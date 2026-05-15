@@ -930,6 +930,61 @@ fn lookup_credential_process(
   ini.get_property(parsed, section: section, key: "credential_process")
 }
 
+// ----- AWS CLI export-credentials fallback -----
+
+/// Use the AWS CLI (`aws configure export-credentials`) to resolve
+/// credentials for a profile. Covers any auth flow the CLI supports — SSO,
+/// IRSA, `login_session`, anything we haven't natively implemented yet.
+///
+/// The CLI's `--format process` output is the same shape as
+/// `credential_process` (`Version: 1`, `AccessKeyId`, etc.), so this is
+/// effectively a thin wrapper that runs the right command and feeds the
+/// output through the existing `credential_process` decoder.
+///
+/// Specifically a deliberate alternative to a native `login_session`
+/// provider: the upstream Go SDK's `credentials/logincreds` uses **DPoP**
+/// (RFC 9449) — every portal request needs a JWT signed with an ECDSA P-256
+/// private key from the local cache. Implementing that natively would add
+/// JWK parsing, JWS signing, and a new crypto FFI, plus the cache file
+/// schema isn't published outside the Go implementation. Until we take on
+/// that work, shelling out to the AWS CLI is the practical bridge.
+///
+/// Requires AWS CLI v2 (`aws configure export-credentials` was added in
+/// 2022). Returns `NotConfigured` if the binary isn't on PATH or the
+/// profile doesn't exist; `FetchFailed` if the CLI exits non-zero or
+/// emits malformed JSON.
+pub fn from_aws_cli(profile profile: String) -> Provider {
+  from_aws_cli_with(profile: profile, runner: os_process.run)
+}
+
+/// `from_aws_cli` with an injectable runner so tests don't actually spawn
+/// `aws`.
+pub fn from_aws_cli_with(
+  profile profile: String,
+  runner runner: fn(String, List(String)) -> Result(#(Int, BitArray), Nil),
+) -> Provider {
+  let command =
+    "aws configure export-credentials --profile "
+    <> profile
+    <> " --format process"
+  Provider(name: "AwsCli(" <> profile <> ")", fetch: fn() {
+    case process_provider.fetch(runner, command) {
+      Ok(c) ->
+        Ok(Credentials(
+          access_key_id: c.access_key_id,
+          secret_access_key: c.secret_access_key,
+          session_token: c.session_token,
+          expires_at: c.expires_at,
+          source: "AwsCli(" <> profile <> ")",
+        ))
+      Error(process_provider.LaunchFailed(reason: reason)) ->
+        Error(NotConfigured(reason: reason))
+      Error(process_provider.BadOutput(reason: reason)) ->
+        Error(FetchFailed(reason: reason))
+    }
+  })
+}
+
 // ----- default chain -----
 
 /// Standard AWS credential-provider chain, in the precedence order other AWS
