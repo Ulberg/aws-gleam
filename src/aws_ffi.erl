@@ -1,7 +1,7 @@
 -module(aws_ffi).
 -export([sha256/1, hmac_sha256/2, hex_encode/1, get_env/1, read_file/1,
          unix_seconds/0, parse_iso8601/1, run_process/2, sha1_hex/1,
-         aws_timestamp/0]).
+         aws_timestamp/0, random_float/0]).
 
 sha256(Data) ->
     crypto:hash(sha256, Data).
@@ -53,6 +53,12 @@ aws_timestamp() ->
             [Y, Mo, D, H, Mi, S]
         )
     ).
+
+%% Uniform random float in [0.0, 1.0). The default backoff jitter source for
+%% the retry strategy. Real callers can substitute a deterministic RNG in
+%% tests so synthetic 429/5xx sequences produce reproducible sleep amounts.
+random_float() ->
+    rand:uniform().
 
 %% Parse an AWS-style ISO 8601 UTC timestamp ("2023-11-30T15:30:00Z" or with
 %% fractional seconds like "2023-11-30T15:30:00.000Z") into unix seconds.
