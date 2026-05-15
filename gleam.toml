@@ -1,0 +1,11 @@
+name = "aws"
+version = "0.1.0"
+target = "erlang"
+
+# Pre-v0.1; no published releases yet.
+
+[dependencies]
+gleam_stdlib = ">= 0.40.0 and < 2.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
