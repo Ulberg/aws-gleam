@@ -36,6 +36,7 @@ build_protocol() {
   cd "$ROOT/.tools"
   "$SMITHY_BIN" ast \
     --aut \
+    --flatten \
     "${SHARED[@]}" \
     "$MODEL_ROOT/$subdir" \
     > "$OUT_DIR/$name.json"

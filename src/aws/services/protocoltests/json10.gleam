@@ -138,60 +138,6 @@ pub fn parse_no_input_and_output_response(
   Ok(NoInputAndOutputOutput)
 }
 
-pub type OperationWithRequiredMembersInput {
-  OperationWithRequiredMembersInput
-}
-
-pub type OperationWithRequiredMembersOutput {
-  OperationWithRequiredMembersOutput
-}
-
-pub fn build_operation_with_required_members_request(
-  _input: OperationWithRequiredMembersInput,
-) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let headers =
-    dict.from_list([
-      #("Content-Type", "application/x-amz-json-1.0"),
-      #("X-Amz-Target", "JsonRpc10.OperationWithRequiredMembers"),
-    ])
-  #("POST", "/", headers, <<"{}">>)
-}
-
-pub fn parse_operation_with_required_members_response(
-  _code: Int,
-  _headers: dict.Dict(String, String),
-  _body: BitArray,
-) -> Result(OperationWithRequiredMembersOutput, String) {
-  Ok(OperationWithRequiredMembersOutput)
-}
-
-pub type OperationWithRequiredMembersWithDefaultsInput {
-  OperationWithRequiredMembersWithDefaultsInput
-}
-
-pub type OperationWithRequiredMembersWithDefaultsOutput {
-  OperationWithRequiredMembersWithDefaultsOutput
-}
-
-pub fn build_operation_with_required_members_with_defaults_request(
-  _input: OperationWithRequiredMembersWithDefaultsInput,
-) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let headers =
-    dict.from_list([
-      #("Content-Type", "application/x-amz-json-1.0"),
-      #("X-Amz-Target", "JsonRpc10.OperationWithRequiredMembersWithDefaults"),
-    ])
-  #("POST", "/", headers, <<"{}">>)
-}
-
-pub fn parse_operation_with_required_members_with_defaults_response(
-  _code: Int,
-  _headers: dict.Dict(String, String),
-  _body: BitArray,
-) -> Result(OperationWithRequiredMembersWithDefaultsOutput, String) {
-  Ok(OperationWithRequiredMembersWithDefaultsOutput)
-}
-
 pub type QueryIncompatibleOperationInput {
   QueryIncompatibleOperationInput
 }

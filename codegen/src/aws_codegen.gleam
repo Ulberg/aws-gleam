@@ -10,6 +10,9 @@
 
 import argv
 import codegen/awsjson
+import codegen/awsquery
+import codegen/restjson
+import codegen/restxml
 import gleam/dict
 import gleam/int
 import gleam/io
@@ -36,7 +39,6 @@ pub fn main() {
 
 fn run(proto_name: String, in_path: String, out_path: String) -> Nil {
   let result = {
-    use protocol <- result.try(pick_protocol(proto_name))
     use text <- result.try(
       simplifile.read(in_path)
       |> result.replace_error("cannot read " <> in_path),
@@ -46,22 +48,22 @@ fn run(proto_name: String, in_path: String, out_path: String) -> Nil {
       |> result.replace_error("cannot parse Smithy AST"),
     )
     use svc_id <- result.try(find_service(m, proto_name))
-    use emitted <- result.try(awsjson.emit_service(m, svc_id, protocol))
+    use #(source, ops) <- result.try(emit(m, svc_id, proto_name))
     use _ <- result.try(
-      simplifile.write(out_path, emitted.source)
+      simplifile.write(out_path, source)
       |> result.replace_error("cannot write " <> out_path),
     )
-    Ok(emitted)
+    Ok(ops)
   }
   case result {
-    Ok(emitted) -> {
+    Ok(ops) -> {
       io.println(
         "wrote "
         <> out_path
         <> " ("
-        <> int.to_string(list.length(emitted.operations_emitted))
+        <> int.to_string(list.length(ops))
         <> " operations: "
-        <> string.join(emitted.operations_emitted, ", ")
+        <> string.join(ops, ", ")
         <> ")",
       )
     }
@@ -69,10 +71,36 @@ fn run(proto_name: String, in_path: String, out_path: String) -> Nil {
   }
 }
 
-fn pick_protocol(name: String) -> Result(awsjson.Protocol, String) {
-  case name {
-    "awsJson1_0" -> Ok(awsjson.AwsJson10)
-    "awsJson1_1" -> Ok(awsjson.AwsJson11)
+fn emit(
+  m: model.Model,
+  svc_id: String,
+  proto_name: String,
+) -> Result(#(String, List(String)), String) {
+  case proto_name {
+    "awsJson1_0" -> {
+      use r <- result.try(awsjson.emit_service(m, svc_id, awsjson.AwsJson10))
+      Ok(#(r.source, r.operations_emitted))
+    }
+    "awsJson1_1" -> {
+      use r <- result.try(awsjson.emit_service(m, svc_id, awsjson.AwsJson11))
+      Ok(#(r.source, r.operations_emitted))
+    }
+    "restJson1" -> {
+      use r <- result.try(restjson.emit_service(m, svc_id))
+      Ok(#(r.source, r.operations_emitted))
+    }
+    "restXml" -> {
+      use r <- result.try(restxml.emit_service(m, svc_id))
+      Ok(#(r.source, r.operations_emitted))
+    }
+    "awsQuery" -> {
+      use r <- result.try(awsquery.emit_service(m, svc_id, awsquery.AwsQuery))
+      Ok(#(r.source, r.operations_emitted))
+    }
+    "ec2Query" -> {
+      use r <- result.try(awsquery.emit_service(m, svc_id, awsquery.Ec2Query))
+      Ok(#(r.source, r.operations_emitted))
+    }
     other -> Error("unsupported protocol: " <> other)
   }
 }
@@ -83,6 +111,10 @@ fn find_service(m: model.Model, proto_name: String) -> Result(String, String) {
   let trait_id = case proto_name {
     "awsJson1_0" -> ShapeId("aws.protocols#awsJson1_0")
     "awsJson1_1" -> ShapeId("aws.protocols#awsJson1_1")
+    "restJson1" -> ShapeId("aws.protocols#restJson1")
+    "restXml" -> ShapeId("aws.protocols#restXml")
+    "awsQuery" -> ShapeId("aws.protocols#awsQuery")
+    "ec2Query" -> ShapeId("aws.protocols#ec2Query")
     _ -> ShapeId("")
   }
   let candidates =

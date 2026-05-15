@@ -1,7 +1,7 @@
 -module(aws_ffi).
 -export([sha256/1, hmac_sha256/2, hex_encode/1, get_env/1, read_file/1,
          unix_seconds/0, parse_iso8601/1, run_process/2, sha1_hex/1,
-         aws_timestamp/0, random_float/0]).
+         aws_timestamp/0, random_float/0, encode_dynamic_to_json/1]).
 
 sha256(Data) ->
     crypto:hash(sha256, Data).
@@ -59,6 +59,52 @@ aws_timestamp() ->
 %% tests so synthetic 429/5xx sequences produce reproducible sleep amounts.
 random_float() ->
     rand:uniform().
+
+%% Encode an arbitrary decoded JSON term (the Erlang shape gleam_json
+%% returns: integers/floats/atoms/binaries/lists/maps) back into a JSON
+%% binary string. Used by the protocol-test loader to round-trip the
+%% `params` blob from the Smithy AST into something the runner can
+%% structurally compare. Returns {ok, Binary} | {error, nil}.
+encode_dynamic_to_json(Term) ->
+    try iolist_to_binary(do_encode_json(Term)) of
+        Bin -> {ok, Bin}
+    catch
+        _:_ -> {error, nil}
+    end.
+
+do_encode_json(null) -> <<"null">>;
+do_encode_json(true) -> <<"true">>;
+do_encode_json(false) -> <<"false">>;
+do_encode_json(undefined) -> <<"null">>;
+do_encode_json(N) when is_integer(N) -> integer_to_binary(N);
+do_encode_json(F) when is_float(F) -> float_to_binary(F, [{decimals, 17}, compact]);
+do_encode_json(B) when is_binary(B) -> [<<"\"">>, escape_json_string(B), <<"\"">>];
+do_encode_json(L) when is_list(L) ->
+    Items = [do_encode_json(I) || I <- L],
+    [<<"[">>, lists:join(<<",">>, Items), <<"]">>];
+do_encode_json(M) when is_map(M) ->
+    Pairs = maps:fold(
+        fun(K, V, Acc) ->
+            KB = if is_binary(K) -> K; is_atom(K) -> atom_to_binary(K, utf8); true -> iolist_to_binary(io_lib:format("~p", [K])) end,
+            Pair = [<<"\"">>, escape_json_string(KB), <<"\":">>, do_encode_json(V)],
+            [Pair | Acc]
+        end, [], M),
+    [<<"{">>, lists:join(<<",">>, Pairs), <<"}">>].
+
+escape_json_string(B) when is_binary(B) ->
+    escape_json_string(B, <<>>).
+escape_json_string(<<>>, Acc) -> Acc;
+escape_json_string(<<$\\, R/binary>>, Acc) -> escape_json_string(R, <<Acc/binary, $\\, $\\>>);
+escape_json_string(<<$", R/binary>>, Acc) -> escape_json_string(R, <<Acc/binary, $\\, $">>);
+escape_json_string(<<$\n, R/binary>>, Acc) -> escape_json_string(R, <<Acc/binary, $\\, $n>>);
+escape_json_string(<<$\r, R/binary>>, Acc) -> escape_json_string(R, <<Acc/binary, $\\, $r>>);
+escape_json_string(<<$\t, R/binary>>, Acc) -> escape_json_string(R, <<Acc/binary, $\\, $t>>);
+escape_json_string(<<C, R/binary>>, Acc) when C < 32 ->
+    escape_json_string(R, <<Acc/binary, $\\, $u, "00", (hex_digit(C div 16)):8, (hex_digit(C rem 16)):8>>);
+escape_json_string(<<C, R/binary>>, Acc) -> escape_json_string(R, <<Acc/binary, C>>).
+
+hex_digit(N) when N < 10 -> $0 + N;
+hex_digit(N) -> $a + N - 10.
 
 %% Parse an AWS-style ISO 8601 UTC timestamp ("2023-11-30T15:30:00Z" or with
 %% fractional seconds like "2023-11-30T15:30:00.000Z") into unix seconds.

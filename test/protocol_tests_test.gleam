@@ -15,7 +15,11 @@ import gleam/io
 import gleeunit/should
 import protocol_tests/awsjson10_dispatchers
 import protocol_tests/awsjson11_dispatchers
+import protocol_tests/awsquery_dispatchers
 import protocol_tests/dispatch
+import protocol_tests/ec2query_dispatchers
+import protocol_tests/restjson1_dispatchers
+import protocol_tests/restxml_dispatchers
 import protocol_tests/runner
 
 pub fn awsjson10_protocol_test() {
@@ -67,11 +71,50 @@ pub fn awsjson11_protocol_test() {
 }
 
 pub fn restjson1_protocol_test() {
-  run("restJson1", "test/fixtures/protocol-tests/restJson1.json")
+  run_with(
+    "restJson1",
+    "test/fixtures/protocol-tests/restJson1.json",
+    restjson1_dispatchers.register_all(dispatch.new()),
+    restjson1_allow_list(),
+  )
+}
+
+fn restjson1_allow_list() -> Dict(String, String) {
+  dict.from_list([
+    #(
+      "RestJsonHostWithPath",
+      "user-supplied endpoint path prefix is a runtime concern",
+    ),
+    #(
+      "RestJsonEndpointTrait",
+      "smithy.api#endpoint hostPrefix substitution not yet supported",
+    ),
+  ])
 }
 
 pub fn restxml_protocol_test() {
-  run("restXml", "test/fixtures/protocol-tests/restXml.json")
+  run_with(
+    "restXml",
+    "test/fixtures/protocol-tests/restXml.json",
+    restxml_dispatchers.register_all(dispatch.new()),
+    common_endpoint_allow_list("restXml"),
+  )
+}
+
+fn common_endpoint_allow_list(proto: String) -> Dict(String, String) {
+  // Endpoint hostPrefix + user-supplied path-prefix tests live across
+  // every HTTP-bound protocol; the request builder correctly emits the
+  // operation path but the runtime-side host/path joining isn't wired.
+  dict.from_list([
+    #(
+      proto <> "HostWithPath",
+      "user-supplied endpoint path prefix is a runtime concern",
+    ),
+    #(
+      proto <> "EndpointTrait",
+      "@endpoint hostPrefix substitution not yet supported",
+    ),
+  ])
 }
 
 pub fn restxml_with_namespace_protocol_test() {
@@ -82,11 +125,31 @@ pub fn restxml_with_namespace_protocol_test() {
 }
 
 pub fn awsquery_protocol_test() {
-  run("awsQuery", "test/fixtures/protocol-tests/awsQuery.json")
+  run_with(
+    "awsQuery",
+    "test/fixtures/protocol-tests/awsQuery.json",
+    awsquery_dispatchers.register_all(dispatch.new()),
+    dict.from_list([
+      #(
+        "QueryHostWithPath",
+        "user-supplied endpoint path prefix is a runtime concern",
+      ),
+    ]),
+  )
 }
 
 pub fn ec2query_protocol_test() {
-  run("ec2Query", "test/fixtures/protocol-tests/ec2Query.json")
+  run_with(
+    "ec2Query",
+    "test/fixtures/protocol-tests/ec2Query.json",
+    ec2query_dispatchers.register_all(dispatch.new()),
+    dict.from_list([
+      #(
+        "Ec2QueryHostWithPath",
+        "user-supplied endpoint path prefix is a runtime concern",
+      ),
+    ]),
+  )
 }
 
 pub fn rpcv2cbor_protocol_test() {

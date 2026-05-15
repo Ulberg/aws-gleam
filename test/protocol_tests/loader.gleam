@@ -319,17 +319,22 @@ fn applies_to_decoder() -> Decoder(cases.AppliesTo) {
   })
 }
 
-/// `params` is an arbitrary JSON object. For the MVP runner we only need
-/// to know whether it was provided; deep params comparison happens at the
-/// generated-code dispatch site, where the emitter can decode them into
-/// the typed input. Returning `Some("present")` keeps the field shape
-/// stable; the runner is responsible for re-fetching the underlying JSON
-/// if it needs structural comparison.
+/// `params` is an arbitrary JSON object. Re-encode the captured
+/// `Dynamic` subtree back into a JSON string via the Erlang FFI helper
+/// so the dispatcher's generated decoder can re-parse it into the typed
+/// input shape.
 fn json_blob_decoder() -> Decoder(Option(String)) {
   decode.then(decode.optional(decode.dynamic), fn(opt) {
     case opt {
       None -> decode.success(None)
-      Some(_) -> decode.success(Some("present"))
+      Some(d) ->
+        case encode_dynamic_to_json(d) {
+          Ok(s) -> decode.success(Some(s))
+          Error(_) -> decode.success(None)
+        }
     }
   })
 }
+
+@external(erlang, "aws_ffi", "encode_dynamic_to_json")
+fn encode_dynamic_to_json(d: Dynamic) -> Result(String, Nil)
