@@ -4,3 +4,7 @@
 erl_crash.dump
 
 codegen/build
+
+.tools/smithy-cli-darwin-aarch64/
+.tools/smithy-cli.zip
+.tools/build
