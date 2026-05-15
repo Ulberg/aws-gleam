@@ -12,6 +12,7 @@
 
 import aws/internal/http_send.{type Send as HttpSend}
 import aws/internal/ini
+import aws/internal/providers/ecs
 import aws/internal/providers/imds
 import gleam/bit_array
 import gleam/int
@@ -300,4 +301,105 @@ pub fn from_imds_with(
       Error(imds.Failed(reason: reason)) -> Error(FetchFailed(reason: reason))
     }
   })
+}
+
+// ----- ECS container credentials provider -----
+
+/// ECS / EKS / Fargate container metadata provider. Resolves the metadata
+/// URL from the standard environment variables (AWS_CONTAINER_-
+/// CREDENTIALS_FULL_URI takes precedence; otherwise AWS_CONTAINER_-
+/// CREDENTIALS_RELATIVE_URI is appended to `http://169.254.170.2`). The
+/// `Authorization` header value is read from AWS_CONTAINER_AUTHORIZATION_-
+/// TOKEN (or _TOKEN_FILE, if set instead).
+///
+/// If neither URI env var is set, the provider always returns
+/// `NotConfigured` so the chain falls through quietly.
+pub fn from_ecs(send send: HttpSend) -> Provider {
+  from_ecs_with_env(send: send, lookup: os_get_env, read_file: read_file_string)
+}
+
+/// Like `from_ecs` but with injectable env-var lookup and file reader so
+/// tests can drive the provider without mutating real OS state.
+pub fn from_ecs_with_env(
+  send send: HttpSend,
+  lookup lookup: fn(String) -> Result(String, Nil),
+  read_file read_file: fn(String) -> Result(String, Nil),
+) -> Provider {
+  let url = resolve_ecs_url(lookup)
+  let token = resolve_ecs_auth_token(lookup, read_file)
+  case url {
+    Some(u) -> from_ecs_with(send: send, url: u, auth_token: token)
+    None ->
+      Provider(name: "ECS", fetch: fn() {
+        Error(NotConfigured(
+          reason: "no AWS_CONTAINER_CREDENTIALS_*_URI in environment",
+        ))
+      })
+  }
+}
+
+/// ECS provider with the URL and auth token supplied explicitly. Useful when
+/// the env-resolution logic isn't a fit (e.g. a sidecar configures things
+/// programmatically).
+pub fn from_ecs_with(
+  send send: HttpSend,
+  url url: String,
+  auth_token auth_token: Option(String),
+) -> Provider {
+  let options = ecs.Options(url: url, auth_token: auth_token)
+  Provider(name: "ECS", fetch: fn() {
+    case ecs.fetch(send, options) {
+      Ok(c) ->
+        Ok(Credentials(
+          access_key_id: c.access_key_id,
+          secret_access_key: c.secret_access_key,
+          session_token: c.session_token,
+          expires_at: c.expires_at,
+          source: "ECS",
+        ))
+      Error(ecs.Unreachable(reason: reason)) ->
+        Error(NotConfigured(reason: reason))
+      Error(ecs.Failed(reason: reason)) -> Error(FetchFailed(reason: reason))
+    }
+  })
+}
+
+fn resolve_ecs_url(
+  lookup: fn(String) -> Result(String, Nil),
+) -> Option(String) {
+  case lookup("AWS_CONTAINER_CREDENTIALS_FULL_URI") {
+    Ok(full) if full != "" -> Some(full)
+    _ ->
+      case lookup("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI") {
+        Ok(rel) if rel != "" -> Some("http://169.254.170.2" <> rel)
+        _ -> None
+      }
+  }
+}
+
+fn resolve_ecs_auth_token(
+  lookup: fn(String) -> Result(String, Nil),
+  read_file: fn(String) -> Result(String, Nil),
+) -> Option(String) {
+  case lookup("AWS_CONTAINER_AUTHORIZATION_TOKEN") {
+    Ok(t) if t != "" -> Some(t)
+    _ ->
+      case lookup("AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE") {
+        Ok(path) if path != "" ->
+          case read_file(path) {
+            Ok(contents) ->
+              case string.trim(contents) {
+                "" -> None
+                t -> Some(t)
+              }
+            Error(_) -> None
+          }
+        _ -> None
+      }
+  }
+}
+
+fn read_file_string(path: String) -> Result(String, Nil) {
+  use bits <- result.try(read_file(path))
+  bit_array.to_string(bits) |> result.replace_error(Nil)
 }
