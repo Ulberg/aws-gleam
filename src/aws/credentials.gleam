@@ -851,3 +851,35 @@ fn lookup_credential_process(
   }
   ini.get_property(parsed, section: section, key: "credential_process")
 }
+
+// ----- default chain -----
+
+/// Standard AWS credential-provider chain, in the precedence order other AWS
+/// SDKs use:
+///
+///   1. Environment variables (`AWS_ACCESS_KEY_ID` and friends)
+///   2. AssumeRoleWithWebIdentity / IRSA (`AWS_WEB_IDENTITY_TOKEN_FILE`)
+///   3. SSO session, via `~/.aws/config` + the cached SSO token
+///   4. Shared credentials file (`~/.aws/credentials`)
+///   5. `credential_process` from the named profile
+///   6. ECS container metadata (`AWS_CONTAINER_CREDENTIALS_*_URI`)
+///   7. EC2 IMDSv2
+///
+/// The returned `Provider` is the bare chain — it does not cache. Wrap it in
+/// `aws/internal/credentials_cache.start_default` to get the cache + refresh
+/// behaviour every long-running process wants.
+///
+/// `profile` selects which profile name is used by the profile, SSO, and
+/// credential_process branches (they all share the AWS-CLI profile concept).
+/// Pass `"default"` to mimic the AWS CLI's default behaviour.
+pub fn default_chain(send send: HttpSend, profile profile: String) -> Provider {
+  chain([
+    from_environment(),
+    from_web_identity(send: send),
+    from_sso(send: send, profile: profile),
+    from_profile(name: profile),
+    from_process(profile: profile),
+    from_ecs(send: send),
+    from_imds(send: send),
+  ])
+}
