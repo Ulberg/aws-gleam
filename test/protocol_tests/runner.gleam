@@ -9,6 +9,7 @@
 //// Each per-protocol entry file decides that — typically failing the
 //// suite if `fail > 0`.
 
+import gleam/bit_array
 import gleam/dict.{type Dict}
 import gleam/int
 import gleam/io
@@ -175,10 +176,11 @@ fn classify_response(
 // ---------- assertions ----------
 
 fn run_request_assertion(c: RequestCase, d: Dispatcher) -> Outcome {
-  // For MVP, ignore params content (loader doesn't extract JSON yet) and
-  // hand an empty string — dispatchers that don't take params won't care.
+  // Pass the actual params JSON string the loader extracted via
+  // aws_ffi:encode_dynamic_to_json — the dispatcher decodes it into
+  // its typed input shape.
   let params_json = case c.params {
-    Some(_) -> "{}"
+    Some(s) -> s
     None -> ""
   }
   case d.build_request(params_json) {
@@ -212,7 +214,7 @@ fn assert_request(c: RequestCase, built: BuiltRequest) -> Outcome {
     c.forbid_headers,
     hs,
   ))
-  use _ <- chain(assert_body_bytes(c.body, body))
+  use _ <- chain(assert_body_bytes(c.body, c.body_media_type, body))
   Passed
 }
 
@@ -313,7 +315,11 @@ fn assert_headers(
   })
 }
 
-fn assert_body_bytes(expected: Option(String), actual: BitArray) -> Outcome {
+fn assert_body_bytes(
+  expected: Option(String),
+  media_type: Option(String),
+  actual: BitArray,
+) -> Outcome {
   case expected {
     None -> Passed
     Some(want) -> {
@@ -321,17 +327,67 @@ fn assert_body_bytes(expected: Option(String), actual: BitArray) -> Outcome {
       case want_bytes == actual {
         True -> Passed
         False ->
-          Failed(
-            reason: "body mismatch (expected "
-            <> int.to_string(string.byte_size(want))
-            <> "B, got "
-            <> int.to_string(bit_array_size(actual))
-            <> "B)",
-          )
+          // Byte comparison failed. Per the Smithy `httpRequestTests`
+          // spec, `bodyMediaType` controls how mismatches are
+          // re-checked: `application/json` is compared structurally so
+          // whitespace and key order don't matter. Other media types
+          // (XML, form-urlencoded, CBOR, etc.) get their own semantic
+          // comparators as those protocols' codecs land.
+          case media_type {
+            Some(mt) ->
+              case is_json_media(mt) {
+                True -> assert_json_semantic_equal(want, actual)
+                False -> body_mismatch(want, actual)
+              }
+            None -> body_mismatch(want, actual)
+          }
       }
     }
   }
 }
+
+fn body_mismatch(want: String, actual: BitArray) -> Outcome {
+  Failed(
+    reason: "body mismatch (expected "
+    <> int.to_string(string.byte_size(want))
+    <> "B, got "
+    <> int.to_string(bit_array_size(actual))
+    <> "B)",
+  )
+}
+
+fn is_json_media(mt: String) -> Bool {
+  string.contains(mt, "json")
+}
+
+fn assert_json_semantic_equal(want: String, actual_bytes: BitArray) -> Outcome {
+  case bit_array_to_string(actual_bytes) {
+    Error(_) -> Failed(reason: "actual body is not utf-8")
+    Ok(actual) ->
+      case json_canonical(want), json_canonical(actual) {
+        Ok(c_want), Ok(c_actual) ->
+          case c_want == c_actual {
+            True -> Passed
+            False ->
+              Failed(
+                reason: "json body mismatch: expected `"
+                <> c_want
+                <> "`, got `"
+                <> c_actual
+                <> "`",
+              )
+          }
+        _, _ -> body_mismatch(want, actual_bytes)
+      }
+  }
+}
+
+/// Round-trip a JSON string through the Erlang term form and re-encode
+/// canonically — sorts object keys and collapses whitespace. Used for
+/// the semantic body comparison; matches what `aws-smithy-protocol-test`
+/// does in Rust at the assertion site.
+@external(erlang, "aws_ffi", "json_canonicalize")
+fn json_canonical(input: String) -> Result(String, Nil)
 
 // ---------- bookkeeping ----------
 
@@ -436,3 +492,7 @@ fn string_to_bit_array(s: String) -> BitArray
 
 @external(erlang, "erlang", "byte_size")
 fn bit_array_size(b: BitArray) -> Int
+
+fn bit_array_to_string(b: BitArray) -> Result(String, Nil) {
+  bit_array.to_string(b)
+}

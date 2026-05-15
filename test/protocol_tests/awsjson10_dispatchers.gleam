@@ -12,23 +12,32 @@ pub fn register_all(registry: Registry) -> Registry {
   registry
   |> dispatch.register(empty_input_and_empty_output_dispatcher())
   |> dispatch.register(endpoint_operation_dispatcher())
+  |> dispatch.register(greeting_with_errors_dispatcher())
   |> dispatch.register(host_with_path_operation_dispatcher())
   |> dispatch.register(no_input_and_no_output_dispatcher())
   |> dispatch.register(no_input_and_output_dispatcher())
   |> dispatch.register(query_incompatible_operation_dispatcher())
+  |> dispatch.register(simple_scalar_properties_dispatcher())
 }
 
 fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.json10#EmptyInputAndEmptyOutput",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_empty_input_and_empty_output_request(
-          svc.EmptyInputAndEmptyOutputInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_empty_input_and_empty_output_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_empty_input_and_empty_output_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_empty_input_and_empty_output_response,
     ),
   )
@@ -37,76 +46,153 @@ fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
 fn endpoint_operation_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.json10#EndpointOperation",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_endpoint_operation_request(svc.EndpointOperationInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_endpoint_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_endpoint_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(svc.parse_endpoint_operation_response),
+    parse_response: response_parser(svc.parse_endpoint_operation_response),
+  )
+}
+
+fn greeting_with_errors_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#GreetingWithErrors",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_greeting_with_errors_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_greeting_with_errors_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_greeting_with_errors_response),
   )
 }
 
 fn host_with_path_operation_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.json10#HostWithPathOperation",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_host_with_path_operation_request(
-          svc.HostWithPathOperationInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_host_with_path_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_host_with_path_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
-      svc.parse_host_with_path_operation_response,
-    ),
+    parse_response: response_parser(svc.parse_host_with_path_operation_response),
   )
 }
 
 fn no_input_and_no_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.json10#NoInputAndNoOutput",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_no_input_and_no_output_request(svc.NoInputAndNoOutputInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_no_input_and_no_output_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_no_input_and_no_output_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
-      svc.parse_no_input_and_no_output_response,
-    ),
+    parse_response: response_parser(svc.parse_no_input_and_no_output_response),
   )
 }
 
 fn no_input_and_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.json10#NoInputAndOutput",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_no_input_and_output_request(svc.NoInputAndOutputInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_no_input_and_output_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_no_input_and_output_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
-      svc.parse_no_input_and_output_response,
-    ),
+    parse_response: response_parser(svc.parse_no_input_and_output_response),
   )
 }
 
 fn query_incompatible_operation_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.json10#QueryIncompatibleOperation",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_query_incompatible_operation_request(
-          svc.QueryIncompatibleOperationInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_query_incompatible_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_query_incompatible_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_query_incompatible_operation_response,
     ),
   )
 }
 
-fn empty_response_parser(
+fn simple_scalar_properties_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#SimpleScalarProperties",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_simple_scalar_properties_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_simple_scalar_properties_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_simple_scalar_properties_response),
+  )
+}
+
+fn response_parser(
   parser: fn(Int, _, BitArray) -> Result(_, String),
 ) -> fn(ParsedResponseInput) -> Result(dispatch.ParsedResponse, String) {
   fn(input: ParsedResponseInput) {

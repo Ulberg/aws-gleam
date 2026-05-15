@@ -1,7 +1,9 @@
 -module(aws_ffi).
 -export([sha256/1, hmac_sha256/2, hex_encode/1, get_env/1, read_file/1,
          unix_seconds/0, parse_iso8601/1, run_process/2, sha1_hex/1,
-         aws_timestamp/0, random_float/0, encode_dynamic_to_json/1]).
+         aws_timestamp/0, random_float/0, encode_dynamic_to_json/1,
+         float_nan/0, float_infinity/0, float_neg_infinity/0,
+         float_is_nan/1, float_is_infinite/1, json_canonicalize/1]).
 
 sha256(Data) ->
     crypto:hash(sha256, Data).
@@ -105,6 +107,114 @@ escape_json_string(<<C, R/binary>>, Acc) -> escape_json_string(R, <<Acc/binary, 
 
 hex_digit(N) when N < 10 -> $0 + N;
 hex_digit(N) -> $a + N - 10.
+
+%% IEEE 754 special-float helpers used by awsJson serializers.
+%% Erlang floats are IEEE 754; we just need to produce the three sentinel
+%% values and recognise them on the way in.
+%%
+%% NaN is the canonical "not a number"; Inf is +∞; -Inf is −∞. The OTP
+%% standard library exposes these via `float_to_*` formatting, but for
+%% Gleam consumers we need plain constructors.
+
+%% awsJson encodes IEEE 754 specials (NaN / Infinity / -Infinity) as JSON
+%% strings. Unlike Rust's `f64`, the Erlang `float()` type CANNOT hold
+%% these values — `0.0/0.0` raises `badarith`, `<<F/float>> = <<NaN_bits>>`
+%% bombs on Badmatch, `binary_to_term` rejects the NaN tag with Badarg.
+%% This is a BEAM platform constraint, documented in
+%% docs/audits/m5.md (§7 "Platform limitations").
+%%
+%% The helpers below DEGRADE GRACEFULLY: constructors return 0.0 when
+%% the underlying VM refuses to allocate the special value, so call
+%% sites don't crash. SimpleScalarProperties special-float protocol-test
+%% cases consequently produce body mismatches (not crashes) — a real,
+%% honest signal that this codec corner is not representable on Erlang.
+%% First-class support requires a wrapper type (e.g. `type Float { F(Float)
+%% NaN PosInf NegInf }`), tracked in the audit's next-iteration roadmap.
+
+float_nan() ->
+    try binary_to_term(<<131, 70, 16#7FF8000000000000:64>>) of
+        F when is_float(F) -> F
+    catch
+        _:_ -> 0.0
+    end.
+
+float_infinity() ->
+    try binary_to_term(<<131, 70, 16#7FF0000000000000:64>>) of
+        F when is_float(F) -> F
+    catch
+        _:_ -> 0.0
+    end.
+
+float_neg_infinity() ->
+    try binary_to_term(<<131, 70, 16#FFF0000000000000:64>>) of
+        F when is_float(F) -> F
+    catch
+        _:_ -> 0.0
+    end.
+
+float_is_nan(F) when is_float(F) ->
+    %% IEEE 754: NaN is the only value not equal to itself. On Erlang
+    %% we never actually hold NaN, so this is reliably false; kept for
+    %% API symmetry with platforms that do.
+    F =/= F;
+float_is_nan(_) -> false.
+
+float_is_infinite(F) when is_float(F) ->
+    %% Comparison against the (degraded) sentinels. Reliably false on
+    %% Erlang.
+    F =:= float_infinity() andalso F =/= 0.0;
+float_is_infinite(_) -> false.
+
+%% Parse a JSON string and re-encode it canonically — object keys sorted,
+%% all whitespace stripped. The Smithy protocol-test spec compares JSON
+%% bodies structurally; this is how we collapse the byte-level
+%% representation to a stable shape before equality testing.
+%% Returns {ok, CanonicalBinary} | {error, nil}.
+json_canonicalize(Bin) when is_binary(Bin) ->
+    case decode_json_string(Bin) of
+        {ok, Term} ->
+            try iolist_to_binary(do_encode_canonical(Term)) of
+                Out -> {ok, Out}
+            catch
+                _:_ -> {error, nil}
+            end;
+        error -> {error, nil}
+    end.
+
+%% Use Erlang OTP 27+ json module for parsing.
+decode_json_string(Bin) ->
+    try json:decode(Bin) of
+        T -> {ok, T}
+    catch
+        _:_ -> error
+    end.
+
+%% Canonical encoder: sorts object keys, no whitespace. Identical
+%% semantics to do_encode_json above except that maps emit pairs in
+%% key-sorted order.
+do_encode_canonical(null) -> <<"null">>;
+do_encode_canonical(true) -> <<"true">>;
+do_encode_canonical(false) -> <<"false">>;
+do_encode_canonical(undefined) -> <<"null">>;
+do_encode_canonical(N) when is_integer(N) -> integer_to_binary(N);
+do_encode_canonical(F) when is_float(F) -> float_to_binary(F, [{decimals, 17}, compact]);
+do_encode_canonical(B) when is_binary(B) -> [<<"\"">>, escape_json_string(B), <<"\"">>];
+do_encode_canonical(L) when is_list(L) ->
+    Items = [do_encode_canonical(I) || I <- L],
+    [<<"[">>, lists:join(<<",">>, Items), <<"]">>];
+do_encode_canonical(M) when is_map(M) ->
+    Sorted = lists:sort(maps:to_list(M)),
+    Pairs = [
+        begin
+            KB = if is_binary(K) -> K;
+                    is_atom(K) -> atom_to_binary(K, utf8);
+                    true -> iolist_to_binary(io_lib:format("~p", [K]))
+                 end,
+            [<<"\"">>, escape_json_string(KB), <<"\":">>, do_encode_canonical(V)]
+        end
+        || {K, V} <- Sorted
+    ],
+    [<<"{">>, lists:join(<<",">>, Pairs), <<"}">>].
 
 %% Parse an AWS-style ISO 8601 UTC timestamp ("2023-11-30T15:30:00Z" or with
 %% fractional seconds like "2023-11-30T15:30:00.000Z") into unix seconds.

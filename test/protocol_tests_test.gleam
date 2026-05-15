@@ -1,16 +1,10 @@
 //// Entry point for Layer 2 (Smithy protocol-test) conformance.
 ////
-//// Each `*_protocol_test` function runs one protocol's full case
-//// corpus through the registry. With no dispatchers registered yet,
-//// every case lands in `skip_no_dispatcher`. The suite passes as long
-//// as no case explicitly FAILS — skipped cases are visible in the
-//// report and shrink as the emitter learns more shapes.
+//// Per-protocol gleeunit test that runs the full case corpus through
+//// the dispatcher registry and asserts `fail` count is zero.
 ////
-//// `skip_allow_list` deliberately defaults to empty. Smithy and
-//// aws-sdk-rust do not document protocol-test cases as "skippable",
-//// so we don't either. A case either passes against our generated
-//// code, or it fails loudly. `appliesTo: "server"` is the only
-//// documented exemption and is handled inside the runner.
+//// `appliesTo: "server"` is the only Smithy-documented skip and is
+//// handled inside the runner itself. No other skip lists.
 
 import gleam/io
 import gleeunit/should
