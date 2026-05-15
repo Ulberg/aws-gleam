@@ -472,6 +472,39 @@ pub fn max_attempts_1_means_no_retries_test() {
   attempt_count(script) |> should.equal(1)
 }
 
+// Mirrors aws-sdk-rust `calculate_exponential_backoff_where_initial_backoff_is_one`.
+pub fn backoff_with_initial_one_ms_test() {
+  let strategy =
+    retry.standard_with(
+      max_attempts: 5,
+      base_delay_ms: 1,
+      max_delay_ms: 10_000,
+      sleep: no_sleep,
+      rng: fn() { 1.0 },
+    )
+  retry.exponential_backoff(strategy, 1) |> should.equal(1)
+  retry.exponential_backoff(strategy, 2) |> should.equal(2)
+  retry.exponential_backoff(strategy, 3) |> should.equal(4)
+  retry.exponential_backoff(strategy, 4) |> should.equal(8)
+}
+
+// Mirrors aws-sdk-rust
+// `should_not_panic_when_exponential_backoff_duration_could_not_be_created`.
+// We use Erlang bignums so `2^N` never overflows, but the `min(_, max_delay)`
+// clamp must still keep the output sane for very large attempt counts.
+pub fn large_attempt_count_clamps_safely_test() {
+  let strategy =
+    retry.standard_with(
+      max_attempts: 1000,
+      base_delay_ms: 100,
+      max_delay_ms: 20_000,
+      sleep: no_sleep,
+      rng: fn() { 1.0 },
+    )
+  retry.exponential_backoff(strategy, 64) |> should.equal(20_000)
+  retry.exponential_backoff(strategy, 256) |> should.equal(20_000)
+}
+
 pub fn exponential_backoff_zero_when_rng_is_zero_test() {
   // rng = 0.0 means no jitter — delay collapses to 0.
   let strategy =
