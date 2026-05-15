@@ -143,7 +143,8 @@ pub fn sign(
       opts.service,
     )
   let date = string.slice(opts.timestamp, 0, 8)
-  let key = signing_key(creds.secret_access_key, date, opts.region, opts.service)
+  let key =
+    signing_key(creds.secret_access_key, date, opts.region, opts.service)
   let sig = signature(key, sts)
   let auth =
     authorization_header(
@@ -186,12 +187,7 @@ fn prepare_headers(
   }
   case creds.session_token, opts.omit_session_token {
     Some(token), False ->
-      upsert_header(
-        with_body,
-        "X-Amz-Security-Token",
-        token,
-        replace: True,
-      )
+      upsert_header(with_body, "X-Amz-Security-Token", token, replace: True)
     _, _ -> with_body
   }
 }
@@ -283,7 +279,11 @@ fn collapse_spaces(s: String) -> String {
   do_collapse(string.to_graphemes(s), False, "")
 }
 
-fn do_collapse(chars: List(String), last_was_space: Bool, acc: String) -> String {
+fn do_collapse(
+  chars: List(String),
+  last_was_space: Bool,
+  acc: String,
+) -> String {
   case chars {
     [] -> acc
     [c, ..rest] ->
@@ -322,7 +322,10 @@ fn drop_first(xs: List(a)) -> List(a) {
   }
 }
 
-fn process_segments(segments: List(String), stack: List(String)) -> List(String) {
+fn process_segments(
+  segments: List(String),
+  stack: List(String),
+) -> List(String) {
   case segments {
     [] -> list.reverse(stack)
     ["", ..rest] -> process_segments(rest, stack)
@@ -420,8 +423,7 @@ fn do_percent_decode(bits: BitArray, acc: BitArray) -> BitArray {
           let byte = hv * 16 + lv
           do_percent_decode(rest, bit_array.append(acc, <<byte>>))
         }
-        _, _ ->
-          do_percent_decode(rest, bit_array.append(acc, <<0x25, h, l>>))
+        _, _ -> do_percent_decode(rest, bit_array.append(acc, <<0x25, h, l>>))
       }
     }
     <<b, rest:bits>> -> do_percent_decode(rest, bit_array.append(acc, <<b>>))
@@ -470,4 +472,3 @@ fn query_pair_compare(
     other -> other
   }
 }
-

@@ -27,9 +27,7 @@ pub fn parse(text: String) -> Result(HttpRequest, ParseError) {
   case string.split(head, "\n") {
     [] -> Error(MalformedRequestLine(""))
     [request_line, ..header_lines] -> {
-      use #(method, path, query) <- result.try(parse_request_line(
-        request_line,
-      ))
+      use #(method, path, query) <- result.try(parse_request_line(request_line))
       use headers <- result.try(parse_headers(header_lines))
       Ok(HttpRequest(
         method: method,
@@ -46,22 +44,32 @@ fn split_head_body(text: String) -> #(String, String) {
   let normalized = string.replace(text, "\r\n", "\n")
   case string.split_once(normalized, "\n\n") {
     Ok(#(head, body)) -> #(head, body)
-    Error(_) -> #(normalized, "")
+    // No blank-line separator: treat the whole thing as the head and
+    // drop any trailing newline so the headers list has no empty tail.
+    Error(_) -> #(string.trim_end(normalized), "")
   }
 }
 
 fn parse_request_line(
   line: String,
 ) -> Result(#(String, String, String), ParseError) {
+  // Method is before the first space, HTTP version after the last. The
+  // request-target sits between, and is allowed to contain spaces (some
+  // SigV4 vectors have literal spaces in the path).
   case string.split(line, " ") {
-    [method, target, _version] -> {
-      let #(path, query) = case string.split_once(target, "?") {
-        Ok(#(p, q)) -> #(p, q)
-        Error(_) -> #(target, "")
+    [method, ..rest] ->
+      case list.reverse(rest) {
+        [_version, ..target_parts_rev] -> {
+          let target = target_parts_rev |> list.reverse |> string.join(" ")
+          let #(path, query) = case string.split_once(target, "?") {
+            Ok(#(p, q)) -> #(p, q)
+            Error(_) -> #(target, "")
+          }
+          Ok(#(method, path, query))
+        }
+        [] -> Error(MalformedRequestLine(line))
       }
-      Ok(#(method, path, query))
-    }
-    _ -> Error(MalformedRequestLine(line))
+    [] -> Error(MalformedRequestLine(line))
   }
 }
 
