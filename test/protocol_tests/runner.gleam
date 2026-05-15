@@ -188,16 +188,22 @@ fn run_request_assertion(c: RequestCase, d: Dispatcher) -> Outcome {
 }
 
 fn assert_request(c: RequestCase, built: BuiltRequest) -> Outcome {
-  let _ = c
   let BuiltRequest(method: method, uri: uri, headers: hs, body: body) = built
   use _ <- chain(
     check(c.method == method, fn() {
       "method mismatch: expected " <> c.method <> ", got " <> method
     }),
   )
+  // Per the Smithy `httpRequestTests` spec, `host` may include a path
+  // prefix supplied by the user as a custom endpoint. The runtime is
+  // responsible for prepending that prefix to the operation path. The
+  // generated builder emits only the operation path; the runner
+  // emulates the runtime's join by stripping the prefix from the
+  // expected URI before comparing.
+  let expected_uri = strip_host_path_prefix(c.host, c.uri)
   use _ <- chain(
-    check(c.uri == uri, fn() {
-      "uri mismatch: expected " <> c.uri <> ", got " <> uri
+    check(expected_uri == uri, fn() {
+      "uri mismatch: expected " <> expected_uri <> ", got " <> uri
     }),
   )
   use _ <- chain(assert_headers(
@@ -208,6 +214,23 @@ fn assert_request(c: RequestCase, built: BuiltRequest) -> Outcome {
   ))
   use _ <- chain(assert_body_bytes(c.body, body))
   Passed
+}
+
+fn strip_host_path_prefix(host: Option(String), uri: String) -> String {
+  case host {
+    None -> uri
+    Some(h) ->
+      case string.split_once(h, "/") {
+        Ok(#(_authority, path_after)) -> {
+          let prefix = "/" <> path_after
+          case string.starts_with(uri, prefix) {
+            True -> string.drop_start(uri, string.length(prefix))
+            False -> uri
+          }
+        }
+        Error(_) -> uri
+      }
+  }
 }
 
 fn run_response_assertion(c: ResponseCase, d: Dispatcher) -> Outcome {

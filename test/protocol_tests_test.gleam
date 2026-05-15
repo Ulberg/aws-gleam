@@ -4,13 +4,14 @@
 //// corpus through the registry. With no dispatchers registered yet,
 //// every case lands in `skip_no_dispatcher`. The suite passes as long
 //// as no case explicitly FAILS — skipped cases are visible in the
-//// report and shrink as M5.3 emits more code.
+//// report and shrink as the emitter learns more shapes.
 ////
-//// To watch progress: `gleam test` shows per-protocol counts. Drop the
-//// allow-list cap (in this file) for each protocol as the emitter
-//// supports more cases.
+//// `skip_allow_list` deliberately defaults to empty. Smithy and
+//// aws-sdk-rust do not document protocol-test cases as "skippable",
+//// so we don't either. A case either passes against our generated
+//// code, or it fails loudly. `appliesTo: "server"` is the only
+//// documented exemption and is handled inside the runner.
 
-import gleam/dict.{type Dict}
 import gleam/io
 import gleeunit/should
 import protocol_tests/awsjson10_dispatchers
@@ -27,38 +28,7 @@ pub fn awsjson10_protocol_test() {
     "awsJson1_0",
     "test/fixtures/protocol-tests/awsJson1_0.json",
     awsjson10_dispatchers.register_all(dispatch.new()),
-    awsjson10_allow_list(),
   )
-}
-
-/// Explicit allow-list of cases the awsJson1_0 emitter is known not to
-/// handle yet. Each entry has a `<case-id>: <why>` shape so a future
-/// reader can decide whether to fix or keep skipping.
-fn awsjson10_allow_list() -> Dict(String, String) {
-  dict.from_list([
-    #(
-      "AwsJson10HostWithPath",
-      "user-supplied endpoint path prefix is a runtime concern; "
-        <> "request builder correctly emits operation path `/`",
-    ),
-    #(
-      "AwsJson10EndpointTrait",
-      "smithy.api#endpoint hostPrefix substitution not yet supported",
-    ),
-  ])
-}
-
-fn awsjson11_allow_list() -> Dict(String, String) {
-  dict.from_list([
-    #(
-      "AwsJson11HostWithPath",
-      "user-supplied endpoint path prefix is a runtime concern",
-    ),
-    #(
-      "AwsJson11EndpointTrait",
-      "smithy.api#endpoint hostPrefix substitution not yet supported",
-    ),
-  ])
 }
 
 pub fn awsjson11_protocol_test() {
@@ -66,7 +36,6 @@ pub fn awsjson11_protocol_test() {
     "awsJson1_1",
     "test/fixtures/protocol-tests/awsJson1_1.json",
     awsjson11_dispatchers.register_all(dispatch.new()),
-    awsjson11_allow_list(),
   )
 }
 
@@ -75,21 +44,7 @@ pub fn restjson1_protocol_test() {
     "restJson1",
     "test/fixtures/protocol-tests/restJson1.json",
     restjson1_dispatchers.register_all(dispatch.new()),
-    restjson1_allow_list(),
   )
-}
-
-fn restjson1_allow_list() -> Dict(String, String) {
-  dict.from_list([
-    #(
-      "RestJsonHostWithPath",
-      "user-supplied endpoint path prefix is a runtime concern",
-    ),
-    #(
-      "RestJsonEndpointTrait",
-      "smithy.api#endpoint hostPrefix substitution not yet supported",
-    ),
-  ])
 }
 
 pub fn restxml_protocol_test() {
@@ -97,24 +52,7 @@ pub fn restxml_protocol_test() {
     "restXml",
     "test/fixtures/protocol-tests/restXml.json",
     restxml_dispatchers.register_all(dispatch.new()),
-    common_endpoint_allow_list("restXml"),
   )
-}
-
-fn common_endpoint_allow_list(proto: String) -> Dict(String, String) {
-  // Endpoint hostPrefix + user-supplied path-prefix tests live across
-  // every HTTP-bound protocol; the request builder correctly emits the
-  // operation path but the runtime-side host/path joining isn't wired.
-  dict.from_list([
-    #(
-      proto <> "HostWithPath",
-      "user-supplied endpoint path prefix is a runtime concern",
-    ),
-    #(
-      proto <> "EndpointTrait",
-      "@endpoint hostPrefix substitution not yet supported",
-    ),
-  ])
 }
 
 pub fn restxml_with_namespace_protocol_test() {
@@ -129,12 +67,6 @@ pub fn awsquery_protocol_test() {
     "awsQuery",
     "test/fixtures/protocol-tests/awsQuery.json",
     awsquery_dispatchers.register_all(dispatch.new()),
-    dict.from_list([
-      #(
-        "QueryHostWithPath",
-        "user-supplied endpoint path prefix is a runtime concern",
-      ),
-    ]),
   )
 }
 
@@ -143,12 +75,6 @@ pub fn ec2query_protocol_test() {
     "ec2Query",
     "test/fixtures/protocol-tests/ec2Query.json",
     ec2query_dispatchers.register_all(dispatch.new()),
-    dict.from_list([
-      #(
-        "Ec2QueryHostWithPath",
-        "user-supplied endpoint path prefix is a runtime concern",
-      ),
-    ]),
   )
 }
 
@@ -157,25 +83,18 @@ pub fn rpcv2cbor_protocol_test() {
 }
 
 fn run(name: String, path: String) {
-  run_with(name, path, dispatch.new(), runner.empty_allow_list())
+  run_with(name, path, dispatch.new())
 }
 
-fn run_with(
-  name: String,
-  path: String,
-  registry: dispatch.Registry,
-  allow: Dict(String, String),
-) {
+fn run_with(name: String, path: String, registry: dispatch.Registry) {
   let report =
     runner.run(runner.Config(
       protocol_name: name,
       fixture_path: path,
       registry: registry,
-      skip_allow_list: allow,
+      skip_allow_list: runner.empty_allow_list(),
     ))
   runner.print_report(report)
-  // The suite fails only on actual FAIL outcomes — skips don't fail the
-  // build. Counts are visible in stdout.
   case report.fail {
     0 -> Nil
     _ -> {
