@@ -14,7 +14,7 @@
 //// defaults (OS rand, `process.sleep`, the `aws_ffi` clock).
 
 import aws/internal/http_send.{type HttpError, type Send}
-import aws/internal/retry/rate_limiter.{type Bucket}
+import aws/internal/retry/rate_limiter.{type Bucket, Acquired, Empty}
 import gleam/erlang/process
 import gleam/float
 import gleam/http/request.{type Request}
@@ -33,12 +33,20 @@ pub const default_base_delay_ms: Int = 100
 /// Rust SDK's `MAX_BACKOFF`).
 pub const default_max_delay_ms: Int = 20_000
 
+/// Cost (in tokens) charged to the adaptive rate limiter per error class.
+/// Matches the Rust SDK: throttling is debited harder than server faults.
+pub const throttle_cost: Int = 10
+
+pub const server_error_cost: Int = 5
+
 /// What the strategy decided after looking at the last attempt.
 pub type Decision {
   /// Attempt succeeded — return the response to the caller.
   Stop
-  /// Attempt failed retryably — sleep `delay_ms` then attempt again.
-  RetryAfter(delay_ms: Int)
+  /// Attempt failed retryably — sleep `delay_ms` then attempt again. `cost`
+  /// is what the adaptive rate limiter will be asked to debit before the
+  /// retry actually runs.
+  RetryAfter(delay_ms: Int, cost: Int)
   /// Attempt failed non-retryably or attempts are exhausted — surface the
   /// last response/error.
   GiveUp
@@ -142,13 +150,17 @@ fn do_attempt(
       result
     }
     GiveUp -> result
-    RetryAfter(delay_ms: delay) -> {
-      // Throttling debits the bucket; non-throttle retryable does too but
-      // with a smaller cost. We treat both the same for now.
-      acquire_from_bucket(strategy)
-      strategy.sleep(delay)
-      do_attempt(send, strategy, req, attempt + 1)
-    }
+    RetryAfter(delay_ms: delay, cost: cost) ->
+      // For adaptive: try to acquire `cost` tokens. If the bucket can't pay,
+      // give up retrying right now and surface whatever the server sent.
+      // For standard (no bucket): always allow.
+      case try_acquire(strategy, cost) {
+        Empty -> result
+        Acquired -> {
+          strategy.sleep(delay)
+          do_attempt(send, strategy, req, attempt + 1)
+        }
+      }
   }
 }
 
@@ -171,21 +183,24 @@ fn classify_response(
   attempt: Int,
   strategy: Strategy,
 ) -> Decision {
-  let retryable = is_retryable_status(resp.status)
-  case retryable, attempt < strategy.max_attempts {
-    False, _ -> Stop
+  case classify_status(resp.status), attempt < strategy.max_attempts {
+    NotRetryable, _ -> Stop
     // It's retryable but we've used our last attempt — return whatever the
     // server sent. The caller can still inspect the status code.
-    True, False -> GiveUp
-    True, True -> {
-      // Honour Retry-After when present (429 / 503 most often). The header
-      // can be a non-negative integer (seconds) or an HTTP date; we only
-      // parse the integer form for now.
+    _, False -> GiveUp
+    Throttle, True -> {
       let delay = case retry_after_seconds(resp) {
         Some(secs) -> int.min(secs * 1000, strategy.max_delay_ms)
         None -> exponential_backoff(strategy, attempt)
       }
-      RetryAfter(delay_ms: delay)
+      RetryAfter(delay_ms: delay, cost: throttle_cost)
+    }
+    ServerError, True -> {
+      let delay = case retry_after_seconds(resp) {
+        Some(secs) -> int.min(secs * 1000, strategy.max_delay_ms)
+        None -> exponential_backoff(strategy, attempt)
+      }
+      RetryAfter(delay_ms: delay, cost: server_error_cost)
     }
   }
 }
@@ -196,21 +211,30 @@ fn classify_transport_error(
   strategy: Strategy,
 ) -> Decision {
   // Every transport error (connect refused, timeout, TLS, garbage response)
-  // is treated as transient. The signing layer is responsible for surfacing
-  // its own deterministic errors before they ever hit us.
+  // is treated as transient — same cost class as a 5xx.
   case attempt < strategy.max_attempts {
-    True -> RetryAfter(delay_ms: exponential_backoff(strategy, attempt))
+    True ->
+      RetryAfter(
+        delay_ms: exponential_backoff(strategy, attempt),
+        cost: server_error_cost,
+      )
     False -> GiveUp
   }
 }
 
-/// AWS-style retryable status codes. 408 / 429 are throttling-adjacent; 5xx
-/// is server fault. Everything else is the caller's problem.
-fn is_retryable_status(status: Int) -> Bool {
+type StatusKind {
+  NotRetryable
+  Throttle
+  ServerError
+}
+
+/// 408 / 429 are throttling-adjacent; 5xx is server fault. Everything else is
+/// the caller's problem.
+fn classify_status(status: Int) -> StatusKind {
   case status {
-    408 | 429 -> True
-    s if s >= 500 && s <= 599 -> True
-    _ -> False
+    408 | 429 -> Throttle
+    s if s >= 500 && s <= 599 -> ServerError
+    _ -> NotRetryable
   }
 }
 
@@ -260,10 +284,12 @@ fn do_pow2(n: Int, acc: Int) -> Int {
 @external(erlang, "aws_ffi", "random_float")
 fn random_float() -> Float
 
-fn acquire_from_bucket(strategy: Strategy) -> Nil {
+/// Try to debit `cost` tokens from the rate limiter. Standard strategies
+/// have no bucket and always return `Acquired`.
+fn try_acquire(strategy: Strategy, cost: Int) -> rate_limiter.AcquireResult {
   case strategy.rate_limiter {
-    Some(bucket) -> rate_limiter.on_throttle(bucket)
-    None -> Nil
+    Some(bucket) -> rate_limiter.try_acquire(bucket, cost: cost)
+    None -> Acquired
   }
 }
 

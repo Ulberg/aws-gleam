@@ -11,7 +11,6 @@ import gleam/erlang/process.{type Subject}
 import gleam/http
 import gleam/http/request.{type Request}
 import gleam/http/response
-import gleam/list
 import gleam/otp/actor
 import gleeunit/should
 
@@ -282,13 +281,16 @@ pub fn backoff_clamps_to_max_delay_test() {
   retry.exponential_backoff(strategy, 10) |> should.equal(500)
 }
 
-// ---------- adaptive: token bucket interplay ----------
+// ---------- adaptive: token bucket gating ----------
 
-pub fn adaptive_throttle_halves_token_bucket_test() {
+pub fn adaptive_debits_throttle_cost_per_retry_test() {
+  // Start with 30 tokens. throttle_cost = 10, so two 429s should debit 20
+  // (30 → 20 → 10). Then a success replenishes by replenish_per_success.
   let assert Ok(bucket) =
     rate_limiter.start(max_capacity: 100, replenish_per_success: 5)
-  let initial = rate_limiter.current(bucket)
-  initial.available |> should.equal(100)
+  // Pre-debit to 30 by acquiring 70 directly.
+  let assert rate_limiter.Acquired = rate_limiter.try_acquire(bucket, cost: 70)
+  rate_limiter.current(bucket).available |> should.equal(30)
 
   let script =
     start_script([
@@ -308,19 +310,71 @@ pub fn adaptive_throttle_halves_token_bucket_test() {
   let send = retry.with_retry(send: stub_send(script), strategy: strategy)
   let assert Ok(_) = send(empty_req())
 
-  // Two throttles halve the bucket twice (100 → 50 → 25), then one success
-  // tops up by 5 → 30.
-  let final = rate_limiter.current(bucket)
-  final.available |> should.equal(30)
+  // Two throttles cost 2 × 10 = 20. Then success replenishes 5.
+  // 30 - 20 + 5 = 15.
+  rate_limiter.current(bucket).available |> should.equal(15)
+}
+
+pub fn adaptive_server_error_costs_less_than_throttle_test() {
+  // server_error_cost = 5; two 503s should debit only 10, vs 20 for two 429s.
+  let assert Ok(bucket) =
+    rate_limiter.start(max_capacity: 100, replenish_per_success: 0)
+  let script =
+    start_script([
+      RespOk(status: 503, headers: []),
+      RespOk(status: 503, headers: []),
+      RespOk(status: 200, headers: []),
+    ])
+  let strategy =
+    retry.adaptive_with(
+      bucket: bucket,
+      max_attempts: 5,
+      base_delay_ms: 1,
+      max_delay_ms: 10,
+      sleep: no_sleep,
+      rng: fixed_rng,
+    )
+  let send = retry.with_retry(send: stub_send(script), strategy: strategy)
+  let assert Ok(_) = send(empty_req())
+  // 100 - 2 × 5 = 90 (no replenish since replenish_per_success=0).
+  rate_limiter.current(bucket).available |> should.equal(90)
+}
+
+pub fn adaptive_empty_bucket_stops_retries_test() {
+  // Empty bucket: a retryable response should NOT retry.
+  let assert Ok(bucket) =
+    rate_limiter.start(max_capacity: 5, replenish_per_success: 1)
+  // Drain to zero by debiting 5 first.
+  let assert rate_limiter.Acquired = rate_limiter.try_acquire(bucket, cost: 5)
+  rate_limiter.current(bucket).available |> should.equal(0)
+
+  let script =
+    start_script([
+      RespOk(status: 503, headers: []),
+      // No second response — if the test retries, the script exhausts and we
+    // get a transport error, which signals the bug.
+    ])
+  let strategy =
+    retry.adaptive_with(
+      bucket: bucket,
+      max_attempts: 5,
+      base_delay_ms: 1,
+      max_delay_ms: 10,
+      sleep: no_sleep,
+      rng: fixed_rng,
+    )
+  let send = retry.with_retry(send: stub_send(script), strategy: strategy)
+  let assert Ok(resp) = send(empty_req())
+  resp.status |> should.equal(503)
+  // Only one attempt — bucket said no.
+  attempt_count(script) |> should.equal(1)
 }
 
 pub fn adaptive_success_replenishes_bucket_test() {
   let assert Ok(bucket) =
     rate_limiter.start(max_capacity: 100, replenish_per_success: 10)
-  // Knock the bucket down first.
-  rate_limiter.on_throttle(bucket)
-  rate_limiter.on_throttle(bucket)
-  // 100 → 50 → 25
+  // Knock the bucket down by debiting.
+  let assert rate_limiter.Acquired = rate_limiter.try_acquire(bucket, cost: 75)
   rate_limiter.current(bucket).available |> should.equal(25)
 
   let script = start_script([RespOk(status: 200, headers: [])])
@@ -335,17 +389,72 @@ pub fn adaptive_success_replenishes_bucket_test() {
     )
   let send = retry.with_retry(send: stub_send(script), strategy: strategy)
   let assert Ok(_) = send(empty_req())
-
   // One success tops up by 10: 25 → 35.
   rate_limiter.current(bucket).available |> should.equal(35)
 }
 
-pub fn rate_limiter_floor_at_one_token_test() {
-  // Beat the bucket all the way down: it must not go to zero, so the next
-  // retry still has *some* shot at succeeding.
+pub fn bucket_replenish_caps_at_max_capacity_test() {
   let assert Ok(bucket) =
-    rate_limiter.start(max_capacity: 4, replenish_per_success: 1)
-  list.repeat(Nil, times: 11)
-  |> list.each(fn(_) { rate_limiter.on_throttle(bucket) })
-  rate_limiter.current(bucket).available |> should.equal(1)
+    rate_limiter.start(max_capacity: 5, replenish_per_success: 100)
+  rate_limiter.on_success(bucket)
+  rate_limiter.on_success(bucket)
+  // Should NOT exceed max_capacity.
+  rate_limiter.current(bucket).available |> should.equal(5)
+}
+
+pub fn bucket_try_acquire_returns_empty_when_short_test() {
+  let assert Ok(bucket) =
+    rate_limiter.start(max_capacity: 5, replenish_per_success: 1)
+  // Take 5.
+  let assert rate_limiter.Acquired = rate_limiter.try_acquire(bucket, cost: 5)
+  // Now ask for 1 more — should fail.
+  let assert rate_limiter.Empty = rate_limiter.try_acquire(bucket, cost: 1)
+  // Bucket state unchanged after a failed acquire.
+  rate_limiter.current(bucket).available |> should.equal(0)
+}
+
+// ---------- edge cases caught by the M4 audit ----------
+
+pub fn status_408_is_retried_like_429_test() {
+  let script =
+    start_script([
+      RespOk(status: 408, headers: []),
+      RespOk(status: 200, headers: []),
+    ])
+  let send =
+    retry.with_retry(send: stub_send(script), strategy: test_strategy())
+  let assert Ok(resp) = send(empty_req())
+  resp.status |> should.equal(200)
+  attempt_count(script) |> should.equal(2)
+}
+
+pub fn max_attempts_1_means_no_retries_test() {
+  // With max_attempts=1, even a retryable error should NOT retry.
+  let script = start_script([RespOk(status: 503, headers: [])])
+  let strategy =
+    retry.standard_with(
+      max_attempts: 1,
+      base_delay_ms: 100,
+      max_delay_ms: 1000,
+      sleep: no_sleep,
+      rng: fixed_rng,
+    )
+  let send = retry.with_retry(send: stub_send(script), strategy: strategy)
+  let assert Ok(resp) = send(empty_req())
+  resp.status |> should.equal(503)
+  attempt_count(script) |> should.equal(1)
+}
+
+pub fn exponential_backoff_zero_when_rng_is_zero_test() {
+  // rng = 0.0 means no jitter — delay collapses to 0.
+  let strategy =
+    retry.standard_with(
+      max_attempts: 5,
+      base_delay_ms: 1000,
+      max_delay_ms: 30_000,
+      sleep: no_sleep,
+      rng: fn() { 0.0 },
+    )
+  retry.exponential_backoff(strategy, 1) |> should.equal(0)
+  retry.exponential_backoff(strategy, 5) |> should.equal(0)
 }
