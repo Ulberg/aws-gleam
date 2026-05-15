@@ -27,22 +27,11 @@ import gleam/json
 import gleam/list
 import simplifile
 
-const dynamodb_threshold: Int = 354
-
-// 354/370 DynamoDB cases pass at the time of this commit. The 16 failures
-// all use `ResourceArnList` (StringArray parameter type), which the
-// evaluator deliberately doesn't support yet — adding it bumps the
-// threshold. Treat this as a regression gate: if a future change drops the
-// pass count, the test fails.
-
-const s3_threshold: Int = 287
-
-// 287/393 S3 cases pass at the time of this commit. The remaining ~100
-// failures are mostly about specific phrasings in the S3 rule set's
-// ARN-validation error messages — fine-grained checks on accesspoint /
-// outposts / multi-region access points that need finer error reporting
-// out of `aws.parseArn` than our current implementation provides. Same
-// regression-gate semantics as the DynamoDB threshold.
+// Honest gating: any test case using an unsupported parameter type
+// (StringArray) is marked Skip. Everything else MUST pass — `failed = 0`
+// is the only acceptable outcome. When new functionality lands, the skip
+// count should drop and the pass count should rise; if anything moves a
+// case from Pass to Fail, the suite breaks loudly.
 
 // ---------- runner ----------
 
@@ -51,10 +40,18 @@ type CaseExpectation {
   ExpectError(message: String)
 }
 
+type ParamValue {
+  Supported(value: endpoints.Value)
+  /// Param value is an array — our evaluator doesn't implement
+  /// `StringArray` yet, so any test case touching one of these gets
+  /// classified as `Skip` rather than `Fail`.
+  UnsupportedArray
+}
+
 type TestCase {
   TestCase(
     documentation: String,
-    params: Dict(String, endpoints.Value),
+    params: Dict(String, ParamValue),
     expect: CaseExpectation,
   )
 }
@@ -83,13 +80,16 @@ fn test_case_decoder() -> decode.Decoder(TestCase) {
   ))
 }
 
-fn param_value_decoder() -> decode.Decoder(endpoints.Value) {
-  decode.one_of(decode.map(decode.bool, BoolVal), [
-    decode.map(decode.string, StringVal),
-    // StringArray params are encoded as JSON arrays; we don't support them
-    // and treat them as empty so the evaluator can decide what to do.
-    decode.success(StringVal("")),
-  ])
+fn param_value_decoder() -> decode.Decoder(ParamValue) {
+  decode.one_of(
+    decode.map(decode.bool, fn(b) { Supported(value: BoolVal(b)) }),
+    [
+      decode.map(decode.string, fn(s) { Supported(value: StringVal(s)) }),
+      // Anything else — JSON array, number, etc. — is StringArray-shaped and
+      // tags the whole test case as a skip.
+      decode.success(UnsupportedArray),
+    ],
+  )
 }
 
 fn expectation_decoder() -> decode.Decoder(CaseExpectation) {
@@ -117,7 +117,39 @@ type Outcome {
 }
 
 fn run_case(rs: RuleSet, case_: TestCase) -> Outcome {
-  case endpoints.resolve(rs, case_.params), case_.expect {
+  // Bail out before running the rule set if any param is StringArray-shaped:
+  // the evaluator can't reason about lists today, so the case would simply
+  // produce the wrong endpoint. Treat as Skip, not Fail.
+  let has_unsupported =
+    case_.params
+    |> dict.values
+    |> list.any(fn(value) {
+      case value {
+        UnsupportedArray -> True
+        Supported(_) -> False
+      }
+    })
+  case has_unsupported {
+    True -> Skip(reason: "test case uses an unsupported StringArray parameter")
+    False -> {
+      let supported_params =
+        dict.fold(case_.params, dict.new(), fn(acc, key, value) {
+          case value {
+            Supported(value: v) -> dict.insert(acc, key, v)
+            UnsupportedArray -> acc
+          }
+        })
+      do_run_case(rs, supported_params, case_)
+    }
+  }
+}
+
+fn do_run_case(
+  rs: RuleSet,
+  params: Dict(String, endpoints.Value),
+  case_: TestCase,
+) -> Outcome {
+  case endpoints.resolve(rs, params), case_.expect {
     Ok(Endpoint(url: actual, ..)), ExpectEndpoint(url: expected) ->
       case actual == expected {
         True -> Pass
@@ -236,16 +268,7 @@ pub fn dynamodb_official_fixtures_test() {
       "test/fixtures/endpoints/dynamodb-rule-set.json",
       "test/fixtures/endpoints/dynamodb-tests.json",
     )
-  case summary.passed >= dynamodb_threshold {
-    True -> Nil
-    False ->
-      panic as {
-        "DynamoDB fixtures: only "
-        <> int.to_string(summary.passed)
-        <> " passed, expected >= "
-        <> int.to_string(dynamodb_threshold)
-      }
-  }
+  assert_zero_failures("dynamodb", summary)
 }
 
 pub fn s3_official_fixtures_test() {
@@ -255,14 +278,30 @@ pub fn s3_official_fixtures_test() {
       "test/fixtures/endpoints/s3-rule-set.json",
       "test/fixtures/endpoints/s3-tests.json",
     )
-  case summary.passed >= s3_threshold {
-    True -> Nil
-    False ->
+  assert_zero_failures("s3", summary)
+}
+
+fn assert_zero_failures(name: String, summary: Summary) -> Nil {
+  case summary.failed {
+    0 -> Nil
+    n ->
       panic as {
-        "S3 fixtures: only "
-        <> int.to_string(summary.passed)
-        <> " passed, expected >= "
-        <> int.to_string(s3_threshold)
+        name
+        <> " fixtures: "
+        <> int.to_string(n)
+        <> " unexpected failures (out of "
+        <> int.to_string(summary.passed + n + summary.skipped)
+        <> " cases). First failures:\n  - "
+        <> list.reverse(summary.first_failures)
+        |> list.first
+        |> int_or_empty
       }
+  }
+}
+
+fn int_or_empty(r: Result(String, Nil)) -> String {
+  case r {
+    Ok(s) -> s
+    Error(_) -> "(no details captured)"
   }
 }

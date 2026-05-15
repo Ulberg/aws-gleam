@@ -667,16 +667,36 @@ fn bi_get_attr(args: List(Expr), scope: Params) -> Result(Value, ResolveError) {
     [obj, key] -> {
       use record <- result.try(eval(obj, scope))
       use key_str <- result.try(eval_to_string(key, scope))
-      case record {
-        RecordVal(fields) ->
-          case dict.get(fields, key_str) {
-            Ok(value) -> Ok(value)
-            Error(_) -> Ok(EmptyVal)
-          }
-        _ -> Ok(EmptyVal)
-      }
+      // The path may include array indexing like "resourceId[0]". Parse into
+      // a sequence of segments and walk.
+      let path = parse_attr_path(key_str)
+      Ok(traverse_value(record, path))
     }
     _ -> Error(Unsupported(reason: "getAttr expects 2 arguments"))
+  }
+}
+
+/// Parse a getAttr path into a list of segments. `"service"` → `["service"]`,
+/// `"resourceId[0]"` → `["resourceId", "0"]`, `"a[1][2]"` → `["a","1","2"]`.
+fn parse_attr_path(path: String) -> List(String) {
+  path
+  |> string.split("[")
+  |> list.map(fn(segment) { string.replace(segment, "]", "") })
+  |> list.filter(fn(s) { s != "" })
+}
+
+fn traverse_value(value: Value, path: List(String)) -> Value {
+  case path {
+    [] -> value
+    [first, ..rest] ->
+      case value {
+        RecordVal(fields) ->
+          case dict.get(fields, first) {
+            Ok(inner) -> traverse_value(inner, rest)
+            Error(_) -> EmptyVal
+          }
+        _ -> EmptyVal
+      }
   }
 }
 
@@ -802,16 +822,23 @@ fn do_parse_url_parts(scheme: String, after_scheme: String) -> Value {
         Ok(#(p, _)) -> p
         Error(_) -> path_and_query
       }
+      // `path` is the literal value (may be "" for hostnames with no path);
+      // `normalizedPath` always starts AND ends with "/" so callers can
+      // concatenate suffixes without worrying about doubled slashes.
       let normalized = case path {
         "" -> "/"
-        _ -> path
+        _ ->
+          case string.ends_with(path, "/") {
+            True -> path
+            False -> path <> "/"
+          }
       }
       let is_ip = looks_like_ip(authority)
       RecordVal(
         dict.from_list([
           #("scheme", StringVal(scheme)),
           #("authority", StringVal(authority)),
-          #("path", StringVal(normalized)),
+          #("path", StringVal(path)),
           #("normalizedPath", StringVal(normalized)),
           #("isIp", BoolVal(is_ip)),
         ]),
@@ -863,39 +890,82 @@ fn bi_aws_parse_arn(
   }
 }
 
+/// Port of the Go SDK's `awsrulesfn.ParseARN`
+/// (aws-sdk-go-v2/internal/endpoints/awsrulesfn/arn.go). Requires the
+/// literal `arn:` prefix, splits into exactly six sections (so colons in
+/// the resource section stay intact), requires non-empty partition /
+/// service / resource, and splits the resource on either `:` or `/`.
 fn parse_arn(arn: String) -> Value {
-  case string.split(arn, ":") {
-    [first, partition, service, region, account_id, ..rest] ->
-      case first {
-        "arn" -> {
-          let resource_id = string.join(rest, ":")
-          let resource_parts =
-            resource_id
-            |> string.split("/")
-            |> list_to_value_list
+  case string.starts_with(arn, "arn:") {
+    False -> EmptyVal
+    True ->
+      case split_n(arn, ":", 6) {
+        [_, partition, service, region, account_id, resource]
+          if partition != "" && service != "" && resource != ""
+        ->
           RecordVal(
             dict.from_list([
               #("partition", StringVal(partition)),
               #("service", StringVal(service)),
               #("region", StringVal(region)),
               #("accountId", StringVal(account_id)),
-              #("resourceId", resource_parts),
+              #("resourceId", split_resource_to_value(resource)),
             ]),
           )
-        }
         _ -> EmptyVal
       }
-    _ -> EmptyVal
   }
 }
 
-fn list_to_value_list(parts: List(String)) -> Value {
-  // resourceId is canonically a string array. We stash it as a record keyed
-  // by index so getAttr with numeric keys works.
-  parts
+/// `strings.SplitN(input, sep, n)` — split into at most `n` parts; the last
+/// part keeps any remaining separators as literal characters.
+fn split_n(input: String, sep: String, n: Int) -> List(String) {
+  do_split_n(input, sep, n, [])
+}
+
+fn do_split_n(
+  input: String,
+  sep: String,
+  n: Int,
+  acc: List(String),
+) -> List(String) {
+  case n <= 1 {
+    True -> list.reverse([input, ..acc])
+    False ->
+      case string.split_once(input, sep) {
+        Ok(#(head, rest)) -> do_split_n(rest, sep, n - 1, [head, ..acc])
+        Error(_) -> list.reverse([input, ..acc])
+      }
+  }
+}
+
+/// Resource-section splitter: break on either `/` or `:`, like the Go SDK's
+/// `splitResource`.
+fn split_resource_to_value(resource: String) -> Value {
+  resource
+  |> split_resource_chars
   |> list.index_map(fn(part, idx) { #(int.to_string(idx), StringVal(part)) })
   |> dict.from_list
   |> RecordVal
+}
+
+fn split_resource_chars(input: String) -> List(String) {
+  do_split_resource(input, "", [])
+}
+
+fn do_split_resource(
+  input: String,
+  buf: String,
+  acc: List(String),
+) -> List(String) {
+  case string.pop_grapheme(input) {
+    Error(_) -> list.reverse([buf, ..acc])
+    Ok(#(c, rest)) ->
+      case c {
+        "/" | ":" -> do_split_resource(rest, "", [buf, ..acc])
+        _ -> do_split_resource(rest, buf <> c, acc)
+      }
+  }
 }
 
 /// RFC 1123 host label validation. Accepts ASCII letters/digits/hyphens, no
@@ -1154,40 +1224,49 @@ fn partition_for(region: String) -> Dict(String, Value) {
         #("supportsDualStack", BoolVal(True)),
         #("implicitGlobalRegion", StringVal("us-gov-west-1")),
       ])
+    AwsEusc ->
+      dict.from_list([
+        #("name", StringVal("aws-eusc")),
+        #("dnsSuffix", StringVal("amazonaws.eu")),
+        #("dualStackDnsSuffix", StringVal("api.amazonwebservices.eu")),
+        #("supportsFIPS", BoolVal(True)),
+        #("supportsDualStack", BoolVal(True)),
+        #("implicitGlobalRegion", StringVal("eusc-de-east-1")),
+      ])
     AwsIso ->
       dict.from_list([
         #("name", StringVal("aws-iso")),
         #("dnsSuffix", StringVal("c2s.ic.gov")),
-        #("dualStackDnsSuffix", StringVal("c2s.ic.gov")),
+        #("dualStackDnsSuffix", StringVal("api.aws.ic.gov")),
         #("supportsFIPS", BoolVal(True)),
-        #("supportsDualStack", BoolVal(False)),
+        #("supportsDualStack", BoolVal(True)),
         #("implicitGlobalRegion", StringVal("us-iso-east-1")),
       ])
     AwsIsoB ->
       dict.from_list([
         #("name", StringVal("aws-iso-b")),
         #("dnsSuffix", StringVal("sc2s.sgov.gov")),
-        #("dualStackDnsSuffix", StringVal("sc2s.sgov.gov")),
+        #("dualStackDnsSuffix", StringVal("api.aws.scloud")),
         #("supportsFIPS", BoolVal(True)),
-        #("supportsDualStack", BoolVal(False)),
+        #("supportsDualStack", BoolVal(True)),
         #("implicitGlobalRegion", StringVal("us-isob-east-1")),
       ])
     AwsIsoE ->
       dict.from_list([
         #("name", StringVal("aws-iso-e")),
         #("dnsSuffix", StringVal("cloud.adc-e.uk")),
-        #("dualStackDnsSuffix", StringVal("cloud.adc-e.uk")),
+        #("dualStackDnsSuffix", StringVal("api.cloud-aws.adc-e.uk")),
         #("supportsFIPS", BoolVal(True)),
-        #("supportsDualStack", BoolVal(False)),
+        #("supportsDualStack", BoolVal(True)),
         #("implicitGlobalRegion", StringVal("eu-isoe-west-1")),
       ])
     AwsIsoF ->
       dict.from_list([
         #("name", StringVal("aws-iso-f")),
         #("dnsSuffix", StringVal("csp.hci.ic.gov")),
-        #("dualStackDnsSuffix", StringVal("csp.hci.ic.gov")),
+        #("dualStackDnsSuffix", StringVal("api.aws.hci.ic.gov")),
         #("supportsFIPS", BoolVal(True)),
-        #("supportsDualStack", BoolVal(False)),
+        #("supportsDualStack", BoolVal(True)),
         #("implicitGlobalRegion", StringVal("us-isof-south-1")),
       ])
   }
@@ -1197,14 +1276,18 @@ type Partition {
   AwsCommercial
   AwsCn
   AwsUsGov
+  AwsEusc
   AwsIso
   AwsIsoB
   AwsIsoE
   AwsIsoF
 }
 
+/// Classify a region into one of the AWS partitions. Mirrors the
+/// `regionRegex` patterns from upstream `partitions.json`. Order matters:
+/// the longest-prefix matchers (us-isob-, us-isof-) come first, then the
+/// generic `us-iso-`.
 fn classify_partition(region: String) -> Partition {
-  // Order matters: `us-isob-` and `us-isof-` must match before `us-iso-`.
   case region {
     "aws-cn-global" -> AwsCn
     "aws-us-gov-global" -> AwsUsGov
@@ -1222,18 +1305,22 @@ fn classify_partition(region: String) -> Partition {
           case string.starts_with(region, "us-gov-") {
             True -> AwsUsGov
             False ->
-              case string.starts_with(region, "us-isob-") {
-                True -> AwsIsoB
+              case string.starts_with(region, "eusc-") {
+                True -> AwsEusc
                 False ->
-                  case string.starts_with(region, "us-isof-") {
-                    True -> AwsIsoF
+                  case string.starts_with(region, "us-isob-") {
+                    True -> AwsIsoB
                     False ->
-                      case string.starts_with(region, "us-iso-") {
-                        True -> AwsIso
+                      case string.starts_with(region, "us-isof-") {
+                        True -> AwsIsoF
                         False ->
-                          case string.starts_with(region, "eu-isoe-") {
-                            True -> AwsIsoE
-                            False -> AwsCommercial
+                          case string.starts_with(region, "us-iso-") {
+                            True -> AwsIso
+                            False ->
+                              case string.starts_with(region, "eu-isoe-") {
+                                True -> AwsIsoE
+                                False -> AwsCommercial
+                              }
                           }
                       }
                   }
