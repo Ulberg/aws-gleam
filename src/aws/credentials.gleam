@@ -12,8 +12,10 @@
 
 import aws/internal/http_send.{type Send as HttpSend}
 import aws/internal/ini
+import aws/internal/os_process
 import aws/internal/providers/ecs
 import aws/internal/providers/imds
+import aws/internal/providers/process as process_provider
 import aws/internal/providers/sso
 import aws/internal/providers/sts_web_identity as web_identity
 import gleam/bit_array
@@ -736,4 +738,116 @@ fn read_sso_cache_file(filename: String) -> Result(String, Nil) {
   let path = home <> "/.aws/sso/cache/" <> filename
   use bits <- result.try(read_file(path))
   bit_array.to_string(bits) |> result.replace_error(Nil)
+}
+
+// ----- credential_process provider -----
+
+/// Credential-process provider. Runs the configured command and parses its
+/// stdout as the AWS credential-process JSON.
+///
+/// `from_process_with_command` takes a command line literally; tests and
+/// programmatic configs use this form.
+pub fn from_process_with_command(command command: String) -> Provider {
+  from_process_with_runner(command: command, runner: os_process.run)
+}
+
+/// Same shape but with an injectable runner so tests can drive scripted
+/// stdout/exit values without spawning real processes.
+pub fn from_process_with_runner(
+  command command: String,
+  runner runner: fn(String, List(String)) -> Result(#(Int, BitArray), Nil),
+) -> Provider {
+  Provider(name: "Process", fetch: fn() {
+    wrap_process_result(process_provider.fetch(runner, command))
+  })
+}
+
+fn wrap_process_result(
+  result: Result(process_provider.ProcessCredentials, process_provider.Error),
+) -> Result(Credentials, ProviderError) {
+  case result {
+    Ok(c) ->
+      Ok(Credentials(
+        access_key_id: c.access_key_id,
+        secret_access_key: c.secret_access_key,
+        session_token: c.session_token,
+        expires_at: c.expires_at,
+        source: "Process",
+      ))
+    // Couldn't even launch the program -> chain falls through quietly.
+    Error(process_provider.LaunchFailed(reason: reason)) ->
+      Error(NotConfigured(reason: reason))
+    // Process ran but produced bad output -> loud misconfig.
+    Error(process_provider.BadOutput(reason: reason)) ->
+      Error(FetchFailed(reason: reason))
+  }
+}
+
+/// Production credential-process provider. Reads `credential_process` from
+/// the named profile in `~/.aws/config` (or `~/.aws/credentials` for the
+/// `[default]` profile only — both files are checked).
+pub fn from_process(profile profile: String) -> Provider {
+  from_process_with_env(
+    profile: profile,
+    config_reader: read_default_config_file,
+    credentials_reader: read_default_profile_file,
+    runner: os_process.run,
+  )
+}
+
+/// Injectable variant for tests.
+pub fn from_process_with_env(
+  profile profile: String,
+  config_reader config_reader: fn() -> Result(String, Nil),
+  credentials_reader credentials_reader: fn() -> Result(String, Nil),
+  runner runner: fn(String, List(String)) -> Result(#(Int, BitArray), Nil),
+) -> Provider {
+  Provider(name: "Process(" <> profile <> ")", fetch: fn() {
+    resolve_and_run_process(profile, config_reader, credentials_reader, runner)
+  })
+}
+
+fn resolve_and_run_process(
+  profile: String,
+  config_reader: fn() -> Result(String, Nil),
+  credentials_reader: fn() -> Result(String, Nil),
+  runner: fn(String, List(String)) -> Result(#(Int, BitArray), Nil),
+) -> Result(Credentials, ProviderError) {
+  // Look in ~/.aws/config first (where credential_process is officially
+  // documented), then fall back to ~/.aws/credentials.
+  let command =
+    lookup_credential_process(profile, config_reader, in_config: True)
+    |> result.or(lookup_credential_process(
+      profile,
+      credentials_reader,
+      in_config: False,
+    ))
+  use cmd <- result.try(
+    command
+    |> result.replace_error(NotConfigured(
+      reason: "profile '" <> profile <> "' has no credential_process setting",
+    )),
+  )
+  wrap_process_result(process_provider.fetch(runner, cmd))
+}
+
+fn lookup_credential_process(
+  profile: String,
+  reader: fn() -> Result(String, Nil),
+  in_config in_config: Bool,
+) -> Result(String, Nil) {
+  use text <- result.try(reader())
+  use parsed <- result.try(
+    ini.parse(text)
+    |> result.replace_error(Nil),
+  )
+  // In ~/.aws/config profiles are spelled `[profile NAME]`; in
+  // ~/.aws/credentials they're plain `[NAME]`. The `[default]` profile is
+  // the exception — bare in both files.
+  let section = case in_config, profile {
+    True, "default" -> "default"
+    True, other -> "profile " <> other
+    False, other -> other
+  }
+  ini.get_property(parsed, section: section, key: "credential_process")
 }
