@@ -8,6 +8,7 @@ import gleam/dynamic/decode.{type Decoder}
 import smithy/shape_id.{type ShapeId}
 
 pub type Trait {
+  Null
   String(String)
   Int(Int)
   Float(Float)
@@ -23,7 +24,11 @@ pub fn decoder() -> Decoder(Trait) {
   let bool = decode.map(decode.bool, Bool)
   let list = decode.map(decode.list(lazy()), List)
   let dict = decode.map(decode.dict(shape_id.decoder(), lazy()), Dict)
-  decode.one_of(int, [float, string, bool, list, dict])
+  let null = decode.map(decode.optional(decode.string), fn(_) { Null })
+  // Order matters in one_of — Dict last so `{}` doesn't shadow stricter
+  // decoders. Null uses optional-string to catch the explicit JSON null
+  // when no other decoder succeeds.
+  decode.one_of(string, [int, float, bool, list, dict, null])
 }
 
 /// Defer evaluation so the recursive decoder graph terminates. Same

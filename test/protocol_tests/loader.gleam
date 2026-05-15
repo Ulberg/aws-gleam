@@ -33,13 +33,18 @@ pub type LoadError {
   MalformedAst(reason: String)
 }
 
-pub fn load(path: String, protocol_name: String) -> Result(ProtocolTests, LoadError) {
+pub fn load(
+  path: String,
+  protocol_name: String,
+) -> Result(ProtocolTests, LoadError) {
   use text <- result.try(
     simplifile.read(path) |> result.replace_error(CannotRead(path: path)),
   )
   use raw <- result.try(
     json.parse(text, top_decoder())
-    |> result.map_error(fn(_) { InvalidJson(reason: "could not parse " <> path) }),
+    |> result.map_error(fn(_) {
+      InvalidJson(reason: "could not parse " <> path)
+    }),
   )
   Ok(walk(raw, protocol_name))
 }
@@ -119,7 +124,8 @@ fn walk_operation(id: String, shape: RawShape) -> OperationTests {
     Ok(d) -> decode_request_cases(d)
     Error(_) -> []
   }
-  let resp_cases = case dict.get(shape.traits, "smithy.test#httpResponseTests")
+  let resp_cases = case
+    dict.get(shape.traits, "smithy.test#httpResponseTests")
   {
     Ok(d) -> decode_response_cases(d)
     Error(_) -> []
@@ -218,11 +224,7 @@ fn request_case_decoder() -> Decoder(RequestCase) {
     None,
     decode.optional(decode.string),
   )
-  use params <- decode.optional_field(
-    "params",
-    None,
-    json_blob_decoder(),
-  )
+  use params <- decode.optional_field("params", None, json_blob_decoder())
   use applies_to <- applies_to_field()
   decode.success(RequestCase(
     id: id,
@@ -279,11 +281,7 @@ fn response_case_decoder() -> Decoder(ResponseCase) {
     None,
     decode.optional(decode.string),
   )
-  use params <- decode.optional_field(
-    "params",
-    None,
-    json_blob_decoder(),
-  )
+  use params <- decode.optional_field("params", None, json_blob_decoder())
   use applies_to <- applies_to_field()
   decode.success(ResponseCase(
     id: id,
@@ -302,9 +300,7 @@ fn response_case_decoder() -> Decoder(ResponseCase) {
 
 /// `appliesTo` is "client", "server", or absent. We map absent →
 /// `AppliesToBoth` so the runner gets to decide.
-fn applies_to_field(
-  k: fn(cases.AppliesTo) -> Decoder(t),
-) -> Decoder(t) {
+fn applies_to_field(k: fn(cases.AppliesTo) -> Decoder(t)) -> Decoder(t) {
   use a <- decode.optional_field(
     "appliesTo",
     AppliesToBoth,

@@ -46,11 +46,7 @@ pub type BuiltRequest {
 }
 
 pub type ParsedResponseInput {
-  ParsedResponseInput(
-    code: Int,
-    headers: Dict(String, String),
-    body: BitArray,
-  )
+  ParsedResponseInput(code: Int, headers: Dict(String, String), body: BitArray)
 }
 
 /// Parsed-output shape: either the operation's typed output (serialised
@@ -77,6 +73,9 @@ pub fn register(registry: Registry, dispatcher: Dispatcher) -> Registry {
   ))
 }
 
-pub fn lookup(registry: Registry, operation_id: String) -> Result(Dispatcher, Nil) {
+pub fn lookup(
+  registry: Registry,
+  operation_id: String,
+) -> Result(Dispatcher, Nil) {
   dict.get(registry.by_operation, operation_id)
 }

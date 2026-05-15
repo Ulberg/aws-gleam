@@ -10,17 +10,60 @@
 //// allow-list cap (in this file) for each protocol as the emitter
 //// supports more cases.
 
+import gleam/dict.{type Dict}
 import gleam/io
 import gleeunit/should
+import protocol_tests/awsjson10_dispatchers
+import protocol_tests/awsjson11_dispatchers
 import protocol_tests/dispatch
 import protocol_tests/runner
 
 pub fn awsjson10_protocol_test() {
-  run("awsJson1_0", "test/fixtures/protocol-tests/awsJson1_0.json")
+  run_with(
+    "awsJson1_0",
+    "test/fixtures/protocol-tests/awsJson1_0.json",
+    awsjson10_dispatchers.register_all(dispatch.new()),
+    awsjson10_allow_list(),
+  )
+}
+
+/// Explicit allow-list of cases the awsJson1_0 emitter is known not to
+/// handle yet. Each entry has a `<case-id>: <why>` shape so a future
+/// reader can decide whether to fix or keep skipping.
+fn awsjson10_allow_list() -> Dict(String, String) {
+  dict.from_list([
+    #(
+      "AwsJson10HostWithPath",
+      "user-supplied endpoint path prefix is a runtime concern; "
+        <> "request builder correctly emits operation path `/`",
+    ),
+    #(
+      "AwsJson10EndpointTrait",
+      "smithy.api#endpoint hostPrefix substitution not yet supported",
+    ),
+  ])
+}
+
+fn awsjson11_allow_list() -> Dict(String, String) {
+  dict.from_list([
+    #(
+      "AwsJson11HostWithPath",
+      "user-supplied endpoint path prefix is a runtime concern",
+    ),
+    #(
+      "AwsJson11EndpointTrait",
+      "smithy.api#endpoint hostPrefix substitution not yet supported",
+    ),
+  ])
 }
 
 pub fn awsjson11_protocol_test() {
-  run("awsJson1_1", "test/fixtures/protocol-tests/awsJson1_1.json")
+  run_with(
+    "awsJson1_1",
+    "test/fixtures/protocol-tests/awsJson1_1.json",
+    awsjson11_dispatchers.register_all(dispatch.new()),
+    awsjson11_allow_list(),
+  )
 }
 
 pub fn restjson1_protocol_test() {
@@ -51,12 +94,21 @@ pub fn rpcv2cbor_protocol_test() {
 }
 
 fn run(name: String, path: String) {
+  run_with(name, path, dispatch.new(), runner.empty_allow_list())
+}
+
+fn run_with(
+  name: String,
+  path: String,
+  registry: dispatch.Registry,
+  allow: Dict(String, String),
+) {
   let report =
     runner.run(runner.Config(
       protocol_name: name,
       fixture_path: path,
-      registry: dispatch.new(),
-      skip_allow_list: runner.empty_allow_list(),
+      registry: registry,
+      skip_allow_list: allow,
     ))
   runner.print_report(report)
   // The suite fails only on actual FAIL outcomes — skips don't fail the
