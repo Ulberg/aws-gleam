@@ -14,6 +14,7 @@ import aws/internal/http_send.{type Send as HttpSend}
 import aws/internal/ini
 import aws/internal/providers/ecs
 import aws/internal/providers/imds
+import aws/internal/providers/sts_web_identity as web_identity
 import gleam/bit_array
 import gleam/int
 import gleam/list
@@ -402,4 +403,131 @@ fn resolve_ecs_auth_token(
 fn read_file_string(path: String) -> Result(String, Nil) {
   use bits <- result.try(read_file(path))
   bit_array.to_string(bits) |> result.replace_error(Nil)
+}
+
+// ----- STS Web Identity (IRSA) provider -----
+
+/// Default STS endpoint for the AssumeRoleWithWebIdentity call. Regional
+/// endpoints would be more correct, but the global endpoint works from
+/// anywhere and is what most SDKs reach for in the absence of region.
+const default_sts_endpoint: String = "https://sts.amazonaws.com/"
+
+/// Default session lifetime requested from STS. AWS caps this at the role's
+/// max-session-duration; one hour is the conservative-but-useful default.
+const default_web_identity_duration: Int = 3600
+
+/// IRSA / STS Web Identity provider. Reads the token from
+/// `AWS_WEB_IDENTITY_TOKEN_FILE` *each fetch* (IRSA rotates the file), reads
+/// `AWS_ROLE_ARN` once at construction, and POSTs to STS.
+pub fn from_web_identity(send send: HttpSend) -> Provider {
+  from_web_identity_with_env(
+    send: send,
+    lookup: os_get_env,
+    read_file: read_file_string,
+  )
+}
+
+/// Injectable env / file reader variant for tests.
+pub fn from_web_identity_with_env(
+  send send: HttpSend,
+  lookup lookup: fn(String) -> Result(String, Nil),
+  read_file read_file: fn(String) -> Result(String, Nil),
+) -> Provider {
+  Provider(name: "WebIdentity", fetch: fn() {
+    fetch_web_identity(send, lookup, read_file, default_sts_endpoint)
+  })
+}
+
+/// Fully-explicit variant — caller provides every parameter. Used by tests
+/// to point at a stub endpoint, and by callers who configure programmatically.
+pub fn from_web_identity_with(
+  send send: HttpSend,
+  endpoint endpoint: String,
+  role_arn role_arn: String,
+  role_session_name role_session_name: String,
+  token_file token_file: String,
+  duration_seconds duration_seconds: Int,
+  read_file read_file: fn(String) -> Result(String, Nil),
+) -> Provider {
+  Provider(name: "WebIdentity", fetch: fn() {
+    do_fetch_web_identity(
+      send,
+      endpoint,
+      role_arn,
+      role_session_name,
+      token_file,
+      duration_seconds,
+      read_file,
+    )
+  })
+}
+
+fn fetch_web_identity(
+  send: HttpSend,
+  lookup: fn(String) -> Result(String, Nil),
+  read_file: fn(String) -> Result(String, Nil),
+  endpoint: String,
+) -> Result(Credentials, ProviderError) {
+  use token_file <- result.try(
+    lookup("AWS_WEB_IDENTITY_TOKEN_FILE")
+    |> result.replace_error(NotConfigured(
+      reason: "AWS_WEB_IDENTITY_TOKEN_FILE not set",
+    )),
+  )
+  use role_arn <- result.try(
+    lookup("AWS_ROLE_ARN")
+    |> result.replace_error(NotConfigured(reason: "AWS_ROLE_ARN not set")),
+  )
+  let role_session_name = case lookup("AWS_ROLE_SESSION_NAME") {
+    Ok(name) if name != "" -> name
+    _ -> "aws-sdk-gleam-session"
+  }
+  do_fetch_web_identity(
+    send,
+    endpoint,
+    role_arn,
+    role_session_name,
+    token_file,
+    default_web_identity_duration,
+    read_file,
+  )
+}
+
+fn do_fetch_web_identity(
+  send: HttpSend,
+  endpoint: String,
+  role_arn: String,
+  role_session_name: String,
+  token_file: String,
+  duration_seconds: Int,
+  read_file: fn(String) -> Result(String, Nil),
+) -> Result(Credentials, ProviderError) {
+  use token <- result.try(
+    read_file(token_file)
+    |> result.replace_error(FetchFailed(
+      reason: "could not read web identity token from " <> token_file,
+    )),
+  )
+  let options =
+    web_identity.Options(
+      endpoint: endpoint,
+      role_arn: role_arn,
+      role_session_name: role_session_name,
+      token: string.trim(token),
+      duration_seconds: duration_seconds,
+    )
+  case web_identity.fetch(send, options) {
+    Ok(c) ->
+      Ok(Credentials(
+        access_key_id: c.access_key_id,
+        secret_access_key: c.secret_access_key,
+        session_token: Some(c.session_token),
+        expires_at: Some(c.expires_at),
+        source: "WebIdentity",
+      ))
+    Error(web_identity.Misconfigured(reason: reason)) ->
+      Error(NotConfigured(reason: reason))
+    Error(web_identity.Failed(reason: reason)) ->
+      Error(FetchFailed(reason: reason))
+  }
 }
