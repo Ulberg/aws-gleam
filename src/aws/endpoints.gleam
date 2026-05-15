@@ -1122,46 +1122,123 @@ fn hex_digit(n: Int) -> String {
   }
 }
 
-/// Hardcoded partition data covering the common AWS partitions. Production
-/// SDKs source this from `partitions.json` shipped with smithy-rs; we'll
-/// vendor that file in a follow-up when more regions need coverage.
+/// Hardcoded partition data sourced from smithy-rs's `partitions.json`.
+/// Refresh when AWS announces a new partition or DNS suffix.
 fn partition_for(region: String) -> Dict(String, Value) {
   let trimmed = string.trim(region)
-  case
-    string.starts_with(trimmed, "cn-") || string.starts_with(trimmed, "aws-cn")
-  {
-    True ->
+  case classify_partition(trimmed) {
+    AwsCommercial ->
+      dict.from_list([
+        #("name", StringVal("aws")),
+        #("dnsSuffix", StringVal("amazonaws.com")),
+        #("dualStackDnsSuffix", StringVal("api.aws")),
+        #("supportsFIPS", BoolVal(True)),
+        #("supportsDualStack", BoolVal(True)),
+        #("implicitGlobalRegion", StringVal("us-east-1")),
+      ])
+    AwsCn ->
       dict.from_list([
         #("name", StringVal("aws-cn")),
         #("dnsSuffix", StringVal("amazonaws.com.cn")),
         #("dualStackDnsSuffix", StringVal("api.amazonwebservices.com.cn")),
-        #("supportsFIPS", BoolVal(False)),
+        #("supportsFIPS", BoolVal(True)),
         #("supportsDualStack", BoolVal(True)),
         #("implicitGlobalRegion", StringVal("cn-northwest-1")),
       ])
-    False ->
+    AwsUsGov ->
+      dict.from_list([
+        #("name", StringVal("aws-us-gov")),
+        #("dnsSuffix", StringVal("amazonaws.com")),
+        #("dualStackDnsSuffix", StringVal("api.aws")),
+        #("supportsFIPS", BoolVal(True)),
+        #("supportsDualStack", BoolVal(True)),
+        #("implicitGlobalRegion", StringVal("us-gov-west-1")),
+      ])
+    AwsIso ->
+      dict.from_list([
+        #("name", StringVal("aws-iso")),
+        #("dnsSuffix", StringVal("c2s.ic.gov")),
+        #("dualStackDnsSuffix", StringVal("c2s.ic.gov")),
+        #("supportsFIPS", BoolVal(True)),
+        #("supportsDualStack", BoolVal(False)),
+        #("implicitGlobalRegion", StringVal("us-iso-east-1")),
+      ])
+    AwsIsoB ->
+      dict.from_list([
+        #("name", StringVal("aws-iso-b")),
+        #("dnsSuffix", StringVal("sc2s.sgov.gov")),
+        #("dualStackDnsSuffix", StringVal("sc2s.sgov.gov")),
+        #("supportsFIPS", BoolVal(True)),
+        #("supportsDualStack", BoolVal(False)),
+        #("implicitGlobalRegion", StringVal("us-isob-east-1")),
+      ])
+    AwsIsoE ->
+      dict.from_list([
+        #("name", StringVal("aws-iso-e")),
+        #("dnsSuffix", StringVal("cloud.adc-e.uk")),
+        #("dualStackDnsSuffix", StringVal("cloud.adc-e.uk")),
+        #("supportsFIPS", BoolVal(True)),
+        #("supportsDualStack", BoolVal(False)),
+        #("implicitGlobalRegion", StringVal("eu-isoe-west-1")),
+      ])
+    AwsIsoF ->
+      dict.from_list([
+        #("name", StringVal("aws-iso-f")),
+        #("dnsSuffix", StringVal("csp.hci.ic.gov")),
+        #("dualStackDnsSuffix", StringVal("csp.hci.ic.gov")),
+        #("supportsFIPS", BoolVal(True)),
+        #("supportsDualStack", BoolVal(False)),
+        #("implicitGlobalRegion", StringVal("us-isof-south-1")),
+      ])
+  }
+}
+
+type Partition {
+  AwsCommercial
+  AwsCn
+  AwsUsGov
+  AwsIso
+  AwsIsoB
+  AwsIsoE
+  AwsIsoF
+}
+
+fn classify_partition(region: String) -> Partition {
+  // Order matters: `us-isob-` and `us-isof-` must match before `us-iso-`.
+  case region {
+    "aws-cn-global" -> AwsCn
+    "aws-us-gov-global" -> AwsUsGov
+    "aws-iso-global" -> AwsIso
+    "aws-iso-b-global" -> AwsIsoB
+    "aws-iso-e-global" -> AwsIsoE
+    "aws-iso-f-global" -> AwsIsoF
+    _ ->
       case
-        string.starts_with(trimmed, "us-gov-")
-        || string.starts_with(trimmed, "us-iso-")
+        string.starts_with(region, "cn-")
+        || string.starts_with(region, "aws-cn-")
       {
-        True ->
-          dict.from_list([
-            #("name", StringVal("aws-us-gov")),
-            #("dnsSuffix", StringVal("amazonaws.com")),
-            #("dualStackDnsSuffix", StringVal("api.aws")),
-            #("supportsFIPS", BoolVal(True)),
-            #("supportsDualStack", BoolVal(True)),
-            #("implicitGlobalRegion", StringVal("us-gov-west-1")),
-          ])
+        True -> AwsCn
         False ->
-          dict.from_list([
-            #("name", StringVal("aws")),
-            #("dnsSuffix", StringVal("amazonaws.com")),
-            #("dualStackDnsSuffix", StringVal("api.aws")),
-            #("supportsFIPS", BoolVal(True)),
-            #("supportsDualStack", BoolVal(True)),
-            #("implicitGlobalRegion", StringVal("us-east-1")),
-          ])
+          case string.starts_with(region, "us-gov-") {
+            True -> AwsUsGov
+            False ->
+              case string.starts_with(region, "us-isob-") {
+                True -> AwsIsoB
+                False ->
+                  case string.starts_with(region, "us-isof-") {
+                    True -> AwsIsoF
+                    False ->
+                      case string.starts_with(region, "us-iso-") {
+                        True -> AwsIso
+                        False ->
+                          case string.starts_with(region, "eu-isoe-") {
+                            True -> AwsIsoE
+                            False -> AwsCommercial
+                          }
+                      }
+                  }
+              }
+          }
       }
   }
 }
