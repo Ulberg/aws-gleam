@@ -1,6 +1,7 @@
 -module(aws_ffi).
 -export([sha256/1, hmac_sha256/2, hex_encode/1, get_env/1, read_file/1,
-         unix_seconds/0, parse_iso8601/1, run_process/2, sha1_hex/1]).
+         unix_seconds/0, parse_iso8601/1, run_process/2, sha1_hex/1,
+         aws_timestamp/0]).
 
 sha256(Data) ->
     crypto:hash(sha256, Data).
@@ -39,6 +40,19 @@ read_file(Path) ->
 %% credential-expiration timestamps (also unix seconds).
 unix_seconds() ->
     erlang:system_time(second).
+
+%% Current UTC time formatted as a SigV4 `X-Amz-Date` value, e.g.
+%% "20240315T143022Z". The signer uses opts.timestamp verbatim in both the
+%% Authorization scope and the X-Amz-Date header, so they're guaranteed to
+%% agree.
+aws_timestamp() ->
+    {{Y, Mo, D}, {H, Mi, S}} = calendar:universal_time(),
+    iolist_to_binary(
+        io_lib:format(
+            "~4..0w~2..0w~2..0wT~2..0w~2..0w~2..0wZ",
+            [Y, Mo, D, H, Mi, S]
+        )
+    ).
 
 %% Parse an AWS-style ISO 8601 UTC timestamp ("2023-11-30T15:30:00Z" or with
 %% fractional seconds like "2023-11-30T15:30:00.000Z") into unix seconds.

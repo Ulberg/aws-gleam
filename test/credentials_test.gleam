@@ -163,7 +163,7 @@ pub fn empty_chain_returns_exhausted_with_no_attempts_test() {
 
 // ---------- profile provider ----------
 
-fn reader_from(text: String) -> fn() -> Result(String, Nil) {
+fn ok_reader(text: String) -> fn() -> Result(String, Nil) {
   fn() { Ok(text) }
 }
 
@@ -171,9 +171,9 @@ fn no_file() -> fn() -> Result(String, Nil) {
   fn() { Error(Nil) }
 }
 
-pub fn profile_provider_loads_named_profile_test() {
-  let reader =
-    reader_from(
+pub fn profile_provider_loads_named_profile_from_credentials_file_test() {
+  let creds =
+    ok_reader(
       "[default]
 aws_access_key_id = DEFAULT_KEY
 aws_secret_access_key = DEFAULT_SECRET
@@ -184,7 +184,11 @@ aws_secret_access_key = PROD_SECRET
 aws_session_token = PROD_TOKEN
 ",
     )
-  credentials.from_profile_with(name: "prod", reader: reader)
+  credentials.from_profile_with(
+    name: "prod",
+    credentials_reader: creds,
+    config_reader: no_file(),
+  )
   |> credentials.fetch
   |> should.equal(
     Ok(Credentials(
@@ -198,34 +202,46 @@ aws_session_token = PROD_TOKEN
 }
 
 pub fn profile_provider_default_section_session_token_optional_test() {
-  let reader =
-    reader_from(
+  let creds =
+    ok_reader(
       "[default]
 aws_access_key_id = K
 aws_secret_access_key = S
 ",
     )
-  let assert Ok(creds) =
-    credentials.from_profile_with(name: "default", reader: reader)
+  let assert Ok(creds_out) =
+    credentials.from_profile_with(
+      name: "default",
+      credentials_reader: creds,
+      config_reader: no_file(),
+    )
     |> credentials.fetch
-  creds.session_token |> should.equal(None)
+  creds_out.session_token |> should.equal(None)
 }
 
-pub fn profile_provider_missing_file_is_not_configured_test() {
+pub fn profile_provider_missing_both_files_is_not_configured_test() {
   let assert Error(err) =
-    credentials.from_profile_with(name: "default", reader: no_file())
+    credentials.from_profile_with(
+      name: "default",
+      credentials_reader: no_file(),
+      config_reader: no_file(),
+    )
     |> credentials.fetch
   case err {
     NotConfigured(_) -> Nil
-    _ -> panic as "expected NotConfigured for missing file"
+    _ -> panic as "expected NotConfigured for missing files"
   }
 }
 
 pub fn profile_provider_unknown_profile_is_not_configured_test() {
-  let reader =
-    reader_from("[default]\naws_access_key_id=K\naws_secret_access_key=S")
+  let creds =
+    ok_reader("[default]\naws_access_key_id=K\naws_secret_access_key=S")
   let assert Error(err) =
-    credentials.from_profile_with(name: "nope", reader: reader)
+    credentials.from_profile_with(
+      name: "nope",
+      credentials_reader: creds,
+      config_reader: no_file(),
+    )
     |> credentials.fetch
   case err {
     NotConfigured(_) -> Nil
@@ -236,9 +252,13 @@ pub fn profile_provider_unknown_profile_is_not_configured_test() {
 pub fn profile_provider_half_configured_profile_is_fetch_failed_test() {
   // Access key but no secret — clearly a misconfiguration, not "no creds
   // here, move on".
-  let reader = reader_from("[default]\naws_access_key_id = K\n")
+  let creds = ok_reader("[default]\naws_access_key_id = K\n")
   let assert Error(err) =
-    credentials.from_profile_with(name: "default", reader: reader)
+    credentials.from_profile_with(
+      name: "default",
+      credentials_reader: creds,
+      config_reader: no_file(),
+    )
     |> credentials.fetch
   case err {
     FetchFailed(_) -> Nil
@@ -248,12 +268,123 @@ pub fn profile_provider_half_configured_profile_is_fetch_failed_test() {
 
 pub fn profile_provider_malformed_file_is_fetch_failed_test() {
   // Property outside any section -> INI parse error.
-  let reader = reader_from("orphan = value")
+  let creds = ok_reader("orphan = value")
   let assert Error(err) =
-    credentials.from_profile_with(name: "default", reader: reader)
+    credentials.from_profile_with(
+      name: "default",
+      credentials_reader: creds,
+      config_reader: no_file(),
+    )
     |> credentials.fetch
   case err {
     FetchFailed(_) -> Nil
     _ -> panic as "expected FetchFailed for malformed credentials file"
   }
+}
+
+// ---------- profile provider: credentials+config merge ----------
+
+pub fn profile_provider_reads_keys_from_config_file_alone_test() {
+  // Some users keep static keys in ~/.aws/config (unusual but valid).
+  // The provider should find them when ~/.aws/credentials is absent.
+  let config =
+    ok_reader(
+      "[profile dev]
+aws_access_key_id = CONFIG_KEY
+aws_secret_access_key = CONFIG_SECRET
+",
+    )
+  credentials.from_profile_with(
+    name: "dev",
+    credentials_reader: no_file(),
+    config_reader: config,
+  )
+  |> credentials.fetch
+  |> should.equal(
+    Ok(Credentials(
+      access_key_id: "CONFIG_KEY",
+      secret_access_key: "CONFIG_SECRET",
+      session_token: None,
+      expires_at: None,
+      source: "Profile(dev)",
+    )),
+  )
+}
+
+pub fn profile_provider_credentials_file_overrides_config_file_test() {
+  // Standard AWS CLI: keys in ~/.aws/credentials beat keys in ~/.aws/config.
+  let creds =
+    ok_reader(
+      "[default]
+aws_access_key_id = CREDS_KEY
+aws_secret_access_key = CREDS_SECRET
+",
+    )
+  let config =
+    ok_reader(
+      "[default]
+aws_access_key_id = CONFIG_KEY
+aws_secret_access_key = CONFIG_SECRET
+",
+    )
+  credentials.from_profile_with(
+    name: "default",
+    credentials_reader: creds,
+    config_reader: config,
+  )
+  |> credentials.fetch
+  |> should.equal(
+    Ok(Credentials(
+      access_key_id: "CREDS_KEY",
+      secret_access_key: "CREDS_SECRET",
+      session_token: None,
+      expires_at: None,
+      source: "Profile(default)",
+    )),
+  )
+}
+
+pub fn profile_provider_uses_profile_prefix_in_config_file_test() {
+  // Verify the section spelling difference: bare in credentials, `profile X`
+  // in config.
+  let config =
+    ok_reader(
+      "[default]
+aws_access_key_id = DEFAULT_KEY
+aws_secret_access_key = DEFAULT_SECRET
+
+[profile prod]
+aws_access_key_id = PROD_KEY
+aws_secret_access_key = PROD_SECRET
+",
+    )
+  let assert Ok(out) =
+    credentials.from_profile_with(
+      name: "prod",
+      credentials_reader: no_file(),
+      config_reader: config,
+    )
+    |> credentials.fetch
+  out.access_key_id |> should.equal("PROD_KEY")
+}
+
+pub fn profile_provider_partial_merge_test() {
+  // credentials.aws_access_key_id + config.aws_secret_access_key -> both used.
+  let creds = ok_reader("[default]\naws_access_key_id = FROM_CREDS\n")
+  let config = ok_reader("[default]\naws_secret_access_key = FROM_CONFIG\n")
+  credentials.from_profile_with(
+    name: "default",
+    credentials_reader: creds,
+    config_reader: config,
+  )
+  |> credentials.fetch
+  |> should.equal(
+    Ok(Credentials(
+      access_key_id: "FROM_CREDS",
+      secret_access_key: "FROM_CONFIG",
+      session_token: None,
+      expires_at: None,
+      source: "Profile(default)",
+    )),
+  )
 }

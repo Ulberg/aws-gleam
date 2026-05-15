@@ -30,11 +30,53 @@ pub type HttpError {
 pub type Send =
   fn(Request(BitArray)) -> Result(Response(BitArray), HttpError)
 
-/// Production sender backed by Erlang's `httpc` via `gleam_httpc`.
+/// Default total-request timeout for `default_send`. 30 seconds is the
+/// gleam_httpc default and a reasonable upper bound for control-plane and
+/// list operations. Object-streaming GETs that may take longer want a
+/// dedicated, more generous Send.
+pub const default_timeout_seconds: Int = 30
+
+/// IMDS gets a much shorter total timeout because its first call goes to a
+/// link-local address that doesn't resolve at all on a non-EC2 host.
+/// Without this, the TCP retransmit window can stall the whole credential
+/// chain for tens of seconds — enough to trip the credentials cache actor's
+/// 5-second call timeout.
+pub const imds_timeout_seconds: Int = 2
+
+/// Production sender — 30 second total timeout, TLS verification on.
 pub fn default_send(
   req: Request(BitArray),
 ) -> Result(Response(BitArray), HttpError) {
-  case httpc.send_bits(req) {
+  do_send(default_config(), req)
+}
+
+/// Build a `Send` with a custom total timeout. Use this for endpoints that
+/// need either fast-fail behaviour (IMDS) or extra patience (large object
+/// downloads). TLS verification and redirect-following match
+/// `default_send`'s defaults; if you need to tweak those, drop down to
+/// `gleam_httpc` directly.
+pub fn with_timeout(seconds seconds: Int) -> Send {
+  let config = httpc.configure() |> httpc.timeout(seconds * 1000)
+  fn(req) { do_send(config, req) }
+}
+
+/// IMDS-tuned sender. Equivalent to `with_timeout(seconds: imds_timeout_seconds)`,
+/// exported as a constant so call sites read meaningfully.
+pub fn imds_send(
+  req: Request(BitArray),
+) -> Result(Response(BitArray), HttpError) {
+  with_timeout(seconds: imds_timeout_seconds)(req)
+}
+
+fn default_config() -> httpc.Configuration {
+  httpc.configure() |> httpc.timeout(default_timeout_seconds * 1000)
+}
+
+fn do_send(
+  config: httpc.Configuration,
+  req: Request(BitArray),
+) -> Result(Response(BitArray), HttpError) {
+  case httpc.dispatch_bits(config, req) {
     Ok(response) -> Ok(response)
     Error(httpc.FailedToConnect(_, _)) ->
       Error(ConnectFailed(reason: "could not connect to host"))
