@@ -10,7 +10,7 @@
 //// The same `Credentials` value flows into SigV4 signing; the signer ignores
 //// the expiry/source metadata that's relevant only to the chain.
 
-import aws/internal/http_send.{type Send as HttpSend}
+import aws/internal/http_send.{type Send as HttpSend, imds_send}
 import aws/internal/ini
 import aws/internal/os_process
 import aws/internal/providers/ecs
@@ -880,6 +880,8 @@ pub fn default_chain(send send: HttpSend, profile profile: String) -> Provider {
     from_profile(name: profile),
     from_process(profile: profile),
     from_ecs(send: send),
-    from_imds(send: send),
+    // IMDS uses a short-timeout sender so its link-local connect fails fast
+    // when we're not on EC2 instead of stalling the whole chain.
+    from_imds(send: imds_send),
   ])
 }
