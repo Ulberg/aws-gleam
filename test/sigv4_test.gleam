@@ -1,6 +1,7 @@
 //// SigV4 conformance tests driven by the official AWS SigV4 test suite,
 //// vendored under `test/fixtures/aws-c-auth/tests/aws-sig-v4-test-suite/`.
 
+import aws/credentials
 import aws/internal/http_request.{type HttpRequest}
 import aws/internal/sigv4
 import gleam/dynamic/decode
@@ -84,11 +85,13 @@ fn load_request(dir: String) -> HttpRequest {
   req
 }
 
-fn build_creds(ctx: Context) -> sigv4.Credentials {
-  sigv4.Credentials(
+fn build_creds(ctx: Context) -> credentials.Credentials {
+  credentials.Credentials(
     access_key_id: ctx.access_key_id,
     secret_access_key: ctx.secret_access_key,
     session_token: ctx.session_token,
+    expires_at: None,
+    source: "Fixture",
   )
 }
 

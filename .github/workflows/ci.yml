@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel a previous run of the same workflow on the same ref when a new push
+# comes in. Saves CI time on busy branches.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Format & test (OTP ${{ matrix.otp }} / Gleam ${{ matrix.gleam }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        otp: ["27.0"]
+        gleam: ["1.16.0"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install OTP and Gleam
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ matrix.otp }}
+          gleam-version: ${{ matrix.gleam }}
+
+      - name: Cache Gleam build artifacts and Hex packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            build
+            ~/.cache/gleam
+            ~/.hex
+          key: gleam-${{ matrix.otp }}-${{ matrix.gleam }}-${{ hashFiles('manifest.toml', 'gleam.toml') }}
+          restore-keys: |
+            gleam-${{ matrix.otp }}-${{ matrix.gleam }}-
+
+      - name: Download dependencies
+        run: gleam deps download
+
+      - name: Check formatting
+        run: gleam format --check src test
+
+      - name: Run tests
+        run: gleam test

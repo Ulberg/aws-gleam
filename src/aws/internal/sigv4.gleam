@@ -1,20 +1,14 @@
+import aws/credentials.{type Credentials}
 import aws/internal/crypto
 import aws/internal/http_request.{
   type Header, type HttpRequest, Header, HttpRequest,
 }
+import aws/internal/uri
 import gleam/bit_array
 import gleam/list
-import gleam/option.{type Option, Some}
+import gleam/option.{Some}
 import gleam/order
 import gleam/string
-
-pub type Credentials {
-  Credentials(
-    access_key_id: String,
-    secret_access_key: String,
-    session_token: Option(String),
-  )
-}
 
 pub type SigningOptions {
   SigningOptions(
@@ -341,103 +335,8 @@ fn process_segments(
 
 pub fn encode_path(path: String) -> String {
   string.split(path, "/")
-  |> list.map(percent_encode_segment)
+  |> list.map(uri.encode_segment)
   |> string.join("/")
-}
-
-fn percent_encode_segment(s: String) -> String {
-  encode_bytes(bit_array.from_string(s), False, "")
-}
-
-pub fn percent_encode_component(s: String) -> String {
-  encode_bytes(percent_decode_bytes(bit_array.from_string(s)), False, "")
-}
-
-fn encode_bytes(bits: BitArray, _unused: Bool, acc: String) -> String {
-  case bits {
-    <<>> -> acc
-    <<b, rest:bits>> ->
-      case is_unreserved(b) {
-        True -> encode_bytes(rest, False, acc <> byte_to_string(b))
-        False -> encode_bytes(rest, False, acc <> "%" <> hex_byte(b))
-      }
-    _ -> acc
-  }
-}
-
-fn is_unreserved(b: Int) -> Bool {
-  { b >= 0x41 && b <= 0x5A }
-  || { b >= 0x61 && b <= 0x7A }
-  || { b >= 0x30 && b <= 0x39 }
-  || b == 0x2D
-  || b == 0x5F
-  || b == 0x2E
-  || b == 0x7E
-}
-
-fn byte_to_string(b: Int) -> String {
-  let bits = <<b>>
-  case bit_array.to_string(bits) {
-    Ok(s) -> s
-    Error(_) -> ""
-  }
-}
-
-fn hex_byte(b: Int) -> String {
-  let high = b / 16
-  let low = b % 16
-  hex_digit(high) <> hex_digit(low)
-}
-
-fn hex_digit(n: Int) -> String {
-  case n {
-    0 -> "0"
-    1 -> "1"
-    2 -> "2"
-    3 -> "3"
-    4 -> "4"
-    5 -> "5"
-    6 -> "6"
-    7 -> "7"
-    8 -> "8"
-    9 -> "9"
-    10 -> "A"
-    11 -> "B"
-    12 -> "C"
-    13 -> "D"
-    14 -> "E"
-    _ -> "F"
-  }
-}
-
-fn percent_decode_bytes(bits: BitArray) -> BitArray {
-  do_percent_decode(bits, <<>>)
-}
-
-fn do_percent_decode(bits: BitArray, acc: BitArray) -> BitArray {
-  case bits {
-    <<>> -> acc
-    <<0x25, h, l, rest:bits>> -> {
-      case hex_value(h), hex_value(l) {
-        Ok(hv), Ok(lv) -> {
-          let byte = hv * 16 + lv
-          do_percent_decode(rest, bit_array.append(acc, <<byte>>))
-        }
-        _, _ -> do_percent_decode(rest, bit_array.append(acc, <<0x25, h, l>>))
-      }
-    }
-    <<b, rest:bits>> -> do_percent_decode(rest, bit_array.append(acc, <<b>>))
-    _ -> acc
-  }
-}
-
-fn hex_value(b: Int) -> Result(Int, Nil) {
-  case b {
-    _ if b >= 0x30 && b <= 0x39 -> Ok(b - 0x30)
-    _ if b >= 0x41 && b <= 0x46 -> Ok(b - 0x41 + 10)
-    _ if b >= 0x61 && b <= 0x66 -> Ok(b - 0x61 + 10)
-    _ -> Error(Nil)
-  }
 }
 
 fn canonical_query_string(query: String) -> String {
@@ -456,10 +355,10 @@ fn canonical_query_string(query: String) -> String {
 fn parse_query_pair(pair: String) -> #(String, String) {
   case string.split_once(pair, "=") {
     Ok(#(name, value)) -> #(
-      percent_encode_component(name),
-      percent_encode_component(value),
+      uri.encode_component(name),
+      uri.encode_component(value),
     )
-    Error(_) -> #(percent_encode_component(pair), "")
+    Error(_) -> #(uri.encode_component(pair), "")
   }
 }
 
