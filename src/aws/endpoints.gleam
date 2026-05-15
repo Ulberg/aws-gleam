@@ -62,11 +62,13 @@ pub type Params =
   Dict(String, Value)
 
 /// Runtime values that flow through evaluation: literals plus the record
-/// shape that `aws.partition` returns.
+/// shape that `aws.partition` returns plus the list shape used for
+/// `stringArray` parameters and the `resourceId` field of a parsed ARN.
 pub type Value {
   StringVal(String)
   BoolVal(Bool)
   RecordVal(Dict(String, Value))
+  ListVal(List(Value))
   EmptyVal
 }
 
@@ -457,6 +459,14 @@ fn is_truthy(value: Value) -> Bool {
   case value {
     EmptyVal -> False
     BoolVal(b) -> b
+    // An empty list / empty record is "not set" — matches the Smithy rules
+    // engine's semantics for `isSet` on stringArray params.
+    ListVal([]) -> False
+    RecordVal(fields) ->
+      case dict.size(fields) {
+        0 -> False
+        _ -> True
+      }
     _ -> True
   }
 }
@@ -510,6 +520,7 @@ fn eval_to_string(expr: Expr, scope: Params) -> Result(String, ResolveError) {
     BoolVal(False) -> Ok("false")
     EmptyVal -> Ok("")
     RecordVal(_) -> Error(Unsupported(reason: "cannot stringify record value"))
+    ListVal(_) -> Error(Unsupported(reason: "cannot stringify list value"))
   }
 }
 
@@ -575,6 +586,7 @@ fn value_to_string(value: Value) -> Result(String, ResolveError) {
     BoolVal(False) -> Ok("false")
     EmptyVal -> Ok("")
     RecordVal(_) -> Error(Unsupported(reason: "cannot stringify record"))
+    ListVal(_) -> Error(Unsupported(reason: "cannot stringify list"))
   }
 }
 
@@ -695,8 +707,26 @@ fn traverse_value(value: Value, path: List(String)) -> Value {
             Ok(inner) -> traverse_value(inner, rest)
             Error(_) -> EmptyVal
           }
+        ListVal(items) ->
+          case int.parse(first) {
+            Ok(idx) ->
+              case list_index(items, idx) {
+                Ok(inner) -> traverse_value(inner, rest)
+                Error(_) -> EmptyVal
+              }
+            Error(_) -> EmptyVal
+          }
         _ -> EmptyVal
       }
+  }
+}
+
+fn list_index(items: List(a), idx: Int) -> Result(a, Nil) {
+  case items, idx {
+    [], _ -> Error(Nil)
+    [head, ..], 0 -> Ok(head)
+    [_, ..rest], n if n > 0 -> list_index(rest, n - 1)
+    _, _ -> Error(Nil)
   }
 }
 

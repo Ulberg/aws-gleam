@@ -17,7 +17,7 @@
 //// first mismatch — the goal is to track coverage as the evaluator matures.
 
 import aws/endpoints.{
-  type Endpoint, type RuleSet, BoolVal, Endpoint, RuleError, StringVal,
+  type Endpoint, type RuleSet, BoolVal, Endpoint, ListVal, RuleError, StringVal,
 }
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode
@@ -42,10 +42,10 @@ type CaseExpectation {
 
 type ParamValue {
   Supported(value: endpoints.Value)
-  /// Param value is an array — our evaluator doesn't implement
-  /// `StringArray` yet, so any test case touching one of these gets
-  /// classified as `Skip` rather than `Fail`.
-  UnsupportedArray
+  /// Reserved for future param types we haven't implemented yet (numbers,
+  /// arrays-of-records, etc). Today every supported param type — string,
+  /// bool, stringArray — decodes into a `Supported` value.
+  Unsupported
 }
 
 type TestCase {
@@ -85,11 +85,20 @@ fn param_value_decoder() -> decode.Decoder(ParamValue) {
     decode.map(decode.bool, fn(b) { Supported(value: BoolVal(b)) }),
     [
       decode.map(decode.string, fn(s) { Supported(value: StringVal(s)) }),
-      // Anything else — JSON array, number, etc. — is StringArray-shaped and
-      // tags the whole test case as a skip.
-      decode.success(UnsupportedArray),
+      // stringArray params: a JSON list of strings → ListVal of StringVals.
+      decode.map(decode.list(decode.string), fn(items) {
+        Supported(value: ListVal(list_map(items, fn(s) { StringVal(s) })))
+      }),
+      decode.success(Unsupported),
     ],
   )
+}
+
+fn list_map(items: List(a), f: fn(a) -> b) -> List(b) {
+  case items {
+    [] -> []
+    [head, ..rest] -> [f(head), ..list_map(rest, f)]
+  }
 }
 
 fn expectation_decoder() -> decode.Decoder(CaseExpectation) {
@@ -125,7 +134,7 @@ fn run_case(rs: RuleSet, case_: TestCase) -> Outcome {
     |> dict.values
     |> list.any(fn(value) {
       case value {
-        UnsupportedArray -> True
+        Unsupported -> True
         Supported(_) -> False
       }
     })
@@ -136,7 +145,7 @@ fn run_case(rs: RuleSet, case_: TestCase) -> Outcome {
         dict.fold(case_.params, dict.new(), fn(acc, key, value) {
           case value {
             Supported(value: v) -> dict.insert(acc, key, v)
-            UnsupportedArray -> acc
+            Unsupported -> acc
           }
         })
       do_run_case(rs, supported_params, case_)
