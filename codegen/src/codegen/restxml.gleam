@@ -34,11 +34,7 @@ pub fn emit_service(
         list.filter_map(refs, fn(ref) {
           let ShapeId(target) = ref.target
           case model.lookup(model, target) {
-            Ok(shape.Operation(
-              input: in_ref,
-              traits: op_traits,
-              ..,
-            )) ->
+            Ok(shape.Operation(input: in_ref, traits: op_traits, ..)) ->
               case http_trait(op_traits) {
                 Some(http) ->
                   case is_unit_or_empty(model, in_ref) {
@@ -76,8 +72,7 @@ fn emit_empty_operation(op_id: String, http: HttpTrait) -> EmittedOp {
   let local = strip_namespace(op_id)
   let pascal = local
   let snake = stringutils.pascal_to_snake(local)
-  let template =
-    "
+  let template = "
 pub type " <> pascal <> "Input {
   " <> pascal <> "Input
 }

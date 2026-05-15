@@ -83,8 +83,7 @@ fn emit_empty_operation(op_id: String, http: HttpTrait) -> EmittedOp {
   let local_name = strip_namespace(op_id)
   let pascal = local_name
   let snake = stringutils.pascal_to_snake(local_name)
-  let template =
-    "
+  let template = "
 pub type " <> pascal <> "Input {
   " <> pascal <> "Input
 }
