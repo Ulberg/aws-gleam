@@ -10,7 +10,9 @@
 //// The same `Credentials` value flows into SigV4 signing; the signer ignores
 //// the expiry/source metadata that's relevant only to the chain.
 
+import aws/internal/http_send.{type Send as HttpSend}
 import aws/internal/ini
+import aws/internal/providers/imds
 import gleam/bit_array
 import gleam/int
 import gleam/list
@@ -251,4 +253,51 @@ fn fetch_from_profile(
     expires_at: None,
     source: "Profile(" <> profile_name <> ")",
   ))
+}
+
+// ----- IMDSv2 (EC2 instance metadata) provider -----
+
+/// IMDSv2 credentials provider. Performs the standard PUT-token / GET-role /
+/// GET-creds dance against the link-local metadata endpoint at
+/// `http://169.254.169.254` and parses the JSON credentials response.
+///
+/// Failure of step 1 (the token PUT) is treated as `NotConfigured` so the
+/// chain quietly falls through to the next provider when we're not on EC2
+/// or Lambda. Failures past that point are `FetchFailed`.
+///
+/// `send` is the HTTP transport — pass `aws/internal/http_send.default_send`
+/// in production, or a stub in tests.
+pub fn from_imds(send send: HttpSend) -> Provider {
+  from_imds_with(
+    send: send,
+    endpoint: "http://169.254.169.254",
+    token_ttl_seconds: 21_600,
+  )
+}
+
+/// IMDSv2 provider with overridable endpoint and token TTL. Test stubs and
+/// fleet-specific deployments (e.g. when AWS_EC2_METADATA_SERVICE_ENDPOINT
+/// is set) use this form.
+pub fn from_imds_with(
+  send send: HttpSend,
+  endpoint endpoint: String,
+  token_ttl_seconds token_ttl_seconds: Int,
+) -> Provider {
+  let options =
+    imds.Options(endpoint: endpoint, token_ttl_seconds: token_ttl_seconds)
+  Provider(name: "IMDSv2", fetch: fn() {
+    case imds.fetch(send, options) {
+      Ok(c) ->
+        Ok(Credentials(
+          access_key_id: c.access_key_id,
+          secret_access_key: c.secret_access_key,
+          session_token: Some(c.session_token),
+          expires_at: Some(c.expires_at),
+          source: "IMDSv2",
+        ))
+      Error(imds.NotOnInstance(reason: reason)) ->
+        Error(NotConfigured(reason: reason))
+      Error(imds.Failed(reason: reason)) -> Error(FetchFailed(reason: reason))
+    }
+  })
 }
