@@ -1,20 +1,13 @@
+import aws/credentials.{type Credentials}
 import aws/internal/crypto
 import aws/internal/http_request.{
   type Header, type HttpRequest, Header, HttpRequest,
 }
 import gleam/bit_array
 import gleam/list
-import gleam/option.{type Option, Some}
+import gleam/option.{Some}
 import gleam/order
 import gleam/string
-
-pub type Credentials {
-  Credentials(
-    access_key_id: String,
-    secret_access_key: String,
-    session_token: Option(String),
-  )
-}
 
 pub type SigningOptions {
   SigningOptions(
