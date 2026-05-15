@@ -10,9 +10,11 @@ import protocol_tests/dispatch.{
 
 pub fn register_all(registry: Registry) -> Registry {
   registry
+  |> dispatch.register(content_type_parameters_dispatcher())
   |> dispatch.register(datetime_offsets_dispatcher())
   |> dispatch.register(empty_input_and_empty_output_dispatcher())
   |> dispatch.register(endpoint_operation_dispatcher())
+  |> dispatch.register(endpoint_with_host_label_operation_dispatcher())
   |> dispatch.register(fractional_seconds_dispatcher())
   |> dispatch.register(greeting_with_errors_dispatcher())
   |> dispatch.register(host_with_path_operation_dispatcher())
@@ -22,7 +24,9 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(malformed_accept_with_body_dispatcher())
   |> dispatch.register(malformed_accept_with_generic_string_dispatcher())
   |> dispatch.register(malformed_accept_with_payload_dispatcher())
+  |> dispatch.register(malformed_content_type_with_body_dispatcher())
   |> dispatch.register(malformed_content_type_without_body_dispatcher())
+  |> dispatch.register(malformed_request_body_dispatcher())
   |> dispatch.register(no_input_and_no_output_dispatcher())
   |> dispatch.register(no_input_and_output_dispatcher())
   |> dispatch.register(output_stream_dispatcher())
@@ -34,29 +38,66 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(unit_input_and_output_dispatcher())
 }
 
+fn content_type_parameters_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#ContentTypeParameters",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_content_type_parameters_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_content_type_parameters_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_content_type_parameters_response),
+  )
+}
+
 fn datetime_offsets_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#DatetimeOffsets",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_datetime_offsets_request(svc.DatetimeOffsetsInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_datetime_offsets_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_datetime_offsets_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(svc.parse_datetime_offsets_response),
+    parse_response: response_parser(svc.parse_datetime_offsets_response),
   )
 }
 
 fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#EmptyInputAndEmptyOutput",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_empty_input_and_empty_output_request(
-          svc.EmptyInputAndEmptyOutputInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_empty_input_and_empty_output_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_empty_input_and_empty_output_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_empty_input_and_empty_output_response,
     ),
   )
@@ -65,68 +106,128 @@ fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
 fn endpoint_operation_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#EndpointOperation",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_endpoint_operation_request(svc.EndpointOperationInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_endpoint_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_endpoint_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(svc.parse_endpoint_operation_response),
+    parse_response: response_parser(svc.parse_endpoint_operation_response),
+  )
+}
+
+fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#EndpointWithHostLabelOperation",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_endpoint_with_host_label_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_endpoint_with_host_label_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_endpoint_with_host_label_operation_response,
+    ),
   )
 }
 
 fn fractional_seconds_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#FractionalSeconds",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_fractional_seconds_request(svc.FractionalSecondsInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_fractional_seconds_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_fractional_seconds_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(svc.parse_fractional_seconds_response),
+    parse_response: response_parser(svc.parse_fractional_seconds_response),
   )
 }
 
 fn greeting_with_errors_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#GreetingWithErrors",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_greeting_with_errors_request(svc.GreetingWithErrorsInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_greeting_with_errors_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_greeting_with_errors_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
-      svc.parse_greeting_with_errors_response,
-    ),
+    parse_response: response_parser(svc.parse_greeting_with_errors_response),
   )
 }
 
 fn host_with_path_operation_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#HostWithPathOperation",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_host_with_path_operation_request(
-          svc.HostWithPathOperationInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_host_with_path_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_host_with_path_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
-      svc.parse_host_with_path_operation_response,
-    ),
+    parse_response: response_parser(svc.parse_host_with_path_operation_response),
   )
 }
 
 fn http_prefix_headers_in_response_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#HttpPrefixHeadersInResponse",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_http_prefix_headers_in_response_request(
-          svc.HttpPrefixHeadersInResponseInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_http_prefix_headers_in_response_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_http_prefix_headers_in_response_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_http_prefix_headers_in_response_response,
     ),
   )
@@ -135,26 +236,42 @@ fn http_prefix_headers_in_response_dispatcher() -> Dispatcher {
 fn http_response_code_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#HttpResponseCode",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_http_response_code_request(svc.HttpResponseCodeInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_http_response_code_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_http_response_code_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(svc.parse_http_response_code_response),
+    parse_response: response_parser(svc.parse_http_response_code_response),
   )
 }
 
 fn ignore_query_params_in_response_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#IgnoreQueryParamsInResponse",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_ignore_query_params_in_response_request(
-          svc.IgnoreQueryParamsInResponseInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_ignore_query_params_in_response_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_ignore_query_params_in_response_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_ignore_query_params_in_response_response,
     ),
   )
@@ -163,14 +280,21 @@ fn ignore_query_params_in_response_dispatcher() -> Dispatcher {
 fn malformed_accept_with_body_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#MalformedAcceptWithBody",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_malformed_accept_with_body_request(
-          svc.MalformedAcceptWithBodyInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_accept_with_body_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_accept_with_body_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_malformed_accept_with_body_response,
     ),
   )
@@ -179,14 +303,21 @@ fn malformed_accept_with_body_dispatcher() -> Dispatcher {
 fn malformed_accept_with_generic_string_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#MalformedAcceptWithGenericString",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_malformed_accept_with_generic_string_request(
-          svc.MalformedAcceptWithGenericStringInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_accept_with_generic_string_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_accept_with_generic_string_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_malformed_accept_with_generic_string_response,
     ),
   )
@@ -195,15 +326,45 @@ fn malformed_accept_with_generic_string_dispatcher() -> Dispatcher {
 fn malformed_accept_with_payload_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#MalformedAcceptWithPayload",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_malformed_accept_with_payload_request(
-          svc.MalformedAcceptWithPayloadInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_accept_with_payload_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_accept_with_payload_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_malformed_accept_with_payload_response,
+    ),
+  )
+}
+
+fn malformed_content_type_with_body_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#MalformedContentTypeWithBody",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_content_type_with_body_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_content_type_with_body_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_malformed_content_type_with_body_response,
     ),
   )
 }
@@ -211,70 +372,128 @@ fn malformed_accept_with_payload_dispatcher() -> Dispatcher {
 fn malformed_content_type_without_body_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#MalformedContentTypeWithoutBody",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_malformed_content_type_without_body_request(
-          svc.MalformedContentTypeWithoutBodyInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_content_type_without_body_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_content_type_without_body_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_malformed_content_type_without_body_response,
     ),
+  )
+}
+
+fn malformed_request_body_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#MalformedRequestBody",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_request_body_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_request_body_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_malformed_request_body_response),
   )
 }
 
 fn no_input_and_no_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#NoInputAndNoOutput",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_no_input_and_no_output_request(svc.NoInputAndNoOutputInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_no_input_and_no_output_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_no_input_and_no_output_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
-      svc.parse_no_input_and_no_output_response,
-    ),
+    parse_response: response_parser(svc.parse_no_input_and_no_output_response),
   )
 }
 
 fn no_input_and_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#NoInputAndOutput",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_no_input_and_output_request(svc.NoInputAndOutputInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_no_input_and_output_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_no_input_and_output_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
-      svc.parse_no_input_and_output_response,
-    ),
+    parse_response: response_parser(svc.parse_no_input_and_output_response),
   )
 }
 
 fn output_stream_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#OutputStream",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_output_stream_request(svc.OutputStreamInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_output_stream_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_output_stream_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(svc.parse_output_stream_response),
+    parse_response: response_parser(svc.parse_output_stream_response),
   )
 }
 
 fn output_stream_with_initial_response_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#OutputStreamWithInitialResponse",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_output_stream_with_initial_response_request(
-          svc.OutputStreamWithInitialResponseInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_output_stream_with_initial_response_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_output_stream_with_initial_response_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_output_stream_with_initial_response_response,
     ),
   )
@@ -283,14 +502,21 @@ fn output_stream_with_initial_response_dispatcher() -> Dispatcher {
 fn response_code_http_fallback_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#ResponseCodeHttpFallback",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_response_code_http_fallback_request(
-          svc.ResponseCodeHttpFallbackInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_response_code_http_fallback_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_response_code_http_fallback_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_response_code_http_fallback_response,
     ),
   )
@@ -299,28 +525,42 @@ fn response_code_http_fallback_dispatcher() -> Dispatcher {
 fn response_code_required_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#ResponseCodeRequired",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_response_code_required_request(svc.ResponseCodeRequiredInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_response_code_required_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_response_code_required_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
-      svc.parse_response_code_required_response,
-    ),
+    parse_response: response_parser(svc.parse_response_code_required_response),
   )
 }
 
 fn test_get_no_input_no_payload_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#TestGetNoInputNoPayload",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_test_get_no_input_no_payload_request(
-          svc.TestGetNoInputNoPayloadInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_test_get_no_input_no_payload_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_test_get_no_input_no_payload_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_test_get_no_input_no_payload_response,
     ),
   )
@@ -329,14 +569,21 @@ fn test_get_no_input_no_payload_dispatcher() -> Dispatcher {
 fn test_post_no_input_no_payload_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#TestPostNoInputNoPayload",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_test_post_no_input_no_payload_request(
-          svc.TestPostNoInputNoPayloadInput,
-        )
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_test_post_no_input_no_payload_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_test_post_no_input_no_payload_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
+    parse_response: response_parser(
       svc.parse_test_post_no_input_no_payload_response,
     ),
   )
@@ -345,18 +592,25 @@ fn test_post_no_input_no_payload_dispatcher() -> Dispatcher {
 fn unit_input_and_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#UnitInputAndOutput",
-    build_request: fn(_params) {
-      let #(method, uri, headers, body) =
-        svc.build_unit_input_and_output_request(svc.UnitInputAndOutputInput)
-      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_unit_input_and_output_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_unit_input_and_output_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
     },
-    parse_response: empty_response_parser(
-      svc.parse_unit_input_and_output_response,
-    ),
+    parse_response: response_parser(svc.parse_unit_input_and_output_response),
   )
 }
 
-fn empty_response_parser(
+fn response_parser(
   parser: fn(Int, _, BitArray) -> Result(_, String),
 ) -> fn(ParsedResponseInput) -> Result(dispatch.ParsedResponse, String) {
   fn(input: ParsedResponseInput) {
