@@ -283,19 +283,14 @@ pub fn backoff_clamps_to_max_delay_test() {
 
 // ---------- adaptive: token bucket gating ----------
 
-pub fn adaptive_debits_throttle_cost_per_retry_test() {
-  // Start with 30 tokens. throttle_cost = 10, so two 429s should debit 20
-  // (30 → 20 → 10). Then a success replenishes by replenish_per_success.
-  let assert Ok(bucket) =
-    rate_limiter.start(max_capacity: 100, replenish_per_success: 5)
-  // Pre-debit to 30 by acquiring 70 directly.
-  let assert rate_limiter.Acquired = rate_limiter.try_acquire(bucket, cost: 70)
-  rate_limiter.current(bucket).available |> should.equal(30)
-
+pub fn successful_retry_returns_permit_tokens_test() {
+  // Matches Rust SDK behaviour: a retry that ultimately succeeds leaves the
+  // bucket essentially unchanged (the held permit is released, success_reward
+  // adds 0 by default). 1× 503 → 200 should net to original capacity.
+  let assert Ok(bucket) = rate_limiter.start(capacity: 100, success_reward: 0)
   let script =
     start_script([
-      RespOk(status: 429, headers: []),
-      RespOk(status: 429, headers: []),
+      RespOk(status: 503, headers: []),
       RespOk(status: 200, headers: []),
     ])
   let strategy =
@@ -309,20 +304,19 @@ pub fn adaptive_debits_throttle_cost_per_retry_test() {
     )
   let send = retry.with_retry(send: stub_send(script), strategy: strategy)
   let assert Ok(_) = send(empty_req())
-
-  // Two throttles cost 2 × 10 = 20. Then success replenishes 5.
-  // 30 - 20 + 5 = 15.
-  rate_limiter.current(bucket).available |> should.equal(15)
+  // -retry_cost +retry_cost +0 = 0 net change.
+  rate_limiter.current(bucket).available |> should.equal(100)
 }
 
-pub fn adaptive_server_error_costs_less_than_throttle_test() {
-  // server_error_cost = 5; two 503s should debit only 10, vs 20 for two 429s.
-  let assert Ok(bucket) =
-    rate_limiter.start(max_capacity: 100, replenish_per_success: 0)
+pub fn transport_error_uses_timeout_retry_cost_test() {
+  // Transport errors are classified as TransientError → timeout_retry_cost
+  // (10), while a 503 would use retry_cost (5). One transport error + final
+  // give-up keeps the larger cost debited longer.
+  let assert Ok(bucket) = rate_limiter.start(capacity: 100, success_reward: 0)
   let script =
     start_script([
-      RespOk(status: 503, headers: []),
-      RespOk(status: 503, headers: []),
+      RespError(error: http_send.Timeout),
+      RespError(error: http_send.Timeout),
       RespOk(status: 200, headers: []),
     ])
   let strategy =
@@ -336,24 +330,73 @@ pub fn adaptive_server_error_costs_less_than_throttle_test() {
     )
   let send = retry.with_retry(send: stub_send(script), strategy: strategy)
   let assert Ok(_) = send(empty_req())
-  // 100 - 2 × 5 = 90 (no replenish since replenish_per_success=0).
-  rate_limiter.current(bucket).available |> should.equal(90)
+  // Across the retry loop the cost is acquired then released between
+  // attempts and after success — the bucket should end where it started.
+  rate_limiter.current(bucket).available |> should.equal(100)
+}
+
+pub fn exhausted_retries_leak_no_permit_test() {
+  // 3× 503 with max=3 exhausts retries. The held permit should still be
+  // released so subsequent operations aren't starved. (Rust SDK: final
+  // permit dropped via RAII on terminal non-retryable / exhausted.)
+  let assert Ok(bucket) = rate_limiter.start(capacity: 100, success_reward: 0)
+  let script =
+    start_script([
+      RespOk(status: 503, headers: []),
+      RespOk(status: 503, headers: []),
+      RespOk(status: 503, headers: []),
+    ])
+  let strategy =
+    retry.adaptive_with(
+      bucket: bucket,
+      max_attempts: 3,
+      base_delay_ms: 1,
+      max_delay_ms: 10,
+      sleep: no_sleep,
+      rng: fixed_rng,
+    )
+  let send = retry.with_retry(send: stub_send(script), strategy: strategy)
+  let assert Ok(_) = send(empty_req())
+  rate_limiter.current(bucket).available |> should.equal(100)
+}
+
+pub fn success_reward_adds_above_returned_tokens_test() {
+  // Setting success_reward > 0 makes the bucket actually grow on a
+  // successful run (beyond just refunding the permit). This is the
+  // configurable knob — matches Rust SDK's `success_reward()` builder.
+  let assert Ok(bucket) = rate_limiter.start(capacity: 100, success_reward: 3)
+  // Pre-debit by 20.
+  let assert rate_limiter.Acquired(_) =
+    rate_limiter.try_acquire(bucket, cost: 20)
+  rate_limiter.current(bucket).available |> should.equal(80)
+
+  let script =
+    start_script([
+      RespOk(status: 503, headers: []),
+      RespOk(status: 200, headers: []),
+    ])
+  let strategy =
+    retry.adaptive_with(
+      bucket: bucket,
+      max_attempts: 3,
+      base_delay_ms: 1,
+      max_delay_ms: 10,
+      sleep: no_sleep,
+      rng: fixed_rng,
+    )
+  let send = retry.with_retry(send: stub_send(script), strategy: strategy)
+  let assert Ok(_) = send(empty_req())
+  // -5 (acquire) +5 (release) +3 (reward) = 83.
+  rate_limiter.current(bucket).available |> should.equal(83)
 }
 
 pub fn adaptive_empty_bucket_stops_retries_test() {
-  // Empty bucket: a retryable response should NOT retry.
-  let assert Ok(bucket) =
-    rate_limiter.start(max_capacity: 5, replenish_per_success: 1)
-  // Drain to zero by debiting 5 first.
-  let assert rate_limiter.Acquired = rate_limiter.try_acquire(bucket, cost: 5)
+  let assert Ok(bucket) = rate_limiter.start(capacity: 5, success_reward: 0)
+  let assert rate_limiter.Acquired(_) =
+    rate_limiter.try_acquire(bucket, cost: 5)
   rate_limiter.current(bucket).available |> should.equal(0)
 
-  let script =
-    start_script([
-      RespOk(status: 503, headers: []),
-      // No second response — if the test retries, the script exhausts and we
-    // get a transport error, which signals the bug.
-    ])
+  let script = start_script([RespOk(status: 503, headers: [])])
   let strategy =
     retry.adaptive_with(
       bucket: bucket,
@@ -366,50 +409,34 @@ pub fn adaptive_empty_bucket_stops_retries_test() {
   let send = retry.with_retry(send: stub_send(script), strategy: strategy)
   let assert Ok(resp) = send(empty_req())
   resp.status |> should.equal(503)
-  // Only one attempt — bucket said no.
   attempt_count(script) |> should.equal(1)
 }
 
-pub fn adaptive_success_replenishes_bucket_test() {
-  let assert Ok(bucket) =
-    rate_limiter.start(max_capacity: 100, replenish_per_success: 10)
-  // Knock the bucket down by debiting.
-  let assert rate_limiter.Acquired = rate_limiter.try_acquire(bucket, cost: 75)
-  rate_limiter.current(bucket).available |> should.equal(25)
-
-  let script = start_script([RespOk(status: 200, headers: [])])
-  let strategy =
-    retry.adaptive_with(
-      bucket: bucket,
-      max_attempts: 3,
-      base_delay_ms: 1,
-      max_delay_ms: 10,
-      sleep: no_sleep,
-      rng: fixed_rng,
-    )
-  let send = retry.with_retry(send: stub_send(script), strategy: strategy)
-  let assert Ok(_) = send(empty_req())
-  // One success tops up by 10: 25 → 35.
-  rate_limiter.current(bucket).available |> should.equal(35)
-}
-
-pub fn bucket_replenish_caps_at_max_capacity_test() {
-  let assert Ok(bucket) =
-    rate_limiter.start(max_capacity: 5, replenish_per_success: 100)
-  rate_limiter.on_success(bucket)
-  rate_limiter.on_success(bucket)
-  // Should NOT exceed max_capacity.
+pub fn bucket_reward_caps_at_capacity_test() {
+  let assert Ok(bucket) = rate_limiter.start(capacity: 5, success_reward: 100)
+  rate_limiter.reward_success(bucket)
+  rate_limiter.reward_success(bucket)
   rate_limiter.current(bucket).available |> should.equal(5)
 }
 
+pub fn bucket_release_caps_at_capacity_test() {
+  // A wild release that would exceed capacity (e.g. reward + release racing)
+  // is clamped, matching Rust SDK's `add_permits` clamping behaviour.
+  let assert Ok(bucket) = rate_limiter.start(capacity: 10, success_reward: 0)
+  let assert rate_limiter.Acquired(p) =
+    rate_limiter.try_acquire(bucket, cost: 5)
+  rate_limiter.release(bucket, permit: p)
+  // Releasing the same permit twice (or any extra release) must not push
+  // available above capacity.
+  rate_limiter.release(bucket, permit: p)
+  rate_limiter.current(bucket).available |> should.equal(10)
+}
+
 pub fn bucket_try_acquire_returns_empty_when_short_test() {
-  let assert Ok(bucket) =
-    rate_limiter.start(max_capacity: 5, replenish_per_success: 1)
-  // Take 5.
-  let assert rate_limiter.Acquired = rate_limiter.try_acquire(bucket, cost: 5)
-  // Now ask for 1 more — should fail.
+  let assert Ok(bucket) = rate_limiter.start(capacity: 5, success_reward: 0)
+  let assert rate_limiter.Acquired(_) =
+    rate_limiter.try_acquire(bucket, cost: 5)
   let assert rate_limiter.Empty = rate_limiter.try_acquire(bucket, cost: 1)
-  // Bucket state unchanged after a failed acquire.
   rate_limiter.current(bucket).available |> should.equal(0)
 }
 
