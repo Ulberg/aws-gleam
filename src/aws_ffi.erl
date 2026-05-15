@@ -1,5 +1,6 @@
 -module(aws_ffi).
--export([sha256/1, hmac_sha256/2, hex_encode/1, get_env/1, read_file/1]).
+-export([sha256/1, hmac_sha256/2, hex_encode/1, get_env/1, read_file/1,
+         unix_seconds/0]).
 
 sha256(Data) ->
     crypto:hash(sha256, Data).
@@ -27,3 +28,9 @@ read_file(Path) ->
         {ok, Bin} -> {ok, Bin};
         {error, _} -> {error, nil}
     end.
+
+%% Unix seconds since epoch. Default production clock for the credentials
+%% cache. system_time(second) is monotonic-corrected and matches AWS's
+%% credential-expiration timestamps (also unix seconds).
+unix_seconds() ->
+    erlang:system_time(second).
