@@ -14,6 +14,7 @@ import aws/internal/http_send.{type Send as HttpSend}
 import aws/internal/ini
 import aws/internal/providers/ecs
 import aws/internal/providers/imds
+import aws/internal/providers/sso
 import aws/internal/providers/sts_web_identity as web_identity
 import gleam/bit_array
 import gleam/int
@@ -530,4 +531,209 @@ fn do_fetch_web_identity(
     Error(web_identity.Failed(reason: reason)) ->
       Error(FetchFailed(reason: reason))
   }
+}
+
+// ----- SSO (IAM Identity Center) provider -----
+
+@external(erlang, "aws_ffi", "sha1_hex")
+fn sha1_hex(input: String) -> String
+
+/// SSO credentials provider. Consumes a cached SSO access token (produced
+/// by `aws sso login`) and exchanges it at the portal for short-lived
+/// credentials.
+///
+/// `from_sso_with` is the explicit form — used by tests and by callers that
+/// resolve their own session / role configuration.
+pub fn from_sso_with(
+  send send: HttpSend,
+  region region: String,
+  account_id account_id: String,
+  role_name role_name: String,
+  access_token access_token: String,
+) -> Provider {
+  let options =
+    sso.Options(
+      region: region,
+      account_id: account_id,
+      role_name: role_name,
+      access_token: access_token,
+      endpoint: sso.default_endpoint(region),
+    )
+  Provider(name: "SSO", fetch: fn() {
+    wrap_sso_result(sso.fetch(send, options))
+  })
+}
+
+/// Same shape as `from_sso_with` but with an overridable portal endpoint.
+/// Tests aim a stub server at the portal path and pass it here.
+pub fn from_sso_with_endpoint(
+  send send: HttpSend,
+  region region: String,
+  account_id account_id: String,
+  role_name role_name: String,
+  access_token access_token: String,
+  endpoint endpoint: String,
+) -> Provider {
+  let options =
+    sso.Options(
+      region: region,
+      account_id: account_id,
+      role_name: role_name,
+      access_token: access_token,
+      endpoint: endpoint,
+    )
+  Provider(name: "SSO", fetch: fn() {
+    wrap_sso_result(sso.fetch(send, options))
+  })
+}
+
+fn wrap_sso_result(
+  result: Result(sso.SsoCredentials, sso.Error),
+) -> Result(Credentials, ProviderError) {
+  case result {
+    Ok(c) ->
+      Ok(Credentials(
+        access_key_id: c.access_key_id,
+        secret_access_key: c.secret_access_key,
+        session_token: Some(c.session_token),
+        expires_at: Some(c.expires_at),
+        source: "SSO",
+      ))
+    Error(sso.Unreachable(reason: reason)) ->
+      Error(NotConfigured(reason: reason))
+    Error(sso.Failed(reason: reason)) -> Error(FetchFailed(reason: reason))
+  }
+}
+
+/// Production SSO provider. Reads the named profile from `~/.aws/config`,
+/// pulls the cached SSO access token from `~/.aws/sso/cache/<sha1>.json`,
+/// and exchanges it at the portal. The cache filename is `sha1(session-or-
+/// start-url)` per the AWS CLI convention.
+pub fn from_sso(send send: HttpSend, profile profile: String) -> Provider {
+  from_sso_with_env(
+    send: send,
+    profile: profile,
+    config_reader: read_default_config_file,
+    cache_reader: read_sso_cache_file,
+  )
+}
+
+/// Injectable variant for tests.
+pub fn from_sso_with_env(
+  send send: HttpSend,
+  profile profile: String,
+  config_reader config_reader: fn() -> Result(String, Nil),
+  cache_reader cache_reader: fn(String) -> Result(String, Nil),
+) -> Provider {
+  Provider(name: "SSO(" <> profile <> ")", fetch: fn() {
+    resolve_and_fetch_sso(send, profile, config_reader, cache_reader)
+  })
+}
+
+fn resolve_and_fetch_sso(
+  send: HttpSend,
+  profile: String,
+  config_reader: fn() -> Result(String, Nil),
+  cache_reader: fn(String) -> Result(String, Nil),
+) -> Result(Credentials, ProviderError) {
+  use config_text <- result.try(
+    config_reader()
+    |> result.replace_error(NotConfigured(reason: "~/.aws/config not readable")),
+  )
+  use config <- result.try(
+    ini.parse(config_text)
+    |> result.map_error(fn(e) {
+      FetchFailed(
+        reason: "config parse error at line " <> int.to_string(e.line),
+      )
+    }),
+  )
+  // Profiles in ~/.aws/config are spelled `[profile NAME]` (except the
+  // implicit default which is `[default]`).
+  let section = case profile {
+    "default" -> "default"
+    other -> "profile " <> other
+  }
+  use sso_session <- result.try(
+    ini.get_property(config, section: section, key: "sso_session")
+    |> result.replace_error(NotConfigured(
+      reason: "profile '" <> profile <> "' has no sso_session",
+    )),
+  )
+  use region <- result.try(
+    ini.get_property(config, section: section, key: "sso_region")
+    |> result.replace_error(NotConfigured(
+      reason: "profile '" <> profile <> "' has no sso_region",
+    )),
+  )
+  use account_id <- result.try(
+    ini.get_property(config, section: section, key: "sso_account_id")
+    |> result.replace_error(NotConfigured(
+      reason: "profile '" <> profile <> "' has no sso_account_id",
+    )),
+  )
+  use role_name <- result.try(
+    ini.get_property(config, section: section, key: "sso_role_name")
+    |> result.replace_error(NotConfigured(
+      reason: "profile '" <> profile <> "' has no sso_role_name",
+    )),
+  )
+  let cache_filename = sha1_hex(sso_session) <> ".json"
+  use cache_text <- result.try(
+    cache_reader(cache_filename)
+    |> result.replace_error(NotConfigured(
+      reason: "no SSO token cache for session '"
+      <> sso_session
+      <> "' — run `aws sso login`",
+    )),
+  )
+  use access_token <- result.try(
+    extract_access_token(cache_text)
+    |> result.replace_error(FetchFailed(
+      reason: "SSO token cache for session '"
+      <> sso_session
+      <> "' is missing accessToken",
+    )),
+  )
+  wrap_sso_result(sso.fetch(
+    send,
+    sso.Options(
+      region: region,
+      account_id: account_id,
+      role_name: role_name,
+      access_token: access_token,
+      endpoint: sso.default_endpoint(region),
+    ),
+  ))
+}
+
+fn extract_access_token(json_text: String) -> Result(String, Nil) {
+  // The token cache JSON has `{"accessToken": "...", "expiresAt": "...", ...}`.
+  // A full decoder is overkill; pull just the one field.
+  case string.split_once(json_text, "\"accessToken\"") {
+    Ok(#(_, after_key)) ->
+      case string.split_once(after_key, "\"") {
+        Ok(#(_, after_first_quote)) ->
+          case string.split_once(after_first_quote, "\"") {
+            Ok(#(value, _)) -> Ok(value)
+            Error(_) -> Error(Nil)
+          }
+        Error(_) -> Error(Nil)
+      }
+    Error(_) -> Error(Nil)
+  }
+}
+
+fn read_default_config_file() -> Result(String, Nil) {
+  use home <- result.try(os_get_env("HOME"))
+  let path = home <> "/.aws/config"
+  use bits <- result.try(read_file(path))
+  bit_array.to_string(bits) |> result.replace_error(Nil)
+}
+
+fn read_sso_cache_file(filename: String) -> Result(String, Nil) {
+  use home <- result.try(os_get_env("HOME"))
+  let path = home <> "/.aws/sso/cache/" <> filename
+  use bits <- result.try(read_file(path))
+  bit_array.to_string(bits) |> result.replace_error(Nil)
 }

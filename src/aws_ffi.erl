@@ -1,6 +1,6 @@
 -module(aws_ffi).
 -export([sha256/1, hmac_sha256/2, hex_encode/1, get_env/1, read_file/1,
-         unix_seconds/0, parse_iso8601/1, run_process/2]).
+         unix_seconds/0, parse_iso8601/1, run_process/2, sha1_hex/1]).
 
 sha256(Data) ->
     crypto:hash(sha256, Data).
@@ -10,6 +10,11 @@ hmac_sha256(Key, Data) ->
 
 hex_encode(Bin) ->
     binary:encode_hex(Bin, lowercase).
+
+%% Lowercase-hex SHA-1 of the input binary. Used by the SSO provider to
+%% derive the cache-file name from a session name / start URL.
+sha1_hex(Bin) ->
+    binary:encode_hex(crypto:hash(sha, Bin), lowercase).
 
 %% Return {ok, Value} if the env var is set, {error, nil} otherwise.
 %% os:getenv/1 returns the string value or the atom false; we coerce to the
