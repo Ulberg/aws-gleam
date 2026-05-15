@@ -160,3 +160,100 @@ pub fn empty_chain_returns_exhausted_with_no_attempts_test() {
     credentials.fetch(credentials.chain([]))
   attempts |> should.equal([])
 }
+
+// ---------- profile provider ----------
+
+fn reader_from(text: String) -> fn() -> Result(String, Nil) {
+  fn() { Ok(text) }
+}
+
+fn no_file() -> fn() -> Result(String, Nil) {
+  fn() { Error(Nil) }
+}
+
+pub fn profile_provider_loads_named_profile_test() {
+  let reader =
+    reader_from(
+      "[default]
+aws_access_key_id = DEFAULT_KEY
+aws_secret_access_key = DEFAULT_SECRET
+
+[prod]
+aws_access_key_id = PROD_KEY
+aws_secret_access_key = PROD_SECRET
+aws_session_token = PROD_TOKEN
+",
+    )
+  credentials.from_profile_with(name: "prod", reader: reader)
+  |> credentials.fetch
+  |> should.equal(
+    Ok(Credentials(
+      access_key_id: "PROD_KEY",
+      secret_access_key: "PROD_SECRET",
+      session_token: Some("PROD_TOKEN"),
+      expires_at: None,
+      source: "Profile(prod)",
+    )),
+  )
+}
+
+pub fn profile_provider_default_section_session_token_optional_test() {
+  let reader =
+    reader_from(
+      "[default]
+aws_access_key_id = K
+aws_secret_access_key = S
+",
+    )
+  let assert Ok(creds) =
+    credentials.from_profile_with(name: "default", reader: reader)
+    |> credentials.fetch
+  creds.session_token |> should.equal(None)
+}
+
+pub fn profile_provider_missing_file_is_not_configured_test() {
+  let assert Error(err) =
+    credentials.from_profile_with(name: "default", reader: no_file())
+    |> credentials.fetch
+  case err {
+    NotConfigured(_) -> Nil
+    _ -> panic as "expected NotConfigured for missing file"
+  }
+}
+
+pub fn profile_provider_unknown_profile_is_not_configured_test() {
+  let reader =
+    reader_from("[default]\naws_access_key_id=K\naws_secret_access_key=S")
+  let assert Error(err) =
+    credentials.from_profile_with(name: "nope", reader: reader)
+    |> credentials.fetch
+  case err {
+    NotConfigured(_) -> Nil
+    _ -> panic as "expected NotConfigured for unknown profile"
+  }
+}
+
+pub fn profile_provider_half_configured_profile_is_fetch_failed_test() {
+  // Access key but no secret — clearly a misconfiguration, not "no creds
+  // here, move on".
+  let reader = reader_from("[default]\naws_access_key_id = K\n")
+  let assert Error(err) =
+    credentials.from_profile_with(name: "default", reader: reader)
+    |> credentials.fetch
+  case err {
+    FetchFailed(_) -> Nil
+    _ -> panic as "expected FetchFailed for half-configured profile"
+  }
+}
+
+pub fn profile_provider_malformed_file_is_fetch_failed_test() {
+  // Property outside any section -> INI parse error.
+  let reader = reader_from("orphan = value")
+  let assert Error(err) =
+    credentials.from_profile_with(name: "default", reader: reader)
+    |> credentials.fetch
+  case err {
+    FetchFailed(_) -> Nil
+    _ -> panic as "expected FetchFailed for malformed credentials file"
+  }
+}

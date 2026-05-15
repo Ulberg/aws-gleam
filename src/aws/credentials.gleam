@@ -10,8 +10,11 @@
 //// The same `Credentials` value flows into SigV4 signing; the signer ignores
 //// the expiry/source metadata that's relevant only to the chain.
 
+import aws/internal/ini
+import gleam/bit_array
+import gleam/int
 import gleam/list
-import gleam/option.{type Option, None}
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 
@@ -150,4 +153,102 @@ fn fetch_from_env(
       ))
     }
   }
+}
+
+// ----- profile (shared credentials file) provider -----
+
+/// AWS shared credentials file provider. Reads `[profile_name]` from the file
+/// returned by `reader`. The reader is injected so tests can drive the
+/// provider with an in-memory string; `from_profile` plugs in a real
+/// `~/.aws/credentials` reader.
+///
+/// Errors:
+///   - reader fails → NotConfigured (file not present is the normal "I'm
+///     not running on a profile-using machine" signal; the chain should fall
+///     through quietly)
+///   - INI parse fails → FetchFailed (the file exists but is corrupt; loud)
+///   - profile section missing → NotConfigured (likewise quiet — they may
+///     have meant to use a different provider)
+///   - profile present but missing access_key_id or secret_access_key →
+///     FetchFailed (clearly a misconfiguration worth surfacing)
+pub fn from_profile_with(
+  name profile_name: String,
+  reader reader: fn() -> Result(String, Nil),
+) -> Provider {
+  Provider(name: "Profile(" <> profile_name <> ")", fetch: fn() {
+    fetch_from_profile(profile_name, reader)
+  })
+}
+
+/// Default profile-file reader: `~/.aws/credentials` for the named profile.
+pub fn from_profile(name profile_name: String) -> Provider {
+  from_profile_with(name: profile_name, reader: read_default_profile_file)
+}
+
+@external(erlang, "aws_ffi", "read_file")
+fn read_file(path: String) -> Result(BitArray, Nil)
+
+fn read_default_profile_file() -> Result(String, Nil) {
+  use home <- result.try(os_get_env("HOME"))
+  let path = home <> "/.aws/credentials"
+  use bits <- result.try(read_file(path))
+  bit_array.to_string(bits) |> result.replace_error(Nil)
+}
+
+fn fetch_from_profile(
+  profile_name: String,
+  reader: fn() -> Result(String, Nil),
+) -> Result(Credentials, ProviderError) {
+  use text <- result.try(
+    reader()
+    |> result.replace_error(NotConfigured(
+      reason: "shared credentials file not readable",
+    )),
+  )
+  use parsed <- result.try(
+    ini.parse(text)
+    |> result.map_error(fn(e) {
+      FetchFailed(
+        reason: "shared credentials parse error at line "
+        <> int.to_string(e.line)
+        <> ": "
+        <> e.message,
+      )
+    }),
+  )
+  use access_key_id <- result.try(
+    ini.get_property(parsed, section: profile_name, key: "aws_access_key_id")
+    |> result.replace_error(NotConfigured(
+      reason: "profile '" <> profile_name <> "' has no aws_access_key_id",
+    )),
+  )
+  use secret_access_key <- result.try(
+    ini.get_property(
+      parsed,
+      section: profile_name,
+      key: "aws_secret_access_key",
+    )
+    |> result.replace_error(FetchFailed(
+      reason: "profile '"
+      <> profile_name
+      <> "' has aws_access_key_id but no aws_secret_access_key",
+    )),
+  )
+  let session_token = case
+    ini.get_property(parsed, section: profile_name, key: "aws_session_token")
+  {
+    Ok(token) ->
+      case string.is_empty(token) {
+        True -> None
+        False -> Some(token)
+      }
+    Error(_) -> None
+  }
+  Ok(Credentials(
+    access_key_id: access_key_id,
+    secret_access_key: secret_access_key,
+    session_token: session_token,
+    expires_at: None,
+    source: "Profile(" <> profile_name <> ")",
+  ))
 }

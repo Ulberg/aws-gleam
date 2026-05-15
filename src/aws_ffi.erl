@@ -1,5 +1,5 @@
 -module(aws_ffi).
--export([sha256/1, hmac_sha256/2, hex_encode/1, get_env/1]).
+-export([sha256/1, hmac_sha256/2, hex_encode/1, get_env/1, read_file/1]).
 
 sha256(Data) ->
     crypto:hash(sha256, Data).
@@ -17,4 +17,13 @@ get_env(Name) ->
     case os:getenv(binary_to_list(Name)) of
         false -> {error, nil};
         Value -> {ok, list_to_binary(Value)}
+    end.
+
+%% Read a file as text. Path is a binary; return {ok, Binary} | {error, nil}.
+%% Used by the default profile-provider reader so the runtime doesn't take
+%% on simplifile as a transitive dependency just to read ~/.aws/credentials.
+read_file(Path) ->
+    case file:read_file(binary_to_list(Path)) of
+        {ok, Bin} -> {ok, Bin};
+        {error, _} -> {error, nil}
     end.
