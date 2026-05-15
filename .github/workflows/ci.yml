@@ -25,6 +25,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Initialise sparse submodules
+        run: scripts/init-submodules.sh
 
       - name: Install OTP and Gleam
         uses: erlef/setup-beam@v1
