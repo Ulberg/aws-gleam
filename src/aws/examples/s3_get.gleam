@@ -36,6 +36,7 @@ import aws/credentials
 import aws/internal/http_request as our_http
 import aws/internal/http_send
 import aws/internal/sigv4
+import aws/region as aws_region
 import gleam/bit_array
 import gleam/http
 import gleam/http/request
@@ -52,31 +53,17 @@ const bucket: String = "demo-bucket-388180356984-eu-north-1-an"
 const object_key: String = ""
 
 const region: String = "eu-north-1"
+
 // ===============================
 
 const profile: String = "default"
 
 pub fn main() {
-  // 1. Resolve credentials through the chain. Two deliberate departures
-  //    from `credentials.default_chain` here:
-  //
-  //      - IMDS is omitted. Its connect to 169.254.169.254 hangs for the
-  //        full TCP retransmit window on a non-EC2 host. The SDK proper
-  //        will set per-provider HTTP timeouts (M3 work); for now we just
-  //        leave IMDS off the local smoke test.
-  //      - The cache actor (`credentials_cache.start_default`) is skipped.
-  //        For a one-shot a direct `fetch` is simpler and avoids the
-  //        actor.call timeout that surfaced the IMDS hang previously.
+  // 1. Resolve credentials. We use the full default chain now that IMDS
+  //    has a short timeout (M3.2), but skip the cache actor — a one-shot
+  //    doesn't benefit from caching and `fetch` reports errors cleanly.
   let send = http_send.default_send
-  let provider =
-    credentials.chain([
-      credentials.from_environment(),
-      credentials.from_web_identity(send: send),
-      credentials.from_sso(send: send, profile: profile),
-      credentials.from_profile(name: profile),
-      credentials.from_process(profile: profile),
-      credentials.from_ecs(send: send),
-    ])
+  let provider = credentials.default_chain(send: send, profile: profile)
 
   case credentials.fetch(provider) {
     Error(err) -> {
@@ -85,12 +72,27 @@ pub fn main() {
     }
     Ok(creds) -> {
       io.println("Resolved credentials from: " <> creds.source)
-      do_get_object(creds)
+      // 2. Resolve region — prefers AWS_REGION env var, falls back to
+      //    AWS_DEFAULT_REGION, then ~/.aws/config. The hardcoded `region`
+      //    constant above is the final fallback for this demo.
+      let resolved_region = case aws_region.resolve(profile: profile) {
+        Ok(r) -> {
+          io.println("Resolved region: " <> r)
+          r
+        }
+        Error(_) -> {
+          io.println(
+            "Region resolution failed — falling back to '" <> region <> "'",
+          )
+          region
+        }
+      }
+      do_get_object(creds, resolved_region)
     }
   }
 }
 
-fn do_get_object(creds: credentials.Credentials) -> Nil {
+fn do_get_object(creds: credentials.Credentials, region: String) -> Nil {
   let host = bucket <> ".s3." <> region <> ".amazonaws.com"
   let path = "/" <> object_key
   let encoded_path = sigv4.encode_path(path)
