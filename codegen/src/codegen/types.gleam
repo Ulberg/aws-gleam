@@ -53,11 +53,30 @@ pub type Resolved {
   RList(element: Resolved, xml_entry_name: String, sparse: Bool)
   /// Smithy map of K → V. `sparse` reflects `@sparse` — sparse maps
   /// permit null values and surface as `Dict(K, Option(V))`.
-  RMap(key: Resolved, value: Resolved, sparse: Bool)
+  RMap(
+    key: Resolved,
+    value: Resolved,
+    sparse: Bool,
+    /// `@xmlName` on the map's key member, defaults to `"key"`.
+    /// Used by restXml's body emitter for `<key>K</key>` /
+    /// `<custom>K</custom>` variants.
+    xml_key_name: String,
+    /// `@xmlName` on the map's value member, defaults to `"value"`.
+    xml_value_name: String,
+  )
   /// Reference to a Smithy structure. The full ID lets the emitter look
   /// the members up on demand without inlining (which would loop on
   /// recursive shapes).
-  RStruct(local_name: String, gleam_name: String, full_id: String)
+  RStruct(
+    local_name: String,
+    gleam_name: String,
+    full_id: String,
+    /// `@xmlName` trait on the struct shape itself (not on a member).
+    /// `Some(s)` overrides the default wire wrapper for `@httpPayload`
+    /// struct members — e.g. `<Hello>` instead of `<PayloadWithXml
+    /// Name>`. `None` falls through to `local_name`.
+    xml_name: option.Option(String),
+  )
   /// Reference to a Smithy union, same as RStruct.
   RUnion(local_name: String, gleam_name: String, full_id: String)
   /// Smithy `@timestamp`. Default representation: Int (epoch seconds).
@@ -131,6 +150,12 @@ pub type MemberDef {
     /// auto-generates a UUID v4 and serialises that. Behaves like a
     /// dynamic `@default` whose value is a fresh UUID per request.
     idempotency_token: Bool,
+    /// `@xmlFlattened` — list / map members with this trait skip the
+    /// wrapper element on the wire. Lists become repeated
+    /// `<member_name>value</member_name>` siblings; maps become
+    /// repeated `<member_name><key>K</key><value>V</value></member
+    /// _name>` siblings.
+    xml_flattened: Bool,
   )
 }
 
@@ -339,6 +364,16 @@ fn namespace_suffix(full_id: String) -> String {
   }
 }
 
+/// Read `@xmlName` on a shape's traits. Used by `RStruct` to track
+/// the per-shape override that `@httpPayload`-bound struct members
+/// honour as the wire wrapper element name.
+fn xml_name_of(traits: shape.Traits) -> option.Option(String) {
+  case dict.get(traits, ShapeId("smithy.api#xmlName")) {
+    Ok(option.Some(trait.String(s))) -> option.Some(s)
+    _ -> option.None
+  }
+}
+
 fn pascalize(s: String) -> String {
   case string.to_graphemes(s) {
     [] -> s
@@ -354,11 +389,17 @@ fn pascalize(s: String) -> String {
 /// after `resolve`.
 pub fn apply_rename(r: Resolved, rename: Dict(String, String)) -> Resolved {
   case r {
-    RStruct(full_id: id, local_name: ln, gleam_name: gn) -> {
+    RStruct(full_id: id, local_name: ln, gleam_name: gn, xml_name: xn) -> {
       let new = gleam_name_for(rename, id)
       case new == ln {
         True -> r
-        False -> RStruct(local_name: new, gleam_name: new, full_id: id)
+        False ->
+          RStruct(
+            local_name: new,
+            gleam_name: new,
+            full_id: id,
+            xml_name: xn,
+          )
       }
       |> fn(x) {
         let _ = gn
@@ -378,11 +419,13 @@ pub fn apply_rename(r: Resolved, rename: Dict(String, String)) -> Resolved {
     }
     RList(element: e, xml_entry_name: xen, sparse: sp) ->
       RList(element: apply_rename(e, rename), xml_entry_name: xen, sparse: sp)
-    RMap(key: k, value: v, sparse: sp) ->
+    RMap(key: k, value: v, sparse: sp, xml_key_name: kn, xml_value_name: vn) ->
       RMap(
         key: apply_rename(k, rename),
         value: apply_rename(v, rename),
         sparse: sp,
+        xml_key_name: kn,
+        xml_value_name: vn,
       )
     _ -> r
   }
@@ -471,13 +514,31 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
       let ShapeId(kt) = k.target
       let ShapeId(vt) = v.target
       let sparse = dict.has_key(mt, ShapeId("smithy.api#sparse"))
-      RMap(key: resolve(model, kt), value: resolve(model, vt), sparse: sparse)
+      // `@xmlName` lives on the **map members** (k.traits / v.traits),
+      // not on the map shape itself. Default to Smithy's "key" /
+      // "value" wire labels.
+      let key_name = case dict.get(k.traits, ShapeId("smithy.api#xmlName")) {
+        Ok(option.Some(trait.String(s))) -> s
+        _ -> "key"
+      }
+      let value_name = case dict.get(v.traits, ShapeId("smithy.api#xmlName")) {
+        Ok(option.Some(trait.String(s))) -> s
+        _ -> "value"
+      }
+      RMap(
+        key: resolve(model, kt),
+        value: resolve(model, vt),
+        sparse: sparse,
+        xml_key_name: key_name,
+        xml_value_name: value_name,
+      )
     }
-    shape.Structure(..) ->
+    shape.Structure(traits: t, ..) ->
       RStruct(
         local_name: strip_namespace(target_id),
         gleam_name: strip_namespace(target_id),
         full_id: target_id,
+        xml_name: xml_name_of(t),
       )
     shape.Union(..) ->
       RUnion(
@@ -606,6 +667,8 @@ fn extract_members(
     }
     let idempotency_token =
       dict.has_key(mem.traits, ShapeId("smithy.api#idempotencyToken"))
+    let xml_flattened =
+      dict.has_key(mem.traits, ShapeId("smithy.api#xmlFlattened"))
     MemberDef(
       json_name: wire_name,
       snake_name: stringutils.pascal_to_snake(name),
@@ -617,6 +680,7 @@ fn extract_members(
       timestamp_format: timestamp_format,
       default_json: default_json,
       idempotency_token: idempotency_token,
+      xml_flattened: xml_flattened,
     )
   })
 }
@@ -700,9 +764,9 @@ pub fn gleam_type(r: Resolved) -> String {
     RList(element: e, sparse: True, ..) ->
       "List(option.Option(" <> gleam_type(e) <> "))"
     RList(element: e, sparse: False, ..) -> "List(" <> gleam_type(e) <> ")"
-    RMap(key: _k, value: v, sparse: True) ->
+    RMap(key: _k, value: v, sparse: True, ..) ->
       "dict.Dict(String, option.Option(" <> gleam_type(v) <> "))"
-    RMap(key: _k, value: v, sparse: False) ->
+    RMap(key: _k, value: v, sparse: False, ..) ->
       "dict.Dict(String, " <> gleam_type(v) <> ")"
     RStruct(gleam_name: n, ..) | RUnion(gleam_name: n, ..) -> n
     RTimestamp -> "Int"

@@ -128,3 +128,24 @@ pub fn map_element(
     })
   element(wrapper, inner)
 }
+
+/// `@xmlFlattened` map: each entry becomes a top-level
+/// `<member_name><key>K</key><value>V</value></member_name>` block
+/// — no outer wrapper, no `<entry>` tag. The caller's containing
+/// element provides the sequencing. `value_name` is the key / value
+/// inner-element name (`"key"` / `"value"` by default; `@xmlName`
+/// overrides land in the caller).
+pub fn flat_map(
+  member_name: String,
+  key_name: String,
+  value_name: String,
+  entries: Dict(String, String),
+) -> String {
+  dict.fold(entries, "", fn(acc, k, v) {
+    acc
+    <> element(
+      member_name,
+      element(key_name, escape_text(k)) <> element(value_name, v),
+    )
+  })
+}

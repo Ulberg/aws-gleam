@@ -291,6 +291,7 @@ fn resolve_or_unit(model: Model, id: String) -> Resolved {
         local_name: "Unit",
         gleam_name: "Unit",
         full_id: "smithy.api#Unit",
+        xml_name: option.None,
       )
     _ -> types.resolve(model, id)
   }
@@ -379,7 +380,7 @@ fn emit_named_shapes(
         acc <> emit_enum_def(n, vs) <> emit_enum_codec(n, vs, is_dispatcher)
       RIntEnum(gleam_name: n, variants: vs, ..) ->
         acc <> emit_int_enum_def(n, vs) <> emit_int_enum_codec(n, vs)
-      RStruct(gleam_name: n, full_id: id, local_name: ln) ->
+      RStruct(gleam_name: n, full_id: id, local_name: ln, ..) ->
         case ln == "Unit" {
           True -> acc
           False -> {
@@ -522,7 +523,13 @@ fn emit_operation(
   }
   let in_members = in_info.members
   let body_encoder =
-    emit_body_encoder_xml(snake, in_info.type_name, local, in_info.synthesise)
+    emit_body_encoder_xml(
+      snake,
+      in_info.type_name,
+      local,
+      in_info.synthesise,
+      in_info.xml_name,
+    )
   let build =
     emit_build(in_info.type_name, in_info.synthesise, snake, http, in_members)
   let parse = emit_parse(out_info, snake)
@@ -546,16 +553,18 @@ fn emit_body_encoder_xml(
   input_type: String,
   op_local: String,
   synthesised: Bool,
+  input_xml_name: option.Option(String),
 ) -> String {
   // The Smithy spec wraps the request body in an element named after
   // the **input shape's local name** (e.g. `XmlTimestampsRequest`),
-  // not the operation's local name (`XmlTimestamps`). For synthetic
-  // Unit inputs there's no input shape, so we fall back to the op
-  // name — that case currently has no protocol-test fixtures for
-  // restXml so the choice is observable only in error messages.
-  let root = case synthesised {
-    True -> op_local
-    False -> input_type
+  // not the operation's local name (`XmlTimestamps`). `@xmlName` on
+  // the input shape overrides that — `BodyWithXmlName` becomes
+  // `<Ahoy>`. For synthetic Unit inputs there's no input shape, so
+  // we fall back to the op name.
+  let root = case synthesised, input_xml_name {
+    True, _ -> op_local
+    False, Some(s) -> s
+    False, None -> input_type
   }
   case synthesised {
     True ->
@@ -596,7 +605,16 @@ fn emit_parse_via_decoder(
 }
 
 type IOTypeInfo {
-  IOTypeInfo(type_name: String, members: List(MemberDef), synthesise: Bool)
+  IOTypeInfo(
+    type_name: String,
+    members: List(MemberDef),
+    synthesise: Bool,
+    /// `@xmlName` on the input/output struct shape, propagated from
+    /// `RStruct.xml_name`. `Some(s)` overrides the wire wrapper for
+    /// the body XML (e.g. `<Ahoy>` instead of `<BodyWithXmlNameInput
+    /// Output>`).
+    xml_name: option.Option(String),
+  )
 }
 
 fn resolve_io_type(
@@ -605,16 +623,32 @@ fn resolve_io_type(
   r: Resolved,
 ) -> IOTypeInfo {
   case r {
-    RStruct(local_name: ln, gleam_name: gn, full_id: id) ->
+    RStruct(local_name: ln, gleam_name: gn, full_id: id, xml_name: xn) ->
       case ln {
         "Unit" ->
-          IOTypeInfo(type_name: synth_name, members: [], synthesise: True)
+          IOTypeInfo(
+            type_name: synth_name,
+            members: [],
+            synthesise: True,
+            xml_name: option.None,
+          )
         _ -> {
           let ms = types.resolve_members(model, id)
-          IOTypeInfo(type_name: gn, members: ms, synthesise: False)
+          IOTypeInfo(
+            type_name: gn,
+            members: ms,
+            synthesise: False,
+            xml_name: xn,
+          )
         }
       }
-    _ -> IOTypeInfo(type_name: synth_name, members: [], synthesise: True)
+    _ ->
+      IOTypeInfo(
+        type_name: synth_name,
+        members: [],
+        synthesise: True,
+        xml_name: option.None,
+      )
   }
 }
 
@@ -1086,31 +1120,61 @@ fn xml_value_expr(m: MemberDef) -> String {
       // Unions in XML body need per-variant element emission; not
       // implemented yet — emit an empty element as a placeholder.
       "xml.empty_element(\"" <> member_name <> "\")"
-    RList(element: _e, xml_entry_name: entry, ..) ->
-      // Smithy default list wrapping: `<MemberName><member>...</member>...</MemberName>`.
-      // The list shape's member `@xmlName` overrides the per-entry tag —
-      // S3's Buckets list, for example, uses `<Bucket>` not `<member>`.
-      "xml.list_element(\""
-      <> member_name
-      <> "\", \""
-      <> entry
-      <> "\", list.map(v, fn(item) { let v = item "
-      <> xml_inner_expr_for_list_element(m.target)
-      <> " }))"
-    RMap(value: v, ..) ->
-      // Smithy default XML map shape:
-      //   <wrapper>
-      //     <entry><key>K</key><value>V</value></entry>
-      //     ...
-      //   </wrapper>
-      // `@xmlName` overrides on the key / value members + `@xml
-      // Flattened` are still TODO — covers most of the XmlMaps
-      // family but not the *XmlName / Flattened* variants.
-      "xml.map_element(\""
-      <> member_name
-      <> "\", \"key\", \"value\", dict.map_values(v, fn(_, v) { "
-      <> xml_map_value_expr(v)
-      <> " }))"
+    RList(element: _e, xml_entry_name: entry, ..) -> {
+      // Smithy default list: `<MemberName><member>...</member>...
+      // </MemberName>`. The list shape's member `@xmlName` overrides
+      // the per-entry tag — S3's Buckets list uses `<Bucket>`.
+      // `@xmlFlattened` on the member drops the wrapper: entries
+      // become repeated `<member_name>value</member_name>` siblings.
+      let inner = xml_inner_expr_for_list_element(m.target)
+      case m.xml_flattened {
+        True ->
+          "xml.flat_list(\""
+          <> member_name
+          <> "\", list.map(v, fn(item) { let v = item "
+          <> inner
+          <> " }))"
+        False ->
+          "xml.list_element(\""
+          <> member_name
+          <> "\", \""
+          <> entry
+          <> "\", list.map(v, fn(item) { let v = item "
+          <> inner
+          <> " }))"
+      }
+    }
+    RMap(value: v, xml_key_name: kn, xml_value_name: vn, ..) -> {
+      // Smithy default XML map: `<wrapper><entry><key>K</key>
+      // <value>V</value></entry>...</wrapper>`. `@xmlFlattened` on
+      // the member drops the outer wrapper AND `<entry>`:
+      // `<member_name><key>K</key><value>V</value></member_name>`
+      // siblings. `@xmlName` on the map's key / value members
+      // replaces the default `key` / `value` labels.
+      let val_expr = xml_map_value_expr(v)
+      case m.xml_flattened {
+        True ->
+          "xml.flat_map(\""
+          <> member_name
+          <> "\", \""
+          <> kn
+          <> "\", \""
+          <> vn
+          <> "\", dict.map_values(v, fn(_, v) { "
+          <> val_expr
+          <> " }))"
+        False ->
+          "xml.map_element(\""
+          <> member_name
+          <> "\", \""
+          <> kn
+          <> "\", \""
+          <> vn
+          <> "\", dict.map_values(v, fn(_, v) { "
+          <> val_expr
+          <> " }))"
+      }
+    }
     RDocument -> "xml.element(\"" <> member_name <> "\", \"\")"
     RUnit -> "xml.empty_element(\"" <> member_name <> "\")"
     Unsupported(..) -> "\"\""
@@ -1530,19 +1594,19 @@ fn emit_payload_body(m: MemberDef) -> String {
       <> " {\n    option.Some(v) -> bit_array.from_string(v)\n    option.None -> <<>>\n  }\n  let content_type = \""
       <> string_ct
       <> "\"\n"
-    RStruct(local_name: name, ..) -> {
+    RStruct(local_name: name, xml_name: xn, ..) -> {
       // Smithy `@httpPayload` for a struct member: the wire root
       // element name comes from (in priority order):
       //   1. `@xmlName` on the @httpPayload **member** itself —
       //      detected by `m.json_name != m.member_name`. This is
       //      the `HttpPayloadWithMemberXmlName` case.
-      //   2. `@xmlName` on the target struct **shape** — would
-      //      win when set, but the shape-level lookup isn't
-      //      plumbed through yet; falls through to (3).
+      //   2. `@xmlName` on the target struct **shape** —
+      //      `HttpPayloadWithXmlName` / `BodyWithXmlName`.
       //   3. The target shape's Smithy local name.
-      let wrapper = case m.json_name == m.member_name {
-        True -> name
-        False -> m.json_name
+      let wrapper = case m.json_name == m.member_name, xn {
+        False, _ -> m.json_name
+        True, Some(s) -> s
+        True, None -> name
       }
       "  let body = case input."
       <> m.snake_name

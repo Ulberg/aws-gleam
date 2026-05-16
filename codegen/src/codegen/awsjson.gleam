@@ -258,6 +258,7 @@ fn resolve_or_unit(model: Model, id: String) -> Resolved {
         local_name: "Unit",
         gleam_name: "Unit",
         full_id: "smithy.api#Unit",
+        xml_name: option.None,
       )
     _ -> types.resolve(model, id)
   }
@@ -400,7 +401,7 @@ fn emit_named_shapes(
         acc <> emit_enum_def(n, vs) <> emit_enum_codec(n, vs)
       RIntEnum(gleam_name: n, variants: vs, ..) ->
         acc <> emit_int_enum_def(n, vs) <> emit_int_enum_codec(n, vs)
-      RStruct(gleam_name: n, full_id: id, local_name: ln) ->
+      RStruct(gleam_name: n, full_id: id, local_name: ln, ..) ->
         case ln == "Unit" {
           // The synthetic Unit struct is per-operation, not a top-level
           // named type — skip in the preamble.
@@ -662,7 +663,7 @@ fn resolve_io_type(
   r: Resolved,
 ) -> IOTypeInfo {
   case r {
-    RStruct(local_name: ln, gleam_name: gn, full_id: id) ->
+    RStruct(local_name: ln, gleam_name: gn, full_id: id, ..) ->
       case ln {
         "Unit" ->
           IOTypeInfo(type_name: synth_name, members: [], synthesise: True)
