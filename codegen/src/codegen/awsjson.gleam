@@ -101,7 +101,8 @@ pub fn emit_service(
         })
 
       let named_shapes = collect_named_shapes(model, resolved_ops)
-      let preamble = emit_named_shapes(model, named_shapes)
+      let is_dispatcher = is_dispatcher_target(service_id)
+      let preamble = emit_named_shapes(model, named_shapes, is_dispatcher)
 
       let op_specs =
         list.map(resolved_ops, fn(t) {
@@ -121,7 +122,7 @@ pub fn emit_service(
         })
       let op_blocks =
         list.map(op_specs, fn(spec) {
-          emit_operation_with(spec, service_target, protocol)
+          emit_operation_with(spec, service_target, protocol, is_dispatcher)
         })
       let client_block = emit_client(metadata)
       let invoke_blocks = list.map(op_specs, emit_invoke)
@@ -325,7 +326,11 @@ fn remember(
   }
 }
 
-fn emit_named_shapes(model: Model, shapes: List(Resolved)) -> String {
+fn emit_named_shapes(
+  model: Model,
+  shapes: List(Resolved),
+  is_dispatcher: Bool,
+) -> String {
   list.fold(shapes, "", fn(acc, r) {
     case r {
       REnum(gleam_name: n, variants: vs, ..) ->
@@ -339,12 +344,14 @@ fn emit_named_shapes(model: Model, shapes: List(Resolved)) -> String {
           True -> acc
           False -> {
             let ms = types.resolve_members(model, id)
-            acc <> emit_record_def(n, ms) <> emit_struct_codec(n, ms)
+            acc
+            <> emit_record_def(n, ms)
+            <> emit_struct_codec(n, ms, is_dispatcher)
           }
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
         let ms = types.resolve_members(model, id)
-        acc <> emit_union_def(n, ms) <> emit_union_codec(n, ms)
+        acc <> emit_union_def(n, ms) <> emit_union_codec(n, ms, is_dispatcher)
       }
       _ -> acc
     }
@@ -357,6 +364,7 @@ fn emit_operation_with(
   spec: OpSpec,
   service_target: String,
   protocol: Protocol,
+  is_dispatcher: Bool,
 ) -> String {
   let snake = spec.snake
   let local_name = spec.local
@@ -364,7 +372,7 @@ fn emit_operation_with(
   let ct = content_type(protocol)
   let in_info = spec.in_info
   let out_info = spec.out_info
-  emit_operation_body(snake, target_value, ct, in_info, out_info)
+  emit_operation_body(snake, target_value, ct, in_info, out_info, is_dispatcher)
   <> emit_error_type(spec)
   <> emit_error_translator(spec)
 }
@@ -450,13 +458,23 @@ fn emit_operation_body(
   ct: String,
   in_info: IOTypeInfo,
   out_info: IOTypeInfo,
+  is_dispatcher: Bool,
 ) -> String {
-  // For Unit input/output we synthesise a singleton type + codec at the
-  // op level. For named-struct sides we reuse the preamble's codec.
-  let synth_in = case in_info.synthesise {
+  // For Unit input/output we synthesise a singleton type + codec at
+  // the op level. The synth input encoder is wire-live (called via
+  // `encode_<op>_input` from `build_<op>_request`); the synth input
+  // decoder is dispatcher-only. The synth output decoder is wire-
+  // live (called via `decode_<op>_output` from `parse_<op>_response`);
+  // the matching output encoder is unused — awsJson never serialises
+  // outputs — so it's omitted.
+  let synth_in_record =
+    case in_info.synthesise {
+      True -> emit_record_def(in_info.type_name, [])
+      False -> ""
+    }
+  let synth_in_encoder = case in_info.synthesise {
     True ->
-      emit_record_def(in_info.type_name, [])
-      <> code.render(struct_codec.encoder(
+      code.render(struct_codec.encoder(
         "encode_" <> snake <> "_input_struct",
         in_info.type_name,
         [],
@@ -464,31 +482,33 @@ fn emit_operation_body(
         True,
       ))
       <> "\n"
-      <> code.render(struct_codec.decoder(
+    False -> ""
+  }
+  let synth_in_decoder = case in_info.synthesise, is_dispatcher {
+    True, True ->
+      code.render(struct_codec.decoder(
         "decode_" <> snake <> "_input_struct",
         in_info.type_name,
         [],
         True,
-      ))
-      <> "\n"
-    False -> ""
-  }
-  let synth_out = case out_info.synthesise {
-    True ->
-      emit_record_def(out_info.type_name, [])
-      <> code.render(struct_codec.encoder(
-        "encode_" <> snake <> "_output_struct",
-        out_info.type_name,
-        [],
-        False,
         True,
       ))
       <> "\n"
-      <> code.render(struct_codec.decoder(
+    _, _ -> ""
+  }
+  let synth_out_record =
+    case out_info.synthesise {
+      True -> emit_record_def(out_info.type_name, [])
+      False -> ""
+    }
+  let synth_out_decoder = case out_info.synthesise {
+    True ->
+      code.render(struct_codec.decoder(
         "decode_" <> snake <> "_output_struct",
         out_info.type_name,
         [],
         True,
+        False,
       ))
       <> "\n"
     False -> ""
@@ -518,22 +538,23 @@ fn emit_operation_body(
     <> in_struct_encoder_name
     <> "(input))\n}\n\n"
 
-  // Use the member-keyed parallel decoder for `decode_<op>_input` —
-  // protocol-test dispatchers pass `params` keyed by Smithy member
-  // names. Synth-Unit inputs have no members, so their `_struct`
-  // decoder works identically and gets re-used.
-  let in_decoder =
-    emit_parse_via_decoder(
-      "decode_" <> snake <> "_input",
-      in_info.type_name,
-      case in_info.synthesise {
-        True -> "decode_" <> snake <> "_input_struct"
-        False ->
-          "decode_"
-          <> stringutils.pascal_to_snake(in_info.type_name)
-          <> "_struct_params"
-      },
-    )
+  // Dispatcher-only: parses the test-case `params` blob (keyed by
+  // Smithy member names) into a typed input.
+  let in_decoder = case is_dispatcher {
+    True ->
+      emit_parse_via_decoder(
+        "decode_" <> snake <> "_input",
+        in_info.type_name,
+        case in_info.synthesise {
+          True -> "decode_" <> snake <> "_input_struct"
+          False ->
+            "decode_"
+            <> stringutils.pascal_to_snake(in_info.type_name)
+            <> "_struct_params"
+        },
+      )
+    False -> ""
+  }
 
   let out_decoder =
     emit_parse_via_decoder(
@@ -545,8 +566,11 @@ fn emit_operation_body(
   let build = emit_build(in_info.type_name, snake, target_value, ct)
   let parse = emit_parse(out_info.type_name, snake)
   "\n"
-  <> synth_in
-  <> synth_out
+  <> synth_in_record
+  <> synth_in_encoder
+  <> synth_in_decoder
+  <> synth_out_record
+  <> synth_out_decoder
   <> in_encoder
   <> in_decoder
   <> out_decoder
@@ -699,19 +723,19 @@ fn emit_int_enum_codec(
   enc <> dec
 }
 
-fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
+fn emit_struct_codec(
+  name: String,
+  members: List(MemberDef),
+  is_dispatcher: Bool,
+) -> String {
   let snake = stringutils.pascal_to_snake(name)
-  // Four functions per named struct, all via the AST-backed
-  // `struct_codec` module. awsJson1_x ignores `@jsonName` per the
-  // Smithy protocol spec, so every encoder + decoder keys by the
-  // Smithy member name (`member_keyed: True`):
-  //   * `_struct`        — nested encoder, populates `@default`
-  //   * `_struct_top`    — operation-input encoder, skips defaults
-  //                         (Smithy AWS-protocol rule)
-  //   * `_struct`        — response decoder
-  //   * `_struct_params` — same shape; preserved for cross-protocol
-  //                         dispatcher parity
-  [
+  // awsJson1_x ignores `@jsonName` per the Smithy protocol spec, so
+  // every codec keys by the Smithy member name. Wire-live:
+  //   * `_struct`     — nested encoder + response decoder, populates
+  //                       `@default`
+  //   * `_struct_top` — operation-input encoder; skips defaults
+  // Dispatcher-only (member-keyed parallel decoder): `_struct_params`.
+  let always = [
     struct_codec.encoder(
       "encode_" <> snake <> "_struct",
       name,
@@ -726,19 +750,36 @@ fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
       True,
       True,
     ),
-    struct_codec.decoder("decode_" <> snake <> "_struct", name, members, True),
     struct_codec.decoder(
-      "decode_" <> snake <> "_struct_params",
+      "decode_" <> snake <> "_struct",
       name,
       members,
       True,
+      False,
     ),
   ]
+  let conditional = case is_dispatcher {
+    True -> [
+      struct_codec.decoder(
+        "decode_" <> snake <> "_struct_params",
+        name,
+        members,
+        True,
+        True,
+      ),
+    ]
+    False -> []
+  }
+  list.append(always, conditional)
   |> list.map(code.render)
   |> list.fold("", fn(acc, s) { acc <> s <> "\n" })
 }
 
-fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
+fn emit_union_codec(
+  name: String,
+  members: List(MemberDef),
+  is_dispatcher: Bool,
+) -> String {
   let snake = stringutils.pascal_to_snake(name)
   let enc =
     "pub fn encode_"
@@ -758,7 +799,14 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       <> "(x))])\n"
     })
     <> "  }\n}\n\n"
-  // Decoder: try each tagged-object branch in sequence.
+  // Wrap union decoder bodies in `decode.recursive` so self-
+  // referential unions (e.g. Smithy's `XmlUnionShape` with a
+  // `unionValue: XmlUnionShape` member) don't eagerly construct
+  // their `decode.one_of` branches and infinite-loop.
+  let lazy_wrap = case members {
+    [] -> ""
+    _ -> "  use <- decode.recursive\n"
+  }
   let dec_body = case members {
     [] -> "  decode.failure(" <> name <> "Empty, \"empty union\")\n"
     [first, ..rest] ->
@@ -770,14 +818,6 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       })
       <> "\n    ],\n  )\n"
   }
-  // Wrap union decoder bodies in `decode.recursive` so self-referential
-  // unions (e.g. Smithy's `XmlUnionShape` with a `unionValue: XmlUnionShape`
-  // member) don't construct their `decode.one_of` branches eagerly and
-  // infinite-loop.
-  let lazy_wrap = case members {
-    [] -> ""
-    _ -> "  use <- decode.recursive\n"
-  }
   let dec =
     "pub fn decode_"
     <> snake
@@ -787,26 +827,30 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
     <> lazy_wrap
     <> dec_body
     <> "}\n\n"
-  let dec_params_body = case members {
-    [] -> "  decode.failure(" <> name <> "Empty, \"empty union\")\n"
-    [first, ..rest] ->
-      "  decode.one_of(\n    "
-      <> emit_union_branch_params(name, first)
-      <> ",\n    ["
-      <> list.fold(rest, "", fn(acc, m) {
-        acc <> "\n      " <> emit_union_branch_params(name, m) <> ","
-      })
-      <> "\n    ],\n  )\n"
+  let dec_params = case is_dispatcher {
+    True -> {
+      let dec_params_body = case members {
+        [] -> "  decode.failure(" <> name <> "Empty, \"empty union\")\n"
+        [first, ..rest] ->
+          "  decode.one_of(\n    "
+          <> emit_union_branch_params(name, first)
+          <> ",\n    ["
+          <> list.fold(rest, "", fn(acc, m) {
+            acc <> "\n      " <> emit_union_branch_params(name, m) <> ","
+          })
+          <> "\n    ],\n  )\n"
+      }
+      "pub fn decode_"
+      <> snake
+      <> "_union_params() -> decode.Decoder("
+      <> name
+      <> ") {\n"
+      <> lazy_wrap
+      <> dec_params_body
+      <> "}\n\n"
+    }
+    False -> ""
   }
-  let dec_params =
-    "pub fn decode_"
-    <> snake
-    <> "_union_params() -> decode.Decoder("
-    <> name
-    <> ") {\n"
-    <> lazy_wrap
-    <> dec_params_body
-    <> "}\n\n"
   enc <> dec <> dec_params
 }
 
@@ -895,6 +939,15 @@ import gleam/option
 }
 
 // ---------- helpers ----------
+
+/// Smithy protocol-test models live under `aws.protocoltests.*` —
+/// the runner round-trips dispatcher params blobs through the
+/// SDK's JSON `_struct_params` / `_union_params` / `_input`
+/// decoders, so these have to be emitted. Real services are wire-
+/// only and don't reach those codecs.
+fn is_dispatcher_target(service_id: String) -> Bool {
+  string.starts_with(service_id, "aws.protocoltests.")
+}
 
 fn strip_namespace(id: String) -> String {
   case string.split_once(id, "#") {

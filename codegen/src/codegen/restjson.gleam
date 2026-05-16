@@ -463,6 +463,7 @@ fn emit_operation(
         in_info.type_name,
         [],
         False,
+        False,
       ))
       <> "\n"
     False -> ""
@@ -482,6 +483,7 @@ fn emit_operation(
         "decode_" <> snake <> "_output_struct",
         out_info.type_name,
         [],
+        False,
         False,
       ))
       <> "\n"
@@ -729,11 +731,18 @@ fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
       False,
       False,
     ),
-    struct_codec.decoder("decode_" <> snake <> "_struct", name, members, False),
+    struct_codec.decoder(
+      "decode_" <> snake <> "_struct",
+      name,
+      members,
+      False,
+      False,
+    ),
     struct_codec.decoder(
       "decode_" <> snake <> "_struct_params",
       name,
       members,
+      True,
       True,
     ),
   ]

@@ -100,7 +100,11 @@ pub fn emit_service(
         })
 
       let named_shapes = collect_named_shapes(model, resolved_ops)
-      let preamble = emit_named_shapes(model, named_shapes)
+      let is_dispatcher = is_dispatcher_target(service_id)
+      let union_reachable =
+        compute_union_reachable_structs(model, named_shapes)
+      let preamble =
+        emit_named_shapes(model, named_shapes, is_dispatcher, union_reachable)
 
       let op_specs =
         list.map(resolved_ops, fn(t) {
@@ -122,7 +126,7 @@ pub fn emit_service(
       let op_blocks =
         list.map(resolved_ops, fn(t) {
           let #(op_id, http, in_r, out_r, _) = t
-          emit_operation(model, op_id, http, in_r, out_r)
+          emit_operation(model, op_id, http, in_r, out_r, is_dispatcher)
         })
       let client_block = emit_client(metadata)
       let invoke_blocks = list.map(op_specs, emit_invoke)
@@ -380,11 +384,16 @@ fn remember(
   }
 }
 
-fn emit_named_shapes(model: Model, shapes: List(Resolved)) -> String {
+fn emit_named_shapes(
+  model: Model,
+  shapes: List(Resolved),
+  is_dispatcher: Bool,
+  union_reachable: Set(String),
+) -> String {
   list.fold(shapes, "", fn(acc, r) {
     case r {
       REnum(gleam_name: n, variants: vs, ..) ->
-        acc <> emit_enum_def(n, vs) <> emit_enum_codec(n, vs)
+        acc <> emit_enum_def(n, vs) <> emit_enum_codec(n, vs, is_dispatcher)
       RIntEnum(gleam_name: n, variants: vs, ..) ->
         acc <> emit_int_enum_def(n, vs) <> emit_int_enum_codec(n, vs)
       RStruct(gleam_name: n, full_id: id, local_name: ln) ->
@@ -392,16 +401,84 @@ fn emit_named_shapes(model: Model, shapes: List(Resolved)) -> String {
           True -> acc
           False -> {
             let ms = types.resolve_members(model, id)
-            acc <> emit_record_def(n, ms) <> emit_struct_codec(n, ms)
+            let emit_json_encoder = set.contains(union_reachable, ln)
+            acc
+            <> emit_record_def(n, ms)
+            <> emit_struct_codec(n, ms, is_dispatcher, emit_json_encoder)
           }
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
         let ms = types.resolve_members(model, id)
-        acc <> emit_union_def(n, ms) <> emit_union_codec(n, ms)
+        acc <> emit_union_def(n, ms) <> emit_union_codec(n, ms, is_dispatcher)
       }
       _ -> acc
     }
   })
+}
+
+/// Walk every union shape and collect the set of struct local names
+/// reachable from any union variant's `target`. The JSON `encode_<X>_
+/// struct` function is only ever called from these unions (the wire
+/// path for restXml is XML), so structs outside this set never need
+/// their JSON encoder emitted. Reachability is transitive: if struct
+/// `A` is referenced by a union and `A` has a field of type `B`,
+/// then `B`'s encoder is also reachable.
+fn compute_union_reachable_structs(
+  model: Model,
+  shapes: List(Resolved),
+) -> Set(String) {
+  let struct_index =
+    list.fold(shapes, dict.new(), fn(acc, r) {
+      case r {
+        RStruct(local_name: n, full_id: id, ..) -> dict.insert(acc, n, id)
+        _ -> acc
+      }
+    })
+  let seeds =
+    list.fold(shapes, set.new(), fn(acc, r) {
+      case r {
+        RUnion(full_id: id, ..) -> {
+          let ms = types.resolve_members(model, id)
+          list.fold(ms, acc, fn(inner, m) {
+            collect_struct_refs(m.target, inner)
+          })
+        }
+        _ -> acc
+      }
+    })
+  fixpoint_struct_refs(model, struct_index, seeds)
+}
+
+fn collect_struct_refs(r: Resolved, acc: Set(String)) -> Set(String) {
+  case r {
+    RStruct(local_name: n, ..) -> set.insert(acc, n)
+    RList(element: e, ..) -> collect_struct_refs(e, acc)
+    RMap(value: v, ..) -> collect_struct_refs(v, acc)
+    _ -> acc
+  }
+}
+
+fn fixpoint_struct_refs(
+  model: Model,
+  struct_index: Dict(String, String),
+  seeds: Set(String),
+) -> Set(String) {
+  let next =
+    set.fold(seeds, seeds, fn(acc, struct_name) {
+      case dict.get(struct_index, struct_name) {
+        Ok(id) -> {
+          let ms = types.resolve_members(model, id)
+          list.fold(ms, acc, fn(inner, m) {
+            collect_struct_refs(m.target, inner)
+          })
+        }
+        Error(_) -> acc
+      }
+    })
+  case set.size(next) == set.size(seeds) {
+    True -> seeds
+    False -> fixpoint_struct_refs(model, struct_index, next)
+  }
 }
 
 // ---------- per-operation emission ----------
@@ -412,6 +489,7 @@ fn emit_operation(
   http: HttpTrait,
   in_r: Resolved,
   out_r: Resolved,
+  is_dispatcher: Bool,
 ) -> String {
   let local = strip_namespace(op_id)
   let pascal = local
@@ -419,42 +497,47 @@ fn emit_operation(
   let in_info = resolve_io_type(model, pascal <> "Input", in_r)
   let out_info = resolve_io_type(model, pascal <> "Output", out_r)
 
-  // For Unit inputs we synthesise a singleton record + member-keyed
-  // params decoder. `_input_struct` is the params decoder reached
-  // by `decode_<op>_input` (the dispatcher's params-blob entry
-  // point). The corresponding JSON encoder is omitted: restXml wire
-  // is XML, so no caller ever serialises Unit input as JSON.
-  let synth_in = case in_info.synthesise {
-    True ->
-      emit_record_def(in_info.type_name, [])
-      <> code.render(struct_codec.decoder(
+  // `synth_in` and `in_decoder` together form the dispatcher's
+  // params-blob entry point — `decode_<op>_input(raw)` parses the
+  // test-case params into a typed input via the member-keyed
+  // `_struct_params` decoder. Real services bypass this entirely,
+  // so both are gated on `is_dispatcher`.
+  let synth_in_record =
+    case in_info.synthesise {
+      True -> emit_record_def(in_info.type_name, [])
+      False -> ""
+    }
+  let synth_in_decoder = case in_info.synthesise, is_dispatcher {
+    True, True ->
+      code.render(struct_codec.decoder(
         "decode_" <> snake <> "_input_struct",
         in_info.type_name,
         [],
         True,
+        True,
       ))
       <> "\n"
-    False -> ""
+    _, _ -> ""
   }
-  // Unit outputs: the XML response decoder builds the Unit value
-  // directly, so no JSON output codec is needed. The synthesised
-  // record def is still useful for the public typed surface.
   let synth_out = case out_info.synthesise {
     True -> emit_record_def(out_info.type_name, [])
     False -> ""
   }
-  let in_decoder =
-    emit_parse_via_decoder(
-      "decode_" <> snake <> "_input",
-      in_info.type_name,
-      case in_info.synthesise {
-        True -> "decode_" <> snake <> "_input_struct"
-        False ->
-          "decode_"
-          <> stringutils.pascal_to_snake(in_info.type_name)
-          <> "_struct_params"
-      },
-    )
+  let in_decoder = case is_dispatcher {
+    True ->
+      emit_parse_via_decoder(
+        "decode_" <> snake <> "_input",
+        in_info.type_name,
+        case in_info.synthesise {
+          True -> "decode_" <> snake <> "_input_struct"
+          False ->
+            "decode_"
+            <> stringutils.pascal_to_snake(in_info.type_name)
+            <> "_struct_params"
+        },
+      )
+    False -> ""
+  }
   let in_members = in_info.members
   let body_encoder =
     emit_body_encoder_xml(snake, in_info.type_name, local, in_info.synthesise)
@@ -462,7 +545,8 @@ fn emit_operation(
     emit_build(in_info.type_name, in_info.synthesise, snake, http, in_members)
   let parse = emit_parse(out_info, snake)
   "\n"
-  <> synth_in
+  <> synth_in_record
+  <> synth_in_decoder
   <> synth_out
   <> in_decoder
   <> body_encoder
@@ -569,8 +653,16 @@ fn emit_union_def(name: String, members: List(MemberDef)) -> String {
 
 // ---------- codec helpers ----------
 
-fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
+fn emit_enum_codec(
+  name: String,
+  variants: List(types.EnumVariant),
+  is_dispatcher: Bool,
+) -> String {
   let snake = stringutils.pascal_to_snake(name)
+  // JSON enum encoder stays — it's reached from `encode_<X>_xml*`
+  // (wire path) for enum-typed members. The JSON decoder is only
+  // ever called from `decode_<X>_struct_params`, which is itself
+  // dispatcher-only, so its emission is gated on the same flag.
   let enc =
     "pub fn encode_"
     <> snake
@@ -586,27 +678,31 @@ fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
       <> "\")\n"
     })
     <> "  }\n}\n\n"
-  let first_ctor = case variants {
-    [v, ..] -> v.gleam_ctor
-    [] -> name <> "Unknown"
+  let dec = case is_dispatcher {
+    True -> {
+      let first_ctor = case variants {
+        [v, ..] -> v.gleam_ctor
+        [] -> name <> "Unknown"
+      }
+      "pub fn decode_"
+      <> snake
+      <> "_enum() -> decode.Decoder("
+      <> name
+      <> ") {\n  decode.then(decode.string, fn(s) {\n    case s {\n"
+      <> list.fold(variants, "", fn(acc, v) {
+        acc
+        <> "      \""
+        <> v.wire_value
+        <> "\" -> decode.success("
+        <> v.gleam_ctor
+        <> ")\n"
+      })
+      <> "      _ -> decode.failure("
+      <> first_ctor
+      <> ", \"unknown enum value\")\n    }\n  })\n}\n\n"
+    }
+    False -> ""
   }
-  let dec =
-    "pub fn decode_"
-    <> snake
-    <> "_enum() -> decode.Decoder("
-    <> name
-    <> ") {\n  decode.then(decode.string, fn(s) {\n    case s {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "      \""
-      <> v.wire_value
-      <> "\" -> decode.success("
-      <> v.gleam_ctor
-      <> ")\n"
-    })
-    <> "      _ -> decode.failure("
-    <> first_ctor
-    <> ", \"unknown enum value\")\n    }\n  })\n}\n\n"
   enc <> dec
 }
 
@@ -669,32 +765,45 @@ fn emit_int_enum_codec(
   int_value <> enc <> dec
 }
 
-fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
+fn emit_struct_codec(
+  name: String,
+  members: List(MemberDef),
+  is_dispatcher: Bool,
+  emit_json_encoder: Bool,
+) -> String {
   let snake = stringutils.pascal_to_snake(name)
-  // restXml wire is XML, so the wire-keyed JSON decoder
-  // (`decode_<X>_struct`) is unreachable from build/parse and is
-  // dropped — that's where the bulk of the previous LOC bloat lived
-  // (`optional_field` plumbing per member). The JSON encoder
-  // survives because union encoders (`@httpPayload` fallback) refer
-  // to it; the params decoder survives because the dispatcher's
-  // `decode_<op>_input` chain reaches it.
-  [
-    struct_codec.encoder(
-      "encode_" <> snake <> "_struct",
-      name,
-      members,
-      False,
-      False,
-    ),
-    struct_codec.decoder(
-      "decode_" <> snake <> "_struct_params",
-      name,
-      members,
-      True,
-    ),
-  ]
-  |> list.map(code.render)
-  |> list.fold("", fn(acc, s) { acc <> s <> "\n" })
+  // restXml wire is XML — the JSON encoder is only emitted when
+  // this struct is transitively reachable from a union encoder
+  // (`@httpPayload` Union fallback emits JSON). Other structs
+  // never need a JSON encoder. The member-keyed `_struct_params`
+  // decoder supports the protocol-test dispatcher's params blob;
+  // real services never reach it.
+  let encoder = case emit_json_encoder {
+    True ->
+      code.render(struct_codec.encoder(
+        "encode_" <> snake <> "_struct",
+        name,
+        members,
+        False,
+        False,
+      ))
+      <> "\n"
+    False -> ""
+  }
+  let params_decoder = case is_dispatcher {
+    True ->
+      code.render(struct_codec.decoder(
+        "decode_" <> snake <> "_struct_params",
+        name,
+        members,
+        True,
+        True,
+      ))
+      <> "\n"
+    False -> ""
+  }
+  encoder
+  <> params_decoder
   <> emit_struct_xml_inner_encoder(
     name,
     "encode_" <> snake <> "_xml_inner",
@@ -973,13 +1082,16 @@ fn xml_inner_expr_for_list_element(target: Resolved) -> String {
   }
 }
 
-/// restXml union codec: the wire-keyed decoder is unreachable
-/// (build/parse use XML), so it is dropped. The encoder survives
-/// because `@httpPayload` Union members fall back to a JSON body —
-/// proper XML union emission is not yet implemented (see the file
-/// header). The `_union_params` decoder is reached by the
-/// dispatcher's params-blob decode chain.
-fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
+/// restXml union codec. The wire-keyed JSON decoder is dropped
+/// (build/parse use XML). The JSON encoder survives because
+/// `@httpPayload` Union members fall back to a JSON body — proper
+/// XML union emission is not yet implemented (see the file header).
+/// The `_union_params` decoder is dispatcher-only.
+fn emit_union_codec(
+  name: String,
+  members: List(MemberDef),
+  is_dispatcher: Bool,
+) -> String {
   let snake = stringutils.pascal_to_snake(name)
   let enc =
     "pub fn encode_"
@@ -999,30 +1111,34 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       <> "(x))])\n"
     })
     <> "  }\n}\n\n"
-  let lazy_wrap = case members {
-    [] -> ""
-    _ -> "  use <- decode.recursive\n"
+  let dec_params = case is_dispatcher {
+    True -> {
+      let lazy_wrap = case members {
+        [] -> ""
+        _ -> "  use <- decode.recursive\n"
+      }
+      let dec_params_body = case members {
+        [] -> "  decode.failure(" <> name <> "Empty, \"empty union\")\n"
+        [first, ..rest] ->
+          "  decode.one_of(\n    "
+          <> emit_union_branch_params(name, first)
+          <> ",\n    ["
+          <> list.fold(rest, "", fn(acc, m) {
+            acc <> "\n      " <> emit_union_branch_params(name, m) <> ","
+          })
+          <> "\n    ],\n  )\n"
+      }
+      "pub fn decode_"
+      <> snake
+      <> "_union_params() -> decode.Decoder("
+      <> name
+      <> ") {\n"
+      <> lazy_wrap
+      <> dec_params_body
+      <> "}\n\n"
+    }
+    False -> ""
   }
-  let dec_params_body = case members {
-    [] -> "  decode.failure(" <> name <> "Empty, \"empty union\")\n"
-    [first, ..rest] ->
-      "  decode.one_of(\n    "
-      <> emit_union_branch_params(name, first)
-      <> ",\n    ["
-      <> list.fold(rest, "", fn(acc, m) {
-        acc <> "\n      " <> emit_union_branch_params(name, m) <> ","
-      })
-      <> "\n    ],\n  )\n"
-  }
-  let dec_params =
-    "pub fn decode_"
-    <> snake
-    <> "_union_params() -> decode.Decoder("
-    <> name
-    <> ") {\n"
-    <> lazy_wrap
-    <> dec_params_body
-    <> "}\n\n"
   enc <> dec_params
 }
 
@@ -1468,6 +1584,17 @@ fn strip_namespace(id: String) -> String {
     Ok(#(_, local)) -> local
     Error(_) -> id
   }
+}
+
+/// Smithy protocol-test models live under `aws.protocoltests.*` —
+/// the runner round-trips dispatcher params blobs through the
+/// SDK's JSON `_struct_params` / `_union_params` / `_input`
+/// decoders, so these have to be emitted. Real services
+/// (`com.amazonaws.*`, etc.) only ever exercise the XML wire path,
+/// so the JSON-side dispatcher codecs are dead weight there and
+/// account for >30% of the prior LOC.
+fn is_dispatcher_target(service_id: String) -> Bool {
+  string.starts_with(service_id, "aws.protocoltests.")
 }
 
 fn derive_module_name(service_id: String) -> String {

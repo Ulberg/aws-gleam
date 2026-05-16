@@ -107,15 +107,22 @@ fn encoder_body(
 /// `pub fn <fn_name>() -> decode.Decoder(<type_name>) { ... }`. Wraps
 /// in `decode.recursive` so self-referential Smithy shapes don't
 /// infinite-loop at decoder construction (eager `decode.one_of`
-/// evaluation).
+/// evaluation). The two orthogonal flags are necessary because the
+/// awsJson wire decoder is *member-keyed* (awsJson ignores
+/// `@jsonName`) yet still refers to nested **wire** decoders, not
+/// the dispatcher's `_struct_params` parallel set.
 pub fn decoder(
   fn_name: String,
   type_name: String,
   members: List(MemberDef),
-  /// `True` ⇒ keys come from Smithy member names (used by the
-  /// protocol-test dispatchers' `params` blob); `False` ⇒ keys come
-  /// from `@jsonName` wire names (response parsing).
+  /// `True` ⇒ keys come from Smithy member names (`m.member_name`).
+  /// `False` ⇒ keys come from `m.json_name` (`@jsonName` override
+  /// or member name when absent).
   member_keyed: Bool,
+  /// `True` ⇒ nested struct/union refs call the dispatcher's
+  /// `_struct_params` / `_union_params` decoders. `False` ⇒ nested
+  /// refs call the wire decoders `_struct` / `_union`.
+  params_nested: Bool,
 ) -> Code {
   case members {
     [] ->
@@ -132,7 +139,12 @@ pub fn decoder(
         name: fn_name,
         params: [],
         return: CodeSome("decode.Decoder(" <> type_name <> ")"),
-        body: Block(items: decoder_body(type_name, members, member_keyed)),
+        body: Block(items: decoder_body(
+          type_name,
+          members,
+          member_keyed,
+          params_nested,
+        )),
       )
   }
 }
@@ -141,6 +153,7 @@ fn decoder_body(
   type_name: String,
   members: List(MemberDef),
   member_keyed: Bool,
+  params_nested: Bool,
 ) -> List(Code) {
   let recursive_guard = Use(name: "", callee: Ident("decode.recursive"))
   let field_lets =
@@ -149,7 +162,7 @@ fn decoder_body(
         True -> m.member_name
         False -> m.json_name
       }
-      let inner = case member_keyed {
+      let inner = case params_nested {
         True -> member_decoder_params_expr(m)
         False -> member_decoder_expr(m)
       }
