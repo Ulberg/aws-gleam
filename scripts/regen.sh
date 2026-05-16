@@ -21,6 +21,12 @@ REPO=$(pwd)
 
 CODEGEN="gleam run -m aws_codegen --"
 
+echo "→ building protocol-test JSON ASTs"
+"$REPO/scripts/build-protocol-test-asts.sh"
+
+echo "→ extracting endpoint fixtures from vendor models"
+"$REPO/scripts/extract-endpoints.sh"
+
 cd "$REPO/codegen"
 
 mkdir -p ../src/aws/services/protocoltests

@@ -48,13 +48,35 @@ jobs:
           restore-keys: |
             gleam-${{ matrix.otp }}-${{ matrix.gleam }}-
 
+      # ./scripts/build-protocol-test-asts.sh shells out to the Smithy
+      # CLI under .tools/. Cache the unpacked CLI by version so we
+      # don't re-fetch ~50 MB every CI run.
+      - name: Cache Smithy CLI
+        id: cache-smithy
+        uses: actions/cache@v4
+        with:
+          path: .tools/smithy-cli-linux-x86_64
+          key: smithy-cli-linux-x86_64-1.61.0
+
+      - name: Download Smithy CLI
+        if: steps.cache-smithy.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p .tools
+          curl -sSL -o .tools/smithy.zip \
+            https://github.com/smithy-lang/smithy/releases/download/1.61.0/smithy-cli-linux-x86_64.zip
+          unzip -q .tools/smithy.zip -d .tools/
+          rm .tools/smithy.zip
+          test -x .tools/smithy-cli-linux-x86_64/bin/smithy
+
       - name: Download dependencies
         run: gleam deps download
 
       - name: Regenerate codegen artefacts
-        # `src/aws/services/*` and `test/protocol_tests/*_dispatchers.gleam`
-        # aren't checked in; the codegen produces them deterministically
-        # from the vendored Smithy models + protocol-test fixtures.
+        # None of `src/aws/services/*`, `test/fixtures/endpoints/*`,
+        # `test/fixtures/protocol-tests/*`, or the dispatcher modules
+        # are tracked. The codegen + the two extract scripts produce
+        # them deterministically from `vendor/aws-sdk-rust/aws-models`
+        # and `vendor/smithy`.
         run: ./scripts/regen.sh
 
       - name: Check formatting
