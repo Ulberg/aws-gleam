@@ -330,7 +330,7 @@ fn walk(
         }
       }
     RList(element: e, ..) -> walk(model, acc, e)
-    RMap(key: k, value: v) -> {
+    RMap(key: k, value: v, ..) -> {
       let acc = walk(model, acc, k)
       walk(model, acc, v)
     }
@@ -810,7 +810,7 @@ fn emit_struct_decoder_params(
         <> " <- decode.optional_field(\""
         <> m.member_name
         <> "\", option.None, decode.optional("
-        <> types.json_decoder_params(m.target)
+        <> types.json_decoder_member_params(m.target, m.timestamp_format)
         <> "))\n"
       })
       <> "  decode.success("
@@ -850,7 +850,7 @@ fn emit_struct_encoder(
         <> " {\n    option.Some(v) -> [#(\""
         <> m.json_name
         <> "\", "
-        <> types.json_encoder(m.target)
+        <> types.json_encoder_member(m.target, m.timestamp_format)
         <> "(v)), ..pairs]\n    option.None -> pairs\n  }\n"
       })
       <> "  json.object(pairs)\n}\n\n"
@@ -886,7 +886,7 @@ fn emit_struct_decoder(
         <> " <- decode.optional_field(\""
         <> m.json_name
         <> "\", option.None, decode.optional("
-        <> types.json_decoder(m.target)
+        <> types.json_decoder_member(m.target, m.timestamp_format)
         <> "))\n"
       })
       <> "  decode.success("

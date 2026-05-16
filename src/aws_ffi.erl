@@ -5,7 +5,8 @@
          aws_timestamp/0, random_float/0, encode_dynamic_to_json/1,
          float_nan/0, float_infinity/0, float_neg_infinity/0,
          float_is_nan/1, float_is_infinite/1, json_canonicalize/1,
-         xml_parse/1, float_short/1, format_iso8601/1, parse_http_date/1]).
+         xml_parse/1, float_short/1, format_iso8601/1, parse_http_date/1,
+         format_http_date/1]).
 
 %% Shortest round-tripping float string, e.g. `1.1` not `1.10000000…e+00`.
 %% Used by query / header / URI-label / XML formatters; matches AWS's
@@ -48,6 +49,25 @@ format_iso8601(Seconds) when is_integer(Seconds) ->
     iolist_to_binary(io_lib:format(
         "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0wZ",
         [Y, Mo, D, H, Mi, S]
+    )).
+
+%% RFC 7231 / IMF-fixdate, e.g. `Tue, 29 Apr 2014 18:30:38 GMT`. Used
+%% by `@timestampFormat("http-date")` body fields and the
+%% `If-Modified-Since`-style header members.
+format_http_date(Seconds) when is_integer(Seconds) ->
+    Epoch = 62167219200,
+    {{Y, Mo, D}, {H, Mi, S}} =
+        calendar:gregorian_seconds_to_datetime(Seconds + Epoch),
+    DayOfWeek = calendar:day_of_the_week({Y, Mo, D}),
+    DayName = element(DayOfWeek,
+        {<<"Mon">>, <<"Tue">>, <<"Wed">>, <<"Thu">>,
+         <<"Fri">>, <<"Sat">>, <<"Sun">>}),
+    MonthName = element(Mo,
+        {<<"Jan">>, <<"Feb">>, <<"Mar">>, <<"Apr">>, <<"May">>, <<"Jun">>,
+         <<"Jul">>, <<"Aug">>, <<"Sep">>, <<"Oct">>, <<"Nov">>, <<"Dec">>}),
+    iolist_to_binary(io_lib:format(
+        "~s, ~2..0w ~s ~4..0w ~2..0w:~2..0w:~2..0w GMT",
+        [DayName, D, MonthName, Y, H, Mi, S]
     )).
 
 sha256(Data) ->

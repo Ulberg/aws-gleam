@@ -20,6 +20,15 @@ fn parse_iso8601_ffi(t: String) -> Result(Int, Nil)
 @external(erlang, "aws_ffi", "parse_http_date")
 fn parse_http_date_ffi(t: String) -> Result(Int, Nil)
 
+/// `2024-01-02T03:04:05Z`. Inverse of `parse_iso8601_ffi`.
+@external(erlang, "aws_ffi", "format_iso8601")
+pub fn format_iso8601(seconds: Int) -> String
+
+/// `Tue, 29 Apr 2014 18:30:38 GMT`. Used by
+/// `@timestampFormat("http-date")` body fields and headers.
+@external(erlang, "aws_ffi", "format_http_date")
+pub fn format_http_date(seconds: Int) -> String
+
 @external(erlang, "erlang", "trunc")
 fn float_to_int(f: Float) -> Int
 

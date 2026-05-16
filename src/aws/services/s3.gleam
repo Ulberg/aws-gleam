@@ -66,7 +66,7 @@ pub fn encode_abort_multipart_upload_request_struct(input: AbortMultipartUploadR
     option.None -> pairs
   }
   let pairs = case input.if_match_initiated_time {
-    option.Some(v) -> [#("IfMatchInitiatedTime", json.int(v)), ..pairs]
+    option.Some(v) -> [#("IfMatchInitiatedTime", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.key {
@@ -1356,7 +1356,7 @@ pub fn encode_copy_object_request_struct(input: CopyObjectRequest) -> json.Json 
     option.None -> pairs
   }
   let pairs = case input.object_lock_retain_until_date {
-    option.Some(v) -> [#("ObjectLockRetainUntilDate", json.int(v)), ..pairs]
+    option.Some(v) -> [#("ObjectLockRetainUntilDate", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.request_payer {
@@ -3271,7 +3271,7 @@ pub fn encode_create_multipart_upload_request_struct(input: CreateMultipartUploa
     option.None -> pairs
   }
   let pairs = case input.object_lock_retain_until_date {
-    option.Some(v) -> [#("ObjectLockRetainUntilDate", json.int(v)), ..pairs]
+    option.Some(v) -> [#("ObjectLockRetainUntilDate", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.request_payer {
@@ -4982,7 +4982,7 @@ pub fn encode_delete_object_request_struct(input: DeleteObjectRequest) -> json.J
     option.None -> pairs
   }
   let pairs = case input.if_match_last_modified_time {
-    option.Some(v) -> [#("IfMatchLastModifiedTime", json.int(v)), ..pairs]
+    option.Some(v) -> [#("IfMatchLastModifiedTime", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.if_match_size {
@@ -8845,7 +8845,7 @@ pub type LifecycleExpiration {
 pub fn encode_lifecycle_expiration_struct(input: LifecycleExpiration) -> json.Json {
   let pairs = []
   let pairs = case input.date {
-    option.Some(v) -> [#("Date", json.int(v)), ..pairs]
+    option.Some(v) -> [#("Date", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.days {
@@ -9327,7 +9327,7 @@ pub type Transition {
 pub fn encode_transition_struct(input: Transition) -> json.Json {
   let pairs = []
   let pairs = case input.date {
-    option.Some(v) -> [#("Date", json.int(v)), ..pairs]
+    option.Some(v) -> [#("Date", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.days {
@@ -16553,7 +16553,7 @@ pub fn encode_object_lock_retention_struct(input: ObjectLockRetention) -> json.J
     option.None -> pairs
   }
   let pairs = case input.retain_until_date {
-    option.Some(v) -> [#("RetainUntilDate", json.int(v)), ..pairs]
+    option.Some(v) -> [#("RetainUntilDate", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -17348,7 +17348,7 @@ pub fn encode_head_object_request_struct(input: HeadObjectRequest) -> json.Json 
     option.None -> pairs
   }
   let pairs = case input.response_expires {
-    option.Some(v) -> [#("ResponseExpires", json.int(v)), ..pairs]
+    option.Some(v) -> [#("ResponseExpires", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sse_customer_algorithm {
@@ -17710,7 +17710,7 @@ pub fn encode_head_object_output_struct(input: HeadObjectOutput) -> json.Json {
     option.None -> pairs
   }
   let pairs = case input.object_lock_retain_until_date {
-    option.Some(v) -> [#("ObjectLockRetainUntilDate", json.int(v)), ..pairs]
+    option.Some(v) -> [#("ObjectLockRetainUntilDate", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.parts_count {
@@ -22609,7 +22609,7 @@ pub fn encode_rename_object_request_struct(input: RenameObjectRequest) -> json.J
     option.None -> pairs
   }
   let pairs = case input.source_if_modified_since {
-    option.Some(v) -> [#("SourceIfModifiedSince", json.int(v)), ..pairs]
+    option.Some(v) -> [#("SourceIfModifiedSince", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.source_if_none_match {
@@ -22617,7 +22617,7 @@ pub fn encode_rename_object_request_struct(input: RenameObjectRequest) -> json.J
     option.None -> pairs
   }
   let pairs = case input.source_if_unmodified_since {
-    option.Some(v) -> [#("SourceIfUnmodifiedSince", json.int(v)), ..pairs]
+    option.Some(v) -> [#("SourceIfUnmodifiedSince", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -24933,7 +24933,7 @@ pub fn encode_write_get_object_response_request_struct(input: WriteGetObjectResp
     option.None -> pairs
   }
   let pairs = case input.object_lock_retain_until_date {
-    option.Some(v) -> [#("ObjectLockRetainUntilDate", json.int(v)), ..pairs]
+    option.Some(v) -> [#("ObjectLockRetainUntilDate", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.parts_count {
@@ -25341,7 +25341,7 @@ pub fn build_abort_multipart_upload_request(
     option.None -> headers
   }
   let headers = case input.if_match_initiated_time {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-if-match-initiated-time", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-if-match-initiated-time", json_timestamp.format_http_date(v))
     option.None -> headers
   }
   let headers = case input.request_payer {
@@ -25610,7 +25610,7 @@ pub fn build_copy_object_request(
     option.None -> headers
   }
   let headers = case input.copy_source_if_modified_since {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-copy-source-if-modified-since", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-copy-source-if-modified-since", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.copy_source_if_none_match {
@@ -25618,7 +25618,7 @@ pub fn build_copy_object_request(
     option.None -> headers
   }
   let headers = case input.copy_source_if_unmodified_since {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-copy-source-if-unmodified-since", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-copy-source-if-unmodified-since", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.copy_source_sse_customer_algorithm {
@@ -25682,7 +25682,7 @@ pub fn build_copy_object_request(
     option.None -> headers
   }
   let headers = case input.object_lock_retain_until_date {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-object-lock-retain-until-date", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-object-lock-retain-until-date", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.request_payer {
@@ -25994,7 +25994,7 @@ pub fn build_create_multipart_upload_request(
     option.None -> headers
   }
   let headers = case input.object_lock_retain_until_date {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-object-lock-retain-until-date", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-object-lock-retain-until-date", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.request_payer {
@@ -27308,7 +27308,7 @@ pub fn build_delete_object_request(
     option.None -> headers
   }
   let headers = case input.if_match_last_modified_time {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-if-match-last-modified-time", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-if-match-last-modified-time", json_timestamp.format_http_date(v))
     option.None -> headers
   }
   let headers = case input.if_match_size {
@@ -30016,7 +30016,7 @@ pub fn build_head_object_request(
     option.None -> query
   }
   let query = case input.response_expires {
-    option.Some(v) -> rest.add_query(query, "response-expires", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.add_query(query, "response-expires", json_timestamp.format_http_date(v))
     option.None -> query
   }
   let query = case input.version_id {
@@ -30037,7 +30037,7 @@ pub fn build_head_object_request(
     option.None -> headers
   }
   let headers = case input.if_modified_since {
-    option.Some(v) -> rest.maybe_set_header(headers, "If-Modified-Since", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "If-Modified-Since", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.if_none_match {
@@ -30045,7 +30045,7 @@ pub fn build_head_object_request(
     option.None -> headers
   }
   let headers = case input.if_unmodified_since {
-    option.Some(v) -> rest.maybe_set_header(headers, "If-Unmodified-Since", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "If-Unmodified-Since", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.range {
@@ -31480,7 +31480,7 @@ pub fn build_rename_object_request(
     option.None -> headers
   }
   let headers = case input.destination_if_modified_since {
-    option.Some(v) -> rest.maybe_set_header(headers, "If-Modified-Since", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "If-Modified-Since", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.destination_if_none_match {
@@ -31488,7 +31488,7 @@ pub fn build_rename_object_request(
     option.None -> headers
   }
   let headers = case input.destination_if_unmodified_since {
-    option.Some(v) -> rest.maybe_set_header(headers, "If-Unmodified-Since", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "If-Unmodified-Since", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.rename_source {
@@ -31500,7 +31500,7 @@ pub fn build_rename_object_request(
     option.None -> headers
   }
   let headers = case input.source_if_modified_since {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-rename-source-if-modified-since", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-rename-source-if-modified-since", json_timestamp.format_http_date(v))
     option.None -> headers
   }
   let headers = case input.source_if_none_match {
@@ -31508,7 +31508,7 @@ pub fn build_rename_object_request(
     option.None -> headers
   }
   let headers = case input.source_if_unmodified_since {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-rename-source-if-unmodified-since", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-rename-source-if-unmodified-since", json_timestamp.format_http_date(v))
     option.None -> headers
   }
   let body = <<>>
@@ -31679,7 +31679,7 @@ pub fn build_upload_part_copy_request(
     option.None -> headers
   }
   let headers = case input.copy_source_if_modified_since {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-copy-source-if-modified-since", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-copy-source-if-modified-since", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.copy_source_if_none_match {
@@ -31687,7 +31687,7 @@ pub fn build_upload_part_copy_request(
     option.None -> headers
   }
   let headers = case input.copy_source_if_unmodified_since {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-copy-source-if-unmodified-since", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-copy-source-if-unmodified-since", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.copy_source_range {
@@ -31920,7 +31920,7 @@ pub fn build_write_get_object_response_request(
     option.None -> headers
   }
   let headers = case input.last_modified {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-fwd-header-Last-Modified", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-fwd-header-Last-Modified", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.missing_meta {
@@ -31936,7 +31936,7 @@ pub fn build_write_get_object_response_request(
     option.None -> headers
   }
   let headers = case input.object_lock_retain_until_date {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-fwd-header-x-amz-object-lock-retain-until-date", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-fwd-header-x-amz-object-lock-retain-until-date", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.parts_count {

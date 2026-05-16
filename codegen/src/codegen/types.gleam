@@ -48,9 +48,12 @@ pub type Resolved {
   /// name used by restXml / awsQuery / ec2Query — defaults to "member"
   /// and is overridden by `@xmlName` on the list shape's member. For
   /// JSON-shaped protocols this field is irrelevant.
-  RList(element: Resolved, xml_entry_name: String)
-  /// Smithy map of K → V.
-  RMap(key: Resolved, value: Resolved)
+  /// `sparse` reflects `@sparse` — sparse lists CAN contain nulls and
+  /// surface as `List(Option(T))` so the codec can preserve them.
+  RList(element: Resolved, xml_entry_name: String, sparse: Bool)
+  /// Smithy map of K → V. `sparse` reflects `@sparse` — sparse maps
+  /// permit null values and surface as `Dict(K, Option(V))`.
+  RMap(key: Resolved, value: Resolved, sparse: Bool)
   /// Reference to a Smithy structure. The full ID lets the emitter look
   /// the members up on demand without inlining (which would loop on
   /// recursive shapes).
@@ -114,6 +117,11 @@ pub type MemberDef {
     /// `@httpPayload` members whose wire form is intrinsically opaque
     /// (Blob, raw String). `None` falls back to the protocol default.
     media_type: option.Option(String),
+    /// `@timestampFormat("date-time"|"http-date"|"epoch-seconds")` —
+    /// member-level override for the wire form of `@timestamp` shapes.
+    /// `None` means use the protocol default (`epoch-seconds` for the
+    /// awsJson family, `date-time` for restJson1 / restXml).
+    timestamp_format: option.Option(String),
   )
 }
 
@@ -126,6 +134,20 @@ fn media_type_of_target(model: Model, target_id: String) -> option.Option(String
             Ok(option.Some(trait.String(s))) -> option.Some(s)
             _ -> option.None
           }
+      }
+    _ -> option.None
+  }
+}
+
+fn timestamp_format_of_target(
+  model: Model,
+  target_id: String,
+) -> option.Option(String) {
+  case model.lookup(model, target_id) {
+    Ok(sh) ->
+      case dict.get(shape_traits(sh), ShapeId("smithy.api#timestampFormat")) {
+        Ok(option.Some(trait.String(s))) -> option.Some(s)
+        _ -> option.None
       }
     _ -> option.None
   }
@@ -228,7 +250,7 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
     shape.Enum(members: m, ..) -> resolve_enum(target_id, m)
     shape.IntEnum(members: m, ..) -> resolve_int_enum(target_id, m)
 
-    shape.List(member: mem, ..) -> {
+    shape.List(member: mem, traits: lt) -> {
       let ShapeId(t) = mem.target
       let entry_name = case
         dict.get(mem.traits, ShapeId("smithy.api#xmlName"))
@@ -236,12 +258,22 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
         Ok(option.Some(trait.String(s))) -> s
         _ -> "member"
       }
-      RList(element: resolve(model, t), xml_entry_name: entry_name)
+      let sparse = dict.has_key(lt, ShapeId("smithy.api#sparse"))
+      RList(
+        element: resolve(model, t),
+        xml_entry_name: entry_name,
+        sparse: sparse,
+      )
     }
-    shape.Map(key: k, value: v, ..) -> {
+    shape.Map(key: k, value: v, traits: mt) -> {
       let ShapeId(kt) = k.target
       let ShapeId(vt) = v.target
-      RMap(key: resolve(model, kt), value: resolve(model, vt))
+      let sparse = dict.has_key(mt, ShapeId("smithy.api#sparse"))
+      RMap(
+        key: resolve(model, kt),
+        value: resolve(model, vt),
+        sparse: sparse,
+      )
     }
     shape.Structure(..) ->
       RStruct(
@@ -345,6 +377,13 @@ fn extract_members(
       Ok(option.Some(trait.String(s))) -> option.Some(s)
       _ -> media_type_of_target(model, target)
     }
+    // `@timestampFormat` (member overrides target-shape trait if both
+    // are set).
+    let timestamp_format =
+      case dict.get(mem.traits, ShapeId("smithy.api#timestampFormat")) {
+        Ok(option.Some(trait.String(s))) -> option.Some(s)
+        _ -> timestamp_format_of_target(model, target)
+      }
     MemberDef(
       json_name: wire_name,
       snake_name: stringutils.pascal_to_snake(name),
@@ -353,6 +392,7 @@ fn extract_members(
       required: dict.has_key(mem.traits, ShapeId("smithy.api#required")),
       binding: binding_of(mem.traits),
       media_type: media_type,
+      timestamp_format: timestamp_format,
     )
   })
 }
@@ -419,7 +459,7 @@ pub fn is_supported(r: Resolved) -> Bool {
   case r {
     Unsupported(..) -> False
     RList(element: e, ..) -> is_supported(e)
-    RMap(key: k, value: v) -> is_supported(k) && is_supported(v)
+    RMap(key: k, value: v, ..) -> is_supported(k) && is_supported(v)
     _ -> True
   }
 }
@@ -433,14 +473,52 @@ pub fn gleam_type(r: Resolved) -> String {
     RPrim(primitive: PFloat) -> "json_float.SmithyFloat"
     RPrim(primitive: PBool) -> "Bool"
     REnum(gleam_name: n, ..) | RIntEnum(gleam_name: n, ..) -> n
-    RList(element: e, ..) -> "List(" <> gleam_type(e) <> ")"
-    RMap(key: _k, value: v) -> "dict.Dict(String, " <> gleam_type(v) <> ")"
+    RList(element: e, sparse: True, ..) ->
+      "List(option.Option(" <> gleam_type(e) <> "))"
+    RList(element: e, sparse: False, ..) -> "List(" <> gleam_type(e) <> ")"
+    RMap(key: _k, value: v, sparse: True) ->
+      "dict.Dict(String, option.Option(" <> gleam_type(v) <> "))"
+    RMap(key: _k, value: v, sparse: False) ->
+      "dict.Dict(String, " <> gleam_type(v) <> ")"
     RStruct(gleam_name: n, ..) | RUnion(gleam_name: n, ..) -> n
     RTimestamp -> "Int"
     RBlob -> "BitArray"
     RDocument -> "json.Json"
     RUnit -> "Nil"
     Unsupported(reason: _) -> "Nil"
+  }
+}
+
+/// Per-member JSON encoder/decoder. Wraps `json_encoder` /
+/// `json_decoder` with `@timestampFormat` handling — timestamps are
+/// the one Smithy type whose wire form depends on the **member**, not
+/// just the shape. `format` is the resolved member-level format
+/// (member-trait first, then shape-trait, then `None` for protocol
+/// default).
+pub fn json_encoder_member(r: Resolved, format: option.Option(String)) -> String {
+  case r, format {
+    RTimestamp, option.Some("date-time") ->
+      "fn(v) { json.string(json_timestamp.format_iso8601(v)) }"
+    RTimestamp, option.Some("http-date") ->
+      "fn(v) { json.string(json_timestamp.format_http_date(v)) }"
+    _, _ -> json_encoder(r)
+  }
+}
+
+pub fn json_decoder_member(r: Resolved, format: option.Option(String)) -> String {
+  case r, format {
+    RTimestamp, _ -> "json_timestamp.decoder()"
+    _, _ -> json_decoder(r)
+  }
+}
+
+pub fn json_decoder_member_params(
+  r: Resolved,
+  format: option.Option(String),
+) -> String {
+  case r, format {
+    RTimestamp, _ -> "json_timestamp.decoder()"
+    _, _ -> json_decoder_params(r)
   }
 }
 
@@ -456,9 +534,17 @@ pub fn json_encoder(r: Resolved) -> String {
       "encode_" <> stringutils.pascal_to_snake(n) <> "_enum"
     RIntEnum(local_name: n, ..) ->
       "encode_" <> stringutils.pascal_to_snake(n) <> "_int_enum"
-    RList(element: e, ..) ->
+    RList(element: e, sparse: True, ..) ->
+      "fn(xs) { json.array(xs, fn(o) { case o { option.Some(x) -> "
+      <> json_encoder(e)
+      <> "(x) option.None -> json.null() } }) }"
+    RList(element: e, sparse: False, ..) ->
       "fn(xs) { json.array(xs, " <> json_encoder(e) <> ") }"
-    RMap(value: v, ..) ->
+    RMap(value: v, sparse: True, ..) ->
+      "fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> "
+      <> json_encoder(v)
+      <> "(x) option.None -> json.null() }) })) }"
+    RMap(value: v, sparse: False, ..) ->
       "fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, "
       <> json_encoder(v)
       <> "(pair.1)) })) }"
@@ -486,9 +572,15 @@ pub fn json_decoder_params(r: Resolved) -> String {
       "decode_" <> stringutils.pascal_to_snake(n) <> "_struct_params()"
     RUnion(local_name: n, ..) ->
       "decode_" <> stringutils.pascal_to_snake(n) <> "_union_params()"
-    RList(element: e, ..) ->
+    RList(element: e, sparse: True, ..) ->
+      "decode.list(decode.optional(" <> json_decoder_params(e) <> "))"
+    RList(element: e, sparse: False, ..) ->
       "decode.list(" <> json_decoder_params(e) <> ")"
-    RMap(value: v, ..) ->
+    RMap(value: v, sparse: True, ..) ->
+      "decode.dict(decode.string, decode.optional("
+      <> json_decoder_params(v)
+      <> "))"
+    RMap(value: v, sparse: False, ..) ->
       "decode.dict(decode.string, " <> json_decoder_params(v) <> ")"
     _ -> json_decoder(r)
   }
@@ -505,8 +597,15 @@ pub fn json_decoder(r: Resolved) -> String {
       "decode_" <> stringutils.pascal_to_snake(n) <> "_enum()"
     RIntEnum(local_name: n, ..) ->
       "decode_" <> stringutils.pascal_to_snake(n) <> "_int_enum()"
-    RList(element: e, ..) -> "decode.list(" <> json_decoder(e) <> ")"
-    RMap(value: v, ..) ->
+    RList(element: e, sparse: True, ..) ->
+      "decode.list(decode.optional(" <> json_decoder(e) <> "))"
+    RList(element: e, sparse: False, ..) ->
+      "decode.list(" <> json_decoder(e) <> ")"
+    RMap(value: v, sparse: True, ..) ->
+      "decode.dict(decode.string, decode.optional("
+      <> json_decoder(v)
+      <> "))"
+    RMap(value: v, sparse: False, ..) ->
       "decode.dict(decode.string, " <> json_decoder(v) <> ")"
     RStruct(local_name: n, ..) ->
       "decode_" <> stringutils.pascal_to_snake(n) <> "_struct()"

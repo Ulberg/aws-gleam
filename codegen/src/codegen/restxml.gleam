@@ -380,7 +380,7 @@ fn walk(
         }
       }
     RList(element: e, ..) -> walk(model, acc, e)
-    RMap(key: k, value: v) -> {
+    RMap(key: k, value: v, ..) -> {
       let acc = walk(model, acc, k)
       walk(model, acc, v)
     }
@@ -720,6 +720,21 @@ fn emit_int_enum_codec(
   variants: List(types.IntEnumVariant),
 ) -> String {
   let snake = stringutils.pascal_to_snake(name)
+  let int_value =
+    "pub fn "
+    <> snake
+    <> "_int_value(v: "
+    <> name
+    <> ") -> Int {\n  case v {\n"
+    <> list.fold(variants, "", fn(acc, v) {
+      acc
+      <> "    "
+      <> v.gleam_ctor
+      <> " -> "
+      <> int_to_string(v.wire_value)
+      <> "\n"
+    })
+    <> "  }\n}\n\n"
   let enc =
     "pub fn encode_"
     <> snake
@@ -756,7 +771,7 @@ fn emit_int_enum_codec(
     <> "      _ -> decode.failure("
     <> first_ctor
     <> ", \"unknown int enum value\")\n    }\n  })\n}\n\n"
-  enc <> dec
+  int_value <> enc <> dec
 }
 
 fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
@@ -804,7 +819,7 @@ fn emit_struct_decoder_params(
         <> " <- decode.optional_field(\""
         <> m.member_name
         <> "\", option.None, decode.optional("
-        <> types.json_decoder_params(m.target)
+        <> types.json_decoder_member_params(m.target, m.timestamp_format)
         <> "))\n"
       })
       <> "  decode.success("
@@ -915,7 +930,7 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> String {
       <> stringutils.pascal_to_snake(name)
       <> "_xml)"
     RUnion(gleam_name: gn, ..) -> emit_unsupported_decoder(gn)
-    RList(element: e, xml_entry_name: entry) -> {
+    RList(element: e, xml_entry_name: entry, ..) -> {
       let inner_decoder = case e {
         RPrim(primitive: types.PString) -> "xml_decode.string_text"
         RPrim(primitive: types.PInt) -> "xml_decode.int_text"
@@ -932,7 +947,7 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> String {
       <> inner_decoder
       <> ")"
     }
-    RMap(key: _, value: _) -> emit_unsupported_decoder(types.gleam_type(target))
+    RMap(key: _, value: _, ..) -> emit_unsupported_decoder(types.gleam_type(target))
     RDocument -> emit_unsupported_decoder(types.gleam_type(target))
     RUnit -> emit_unsupported_decoder(types.gleam_type(target))
     Unsupported(..) -> emit_unsupported_decoder(types.gleam_type(target))
@@ -1043,7 +1058,7 @@ fn xml_value_expr(target: Resolved, member_name: String) -> String {
       // Unions in XML body need per-variant element emission; not
       // implemented yet — emit an empty element as a placeholder.
       "xml.empty_element(\"" <> member_name <> "\")"
-    RList(element: _e, xml_entry_name: entry) ->
+    RList(element: _e, xml_entry_name: entry, ..) ->
       // Smithy default list wrapping: `<MemberName><member>...</member>...</MemberName>`.
       // The list shape's member `@xmlName` overrides the per-entry tag —
       // S3's Buckets list, for example, uses `<Bucket>` not `<member>`.
@@ -1054,7 +1069,7 @@ fn xml_value_expr(target: Resolved, member_name: String) -> String {
       <> "\", list.map(v, fn(item) { let v = item "
       <> xml_inner_expr_for_list_element(target)
       <> " }))"
-    RMap(value: _v, key: _k) -> "xml.empty_element(\"" <> member_name <> "\")"
+    RMap(value: _v, key: _k, ..) -> "xml.empty_element(\"" <> member_name <> "\")"
     RDocument -> "xml.element(\"" <> member_name <> "\", \"\")"
     RUnit -> "xml.empty_element(\"" <> member_name <> "\")"
     Unsupported(..) -> "\"\""
@@ -1111,7 +1126,7 @@ fn emit_struct_encoder(
         <> " {\n    option.Some(v) -> [#(\""
         <> m.json_name
         <> "\", "
-        <> types.json_encoder(m.target)
+        <> types.json_encoder_member(m.target, m.timestamp_format)
         <> "(v)), ..pairs]\n    option.None -> pairs\n  }\n"
       })
       <> "  json.object(pairs)\n}\n\n"
@@ -1145,7 +1160,7 @@ fn emit_struct_decoder(
         <> " <- decode.optional_field(\""
         <> m.json_name
         <> "\", option.None, decode.optional("
-        <> types.json_decoder(m.target)
+        <> types.json_decoder_member(m.target, m.timestamp_format)
         <> "))\n"
       })
       <> "  decode.success("
@@ -1357,7 +1372,7 @@ fn emit_path_setup(uri_template: String, labels: List(MemberDef)) -> String {
     <> " {\n    option.Some(v) -> rest.substitute_label(path, \""
     <> m.json_name
     <> "\", "
-    <> value_to_string(m.target)
+    <> value_to_string_with_format(m.target, m.timestamp_format)
     <> ", "
     <> greedy_str
     <> ")\n    option.None -> path\n  }\n"
@@ -1383,7 +1398,7 @@ fn emit_query_setup(
           <> " {\n    option.Some(xs) -> list.fold(xs, query, fn(q, item) {\n      let v = item\n      rest.add_query(q, \""
           <> query_name
           <> "\", "
-          <> value_to_string(e)
+          <> value_to_string_with_format(e, m.timestamp_format)
           <> ")\n    })\n    option.None -> query\n  }\n"
         _ ->
           acc
@@ -1392,7 +1407,7 @@ fn emit_query_setup(
           <> " {\n    option.Some(v) -> rest.add_query(query, \""
           <> query_name
           <> "\", "
-          <> value_to_string(m.target)
+          <> value_to_string_with_format(m.target, m.timestamp_format)
           <> ")\n    option.None -> query\n  }\n"
       }
     })
@@ -1401,9 +1416,9 @@ fn emit_query_setup(
     // `add_query_params`, Map<String, List<String>> uses
     // `add_query_params_list`. Anything else: skip.
     let helper = case m.target {
-      RMap(key: _, value: RList(element: RPrim(primitive: types.PString), ..)) ->
+      RMap(key: _, value: RList(element: RPrim(primitive: types.PString), ..), ..) ->
         Ok("rest.add_query_params_list")
-      RMap(key: _, value: RPrim(primitive: types.PString)) ->
+      RMap(key: _, value: RPrim(primitive: types.PString), ..) ->
         Ok("rest.add_query_params")
       _ -> Error(Nil)
     }
@@ -1439,7 +1454,7 @@ fn emit_header_setup(
           <> " {\n    option.Some(xs) -> rest.maybe_set_list_header(headers, \""
           <> header_name
           <> "\", list.map(xs, fn(item) { let v = item "
-          <> value_to_string(e)
+          <> value_to_string_with_format(e, m.timestamp_format)
           <> " }))\n    option.None -> headers\n  }\n"
         _ ->
           acc
@@ -1448,7 +1463,7 @@ fn emit_header_setup(
           <> " {\n    option.Some(v) -> rest.maybe_set_header(headers, \""
           <> header_name
           <> "\", "
-          <> value_to_string(m.target)
+          <> value_to_string_with_format(m.target, m.timestamp_format)
           <> ")\n    option.None -> headers\n  }\n"
       }
     })
@@ -1503,22 +1518,31 @@ fn emit_payload_body(m: MemberDef) -> String {
 /// String — used in label / query / header position where everything
 /// is stringified.
 fn value_to_string(target: Resolved) -> String {
+  value_to_string_with_format(target, None)
+}
+
+fn value_to_string_with_format(
+  target: Resolved,
+  timestamp_format: Option(String),
+) -> String {
   case target {
     RPrim(primitive: types.PString) -> "v"
     RPrim(primitive: types.PInt) -> "rest.int_to_query(v)"
     RPrim(primitive: types.PFloat) ->
       "case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
     RPrim(primitive: types.PBool) -> "rest.bool_to_query(v)"
-    // Enum: encode to json.string, then strip the surrounding quotes
-    // off. Cheaper than emitting a per-variant case (which would need
-    // the variant list at this site).
     REnum(local_name: _, ..) ->
       "rest.enum_wire_value(" <> types.json_encoder(target) <> "(v))"
-    RIntEnum(local_name: _, ..) ->
-      "rest.int_to_query(case "
-      <> types.json_encoder(target)
-      <> "(v) { _ -> 0 })"
-    RTimestamp -> "rest.timestamp_to_header(v)"
+    RIntEnum(local_name: n, ..) ->
+      "rest.int_to_query("
+      <> stringutils.pascal_to_snake(n)
+      <> "_int_value(v))"
+    RTimestamp ->
+      case timestamp_format {
+        Some("epoch-seconds") -> "rest.int_to_query(v)"
+        Some("http-date") -> "json_timestamp.format_http_date(v)"
+        _ -> "json_timestamp.format_iso8601(v)"
+      }
     _ -> "\"\""
   }
 }

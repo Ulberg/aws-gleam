@@ -102,7 +102,7 @@ pub type DatetimeOffsetsOutput {
 pub fn encode_datetime_offsets_output_struct(input: DatetimeOffsetsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.datetime {
-    option.Some(v) -> [#("datetime", json.int(v)), ..pairs]
+    option.Some(v) -> [#("datetime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -160,7 +160,7 @@ pub type FractionalSecondsOutput {
 pub fn encode_fractional_seconds_output_struct(input: FractionalSecondsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.datetime {
-    option.Some(v) -> [#("datetime", json.int(v)), ..pairs]
+    option.Some(v) -> [#("datetime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -695,7 +695,7 @@ pub fn encode_kitchen_sink_struct(input: KitchenSink) -> json.Json {
     option.None -> pairs
   }
   let pairs = case input.httpdate_timestamp {
-    option.Some(v) -> [#("HttpdateTimestamp", json.int(v)), ..pairs]
+    option.Some(v) -> [#("HttpdateTimestamp", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer {
@@ -703,7 +703,7 @@ pub fn encode_kitchen_sink_struct(input: KitchenSink) -> json.Json {
     option.None -> pairs
   }
   let pairs = case input.iso8601_timestamp {
-    option.Some(v) -> [#("Iso8601Timestamp", json.int(v)), ..pairs]
+    option.Some(v) -> [#("Iso8601Timestamp", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.json_value {
@@ -1224,27 +1224,27 @@ pub fn decode_simple_scalar_properties_input_output_struct_params() -> decode.De
 
 pub type SparseNullsOperationInputOutput {
   SparseNullsOperationInputOutput(
-    sparse_string_list: option.Option(List(String)),
-    sparse_string_map: option.Option(dict.Dict(String, String)),
+    sparse_string_list: option.Option(List(option.Option(String))),
+    sparse_string_map: option.Option(dict.Dict(String, option.Option(String))),
   )
 }
 
 pub fn encode_sparse_nulls_operation_input_output_struct(input: SparseNullsOperationInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.sparse_string_list {
-    option.Some(v) -> [#("sparseStringList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseStringList", fn(xs) { json.array(xs, fn(o) { case o { option.Some(x) -> json.string(x) option.None -> json.null() } }) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_string_map {
-    option.Some(v) -> [#("sparseStringMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseStringMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> json.string(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_sparse_nulls_operation_input_output_struct() -> decode.Decoder(SparseNullsOperationInputOutput) {
-  use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.string)))
-  use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.optional(decode.string))))
+  use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.string))))
   decode.success(SparseNullsOperationInputOutput(
     sparse_string_list: sparse_string_list,
     sparse_string_map: sparse_string_map,
@@ -1252,8 +1252,8 @@ pub fn decode_sparse_nulls_operation_input_output_struct() -> decode.Decoder(Spa
 }
 
 pub fn decode_sparse_nulls_operation_input_output_struct_params() -> decode.Decoder(SparseNullsOperationInputOutput) {
-  use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.string)))
-  use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.optional(decode.string))))
+  use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.string))))
   decode.success(SparseNullsOperationInputOutput(
     sparse_string_list: sparse_string_list,
     sparse_string_map: sparse_string_map,

@@ -288,6 +288,14 @@ pub type IntegerEnum {
   IntegerEnumC
 }
 
+pub fn integer_enum_int_value(v: IntegerEnum) -> Int {
+  case v {
+    IntegerEnumA -> 1
+    IntegerEnumB -> 2
+    IntegerEnumC -> 3
+  }
+}
+
 pub fn encode_integer_enum_int_enum(v: IntegerEnum) -> json.Json {
   case v {
     IntegerEnumA -> json.int(1)
@@ -428,7 +436,7 @@ pub type DatetimeOffsetsOutput {
 pub fn encode_datetime_offsets_output_struct(input: DatetimeOffsetsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.datetime {
-    option.Some(v) -> [#("datetime", json.int(v)), ..pairs]
+    option.Some(v) -> [#("datetime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -729,7 +737,7 @@ pub fn encode_headers_event_struct(input: HeadersEvent) -> json.Json {
     option.None -> pairs
   }
   let pairs = case input.timestamp_header {
-    option.Some(v) -> [#("timestampHeader", json.int(v)), ..pairs]
+    option.Some(v) -> [#("timestampHeader", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -1312,7 +1320,7 @@ pub type FractionalSecondsOutput {
 pub fn encode_fractional_seconds_output_struct(input: FractionalSecondsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.datetime {
-    option.Some(v) -> [#("datetime", json.int(v)), ..pairs]
+    option.Some(v) -> [#("datetime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -2141,7 +2149,7 @@ pub fn encode_http_request_with_labels_and_timestamp_format_input_struct(input: 
     option.None -> pairs
   }
   let pairs = case input.member_date_time {
-    option.Some(v) -> [#("memberDateTime", json.int(v)), ..pairs]
+    option.Some(v) -> [#("memberDateTime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.member_epoch_seconds {
@@ -2149,11 +2157,11 @@ pub fn encode_http_request_with_labels_and_timestamp_format_input_struct(input: 
     option.None -> pairs
   }
   let pairs = case input.member_http_date {
-    option.Some(v) -> [#("memberHttpDate", json.int(v)), ..pairs]
+    option.Some(v) -> [#("memberHttpDate", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.target_date_time {
-    option.Some(v) -> [#("targetDateTime", json.int(v)), ..pairs]
+    option.Some(v) -> [#("targetDateTime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.target_epoch_seconds {
@@ -2161,7 +2169,7 @@ pub fn encode_http_request_with_labels_and_timestamp_format_input_struct(input: 
     option.None -> pairs
   }
   let pairs = case input.target_http_date {
-    option.Some(v) -> [#("targetHttpDate", json.int(v)), ..pairs]
+    option.Some(v) -> [#("targetHttpDate", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -2995,11 +3003,11 @@ pub type JsonTimestampsInputOutput {
 pub fn encode_json_timestamps_input_output_struct(input: JsonTimestampsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.date_time {
-    option.Some(v) -> [#("dateTime", json.int(v)), ..pairs]
+    option.Some(v) -> [#("dateTime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.date_time_on_target {
-    option.Some(v) -> [#("dateTimeOnTarget", json.int(v)), ..pairs]
+    option.Some(v) -> [#("dateTimeOnTarget", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.epoch_seconds {
@@ -3011,11 +3019,11 @@ pub fn encode_json_timestamps_input_output_struct(input: JsonTimestampsInputOutp
     option.None -> pairs
   }
   let pairs = case input.http_date {
-    option.Some(v) -> [#("httpDate", json.int(v)), ..pairs]
+    option.Some(v) -> [#("httpDate", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.http_date_on_target {
-    option.Some(v) -> [#("httpDateOnTarget", json.int(v)), ..pairs]
+    option.Some(v) -> [#("httpDateOnTarget", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.normal {
@@ -3854,7 +3862,7 @@ pub type MalformedTimestampBodyDateTimeInput {
 pub fn encode_malformed_timestamp_body_date_time_input_struct(input: MalformedTimestampBodyDateTimeInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
-    option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
+    option.Some(v) -> [#("timestamp", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -3912,7 +3920,7 @@ pub type MalformedTimestampBodyHttpDateInput {
 pub fn encode_malformed_timestamp_body_http_date_input_struct(input: MalformedTimestampBodyHttpDateInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
-    option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
+    option.Some(v) -> [#("timestamp", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -3941,7 +3949,7 @@ pub type MalformedTimestampHeaderDateTimeInput {
 pub fn encode_malformed_timestamp_header_date_time_input_struct(input: MalformedTimestampHeaderDateTimeInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
-    option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
+    option.Some(v) -> [#("timestamp", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -4086,7 +4094,7 @@ pub type MalformedTimestampPathHttpDateInput {
 pub fn encode_malformed_timestamp_path_http_date_input_struct(input: MalformedTimestampPathHttpDateInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
-    option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
+    option.Some(v) -> [#("timestamp", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -4173,7 +4181,7 @@ pub type MalformedTimestampQueryHttpDateInput {
 pub fn encode_malformed_timestamp_query_http_date_input_struct(input: MalformedTimestampQueryHttpDateInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
-    option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
+    option.Some(v) -> [#("timestamp", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -4879,6 +4887,13 @@ pub fn decode_test_enum_enum() -> decode.Decoder(TestEnum) {
 pub type TestIntEnum {
   TestIntEnumOne
   TestIntEnumTwo
+}
+
+pub fn test_int_enum_int_value(v: TestIntEnum) -> Int {
+  case v {
+    TestIntEnumOne -> 1
+    TestIntEnumTwo -> 2
+  }
 }
 
 pub fn encode_test_int_enum_int_enum(v: TestIntEnum) -> json.Json {
@@ -6017,27 +6032,27 @@ pub fn decode_simple_scalar_properties_input_output_struct_params() -> decode.De
 
 pub type SparseJsonListsInputOutput {
   SparseJsonListsInputOutput(
-    sparse_short_list: option.Option(List(Int)),
-    sparse_string_list: option.Option(List(String)),
+    sparse_short_list: option.Option(List(option.Option(Int))),
+    sparse_string_list: option.Option(List(option.Option(String))),
   )
 }
 
 pub fn encode_sparse_json_lists_input_output_struct(input: SparseJsonListsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.sparse_short_list {
-    option.Some(v) -> [#("sparseShortList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseShortList", fn(xs) { json.array(xs, fn(o) { case o { option.Some(x) -> json.int(x) option.None -> json.null() } }) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_string_list {
-    option.Some(v) -> [#("sparseStringList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseStringList", fn(xs) { json.array(xs, fn(o) { case o { option.Some(x) -> json.string(x) option.None -> json.null() } }) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_sparse_json_lists_input_output_struct() -> decode.Decoder(SparseJsonListsInputOutput) {
-  use sparse_short_list <- decode.optional_field("sparseShortList", option.None, decode.optional(decode.list(decode.int)))
-  use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.string)))
+  use sparse_short_list <- decode.optional_field("sparseShortList", option.None, decode.optional(decode.list(decode.optional(decode.int))))
+  use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.optional(decode.string))))
   decode.success(SparseJsonListsInputOutput(
     sparse_short_list: sparse_short_list,
     sparse_string_list: sparse_string_list,
@@ -6045,8 +6060,8 @@ pub fn decode_sparse_json_lists_input_output_struct() -> decode.Decoder(SparseJs
 }
 
 pub fn decode_sparse_json_lists_input_output_struct_params() -> decode.Decoder(SparseJsonListsInputOutput) {
-  use sparse_short_list <- decode.optional_field("sparseShortList", option.None, decode.optional(decode.list(decode.int)))
-  use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.string)))
+  use sparse_short_list <- decode.optional_field("sparseShortList", option.None, decode.optional(decode.list(decode.optional(decode.int))))
+  use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.optional(decode.string))))
   decode.success(SparseJsonListsInputOutput(
     sparse_short_list: sparse_short_list,
     sparse_string_list: sparse_string_list,
@@ -6055,45 +6070,45 @@ pub fn decode_sparse_json_lists_input_output_struct_params() -> decode.Decoder(S
 
 pub type SparseJsonMapsInputOutput {
   SparseJsonMapsInputOutput(
-    sparse_boolean_map: option.Option(dict.Dict(String, Bool)),
-    sparse_number_map: option.Option(dict.Dict(String, Int)),
-    sparse_set_map: option.Option(dict.Dict(String, List(String))),
-    sparse_string_map: option.Option(dict.Dict(String, String)),
-    sparse_struct_map: option.Option(dict.Dict(String, GreetingStruct)),
+    sparse_boolean_map: option.Option(dict.Dict(String, option.Option(Bool))),
+    sparse_number_map: option.Option(dict.Dict(String, option.Option(Int))),
+    sparse_set_map: option.Option(dict.Dict(String, option.Option(List(String)))),
+    sparse_string_map: option.Option(dict.Dict(String, option.Option(String))),
+    sparse_struct_map: option.Option(dict.Dict(String, option.Option(GreetingStruct))),
   )
 }
 
 pub fn encode_sparse_json_maps_input_output_struct(input: SparseJsonMapsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.sparse_boolean_map {
-    option.Some(v) -> [#("sparseBooleanMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.bool(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseBooleanMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> json.bool(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_number_map {
-    option.Some(v) -> [#("sparseNumberMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.int(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseNumberMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> json.int(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_set_map {
-    option.Some(v) -> [#("sparseSetMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseSetMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> fn(xs) { json.array(xs, json.string) }(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_string_map {
-    option.Some(v) -> [#("sparseStringMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseStringMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> json.string(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_struct_map {
-    option.Some(v) -> [#("sparseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_greeting_struct_struct(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> encode_greeting_struct_struct(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_sparse_json_maps_input_output_struct() -> decode.Decoder(SparseJsonMapsInputOutput) {
-  use sparse_boolean_map <- decode.optional_field("sparseBooleanMap", option.None, decode.optional(decode.dict(decode.string, decode.bool)))
-  use sparse_number_map <- decode.optional_field("sparseNumberMap", option.None, decode.optional(decode.dict(decode.string, decode.int)))
-  use sparse_set_map <- decode.optional_field("sparseSetMap", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
-  use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use sparse_struct_map <- decode.optional_field("sparseStructMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())))
+  use sparse_boolean_map <- decode.optional_field("sparseBooleanMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.bool))))
+  use sparse_number_map <- decode.optional_field("sparseNumberMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.int))))
+  use sparse_set_map <- decode.optional_field("sparseSetMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.list(decode.string)))))
+  use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.string))))
+  use sparse_struct_map <- decode.optional_field("sparseStructMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode_greeting_struct_struct()))))
   decode.success(SparseJsonMapsInputOutput(
     sparse_boolean_map: sparse_boolean_map,
     sparse_number_map: sparse_number_map,
@@ -6104,11 +6119,11 @@ pub fn decode_sparse_json_maps_input_output_struct() -> decode.Decoder(SparseJso
 }
 
 pub fn decode_sparse_json_maps_input_output_struct_params() -> decode.Decoder(SparseJsonMapsInputOutput) {
-  use sparse_boolean_map <- decode.optional_field("sparseBooleanMap", option.None, decode.optional(decode.dict(decode.string, decode.bool)))
-  use sparse_number_map <- decode.optional_field("sparseNumberMap", option.None, decode.optional(decode.dict(decode.string, decode.int)))
-  use sparse_set_map <- decode.optional_field("sparseSetMap", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
-  use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use sparse_struct_map <- decode.optional_field("sparseStructMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
+  use sparse_boolean_map <- decode.optional_field("sparseBooleanMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.bool))))
+  use sparse_number_map <- decode.optional_field("sparseNumberMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.int))))
+  use sparse_set_map <- decode.optional_field("sparseSetMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.list(decode.string)))))
+  use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.string))))
+  use sparse_struct_map <- decode.optional_field("sparseStructMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode_greeting_struct_struct_params()))))
   decode.success(SparseJsonMapsInputOutput(
     sparse_boolean_map: sparse_boolean_map,
     sparse_number_map: sparse_number_map,
@@ -6452,7 +6467,7 @@ pub fn encode_timestamp_format_headers_io_struct(input: TimestampFormatHeadersIO
     option.None -> pairs
   }
   let pairs = case input.member_date_time {
-    option.Some(v) -> [#("memberDateTime", json.int(v)), ..pairs]
+    option.Some(v) -> [#("memberDateTime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.member_epoch_seconds {
@@ -6460,11 +6475,11 @@ pub fn encode_timestamp_format_headers_io_struct(input: TimestampFormatHeadersIO
     option.None -> pairs
   }
   let pairs = case input.member_http_date {
-    option.Some(v) -> [#("memberHttpDate", json.int(v)), ..pairs]
+    option.Some(v) -> [#("memberHttpDate", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.target_date_time {
-    option.Some(v) -> [#("targetDateTime", json.int(v)), ..pairs]
+    option.Some(v) -> [#("targetDateTime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.target_epoch_seconds {
@@ -6472,7 +6487,7 @@ pub fn encode_timestamp_format_headers_io_struct(input: TimestampFormatHeadersIO
     option.None -> pairs
   }
   let pairs = case input.target_http_date {
-    option.Some(v) -> [#("targetHttpDate", json.int(v)), ..pairs]
+    option.Some(v) -> [#("targetHttpDate", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -6602,13 +6617,13 @@ pub fn build_all_query_string_types_request(
     option.None -> query
   }
   let query = case input.query_integer_enum {
-    option.Some(v) -> rest.add_query(query, "IntegerEnum", rest.int_to_query(case encode_integer_enum_int_enum(v) { _ -> 0 }))
+    option.Some(v) -> rest.add_query(query, "IntegerEnum", rest.int_to_query(integer_enum_int_value(v)))
     option.None -> query
   }
   let query = case input.query_integer_enum_list {
     option.Some(xs) -> list.fold(xs, query, fn(q, item) {
       let v = item
-      rest.add_query(q, "IntegerEnumList", rest.int_to_query(case encode_integer_enum_int_enum(v) { _ -> 0 }))
+      rest.add_query(q, "IntegerEnumList", rest.int_to_query(integer_enum_int_value(v)))
     })
     option.None -> query
   }
@@ -6653,13 +6668,13 @@ pub fn build_all_query_string_types_request(
     option.None -> query
   }
   let query = case input.query_timestamp {
-    option.Some(v) -> rest.add_query(query, "Timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.add_query(query, "Timestamp", json_timestamp.format_iso8601(v))
     option.None -> query
   }
   let query = case input.query_timestamp_list {
     option.Some(xs) -> list.fold(xs, query, fn(q, item) {
       let v = item
-      rest.add_query(q, "TimestampList", rest.timestamp_to_header(v))
+      rest.add_query(q, "TimestampList", json_timestamp.format_iso8601(v))
     })
     option.None -> query
   }
@@ -8572,7 +8587,7 @@ pub fn build_http_request_with_labels_request(
     option.None -> path
   }
   let path = case input.timestamp {
-    option.Some(v) -> rest.substitute_label(path, "timestamp", rest.timestamp_to_header(v), False)
+    option.Some(v) -> rest.substitute_label(path, "timestamp", json_timestamp.format_iso8601(v), False)
     option.None -> path
   }
   let query = ""
@@ -8640,31 +8655,31 @@ pub fn build_http_request_with_labels_and_timestamp_format_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/HttpRequestWithLabelsAndTimestampFormat/{memberEpochSeconds}/{memberHttpDate}/{memberDateTime}/{defaultFormat}/{targetEpochSeconds}/{targetHttpDate}/{targetDateTime}"
   let path = case input.default_format {
-    option.Some(v) -> rest.substitute_label(path, "defaultFormat", rest.timestamp_to_header(v), False)
+    option.Some(v) -> rest.substitute_label(path, "defaultFormat", json_timestamp.format_iso8601(v), False)
     option.None -> path
   }
   let path = case input.member_date_time {
-    option.Some(v) -> rest.substitute_label(path, "memberDateTime", rest.timestamp_to_header(v), False)
+    option.Some(v) -> rest.substitute_label(path, "memberDateTime", json_timestamp.format_iso8601(v), False)
     option.None -> path
   }
   let path = case input.member_epoch_seconds {
-    option.Some(v) -> rest.substitute_label(path, "memberEpochSeconds", rest.timestamp_to_header(v), False)
+    option.Some(v) -> rest.substitute_label(path, "memberEpochSeconds", rest.int_to_query(v), False)
     option.None -> path
   }
   let path = case input.member_http_date {
-    option.Some(v) -> rest.substitute_label(path, "memberHttpDate", rest.timestamp_to_header(v), False)
+    option.Some(v) -> rest.substitute_label(path, "memberHttpDate", json_timestamp.format_http_date(v), False)
     option.None -> path
   }
   let path = case input.target_date_time {
-    option.Some(v) -> rest.substitute_label(path, "targetDateTime", rest.timestamp_to_header(v), False)
+    option.Some(v) -> rest.substitute_label(path, "targetDateTime", json_timestamp.format_iso8601(v), False)
     option.None -> path
   }
   let path = case input.target_epoch_seconds {
-    option.Some(v) -> rest.substitute_label(path, "targetEpochSeconds", rest.timestamp_to_header(v), False)
+    option.Some(v) -> rest.substitute_label(path, "targetEpochSeconds", rest.int_to_query(v), False)
     option.None -> path
   }
   let path = case input.target_http_date {
-    option.Some(v) -> rest.substitute_label(path, "targetHttpDate", rest.timestamp_to_header(v), False)
+    option.Some(v) -> rest.substitute_label(path, "targetHttpDate", json_timestamp.format_http_date(v), False)
     option.None -> path
   }
   let query = ""
@@ -9025,11 +9040,11 @@ pub fn build_input_and_output_with_headers_request(
     option.None -> headers
   }
   let headers = case input.header_integer_enum {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-IntegerEnum", rest.int_to_query(case encode_integer_enum_int_enum(v) { _ -> 0 }))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-IntegerEnum", rest.int_to_query(integer_enum_int_value(v)))
     option.None -> headers
   }
   let headers = case input.header_integer_enum_list {
-    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-IntegerEnumList", list.map(xs, fn(item) { let v = item rest.int_to_query(case encode_integer_enum_int_enum(v) { _ -> 0 }) }))
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-IntegerEnumList", list.map(xs, fn(item) { let v = item rest.int_to_query(integer_enum_int_value(v)) }))
     option.None -> headers
   }
   let headers = case input.header_integer_list {
@@ -9057,7 +9072,7 @@ pub fn build_input_and_output_with_headers_request(
     option.None -> headers
   }
   let headers = case input.header_timestamp_list {
-    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-TimestampList", list.map(xs, fn(item) { let v = item rest.timestamp_to_header(v) }))
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-TimestampList", list.map(xs, fn(item) { let v = item json_timestamp.format_iso8601(v) }))
     option.None -> headers
   }
   let headers = case input.header_true_bool {
@@ -9661,11 +9676,11 @@ pub fn decode_json_timestamps_output(body: String) -> Result(JsonTimestampsInput
 pub fn encode_json_timestamps_body(input: JsonTimestampsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.date_time {
-    option.Some(v) -> [#("dateTime", json.int(v)), ..pairs]
+    option.Some(v) -> [#("dateTime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.date_time_on_target {
-    option.Some(v) -> [#("dateTimeOnTarget", json.int(v)), ..pairs]
+    option.Some(v) -> [#("dateTimeOnTarget", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.epoch_seconds {
@@ -9677,11 +9692,11 @@ pub fn encode_json_timestamps_body(input: JsonTimestampsInputOutput) -> json.Jso
     option.None -> pairs
   }
   let pairs = case input.http_date {
-    option.Some(v) -> [#("httpDate", json.int(v)), ..pairs]
+    option.Some(v) -> [#("httpDate", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.http_date_on_target {
-    option.Some(v) -> [#("httpDateOnTarget", json.int(v)), ..pairs]
+    option.Some(v) -> [#("httpDateOnTarget", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.normal {
@@ -11310,7 +11325,7 @@ pub fn decode_malformed_timestamp_body_date_time_output(body: String) -> Result(
 pub fn encode_malformed_timestamp_body_date_time_body(input: MalformedTimestampBodyDateTimeInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
-    option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
+    option.Some(v) -> [#("timestamp", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -11450,7 +11465,7 @@ pub fn decode_malformed_timestamp_body_http_date_output(body: String) -> Result(
 pub fn encode_malformed_timestamp_body_http_date_body(input: MalformedTimestampBodyHttpDateInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
-    option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
+    option.Some(v) -> [#("timestamp", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -11528,7 +11543,7 @@ pub fn build_malformed_timestamp_header_date_time_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.timestamp {
-    option.Some(v) -> rest.maybe_set_header(headers, "timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "timestamp", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let body = <<>>
@@ -11596,7 +11611,7 @@ pub fn build_malformed_timestamp_header_default_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.timestamp {
-    option.Some(v) -> rest.maybe_set_header(headers, "timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "timestamp", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let body = <<>>
@@ -11664,7 +11679,7 @@ pub fn build_malformed_timestamp_header_epoch_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.timestamp {
-    option.Some(v) -> rest.maybe_set_header(headers, "timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "timestamp", rest.int_to_query(v))
     option.None -> headers
   }
   let body = <<>>
@@ -11730,7 +11745,7 @@ pub fn build_malformed_timestamp_path_default_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedTimestampPathDefault/{timestamp}"
   let path = case input.timestamp {
-    option.Some(v) -> rest.substitute_label(path, "timestamp", rest.timestamp_to_header(v), False)
+    option.Some(v) -> rest.substitute_label(path, "timestamp", json_timestamp.format_iso8601(v), False)
     option.None -> path
   }
   let query = ""
@@ -11798,7 +11813,7 @@ pub fn build_malformed_timestamp_path_epoch_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedTimestampPathEpoch/{timestamp}"
   let path = case input.timestamp {
-    option.Some(v) -> rest.substitute_label(path, "timestamp", rest.timestamp_to_header(v), False)
+    option.Some(v) -> rest.substitute_label(path, "timestamp", rest.int_to_query(v), False)
     option.None -> path
   }
   let query = ""
@@ -11866,7 +11881,7 @@ pub fn build_malformed_timestamp_path_http_date_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedTimestampPathHttpDate/{timestamp}"
   let path = case input.timestamp {
-    option.Some(v) -> rest.substitute_label(path, "timestamp", rest.timestamp_to_header(v), False)
+    option.Some(v) -> rest.substitute_label(path, "timestamp", json_timestamp.format_http_date(v), False)
     option.None -> path
   }
   let query = ""
@@ -11935,7 +11950,7 @@ pub fn build_malformed_timestamp_query_default_request(
   let path = "/MalformedTimestampQueryDefault"
   let query = ""
   let query = case input.timestamp {
-    option.Some(v) -> rest.add_query(query, "timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.add_query(query, "timestamp", json_timestamp.format_iso8601(v))
     option.None -> query
   }
   let headers = dict.new()
@@ -12003,7 +12018,7 @@ pub fn build_malformed_timestamp_query_epoch_request(
   let path = "/MalformedTimestampQueryEpoch"
   let query = ""
   let query = case input.timestamp {
-    option.Some(v) -> rest.add_query(query, "timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.add_query(query, "timestamp", rest.int_to_query(v))
     option.None -> query
   }
   let headers = dict.new()
@@ -12071,7 +12086,7 @@ pub fn build_malformed_timestamp_query_http_date_request(
   let path = "/MalformedTimestampQueryHttpDate"
   let query = ""
   let query = case input.timestamp {
-    option.Some(v) -> rest.add_query(query, "timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.add_query(query, "timestamp", json_timestamp.format_http_date(v))
     option.None -> query
   }
   let headers = dict.new()
@@ -12652,7 +12667,7 @@ pub fn build_omits_serializing_empty_lists_request(
   let query = case input.query_integer_enum_list {
     option.Some(xs) -> list.fold(xs, query, fn(q, item) {
       let v = item
-      rest.add_query(q, "IntegerEnumList", rest.int_to_query(case encode_integer_enum_int_enum(v) { _ -> 0 }))
+      rest.add_query(q, "IntegerEnumList", rest.int_to_query(integer_enum_int_value(v)))
     })
     option.None -> query
   }
@@ -12673,7 +12688,7 @@ pub fn build_omits_serializing_empty_lists_request(
   let query = case input.query_timestamp_list {
     option.Some(xs) -> list.fold(xs, query, fn(q, item) {
       let v = item
-      rest.add_query(q, "TimestampList", rest.timestamp_to_header(v))
+      rest.add_query(q, "TimestampList", json_timestamp.format_iso8601(v))
     })
     option.None -> query
   }
@@ -13708,11 +13723,11 @@ pub fn decode_sparse_json_lists_output(body: String) -> Result(SparseJsonListsIn
 pub fn encode_sparse_json_lists_body(input: SparseJsonListsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.sparse_short_list {
-    option.Some(v) -> [#("sparseShortList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseShortList", fn(xs) { json.array(xs, fn(o) { case o { option.Some(x) -> json.int(x) option.None -> json.null() } }) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_string_list {
-    option.Some(v) -> [#("sparseStringList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseStringList", fn(xs) { json.array(xs, fn(o) { case o { option.Some(x) -> json.string(x) option.None -> json.null() } }) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -13776,23 +13791,23 @@ pub fn decode_sparse_json_maps_output(body: String) -> Result(SparseJsonMapsInpu
 pub fn encode_sparse_json_maps_body(input: SparseJsonMapsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.sparse_boolean_map {
-    option.Some(v) -> [#("sparseBooleanMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.bool(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseBooleanMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> json.bool(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_number_map {
-    option.Some(v) -> [#("sparseNumberMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.int(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseNumberMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> json.int(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_set_map {
-    option.Some(v) -> [#("sparseSetMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseSetMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> fn(xs) { json.array(xs, json.string) }(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_string_map {
-    option.Some(v) -> [#("sparseStringMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseStringMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> json.string(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_struct_map {
-    option.Some(v) -> [#("sparseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_greeting_struct_struct(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> encode_greeting_struct_struct(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -14537,31 +14552,31 @@ pub fn build_timestamp_format_headers_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.default_format {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-defaultFormat", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-defaultFormat", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.member_date_time {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-memberDateTime", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-memberDateTime", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.member_epoch_seconds {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-memberEpochSeconds", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-memberEpochSeconds", rest.int_to_query(v))
     option.None -> headers
   }
   let headers = case input.member_http_date {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-memberHttpDate", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-memberHttpDate", json_timestamp.format_http_date(v))
     option.None -> headers
   }
   let headers = case input.target_date_time {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-targetDateTime", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-targetDateTime", json_timestamp.format_iso8601(v))
     option.None -> headers
   }
   let headers = case input.target_epoch_seconds {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-targetEpochSeconds", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-targetEpochSeconds", rest.int_to_query(v))
     option.None -> headers
   }
   let headers = case input.target_http_date {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-targetHttpDate", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-targetHttpDate", json_timestamp.format_http_date(v))
     option.None -> headers
   }
   let body = <<>>
