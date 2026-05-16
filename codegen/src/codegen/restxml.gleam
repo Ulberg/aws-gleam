@@ -1120,6 +1120,11 @@ fn emit_struct_encoder(
       <> type_name
       <> ") -> json.Json {\n  let pairs = []\n"
       <> list.fold(members, "", fn(acc, m) {
+        let none_branch = case m.default_json {
+          option.Some(expr) ->
+            "[#(\"" <> m.json_name <> "\", " <> expr <> "), ..pairs]"
+          option.None -> "pairs"
+        }
         acc
         <> "  let pairs = case input."
         <> m.snake_name
@@ -1127,7 +1132,9 @@ fn emit_struct_encoder(
         <> m.json_name
         <> "\", "
         <> types.json_encoder_member(m.target, m.timestamp_format)
-        <> "(v)), ..pairs]\n    option.None -> pairs\n  }\n"
+        <> "(v)), ..pairs]\n    option.None -> "
+        <> none_branch
+        <> "\n  }\n"
       })
       <> "  json.object(pairs)\n}\n\n"
   }

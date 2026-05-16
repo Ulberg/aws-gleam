@@ -63,6 +63,15 @@ pub fn encode_content_type_parameters_input_struct(input: ContentTypeParametersI
   json.object(pairs)
 }
 
+pub fn encode_content_type_parameters_input_struct_top(input: ContentTypeParametersInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.value {
+    option.Some(v) -> [#("value", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_content_type_parameters_input_struct() -> decode.Decoder(ContentTypeParametersInput) {
   use value <- decode.optional_field("value", option.None, decode.optional(decode.int))
   decode.success(ContentTypeParametersInput(
@@ -85,6 +94,10 @@ pub fn encode_content_type_parameters_output_struct(_v: ContentTypeParametersOut
   json.object([])
 }
 
+pub fn encode_content_type_parameters_output_struct_top(_v: ContentTypeParametersOutput) -> json.Json {
+  json.object([])
+}
+
 pub fn decode_content_type_parameters_output_struct() -> decode.Decoder(ContentTypeParametersOutput) {
   decode.success(ContentTypeParametersOutput)
 }
@@ -98,6 +111,10 @@ pub type EmptyInputAndEmptyOutputInput {
 }
 
 pub fn encode_empty_input_and_empty_output_input_struct(_v: EmptyInputAndEmptyOutputInput) -> json.Json {
+  json.object([])
+}
+
+pub fn encode_empty_input_and_empty_output_input_struct_top(_v: EmptyInputAndEmptyOutputInput) -> json.Json {
   json.object([])
 }
 
@@ -117,6 +134,10 @@ pub fn encode_empty_input_and_empty_output_output_struct(_v: EmptyInputAndEmptyO
   json.object([])
 }
 
+pub fn encode_empty_input_and_empty_output_output_struct_top(_v: EmptyInputAndEmptyOutputOutput) -> json.Json {
+  json.object([])
+}
+
 pub fn decode_empty_input_and_empty_output_output_struct() -> decode.Decoder(EmptyInputAndEmptyOutputOutput) {
   decode.success(EmptyInputAndEmptyOutputOutput)
 }
@@ -132,6 +153,15 @@ pub type EndpointWithHostLabelOperationInput {
 }
 
 pub fn encode_endpoint_with_host_label_operation_input_struct(input: EndpointWithHostLabelOperationInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.label {
+    option.Some(v) -> [#("label", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_endpoint_with_host_label_operation_input_struct_top(input: EndpointWithHostLabelOperationInput) -> json.Json {
   let pairs = []
   let pairs = case input.label {
     option.Some(v) -> [#("label", json.string(v)), ..pairs]
@@ -169,6 +199,15 @@ pub fn encode_greeting_with_errors_input_struct(input: GreetingWithErrorsInput) 
   json.object(pairs)
 }
 
+pub fn encode_greeting_with_errors_input_struct_top(input: GreetingWithErrorsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.greeting {
+    option.Some(v) -> [#("greeting", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_greeting_with_errors_input_struct() -> decode.Decoder(GreetingWithErrorsInput) {
   use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
   decode.success(GreetingWithErrorsInput(
@@ -190,6 +229,15 @@ pub type GreetingWithErrorsOutput {
 }
 
 pub fn encode_greeting_with_errors_output_struct(input: GreetingWithErrorsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.greeting {
+    option.Some(v) -> [#("greeting", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_greeting_with_errors_output_struct_top(input: GreetingWithErrorsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.greeting {
     option.Some(v) -> [#("greeting", json.string(v)), ..pairs]
@@ -232,6 +280,19 @@ pub fn encode_complex_error_struct(input: ComplexError) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_complex_error_struct_top(input: ComplexError) -> json.Json {
+  let pairs = []
+  let pairs = case input.nested {
+    option.Some(v) -> [#("Nested", encode_complex_nested_error_data_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.top_level {
+    option.Some(v) -> [#("TopLevel", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_complex_error_struct() -> decode.Decoder(ComplexError) {
   use nested <- decode.optional_field("Nested", option.None, decode.optional(decode_complex_nested_error_data_struct()))
   use top_level <- decode.optional_field("TopLevel", option.None, decode.optional(decode.string))
@@ -259,14 +320,23 @@ pub type ComplexNestedErrorData {
 pub fn encode_complex_nested_error_data_struct(input: ComplexNestedErrorData) -> json.Json {
   let pairs = []
   let pairs = case input.foo {
-    option.Some(v) -> [#("Fooooo", json.string(v)), ..pairs]
+    option.Some(v) -> [#("Foo", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_complex_nested_error_data_struct_top(input: ComplexNestedErrorData) -> json.Json {
+  let pairs = []
+  let pairs = case input.foo {
+    option.Some(v) -> [#("Foo", json.string(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_complex_nested_error_data_struct() -> decode.Decoder(ComplexNestedErrorData) {
-  use foo <- decode.optional_field("Fooooo", option.None, decode.optional(decode.string))
+  use foo <- decode.optional_field("Foo", option.None, decode.optional(decode.string))
   decode.success(ComplexNestedErrorData(
     foo: foo,
   ))
@@ -287,6 +357,10 @@ pub fn encode_foo_error_struct(_v: FooError) -> json.Json {
   json.object([])
 }
 
+pub fn encode_foo_error_struct_top(_v: FooError) -> json.Json {
+  json.object([])
+}
+
 pub fn decode_foo_error_struct() -> decode.Decoder(FooError) {
   decode.success(FooError)
 }
@@ -302,6 +376,15 @@ pub type InvalidGreeting {
 }
 
 pub fn encode_invalid_greeting_struct(input: InvalidGreeting) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("Message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_invalid_greeting_struct_top(input: InvalidGreeting) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("Message", json.string(v)), ..pairs]
@@ -331,6 +414,15 @@ pub type JsonUnionsInput {
 }
 
 pub fn encode_json_unions_input_struct(input: JsonUnionsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.contents {
+    option.Some(v) -> [#("contents", encode_my_union_union(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_json_unions_input_struct_top(input: JsonUnionsInput) -> json.Json {
   let pairs = []
   let pairs = case input.contents {
     option.Some(v) -> [#("contents", encode_my_union_union(v)), ..pairs]
@@ -486,6 +578,15 @@ pub fn encode_greeting_struct_struct(input: GreetingStruct) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_greeting_struct_struct_top(input: GreetingStruct) -> json.Json {
+  let pairs = []
+  let pairs = case input.hi {
+    option.Some(v) -> [#("hi", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_greeting_struct_struct() -> decode.Decoder(GreetingStruct) {
   use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
   decode.success(GreetingStruct(
@@ -507,6 +608,15 @@ pub type JsonUnionsOutput {
 }
 
 pub fn encode_json_unions_output_struct(input: JsonUnionsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.contents {
+    option.Some(v) -> [#("contents", encode_my_union_union(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_json_unions_output_struct_top(input: JsonUnionsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.contents {
     option.Some(v) -> [#("contents", encode_my_union_union(v)), ..pairs]
@@ -537,6 +647,10 @@ pub fn encode_no_input_and_output_output_struct(_v: NoInputAndOutputOutput) -> j
   json.object([])
 }
 
+pub fn encode_no_input_and_output_output_struct_top(_v: NoInputAndOutputOutput) -> json.Json {
+  json.object([])
+}
+
 pub fn decode_no_input_and_output_output_struct() -> decode.Decoder(NoInputAndOutputOutput) {
   decode.success(NoInputAndOutputOutput)
 }
@@ -555,6 +669,27 @@ pub type OperationWithDefaultsInput {
 }
 
 pub fn encode_operation_with_defaults_input_struct(input: OperationWithDefaultsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.client_optional_defaults {
+    option.Some(v) -> [#("clientOptionalDefaults", encode_client_optional_defaults_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.defaults {
+    option.Some(v) -> [#("defaults", encode_defaults_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.other_top_level_default {
+    option.Some(v) -> [#("otherTopLevelDefault", json.int(v)), ..pairs]
+    option.None -> [#("otherTopLevelDefault", json.int(0)), ..pairs]
+  }
+  let pairs = case input.top_level_default {
+    option.Some(v) -> [#("topLevelDefault", json.string(v)), ..pairs]
+    option.None -> [#("topLevelDefault", json.string("hi")), ..pairs]
+  }
+  json.object(pairs)
+}
+
+pub fn encode_operation_with_defaults_input_struct_top(input: OperationWithDefaultsInput) -> json.Json {
   let pairs = []
   let pairs = case input.client_optional_defaults {
     option.Some(v) -> [#("clientOptionalDefaults", encode_client_optional_defaults_struct(v)), ..pairs]
@@ -616,6 +751,15 @@ pub fn encode_client_optional_defaults_struct(input: ClientOptionalDefaults) -> 
   json.object(pairs)
 }
 
+pub fn encode_client_optional_defaults_struct_top(input: ClientOptionalDefaults) -> json.Json {
+  let pairs = []
+  let pairs = case input.member {
+    option.Some(v) -> [#("member", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_client_optional_defaults_struct() -> decode.Decoder(ClientOptionalDefaults) {
   use member <- decode.optional_field("member", option.None, decode.optional(decode.int))
   decode.success(ClientOptionalDefaults(
@@ -664,6 +808,123 @@ pub type Defaults {
 }
 
 pub fn encode_defaults_struct(input: Defaults) -> json.Json {
+  let pairs = []
+  let pairs = case input.default_blob {
+    option.Some(v) -> [#("defaultBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
+    option.None -> [#("defaultBlob", json.string("YWJj")), ..pairs]
+  }
+  let pairs = case input.default_boolean {
+    option.Some(v) -> [#("defaultBoolean", json.bool(v)), ..pairs]
+    option.None -> [#("defaultBoolean", json.bool(True)), ..pairs]
+  }
+  let pairs = case input.default_byte {
+    option.Some(v) -> [#("defaultByte", json.int(v)), ..pairs]
+    option.None -> [#("defaultByte", json.int(1)), ..pairs]
+  }
+  let pairs = case input.default_document_boolean {
+    option.Some(v) -> [#("defaultDocumentBoolean", fn(j) { j }(v)), ..pairs]
+    option.None -> [#("defaultDocumentBoolean", json.bool(True)), ..pairs]
+  }
+  let pairs = case input.default_document_list {
+    option.Some(v) -> [#("defaultDocumentList", fn(j) { j }(v)), ..pairs]
+    option.None -> [#("defaultDocumentList", json.preprocessed_array([])), ..pairs]
+  }
+  let pairs = case input.default_document_map {
+    option.Some(v) -> [#("defaultDocumentMap", fn(j) { j }(v)), ..pairs]
+    option.None -> [#("defaultDocumentMap", json.object([])), ..pairs]
+  }
+  let pairs = case input.default_document_string {
+    option.Some(v) -> [#("defaultDocumentString", fn(j) { j }(v)), ..pairs]
+    option.None -> [#("defaultDocumentString", json.string("hi")), ..pairs]
+  }
+  let pairs = case input.default_double {
+    option.Some(v) -> [#("defaultDouble", json_float.encode(v)), ..pairs]
+    option.None -> [#("defaultDouble", json.float(1.0)), ..pairs]
+  }
+  let pairs = case input.default_enum {
+    option.Some(v) -> [#("defaultEnum", encode_test_enum_enum(v)), ..pairs]
+    option.None -> [#("defaultEnum", json.string("FOO")), ..pairs]
+  }
+  let pairs = case input.default_float {
+    option.Some(v) -> [#("defaultFloat", json_float.encode(v)), ..pairs]
+    option.None -> [#("defaultFloat", json.float(1.0)), ..pairs]
+  }
+  let pairs = case input.default_int_enum {
+    option.Some(v) -> [#("defaultIntEnum", encode_test_int_enum_int_enum(v)), ..pairs]
+    option.None -> [#("defaultIntEnum", json.int(1)), ..pairs]
+  }
+  let pairs = case input.default_integer {
+    option.Some(v) -> [#("defaultInteger", json.int(v)), ..pairs]
+    option.None -> [#("defaultInteger", json.int(10)), ..pairs]
+  }
+  let pairs = case input.default_list {
+    option.Some(v) -> [#("defaultList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> [#("defaultList", json.preprocessed_array([])), ..pairs]
+  }
+  let pairs = case input.default_long {
+    option.Some(v) -> [#("defaultLong", json.int(v)), ..pairs]
+    option.None -> [#("defaultLong", json.int(100)), ..pairs]
+  }
+  let pairs = case input.default_map {
+    option.Some(v) -> [#("defaultMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> [#("defaultMap", json.object([])), ..pairs]
+  }
+  let pairs = case input.default_null_document {
+    option.Some(v) -> [#("defaultNullDocument", fn(j) { j }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.default_short {
+    option.Some(v) -> [#("defaultShort", json.int(v)), ..pairs]
+    option.None -> [#("defaultShort", json.int(1)), ..pairs]
+  }
+  let pairs = case input.default_string {
+    option.Some(v) -> [#("defaultString", json.string(v)), ..pairs]
+    option.None -> [#("defaultString", json.string("hi")), ..pairs]
+  }
+  let pairs = case input.default_timestamp {
+    option.Some(v) -> [#("defaultTimestamp", json.int(v)), ..pairs]
+    option.None -> [#("defaultTimestamp", json.int(0)), ..pairs]
+  }
+  let pairs = case input.empty_blob {
+    option.Some(v) -> [#("emptyBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
+    option.None -> [#("emptyBlob", json.string("")), ..pairs]
+  }
+  let pairs = case input.empty_string {
+    option.Some(v) -> [#("emptyString", json.string(v)), ..pairs]
+    option.None -> [#("emptyString", json.string("")), ..pairs]
+  }
+  let pairs = case input.false_boolean {
+    option.Some(v) -> [#("falseBoolean", json.bool(v)), ..pairs]
+    option.None -> [#("falseBoolean", json.bool(False)), ..pairs]
+  }
+  let pairs = case input.zero_byte {
+    option.Some(v) -> [#("zeroByte", json.int(v)), ..pairs]
+    option.None -> [#("zeroByte", json.int(0)), ..pairs]
+  }
+  let pairs = case input.zero_double {
+    option.Some(v) -> [#("zeroDouble", json_float.encode(v)), ..pairs]
+    option.None -> [#("zeroDouble", json.float(0.0)), ..pairs]
+  }
+  let pairs = case input.zero_float {
+    option.Some(v) -> [#("zeroFloat", json_float.encode(v)), ..pairs]
+    option.None -> [#("zeroFloat", json.float(0.0)), ..pairs]
+  }
+  let pairs = case input.zero_integer {
+    option.Some(v) -> [#("zeroInteger", json.int(v)), ..pairs]
+    option.None -> [#("zeroInteger", json.int(0)), ..pairs]
+  }
+  let pairs = case input.zero_long {
+    option.Some(v) -> [#("zeroLong", json.int(v)), ..pairs]
+    option.None -> [#("zeroLong", json.int(0)), ..pairs]
+  }
+  let pairs = case input.zero_short {
+    option.Some(v) -> [#("zeroShort", json.int(v)), ..pairs]
+    option.None -> [#("zeroShort", json.int(0)), ..pairs]
+  }
+  json.object(pairs)
+}
+
+pub fn encode_defaults_struct_top(input: Defaults) -> json.Json {
   let pairs = []
   let pairs = case input.default_blob {
     option.Some(v) -> [#("defaultBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
@@ -986,6 +1247,123 @@ pub fn encode_operation_with_defaults_output_struct(input: OperationWithDefaults
   let pairs = []
   let pairs = case input.default_blob {
     option.Some(v) -> [#("defaultBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
+    option.None -> [#("defaultBlob", json.string("YWJj")), ..pairs]
+  }
+  let pairs = case input.default_boolean {
+    option.Some(v) -> [#("defaultBoolean", json.bool(v)), ..pairs]
+    option.None -> [#("defaultBoolean", json.bool(True)), ..pairs]
+  }
+  let pairs = case input.default_byte {
+    option.Some(v) -> [#("defaultByte", json.int(v)), ..pairs]
+    option.None -> [#("defaultByte", json.int(1)), ..pairs]
+  }
+  let pairs = case input.default_document_boolean {
+    option.Some(v) -> [#("defaultDocumentBoolean", fn(j) { j }(v)), ..pairs]
+    option.None -> [#("defaultDocumentBoolean", json.bool(True)), ..pairs]
+  }
+  let pairs = case input.default_document_list {
+    option.Some(v) -> [#("defaultDocumentList", fn(j) { j }(v)), ..pairs]
+    option.None -> [#("defaultDocumentList", json.preprocessed_array([])), ..pairs]
+  }
+  let pairs = case input.default_document_map {
+    option.Some(v) -> [#("defaultDocumentMap", fn(j) { j }(v)), ..pairs]
+    option.None -> [#("defaultDocumentMap", json.object([])), ..pairs]
+  }
+  let pairs = case input.default_document_string {
+    option.Some(v) -> [#("defaultDocumentString", fn(j) { j }(v)), ..pairs]
+    option.None -> [#("defaultDocumentString", json.string("hi")), ..pairs]
+  }
+  let pairs = case input.default_double {
+    option.Some(v) -> [#("defaultDouble", json_float.encode(v)), ..pairs]
+    option.None -> [#("defaultDouble", json.float(1.0)), ..pairs]
+  }
+  let pairs = case input.default_enum {
+    option.Some(v) -> [#("defaultEnum", encode_test_enum_enum(v)), ..pairs]
+    option.None -> [#("defaultEnum", json.string("FOO")), ..pairs]
+  }
+  let pairs = case input.default_float {
+    option.Some(v) -> [#("defaultFloat", json_float.encode(v)), ..pairs]
+    option.None -> [#("defaultFloat", json.float(1.0)), ..pairs]
+  }
+  let pairs = case input.default_int_enum {
+    option.Some(v) -> [#("defaultIntEnum", encode_test_int_enum_int_enum(v)), ..pairs]
+    option.None -> [#("defaultIntEnum", json.int(1)), ..pairs]
+  }
+  let pairs = case input.default_integer {
+    option.Some(v) -> [#("defaultInteger", json.int(v)), ..pairs]
+    option.None -> [#("defaultInteger", json.int(10)), ..pairs]
+  }
+  let pairs = case input.default_list {
+    option.Some(v) -> [#("defaultList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> [#("defaultList", json.preprocessed_array([])), ..pairs]
+  }
+  let pairs = case input.default_long {
+    option.Some(v) -> [#("defaultLong", json.int(v)), ..pairs]
+    option.None -> [#("defaultLong", json.int(100)), ..pairs]
+  }
+  let pairs = case input.default_map {
+    option.Some(v) -> [#("defaultMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> [#("defaultMap", json.object([])), ..pairs]
+  }
+  let pairs = case input.default_null_document {
+    option.Some(v) -> [#("defaultNullDocument", fn(j) { j }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.default_short {
+    option.Some(v) -> [#("defaultShort", json.int(v)), ..pairs]
+    option.None -> [#("defaultShort", json.int(1)), ..pairs]
+  }
+  let pairs = case input.default_string {
+    option.Some(v) -> [#("defaultString", json.string(v)), ..pairs]
+    option.None -> [#("defaultString", json.string("hi")), ..pairs]
+  }
+  let pairs = case input.default_timestamp {
+    option.Some(v) -> [#("defaultTimestamp", json.int(v)), ..pairs]
+    option.None -> [#("defaultTimestamp", json.int(0)), ..pairs]
+  }
+  let pairs = case input.empty_blob {
+    option.Some(v) -> [#("emptyBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
+    option.None -> [#("emptyBlob", json.string("")), ..pairs]
+  }
+  let pairs = case input.empty_string {
+    option.Some(v) -> [#("emptyString", json.string(v)), ..pairs]
+    option.None -> [#("emptyString", json.string("")), ..pairs]
+  }
+  let pairs = case input.false_boolean {
+    option.Some(v) -> [#("falseBoolean", json.bool(v)), ..pairs]
+    option.None -> [#("falseBoolean", json.bool(False)), ..pairs]
+  }
+  let pairs = case input.zero_byte {
+    option.Some(v) -> [#("zeroByte", json.int(v)), ..pairs]
+    option.None -> [#("zeroByte", json.int(0)), ..pairs]
+  }
+  let pairs = case input.zero_double {
+    option.Some(v) -> [#("zeroDouble", json_float.encode(v)), ..pairs]
+    option.None -> [#("zeroDouble", json.float(0.0)), ..pairs]
+  }
+  let pairs = case input.zero_float {
+    option.Some(v) -> [#("zeroFloat", json_float.encode(v)), ..pairs]
+    option.None -> [#("zeroFloat", json.float(0.0)), ..pairs]
+  }
+  let pairs = case input.zero_integer {
+    option.Some(v) -> [#("zeroInteger", json.int(v)), ..pairs]
+    option.None -> [#("zeroInteger", json.int(0)), ..pairs]
+  }
+  let pairs = case input.zero_long {
+    option.Some(v) -> [#("zeroLong", json.int(v)), ..pairs]
+    option.None -> [#("zeroLong", json.int(0)), ..pairs]
+  }
+  let pairs = case input.zero_short {
+    option.Some(v) -> [#("zeroShort", json.int(v)), ..pairs]
+    option.None -> [#("zeroShort", json.int(0)), ..pairs]
+  }
+  json.object(pairs)
+}
+
+pub fn encode_operation_with_defaults_output_struct_top(input: OperationWithDefaultsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.default_blob {
+    option.Some(v) -> [#("defaultBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.default_boolean {
@@ -1236,6 +1614,15 @@ pub fn encode_operation_with_nested_structure_input_struct(input: OperationWithN
   json.object(pairs)
 }
 
+pub fn encode_operation_with_nested_structure_input_struct_top(input: OperationWithNestedStructureInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.top_level {
+    option.Some(v) -> [#("topLevel", encode_top_level_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_operation_with_nested_structure_input_struct() -> decode.Decoder(OperationWithNestedStructureInput) {
   use top_level <- decode.optional_field("topLevel", option.None, decode.optional(decode_top_level_struct()))
   decode.success(OperationWithNestedStructureInput(
@@ -1259,6 +1646,23 @@ pub type TopLevel {
 }
 
 pub fn encode_top_level_struct(input: TopLevel) -> json.Json {
+  let pairs = []
+  let pairs = case input.dialog {
+    option.Some(v) -> [#("dialog", encode_dialog_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.dialog_list {
+    option.Some(v) -> [#("dialogList", fn(xs) { json.array(xs, encode_dialog_struct) }(v)), ..pairs]
+    option.None -> [#("dialogList", json.preprocessed_array([])), ..pairs]
+  }
+  let pairs = case input.dialog_map {
+    option.Some(v) -> [#("dialogMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_dialog_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> [#("dialogMap", json.object([])), ..pairs]
+  }
+  json.object(pairs)
+}
+
+pub fn encode_top_level_struct_top(input: TopLevel) -> json.Json {
   let pairs = []
   let pairs = case input.dialog {
     option.Some(v) -> [#("dialog", encode_dialog_struct(v)), ..pairs]
@@ -1313,6 +1717,23 @@ pub fn encode_dialog_struct(input: Dialog) -> json.Json {
   }
   let pairs = case input.greeting {
     option.Some(v) -> [#("greeting", json.string(v)), ..pairs]
+    option.None -> [#("greeting", json.string("hi")), ..pairs]
+  }
+  let pairs = case input.language {
+    option.Some(v) -> [#("language", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_dialog_struct_top(input: Dialog) -> json.Json {
+  let pairs = []
+  let pairs = case input.farewell {
+    option.Some(v) -> [#("farewell", encode_farewell_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.greeting {
+    option.Some(v) -> [#("greeting", json.string(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.language {
@@ -1354,6 +1775,15 @@ pub fn encode_farewell_struct(input: Farewell) -> json.Json {
   let pairs = []
   let pairs = case input.phrase {
     option.Some(v) -> [#("phrase", json.string(v)), ..pairs]
+    option.None -> [#("phrase", json.string("bye")), ..pairs]
+  }
+  json.object(pairs)
+}
+
+pub fn encode_farewell_struct_top(input: Farewell) -> json.Json {
+  let pairs = []
+  let pairs = case input.phrase {
+    option.Some(v) -> [#("phrase", json.string(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -1382,6 +1812,23 @@ pub type OperationWithNestedStructureOutput {
 }
 
 pub fn encode_operation_with_nested_structure_output_struct(input: OperationWithNestedStructureOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.dialog {
+    option.Some(v) -> [#("dialog", encode_dialog_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.dialog_list {
+    option.Some(v) -> [#("dialogList", fn(xs) { json.array(xs, encode_dialog_struct) }(v)), ..pairs]
+    option.None -> [#("dialogList", json.preprocessed_array([])), ..pairs]
+  }
+  let pairs = case input.dialog_map {
+    option.Some(v) -> [#("dialogMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_dialog_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> [#("dialogMap", json.object([])), ..pairs]
+  }
+  json.object(pairs)
+}
+
+pub fn encode_operation_with_nested_structure_output_struct_top(input: OperationWithNestedStructureOutput) -> json.Json {
   let pairs = []
   let pairs = case input.dialog {
     option.Some(v) -> [#("dialog", encode_dialog_struct(v)), ..pairs]
@@ -1438,6 +1885,59 @@ pub type OperationWithRequiredMembersOutput {
 }
 
 pub fn encode_operation_with_required_members_output_struct(input: OperationWithRequiredMembersOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.required_blob {
+    option.Some(v) -> [#("requiredBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.required_boolean {
+    option.Some(v) -> [#("requiredBoolean", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.required_byte {
+    option.Some(v) -> [#("requiredByte", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.required_double {
+    option.Some(v) -> [#("requiredDouble", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.required_float {
+    option.Some(v) -> [#("requiredFloat", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.required_integer {
+    option.Some(v) -> [#("requiredInteger", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.required_list {
+    option.Some(v) -> [#("requiredList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.required_long {
+    option.Some(v) -> [#("requiredLong", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.required_map {
+    option.Some(v) -> [#("requiredMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.required_short {
+    option.Some(v) -> [#("requiredShort", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.required_string {
+    option.Some(v) -> [#("requiredString", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.required_timestamp {
+    option.Some(v) -> [#("requiredTimestamp", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_operation_with_required_members_output_struct_top(input: OperationWithRequiredMembersOutput) -> json.Json {
   let pairs = []
   let pairs = case input.required_blob {
     option.Some(v) -> [#("requiredBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
@@ -1568,6 +2068,67 @@ pub type OperationWithRequiredMembersWithDefaultsOutput {
 }
 
 pub fn encode_operation_with_required_members_with_defaults_output_struct(input: OperationWithRequiredMembersWithDefaultsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.required_blob {
+    option.Some(v) -> [#("requiredBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
+    option.None -> [#("requiredBlob", json.string("YmxvYg==")), ..pairs]
+  }
+  let pairs = case input.required_boolean {
+    option.Some(v) -> [#("requiredBoolean", json.bool(v)), ..pairs]
+    option.None -> [#("requiredBoolean", json.bool(True)), ..pairs]
+  }
+  let pairs = case input.required_byte {
+    option.Some(v) -> [#("requiredByte", json.int(v)), ..pairs]
+    option.None -> [#("requiredByte", json.int(1)), ..pairs]
+  }
+  let pairs = case input.required_double {
+    option.Some(v) -> [#("requiredDouble", json_float.encode(v)), ..pairs]
+    option.None -> [#("requiredDouble", json.float(1.0)), ..pairs]
+  }
+  let pairs = case input.required_enum {
+    option.Some(v) -> [#("requiredEnum", encode_required_enum_enum(v)), ..pairs]
+    option.None -> [#("requiredEnum", json.string("FOO")), ..pairs]
+  }
+  let pairs = case input.required_float {
+    option.Some(v) -> [#("requiredFloat", json_float.encode(v)), ..pairs]
+    option.None -> [#("requiredFloat", json.float(1.0)), ..pairs]
+  }
+  let pairs = case input.required_int_enum {
+    option.Some(v) -> [#("requiredIntEnum", encode_required_int_enum_int_enum(v)), ..pairs]
+    option.None -> [#("requiredIntEnum", json.int(1)), ..pairs]
+  }
+  let pairs = case input.required_integer {
+    option.Some(v) -> [#("requiredInteger", json.int(v)), ..pairs]
+    option.None -> [#("requiredInteger", json.int(10)), ..pairs]
+  }
+  let pairs = case input.required_list {
+    option.Some(v) -> [#("requiredList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> [#("requiredList", json.preprocessed_array([])), ..pairs]
+  }
+  let pairs = case input.required_long {
+    option.Some(v) -> [#("requiredLong", json.int(v)), ..pairs]
+    option.None -> [#("requiredLong", json.int(100)), ..pairs]
+  }
+  let pairs = case input.required_map {
+    option.Some(v) -> [#("requiredMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> [#("requiredMap", json.object([])), ..pairs]
+  }
+  let pairs = case input.required_short {
+    option.Some(v) -> [#("requiredShort", json.int(v)), ..pairs]
+    option.None -> [#("requiredShort", json.int(1)), ..pairs]
+  }
+  let pairs = case input.required_string {
+    option.Some(v) -> [#("requiredString", json.string(v)), ..pairs]
+    option.None -> [#("requiredString", json.string("hi")), ..pairs]
+  }
+  let pairs = case input.required_timestamp {
+    option.Some(v) -> [#("requiredTimestamp", json.int(v)), ..pairs]
+    option.None -> [#("requiredTimestamp", json.int(1)), ..pairs]
+  }
+  json.object(pairs)
+}
+
+pub fn encode_operation_with_required_members_with_defaults_output_struct_top(input: OperationWithRequiredMembersWithDefaultsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.required_blob {
     option.Some(v) -> [#("requiredBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
@@ -1761,6 +2322,19 @@ pub fn encode_simple_scalar_properties_input_struct(input: SimpleScalarPropertie
   json.object(pairs)
 }
 
+pub fn encode_simple_scalar_properties_input_struct_top(input: SimpleScalarPropertiesInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.double_value {
+    option.Some(v) -> [#("doubleValue", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.float_value {
+    option.Some(v) -> [#("floatValue", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_simple_scalar_properties_input_struct() -> decode.Decoder(SimpleScalarPropertiesInput) {
   use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
   use float_value <- decode.optional_field("floatValue", option.None, decode.optional(json_float.decoder()))
@@ -1799,6 +2373,19 @@ pub fn encode_simple_scalar_properties_output_struct(input: SimpleScalarProperti
   json.object(pairs)
 }
 
+pub fn encode_simple_scalar_properties_output_struct_top(input: SimpleScalarPropertiesOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.double_value {
+    option.Some(v) -> [#("doubleValue", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.float_value {
+    option.Some(v) -> [#("floatValue", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_simple_scalar_properties_output_struct() -> decode.Decoder(SimpleScalarPropertiesOutput) {
   use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
   use float_value <- decode.optional_field("floatValue", option.None, decode.optional(json_float.decoder()))
@@ -1819,7 +2406,7 @@ pub fn decode_simple_scalar_properties_output_struct_params() -> decode.Decoder(
 
 
 pub fn encode_content_type_parameters_input(input: ContentTypeParametersInput) -> String {
-  json.to_string(encode_content_type_parameters_input_struct(input))
+  json.to_string(encode_content_type_parameters_input_struct_top(input))
 }
 
 pub fn decode_content_type_parameters_input(body: String) -> Result(ContentTypeParametersInput, String) {
@@ -1885,7 +2472,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_empty_input_and_empty_output_input(input: EmptyInputAndEmptyOutputInput) -> String {
-  json.to_string(encode_empty_input_and_empty_output_input_struct(input))
+  json.to_string(encode_empty_input_and_empty_output_input_struct_top(input))
 }
 
 pub fn decode_empty_input_and_empty_output_input(body: String) -> Result(EmptyInputAndEmptyOutputInput, String) {
@@ -2053,7 +2640,7 @@ pub fn decode_endpoint_with_host_label_operation_output_struct() -> decode.Decod
 }
 
 pub fn encode_endpoint_with_host_label_operation_input(input: EndpointWithHostLabelOperationInput) -> String {
-  json.to_string(encode_endpoint_with_host_label_operation_input_struct(input))
+  json.to_string(encode_endpoint_with_host_label_operation_input_struct_top(input))
 }
 
 pub fn decode_endpoint_with_host_label_operation_input(body: String) -> Result(EndpointWithHostLabelOperationInput, String) {
@@ -2119,7 +2706,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_greeting_with_errors_input(input: GreetingWithErrorsInput) -> String {
-  json.to_string(encode_greeting_with_errors_input_struct(input))
+  json.to_string(encode_greeting_with_errors_input_struct_top(input))
 }
 
 pub fn decode_greeting_with_errors_input(body: String) -> Result(GreetingWithErrorsInput, String) {
@@ -2305,7 +2892,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_json_unions_input(input: JsonUnionsInput) -> String {
-  json.to_string(encode_json_unions_input_struct(input))
+  json.to_string(encode_json_unions_input_struct_top(input))
 }
 
 pub fn decode_json_unions_input(body: String) -> Result(JsonUnionsInput, String) {
@@ -2539,7 +3126,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_operation_with_defaults_input(input: OperationWithDefaultsInput) -> String {
-  json.to_string(encode_operation_with_defaults_input_struct(input))
+  json.to_string(encode_operation_with_defaults_input_struct_top(input))
 }
 
 pub fn decode_operation_with_defaults_input(body: String) -> Result(OperationWithDefaultsInput, String) {
@@ -2605,7 +3192,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_operation_with_nested_structure_input(input: OperationWithNestedStructureInput) -> String {
-  json.to_string(encode_operation_with_nested_structure_input_struct(input))
+  json.to_string(encode_operation_with_nested_structure_input_struct_top(input))
 }
 
 pub fn decode_operation_with_nested_structure_input(body: String) -> Result(OperationWithNestedStructureInput, String) {
@@ -2917,7 +3504,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_simple_scalar_properties_input(input: SimpleScalarPropertiesInput) -> String {
-  json.to_string(encode_simple_scalar_properties_input_struct(input))
+  json.to_string(encode_simple_scalar_properties_input_struct_top(input))
 }
 
 pub fn decode_simple_scalar_properties_input(body: String) -> Result(SimpleScalarPropertiesInput, String) {

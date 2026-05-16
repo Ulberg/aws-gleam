@@ -16842,7 +16842,7 @@ pub fn encode_get_object_torrent_output_struct(input: GetObjectTorrentOutput) ->
   let pairs = []
   let pairs = case input.body {
     option.Some(v) -> [#("Body", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("Body", json.string("")), ..pairs]
   }
   let pairs = case input.request_charged {
     option.Some(v) -> [#("RequestCharged", encode_request_charged_enum(v)), ..pairs]
@@ -24814,7 +24814,7 @@ pub fn encode_write_get_object_response_request_struct(input: WriteGetObjectResp
   }
   let pairs = case input.body {
     option.Some(v) -> [#("Body", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("Body", json.string("")), ..pairs]
   }
   let pairs = case input.bucket_key_enabled {
     option.Some(v) -> [#("BucketKeyEnabled", json.bool(v)), ..pairs]

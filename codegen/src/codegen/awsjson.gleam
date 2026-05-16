@@ -518,7 +518,9 @@ fn emit_operation_body(
   let in_struct_encoder_name = case in_info.synthesise {
     True -> "encode_" <> snake <> "_input_struct"
     False ->
-      "encode_" <> stringutils.pascal_to_snake(in_info.type_name) <> "_struct"
+      "encode_"
+      <> stringutils.pascal_to_snake(in_info.type_name)
+      <> "_struct_top"
   }
   let out_struct_decoder_name = case out_info.synthesise {
     True -> "decode_" <> snake <> "_output_struct"
@@ -772,12 +774,49 @@ fn emit_int_enum_codec(
 fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
   let snake = stringutils.pascal_to_snake(name)
   emit_struct_encoder(name, "encode_" <> snake <> "_struct", members)
+  // Top-level operation-input encoder: same as `_struct` but skips
+  // `@default` population. Per the AWS-Smithy protocols spec, clients
+  // do NOT serialise top-level defaults on operation inputs — only
+  // defaults on nested struct members.
+  <> emit_struct_encoder_top(name, "encode_" <> snake <> "_struct_top", members)
   <> emit_struct_decoder(name, "decode_" <> snake <> "_struct", members)
   <> emit_struct_decoder_params(
     name,
     "decode_" <> snake <> "_struct_params",
     members,
   )
+}
+
+fn emit_struct_encoder_top(
+  type_name: String,
+  fn_name: String,
+  members: List(MemberDef),
+) -> String {
+  case members {
+    [] ->
+      "pub fn "
+      <> fn_name
+      <> "(_v: "
+      <> type_name
+      <> ") -> json.Json {\n  json.object([])\n}\n\n"
+    _ ->
+      "pub fn "
+      <> fn_name
+      <> "(input: "
+      <> type_name
+      <> ") -> json.Json {\n  let pairs = []\n"
+      <> list.fold(members, "", fn(acc, m) {
+        acc
+        <> "  let pairs = case input."
+        <> m.snake_name
+        <> " {\n    option.Some(v) -> [#(\""
+        <> m.member_name
+        <> "\", "
+        <> types.json_encoder_member(m.target, m.timestamp_format)
+        <> "(v)), ..pairs]\n    option.None -> pairs\n  }\n"
+      })
+      <> "  json.object(pairs)\n}\n\n"
+  }
 }
 
 /// Parallel decoder keyed by Smithy member names rather than wire
@@ -844,14 +883,21 @@ fn emit_struct_encoder(
       <> type_name
       <> ") -> json.Json {\n  let pairs = []\n"
       <> list.fold(members, "", fn(acc, m) {
+        let none_branch = case m.default_json {
+          option.Some(expr) ->
+            "[#(\"" <> m.member_name <> "\", " <> expr <> "), ..pairs]"
+          option.None -> "pairs"
+        }
         acc
         <> "  let pairs = case input."
         <> m.snake_name
         <> " {\n    option.Some(v) -> [#(\""
-        <> m.json_name
+        <> m.member_name
         <> "\", "
         <> types.json_encoder_member(m.target, m.timestamp_format)
-        <> "(v)), ..pairs]\n    option.None -> pairs\n  }\n"
+        <> "(v)), ..pairs]\n    option.None -> "
+        <> none_branch
+        <> "\n  }\n"
       })
       <> "  json.object(pairs)\n}\n\n"
   }
@@ -884,7 +930,7 @@ fn emit_struct_decoder(
         <> "  use "
         <> m.snake_name
         <> " <- decode.optional_field(\""
-        <> m.json_name
+        <> m.member_name
         <> "\", option.None, decode.optional("
         <> types.json_decoder_member(m.target, m.timestamp_format)
         <> "))\n"
@@ -913,7 +959,7 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       <> name
       <> pascalize_member(m.member_name)
       <> "(x) -> json.object([#(\""
-      <> m.json_name
+      <> m.member_name
       <> "\", "
       <> types.json_encoder(m.target)
       <> "(x))])\n"
@@ -963,7 +1009,7 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
 
 fn emit_union_branch(union_name: String, m: MemberDef) -> String {
   "decode.field(\""
-  <> m.json_name
+  <> m.member_name
   <> "\", "
   <> types.json_decoder(m.target)
   <> ", fn(x) { decode.success("

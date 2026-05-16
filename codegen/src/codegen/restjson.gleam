@@ -809,6 +809,11 @@ fn emit_struct_encoder(
       <> type_name
       <> ") -> json.Json {\n  let pairs = []\n"
       <> list.fold(members, "", fn(acc, m) {
+        let none_branch = case m.default_json {
+          option.Some(expr) ->
+            "[#(\"" <> m.json_name <> "\", " <> expr <> "), ..pairs]"
+          option.None -> "pairs"
+        }
         acc
         <> "  let pairs = case input."
         <> m.snake_name
@@ -816,7 +821,9 @@ fn emit_struct_encoder(
         <> m.json_name
         <> "\", "
         <> types.json_encoder_member(m.target, m.timestamp_format)
-        <> "(v)), ..pairs]\n    option.None -> pairs\n  }\n"
+        <> "(v)), ..pairs]\n    option.None -> "
+        <> none_branch
+        <> "\n  }\n"
       })
       <> "  json.object(pairs)\n}\n\n"
   }
@@ -1216,15 +1223,22 @@ fn emit_payload_body(m: MemberDef) -> String {
       <> ct
       <> "\"\n"
     }
-    _ ->
-      // Absent struct / document `@httpPayload` ⇒ `{}` rather than
-      // empty bytes — restJson1 servers expect to JSON-parse a
-      // structured body even when every field is null.
+    RStruct(..) ->
+      // Absent struct `@httpPayload` ⇒ `{}` rather than empty bytes
+      // — restJson1 servers expect to JSON-parse a structured body
+      // even when every field is null.
       "  let body = case input."
       <> m.snake_name
       <> " {\n    option.Some(v) -> bit_array.from_string(json.to_string("
       <> types.json_encoder(m.target)
       <> "(v)))\n    option.None -> bit_array.from_string(\"{}\")\n  }\n  let content_type = \"application/json\"\n"
+    _ ->
+      // Unions / Documents / other payload types: empty when unset.
+      "  let body = case input."
+      <> m.snake_name
+      <> " {\n    option.Some(v) -> bit_array.from_string(json.to_string("
+      <> types.json_encoder(m.target)
+      <> "(v)))\n    option.None -> <<>>\n  }\n  let content_type = \"application/json\"\n"
   }
 }
 

@@ -122,6 +122,11 @@ pub type MemberDef {
     /// `None` means use the protocol default (`epoch-seconds` for the
     /// awsJson family, `date-time` for restJson1 / restXml).
     timestamp_format: option.Option(String),
+    /// `@default(value)` — the SDK serialises this value when the user
+    /// leaves the field unset (`Option.None`). Stored as a Gleam source
+    /// expression that produces `gleam/json.Json` so the encoder can
+    /// splice it directly into the body.
+    default_json: option.Option(String),
   )
 }
 
@@ -151,6 +156,71 @@ fn timestamp_format_of_target(
       }
     _ -> option.None
   }
+}
+
+/// Render an `@default(VALUE)` trait as a Gleam source expression
+/// producing `gleam/json.Json`. Used by the per-struct encoder to
+/// splice the default in place of an `option.None` field.
+fn default_to_json_expr(t: trait.Trait) -> String {
+  case t {
+    trait.Null -> "json.null()"
+    trait.String(s) -> "json.string(\"" <> escape_default_string(s) <> "\")"
+    trait.Int(n) -> "json.int(" <> int_to_dec(n) <> ")"
+    trait.Float(f) -> "json.float(" <> float_to_dec(f) <> ")"
+    trait.Bool(True) -> "json.bool(True)"
+    trait.Bool(False) -> "json.bool(False)"
+    trait.List(_) -> "json.preprocessed_array([])"
+    trait.Dict(_) -> "json.object([])"
+  }
+}
+
+fn escape_default_string(s: String) -> String {
+  s
+  |> string.replace("\\", "\\\\")
+  |> string.replace("\"", "\\\"")
+}
+
+fn int_to_dec(n: Int) -> String {
+  case n {
+    0 -> "0"
+    _ -> int_str(n, "")
+  }
+}
+
+fn int_str(n: Int, acc: String) -> String {
+  case n {
+    0 -> acc
+    _ -> {
+      let d = n - { n / 10 } * 10
+      let c = case d {
+        0 -> "0"
+        1 -> "1"
+        2 -> "2"
+        3 -> "3"
+        4 -> "4"
+        5 -> "5"
+        6 -> "6"
+        7 -> "7"
+        8 -> "8"
+        9 -> "9"
+        _ -> "?"
+      }
+      int_str(n / 10, c <> acc)
+    }
+  }
+}
+
+// OTP 25+ short formatter — `1.1` not `1.10000…e+00`. Lives directly
+// in `erlang` (no extra deps for the codegen subproject).
+@external(erlang, "erlang", "float_to_binary")
+fn float_to_binary(f: Float, opts: List(FloatFormatOpt)) -> String
+
+type FloatFormatOpt {
+  Short
+}
+
+fn float_to_dec(f: Float) -> String {
+  float_to_binary(f, [Short])
 }
 
 fn shape_traits(sh: shape.Shape) -> Dict(ShapeId, option.Option(trait.Trait)) {
@@ -384,6 +454,18 @@ fn extract_members(
         Ok(option.Some(trait.String(s))) -> option.Some(s)
         _ -> timestamp_format_of_target(model, target)
       }
+    // `@clientOptional` opts a member out of automatic default
+    // population. Per the Smithy spec, the wire form leaves the field
+    // absent even if the shape declared a `@default`.
+    let client_optional =
+      dict.has_key(mem.traits, ShapeId("smithy.api#clientOptional"))
+    let default_json = case
+      dict.get(mem.traits, ShapeId("smithy.api#default")),
+      client_optional
+    {
+      Ok(option.Some(t)), False -> option.Some(default_to_json_expr(t))
+      _, _ -> option.None
+    }
     MemberDef(
       json_name: wire_name,
       snake_name: stringutils.pascal_to_snake(name),
@@ -393,6 +475,7 @@ fn extract_members(
       binding: binding_of(mem.traits),
       media_type: media_type,
       timestamp_format: timestamp_format,
+      default_json: default_json,
     )
   })
 }

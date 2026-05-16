@@ -63,6 +63,15 @@ pub fn encode_content_type_parameters_input_struct(input: ContentTypeParametersI
   json.object(pairs)
 }
 
+pub fn encode_content_type_parameters_input_struct_top(input: ContentTypeParametersInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.value {
+    option.Some(v) -> [#("value", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_content_type_parameters_input_struct() -> decode.Decoder(ContentTypeParametersInput) {
   use value <- decode.optional_field("value", option.None, decode.optional(decode.int))
   decode.success(ContentTypeParametersInput(
@@ -85,6 +94,10 @@ pub fn encode_content_type_parameters_output_struct(_v: ContentTypeParametersOut
   json.object([])
 }
 
+pub fn encode_content_type_parameters_output_struct_top(_v: ContentTypeParametersOutput) -> json.Json {
+  json.object([])
+}
+
 pub fn decode_content_type_parameters_output_struct() -> decode.Decoder(ContentTypeParametersOutput) {
   decode.success(ContentTypeParametersOutput)
 }
@@ -100,6 +113,15 @@ pub type DatetimeOffsetsOutput {
 }
 
 pub fn encode_datetime_offsets_output_struct(input: DatetimeOffsetsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.datetime {
+    option.Some(v) -> [#("datetime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_datetime_offsets_output_struct_top(input: DatetimeOffsetsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.datetime {
     option.Some(v) -> [#("datetime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
@@ -137,6 +159,15 @@ pub fn encode_host_label_input_struct(input: HostLabelInput) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_host_label_input_struct_top(input: HostLabelInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.label {
+    option.Some(v) -> [#("label", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_host_label_input_struct() -> decode.Decoder(HostLabelInput) {
   use label <- decode.optional_field("label", option.None, decode.optional(decode.string))
   decode.success(HostLabelInput(
@@ -166,6 +197,15 @@ pub fn encode_fractional_seconds_output_struct(input: FractionalSecondsOutput) -
   json.object(pairs)
 }
 
+pub fn encode_fractional_seconds_output_struct_top(input: FractionalSecondsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.datetime {
+    option.Some(v) -> [#("datetime", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_fractional_seconds_output_struct() -> decode.Decoder(FractionalSecondsOutput) {
   use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(FractionalSecondsOutput(
@@ -187,6 +227,15 @@ pub type GreetingWithErrorsOutput {
 }
 
 pub fn encode_greeting_with_errors_output_struct(input: GreetingWithErrorsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.greeting {
+    option.Some(v) -> [#("greeting", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_greeting_with_errors_output_struct_top(input: GreetingWithErrorsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.greeting {
     option.Some(v) -> [#("greeting", json.string(v)), ..pairs]
@@ -229,6 +278,19 @@ pub fn encode_complex_error_struct(input: ComplexError) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_complex_error_struct_top(input: ComplexError) -> json.Json {
+  let pairs = []
+  let pairs = case input.nested {
+    option.Some(v) -> [#("Nested", encode_complex_nested_error_data_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.top_level {
+    option.Some(v) -> [#("TopLevel", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_complex_error_struct() -> decode.Decoder(ComplexError) {
   use nested <- decode.optional_field("Nested", option.None, decode.optional(decode_complex_nested_error_data_struct()))
   use top_level <- decode.optional_field("TopLevel", option.None, decode.optional(decode.string))
@@ -256,14 +318,23 @@ pub type ComplexNestedErrorData {
 pub fn encode_complex_nested_error_data_struct(input: ComplexNestedErrorData) -> json.Json {
   let pairs = []
   let pairs = case input.foo {
-    option.Some(v) -> [#("Fooooo", json.string(v)), ..pairs]
+    option.Some(v) -> [#("Foo", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_complex_nested_error_data_struct_top(input: ComplexNestedErrorData) -> json.Json {
+  let pairs = []
+  let pairs = case input.foo {
+    option.Some(v) -> [#("Foo", json.string(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_complex_nested_error_data_struct() -> decode.Decoder(ComplexNestedErrorData) {
-  use foo <- decode.optional_field("Fooooo", option.None, decode.optional(decode.string))
+  use foo <- decode.optional_field("Foo", option.None, decode.optional(decode.string))
   decode.success(ComplexNestedErrorData(
     foo: foo,
   ))
@@ -284,6 +355,10 @@ pub fn encode_foo_error_struct(_v: FooError) -> json.Json {
   json.object([])
 }
 
+pub fn encode_foo_error_struct_top(_v: FooError) -> json.Json {
+  json.object([])
+}
+
 pub fn decode_foo_error_struct() -> decode.Decoder(FooError) {
   decode.success(FooError)
 }
@@ -299,6 +374,15 @@ pub type InvalidGreeting {
 }
 
 pub fn encode_invalid_greeting_struct(input: InvalidGreeting) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("Message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_invalid_greeting_struct_top(input: InvalidGreeting) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("Message", json.string(v)), ..pairs]
@@ -333,6 +417,35 @@ pub type JsonEnumsInputOutput {
 }
 
 pub fn encode_json_enums_input_output_struct(input: JsonEnumsInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.foo_enum1 {
+    option.Some(v) -> [#("fooEnum1", encode_foo_enum_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.foo_enum2 {
+    option.Some(v) -> [#("fooEnum2", encode_foo_enum_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.foo_enum3 {
+    option.Some(v) -> [#("fooEnum3", encode_foo_enum_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.foo_enum_list {
+    option.Some(v) -> [#("fooEnumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.foo_enum_map {
+    option.Some(v) -> [#("fooEnumMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_foo_enum_enum(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.foo_enum_set {
+    option.Some(v) -> [#("fooEnumSet", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_json_enums_input_output_struct_top(input: JsonEnumsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.foo_enum1 {
     option.Some(v) -> [#("fooEnum1", encode_foo_enum_enum(v)), ..pairs]
@@ -466,6 +579,35 @@ pub fn encode_json_int_enums_input_output_struct(input: JsonIntEnumsInputOutput)
   json.object(pairs)
 }
 
+pub fn encode_json_int_enums_input_output_struct_top(input: JsonIntEnumsInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.int_enum1 {
+    option.Some(v) -> [#("intEnum1", encode_integer_enum_int_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.int_enum2 {
+    option.Some(v) -> [#("intEnum2", encode_integer_enum_int_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.int_enum3 {
+    option.Some(v) -> [#("intEnum3", encode_integer_enum_int_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.int_enum_list {
+    option.Some(v) -> [#("intEnumList", fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.int_enum_map {
+    option.Some(v) -> [#("intEnumMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_integer_enum_int_enum(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.int_enum_set {
+    option.Some(v) -> [#("intEnumSet", fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_json_int_enums_input_output_struct() -> decode.Decoder(JsonIntEnumsInputOutput) {
   use int_enum1 <- decode.optional_field("intEnum1", option.None, decode.optional(decode_integer_enum_int_enum()))
   use int_enum2 <- decode.optional_field("intEnum2", option.None, decode.optional(decode_integer_enum_int_enum()))
@@ -532,6 +674,15 @@ pub type UnionInputOutput {
 }
 
 pub fn encode_union_input_output_struct(input: UnionInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.contents {
+    option.Some(v) -> [#("contents", encode_my_union_union(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_union_input_output_struct_top(input: UnionInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.contents {
     option.Some(v) -> [#("contents", encode_my_union_union(v)), ..pairs]
@@ -627,6 +778,15 @@ pub fn encode_greeting_struct_struct(input: GreetingStruct) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_greeting_struct_struct_top(input: GreetingStruct) -> json.Json {
+  let pairs = []
+  let pairs = case input.hi {
+    option.Some(v) -> [#("hi", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_greeting_struct_struct() -> decode.Decoder(GreetingStruct) {
   use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
   decode.success(GreetingStruct(
@@ -673,6 +833,115 @@ pub type KitchenSink {
 }
 
 pub fn encode_kitchen_sink_struct(input: KitchenSink) -> json.Json {
+  let pairs = []
+  let pairs = case input.blob {
+    option.Some(v) -> [#("Blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.boolean {
+    option.Some(v) -> [#("Boolean", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.double {
+    option.Some(v) -> [#("Double", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.empty_struct {
+    option.Some(v) -> [#("EmptyStruct", encode_empty_struct_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.float {
+    option.Some(v) -> [#("Float", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.httpdate_timestamp {
+    option.Some(v) -> [#("HttpdateTimestamp", fn(v) { json.string(json_timestamp.format_http_date(v)) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.integer {
+    option.Some(v) -> [#("Integer", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.iso8601_timestamp {
+    option.Some(v) -> [#("Iso8601Timestamp", fn(v) { json.string(json_timestamp.format_iso8601(v)) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.json_value {
+    option.Some(v) -> [#("JsonValue", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.list_of_lists {
+    option.Some(v) -> [#("ListOfLists", fn(xs) { json.array(xs, fn(xs) { json.array(xs, json.string) }) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.list_of_maps_of_strings {
+    option.Some(v) -> [#("ListOfMapsOfStrings", fn(xs) { json.array(xs, fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.list_of_strings {
+    option.Some(v) -> [#("ListOfStrings", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.list_of_structs {
+    option.Some(v) -> [#("ListOfStructs", fn(xs) { json.array(xs, encode_simple_struct_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.long {
+    option.Some(v) -> [#("Long", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.map_of_lists_of_strings {
+    option.Some(v) -> [#("MapOfListsOfStrings", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.map_of_maps {
+    option.Some(v) -> [#("MapOfMaps", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.map_of_strings {
+    option.Some(v) -> [#("MapOfStrings", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.map_of_structs {
+    option.Some(v) -> [#("MapOfStructs", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_simple_struct_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.recursive_list {
+    option.Some(v) -> [#("RecursiveList", fn(xs) { json.array(xs, encode_kitchen_sink_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.recursive_map {
+    option.Some(v) -> [#("RecursiveMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_kitchen_sink_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.recursive_struct {
+    option.Some(v) -> [#("RecursiveStruct", encode_kitchen_sink_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.simple_struct {
+    option.Some(v) -> [#("SimpleStruct", encode_simple_struct_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.string {
+    option.Some(v) -> [#("String", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.struct_with_json_name {
+    option.Some(v) -> [#("StructWithJsonName", encode_struct_with_json_name_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.timestamp {
+    option.Some(v) -> [#("Timestamp", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.unix_timestamp {
+    option.Some(v) -> [#("UnixTimestamp", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_kitchen_sink_struct_top(input: KitchenSink) -> json.Json {
   let pairs = []
   let pairs = case input.blob {
     option.Some(v) -> [#("Blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
@@ -903,6 +1172,10 @@ pub fn encode_empty_struct_struct(_v: EmptyStruct) -> json.Json {
   json.object([])
 }
 
+pub fn encode_empty_struct_struct_top(_v: EmptyStruct) -> json.Json {
+  json.object([])
+}
+
 pub fn decode_empty_struct_struct() -> decode.Decoder(EmptyStruct) {
   decode.success(EmptyStruct)
 }
@@ -918,6 +1191,15 @@ pub type SimpleStruct {
 }
 
 pub fn encode_simple_struct_struct(input: SimpleStruct) -> json.Json {
+  let pairs = []
+  let pairs = case input.value {
+    option.Some(v) -> [#("Value", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_simple_struct_struct_top(input: SimpleStruct) -> json.Json {
   let pairs = []
   let pairs = case input.value {
     option.Some(v) -> [#("Value", json.string(v)), ..pairs]
@@ -949,14 +1231,23 @@ pub type StructWithJsonName {
 pub fn encode_struct_with_json_name_struct(input: StructWithJsonName) -> json.Json {
   let pairs = []
   let pairs = case input.value {
-    option.Some(v) -> [#("RenamedMember", json.string(v)), ..pairs]
+    option.Some(v) -> [#("Value", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_struct_with_json_name_struct_top(input: StructWithJsonName) -> json.Json {
+  let pairs = []
+  let pairs = case input.value {
+    option.Some(v) -> [#("Value", json.string(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_struct_with_json_name_struct() -> decode.Decoder(StructWithJsonName) {
-  use value <- decode.optional_field("RenamedMember", option.None, decode.optional(decode.string))
+  use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
   decode.success(StructWithJsonName(
     value: value,
   ))
@@ -982,6 +1273,39 @@ pub type ErrorWithMembers {
 }
 
 pub fn encode_error_with_members_struct(input: ErrorWithMembers) -> json.Json {
+  let pairs = []
+  let pairs = case input.code {
+    option.Some(v) -> [#("Code", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.complex_data {
+    option.Some(v) -> [#("ComplexData", encode_kitchen_sink_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.integer_field {
+    option.Some(v) -> [#("IntegerField", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.list_field {
+    option.Some(v) -> [#("ListField", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.map_field {
+    option.Some(v) -> [#("MapField", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.message {
+    option.Some(v) -> [#("Message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.string_field {
+    option.Some(v) -> [#("StringField", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_error_with_members_struct_top(input: ErrorWithMembers) -> json.Json {
   let pairs = []
   let pairs = case input.code {
     option.Some(v) -> [#("Code", json.string(v)), ..pairs]
@@ -1060,6 +1384,10 @@ pub fn encode_error_without_members_struct(_v: ErrorWithoutMembers) -> json.Json
   json.object([])
 }
 
+pub fn encode_error_without_members_struct_top(_v: ErrorWithoutMembers) -> json.Json {
+  json.object([])
+}
+
 pub fn decode_error_without_members_struct() -> decode.Decoder(ErrorWithoutMembers) {
   decode.success(ErrorWithoutMembers)
 }
@@ -1075,6 +1403,15 @@ pub type NullOperationInputOutput {
 }
 
 pub fn encode_null_operation_input_output_struct(input: NullOperationInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.string {
+    option.Some(v) -> [#("string", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_null_operation_input_output_struct_top(input: NullOperationInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.string {
     option.Some(v) -> [#("string", json.string(v)), ..pairs]
@@ -1112,6 +1449,15 @@ pub fn encode_operation_with_optional_input_output_input_struct(input: Operation
   json.object(pairs)
 }
 
+pub fn encode_operation_with_optional_input_output_input_struct_top(input: OperationWithOptionalInputOutputInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.value {
+    option.Some(v) -> [#("Value", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_operation_with_optional_input_output_input_struct() -> decode.Decoder(OperationWithOptionalInputOutputInput) {
   use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
   decode.success(OperationWithOptionalInputOutputInput(
@@ -1133,6 +1479,15 @@ pub type OperationWithOptionalInputOutputOutput {
 }
 
 pub fn encode_operation_with_optional_input_output_output_struct(input: OperationWithOptionalInputOutputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.value {
+    option.Some(v) -> [#("Value", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_operation_with_optional_input_output_output_struct_top(input: OperationWithOptionalInputOutputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.value {
     option.Some(v) -> [#("Value", json.string(v)), ..pairs]
@@ -1170,6 +1525,15 @@ pub fn encode_put_and_get_inline_documents_input_output_struct(input: PutAndGetI
   json.object(pairs)
 }
 
+pub fn encode_put_and_get_inline_documents_input_output_struct_top(input: PutAndGetInlineDocumentsInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.inline_document {
+    option.Some(v) -> [#("inlineDocument", fn(j) { j }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_put_and_get_inline_documents_input_output_struct() -> decode.Decoder(PutAndGetInlineDocumentsInputOutput) {
   use inline_document <- decode.optional_field("inlineDocument", option.None, decode.optional(json_document.decoder()))
   decode.success(PutAndGetInlineDocumentsInputOutput(
@@ -1192,6 +1556,19 @@ pub type SimpleScalarPropertiesInputOutput {
 }
 
 pub fn encode_simple_scalar_properties_input_output_struct(input: SimpleScalarPropertiesInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.double_value {
+    option.Some(v) -> [#("doubleValue", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.float_value {
+    option.Some(v) -> [#("floatValue", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_simple_scalar_properties_input_output_struct_top(input: SimpleScalarPropertiesInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.double_value {
     option.Some(v) -> [#("doubleValue", json_float.encode(v)), ..pairs]
@@ -1242,6 +1619,19 @@ pub fn encode_sparse_nulls_operation_input_output_struct(input: SparseNullsOpera
   json.object(pairs)
 }
 
+pub fn encode_sparse_nulls_operation_input_output_struct_top(input: SparseNullsOperationInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.sparse_string_list {
+    option.Some(v) -> [#("sparseStringList", fn(xs) { json.array(xs, fn(o) { case o { option.Some(x) -> json.string(x) option.None -> json.null() } }) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.sparse_string_map {
+    option.Some(v) -> [#("sparseStringMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> json.string(x) option.None -> json.null() }) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_sparse_nulls_operation_input_output_struct() -> decode.Decoder(SparseNullsOperationInputOutput) {
   use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.optional(decode.string))))
   use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.string))))
@@ -1262,7 +1652,7 @@ pub fn decode_sparse_nulls_operation_input_output_struct_params() -> decode.Deco
 
 
 pub fn encode_content_type_parameters_input(input: ContentTypeParametersInput) -> String {
-  json.to_string(encode_content_type_parameters_input_struct(input))
+  json.to_string(encode_content_type_parameters_input_struct_top(input))
 }
 
 pub fn decode_content_type_parameters_input(body: String) -> Result(ContentTypeParametersInput, String) {
@@ -1598,7 +1988,7 @@ pub fn decode_endpoint_with_host_label_operation_output_struct() -> decode.Decod
 }
 
 pub fn encode_endpoint_with_host_label_operation_input(input: HostLabelInput) -> String {
-  json.to_string(encode_host_label_input_struct(input))
+  json.to_string(encode_host_label_input_struct_top(input))
 }
 
 pub fn decode_endpoint_with_host_label_operation_input(body: String) -> Result(HostLabelInput, String) {
@@ -1940,7 +2330,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_json_enums_input(input: JsonEnumsInputOutput) -> String {
-  json.to_string(encode_json_enums_input_output_struct(input))
+  json.to_string(encode_json_enums_input_output_struct_top(input))
 }
 
 pub fn decode_json_enums_input(body: String) -> Result(JsonEnumsInputOutput, String) {
@@ -2006,7 +2396,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_json_int_enums_input(input: JsonIntEnumsInputOutput) -> String {
-  json.to_string(encode_json_int_enums_input_output_struct(input))
+  json.to_string(encode_json_int_enums_input_output_struct_top(input))
 }
 
 pub fn decode_json_int_enums_input(body: String) -> Result(JsonIntEnumsInputOutput, String) {
@@ -2072,7 +2462,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_json_unions_input(input: UnionInputOutput) -> String {
-  json.to_string(encode_union_input_output_struct(input))
+  json.to_string(encode_union_input_output_struct_top(input))
 }
 
 pub fn decode_json_unions_input(body: String) -> Result(UnionInputOutput, String) {
@@ -2138,7 +2528,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_kitchen_sink_operation_input(input: KitchenSink) -> String {
-  json.to_string(encode_kitchen_sink_struct(input))
+  json.to_string(encode_kitchen_sink_struct_top(input))
 }
 
 pub fn decode_kitchen_sink_operation_input(body: String) -> Result(KitchenSink, String) {
@@ -2224,7 +2614,7 @@ fn translate_kitchen_sink_operation_error(err: awsjson_client.ClientError) -> Ki
 
 
 pub fn encode_null_operation_input(input: NullOperationInputOutput) -> String {
-  json.to_string(encode_null_operation_input_output_struct(input))
+  json.to_string(encode_null_operation_input_output_struct_top(input))
 }
 
 pub fn decode_null_operation_input(body: String) -> Result(NullOperationInputOutput, String) {
@@ -2290,7 +2680,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_operation_with_optional_input_output_input(input: OperationWithOptionalInputOutputInput) -> String {
-  json.to_string(encode_operation_with_optional_input_output_input_struct(input))
+  json.to_string(encode_operation_with_optional_input_output_input_struct_top(input))
 }
 
 pub fn decode_operation_with_optional_input_output_input(body: String) -> Result(OperationWithOptionalInputOutputInput, String) {
@@ -2356,7 +2746,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_put_and_get_inline_documents_input(input: PutAndGetInlineDocumentsInputOutput) -> String {
-  json.to_string(encode_put_and_get_inline_documents_input_output_struct(input))
+  json.to_string(encode_put_and_get_inline_documents_input_output_struct_top(input))
 }
 
 pub fn decode_put_and_get_inline_documents_input(body: String) -> Result(PutAndGetInlineDocumentsInputOutput, String) {
@@ -2422,7 +2812,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_simple_scalar_properties_input(input: SimpleScalarPropertiesInputOutput) -> String {
-  json.to_string(encode_simple_scalar_properties_input_output_struct(input))
+  json.to_string(encode_simple_scalar_properties_input_output_struct_top(input))
 }
 
 pub fn decode_simple_scalar_properties_input(body: String) -> Result(SimpleScalarPropertiesInputOutput, String) {
@@ -2488,7 +2878,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_sparse_nulls_operation_input(input: SparseNullsOperationInputOutput) -> String {
-  json.to_string(encode_sparse_nulls_operation_input_output_struct(input))
+  json.to_string(encode_sparse_nulls_operation_input_output_struct_top(input))
 }
 
 pub fn decode_sparse_nulls_operation_input(body: String) -> Result(SparseNullsOperationInputOutput, String) {

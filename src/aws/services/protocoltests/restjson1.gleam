@@ -4523,11 +4523,11 @@ pub fn encode_operation_with_defaults_input_struct(input: OperationWithDefaultsI
   }
   let pairs = case input.other_top_level_default {
     option.Some(v) -> [#("otherTopLevelDefault", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("otherTopLevelDefault", json.int(0)), ..pairs]
   }
   let pairs = case input.top_level_default {
     option.Some(v) -> [#("topLevelDefault", json.string(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("topLevelDefault", json.string("hi")), ..pairs]
   }
   json.object(pairs)
 }
@@ -4624,63 +4624,63 @@ pub fn encode_defaults_struct(input: Defaults) -> json.Json {
   let pairs = []
   let pairs = case input.default_blob {
     option.Some(v) -> [#("defaultBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultBlob", json.string("YWJj")), ..pairs]
   }
   let pairs = case input.default_boolean {
     option.Some(v) -> [#("defaultBoolean", json.bool(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultBoolean", json.bool(True)), ..pairs]
   }
   let pairs = case input.default_byte {
     option.Some(v) -> [#("defaultByte", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultByte", json.int(1)), ..pairs]
   }
   let pairs = case input.default_document_boolean {
     option.Some(v) -> [#("defaultDocumentBoolean", fn(j) { j }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultDocumentBoolean", json.bool(True)), ..pairs]
   }
   let pairs = case input.default_document_list {
     option.Some(v) -> [#("defaultDocumentList", fn(j) { j }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultDocumentList", json.preprocessed_array([])), ..pairs]
   }
   let pairs = case input.default_document_map {
     option.Some(v) -> [#("defaultDocumentMap", fn(j) { j }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultDocumentMap", json.object([])), ..pairs]
   }
   let pairs = case input.default_document_string {
     option.Some(v) -> [#("defaultDocumentString", fn(j) { j }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultDocumentString", json.string("hi")), ..pairs]
   }
   let pairs = case input.default_double {
     option.Some(v) -> [#("defaultDouble", json_float.encode(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultDouble", json.float(1.0)), ..pairs]
   }
   let pairs = case input.default_enum {
     option.Some(v) -> [#("defaultEnum", encode_test_enum_enum(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultEnum", json.string("FOO")), ..pairs]
   }
   let pairs = case input.default_float {
     option.Some(v) -> [#("defaultFloat", json_float.encode(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultFloat", json.float(1.0)), ..pairs]
   }
   let pairs = case input.default_int_enum {
     option.Some(v) -> [#("defaultIntEnum", encode_test_int_enum_int_enum(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultIntEnum", json.int(1)), ..pairs]
   }
   let pairs = case input.default_integer {
     option.Some(v) -> [#("defaultInteger", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultInteger", json.int(10)), ..pairs]
   }
   let pairs = case input.default_list {
     option.Some(v) -> [#("defaultList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultList", json.preprocessed_array([])), ..pairs]
   }
   let pairs = case input.default_long {
     option.Some(v) -> [#("defaultLong", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultLong", json.int(100)), ..pairs]
   }
   let pairs = case input.default_map {
     option.Some(v) -> [#("defaultMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultMap", json.object([])), ..pairs]
   }
   let pairs = case input.default_null_document {
     option.Some(v) -> [#("defaultNullDocument", fn(j) { j }(v)), ..pairs]
@@ -4688,51 +4688,51 @@ pub fn encode_defaults_struct(input: Defaults) -> json.Json {
   }
   let pairs = case input.default_short {
     option.Some(v) -> [#("defaultShort", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultShort", json.int(1)), ..pairs]
   }
   let pairs = case input.default_string {
     option.Some(v) -> [#("defaultString", json.string(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultString", json.string("hi")), ..pairs]
   }
   let pairs = case input.default_timestamp {
     option.Some(v) -> [#("defaultTimestamp", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultTimestamp", json.int(0)), ..pairs]
   }
   let pairs = case input.empty_blob {
     option.Some(v) -> [#("emptyBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("emptyBlob", json.string("")), ..pairs]
   }
   let pairs = case input.empty_string {
     option.Some(v) -> [#("emptyString", json.string(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("emptyString", json.string("")), ..pairs]
   }
   let pairs = case input.false_boolean {
     option.Some(v) -> [#("falseBoolean", json.bool(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("falseBoolean", json.bool(False)), ..pairs]
   }
   let pairs = case input.zero_byte {
     option.Some(v) -> [#("zeroByte", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("zeroByte", json.int(0)), ..pairs]
   }
   let pairs = case input.zero_double {
     option.Some(v) -> [#("zeroDouble", json_float.encode(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("zeroDouble", json.float(0.0)), ..pairs]
   }
   let pairs = case input.zero_float {
     option.Some(v) -> [#("zeroFloat", json_float.encode(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("zeroFloat", json.float(0.0)), ..pairs]
   }
   let pairs = case input.zero_integer {
     option.Some(v) -> [#("zeroInteger", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("zeroInteger", json.int(0)), ..pairs]
   }
   let pairs = case input.zero_long {
     option.Some(v) -> [#("zeroLong", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("zeroLong", json.int(0)), ..pairs]
   }
   let pairs = case input.zero_short {
     option.Some(v) -> [#("zeroShort", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("zeroShort", json.int(0)), ..pairs]
   }
   json.object(pairs)
 }
@@ -4950,63 +4950,63 @@ pub fn encode_operation_with_defaults_output_struct(input: OperationWithDefaults
   let pairs = []
   let pairs = case input.default_blob {
     option.Some(v) -> [#("defaultBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultBlob", json.string("YWJj")), ..pairs]
   }
   let pairs = case input.default_boolean {
     option.Some(v) -> [#("defaultBoolean", json.bool(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultBoolean", json.bool(True)), ..pairs]
   }
   let pairs = case input.default_byte {
     option.Some(v) -> [#("defaultByte", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultByte", json.int(1)), ..pairs]
   }
   let pairs = case input.default_document_boolean {
     option.Some(v) -> [#("defaultDocumentBoolean", fn(j) { j }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultDocumentBoolean", json.bool(True)), ..pairs]
   }
   let pairs = case input.default_document_list {
     option.Some(v) -> [#("defaultDocumentList", fn(j) { j }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultDocumentList", json.preprocessed_array([])), ..pairs]
   }
   let pairs = case input.default_document_map {
     option.Some(v) -> [#("defaultDocumentMap", fn(j) { j }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultDocumentMap", json.object([])), ..pairs]
   }
   let pairs = case input.default_document_string {
     option.Some(v) -> [#("defaultDocumentString", fn(j) { j }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultDocumentString", json.string("hi")), ..pairs]
   }
   let pairs = case input.default_double {
     option.Some(v) -> [#("defaultDouble", json_float.encode(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultDouble", json.float(1.0)), ..pairs]
   }
   let pairs = case input.default_enum {
     option.Some(v) -> [#("defaultEnum", encode_test_enum_enum(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultEnum", json.string("FOO")), ..pairs]
   }
   let pairs = case input.default_float {
     option.Some(v) -> [#("defaultFloat", json_float.encode(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultFloat", json.float(1.0)), ..pairs]
   }
   let pairs = case input.default_int_enum {
     option.Some(v) -> [#("defaultIntEnum", encode_test_int_enum_int_enum(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultIntEnum", json.int(1)), ..pairs]
   }
   let pairs = case input.default_integer {
     option.Some(v) -> [#("defaultInteger", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultInteger", json.int(10)), ..pairs]
   }
   let pairs = case input.default_list {
     option.Some(v) -> [#("defaultList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultList", json.preprocessed_array([])), ..pairs]
   }
   let pairs = case input.default_long {
     option.Some(v) -> [#("defaultLong", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultLong", json.int(100)), ..pairs]
   }
   let pairs = case input.default_map {
     option.Some(v) -> [#("defaultMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultMap", json.object([])), ..pairs]
   }
   let pairs = case input.default_null_document {
     option.Some(v) -> [#("defaultNullDocument", fn(j) { j }(v)), ..pairs]
@@ -5014,51 +5014,51 @@ pub fn encode_operation_with_defaults_output_struct(input: OperationWithDefaults
   }
   let pairs = case input.default_short {
     option.Some(v) -> [#("defaultShort", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultShort", json.int(1)), ..pairs]
   }
   let pairs = case input.default_string {
     option.Some(v) -> [#("defaultString", json.string(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultString", json.string("hi")), ..pairs]
   }
   let pairs = case input.default_timestamp {
     option.Some(v) -> [#("defaultTimestamp", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("defaultTimestamp", json.int(0)), ..pairs]
   }
   let pairs = case input.empty_blob {
     option.Some(v) -> [#("emptyBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("emptyBlob", json.string("")), ..pairs]
   }
   let pairs = case input.empty_string {
     option.Some(v) -> [#("emptyString", json.string(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("emptyString", json.string("")), ..pairs]
   }
   let pairs = case input.false_boolean {
     option.Some(v) -> [#("falseBoolean", json.bool(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("falseBoolean", json.bool(False)), ..pairs]
   }
   let pairs = case input.zero_byte {
     option.Some(v) -> [#("zeroByte", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("zeroByte", json.int(0)), ..pairs]
   }
   let pairs = case input.zero_double {
     option.Some(v) -> [#("zeroDouble", json_float.encode(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("zeroDouble", json.float(0.0)), ..pairs]
   }
   let pairs = case input.zero_float {
     option.Some(v) -> [#("zeroFloat", json_float.encode(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("zeroFloat", json.float(0.0)), ..pairs]
   }
   let pairs = case input.zero_integer {
     option.Some(v) -> [#("zeroInteger", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("zeroInteger", json.int(0)), ..pairs]
   }
   let pairs = case input.zero_long {
     option.Some(v) -> [#("zeroLong", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("zeroLong", json.int(0)), ..pairs]
   }
   let pairs = case input.zero_short {
     option.Some(v) -> [#("zeroShort", json.int(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("zeroShort", json.int(0)), ..pairs]
   }
   json.object(pairs)
 }
@@ -5230,11 +5230,11 @@ pub fn encode_top_level_struct(input: TopLevel) -> json.Json {
   }
   let pairs = case input.dialog_list {
     option.Some(v) -> [#("dialogList", fn(xs) { json.array(xs, encode_dialog_struct) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("dialogList", json.preprocessed_array([])), ..pairs]
   }
   let pairs = case input.dialog_map {
     option.Some(v) -> [#("dialogMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_dialog_struct(pair.1)) })) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("dialogMap", json.object([])), ..pairs]
   }
   json.object(pairs)
 }
@@ -5277,7 +5277,7 @@ pub fn encode_dialog_struct(input: Dialog) -> json.Json {
   }
   let pairs = case input.greeting {
     option.Some(v) -> [#("greeting", json.string(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("greeting", json.string("hi")), ..pairs]
   }
   let pairs = case input.language {
     option.Some(v) -> [#("language", json.string(v)), ..pairs]
@@ -5318,7 +5318,7 @@ pub fn encode_farewell_struct(input: Farewell) -> json.Json {
   let pairs = []
   let pairs = case input.phrase {
     option.Some(v) -> [#("phrase", json.string(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("phrase", json.string("bye")), ..pairs]
   }
   json.object(pairs)
 }
@@ -5353,11 +5353,11 @@ pub fn encode_operation_with_nested_structure_output_struct(input: OperationWith
   }
   let pairs = case input.dialog_list {
     option.Some(v) -> [#("dialogList", fn(xs) { json.array(xs, encode_dialog_struct) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("dialogList", json.preprocessed_array([])), ..pairs]
   }
   let pairs = case input.dialog_map {
     option.Some(v) -> [#("dialogMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_dialog_struct(pair.1)) })) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("dialogMap", json.object([])), ..pairs]
   }
   json.object(pairs)
 }
@@ -6144,7 +6144,7 @@ pub fn encode_streaming_traits_input_output_struct(input: StreamingTraitsInputOu
   let pairs = []
   let pairs = case input.blob {
     option.Some(v) -> [#("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("blob", json.string("")), ..pairs]
   }
   let pairs = case input.foo {
     option.Some(v) -> [#("foo", json.string(v)), ..pairs]
@@ -6182,7 +6182,7 @@ pub fn encode_streaming_traits_require_length_input_struct(input: StreamingTrait
   let pairs = []
   let pairs = case input.blob {
     option.Some(v) -> [#("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("blob", json.string("")), ..pairs]
   }
   let pairs = case input.foo {
     option.Some(v) -> [#("foo", json.string(v)), ..pairs]
@@ -6220,7 +6220,7 @@ pub fn encode_streaming_traits_with_media_type_input_output_struct(input: Stream
   let pairs = []
   let pairs = case input.blob {
     option.Some(v) -> [#("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
-    option.None -> pairs
+    option.None -> [#("blob", json.string("")), ..pairs]
   }
   let pairs = case input.foo {
     option.Some(v) -> [#("foo", json.string(v)), ..pairs]

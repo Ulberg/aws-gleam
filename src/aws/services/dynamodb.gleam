@@ -68,6 +68,19 @@ pub fn encode_batch_execute_statement_input_struct(input: BatchExecuteStatementI
   json.object(pairs)
 }
 
+pub fn encode_batch_execute_statement_input_struct_top(input: BatchExecuteStatementInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.statements {
+    option.Some(v) -> [#("Statements", fn(xs) { json.array(xs, encode_batch_statement_request_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_batch_execute_statement_input_struct() -> decode.Decoder(BatchExecuteStatementInput) {
   use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
   use statements <- decode.optional_field("Statements", option.None, decode.optional(decode.list(decode_batch_statement_request_struct())))
@@ -121,6 +134,27 @@ pub type BatchStatementRequest {
 }
 
 pub fn encode_batch_statement_request_struct(input: BatchStatementRequest) -> json.Json {
+  let pairs = []
+  let pairs = case input.consistent_read {
+    option.Some(v) -> [#("ConsistentRead", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.parameters {
+    option.Some(v) -> [#("Parameters", fn(xs) { json.array(xs, encode_attribute_value_union) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values_on_condition_check_failure {
+    option.Some(v) -> [#("ReturnValuesOnConditionCheckFailure", encode_return_values_on_condition_check_failure_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.statement {
+    option.Some(v) -> [#("Statement", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_batch_statement_request_struct_top(input: BatchStatementRequest) -> json.Json {
   let pairs = []
   let pairs = case input.consistent_read {
     option.Some(v) -> [#("ConsistentRead", json.bool(v)), ..pairs]
@@ -271,6 +305,19 @@ pub fn encode_batch_execute_statement_output_struct(input: BatchExecuteStatement
   json.object(pairs)
 }
 
+pub fn encode_batch_execute_statement_output_struct_top(input: BatchExecuteStatementOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", fn(xs) { json.array(xs, encode_consumed_capacity_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.responses {
+    option.Some(v) -> [#("Responses", fn(xs) { json.array(xs, encode_batch_statement_response_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_batch_execute_statement_output_struct() -> decode.Decoder(BatchExecuteStatementOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct())))
   use responses <- decode.optional_field("Responses", option.None, decode.optional(decode.list(decode_batch_statement_response_struct())))
@@ -302,6 +349,39 @@ pub type ConsumedCapacity {
 }
 
 pub fn encode_consumed_capacity_struct(input: ConsumedCapacity) -> json.Json {
+  let pairs = []
+  let pairs = case input.capacity_units {
+    option.Some(v) -> [#("CapacityUnits", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_secondary_indexes {
+    option.Some(v) -> [#("GlobalSecondaryIndexes", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_capacity_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.local_secondary_indexes {
+    option.Some(v) -> [#("LocalSecondaryIndexes", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_capacity_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.read_capacity_units {
+    option.Some(v) -> [#("ReadCapacityUnits", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table {
+    option.Some(v) -> [#("Table", encode_capacity_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.write_capacity_units {
+    option.Some(v) -> [#("WriteCapacityUnits", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_consumed_capacity_struct_top(input: ConsumedCapacity) -> json.Json {
   let pairs = []
   let pairs = case input.capacity_units {
     option.Some(v) -> [#("CapacityUnits", json_float.encode(v)), ..pairs]
@@ -397,6 +477,23 @@ pub fn encode_capacity_struct(input: Capacity) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_capacity_struct_top(input: Capacity) -> json.Json {
+  let pairs = []
+  let pairs = case input.capacity_units {
+    option.Some(v) -> [#("CapacityUnits", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.read_capacity_units {
+    option.Some(v) -> [#("ReadCapacityUnits", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.write_capacity_units {
+    option.Some(v) -> [#("WriteCapacityUnits", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_capacity_struct() -> decode.Decoder(Capacity) {
   use capacity_units <- decode.optional_field("CapacityUnits", option.None, decode.optional(json_float.decoder()))
   use read_capacity_units <- decode.optional_field("ReadCapacityUnits", option.None, decode.optional(json_float.decoder()))
@@ -444,6 +541,23 @@ pub fn encode_batch_statement_response_struct(input: BatchStatementResponse) -> 
   json.object(pairs)
 }
 
+pub fn encode_batch_statement_response_struct_top(input: BatchStatementResponse) -> json.Json {
+  let pairs = []
+  let pairs = case input.error {
+    option.Some(v) -> [#("Error", encode_batch_statement_error_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item {
+    option.Some(v) -> [#("Item", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_batch_statement_response_struct() -> decode.Decoder(BatchStatementResponse) {
   use error <- decode.optional_field("Error", option.None, decode.optional(decode_batch_statement_error_struct()))
   use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
@@ -475,6 +589,23 @@ pub type BatchStatementError {
 }
 
 pub fn encode_batch_statement_error_struct(input: BatchStatementError) -> json.Json {
+  let pairs = []
+  let pairs = case input.code {
+    option.Some(v) -> [#("Code", encode_batch_statement_error_code_enum_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item {
+    option.Some(v) -> [#("Item", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.message {
+    option.Some(v) -> [#("Message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_batch_statement_error_struct_top(input: BatchStatementError) -> json.Json {
   let pairs = []
   let pairs = case input.code {
     option.Some(v) -> [#("Code", encode_batch_statement_error_code_enum_enum(v)), ..pairs]
@@ -577,6 +708,15 @@ pub fn encode_internal_server_error_struct(input: InternalServerError) -> json.J
   json.object(pairs)
 }
 
+pub fn encode_internal_server_error_struct_top(input: InternalServerError) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_internal_server_error_struct() -> decode.Decoder(InternalServerError) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(InternalServerError(
@@ -599,6 +739,19 @@ pub type RequestLimitExceeded {
 }
 
 pub fn encode_request_limit_exceeded_struct(input: RequestLimitExceeded) -> json.Json {
+  let pairs = []
+  let pairs = case input.throttling_reasons {
+    option.Some(v) -> [#("ThrottlingReasons", fn(xs) { json.array(xs, encode_throttling_reason_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_request_limit_exceeded_struct_top(input: RequestLimitExceeded) -> json.Json {
   let pairs = []
   let pairs = case input.throttling_reasons {
     option.Some(v) -> [#("ThrottlingReasons", fn(xs) { json.array(xs, encode_throttling_reason_struct) }(v)), ..pairs]
@@ -649,6 +802,19 @@ pub fn encode_throttling_reason_struct(input: ThrottlingReason) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_throttling_reason_struct_top(input: ThrottlingReason) -> json.Json {
+  let pairs = []
+  let pairs = case input.reason {
+    option.Some(v) -> [#("reason", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.resource {
+    option.Some(v) -> [#("resource", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_throttling_reason_struct() -> decode.Decoder(ThrottlingReason) {
   use reason <- decode.optional_field("reason", option.None, decode.optional(decode.string))
   use resource <- decode.optional_field("resource", option.None, decode.optional(decode.string))
@@ -675,6 +841,19 @@ pub type ThrottlingException {
 }
 
 pub fn encode_throttling_exception_struct(input: ThrottlingException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.throttling_reasons {
+    option.Some(v) -> [#("throttlingReasons", fn(xs) { json.array(xs, encode_throttling_reason_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_throttling_exception_struct_top(input: ThrottlingException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -725,6 +904,19 @@ pub fn encode_batch_get_item_input_struct(input: BatchGetItemInput) -> json.Json
   json.object(pairs)
 }
 
+pub fn encode_batch_get_item_input_struct_top(input: BatchGetItemInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.request_items {
+    option.Some(v) -> [#("RequestItems", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_keys_and_attributes_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_batch_get_item_input_struct() -> decode.Decoder(BatchGetItemInput) {
   use request_items <- decode.optional_field("RequestItems", option.None, decode.optional(decode.dict(decode.string, decode_keys_and_attributes_struct())))
   use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
@@ -754,6 +946,31 @@ pub type KeysAndAttributes {
 }
 
 pub fn encode_keys_and_attributes_struct(input: KeysAndAttributes) -> json.Json {
+  let pairs = []
+  let pairs = case input.attributes_to_get {
+    option.Some(v) -> [#("AttributesToGet", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.consistent_read {
+    option.Some(v) -> [#("ConsistentRead", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_names {
+    option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.keys {
+    option.Some(v) -> [#("Keys", fn(xs) { json.array(xs, fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection_expression {
+    option.Some(v) -> [#("ProjectionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_keys_and_attributes_struct_top(input: KeysAndAttributes) -> json.Json {
   let pairs = []
   let pairs = case input.attributes_to_get {
     option.Some(v) -> [#("AttributesToGet", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
@@ -833,6 +1050,23 @@ pub fn encode_batch_get_item_output_struct(input: BatchGetItemOutput) -> json.Js
   json.object(pairs)
 }
 
+pub fn encode_batch_get_item_output_struct_top(input: BatchGetItemOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", fn(xs) { json.array(xs, encode_consumed_capacity_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.responses {
+    option.Some(v) -> [#("Responses", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }) }(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.unprocessed_keys {
+    option.Some(v) -> [#("UnprocessedKeys", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_keys_and_attributes_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_batch_get_item_output_struct() -> decode.Decoder(BatchGetItemOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct())))
   use responses <- decode.optional_field("Responses", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.dict(decode.string, decode_attribute_value_union())))))
@@ -870,6 +1104,15 @@ pub fn encode_invalid_endpoint_exception_struct(input: InvalidEndpointException)
   json.object(pairs)
 }
 
+pub fn encode_invalid_endpoint_exception_struct_top(input: InvalidEndpointException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("Message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_invalid_endpoint_exception_struct() -> decode.Decoder(InvalidEndpointException) {
   use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
   decode.success(InvalidEndpointException(
@@ -892,6 +1135,19 @@ pub type ProvisionedThroughputExceededException {
 }
 
 pub fn encode_provisioned_throughput_exceeded_exception_struct(input: ProvisionedThroughputExceededException) -> json.Json {
+  let pairs = []
+  let pairs = case input.throttling_reasons {
+    option.Some(v) -> [#("ThrottlingReasons", fn(xs) { json.array(xs, encode_throttling_reason_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_provisioned_throughput_exceeded_exception_struct_top(input: ProvisionedThroughputExceededException) -> json.Json {
   let pairs = []
   let pairs = case input.throttling_reasons {
     option.Some(v) -> [#("ThrottlingReasons", fn(xs) { json.array(xs, encode_throttling_reason_struct) }(v)), ..pairs]
@@ -937,6 +1193,15 @@ pub fn encode_resource_not_found_exception_struct(input: ResourceNotFoundExcepti
   json.object(pairs)
 }
 
+pub fn encode_resource_not_found_exception_struct_top(input: ResourceNotFoundException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_resource_not_found_exception_struct() -> decode.Decoder(ResourceNotFoundException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ResourceNotFoundException(
@@ -960,6 +1225,23 @@ pub type BatchWriteItemInput {
 }
 
 pub fn encode_batch_write_item_input_struct(input: BatchWriteItemInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.request_items {
+    option.Some(v) -> [#("RequestItems", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, encode_write_request_struct) }(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_item_collection_metrics {
+    option.Some(v) -> [#("ReturnItemCollectionMetrics", encode_return_item_collection_metrics_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_batch_write_item_input_struct_top(input: BatchWriteItemInput) -> json.Json {
   let pairs = []
   let pairs = case input.request_items {
     option.Some(v) -> [#("RequestItems", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, encode_write_request_struct) }(pair.1)) })) }(v)), ..pairs]
@@ -1018,6 +1300,19 @@ pub fn encode_write_request_struct(input: WriteRequest) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_write_request_struct_top(input: WriteRequest) -> json.Json {
+  let pairs = []
+  let pairs = case input.delete_request {
+    option.Some(v) -> [#("DeleteRequest", encode_delete_request_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.put_request {
+    option.Some(v) -> [#("PutRequest", encode_put_request_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_write_request_struct() -> decode.Decoder(WriteRequest) {
   use delete_request <- decode.optional_field("DeleteRequest", option.None, decode.optional(decode_delete_request_struct()))
   use put_request <- decode.optional_field("PutRequest", option.None, decode.optional(decode_put_request_struct()))
@@ -1051,6 +1346,15 @@ pub fn encode_delete_request_struct(input: DeleteRequest) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_delete_request_struct_top(input: DeleteRequest) -> json.Json {
+  let pairs = []
+  let pairs = case input.key {
+    option.Some(v) -> [#("Key", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_delete_request_struct() -> decode.Decoder(DeleteRequest) {
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
   decode.success(DeleteRequest(
@@ -1072,6 +1376,15 @@ pub type PutRequest {
 }
 
 pub fn encode_put_request_struct(input: PutRequest) -> json.Json {
+  let pairs = []
+  let pairs = case input.item {
+    option.Some(v) -> [#("Item", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_put_request_struct_top(input: PutRequest) -> json.Json {
   let pairs = []
   let pairs = case input.item {
     option.Some(v) -> [#("Item", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
@@ -1141,6 +1454,23 @@ pub fn encode_batch_write_item_output_struct(input: BatchWriteItemOutput) -> jso
   json.object(pairs)
 }
 
+pub fn encode_batch_write_item_output_struct_top(input: BatchWriteItemOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", fn(xs) { json.array(xs, encode_consumed_capacity_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item_collection_metrics {
+    option.Some(v) -> [#("ItemCollectionMetrics", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, encode_item_collection_metrics_struct) }(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.unprocessed_items {
+    option.Some(v) -> [#("UnprocessedItems", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, encode_write_request_struct) }(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_batch_write_item_output_struct() -> decode.Decoder(BatchWriteItemOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct())))
   use item_collection_metrics <- decode.optional_field("ItemCollectionMetrics", option.None, decode.optional(decode.dict(decode.string, decode.list(decode_item_collection_metrics_struct()))))
@@ -1171,6 +1501,19 @@ pub type ItemCollectionMetrics {
 }
 
 pub fn encode_item_collection_metrics_struct(input: ItemCollectionMetrics) -> json.Json {
+  let pairs = []
+  let pairs = case input.item_collection_key {
+    option.Some(v) -> [#("ItemCollectionKey", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.size_estimate_range_gb {
+    option.Some(v) -> [#("SizeEstimateRangeGB", fn(xs) { json.array(xs, json_float.encode) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_item_collection_metrics_struct_top(input: ItemCollectionMetrics) -> json.Json {
   let pairs = []
   let pairs = case input.item_collection_key {
     option.Some(v) -> [#("ItemCollectionKey", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
@@ -1216,6 +1559,15 @@ pub fn encode_item_collection_size_limit_exceeded_exception_struct(input: ItemCo
   json.object(pairs)
 }
 
+pub fn encode_item_collection_size_limit_exceeded_exception_struct_top(input: ItemCollectionSizeLimitExceededException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_item_collection_size_limit_exceeded_exception_struct() -> decode.Decoder(ItemCollectionSizeLimitExceededException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ItemCollectionSizeLimitExceededException(
@@ -1237,6 +1589,15 @@ pub type ReplicatedWriteConflictException {
 }
 
 pub fn encode_replicated_write_conflict_exception_struct(input: ReplicatedWriteConflictException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_replicated_write_conflict_exception_struct_top(input: ReplicatedWriteConflictException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -1267,6 +1628,19 @@ pub type CreateBackupInput {
 }
 
 pub fn encode_create_backup_input_struct(input: CreateBackupInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.backup_name {
+    option.Some(v) -> [#("BackupName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_create_backup_input_struct_top(input: CreateBackupInput) -> json.Json {
   let pairs = []
   let pairs = case input.backup_name {
     option.Some(v) -> [#("BackupName", json.string(v)), ..pairs]
@@ -1312,6 +1686,15 @@ pub fn encode_create_backup_output_struct(input: CreateBackupOutput) -> json.Jso
   json.object(pairs)
 }
 
+pub fn encode_create_backup_output_struct_top(input: CreateBackupOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.backup_details {
+    option.Some(v) -> [#("BackupDetails", encode_backup_details_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_create_backup_output_struct() -> decode.Decoder(CreateBackupOutput) {
   use backup_details <- decode.optional_field("BackupDetails", option.None, decode.optional(decode_backup_details_struct()))
   decode.success(CreateBackupOutput(
@@ -1339,6 +1722,39 @@ pub type BackupDetails {
 }
 
 pub fn encode_backup_details_struct(input: BackupDetails) -> json.Json {
+  let pairs = []
+  let pairs = case input.backup_arn {
+    option.Some(v) -> [#("BackupArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.backup_creation_date_time {
+    option.Some(v) -> [#("BackupCreationDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.backup_expiry_date_time {
+    option.Some(v) -> [#("BackupExpiryDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.backup_name {
+    option.Some(v) -> [#("BackupName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.backup_size_bytes {
+    option.Some(v) -> [#("BackupSizeBytes", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.backup_status {
+    option.Some(v) -> [#("BackupStatus", encode_backup_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.backup_type {
+    option.Some(v) -> [#("BackupType", encode_backup_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_backup_details_struct_top(input: BackupDetails) -> json.Json {
   let pairs = []
   let pairs = case input.backup_arn {
     option.Some(v) -> [#("BackupArn", json.string(v)), ..pairs]
@@ -1474,6 +1890,15 @@ pub fn encode_backup_in_use_exception_struct(input: BackupInUseException) -> jso
   json.object(pairs)
 }
 
+pub fn encode_backup_in_use_exception_struct_top(input: BackupInUseException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_backup_in_use_exception_struct() -> decode.Decoder(BackupInUseException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(BackupInUseException(
@@ -1495,6 +1920,15 @@ pub type ContinuousBackupsUnavailableException {
 }
 
 pub fn encode_continuous_backups_unavailable_exception_struct(input: ContinuousBackupsUnavailableException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_continuous_backups_unavailable_exception_struct_top(input: ContinuousBackupsUnavailableException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -1532,6 +1966,15 @@ pub fn encode_limit_exceeded_exception_struct(input: LimitExceededException) -> 
   json.object(pairs)
 }
 
+pub fn encode_limit_exceeded_exception_struct_top(input: LimitExceededException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_limit_exceeded_exception_struct() -> decode.Decoder(LimitExceededException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(LimitExceededException(
@@ -1553,6 +1996,15 @@ pub type TableInUseException {
 }
 
 pub fn encode_table_in_use_exception_struct(input: TableInUseException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_table_in_use_exception_struct_top(input: TableInUseException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -1590,6 +2042,15 @@ pub fn encode_table_not_found_exception_struct(input: TableNotFoundException) ->
   json.object(pairs)
 }
 
+pub fn encode_table_not_found_exception_struct_top(input: TableNotFoundException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_table_not_found_exception_struct() -> decode.Decoder(TableNotFoundException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(TableNotFoundException(
@@ -1612,6 +2073,19 @@ pub type CreateGlobalTableInput {
 }
 
 pub fn encode_create_global_table_input_struct(input: CreateGlobalTableInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_table_name {
+    option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replication_group {
+    option.Some(v) -> [#("ReplicationGroup", fn(xs) { json.array(xs, encode_replica_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_create_global_table_input_struct_top(input: CreateGlobalTableInput) -> json.Json {
   let pairs = []
   let pairs = case input.global_table_name {
     option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
@@ -1657,6 +2131,15 @@ pub fn encode_replica_struct(input: Replica) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_replica_struct_top(input: Replica) -> json.Json {
+  let pairs = []
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_replica_struct() -> decode.Decoder(Replica) {
   use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
   decode.success(Replica(
@@ -1678,6 +2161,15 @@ pub type CreateGlobalTableOutput {
 }
 
 pub fn encode_create_global_table_output_struct(input: CreateGlobalTableOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_table_description {
+    option.Some(v) -> [#("GlobalTableDescription", encode_global_table_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_create_global_table_output_struct_top(input: CreateGlobalTableOutput) -> json.Json {
   let pairs = []
   let pairs = case input.global_table_description {
     option.Some(v) -> [#("GlobalTableDescription", encode_global_table_description_struct(v)), ..pairs]
@@ -1711,6 +2203,31 @@ pub type GlobalTableDescription {
 }
 
 pub fn encode_global_table_description_struct(input: GlobalTableDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.creation_date_time {
+    option.Some(v) -> [#("CreationDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_arn {
+    option.Some(v) -> [#("GlobalTableArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_name {
+    option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_status {
+    option.Some(v) -> [#("GlobalTableStatus", encode_global_table_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replication_group {
+    option.Some(v) -> [#("ReplicationGroup", fn(xs) { json.array(xs, encode_replica_description_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_global_table_description_struct_top(input: GlobalTableDescription) -> json.Json {
   let pairs = []
   let pairs = case input.creation_date_time {
     option.Some(v) -> [#("CreationDateTime", json.int(v)), ..pairs]
@@ -1868,6 +2385,63 @@ pub fn encode_replica_description_struct(input: ReplicaDescription) -> json.Json
   json.object(pairs)
 }
 
+pub fn encode_replica_description_struct_top(input: ReplicaDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_secondary_indexes {
+    option.Some(v) -> [#("GlobalSecondaryIndexes", fn(xs) { json.array(xs, encode_replica_global_secondary_index_description_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_settings_replication_mode {
+    option.Some(v) -> [#("GlobalTableSettingsReplicationMode", encode_global_table_settings_replication_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.kms_master_key_id {
+    option.Some(v) -> [#("KMSMasterKeyId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput_override {
+    option.Some(v) -> [#("OnDemandThroughputOverride", encode_on_demand_throughput_override_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput_override {
+    option.Some(v) -> [#("ProvisionedThroughputOverride", encode_provisioned_throughput_override_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_arn {
+    option.Some(v) -> [#("ReplicaArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_inaccessible_date_time {
+    option.Some(v) -> [#("ReplicaInaccessibleDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_status {
+    option.Some(v) -> [#("ReplicaStatus", encode_replica_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_status_description {
+    option.Some(v) -> [#("ReplicaStatusDescription", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_status_percent_progress {
+    option.Some(v) -> [#("ReplicaStatusPercentProgress", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_table_class_summary {
+    option.Some(v) -> [#("ReplicaTableClassSummary", encode_table_class_summary_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.warm_throughput {
+    option.Some(v) -> [#("WarmThroughput", encode_table_warm_throughput_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_replica_description_struct() -> decode.Decoder(ReplicaDescription) {
   use global_secondary_indexes <- decode.optional_field("GlobalSecondaryIndexes", option.None, decode.optional(decode.list(decode_replica_global_secondary_index_description_struct())))
   use global_table_settings_replication_mode <- decode.optional_field("GlobalTableSettingsReplicationMode", option.None, decode.optional(decode_global_table_settings_replication_mode_enum()))
@@ -1960,6 +2534,27 @@ pub fn encode_replica_global_secondary_index_description_struct(input: ReplicaGl
   json.object(pairs)
 }
 
+pub fn encode_replica_global_secondary_index_description_struct_top(input: ReplicaGlobalSecondaryIndexDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput_override {
+    option.Some(v) -> [#("OnDemandThroughputOverride", encode_on_demand_throughput_override_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput_override {
+    option.Some(v) -> [#("ProvisionedThroughputOverride", encode_provisioned_throughput_override_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.warm_throughput {
+    option.Some(v) -> [#("WarmThroughput", encode_global_secondary_index_warm_throughput_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_replica_global_secondary_index_description_struct() -> decode.Decoder(ReplicaGlobalSecondaryIndexDescription) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use on_demand_throughput_override <- decode.optional_field("OnDemandThroughputOverride", option.None, decode.optional(decode_on_demand_throughput_override_struct()))
@@ -2001,6 +2596,15 @@ pub fn encode_on_demand_throughput_override_struct(input: OnDemandThroughputOver
   json.object(pairs)
 }
 
+pub fn encode_on_demand_throughput_override_struct_top(input: OnDemandThroughputOverride) -> json.Json {
+  let pairs = []
+  let pairs = case input.max_read_request_units {
+    option.Some(v) -> [#("MaxReadRequestUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_on_demand_throughput_override_struct() -> decode.Decoder(OnDemandThroughputOverride) {
   use max_read_request_units <- decode.optional_field("MaxReadRequestUnits", option.None, decode.optional(decode.int))
   decode.success(OnDemandThroughputOverride(
@@ -2022,6 +2626,15 @@ pub type ProvisionedThroughputOverride {
 }
 
 pub fn encode_provisioned_throughput_override_struct(input: ProvisionedThroughputOverride) -> json.Json {
+  let pairs = []
+  let pairs = case input.read_capacity_units {
+    option.Some(v) -> [#("ReadCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_provisioned_throughput_override_struct_top(input: ProvisionedThroughputOverride) -> json.Json {
   let pairs = []
   let pairs = case input.read_capacity_units {
     option.Some(v) -> [#("ReadCapacityUnits", json.int(v)), ..pairs]
@@ -2053,6 +2666,23 @@ pub type GlobalSecondaryIndexWarmThroughputDescription {
 }
 
 pub fn encode_global_secondary_index_warm_throughput_description_struct(input: GlobalSecondaryIndexWarmThroughputDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.read_units_per_second {
+    option.Some(v) -> [#("ReadUnitsPerSecond", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.status {
+    option.Some(v) -> [#("Status", encode_index_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.write_units_per_second {
+    option.Some(v) -> [#("WriteUnitsPerSecond", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_global_secondary_index_warm_throughput_description_struct_top(input: GlobalSecondaryIndexWarmThroughputDescription) -> json.Json {
   let pairs = []
   let pairs = case input.read_units_per_second {
     option.Some(v) -> [#("ReadUnitsPerSecond", json.int(v)), ..pairs]
@@ -2210,6 +2840,19 @@ pub fn encode_table_class_summary_struct(input: TableClassSummary) -> json.Json 
   json.object(pairs)
 }
 
+pub fn encode_table_class_summary_struct_top(input: TableClassSummary) -> json.Json {
+  let pairs = []
+  let pairs = case input.last_update_date_time {
+    option.Some(v) -> [#("LastUpdateDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_class {
+    option.Some(v) -> [#("TableClass", encode_table_class_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_table_class_summary_struct() -> decode.Decoder(TableClassSummary) {
   use last_update_date_time <- decode.optional_field("LastUpdateDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use table_class <- decode.optional_field("TableClass", option.None, decode.optional(decode_table_class_enum()))
@@ -2259,6 +2902,23 @@ pub type TableWarmThroughputDescription {
 }
 
 pub fn encode_table_warm_throughput_description_struct(input: TableWarmThroughputDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.read_units_per_second {
+    option.Some(v) -> [#("ReadUnitsPerSecond", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.status {
+    option.Some(v) -> [#("Status", encode_table_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.write_units_per_second {
+    option.Some(v) -> [#("WriteUnitsPerSecond", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_table_warm_throughput_description_struct_top(input: TableWarmThroughputDescription) -> json.Json {
   let pairs = []
   let pairs = case input.read_units_per_second {
     option.Some(v) -> [#("ReadUnitsPerSecond", json.int(v)), ..pairs]
@@ -2352,6 +3012,15 @@ pub fn encode_global_table_already_exists_exception_struct(input: GlobalTableAlr
   json.object(pairs)
 }
 
+pub fn encode_global_table_already_exists_exception_struct_top(input: GlobalTableAlreadyExistsException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_global_table_already_exists_exception_struct() -> decode.Decoder(GlobalTableAlreadyExistsException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(GlobalTableAlreadyExistsException(
@@ -2389,6 +3058,79 @@ pub type CreateTableInput {
 }
 
 pub fn encode_create_table_input_struct(input: CreateTableInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.attribute_definitions {
+    option.Some(v) -> [#("AttributeDefinitions", fn(xs) { json.array(xs, encode_attribute_definition_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.billing_mode {
+    option.Some(v) -> [#("BillingMode", encode_billing_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.deletion_protection_enabled {
+    option.Some(v) -> [#("DeletionProtectionEnabled", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_secondary_indexes {
+    option.Some(v) -> [#("GlobalSecondaryIndexes", fn(xs) { json.array(xs, encode_global_secondary_index_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_settings_replication_mode {
+    option.Some(v) -> [#("GlobalTableSettingsReplicationMode", encode_global_table_settings_replication_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_source_arn {
+    option.Some(v) -> [#("GlobalTableSourceArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_schema {
+    option.Some(v) -> [#("KeySchema", fn(xs) { json.array(xs, encode_key_schema_element_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.local_secondary_indexes {
+    option.Some(v) -> [#("LocalSecondaryIndexes", fn(xs) { json.array(xs, encode_local_secondary_index_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput {
+    option.Some(v) -> [#("OnDemandThroughput", encode_on_demand_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput {
+    option.Some(v) -> [#("ProvisionedThroughput", encode_provisioned_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.resource_policy {
+    option.Some(v) -> [#("ResourcePolicy", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.sse_specification {
+    option.Some(v) -> [#("SSESpecification", encode_sse_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.stream_specification {
+    option.Some(v) -> [#("StreamSpecification", encode_stream_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_class {
+    option.Some(v) -> [#("TableClass", encode_table_class_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.tags {
+    option.Some(v) -> [#("Tags", fn(xs) { json.array(xs, encode_tag_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.warm_throughput {
+    option.Some(v) -> [#("WarmThroughput", encode_warm_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_create_table_input_struct_top(input: CreateTableInput) -> json.Json {
   let pairs = []
   let pairs = case input.attribute_definitions {
     option.Some(v) -> [#("AttributeDefinitions", fn(xs) { json.array(xs, encode_attribute_definition_struct) }(v)), ..pairs]
@@ -2559,6 +3301,19 @@ pub fn encode_attribute_definition_struct(input: AttributeDefinition) -> json.Js
   json.object(pairs)
 }
 
+pub fn encode_attribute_definition_struct_top(input: AttributeDefinition) -> json.Json {
+  let pairs = []
+  let pairs = case input.attribute_name {
+    option.Some(v) -> [#("AttributeName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.attribute_type {
+    option.Some(v) -> [#("AttributeType", encode_scalar_attribute_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_attribute_definition_struct() -> decode.Decoder(AttributeDefinition) {
   use attribute_name <- decode.optional_field("AttributeName", option.None, decode.optional(decode.string))
   use attribute_type <- decode.optional_field("AttributeType", option.None, decode.optional(decode_scalar_attribute_type_enum()))
@@ -2664,6 +3419,35 @@ pub fn encode_global_secondary_index_struct(input: GlobalSecondaryIndex) -> json
   json.object(pairs)
 }
 
+pub fn encode_global_secondary_index_struct_top(input: GlobalSecondaryIndex) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_schema {
+    option.Some(v) -> [#("KeySchema", fn(xs) { json.array(xs, encode_key_schema_element_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput {
+    option.Some(v) -> [#("OnDemandThroughput", encode_on_demand_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection {
+    option.Some(v) -> [#("Projection", encode_projection_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput {
+    option.Some(v) -> [#("ProvisionedThroughput", encode_provisioned_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.warm_throughput {
+    option.Some(v) -> [#("WarmThroughput", encode_warm_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_global_secondary_index_struct() -> decode.Decoder(GlobalSecondaryIndex) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct())))
@@ -2706,6 +3490,19 @@ pub type KeySchemaElement {
 }
 
 pub fn encode_key_schema_element_struct(input: KeySchemaElement) -> json.Json {
+  let pairs = []
+  let pairs = case input.attribute_name {
+    option.Some(v) -> [#("AttributeName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_type {
+    option.Some(v) -> [#("KeyType", encode_key_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_key_schema_element_struct_top(input: KeySchemaElement) -> json.Json {
   let pairs = []
   let pairs = case input.attribute_name {
     option.Some(v) -> [#("AttributeName", json.string(v)), ..pairs]
@@ -2778,6 +3575,19 @@ pub fn encode_on_demand_throughput_struct(input: OnDemandThroughput) -> json.Jso
   json.object(pairs)
 }
 
+pub fn encode_on_demand_throughput_struct_top(input: OnDemandThroughput) -> json.Json {
+  let pairs = []
+  let pairs = case input.max_read_request_units {
+    option.Some(v) -> [#("MaxReadRequestUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.max_write_request_units {
+    option.Some(v) -> [#("MaxWriteRequestUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_on_demand_throughput_struct() -> decode.Decoder(OnDemandThroughput) {
   use max_read_request_units <- decode.optional_field("MaxReadRequestUnits", option.None, decode.optional(decode.int))
   use max_write_request_units <- decode.optional_field("MaxWriteRequestUnits", option.None, decode.optional(decode.int))
@@ -2804,6 +3614,19 @@ pub type Projection {
 }
 
 pub fn encode_projection_struct(input: Projection) -> json.Json {
+  let pairs = []
+  let pairs = case input.non_key_attributes {
+    option.Some(v) -> [#("NonKeyAttributes", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection_type {
+    option.Some(v) -> [#("ProjectionType", encode_projection_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_projection_struct_top(input: Projection) -> json.Json {
   let pairs = []
   let pairs = case input.non_key_attributes {
     option.Some(v) -> [#("NonKeyAttributes", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
@@ -2879,6 +3702,19 @@ pub fn encode_provisioned_throughput_struct(input: ProvisionedThroughput) -> jso
   json.object(pairs)
 }
 
+pub fn encode_provisioned_throughput_struct_top(input: ProvisionedThroughput) -> json.Json {
+  let pairs = []
+  let pairs = case input.read_capacity_units {
+    option.Some(v) -> [#("ReadCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.write_capacity_units {
+    option.Some(v) -> [#("WriteCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_provisioned_throughput_struct() -> decode.Decoder(ProvisionedThroughput) {
   use read_capacity_units <- decode.optional_field("ReadCapacityUnits", option.None, decode.optional(decode.int))
   use write_capacity_units <- decode.optional_field("WriteCapacityUnits", option.None, decode.optional(decode.int))
@@ -2905,6 +3741,19 @@ pub type WarmThroughput {
 }
 
 pub fn encode_warm_throughput_struct(input: WarmThroughput) -> json.Json {
+  let pairs = []
+  let pairs = case input.read_units_per_second {
+    option.Some(v) -> [#("ReadUnitsPerSecond", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.write_units_per_second {
+    option.Some(v) -> [#("WriteUnitsPerSecond", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_warm_throughput_struct_top(input: WarmThroughput) -> json.Json {
   let pairs = []
   let pairs = case input.read_units_per_second {
     option.Some(v) -> [#("ReadUnitsPerSecond", json.int(v)), ..pairs]
@@ -2960,6 +3809,23 @@ pub fn encode_local_secondary_index_struct(input: LocalSecondaryIndex) -> json.J
   json.object(pairs)
 }
 
+pub fn encode_local_secondary_index_struct_top(input: LocalSecondaryIndex) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_schema {
+    option.Some(v) -> [#("KeySchema", fn(xs) { json.array(xs, encode_key_schema_element_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection {
+    option.Some(v) -> [#("Projection", encode_projection_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_local_secondary_index_struct() -> decode.Decoder(LocalSecondaryIndex) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct())))
@@ -2991,6 +3857,23 @@ pub type SSESpecification {
 }
 
 pub fn encode_sse_specification_struct(input: SSESpecification) -> json.Json {
+  let pairs = []
+  let pairs = case input.enabled {
+    option.Some(v) -> [#("Enabled", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.kms_master_key_id {
+    option.Some(v) -> [#("KMSMasterKeyId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.sse_type {
+    option.Some(v) -> [#("SSEType", encode_sse_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_sse_specification_struct_top(input: SSESpecification) -> json.Json {
   let pairs = []
   let pairs = case input.enabled {
     option.Some(v) -> [#("Enabled", json.bool(v)), ..pairs]
@@ -3071,6 +3954,19 @@ pub fn encode_stream_specification_struct(input: StreamSpecification) -> json.Js
   json.object(pairs)
 }
 
+pub fn encode_stream_specification_struct_top(input: StreamSpecification) -> json.Json {
+  let pairs = []
+  let pairs = case input.stream_enabled {
+    option.Some(v) -> [#("StreamEnabled", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.stream_view_type {
+    option.Some(v) -> [#("StreamViewType", encode_stream_view_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_stream_specification_struct() -> decode.Decoder(StreamSpecification) {
   use stream_enabled <- decode.optional_field("StreamEnabled", option.None, decode.optional(decode.bool))
   use stream_view_type <- decode.optional_field("StreamViewType", option.None, decode.optional(decode_stream_view_type_enum()))
@@ -3137,6 +4033,19 @@ pub fn encode_tag_struct(input: Tag) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_tag_struct_top(input: Tag) -> json.Json {
+  let pairs = []
+  let pairs = case input.key {
+    option.Some(v) -> [#("Key", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.value {
+    option.Some(v) -> [#("Value", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_tag_struct() -> decode.Decoder(Tag) {
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
   use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
@@ -3162,6 +4071,15 @@ pub type CreateTableOutput {
 }
 
 pub fn encode_create_table_output_struct(input: CreateTableOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_description {
+    option.Some(v) -> [#("TableDescription", encode_table_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_create_table_output_struct_top(input: CreateTableOutput) -> json.Json {
   let pairs = []
   let pairs = case input.table_description {
     option.Some(v) -> [#("TableDescription", encode_table_description_struct(v)), ..pairs]
@@ -3218,6 +4136,123 @@ pub type TableDescription {
 }
 
 pub fn encode_table_description_struct(input: TableDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.archival_summary {
+    option.Some(v) -> [#("ArchivalSummary", encode_archival_summary_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.attribute_definitions {
+    option.Some(v) -> [#("AttributeDefinitions", fn(xs) { json.array(xs, encode_attribute_definition_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.billing_mode_summary {
+    option.Some(v) -> [#("BillingModeSummary", encode_billing_mode_summary_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.creation_date_time {
+    option.Some(v) -> [#("CreationDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.deletion_protection_enabled {
+    option.Some(v) -> [#("DeletionProtectionEnabled", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_secondary_indexes {
+    option.Some(v) -> [#("GlobalSecondaryIndexes", fn(xs) { json.array(xs, encode_global_secondary_index_description_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_settings_replication_mode {
+    option.Some(v) -> [#("GlobalTableSettingsReplicationMode", encode_global_table_settings_replication_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_version {
+    option.Some(v) -> [#("GlobalTableVersion", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_witnesses {
+    option.Some(v) -> [#("GlobalTableWitnesses", fn(xs) { json.array(xs, encode_global_table_witness_description_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item_count {
+    option.Some(v) -> [#("ItemCount", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_schema {
+    option.Some(v) -> [#("KeySchema", fn(xs) { json.array(xs, encode_key_schema_element_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.latest_stream_arn {
+    option.Some(v) -> [#("LatestStreamArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.latest_stream_label {
+    option.Some(v) -> [#("LatestStreamLabel", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.local_secondary_indexes {
+    option.Some(v) -> [#("LocalSecondaryIndexes", fn(xs) { json.array(xs, encode_local_secondary_index_description_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.multi_region_consistency {
+    option.Some(v) -> [#("MultiRegionConsistency", encode_multi_region_consistency_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput {
+    option.Some(v) -> [#("OnDemandThroughput", encode_on_demand_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput {
+    option.Some(v) -> [#("ProvisionedThroughput", encode_provisioned_throughput_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replicas {
+    option.Some(v) -> [#("Replicas", fn(xs) { json.array(xs, encode_replica_description_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.restore_summary {
+    option.Some(v) -> [#("RestoreSummary", encode_restore_summary_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.sse_description {
+    option.Some(v) -> [#("SSEDescription", encode_sse_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.stream_specification {
+    option.Some(v) -> [#("StreamSpecification", encode_stream_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_arn {
+    option.Some(v) -> [#("TableArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_class_summary {
+    option.Some(v) -> [#("TableClassSummary", encode_table_class_summary_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_id {
+    option.Some(v) -> [#("TableId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_size_bytes {
+    option.Some(v) -> [#("TableSizeBytes", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_status {
+    option.Some(v) -> [#("TableStatus", encode_table_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.warm_throughput {
+    option.Some(v) -> [#("WarmThroughput", encode_table_warm_throughput_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_table_description_struct_top(input: TableDescription) -> json.Json {
   let pairs = []
   let pairs = case input.archival_summary {
     option.Some(v) -> [#("ArchivalSummary", encode_archival_summary_struct(v)), ..pairs]
@@ -3481,6 +4516,23 @@ pub fn encode_archival_summary_struct(input: ArchivalSummary) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_archival_summary_struct_top(input: ArchivalSummary) -> json.Json {
+  let pairs = []
+  let pairs = case input.archival_backup_arn {
+    option.Some(v) -> [#("ArchivalBackupArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.archival_date_time {
+    option.Some(v) -> [#("ArchivalDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.archival_reason {
+    option.Some(v) -> [#("ArchivalReason", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_archival_summary_struct() -> decode.Decoder(ArchivalSummary) {
   use archival_backup_arn <- decode.optional_field("ArchivalBackupArn", option.None, decode.optional(decode.string))
   use archival_date_time <- decode.optional_field("ArchivalDateTime", option.None, decode.optional(json_timestamp.decoder()))
@@ -3511,6 +4563,19 @@ pub type BillingModeSummary {
 }
 
 pub fn encode_billing_mode_summary_struct(input: BillingModeSummary) -> json.Json {
+  let pairs = []
+  let pairs = case input.billing_mode {
+    option.Some(v) -> [#("BillingMode", encode_billing_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.last_update_to_pay_per_request_date_time {
+    option.Some(v) -> [#("LastUpdateToPayPerRequestDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_billing_mode_summary_struct_top(input: BillingModeSummary) -> json.Json {
   let pairs = []
   let pairs = case input.billing_mode {
     option.Some(v) -> [#("BillingMode", encode_billing_mode_enum(v)), ..pairs]
@@ -3558,6 +4623,55 @@ pub type GlobalSecondaryIndexDescription {
 }
 
 pub fn encode_global_secondary_index_description_struct(input: GlobalSecondaryIndexDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.backfilling {
+    option.Some(v) -> [#("Backfilling", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_arn {
+    option.Some(v) -> [#("IndexArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_size_bytes {
+    option.Some(v) -> [#("IndexSizeBytes", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_status {
+    option.Some(v) -> [#("IndexStatus", encode_index_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item_count {
+    option.Some(v) -> [#("ItemCount", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_schema {
+    option.Some(v) -> [#("KeySchema", fn(xs) { json.array(xs, encode_key_schema_element_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput {
+    option.Some(v) -> [#("OnDemandThroughput", encode_on_demand_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection {
+    option.Some(v) -> [#("Projection", encode_projection_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput {
+    option.Some(v) -> [#("ProvisionedThroughput", encode_provisioned_throughput_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.warm_throughput {
+    option.Some(v) -> [#("WarmThroughput", encode_global_secondary_index_warm_throughput_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_global_secondary_index_description_struct_top(input: GlobalSecondaryIndexDescription) -> json.Json {
   let pairs = []
   let pairs = case input.backfilling {
     option.Some(v) -> [#("Backfilling", json.bool(v)), ..pairs]
@@ -3695,6 +4809,31 @@ pub fn encode_provisioned_throughput_description_struct(input: ProvisionedThroug
   json.object(pairs)
 }
 
+pub fn encode_provisioned_throughput_description_struct_top(input: ProvisionedThroughputDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.last_decrease_date_time {
+    option.Some(v) -> [#("LastDecreaseDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.last_increase_date_time {
+    option.Some(v) -> [#("LastIncreaseDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.number_of_decreases_today {
+    option.Some(v) -> [#("NumberOfDecreasesToday", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.read_capacity_units {
+    option.Some(v) -> [#("ReadCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.write_capacity_units {
+    option.Some(v) -> [#("WriteCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_provisioned_throughput_description_struct() -> decode.Decoder(ProvisionedThroughputDescription) {
   use last_decrease_date_time <- decode.optional_field("LastDecreaseDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use last_increase_date_time <- decode.optional_field("LastIncreaseDateTime", option.None, decode.optional(json_timestamp.decoder()))
@@ -3733,6 +4872,19 @@ pub type GlobalTableWitnessDescription {
 }
 
 pub fn encode_global_table_witness_description_struct(input: GlobalTableWitnessDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.witness_status {
+    option.Some(v) -> [#("WitnessStatus", encode_witness_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_global_table_witness_description_struct_top(input: GlobalTableWitnessDescription) -> json.Json {
   let pairs = []
   let pairs = case input.region_name {
     option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
@@ -3800,6 +4952,35 @@ pub type LocalSecondaryIndexDescription {
 }
 
 pub fn encode_local_secondary_index_description_struct(input: LocalSecondaryIndexDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_arn {
+    option.Some(v) -> [#("IndexArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_size_bytes {
+    option.Some(v) -> [#("IndexSizeBytes", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item_count {
+    option.Some(v) -> [#("ItemCount", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_schema {
+    option.Some(v) -> [#("KeySchema", fn(xs) { json.array(xs, encode_key_schema_element_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection {
+    option.Some(v) -> [#("Projection", encode_projection_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_local_secondary_index_description_struct_top(input: LocalSecondaryIndexDescription) -> json.Json {
   let pairs = []
   let pairs = case input.index_arn {
     option.Some(v) -> [#("IndexArn", json.string(v)), ..pairs]
@@ -3914,6 +5095,27 @@ pub fn encode_restore_summary_struct(input: RestoreSummary) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_restore_summary_struct_top(input: RestoreSummary) -> json.Json {
+  let pairs = []
+  let pairs = case input.restore_date_time {
+    option.Some(v) -> [#("RestoreDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.restore_in_progress {
+    option.Some(v) -> [#("RestoreInProgress", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.source_backup_arn {
+    option.Some(v) -> [#("SourceBackupArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.source_table_arn {
+    option.Some(v) -> [#("SourceTableArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_restore_summary_struct() -> decode.Decoder(RestoreSummary) {
   use restore_date_time <- decode.optional_field("RestoreDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use restore_in_progress <- decode.optional_field("RestoreInProgress", option.None, decode.optional(decode.bool))
@@ -3950,6 +5152,27 @@ pub type SSEDescription {
 }
 
 pub fn encode_sse_description_struct(input: SSEDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.inaccessible_encryption_date_time {
+    option.Some(v) -> [#("InaccessibleEncryptionDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.kms_master_key_arn {
+    option.Some(v) -> [#("KMSMasterKeyArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.sse_type {
+    option.Some(v) -> [#("SSEType", encode_sse_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.status {
+    option.Some(v) -> [#("Status", encode_sse_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_sse_description_struct_top(input: SSEDescription) -> json.Json {
   let pairs = []
   let pairs = case input.inaccessible_encryption_date_time {
     option.Some(v) -> [#("InaccessibleEncryptionDateTime", json.int(v)), ..pairs]
@@ -4042,6 +5265,15 @@ pub fn encode_resource_in_use_exception_struct(input: ResourceInUseException) ->
   json.object(pairs)
 }
 
+pub fn encode_resource_in_use_exception_struct_top(input: ResourceInUseException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_resource_in_use_exception_struct() -> decode.Decoder(ResourceInUseException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ResourceInUseException(
@@ -4063,6 +5295,15 @@ pub type DeleteBackupInput {
 }
 
 pub fn encode_delete_backup_input_struct(input: DeleteBackupInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.backup_arn {
+    option.Some(v) -> [#("BackupArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_delete_backup_input_struct_top(input: DeleteBackupInput) -> json.Json {
   let pairs = []
   let pairs = case input.backup_arn {
     option.Some(v) -> [#("BackupArn", json.string(v)), ..pairs]
@@ -4100,6 +5341,15 @@ pub fn encode_delete_backup_output_struct(input: DeleteBackupOutput) -> json.Jso
   json.object(pairs)
 }
 
+pub fn encode_delete_backup_output_struct_top(input: DeleteBackupOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.backup_description {
+    option.Some(v) -> [#("BackupDescription", encode_backup_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_delete_backup_output_struct() -> decode.Decoder(DeleteBackupOutput) {
   use backup_description <- decode.optional_field("BackupDescription", option.None, decode.optional(decode_backup_description_struct()))
   decode.success(DeleteBackupOutput(
@@ -4123,6 +5373,23 @@ pub type BackupDescription {
 }
 
 pub fn encode_backup_description_struct(input: BackupDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.backup_details {
+    option.Some(v) -> [#("BackupDetails", encode_backup_details_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.source_table_details {
+    option.Some(v) -> [#("SourceTableDetails", encode_source_table_details_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.source_table_feature_details {
+    option.Some(v) -> [#("SourceTableFeatureDetails", encode_source_table_feature_details_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_backup_description_struct_top(input: BackupDescription) -> json.Json {
   let pairs = []
   let pairs = case input.backup_details {
     option.Some(v) -> [#("BackupDetails", encode_backup_details_struct(v)), ..pairs]
@@ -4177,6 +5444,51 @@ pub type SourceTableDetails {
 }
 
 pub fn encode_source_table_details_struct(input: SourceTableDetails) -> json.Json {
+  let pairs = []
+  let pairs = case input.billing_mode {
+    option.Some(v) -> [#("BillingMode", encode_billing_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item_count {
+    option.Some(v) -> [#("ItemCount", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_schema {
+    option.Some(v) -> [#("KeySchema", fn(xs) { json.array(xs, encode_key_schema_element_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput {
+    option.Some(v) -> [#("OnDemandThroughput", encode_on_demand_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput {
+    option.Some(v) -> [#("ProvisionedThroughput", encode_provisioned_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_arn {
+    option.Some(v) -> [#("TableArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_creation_date_time {
+    option.Some(v) -> [#("TableCreationDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_id {
+    option.Some(v) -> [#("TableId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_size_bytes {
+    option.Some(v) -> [#("TableSizeBytes", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_source_table_details_struct_top(input: SourceTableDetails) -> json.Json {
   let pairs = []
   let pairs = case input.billing_mode {
     option.Some(v) -> [#("BillingMode", encode_billing_mode_enum(v)), ..pairs]
@@ -4306,6 +5618,31 @@ pub fn encode_source_table_feature_details_struct(input: SourceTableFeatureDetai
   json.object(pairs)
 }
 
+pub fn encode_source_table_feature_details_struct_top(input: SourceTableFeatureDetails) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_secondary_indexes {
+    option.Some(v) -> [#("GlobalSecondaryIndexes", fn(xs) { json.array(xs, encode_global_secondary_index_info_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.local_secondary_indexes {
+    option.Some(v) -> [#("LocalSecondaryIndexes", fn(xs) { json.array(xs, encode_local_secondary_index_info_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.sse_description {
+    option.Some(v) -> [#("SSEDescription", encode_sse_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.stream_description {
+    option.Some(v) -> [#("StreamDescription", encode_stream_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.time_to_live_description {
+    option.Some(v) -> [#("TimeToLiveDescription", encode_time_to_live_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_source_table_feature_details_struct() -> decode.Decoder(SourceTableFeatureDetails) {
   use global_secondary_indexes <- decode.optional_field("GlobalSecondaryIndexes", option.None, decode.optional(decode.list(decode_global_secondary_index_info_struct())))
   use local_secondary_indexes <- decode.optional_field("LocalSecondaryIndexes", option.None, decode.optional(decode.list(decode_local_secondary_index_info_struct())))
@@ -4347,6 +5684,31 @@ pub type GlobalSecondaryIndexInfo {
 }
 
 pub fn encode_global_secondary_index_info_struct(input: GlobalSecondaryIndexInfo) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_schema {
+    option.Some(v) -> [#("KeySchema", fn(xs) { json.array(xs, encode_key_schema_element_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput {
+    option.Some(v) -> [#("OnDemandThroughput", encode_on_demand_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection {
+    option.Some(v) -> [#("Projection", encode_projection_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput {
+    option.Some(v) -> [#("ProvisionedThroughput", encode_provisioned_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_global_secondary_index_info_struct_top(input: GlobalSecondaryIndexInfo) -> json.Json {
   let pairs = []
   let pairs = case input.index_name {
     option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
@@ -4426,6 +5788,23 @@ pub fn encode_local_secondary_index_info_struct(input: LocalSecondaryIndexInfo) 
   json.object(pairs)
 }
 
+pub fn encode_local_secondary_index_info_struct_top(input: LocalSecondaryIndexInfo) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_schema {
+    option.Some(v) -> [#("KeySchema", fn(xs) { json.array(xs, encode_key_schema_element_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection {
+    option.Some(v) -> [#("Projection", encode_projection_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_local_secondary_index_info_struct() -> decode.Decoder(LocalSecondaryIndexInfo) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct())))
@@ -4456,6 +5835,19 @@ pub type TimeToLiveDescription {
 }
 
 pub fn encode_time_to_live_description_struct(input: TimeToLiveDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.attribute_name {
+    option.Some(v) -> [#("AttributeName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.time_to_live_status {
+    option.Some(v) -> [#("TimeToLiveStatus", encode_time_to_live_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_time_to_live_description_struct_top(input: TimeToLiveDescription) -> json.Json {
   let pairs = []
   let pairs = case input.attribute_name {
     option.Some(v) -> [#("AttributeName", json.string(v)), ..pairs]
@@ -4529,6 +5921,15 @@ pub fn encode_backup_not_found_exception_struct(input: BackupNotFoundException) 
   json.object(pairs)
 }
 
+pub fn encode_backup_not_found_exception_struct_top(input: BackupNotFoundException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_backup_not_found_exception_struct() -> decode.Decoder(BackupNotFoundException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(BackupNotFoundException(
@@ -4560,6 +5961,55 @@ pub type DeleteItemInput {
 }
 
 pub fn encode_delete_item_input_struct(input: DeleteItemInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.condition_expression {
+    option.Some(v) -> [#("ConditionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.conditional_operator {
+    option.Some(v) -> [#("ConditionalOperator", encode_conditional_operator_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expected {
+    option.Some(v) -> [#("Expected", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_expected_attribute_value_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_names {
+    option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_values {
+    option.Some(v) -> [#("ExpressionAttributeValues", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key {
+    option.Some(v) -> [#("Key", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_item_collection_metrics {
+    option.Some(v) -> [#("ReturnItemCollectionMetrics", encode_return_item_collection_metrics_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values {
+    option.Some(v) -> [#("ReturnValues", encode_return_value_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values_on_condition_check_failure {
+    option.Some(v) -> [#("ReturnValuesOnConditionCheckFailure", encode_return_values_on_condition_check_failure_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_delete_item_input_struct_top(input: DeleteItemInput) -> json.Json {
   let pairs = []
   let pairs = case input.condition_expression {
     option.Some(v) -> [#("ConditionExpression", json.string(v)), ..pairs]
@@ -4694,6 +6144,27 @@ pub type ExpectedAttributeValue {
 }
 
 pub fn encode_expected_attribute_value_struct(input: ExpectedAttributeValue) -> json.Json {
+  let pairs = []
+  let pairs = case input.attribute_value_list {
+    option.Some(v) -> [#("AttributeValueList", fn(xs) { json.array(xs, encode_attribute_value_union) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.comparison_operator {
+    option.Some(v) -> [#("ComparisonOperator", encode_comparison_operator_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.exists {
+    option.Some(v) -> [#("Exists", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.value {
+    option.Some(v) -> [#("Value", encode_attribute_value_union(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_expected_attribute_value_struct_top(input: ExpectedAttributeValue) -> json.Json {
   let pairs = []
   let pairs = case input.attribute_value_list {
     option.Some(v) -> [#("AttributeValueList", fn(xs) { json.array(xs, encode_attribute_value_union) }(v)), ..pairs]
@@ -4851,6 +6322,23 @@ pub fn encode_delete_item_output_struct(input: DeleteItemOutput) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_delete_item_output_struct_top(input: DeleteItemOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.attributes {
+    option.Some(v) -> [#("Attributes", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", encode_consumed_capacity_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item_collection_metrics {
+    option.Some(v) -> [#("ItemCollectionMetrics", encode_item_collection_metrics_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_delete_item_output_struct() -> decode.Decoder(DeleteItemOutput) {
   use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct()))
@@ -4881,6 +6369,19 @@ pub type ConditionalCheckFailedException {
 }
 
 pub fn encode_conditional_check_failed_exception_struct(input: ConditionalCheckFailedException) -> json.Json {
+  let pairs = []
+  let pairs = case input.item {
+    option.Some(v) -> [#("Item", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_conditional_check_failed_exception_struct_top(input: ConditionalCheckFailedException) -> json.Json {
   let pairs = []
   let pairs = case input.item {
     option.Some(v) -> [#("Item", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
@@ -4926,6 +6427,15 @@ pub fn encode_transaction_conflict_exception_struct(input: TransactionConflictEx
   json.object(pairs)
 }
 
+pub fn encode_transaction_conflict_exception_struct_top(input: TransactionConflictException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_transaction_conflict_exception_struct() -> decode.Decoder(TransactionConflictException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(TransactionConflictException(
@@ -4948,6 +6458,19 @@ pub type DeleteResourcePolicyInput {
 }
 
 pub fn encode_delete_resource_policy_input_struct(input: DeleteResourcePolicyInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.expected_revision_id {
+    option.Some(v) -> [#("ExpectedRevisionId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.resource_arn {
+    option.Some(v) -> [#("ResourceArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_delete_resource_policy_input_struct_top(input: DeleteResourcePolicyInput) -> json.Json {
   let pairs = []
   let pairs = case input.expected_revision_id {
     option.Some(v) -> [#("ExpectedRevisionId", json.string(v)), ..pairs]
@@ -4993,6 +6516,15 @@ pub fn encode_delete_resource_policy_output_struct(input: DeleteResourcePolicyOu
   json.object(pairs)
 }
 
+pub fn encode_delete_resource_policy_output_struct_top(input: DeleteResourcePolicyOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.revision_id {
+    option.Some(v) -> [#("RevisionId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_delete_resource_policy_output_struct() -> decode.Decoder(DeleteResourcePolicyOutput) {
   use revision_id <- decode.optional_field("RevisionId", option.None, decode.optional(decode.string))
   decode.success(DeleteResourcePolicyOutput(
@@ -5014,6 +6546,15 @@ pub type PolicyNotFoundException {
 }
 
 pub fn encode_policy_not_found_exception_struct(input: PolicyNotFoundException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_policy_not_found_exception_struct_top(input: PolicyNotFoundException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -5051,6 +6592,15 @@ pub fn encode_delete_table_input_struct(input: DeleteTableInput) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_delete_table_input_struct_top(input: DeleteTableInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_delete_table_input_struct() -> decode.Decoder(DeleteTableInput) {
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(DeleteTableInput(
@@ -5072,6 +6622,15 @@ pub type DeleteTableOutput {
 }
 
 pub fn encode_delete_table_output_struct(input: DeleteTableOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_description {
+    option.Some(v) -> [#("TableDescription", encode_table_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_delete_table_output_struct_top(input: DeleteTableOutput) -> json.Json {
   let pairs = []
   let pairs = case input.table_description {
     option.Some(v) -> [#("TableDescription", encode_table_description_struct(v)), ..pairs]
@@ -5109,6 +6668,15 @@ pub fn encode_describe_backup_input_struct(input: DescribeBackupInput) -> json.J
   json.object(pairs)
 }
 
+pub fn encode_describe_backup_input_struct_top(input: DescribeBackupInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.backup_arn {
+    option.Some(v) -> [#("BackupArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_describe_backup_input_struct() -> decode.Decoder(DescribeBackupInput) {
   use backup_arn <- decode.optional_field("BackupArn", option.None, decode.optional(decode.string))
   decode.success(DescribeBackupInput(
@@ -5130,6 +6698,15 @@ pub type DescribeBackupOutput {
 }
 
 pub fn encode_describe_backup_output_struct(input: DescribeBackupOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.backup_description {
+    option.Some(v) -> [#("BackupDescription", encode_backup_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_backup_output_struct_top(input: DescribeBackupOutput) -> json.Json {
   let pairs = []
   let pairs = case input.backup_description {
     option.Some(v) -> [#("BackupDescription", encode_backup_description_struct(v)), ..pairs]
@@ -5167,6 +6744,15 @@ pub fn encode_describe_continuous_backups_input_struct(input: DescribeContinuous
   json.object(pairs)
 }
 
+pub fn encode_describe_continuous_backups_input_struct_top(input: DescribeContinuousBackupsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_describe_continuous_backups_input_struct() -> decode.Decoder(DescribeContinuousBackupsInput) {
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(DescribeContinuousBackupsInput(
@@ -5188,6 +6774,15 @@ pub type DescribeContinuousBackupsOutput {
 }
 
 pub fn encode_describe_continuous_backups_output_struct(input: DescribeContinuousBackupsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.continuous_backups_description {
+    option.Some(v) -> [#("ContinuousBackupsDescription", encode_continuous_backups_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_continuous_backups_output_struct_top(input: DescribeContinuousBackupsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.continuous_backups_description {
     option.Some(v) -> [#("ContinuousBackupsDescription", encode_continuous_backups_description_struct(v)), ..pairs]
@@ -5218,6 +6813,19 @@ pub type ContinuousBackupsDescription {
 }
 
 pub fn encode_continuous_backups_description_struct(input: ContinuousBackupsDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.continuous_backups_status {
+    option.Some(v) -> [#("ContinuousBackupsStatus", encode_continuous_backups_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.point_in_time_recovery_description {
+    option.Some(v) -> [#("PointInTimeRecoveryDescription", encode_point_in_time_recovery_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_continuous_backups_description_struct_top(input: ContinuousBackupsDescription) -> json.Json {
   let pairs = []
   let pairs = case input.continuous_backups_status {
     option.Some(v) -> [#("ContinuousBackupsStatus", encode_continuous_backups_status_enum(v)), ..pairs]
@@ -5280,6 +6888,27 @@ pub type PointInTimeRecoveryDescription {
 }
 
 pub fn encode_point_in_time_recovery_description_struct(input: PointInTimeRecoveryDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.earliest_restorable_date_time {
+    option.Some(v) -> [#("EarliestRestorableDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.latest_restorable_date_time {
+    option.Some(v) -> [#("LatestRestorableDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.point_in_time_recovery_status {
+    option.Some(v) -> [#("PointInTimeRecoveryStatus", encode_point_in_time_recovery_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.recovery_period_in_days {
+    option.Some(v) -> [#("RecoveryPeriodInDays", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_point_in_time_recovery_description_struct_top(input: PointInTimeRecoveryDescription) -> json.Json {
   let pairs = []
   let pairs = case input.earliest_restorable_date_time {
     option.Some(v) -> [#("EarliestRestorableDateTime", json.int(v)), ..pairs]
@@ -5368,6 +6997,19 @@ pub fn encode_describe_contributor_insights_input_struct(input: DescribeContribu
   json.object(pairs)
 }
 
+pub fn encode_describe_contributor_insights_input_struct_top(input: DescribeContributorInsightsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_describe_contributor_insights_input_struct() -> decode.Decoder(DescribeContributorInsightsInput) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
@@ -5399,6 +7041,39 @@ pub type DescribeContributorInsightsOutput {
 }
 
 pub fn encode_describe_contributor_insights_output_struct(input: DescribeContributorInsightsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.contributor_insights_mode {
+    option.Some(v) -> [#("ContributorInsightsMode", encode_contributor_insights_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.contributor_insights_rule_list {
+    option.Some(v) -> [#("ContributorInsightsRuleList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.contributor_insights_status {
+    option.Some(v) -> [#("ContributorInsightsStatus", encode_contributor_insights_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.failure_exception {
+    option.Some(v) -> [#("FailureException", encode_failure_exception_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.last_update_date_time {
+    option.Some(v) -> [#("LastUpdateDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_contributor_insights_output_struct_top(input: DescribeContributorInsightsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.contributor_insights_mode {
     option.Some(v) -> [#("ContributorInsightsMode", encode_contributor_insights_mode_enum(v)), ..pairs]
@@ -5542,6 +7217,19 @@ pub fn encode_failure_exception_struct(input: FailureException) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_failure_exception_struct_top(input: FailureException) -> json.Json {
+  let pairs = []
+  let pairs = case input.exception_description {
+    option.Some(v) -> [#("ExceptionDescription", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.exception_name {
+    option.Some(v) -> [#("ExceptionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_failure_exception_struct() -> decode.Decoder(FailureException) {
   use exception_description <- decode.optional_field("ExceptionDescription", option.None, decode.optional(decode.string))
   use exception_name <- decode.optional_field("ExceptionName", option.None, decode.optional(decode.string))
@@ -5568,6 +7256,10 @@ pub fn encode_describe_endpoints_request_struct(_v: DescribeEndpointsRequest) ->
   json.object([])
 }
 
+pub fn encode_describe_endpoints_request_struct_top(_v: DescribeEndpointsRequest) -> json.Json {
+  json.object([])
+}
+
 pub fn decode_describe_endpoints_request_struct() -> decode.Decoder(DescribeEndpointsRequest) {
   decode.success(DescribeEndpointsRequest)
 }
@@ -5583,6 +7275,15 @@ pub type DescribeEndpointsResponse {
 }
 
 pub fn encode_describe_endpoints_response_struct(input: DescribeEndpointsResponse) -> json.Json {
+  let pairs = []
+  let pairs = case input.endpoints {
+    option.Some(v) -> [#("Endpoints", fn(xs) { json.array(xs, encode_endpoint_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_endpoints_response_struct_top(input: DescribeEndpointsResponse) -> json.Json {
   let pairs = []
   let pairs = case input.endpoints {
     option.Some(v) -> [#("Endpoints", fn(xs) { json.array(xs, encode_endpoint_struct) }(v)), ..pairs]
@@ -5613,6 +7314,19 @@ pub type Endpoint {
 }
 
 pub fn encode_endpoint_struct(input: Endpoint) -> json.Json {
+  let pairs = []
+  let pairs = case input.address {
+    option.Some(v) -> [#("Address", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.cache_period_in_minutes {
+    option.Some(v) -> [#("CachePeriodInMinutes", json.int(v)), ..pairs]
+    option.None -> [#("CachePeriodInMinutes", json.int(0)), ..pairs]
+  }
+  json.object(pairs)
+}
+
+pub fn encode_endpoint_struct_top(input: Endpoint) -> json.Json {
   let pairs = []
   let pairs = case input.address {
     option.Some(v) -> [#("Address", json.string(v)), ..pairs]
@@ -5658,6 +7372,15 @@ pub fn encode_describe_export_input_struct(input: DescribeExportInput) -> json.J
   json.object(pairs)
 }
 
+pub fn encode_describe_export_input_struct_top(input: DescribeExportInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.export_arn {
+    option.Some(v) -> [#("ExportArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_describe_export_input_struct() -> decode.Decoder(DescribeExportInput) {
   use export_arn <- decode.optional_field("ExportArn", option.None, decode.optional(decode.string))
   decode.success(DescribeExportInput(
@@ -5679,6 +7402,15 @@ pub type DescribeExportOutput {
 }
 
 pub fn encode_describe_export_output_struct(input: DescribeExportOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.export_description {
+    option.Some(v) -> [#("ExportDescription", encode_export_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_export_output_struct_top(input: DescribeExportOutput) -> json.Json {
   let pairs = []
   let pairs = case input.export_description {
     option.Some(v) -> [#("ExportDescription", encode_export_description_struct(v)), ..pairs]
@@ -5728,6 +7460,95 @@ pub type ExportDescription {
 }
 
 pub fn encode_export_description_struct(input: ExportDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.billed_size_bytes {
+    option.Some(v) -> [#("BilledSizeBytes", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.client_token {
+    option.Some(v) -> [#("ClientToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.end_time {
+    option.Some(v) -> [#("EndTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_arn {
+    option.Some(v) -> [#("ExportArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_format {
+    option.Some(v) -> [#("ExportFormat", encode_export_format_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_manifest {
+    option.Some(v) -> [#("ExportManifest", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_status {
+    option.Some(v) -> [#("ExportStatus", encode_export_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_time {
+    option.Some(v) -> [#("ExportTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_type {
+    option.Some(v) -> [#("ExportType", encode_export_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.failure_code {
+    option.Some(v) -> [#("FailureCode", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.failure_message {
+    option.Some(v) -> [#("FailureMessage", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.incremental_export_specification {
+    option.Some(v) -> [#("IncrementalExportSpecification", encode_incremental_export_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item_count {
+    option.Some(v) -> [#("ItemCount", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_bucket {
+    option.Some(v) -> [#("S3Bucket", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_bucket_owner {
+    option.Some(v) -> [#("S3BucketOwner", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_prefix {
+    option.Some(v) -> [#("S3Prefix", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_sse_algorithm {
+    option.Some(v) -> [#("S3SseAlgorithm", encode_s3_sse_algorithm_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_sse_kms_key_id {
+    option.Some(v) -> [#("S3SseKmsKeyId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.start_time {
+    option.Some(v) -> [#("StartTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_arn {
+    option.Some(v) -> [#("TableArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_id {
+    option.Some(v) -> [#("TableId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_export_description_struct_top(input: ExportDescription) -> json.Json {
   let pairs = []
   let pairs = case input.billed_size_bytes {
     option.Some(v) -> [#("BilledSizeBytes", json.int(v)), ..pairs]
@@ -6004,6 +7825,23 @@ pub fn encode_incremental_export_specification_struct(input: IncrementalExportSp
   json.object(pairs)
 }
 
+pub fn encode_incremental_export_specification_struct_top(input: IncrementalExportSpecification) -> json.Json {
+  let pairs = []
+  let pairs = case input.export_from_time {
+    option.Some(v) -> [#("ExportFromTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_to_time {
+    option.Some(v) -> [#("ExportToTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_view_type {
+    option.Some(v) -> [#("ExportViewType", encode_export_view_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_incremental_export_specification_struct() -> decode.Decoder(IncrementalExportSpecification) {
   use export_from_time <- decode.optional_field("ExportFromTime", option.None, decode.optional(json_timestamp.decoder()))
   use export_to_time <- decode.optional_field("ExportToTime", option.None, decode.optional(json_timestamp.decoder()))
@@ -6085,6 +7923,15 @@ pub fn encode_export_not_found_exception_struct(input: ExportNotFoundException) 
   json.object(pairs)
 }
 
+pub fn encode_export_not_found_exception_struct_top(input: ExportNotFoundException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_export_not_found_exception_struct() -> decode.Decoder(ExportNotFoundException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ExportNotFoundException(
@@ -6106,6 +7953,15 @@ pub type DescribeGlobalTableInput {
 }
 
 pub fn encode_describe_global_table_input_struct(input: DescribeGlobalTableInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_table_name {
+    option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_global_table_input_struct_top(input: DescribeGlobalTableInput) -> json.Json {
   let pairs = []
   let pairs = case input.global_table_name {
     option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
@@ -6143,6 +7999,15 @@ pub fn encode_describe_global_table_output_struct(input: DescribeGlobalTableOutp
   json.object(pairs)
 }
 
+pub fn encode_describe_global_table_output_struct_top(input: DescribeGlobalTableOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_table_description {
+    option.Some(v) -> [#("GlobalTableDescription", encode_global_table_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_describe_global_table_output_struct() -> decode.Decoder(DescribeGlobalTableOutput) {
   use global_table_description <- decode.optional_field("GlobalTableDescription", option.None, decode.optional(decode_global_table_description_struct()))
   decode.success(DescribeGlobalTableOutput(
@@ -6164,6 +8029,15 @@ pub type GlobalTableNotFoundException {
 }
 
 pub fn encode_global_table_not_found_exception_struct(input: GlobalTableNotFoundException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_global_table_not_found_exception_struct_top(input: GlobalTableNotFoundException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -6201,6 +8075,15 @@ pub fn encode_describe_global_table_settings_input_struct(input: DescribeGlobalT
   json.object(pairs)
 }
 
+pub fn encode_describe_global_table_settings_input_struct_top(input: DescribeGlobalTableSettingsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_table_name {
+    option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_describe_global_table_settings_input_struct() -> decode.Decoder(DescribeGlobalTableSettingsInput) {
   use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
   decode.success(DescribeGlobalTableSettingsInput(
@@ -6223,6 +8106,19 @@ pub type DescribeGlobalTableSettingsOutput {
 }
 
 pub fn encode_describe_global_table_settings_output_struct(input: DescribeGlobalTableSettingsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_table_name {
+    option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_settings {
+    option.Some(v) -> [#("ReplicaSettings", fn(xs) { json.array(xs, encode_replica_settings_description_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_global_table_settings_output_struct_top(input: DescribeGlobalTableSettingsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.global_table_name {
     option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
@@ -6268,6 +8164,47 @@ pub type ReplicaSettingsDescription {
 }
 
 pub fn encode_replica_settings_description_struct(input: ReplicaSettingsDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_billing_mode_summary {
+    option.Some(v) -> [#("ReplicaBillingModeSummary", encode_billing_mode_summary_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_global_secondary_index_settings {
+    option.Some(v) -> [#("ReplicaGlobalSecondaryIndexSettings", fn(xs) { json.array(xs, encode_replica_global_secondary_index_settings_description_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_provisioned_read_capacity_auto_scaling_settings {
+    option.Some(v) -> [#("ReplicaProvisionedReadCapacityAutoScalingSettings", encode_auto_scaling_settings_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_provisioned_read_capacity_units {
+    option.Some(v) -> [#("ReplicaProvisionedReadCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_provisioned_write_capacity_auto_scaling_settings {
+    option.Some(v) -> [#("ReplicaProvisionedWriteCapacityAutoScalingSettings", encode_auto_scaling_settings_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_provisioned_write_capacity_units {
+    option.Some(v) -> [#("ReplicaProvisionedWriteCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_status {
+    option.Some(v) -> [#("ReplicaStatus", encode_replica_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_table_class_summary {
+    option.Some(v) -> [#("ReplicaTableClassSummary", encode_table_class_summary_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_replica_settings_description_struct_top(input: ReplicaSettingsDescription) -> json.Json {
   let pairs = []
   let pairs = case input.region_name {
     option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
@@ -6394,6 +8331,35 @@ pub fn encode_replica_global_secondary_index_settings_description_struct(input: 
   json.object(pairs)
 }
 
+pub fn encode_replica_global_secondary_index_settings_description_struct_top(input: ReplicaGlobalSecondaryIndexSettingsDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_status {
+    option.Some(v) -> [#("IndexStatus", encode_index_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_read_capacity_auto_scaling_settings {
+    option.Some(v) -> [#("ProvisionedReadCapacityAutoScalingSettings", encode_auto_scaling_settings_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_read_capacity_units {
+    option.Some(v) -> [#("ProvisionedReadCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_write_capacity_auto_scaling_settings {
+    option.Some(v) -> [#("ProvisionedWriteCapacityAutoScalingSettings", encode_auto_scaling_settings_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_write_capacity_units {
+    option.Some(v) -> [#("ProvisionedWriteCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_replica_global_secondary_index_settings_description_struct() -> decode.Decoder(ReplicaGlobalSecondaryIndexSettingsDescription) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use index_status <- decode.optional_field("IndexStatus", option.None, decode.optional(decode_index_status_enum()))
@@ -6439,6 +8405,31 @@ pub type AutoScalingSettingsDescription {
 }
 
 pub fn encode_auto_scaling_settings_description_struct(input: AutoScalingSettingsDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.auto_scaling_disabled {
+    option.Some(v) -> [#("AutoScalingDisabled", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.auto_scaling_role_arn {
+    option.Some(v) -> [#("AutoScalingRoleArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.maximum_units {
+    option.Some(v) -> [#("MaximumUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.minimum_units {
+    option.Some(v) -> [#("MinimumUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.scaling_policies {
+    option.Some(v) -> [#("ScalingPolicies", fn(xs) { json.array(xs, encode_auto_scaling_policy_description_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_auto_scaling_settings_description_struct_top(input: AutoScalingSettingsDescription) -> json.Json {
   let pairs = []
   let pairs = case input.auto_scaling_disabled {
     option.Some(v) -> [#("AutoScalingDisabled", json.bool(v)), ..pairs]
@@ -6513,6 +8504,19 @@ pub fn encode_auto_scaling_policy_description_struct(input: AutoScalingPolicyDes
   json.object(pairs)
 }
 
+pub fn encode_auto_scaling_policy_description_struct_top(input: AutoScalingPolicyDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.policy_name {
+    option.Some(v) -> [#("PolicyName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.target_tracking_scaling_policy_configuration {
+    option.Some(v) -> [#("TargetTrackingScalingPolicyConfiguration", encode_auto_scaling_target_tracking_scaling_policy_configuration_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_auto_scaling_policy_description_struct() -> decode.Decoder(AutoScalingPolicyDescription) {
   use policy_name <- decode.optional_field("PolicyName", option.None, decode.optional(decode.string))
   use target_tracking_scaling_policy_configuration <- decode.optional_field("TargetTrackingScalingPolicyConfiguration", option.None, decode.optional(decode_auto_scaling_target_tracking_scaling_policy_configuration_description_struct()))
@@ -6541,6 +8545,27 @@ pub type AutoScalingTargetTrackingScalingPolicyConfigurationDescription {
 }
 
 pub fn encode_auto_scaling_target_tracking_scaling_policy_configuration_description_struct(input: AutoScalingTargetTrackingScalingPolicyConfigurationDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.disable_scale_in {
+    option.Some(v) -> [#("DisableScaleIn", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.scale_in_cooldown {
+    option.Some(v) -> [#("ScaleInCooldown", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.scale_out_cooldown {
+    option.Some(v) -> [#("ScaleOutCooldown", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.target_value {
+    option.Some(v) -> [#("TargetValue", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_auto_scaling_target_tracking_scaling_policy_configuration_description_struct_top(input: AutoScalingTargetTrackingScalingPolicyConfigurationDescription) -> json.Json {
   let pairs = []
   let pairs = case input.disable_scale_in {
     option.Some(v) -> [#("DisableScaleIn", json.bool(v)), ..pairs]
@@ -6602,6 +8627,15 @@ pub fn encode_describe_import_input_struct(input: DescribeImportInput) -> json.J
   json.object(pairs)
 }
 
+pub fn encode_describe_import_input_struct_top(input: DescribeImportInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.import_arn {
+    option.Some(v) -> [#("ImportArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_describe_import_input_struct() -> decode.Decoder(DescribeImportInput) {
   use import_arn <- decode.optional_field("ImportArn", option.None, decode.optional(decode.string))
   decode.success(DescribeImportInput(
@@ -6623,6 +8657,15 @@ pub type DescribeImportOutput {
 }
 
 pub fn encode_describe_import_output_struct(input: DescribeImportOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.import_table_description {
+    option.Some(v) -> [#("ImportTableDescription", encode_import_table_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_import_output_struct_top(input: DescribeImportOutput) -> json.Json {
   let pairs = []
   let pairs = case input.import_table_description {
     option.Some(v) -> [#("ImportTableDescription", encode_import_table_description_struct(v)), ..pairs]
@@ -6670,6 +8713,87 @@ pub type ImportTableDescription {
 }
 
 pub fn encode_import_table_description_struct(input: ImportTableDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.client_token {
+    option.Some(v) -> [#("ClientToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.cloud_watch_log_group_arn {
+    option.Some(v) -> [#("CloudWatchLogGroupArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.end_time {
+    option.Some(v) -> [#("EndTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.error_count {
+    option.Some(v) -> [#("ErrorCount", json.int(v)), ..pairs]
+    option.None -> [#("ErrorCount", json.int(0)), ..pairs]
+  }
+  let pairs = case input.failure_code {
+    option.Some(v) -> [#("FailureCode", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.failure_message {
+    option.Some(v) -> [#("FailureMessage", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.import_arn {
+    option.Some(v) -> [#("ImportArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.import_status {
+    option.Some(v) -> [#("ImportStatus", encode_import_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.imported_item_count {
+    option.Some(v) -> [#("ImportedItemCount", json.int(v)), ..pairs]
+    option.None -> [#("ImportedItemCount", json.int(0)), ..pairs]
+  }
+  let pairs = case input.input_compression_type {
+    option.Some(v) -> [#("InputCompressionType", encode_input_compression_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.input_format {
+    option.Some(v) -> [#("InputFormat", encode_input_format_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.input_format_options {
+    option.Some(v) -> [#("InputFormatOptions", encode_input_format_options_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.processed_item_count {
+    option.Some(v) -> [#("ProcessedItemCount", json.int(v)), ..pairs]
+    option.None -> [#("ProcessedItemCount", json.int(0)), ..pairs]
+  }
+  let pairs = case input.processed_size_bytes {
+    option.Some(v) -> [#("ProcessedSizeBytes", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_bucket_source {
+    option.Some(v) -> [#("S3BucketSource", encode_s3_bucket_source_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.start_time {
+    option.Some(v) -> [#("StartTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_arn {
+    option.Some(v) -> [#("TableArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_creation_parameters {
+    option.Some(v) -> [#("TableCreationParameters", encode_table_creation_parameters_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_id {
+    option.Some(v) -> [#("TableId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_import_table_description_struct_top(input: ImportTableDescription) -> json.Json {
   let pairs = []
   let pairs = case input.client_token {
     option.Some(v) -> [#("ClientToken", json.string(v)), ..pairs]
@@ -6932,6 +9056,15 @@ pub fn encode_input_format_options_struct(input: InputFormatOptions) -> json.Jso
   json.object(pairs)
 }
 
+pub fn encode_input_format_options_struct_top(input: InputFormatOptions) -> json.Json {
+  let pairs = []
+  let pairs = case input.csv {
+    option.Some(v) -> [#("Csv", encode_csv_options_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_input_format_options_struct() -> decode.Decoder(InputFormatOptions) {
   use csv <- decode.optional_field("Csv", option.None, decode.optional(decode_csv_options_struct()))
   decode.success(InputFormatOptions(
@@ -6954,6 +9087,19 @@ pub type CsvOptions {
 }
 
 pub fn encode_csv_options_struct(input: CsvOptions) -> json.Json {
+  let pairs = []
+  let pairs = case input.delimiter {
+    option.Some(v) -> [#("Delimiter", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.header_list {
+    option.Some(v) -> [#("HeaderList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_csv_options_struct_top(input: CsvOptions) -> json.Json {
   let pairs = []
   let pairs = case input.delimiter {
     option.Some(v) -> [#("Delimiter", json.string(v)), ..pairs]
@@ -7009,6 +9155,23 @@ pub fn encode_s3_bucket_source_struct(input: S3BucketSource) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_s3_bucket_source_struct_top(input: S3BucketSource) -> json.Json {
+  let pairs = []
+  let pairs = case input.s3_bucket {
+    option.Some(v) -> [#("S3Bucket", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_bucket_owner {
+    option.Some(v) -> [#("S3BucketOwner", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_key_prefix {
+    option.Some(v) -> [#("S3KeyPrefix", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_s3_bucket_source_struct() -> decode.Decoder(S3BucketSource) {
   use s3_bucket <- decode.optional_field("S3Bucket", option.None, decode.optional(decode.string))
   use s3_bucket_owner <- decode.optional_field("S3BucketOwner", option.None, decode.optional(decode.string))
@@ -7045,6 +9208,43 @@ pub type TableCreationParameters {
 }
 
 pub fn encode_table_creation_parameters_struct(input: TableCreationParameters) -> json.Json {
+  let pairs = []
+  let pairs = case input.attribute_definitions {
+    option.Some(v) -> [#("AttributeDefinitions", fn(xs) { json.array(xs, encode_attribute_definition_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.billing_mode {
+    option.Some(v) -> [#("BillingMode", encode_billing_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_secondary_indexes {
+    option.Some(v) -> [#("GlobalSecondaryIndexes", fn(xs) { json.array(xs, encode_global_secondary_index_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_schema {
+    option.Some(v) -> [#("KeySchema", fn(xs) { json.array(xs, encode_key_schema_element_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput {
+    option.Some(v) -> [#("OnDemandThroughput", encode_on_demand_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput {
+    option.Some(v) -> [#("ProvisionedThroughput", encode_provisioned_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.sse_specification {
+    option.Some(v) -> [#("SSESpecification", encode_sse_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_table_creation_parameters_struct_top(input: TableCreationParameters) -> json.Json {
   let pairs = []
   let pairs = case input.attribute_definitions {
     option.Some(v) -> [#("AttributeDefinitions", fn(xs) { json.array(xs, encode_attribute_definition_struct) }(v)), ..pairs]
@@ -7138,6 +9338,15 @@ pub fn encode_import_not_found_exception_struct(input: ImportNotFoundException) 
   json.object(pairs)
 }
 
+pub fn encode_import_not_found_exception_struct_top(input: ImportNotFoundException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_import_not_found_exception_struct() -> decode.Decoder(ImportNotFoundException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ImportNotFoundException(
@@ -7159,6 +9368,15 @@ pub type DescribeKinesisStreamingDestinationInput {
 }
 
 pub fn encode_describe_kinesis_streaming_destination_input_struct(input: DescribeKinesisStreamingDestinationInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_kinesis_streaming_destination_input_struct_top(input: DescribeKinesisStreamingDestinationInput) -> json.Json {
   let pairs = []
   let pairs = case input.table_name {
     option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
@@ -7201,6 +9419,19 @@ pub fn encode_describe_kinesis_streaming_destination_output_struct(input: Descri
   json.object(pairs)
 }
 
+pub fn encode_describe_kinesis_streaming_destination_output_struct_top(input: DescribeKinesisStreamingDestinationOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.kinesis_data_stream_destinations {
+    option.Some(v) -> [#("KinesisDataStreamDestinations", fn(xs) { json.array(xs, encode_kinesis_data_stream_destination_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_describe_kinesis_streaming_destination_output_struct() -> decode.Decoder(DescribeKinesisStreamingDestinationOutput) {
   use kinesis_data_stream_destinations <- decode.optional_field("KinesisDataStreamDestinations", option.None, decode.optional(decode.list(decode_kinesis_data_stream_destination_struct())))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
@@ -7229,6 +9460,27 @@ pub type KinesisDataStreamDestination {
 }
 
 pub fn encode_kinesis_data_stream_destination_struct(input: KinesisDataStreamDestination) -> json.Json {
+  let pairs = []
+  let pairs = case input.approximate_creation_date_time_precision {
+    option.Some(v) -> [#("ApproximateCreationDateTimePrecision", encode_approximate_creation_date_time_precision_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.destination_status {
+    option.Some(v) -> [#("DestinationStatus", encode_destination_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.destination_status_description {
+    option.Some(v) -> [#("DestinationStatusDescription", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.stream_arn {
+    option.Some(v) -> [#("StreamArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_kinesis_data_stream_destination_struct_top(input: KinesisDataStreamDestination) -> json.Json {
   let pairs = []
   let pairs = case input.approximate_creation_date_time_precision {
     option.Some(v) -> [#("ApproximateCreationDateTimePrecision", encode_approximate_creation_date_time_precision_enum(v)), ..pairs]
@@ -7339,6 +9591,10 @@ pub fn encode_describe_limits_input_struct(_v: DescribeLimitsInput) -> json.Json
   json.object([])
 }
 
+pub fn encode_describe_limits_input_struct_top(_v: DescribeLimitsInput) -> json.Json {
+  json.object([])
+}
+
 pub fn decode_describe_limits_input_struct() -> decode.Decoder(DescribeLimitsInput) {
   decode.success(DescribeLimitsInput)
 }
@@ -7357,6 +9613,27 @@ pub type DescribeLimitsOutput {
 }
 
 pub fn encode_describe_limits_output_struct(input: DescribeLimitsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.account_max_read_capacity_units {
+    option.Some(v) -> [#("AccountMaxReadCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.account_max_write_capacity_units {
+    option.Some(v) -> [#("AccountMaxWriteCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_max_read_capacity_units {
+    option.Some(v) -> [#("TableMaxReadCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_max_write_capacity_units {
+    option.Some(v) -> [#("TableMaxWriteCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_limits_output_struct_top(input: DescribeLimitsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.account_max_read_capacity_units {
     option.Some(v) -> [#("AccountMaxReadCapacityUnits", json.int(v)), ..pairs]
@@ -7418,6 +9695,15 @@ pub fn encode_describe_table_input_struct(input: DescribeTableInput) -> json.Jso
   json.object(pairs)
 }
 
+pub fn encode_describe_table_input_struct_top(input: DescribeTableInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_describe_table_input_struct() -> decode.Decoder(DescribeTableInput) {
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(DescribeTableInput(
@@ -7439,6 +9725,15 @@ pub type DescribeTableOutput {
 }
 
 pub fn encode_describe_table_output_struct(input: DescribeTableOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table {
+    option.Some(v) -> [#("Table", encode_table_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_table_output_struct_top(input: DescribeTableOutput) -> json.Json {
   let pairs = []
   let pairs = case input.table {
     option.Some(v) -> [#("Table", encode_table_description_struct(v)), ..pairs]
@@ -7476,6 +9771,15 @@ pub fn encode_describe_table_replica_auto_scaling_input_struct(input: DescribeTa
   json.object(pairs)
 }
 
+pub fn encode_describe_table_replica_auto_scaling_input_struct_top(input: DescribeTableReplicaAutoScalingInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_describe_table_replica_auto_scaling_input_struct() -> decode.Decoder(DescribeTableReplicaAutoScalingInput) {
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(DescribeTableReplicaAutoScalingInput(
@@ -7497,6 +9801,15 @@ pub type DescribeTableReplicaAutoScalingOutput {
 }
 
 pub fn encode_describe_table_replica_auto_scaling_output_struct(input: DescribeTableReplicaAutoScalingOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_auto_scaling_description {
+    option.Some(v) -> [#("TableAutoScalingDescription", encode_table_auto_scaling_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_table_replica_auto_scaling_output_struct_top(input: DescribeTableReplicaAutoScalingOutput) -> json.Json {
   let pairs = []
   let pairs = case input.table_auto_scaling_description {
     option.Some(v) -> [#("TableAutoScalingDescription", encode_table_auto_scaling_description_struct(v)), ..pairs]
@@ -7528,6 +9841,23 @@ pub type TableAutoScalingDescription {
 }
 
 pub fn encode_table_auto_scaling_description_struct(input: TableAutoScalingDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.replicas {
+    option.Some(v) -> [#("Replicas", fn(xs) { json.array(xs, encode_replica_auto_scaling_description_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_status {
+    option.Some(v) -> [#("TableStatus", encode_table_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_table_auto_scaling_description_struct_top(input: TableAutoScalingDescription) -> json.Json {
   let pairs = []
   let pairs = case input.replicas {
     option.Some(v) -> [#("Replicas", fn(xs) { json.array(xs, encode_replica_auto_scaling_description_struct) }(v)), ..pairs]
@@ -7577,6 +9907,31 @@ pub type ReplicaAutoScalingDescription {
 }
 
 pub fn encode_replica_auto_scaling_description_struct(input: ReplicaAutoScalingDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_secondary_indexes {
+    option.Some(v) -> [#("GlobalSecondaryIndexes", fn(xs) { json.array(xs, encode_replica_global_secondary_index_auto_scaling_description_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_provisioned_read_capacity_auto_scaling_settings {
+    option.Some(v) -> [#("ReplicaProvisionedReadCapacityAutoScalingSettings", encode_auto_scaling_settings_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_provisioned_write_capacity_auto_scaling_settings {
+    option.Some(v) -> [#("ReplicaProvisionedWriteCapacityAutoScalingSettings", encode_auto_scaling_settings_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_status {
+    option.Some(v) -> [#("ReplicaStatus", encode_replica_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_replica_auto_scaling_description_struct_top(input: ReplicaAutoScalingDescription) -> json.Json {
   let pairs = []
   let pairs = case input.global_secondary_indexes {
     option.Some(v) -> [#("GlobalSecondaryIndexes", fn(xs) { json.array(xs, encode_replica_global_secondary_index_auto_scaling_description_struct) }(v)), ..pairs]
@@ -7661,6 +10016,27 @@ pub fn encode_replica_global_secondary_index_auto_scaling_description_struct(inp
   json.object(pairs)
 }
 
+pub fn encode_replica_global_secondary_index_auto_scaling_description_struct_top(input: ReplicaGlobalSecondaryIndexAutoScalingDescription) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_status {
+    option.Some(v) -> [#("IndexStatus", encode_index_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_read_capacity_auto_scaling_settings {
+    option.Some(v) -> [#("ProvisionedReadCapacityAutoScalingSettings", encode_auto_scaling_settings_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_write_capacity_auto_scaling_settings {
+    option.Some(v) -> [#("ProvisionedWriteCapacityAutoScalingSettings", encode_auto_scaling_settings_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_replica_global_secondary_index_auto_scaling_description_struct() -> decode.Decoder(ReplicaGlobalSecondaryIndexAutoScalingDescription) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use index_status <- decode.optional_field("IndexStatus", option.None, decode.optional(decode_index_status_enum()))
@@ -7702,6 +10078,15 @@ pub fn encode_describe_time_to_live_input_struct(input: DescribeTimeToLiveInput)
   json.object(pairs)
 }
 
+pub fn encode_describe_time_to_live_input_struct_top(input: DescribeTimeToLiveInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_describe_time_to_live_input_struct() -> decode.Decoder(DescribeTimeToLiveInput) {
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(DescribeTimeToLiveInput(
@@ -7723,6 +10108,15 @@ pub type DescribeTimeToLiveOutput {
 }
 
 pub fn encode_describe_time_to_live_output_struct(input: DescribeTimeToLiveOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.time_to_live_description {
+    option.Some(v) -> [#("TimeToLiveDescription", encode_time_to_live_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_describe_time_to_live_output_struct_top(input: DescribeTimeToLiveOutput) -> json.Json {
   let pairs = []
   let pairs = case input.time_to_live_description {
     option.Some(v) -> [#("TimeToLiveDescription", encode_time_to_live_description_struct(v)), ..pairs]
@@ -7754,6 +10148,23 @@ pub type KinesisStreamingDestinationInput {
 }
 
 pub fn encode_kinesis_streaming_destination_input_struct(input: KinesisStreamingDestinationInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.enable_kinesis_streaming_configuration {
+    option.Some(v) -> [#("EnableKinesisStreamingConfiguration", encode_enable_kinesis_streaming_configuration_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.stream_arn {
+    option.Some(v) -> [#("StreamArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_kinesis_streaming_destination_input_struct_top(input: KinesisStreamingDestinationInput) -> json.Json {
   let pairs = []
   let pairs = case input.enable_kinesis_streaming_configuration {
     option.Some(v) -> [#("EnableKinesisStreamingConfiguration", encode_enable_kinesis_streaming_configuration_struct(v)), ..pairs]
@@ -7807,6 +10218,15 @@ pub fn encode_enable_kinesis_streaming_configuration_struct(input: EnableKinesis
   json.object(pairs)
 }
 
+pub fn encode_enable_kinesis_streaming_configuration_struct_top(input: EnableKinesisStreamingConfiguration) -> json.Json {
+  let pairs = []
+  let pairs = case input.approximate_creation_date_time_precision {
+    option.Some(v) -> [#("ApproximateCreationDateTimePrecision", encode_approximate_creation_date_time_precision_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_enable_kinesis_streaming_configuration_struct() -> decode.Decoder(EnableKinesisStreamingConfiguration) {
   use approximate_creation_date_time_precision <- decode.optional_field("ApproximateCreationDateTimePrecision", option.None, decode.optional(decode_approximate_creation_date_time_precision_enum()))
   decode.success(EnableKinesisStreamingConfiguration(
@@ -7831,6 +10251,27 @@ pub type KinesisStreamingDestinationOutput {
 }
 
 pub fn encode_kinesis_streaming_destination_output_struct(input: KinesisStreamingDestinationOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.destination_status {
+    option.Some(v) -> [#("DestinationStatus", encode_destination_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.enable_kinesis_streaming_configuration {
+    option.Some(v) -> [#("EnableKinesisStreamingConfiguration", encode_enable_kinesis_streaming_configuration_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.stream_arn {
+    option.Some(v) -> [#("StreamArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_kinesis_streaming_destination_output_struct_top(input: KinesisStreamingDestinationOutput) -> json.Json {
   let pairs = []
   let pairs = case input.destination_status {
     option.Some(v) -> [#("DestinationStatus", encode_destination_status_enum(v)), ..pairs]
@@ -7890,6 +10331,39 @@ pub type ExecuteStatementInput {
 }
 
 pub fn encode_execute_statement_input_struct(input: ExecuteStatementInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.consistent_read {
+    option.Some(v) -> [#("ConsistentRead", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.limit {
+    option.Some(v) -> [#("Limit", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.next_token {
+    option.Some(v) -> [#("NextToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.parameters {
+    option.Some(v) -> [#("Parameters", fn(xs) { json.array(xs, encode_attribute_value_union) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values_on_condition_check_failure {
+    option.Some(v) -> [#("ReturnValuesOnConditionCheckFailure", encode_return_values_on_condition_check_failure_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.statement {
+    option.Some(v) -> [#("Statement", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_execute_statement_input_struct_top(input: ExecuteStatementInput) -> json.Json {
   let pairs = []
   let pairs = case input.consistent_read {
     option.Some(v) -> [#("ConsistentRead", json.bool(v)), ..pairs]
@@ -7990,6 +10464,27 @@ pub fn encode_execute_statement_output_struct(input: ExecuteStatementOutput) -> 
   json.object(pairs)
 }
 
+pub fn encode_execute_statement_output_struct_top(input: ExecuteStatementOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", encode_consumed_capacity_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.items {
+    option.Some(v) -> [#("Items", fn(xs) { json.array(xs, fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.last_evaluated_key {
+    option.Some(v) -> [#("LastEvaluatedKey", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.next_token {
+    option.Some(v) -> [#("NextToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_execute_statement_output_struct() -> decode.Decoder(ExecuteStatementOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct()))
   use items <- decode.optional_field("Items", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union()))))
@@ -8031,6 +10526,15 @@ pub fn encode_duplicate_item_exception_struct(input: DuplicateItemException) -> 
   json.object(pairs)
 }
 
+pub fn encode_duplicate_item_exception_struct_top(input: DuplicateItemException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_duplicate_item_exception_struct() -> decode.Decoder(DuplicateItemException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(DuplicateItemException(
@@ -8054,6 +10558,23 @@ pub type ExecuteTransactionInput {
 }
 
 pub fn encode_execute_transaction_input_struct(input: ExecuteTransactionInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.client_request_token {
+    option.Some(v) -> [#("ClientRequestToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.transact_statements {
+    option.Some(v) -> [#("TransactStatements", fn(xs) { json.array(xs, encode_parameterized_statement_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_execute_transaction_input_struct_top(input: ExecuteTransactionInput) -> json.Json {
   let pairs = []
   let pairs = case input.client_request_token {
     option.Some(v) -> [#("ClientRequestToken", json.string(v)), ..pairs]
@@ -8117,6 +10638,23 @@ pub fn encode_parameterized_statement_struct(input: ParameterizedStatement) -> j
   json.object(pairs)
 }
 
+pub fn encode_parameterized_statement_struct_top(input: ParameterizedStatement) -> json.Json {
+  let pairs = []
+  let pairs = case input.parameters {
+    option.Some(v) -> [#("Parameters", fn(xs) { json.array(xs, encode_attribute_value_union) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values_on_condition_check_failure {
+    option.Some(v) -> [#("ReturnValuesOnConditionCheckFailure", encode_return_values_on_condition_check_failure_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.statement {
+    option.Some(v) -> [#("Statement", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_parameterized_statement_struct() -> decode.Decoder(ParameterizedStatement) {
   use parameters <- decode.optional_field("Parameters", option.None, decode.optional(decode.list(decode_attribute_value_union())))
   use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
@@ -8147,6 +10685,19 @@ pub type ExecuteTransactionOutput {
 }
 
 pub fn encode_execute_transaction_output_struct(input: ExecuteTransactionOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", fn(xs) { json.array(xs, encode_consumed_capacity_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.responses {
+    option.Some(v) -> [#("Responses", fn(xs) { json.array(xs, encode_item_response_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_execute_transaction_output_struct_top(input: ExecuteTransactionOutput) -> json.Json {
   let pairs = []
   let pairs = case input.consumed_capacity {
     option.Some(v) -> [#("ConsumedCapacity", fn(xs) { json.array(xs, encode_consumed_capacity_struct) }(v)), ..pairs]
@@ -8192,6 +10743,15 @@ pub fn encode_item_response_struct(input: ItemResponse) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_item_response_struct_top(input: ItemResponse) -> json.Json {
+  let pairs = []
+  let pairs = case input.item {
+    option.Some(v) -> [#("Item", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_item_response_struct() -> decode.Decoder(ItemResponse) {
   use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
   decode.success(ItemResponse(
@@ -8213,6 +10773,15 @@ pub type IdempotentParameterMismatchException {
 }
 
 pub fn encode_idempotent_parameter_mismatch_exception_struct(input: IdempotentParameterMismatchException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("Message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_idempotent_parameter_mismatch_exception_struct_top(input: IdempotentParameterMismatchException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("Message", json.string(v)), ..pairs]
@@ -8243,6 +10812,19 @@ pub type TransactionCanceledException {
 }
 
 pub fn encode_transaction_canceled_exception_struct(input: TransactionCanceledException) -> json.Json {
+  let pairs = []
+  let pairs = case input.cancellation_reasons {
+    option.Some(v) -> [#("CancellationReasons", fn(xs) { json.array(xs, encode_cancellation_reason_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.message {
+    option.Some(v) -> [#("Message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_transaction_canceled_exception_struct_top(input: TransactionCanceledException) -> json.Json {
   let pairs = []
   let pairs = case input.cancellation_reasons {
     option.Some(v) -> [#("CancellationReasons", fn(xs) { json.array(xs, encode_cancellation_reason_struct) }(v)), ..pairs]
@@ -8298,6 +10880,23 @@ pub fn encode_cancellation_reason_struct(input: CancellationReason) -> json.Json
   json.object(pairs)
 }
 
+pub fn encode_cancellation_reason_struct_top(input: CancellationReason) -> json.Json {
+  let pairs = []
+  let pairs = case input.code {
+    option.Some(v) -> [#("Code", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item {
+    option.Some(v) -> [#("Item", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.message {
+    option.Some(v) -> [#("Message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_cancellation_reason_struct() -> decode.Decoder(CancellationReason) {
   use code <- decode.optional_field("Code", option.None, decode.optional(decode.string))
   use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
@@ -8327,6 +10926,15 @@ pub type TransactionInProgressException {
 }
 
 pub fn encode_transaction_in_progress_exception_struct(input: TransactionInProgressException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("Message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_transaction_in_progress_exception_struct_top(input: TransactionInProgressException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("Message", json.string(v)), ..pairs]
@@ -8366,6 +10974,55 @@ pub type ExportTableToPointInTimeInput {
 }
 
 pub fn encode_export_table_to_point_in_time_input_struct(input: ExportTableToPointInTimeInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.client_token {
+    option.Some(v) -> [#("ClientToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_format {
+    option.Some(v) -> [#("ExportFormat", encode_export_format_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_time {
+    option.Some(v) -> [#("ExportTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_type {
+    option.Some(v) -> [#("ExportType", encode_export_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.incremental_export_specification {
+    option.Some(v) -> [#("IncrementalExportSpecification", encode_incremental_export_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_bucket {
+    option.Some(v) -> [#("S3Bucket", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_bucket_owner {
+    option.Some(v) -> [#("S3BucketOwner", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_prefix {
+    option.Some(v) -> [#("S3Prefix", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_sse_algorithm {
+    option.Some(v) -> [#("S3SseAlgorithm", encode_s3_sse_algorithm_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_sse_kms_key_id {
+    option.Some(v) -> [#("S3SseKmsKeyId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_arn {
+    option.Some(v) -> [#("TableArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_export_table_to_point_in_time_input_struct_top(input: ExportTableToPointInTimeInput) -> json.Json {
   let pairs = []
   let pairs = case input.client_token {
     option.Some(v) -> [#("ClientToken", json.string(v)), ..pairs]
@@ -8483,6 +11140,15 @@ pub fn encode_export_table_to_point_in_time_output_struct(input: ExportTableToPo
   json.object(pairs)
 }
 
+pub fn encode_export_table_to_point_in_time_output_struct_top(input: ExportTableToPointInTimeOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.export_description {
+    option.Some(v) -> [#("ExportDescription", encode_export_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_export_table_to_point_in_time_output_struct() -> decode.Decoder(ExportTableToPointInTimeOutput) {
   use export_description <- decode.optional_field("ExportDescription", option.None, decode.optional(decode_export_description_struct()))
   decode.success(ExportTableToPointInTimeOutput(
@@ -8504,6 +11170,15 @@ pub type ExportConflictException {
 }
 
 pub fn encode_export_conflict_exception_struct(input: ExportConflictException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_export_conflict_exception_struct_top(input: ExportConflictException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -8541,6 +11216,15 @@ pub fn encode_invalid_export_time_exception_struct(input: InvalidExportTimeExcep
   json.object(pairs)
 }
 
+pub fn encode_invalid_export_time_exception_struct_top(input: InvalidExportTimeException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_invalid_export_time_exception_struct() -> decode.Decoder(InvalidExportTimeException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(InvalidExportTimeException(
@@ -8562,6 +11246,15 @@ pub type PointInTimeRecoveryUnavailableException {
 }
 
 pub fn encode_point_in_time_recovery_unavailable_exception_struct(input: PointInTimeRecoveryUnavailableException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_point_in_time_recovery_unavailable_exception_struct_top(input: PointInTimeRecoveryUnavailableException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -8597,6 +11290,39 @@ pub type GetItemInput {
 }
 
 pub fn encode_get_item_input_struct(input: GetItemInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.attributes_to_get {
+    option.Some(v) -> [#("AttributesToGet", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.consistent_read {
+    option.Some(v) -> [#("ConsistentRead", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_names {
+    option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key {
+    option.Some(v) -> [#("Key", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection_expression {
+    option.Some(v) -> [#("ProjectionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_get_item_input_struct_top(input: GetItemInput) -> json.Json {
   let pairs = []
   let pairs = case input.attributes_to_get {
     option.Some(v) -> [#("AttributesToGet", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
@@ -8687,6 +11413,19 @@ pub fn encode_get_item_output_struct(input: GetItemOutput) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_get_item_output_struct_top(input: GetItemOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", encode_consumed_capacity_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item {
+    option.Some(v) -> [#("Item", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_get_item_output_struct() -> decode.Decoder(GetItemOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct()))
   use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
@@ -8712,6 +11451,15 @@ pub type GetResourcePolicyInput {
 }
 
 pub fn encode_get_resource_policy_input_struct(input: GetResourcePolicyInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.resource_arn {
+    option.Some(v) -> [#("ResourceArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_get_resource_policy_input_struct_top(input: GetResourcePolicyInput) -> json.Json {
   let pairs = []
   let pairs = case input.resource_arn {
     option.Some(v) -> [#("ResourceArn", json.string(v)), ..pairs]
@@ -8754,6 +11502,19 @@ pub fn encode_get_resource_policy_output_struct(input: GetResourcePolicyOutput) 
   json.object(pairs)
 }
 
+pub fn encode_get_resource_policy_output_struct_top(input: GetResourcePolicyOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.policy {
+    option.Some(v) -> [#("Policy", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.revision_id {
+    option.Some(v) -> [#("RevisionId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_get_resource_policy_output_struct() -> decode.Decoder(GetResourcePolicyOutput) {
   use policy <- decode.optional_field("Policy", option.None, decode.optional(decode.string))
   use revision_id <- decode.optional_field("RevisionId", option.None, decode.optional(decode.string))
@@ -8784,6 +11545,35 @@ pub type ImportTableInput {
 }
 
 pub fn encode_import_table_input_struct(input: ImportTableInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.client_token {
+    option.Some(v) -> [#("ClientToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.input_compression_type {
+    option.Some(v) -> [#("InputCompressionType", encode_input_compression_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.input_format {
+    option.Some(v) -> [#("InputFormat", encode_input_format_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.input_format_options {
+    option.Some(v) -> [#("InputFormatOptions", encode_input_format_options_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_bucket_source {
+    option.Some(v) -> [#("S3BucketSource", encode_s3_bucket_source_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_creation_parameters {
+    option.Some(v) -> [#("TableCreationParameters", encode_table_creation_parameters_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_import_table_input_struct_top(input: ImportTableInput) -> json.Json {
   let pairs = []
   let pairs = case input.client_token {
     option.Some(v) -> [#("ClientToken", json.string(v)), ..pairs]
@@ -8861,6 +11651,15 @@ pub fn encode_import_table_output_struct(input: ImportTableOutput) -> json.Json 
   json.object(pairs)
 }
 
+pub fn encode_import_table_output_struct_top(input: ImportTableOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.import_table_description {
+    option.Some(v) -> [#("ImportTableDescription", encode_import_table_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_import_table_output_struct() -> decode.Decoder(ImportTableOutput) {
   use import_table_description <- decode.optional_field("ImportTableDescription", option.None, decode.optional(decode_import_table_description_struct()))
   decode.success(ImportTableOutput(
@@ -8882,6 +11681,15 @@ pub type ImportConflictException {
 }
 
 pub fn encode_import_conflict_exception_struct(input: ImportConflictException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_import_conflict_exception_struct_top(input: ImportConflictException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -8916,6 +11724,35 @@ pub type ListBackupsInput {
 }
 
 pub fn encode_list_backups_input_struct(input: ListBackupsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.backup_type {
+    option.Some(v) -> [#("BackupType", encode_backup_type_filter_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.exclusive_start_backup_arn {
+    option.Some(v) -> [#("ExclusiveStartBackupArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.limit {
+    option.Some(v) -> [#("Limit", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.time_range_lower_bound {
+    option.Some(v) -> [#("TimeRangeLowerBound", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.time_range_upper_bound {
+    option.Some(v) -> [#("TimeRangeUpperBound", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_list_backups_input_struct_top(input: ListBackupsInput) -> json.Json {
   let pairs = []
   let pairs = case input.backup_type {
     option.Some(v) -> [#("BackupType", encode_backup_type_filter_enum(v)), ..pairs]
@@ -9026,6 +11863,19 @@ pub fn encode_list_backups_output_struct(input: ListBackupsOutput) -> json.Json 
   json.object(pairs)
 }
 
+pub fn encode_list_backups_output_struct_top(input: ListBackupsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.backup_summaries {
+    option.Some(v) -> [#("BackupSummaries", fn(xs) { json.array(xs, encode_backup_summary_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.last_evaluated_backup_arn {
+    option.Some(v) -> [#("LastEvaluatedBackupArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_list_backups_output_struct() -> decode.Decoder(ListBackupsOutput) {
   use backup_summaries <- decode.optional_field("BackupSummaries", option.None, decode.optional(decode.list(decode_backup_summary_struct())))
   use last_evaluated_backup_arn <- decode.optional_field("LastEvaluatedBackupArn", option.None, decode.optional(decode.string))
@@ -9060,6 +11910,51 @@ pub type BackupSummary {
 }
 
 pub fn encode_backup_summary_struct(input: BackupSummary) -> json.Json {
+  let pairs = []
+  let pairs = case input.backup_arn {
+    option.Some(v) -> [#("BackupArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.backup_creation_date_time {
+    option.Some(v) -> [#("BackupCreationDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.backup_expiry_date_time {
+    option.Some(v) -> [#("BackupExpiryDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.backup_name {
+    option.Some(v) -> [#("BackupName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.backup_size_bytes {
+    option.Some(v) -> [#("BackupSizeBytes", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.backup_status {
+    option.Some(v) -> [#("BackupStatus", encode_backup_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.backup_type {
+    option.Some(v) -> [#("BackupType", encode_backup_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_arn {
+    option.Some(v) -> [#("TableArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_id {
+    option.Some(v) -> [#("TableId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_backup_summary_struct_top(input: BackupSummary) -> json.Json {
   let pairs = []
   let pairs = case input.backup_arn {
     option.Some(v) -> [#("BackupArn", json.string(v)), ..pairs]
@@ -9166,6 +12061,23 @@ pub fn encode_list_contributor_insights_input_struct(input: ListContributorInsig
   let pairs = []
   let pairs = case input.max_results {
     option.Some(v) -> [#("MaxResults", json.int(v)), ..pairs]
+    option.None -> [#("MaxResults", json.int(0)), ..pairs]
+  }
+  let pairs = case input.next_token {
+    option.Some(v) -> [#("NextToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_list_contributor_insights_input_struct_top(input: ListContributorInsightsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.max_results {
+    option.Some(v) -> [#("MaxResults", json.int(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.next_token {
@@ -9221,6 +12133,19 @@ pub fn encode_list_contributor_insights_output_struct(input: ListContributorInsi
   json.object(pairs)
 }
 
+pub fn encode_list_contributor_insights_output_struct_top(input: ListContributorInsightsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.contributor_insights_summaries {
+    option.Some(v) -> [#("ContributorInsightsSummaries", fn(xs) { json.array(xs, encode_contributor_insights_summary_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.next_token {
+    option.Some(v) -> [#("NextToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_list_contributor_insights_output_struct() -> decode.Decoder(ListContributorInsightsOutput) {
   use contributor_insights_summaries <- decode.optional_field("ContributorInsightsSummaries", option.None, decode.optional(decode.list(decode_contributor_insights_summary_struct())))
   use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
@@ -9249,6 +12174,27 @@ pub type ContributorInsightsSummary {
 }
 
 pub fn encode_contributor_insights_summary_struct(input: ContributorInsightsSummary) -> json.Json {
+  let pairs = []
+  let pairs = case input.contributor_insights_mode {
+    option.Some(v) -> [#("ContributorInsightsMode", encode_contributor_insights_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.contributor_insights_status {
+    option.Some(v) -> [#("ContributorInsightsStatus", encode_contributor_insights_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_contributor_insights_summary_struct_top(input: ContributorInsightsSummary) -> json.Json {
   let pairs = []
   let pairs = case input.contributor_insights_mode {
     option.Some(v) -> [#("ContributorInsightsMode", encode_contributor_insights_mode_enum(v)), ..pairs]
@@ -9320,6 +12266,23 @@ pub fn encode_list_exports_input_struct(input: ListExportsInput) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_list_exports_input_struct_top(input: ListExportsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.max_results {
+    option.Some(v) -> [#("MaxResults", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.next_token {
+    option.Some(v) -> [#("NextToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_arn {
+    option.Some(v) -> [#("TableArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_list_exports_input_struct() -> decode.Decoder(ListExportsInput) {
   use max_results <- decode.optional_field("MaxResults", option.None, decode.optional(decode.int))
   use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
@@ -9362,6 +12325,19 @@ pub fn encode_list_exports_output_struct(input: ListExportsOutput) -> json.Json 
   json.object(pairs)
 }
 
+pub fn encode_list_exports_output_struct_top(input: ListExportsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.export_summaries {
+    option.Some(v) -> [#("ExportSummaries", fn(xs) { json.array(xs, encode_export_summary_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.next_token {
+    option.Some(v) -> [#("NextToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_list_exports_output_struct() -> decode.Decoder(ListExportsOutput) {
   use export_summaries <- decode.optional_field("ExportSummaries", option.None, decode.optional(decode.list(decode_export_summary_struct())))
   use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
@@ -9389,6 +12365,23 @@ pub type ExportSummary {
 }
 
 pub fn encode_export_summary_struct(input: ExportSummary) -> json.Json {
+  let pairs = []
+  let pairs = case input.export_arn {
+    option.Some(v) -> [#("ExportArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_status {
+    option.Some(v) -> [#("ExportStatus", encode_export_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.export_type {
+    option.Some(v) -> [#("ExportType", encode_export_type_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_export_summary_struct_top(input: ExportSummary) -> json.Json {
   let pairs = []
   let pairs = case input.export_arn {
     option.Some(v) -> [#("ExportArn", json.string(v)), ..pairs]
@@ -9452,6 +12445,23 @@ pub fn encode_list_global_tables_input_struct(input: ListGlobalTablesInput) -> j
   json.object(pairs)
 }
 
+pub fn encode_list_global_tables_input_struct_top(input: ListGlobalTablesInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.exclusive_start_global_table_name {
+    option.Some(v) -> [#("ExclusiveStartGlobalTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.limit {
+    option.Some(v) -> [#("Limit", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_list_global_tables_input_struct() -> decode.Decoder(ListGlobalTablesInput) {
   use exclusive_start_global_table_name <- decode.optional_field("ExclusiveStartGlobalTableName", option.None, decode.optional(decode.string))
   use limit <- decode.optional_field("Limit", option.None, decode.optional(decode.int))
@@ -9482,6 +12492,19 @@ pub type ListGlobalTablesOutput {
 }
 
 pub fn encode_list_global_tables_output_struct(input: ListGlobalTablesOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_tables {
+    option.Some(v) -> [#("GlobalTables", fn(xs) { json.array(xs, encode_global_table_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.last_evaluated_global_table_name {
+    option.Some(v) -> [#("LastEvaluatedGlobalTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_list_global_tables_output_struct_top(input: ListGlobalTablesOutput) -> json.Json {
   let pairs = []
   let pairs = case input.global_tables {
     option.Some(v) -> [#("GlobalTables", fn(xs) { json.array(xs, encode_global_table_struct) }(v)), ..pairs]
@@ -9532,6 +12555,19 @@ pub fn encode_global_table_struct(input: GlobalTable) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_global_table_struct_top(input: GlobalTable) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_table_name {
+    option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replication_group {
+    option.Some(v) -> [#("ReplicationGroup", fn(xs) { json.array(xs, encode_replica_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_global_table_struct() -> decode.Decoder(GlobalTable) {
   use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
   use replication_group <- decode.optional_field("ReplicationGroup", option.None, decode.optional(decode.list(decode_replica_struct())))
@@ -9559,6 +12595,23 @@ pub type ListImportsInput {
 }
 
 pub fn encode_list_imports_input_struct(input: ListImportsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.next_token {
+    option.Some(v) -> [#("NextToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.page_size {
+    option.Some(v) -> [#("PageSize", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_arn {
+    option.Some(v) -> [#("TableArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_list_imports_input_struct_top(input: ListImportsInput) -> json.Json {
   let pairs = []
   let pairs = case input.next_token {
     option.Some(v) -> [#("NextToken", json.string(v)), ..pairs]
@@ -9617,6 +12670,19 @@ pub fn encode_list_imports_output_struct(input: ListImportsOutput) -> json.Json 
   json.object(pairs)
 }
 
+pub fn encode_list_imports_output_struct_top(input: ListImportsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.import_summary_list {
+    option.Some(v) -> [#("ImportSummaryList", fn(xs) { json.array(xs, encode_import_summary_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.next_token {
+    option.Some(v) -> [#("NextToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_list_imports_output_struct() -> decode.Decoder(ListImportsOutput) {
   use import_summary_list <- decode.optional_field("ImportSummaryList", option.None, decode.optional(decode.list(decode_import_summary_struct())))
   use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
@@ -9649,6 +12715,43 @@ pub type ImportSummary {
 }
 
 pub fn encode_import_summary_struct(input: ImportSummary) -> json.Json {
+  let pairs = []
+  let pairs = case input.cloud_watch_log_group_arn {
+    option.Some(v) -> [#("CloudWatchLogGroupArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.end_time {
+    option.Some(v) -> [#("EndTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.import_arn {
+    option.Some(v) -> [#("ImportArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.import_status {
+    option.Some(v) -> [#("ImportStatus", encode_import_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.input_format {
+    option.Some(v) -> [#("InputFormat", encode_input_format_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.s3_bucket_source {
+    option.Some(v) -> [#("S3BucketSource", encode_s3_bucket_source_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.start_time {
+    option.Some(v) -> [#("StartTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_arn {
+    option.Some(v) -> [#("TableArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_import_summary_struct_top(input: ImportSummary) -> json.Json {
   let pairs = []
   let pairs = case input.cloud_watch_log_group_arn {
     option.Some(v) -> [#("CloudWatchLogGroupArn", json.string(v)), ..pairs]
@@ -9747,6 +12850,19 @@ pub fn encode_list_tables_input_struct(input: ListTablesInput) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_list_tables_input_struct_top(input: ListTablesInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.exclusive_start_table_name {
+    option.Some(v) -> [#("ExclusiveStartTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.limit {
+    option.Some(v) -> [#("Limit", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_list_tables_input_struct() -> decode.Decoder(ListTablesInput) {
   use exclusive_start_table_name <- decode.optional_field("ExclusiveStartTableName", option.None, decode.optional(decode.string))
   use limit <- decode.optional_field("Limit", option.None, decode.optional(decode.int))
@@ -9773,6 +12889,19 @@ pub type ListTablesOutput {
 }
 
 pub fn encode_list_tables_output_struct(input: ListTablesOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.last_evaluated_table_name {
+    option.Some(v) -> [#("LastEvaluatedTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_names {
+    option.Some(v) -> [#("TableNames", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_list_tables_output_struct_top(input: ListTablesOutput) -> json.Json {
   let pairs = []
   let pairs = case input.last_evaluated_table_name {
     option.Some(v) -> [#("LastEvaluatedTableName", json.string(v)), ..pairs]
@@ -9823,6 +12952,19 @@ pub fn encode_list_tags_of_resource_input_struct(input: ListTagsOfResourceInput)
   json.object(pairs)
 }
 
+pub fn encode_list_tags_of_resource_input_struct_top(input: ListTagsOfResourceInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.next_token {
+    option.Some(v) -> [#("NextToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.resource_arn {
+    option.Some(v) -> [#("ResourceArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_list_tags_of_resource_input_struct() -> decode.Decoder(ListTagsOfResourceInput) {
   use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
   use resource_arn <- decode.optional_field("ResourceArn", option.None, decode.optional(decode.string))
@@ -9849,6 +12991,19 @@ pub type ListTagsOfResourceOutput {
 }
 
 pub fn encode_list_tags_of_resource_output_struct(input: ListTagsOfResourceOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.next_token {
+    option.Some(v) -> [#("NextToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.tags {
+    option.Some(v) -> [#("Tags", fn(xs) { json.array(xs, encode_tag_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_list_tags_of_resource_output_struct_top(input: ListTagsOfResourceOutput) -> json.Json {
   let pairs = []
   let pairs = case input.next_token {
     option.Some(v) -> [#("NextToken", json.string(v)), ..pairs]
@@ -9896,6 +13051,55 @@ pub type PutItemInput {
 }
 
 pub fn encode_put_item_input_struct(input: PutItemInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.condition_expression {
+    option.Some(v) -> [#("ConditionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.conditional_operator {
+    option.Some(v) -> [#("ConditionalOperator", encode_conditional_operator_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expected {
+    option.Some(v) -> [#("Expected", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_expected_attribute_value_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_names {
+    option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_values {
+    option.Some(v) -> [#("ExpressionAttributeValues", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item {
+    option.Some(v) -> [#("Item", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_item_collection_metrics {
+    option.Some(v) -> [#("ReturnItemCollectionMetrics", encode_return_item_collection_metrics_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values {
+    option.Some(v) -> [#("ReturnValues", encode_return_value_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values_on_condition_check_failure {
+    option.Some(v) -> [#("ReturnValuesOnConditionCheckFailure", encode_return_values_on_condition_check_failure_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_put_item_input_struct_top(input: PutItemInput) -> json.Json {
   let pairs = []
   let pairs = case input.condition_expression {
     option.Some(v) -> [#("ConditionExpression", json.string(v)), ..pairs]
@@ -10023,6 +13227,23 @@ pub fn encode_put_item_output_struct(input: PutItemOutput) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_put_item_output_struct_top(input: PutItemOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.attributes {
+    option.Some(v) -> [#("Attributes", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", encode_consumed_capacity_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item_collection_metrics {
+    option.Some(v) -> [#("ItemCollectionMetrics", encode_item_collection_metrics_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_put_item_output_struct() -> decode.Decoder(PutItemOutput) {
   use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct()))
@@ -10055,6 +13276,27 @@ pub type PutResourcePolicyInput {
 }
 
 pub fn encode_put_resource_policy_input_struct(input: PutResourcePolicyInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.confirm_remove_self_resource_access {
+    option.Some(v) -> [#("ConfirmRemoveSelfResourceAccess", json.bool(v)), ..pairs]
+    option.None -> [#("ConfirmRemoveSelfResourceAccess", json.bool(False)), ..pairs]
+  }
+  let pairs = case input.expected_revision_id {
+    option.Some(v) -> [#("ExpectedRevisionId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.policy {
+    option.Some(v) -> [#("Policy", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.resource_arn {
+    option.Some(v) -> [#("ResourceArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_put_resource_policy_input_struct_top(input: PutResourcePolicyInput) -> json.Json {
   let pairs = []
   let pairs = case input.confirm_remove_self_resource_access {
     option.Some(v) -> [#("ConfirmRemoveSelfResourceAccess", json.bool(v)), ..pairs]
@@ -10116,6 +13358,15 @@ pub fn encode_put_resource_policy_output_struct(input: PutResourcePolicyOutput) 
   json.object(pairs)
 }
 
+pub fn encode_put_resource_policy_output_struct_top(input: PutResourcePolicyOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.revision_id {
+    option.Some(v) -> [#("RevisionId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_put_resource_policy_output_struct() -> decode.Decoder(PutResourcePolicyOutput) {
   use revision_id <- decode.optional_field("RevisionId", option.None, decode.optional(decode.string))
   decode.success(PutResourcePolicyOutput(
@@ -10153,6 +13404,79 @@ pub type QueryInput {
 }
 
 pub fn encode_query_input_struct(input: QueryInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.attributes_to_get {
+    option.Some(v) -> [#("AttributesToGet", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.conditional_operator {
+    option.Some(v) -> [#("ConditionalOperator", encode_conditional_operator_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.consistent_read {
+    option.Some(v) -> [#("ConsistentRead", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.exclusive_start_key {
+    option.Some(v) -> [#("ExclusiveStartKey", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_names {
+    option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_values {
+    option.Some(v) -> [#("ExpressionAttributeValues", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.filter_expression {
+    option.Some(v) -> [#("FilterExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_condition_expression {
+    option.Some(v) -> [#("KeyConditionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_conditions {
+    option.Some(v) -> [#("KeyConditions", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_condition_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.limit {
+    option.Some(v) -> [#("Limit", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection_expression {
+    option.Some(v) -> [#("ProjectionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.query_filter {
+    option.Some(v) -> [#("QueryFilter", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_condition_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.scan_index_forward {
+    option.Some(v) -> [#("ScanIndexForward", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.select {
+    option.Some(v) -> [#("Select", encode_select_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_query_input_struct_top(input: QueryInput) -> json.Json {
   let pairs = []
   let pairs = case input.attributes_to_get {
     option.Some(v) -> [#("AttributesToGet", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
@@ -10323,6 +13647,19 @@ pub fn encode_condition_struct(input: Condition) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_condition_struct_top(input: Condition) -> json.Json {
+  let pairs = []
+  let pairs = case input.attribute_value_list {
+    option.Some(v) -> [#("AttributeValueList", fn(xs) { json.array(xs, encode_attribute_value_union) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.comparison_operator {
+    option.Some(v) -> [#("ComparisonOperator", encode_comparison_operator_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_condition_struct() -> decode.Decoder(Condition) {
   use attribute_value_list <- decode.optional_field("AttributeValueList", option.None, decode.optional(decode.list(decode_attribute_value_union())))
   use comparison_operator <- decode.optional_field("ComparisonOperator", option.None, decode.optional(decode_comparison_operator_enum()))
@@ -10380,6 +13717,31 @@ pub type QueryOutput {
 }
 
 pub fn encode_query_output_struct(input: QueryOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", encode_consumed_capacity_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.count {
+    option.Some(v) -> [#("Count", json.int(v)), ..pairs]
+    option.None -> [#("Count", json.int(0)), ..pairs]
+  }
+  let pairs = case input.items {
+    option.Some(v) -> [#("Items", fn(xs) { json.array(xs, fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.last_evaluated_key {
+    option.Some(v) -> [#("LastEvaluatedKey", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.scanned_count {
+    option.Some(v) -> [#("ScannedCount", json.int(v)), ..pairs]
+    option.None -> [#("ScannedCount", json.int(0)), ..pairs]
+  }
+  json.object(pairs)
+}
+
+pub fn encode_query_output_struct_top(input: QueryOutput) -> json.Json {
   let pairs = []
   let pairs = case input.consumed_capacity {
     option.Some(v) -> [#("ConsumedCapacity", encode_consumed_capacity_struct(v)), ..pairs]
@@ -10484,6 +13846,43 @@ pub fn encode_restore_table_from_backup_input_struct(input: RestoreTableFromBack
   json.object(pairs)
 }
 
+pub fn encode_restore_table_from_backup_input_struct_top(input: RestoreTableFromBackupInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.backup_arn {
+    option.Some(v) -> [#("BackupArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.billing_mode_override {
+    option.Some(v) -> [#("BillingModeOverride", encode_billing_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_secondary_index_override {
+    option.Some(v) -> [#("GlobalSecondaryIndexOverride", fn(xs) { json.array(xs, encode_global_secondary_index_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.local_secondary_index_override {
+    option.Some(v) -> [#("LocalSecondaryIndexOverride", fn(xs) { json.array(xs, encode_local_secondary_index_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput_override {
+    option.Some(v) -> [#("OnDemandThroughputOverride", encode_on_demand_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput_override {
+    option.Some(v) -> [#("ProvisionedThroughputOverride", encode_provisioned_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.sse_specification_override {
+    option.Some(v) -> [#("SSESpecificationOverride", encode_sse_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.target_table_name {
+    option.Some(v) -> [#("TargetTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_restore_table_from_backup_input_struct() -> decode.Decoder(RestoreTableFromBackupInput) {
   use backup_arn <- decode.optional_field("BackupArn", option.None, decode.optional(decode.string))
   use billing_mode_override <- decode.optional_field("BillingModeOverride", option.None, decode.optional(decode_billing_mode_enum()))
@@ -10541,6 +13940,15 @@ pub fn encode_restore_table_from_backup_output_struct(input: RestoreTableFromBac
   json.object(pairs)
 }
 
+pub fn encode_restore_table_from_backup_output_struct_top(input: RestoreTableFromBackupOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_description {
+    option.Some(v) -> [#("TableDescription", encode_table_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_restore_table_from_backup_output_struct() -> decode.Decoder(RestoreTableFromBackupOutput) {
   use table_description <- decode.optional_field("TableDescription", option.None, decode.optional(decode_table_description_struct()))
   decode.success(RestoreTableFromBackupOutput(
@@ -10562,6 +13970,15 @@ pub type TableAlreadyExistsException {
 }
 
 pub fn encode_table_already_exists_exception_struct(input: TableAlreadyExistsException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_table_already_exists_exception_struct_top(input: TableAlreadyExistsException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -10601,6 +14018,55 @@ pub type RestoreTableToPointInTimeInput {
 }
 
 pub fn encode_restore_table_to_point_in_time_input_struct(input: RestoreTableToPointInTimeInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.billing_mode_override {
+    option.Some(v) -> [#("BillingModeOverride", encode_billing_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_secondary_index_override {
+    option.Some(v) -> [#("GlobalSecondaryIndexOverride", fn(xs) { json.array(xs, encode_global_secondary_index_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.local_secondary_index_override {
+    option.Some(v) -> [#("LocalSecondaryIndexOverride", fn(xs) { json.array(xs, encode_local_secondary_index_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput_override {
+    option.Some(v) -> [#("OnDemandThroughputOverride", encode_on_demand_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput_override {
+    option.Some(v) -> [#("ProvisionedThroughputOverride", encode_provisioned_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.restore_date_time {
+    option.Some(v) -> [#("RestoreDateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.sse_specification_override {
+    option.Some(v) -> [#("SSESpecificationOverride", encode_sse_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.source_table_arn {
+    option.Some(v) -> [#("SourceTableArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.source_table_name {
+    option.Some(v) -> [#("SourceTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.target_table_name {
+    option.Some(v) -> [#("TargetTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.use_latest_restorable_time {
+    option.Some(v) -> [#("UseLatestRestorableTime", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_restore_table_to_point_in_time_input_struct_top(input: RestoreTableToPointInTimeInput) -> json.Json {
   let pairs = []
   let pairs = case input.billing_mode_override {
     option.Some(v) -> [#("BillingModeOverride", encode_billing_mode_enum(v)), ..pairs]
@@ -10718,6 +14184,15 @@ pub fn encode_restore_table_to_point_in_time_output_struct(input: RestoreTableTo
   json.object(pairs)
 }
 
+pub fn encode_restore_table_to_point_in_time_output_struct_top(input: RestoreTableToPointInTimeOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_description {
+    option.Some(v) -> [#("TableDescription", encode_table_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_restore_table_to_point_in_time_output_struct() -> decode.Decoder(RestoreTableToPointInTimeOutput) {
   use table_description <- decode.optional_field("TableDescription", option.None, decode.optional(decode_table_description_struct()))
   decode.success(RestoreTableToPointInTimeOutput(
@@ -10739,6 +14214,15 @@ pub type InvalidRestoreTimeException {
 }
 
 pub fn encode_invalid_restore_time_exception_struct(input: InvalidRestoreTimeException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_invalid_restore_time_exception_struct_top(input: InvalidRestoreTimeException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -10783,6 +14267,75 @@ pub type ScanInput {
 }
 
 pub fn encode_scan_input_struct(input: ScanInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.attributes_to_get {
+    option.Some(v) -> [#("AttributesToGet", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.conditional_operator {
+    option.Some(v) -> [#("ConditionalOperator", encode_conditional_operator_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.consistent_read {
+    option.Some(v) -> [#("ConsistentRead", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.exclusive_start_key {
+    option.Some(v) -> [#("ExclusiveStartKey", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_names {
+    option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_values {
+    option.Some(v) -> [#("ExpressionAttributeValues", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.filter_expression {
+    option.Some(v) -> [#("FilterExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.limit {
+    option.Some(v) -> [#("Limit", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection_expression {
+    option.Some(v) -> [#("ProjectionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.scan_filter {
+    option.Some(v) -> [#("ScanFilter", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_condition_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.segment {
+    option.Some(v) -> [#("Segment", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.select {
+    option.Some(v) -> [#("Select", encode_select_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.total_segments {
+    option.Some(v) -> [#("TotalSegments", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_scan_input_struct_top(input: ScanInput) -> json.Json {
   let pairs = []
   let pairs = case input.attributes_to_get {
     option.Some(v) -> [#("AttributesToGet", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
@@ -10943,6 +14496,31 @@ pub fn encode_scan_output_struct(input: ScanOutput) -> json.Json {
   }
   let pairs = case input.count {
     option.Some(v) -> [#("Count", json.int(v)), ..pairs]
+    option.None -> [#("Count", json.int(0)), ..pairs]
+  }
+  let pairs = case input.items {
+    option.Some(v) -> [#("Items", fn(xs) { json.array(xs, fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.last_evaluated_key {
+    option.Some(v) -> [#("LastEvaluatedKey", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.scanned_count {
+    option.Some(v) -> [#("ScannedCount", json.int(v)), ..pairs]
+    option.None -> [#("ScannedCount", json.int(0)), ..pairs]
+  }
+  json.object(pairs)
+}
+
+pub fn encode_scan_output_struct_top(input: ScanOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", encode_consumed_capacity_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.count {
+    option.Some(v) -> [#("Count", json.int(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.items {
@@ -11010,6 +14588,19 @@ pub fn encode_tag_resource_input_struct(input: TagResourceInput) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_tag_resource_input_struct_top(input: TagResourceInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.resource_arn {
+    option.Some(v) -> [#("ResourceArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.tags {
+    option.Some(v) -> [#("Tags", fn(xs) { json.array(xs, encode_tag_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_tag_resource_input_struct() -> decode.Decoder(TagResourceInput) {
   use resource_arn <- decode.optional_field("ResourceArn", option.None, decode.optional(decode.string))
   use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct())))
@@ -11036,6 +14627,19 @@ pub type TransactGetItemsInput {
 }
 
 pub fn encode_transact_get_items_input_struct(input: TransactGetItemsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.transact_items {
+    option.Some(v) -> [#("TransactItems", fn(xs) { json.array(xs, encode_transact_get_item_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_transact_get_items_input_struct_top(input: TransactGetItemsInput) -> json.Json {
   let pairs = []
   let pairs = case input.return_consumed_capacity {
     option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
@@ -11081,6 +14685,15 @@ pub fn encode_transact_get_item_struct(input: TransactGetItem) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_transact_get_item_struct_top(input: TransactGetItem) -> json.Json {
+  let pairs = []
+  let pairs = case input.get {
+    option.Some(v) -> [#("Get", encode_get_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_transact_get_item_struct() -> decode.Decoder(TransactGetItem) {
   use get <- decode.optional_field("Get", option.None, decode.optional(decode_get_struct()))
   decode.success(TransactGetItem(
@@ -11105,6 +14718,27 @@ pub type Get {
 }
 
 pub fn encode_get_struct(input: Get) -> json.Json {
+  let pairs = []
+  let pairs = case input.expression_attribute_names {
+    option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key {
+    option.Some(v) -> [#("Key", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection_expression {
+    option.Some(v) -> [#("ProjectionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_get_struct_top(input: Get) -> json.Json {
   let pairs = []
   let pairs = case input.expression_attribute_names {
     option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
@@ -11171,6 +14805,19 @@ pub fn encode_transact_get_items_output_struct(input: TransactGetItemsOutput) ->
   json.object(pairs)
 }
 
+pub fn encode_transact_get_items_output_struct_top(input: TransactGetItemsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", fn(xs) { json.array(xs, encode_consumed_capacity_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.responses {
+    option.Some(v) -> [#("Responses", fn(xs) { json.array(xs, encode_item_response_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_transact_get_items_output_struct() -> decode.Decoder(TransactGetItemsOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct())))
   use responses <- decode.optional_field("Responses", option.None, decode.optional(decode.list(decode_item_response_struct())))
@@ -11199,6 +14846,27 @@ pub type TransactWriteItemsInput {
 }
 
 pub fn encode_transact_write_items_input_struct(input: TransactWriteItemsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.client_request_token {
+    option.Some(v) -> [#("ClientRequestToken", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_item_collection_metrics {
+    option.Some(v) -> [#("ReturnItemCollectionMetrics", encode_return_item_collection_metrics_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.transact_items {
+    option.Some(v) -> [#("TransactItems", fn(xs) { json.array(xs, encode_transact_write_item_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_transact_write_items_input_struct_top(input: TransactWriteItemsInput) -> json.Json {
   let pairs = []
   let pairs = case input.client_request_token {
     option.Some(v) -> [#("ClientRequestToken", json.string(v)), ..pairs]
@@ -11275,6 +14943,27 @@ pub fn encode_transact_write_item_struct(input: TransactWriteItem) -> json.Json 
   json.object(pairs)
 }
 
+pub fn encode_transact_write_item_struct_top(input: TransactWriteItem) -> json.Json {
+  let pairs = []
+  let pairs = case input.condition_check {
+    option.Some(v) -> [#("ConditionCheck", encode_condition_check_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.delete {
+    option.Some(v) -> [#("Delete", encode_delete_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.put {
+    option.Some(v) -> [#("Put", encode_put_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.update {
+    option.Some(v) -> [#("Update", encode_update_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_transact_write_item_struct() -> decode.Decoder(TransactWriteItem) {
   use condition_check <- decode.optional_field("ConditionCheck", option.None, decode.optional(decode_condition_check_struct()))
   use delete <- decode.optional_field("Delete", option.None, decode.optional(decode_delete_struct()))
@@ -11313,6 +15002,35 @@ pub type ConditionCheck {
 }
 
 pub fn encode_condition_check_struct(input: ConditionCheck) -> json.Json {
+  let pairs = []
+  let pairs = case input.condition_expression {
+    option.Some(v) -> [#("ConditionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_names {
+    option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_values {
+    option.Some(v) -> [#("ExpressionAttributeValues", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key {
+    option.Some(v) -> [#("Key", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values_on_condition_check_failure {
+    option.Some(v) -> [#("ReturnValuesOnConditionCheckFailure", encode_return_values_on_condition_check_failure_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_condition_check_struct_top(input: ConditionCheck) -> json.Json {
   let pairs = []
   let pairs = case input.condition_expression {
     option.Some(v) -> [#("ConditionExpression", json.string(v)), ..pairs]
@@ -11415,6 +15133,35 @@ pub fn encode_delete_struct(input: Delete) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_delete_struct_top(input: Delete) -> json.Json {
+  let pairs = []
+  let pairs = case input.condition_expression {
+    option.Some(v) -> [#("ConditionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_names {
+    option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_values {
+    option.Some(v) -> [#("ExpressionAttributeValues", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key {
+    option.Some(v) -> [#("Key", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values_on_condition_check_failure {
+    option.Some(v) -> [#("ReturnValuesOnConditionCheckFailure", encode_return_values_on_condition_check_failure_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_delete_struct() -> decode.Decoder(Delete) {
   use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
@@ -11461,6 +15208,35 @@ pub type Put {
 }
 
 pub fn encode_put_struct(input: Put) -> json.Json {
+  let pairs = []
+  let pairs = case input.condition_expression {
+    option.Some(v) -> [#("ConditionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_names {
+    option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_values {
+    option.Some(v) -> [#("ExpressionAttributeValues", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item {
+    option.Some(v) -> [#("Item", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values_on_condition_check_failure {
+    option.Some(v) -> [#("ReturnValuesOnConditionCheckFailure", encode_return_values_on_condition_check_failure_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_put_struct_top(input: Put) -> json.Json {
   let pairs = []
   let pairs = case input.condition_expression {
     option.Some(v) -> [#("ConditionExpression", json.string(v)), ..pairs]
@@ -11568,6 +15344,39 @@ pub fn encode_update_struct(input: Update) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_update_struct_top(input: Update) -> json.Json {
+  let pairs = []
+  let pairs = case input.condition_expression {
+    option.Some(v) -> [#("ConditionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_names {
+    option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_values {
+    option.Some(v) -> [#("ExpressionAttributeValues", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key {
+    option.Some(v) -> [#("Key", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values_on_condition_check_failure {
+    option.Some(v) -> [#("ReturnValuesOnConditionCheckFailure", encode_return_values_on_condition_check_failure_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.update_expression {
+    option.Some(v) -> [#("UpdateExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_update_struct() -> decode.Decoder(Update) {
   use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
@@ -11626,6 +15435,19 @@ pub fn encode_transact_write_items_output_struct(input: TransactWriteItemsOutput
   json.object(pairs)
 }
 
+pub fn encode_transact_write_items_output_struct_top(input: TransactWriteItemsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", fn(xs) { json.array(xs, encode_consumed_capacity_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item_collection_metrics {
+    option.Some(v) -> [#("ItemCollectionMetrics", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, encode_item_collection_metrics_struct) }(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_transact_write_items_output_struct() -> decode.Decoder(TransactWriteItemsOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct())))
   use item_collection_metrics <- decode.optional_field("ItemCollectionMetrics", option.None, decode.optional(decode.dict(decode.string, decode.list(decode_item_collection_metrics_struct()))))
@@ -11652,6 +15474,19 @@ pub type UntagResourceInput {
 }
 
 pub fn encode_untag_resource_input_struct(input: UntagResourceInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.resource_arn {
+    option.Some(v) -> [#("ResourceArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.tag_keys {
+    option.Some(v) -> [#("TagKeys", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_untag_resource_input_struct_top(input: UntagResourceInput) -> json.Json {
   let pairs = []
   let pairs = case input.resource_arn {
     option.Some(v) -> [#("ResourceArn", json.string(v)), ..pairs]
@@ -11702,6 +15537,19 @@ pub fn encode_update_continuous_backups_input_struct(input: UpdateContinuousBack
   json.object(pairs)
 }
 
+pub fn encode_update_continuous_backups_input_struct_top(input: UpdateContinuousBackupsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.point_in_time_recovery_specification {
+    option.Some(v) -> [#("PointInTimeRecoverySpecification", encode_point_in_time_recovery_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_update_continuous_backups_input_struct() -> decode.Decoder(UpdateContinuousBackupsInput) {
   use point_in_time_recovery_specification <- decode.optional_field("PointInTimeRecoverySpecification", option.None, decode.optional(decode_point_in_time_recovery_specification_struct()))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
@@ -11728,6 +15576,19 @@ pub type PointInTimeRecoverySpecification {
 }
 
 pub fn encode_point_in_time_recovery_specification_struct(input: PointInTimeRecoverySpecification) -> json.Json {
+  let pairs = []
+  let pairs = case input.point_in_time_recovery_enabled {
+    option.Some(v) -> [#("PointInTimeRecoveryEnabled", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.recovery_period_in_days {
+    option.Some(v) -> [#("RecoveryPeriodInDays", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_point_in_time_recovery_specification_struct_top(input: PointInTimeRecoverySpecification) -> json.Json {
   let pairs = []
   let pairs = case input.point_in_time_recovery_enabled {
     option.Some(v) -> [#("PointInTimeRecoveryEnabled", json.bool(v)), ..pairs]
@@ -11773,6 +15634,15 @@ pub fn encode_update_continuous_backups_output_struct(input: UpdateContinuousBac
   json.object(pairs)
 }
 
+pub fn encode_update_continuous_backups_output_struct_top(input: UpdateContinuousBackupsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.continuous_backups_description {
+    option.Some(v) -> [#("ContinuousBackupsDescription", encode_continuous_backups_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_update_continuous_backups_output_struct() -> decode.Decoder(UpdateContinuousBackupsOutput) {
   use continuous_backups_description <- decode.optional_field("ContinuousBackupsDescription", option.None, decode.optional(decode_continuous_backups_description_struct()))
   decode.success(UpdateContinuousBackupsOutput(
@@ -11797,6 +15667,27 @@ pub type UpdateContributorInsightsInput {
 }
 
 pub fn encode_update_contributor_insights_input_struct(input: UpdateContributorInsightsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.contributor_insights_action {
+    option.Some(v) -> [#("ContributorInsightsAction", encode_contributor_insights_action_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.contributor_insights_mode {
+    option.Some(v) -> [#("ContributorInsightsMode", encode_contributor_insights_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_update_contributor_insights_input_struct_top(input: UpdateContributorInsightsInput) -> json.Json {
   let pairs = []
   let pairs = case input.contributor_insights_action {
     option.Some(v) -> [#("ContributorInsightsAction", encode_contributor_insights_action_enum(v)), ..pairs]
@@ -11895,6 +15786,27 @@ pub fn encode_update_contributor_insights_output_struct(input: UpdateContributor
   json.object(pairs)
 }
 
+pub fn encode_update_contributor_insights_output_struct_top(input: UpdateContributorInsightsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.contributor_insights_mode {
+    option.Some(v) -> [#("ContributorInsightsMode", encode_contributor_insights_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.contributor_insights_status {
+    option.Some(v) -> [#("ContributorInsightsStatus", encode_contributor_insights_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_update_contributor_insights_output_struct() -> decode.Decoder(UpdateContributorInsightsOutput) {
   use contributor_insights_mode <- decode.optional_field("ContributorInsightsMode", option.None, decode.optional(decode_contributor_insights_mode_enum()))
   use contributor_insights_status <- decode.optional_field("ContributorInsightsStatus", option.None, decode.optional(decode_contributor_insights_status_enum()))
@@ -11929,6 +15841,19 @@ pub type UpdateGlobalTableInput {
 }
 
 pub fn encode_update_global_table_input_struct(input: UpdateGlobalTableInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_table_name {
+    option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_updates {
+    option.Some(v) -> [#("ReplicaUpdates", fn(xs) { json.array(xs, encode_replica_update_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_update_global_table_input_struct_top(input: UpdateGlobalTableInput) -> json.Json {
   let pairs = []
   let pairs = case input.global_table_name {
     option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
@@ -11979,6 +15904,19 @@ pub fn encode_replica_update_struct(input: ReplicaUpdate) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_replica_update_struct_top(input: ReplicaUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.create {
+    option.Some(v) -> [#("Create", encode_create_replica_action_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.delete {
+    option.Some(v) -> [#("Delete", encode_delete_replica_action_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_replica_update_struct() -> decode.Decoder(ReplicaUpdate) {
   use create <- decode.optional_field("Create", option.None, decode.optional(decode_create_replica_action_struct()))
   use delete <- decode.optional_field("Delete", option.None, decode.optional(decode_delete_replica_action_struct()))
@@ -12004,6 +15942,15 @@ pub type CreateReplicaAction {
 }
 
 pub fn encode_create_replica_action_struct(input: CreateReplicaAction) -> json.Json {
+  let pairs = []
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_create_replica_action_struct_top(input: CreateReplicaAction) -> json.Json {
   let pairs = []
   let pairs = case input.region_name {
     option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
@@ -12041,6 +15988,15 @@ pub fn encode_delete_replica_action_struct(input: DeleteReplicaAction) -> json.J
   json.object(pairs)
 }
 
+pub fn encode_delete_replica_action_struct_top(input: DeleteReplicaAction) -> json.Json {
+  let pairs = []
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_delete_replica_action_struct() -> decode.Decoder(DeleteReplicaAction) {
   use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
   decode.success(DeleteReplicaAction(
@@ -12062,6 +16018,15 @@ pub type UpdateGlobalTableOutput {
 }
 
 pub fn encode_update_global_table_output_struct(input: UpdateGlobalTableOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_table_description {
+    option.Some(v) -> [#("GlobalTableDescription", encode_global_table_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_update_global_table_output_struct_top(input: UpdateGlobalTableOutput) -> json.Json {
   let pairs = []
   let pairs = case input.global_table_description {
     option.Some(v) -> [#("GlobalTableDescription", encode_global_table_description_struct(v)), ..pairs]
@@ -12099,6 +16064,15 @@ pub fn encode_replica_already_exists_exception_struct(input: ReplicaAlreadyExist
   json.object(pairs)
 }
 
+pub fn encode_replica_already_exists_exception_struct_top(input: ReplicaAlreadyExistsException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_replica_already_exists_exception_struct() -> decode.Decoder(ReplicaAlreadyExistsException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ReplicaAlreadyExistsException(
@@ -12120,6 +16094,15 @@ pub type ReplicaNotFoundException {
 }
 
 pub fn encode_replica_not_found_exception_struct(input: ReplicaNotFoundException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_replica_not_found_exception_struct_top(input: ReplicaNotFoundException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -12154,6 +16137,35 @@ pub type UpdateGlobalTableSettingsInput {
 }
 
 pub fn encode_update_global_table_settings_input_struct(input: UpdateGlobalTableSettingsInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_table_billing_mode {
+    option.Some(v) -> [#("GlobalTableBillingMode", encode_billing_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_global_secondary_index_settings_update {
+    option.Some(v) -> [#("GlobalTableGlobalSecondaryIndexSettingsUpdate", fn(xs) { json.array(xs, encode_global_table_global_secondary_index_settings_update_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_name {
+    option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_provisioned_write_capacity_auto_scaling_settings_update {
+    option.Some(v) -> [#("GlobalTableProvisionedWriteCapacityAutoScalingSettingsUpdate", encode_auto_scaling_settings_update_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_provisioned_write_capacity_units {
+    option.Some(v) -> [#("GlobalTableProvisionedWriteCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_settings_update {
+    option.Some(v) -> [#("ReplicaSettingsUpdate", fn(xs) { json.array(xs, encode_replica_settings_update_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_update_global_table_settings_input_struct_top(input: UpdateGlobalTableSettingsInput) -> json.Json {
   let pairs = []
   let pairs = case input.global_table_billing_mode {
     option.Some(v) -> [#("GlobalTableBillingMode", encode_billing_mode_enum(v)), ..pairs]
@@ -12241,6 +16253,23 @@ pub fn encode_global_table_global_secondary_index_settings_update_struct(input: 
   json.object(pairs)
 }
 
+pub fn encode_global_table_global_secondary_index_settings_update_struct_top(input: GlobalTableGlobalSecondaryIndexSettingsUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_write_capacity_auto_scaling_settings_update {
+    option.Some(v) -> [#("ProvisionedWriteCapacityAutoScalingSettingsUpdate", encode_auto_scaling_settings_update_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_write_capacity_units {
+    option.Some(v) -> [#("ProvisionedWriteCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_global_table_global_secondary_index_settings_update_struct() -> decode.Decoder(GlobalTableGlobalSecondaryIndexSettingsUpdate) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use provisioned_write_capacity_auto_scaling_settings_update <- decode.optional_field("ProvisionedWriteCapacityAutoScalingSettingsUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct()))
@@ -12274,6 +16303,31 @@ pub type AutoScalingSettingsUpdate {
 }
 
 pub fn encode_auto_scaling_settings_update_struct(input: AutoScalingSettingsUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.auto_scaling_disabled {
+    option.Some(v) -> [#("AutoScalingDisabled", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.auto_scaling_role_arn {
+    option.Some(v) -> [#("AutoScalingRoleArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.maximum_units {
+    option.Some(v) -> [#("MaximumUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.minimum_units {
+    option.Some(v) -> [#("MinimumUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.scaling_policy_update {
+    option.Some(v) -> [#("ScalingPolicyUpdate", encode_auto_scaling_policy_update_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_auto_scaling_settings_update_struct_top(input: AutoScalingSettingsUpdate) -> json.Json {
   let pairs = []
   let pairs = case input.auto_scaling_disabled {
     option.Some(v) -> [#("AutoScalingDisabled", json.bool(v)), ..pairs]
@@ -12348,6 +16402,19 @@ pub fn encode_auto_scaling_policy_update_struct(input: AutoScalingPolicyUpdate) 
   json.object(pairs)
 }
 
+pub fn encode_auto_scaling_policy_update_struct_top(input: AutoScalingPolicyUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.policy_name {
+    option.Some(v) -> [#("PolicyName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.target_tracking_scaling_policy_configuration {
+    option.Some(v) -> [#("TargetTrackingScalingPolicyConfiguration", encode_auto_scaling_target_tracking_scaling_policy_configuration_update_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_auto_scaling_policy_update_struct() -> decode.Decoder(AutoScalingPolicyUpdate) {
   use policy_name <- decode.optional_field("PolicyName", option.None, decode.optional(decode.string))
   use target_tracking_scaling_policy_configuration <- decode.optional_field("TargetTrackingScalingPolicyConfiguration", option.None, decode.optional(decode_auto_scaling_target_tracking_scaling_policy_configuration_update_struct()))
@@ -12376,6 +16443,27 @@ pub type AutoScalingTargetTrackingScalingPolicyConfigurationUpdate {
 }
 
 pub fn encode_auto_scaling_target_tracking_scaling_policy_configuration_update_struct(input: AutoScalingTargetTrackingScalingPolicyConfigurationUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.disable_scale_in {
+    option.Some(v) -> [#("DisableScaleIn", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.scale_in_cooldown {
+    option.Some(v) -> [#("ScaleInCooldown", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.scale_out_cooldown {
+    option.Some(v) -> [#("ScaleOutCooldown", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.target_value {
+    option.Some(v) -> [#("TargetValue", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_auto_scaling_target_tracking_scaling_policy_configuration_update_struct_top(input: AutoScalingTargetTrackingScalingPolicyConfigurationUpdate) -> json.Json {
   let pairs = []
   let pairs = case input.disable_scale_in {
     option.Some(v) -> [#("DisableScaleIn", json.bool(v)), ..pairs]
@@ -12457,6 +16545,31 @@ pub fn encode_replica_settings_update_struct(input: ReplicaSettingsUpdate) -> js
   json.object(pairs)
 }
 
+pub fn encode_replica_settings_update_struct_top(input: ReplicaSettingsUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_global_secondary_index_settings_update {
+    option.Some(v) -> [#("ReplicaGlobalSecondaryIndexSettingsUpdate", fn(xs) { json.array(xs, encode_replica_global_secondary_index_settings_update_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_provisioned_read_capacity_auto_scaling_settings_update {
+    option.Some(v) -> [#("ReplicaProvisionedReadCapacityAutoScalingSettingsUpdate", encode_auto_scaling_settings_update_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_provisioned_read_capacity_units {
+    option.Some(v) -> [#("ReplicaProvisionedReadCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_table_class {
+    option.Some(v) -> [#("ReplicaTableClass", encode_table_class_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_replica_settings_update_struct() -> decode.Decoder(ReplicaSettingsUpdate) {
   use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
   use replica_global_secondary_index_settings_update <- decode.optional_field("ReplicaGlobalSecondaryIndexSettingsUpdate", option.None, decode.optional(decode.list(decode_replica_global_secondary_index_settings_update_struct())))
@@ -12496,6 +16609,23 @@ pub type ReplicaGlobalSecondaryIndexSettingsUpdate {
 }
 
 pub fn encode_replica_global_secondary_index_settings_update_struct(input: ReplicaGlobalSecondaryIndexSettingsUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_read_capacity_auto_scaling_settings_update {
+    option.Some(v) -> [#("ProvisionedReadCapacityAutoScalingSettingsUpdate", encode_auto_scaling_settings_update_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_read_capacity_units {
+    option.Some(v) -> [#("ProvisionedReadCapacityUnits", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_replica_global_secondary_index_settings_update_struct_top(input: ReplicaGlobalSecondaryIndexSettingsUpdate) -> json.Json {
   let pairs = []
   let pairs = case input.index_name {
     option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
@@ -12554,6 +16684,19 @@ pub fn encode_update_global_table_settings_output_struct(input: UpdateGlobalTabl
   json.object(pairs)
 }
 
+pub fn encode_update_global_table_settings_output_struct_top(input: UpdateGlobalTableSettingsOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_table_name {
+    option.Some(v) -> [#("GlobalTableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_settings {
+    option.Some(v) -> [#("ReplicaSettings", fn(xs) { json.array(xs, encode_replica_settings_description_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_update_global_table_settings_output_struct() -> decode.Decoder(UpdateGlobalTableSettingsOutput) {
   use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
   use replica_settings <- decode.optional_field("ReplicaSettings", option.None, decode.optional(decode.list(decode_replica_settings_description_struct())))
@@ -12579,6 +16722,15 @@ pub type IndexNotFoundException {
 }
 
 pub fn encode_index_not_found_exception_struct(input: IndexNotFoundException) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_index_not_found_exception_struct_top(input: IndexNotFoundException) -> json.Json {
   let pairs = []
   let pairs = case input.message {
     option.Some(v) -> [#("message", json.string(v)), ..pairs]
@@ -12620,6 +16772,63 @@ pub type UpdateItemInput {
 }
 
 pub fn encode_update_item_input_struct(input: UpdateItemInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.attribute_updates {
+    option.Some(v) -> [#("AttributeUpdates", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_update_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.condition_expression {
+    option.Some(v) -> [#("ConditionExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.conditional_operator {
+    option.Some(v) -> [#("ConditionalOperator", encode_conditional_operator_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expected {
+    option.Some(v) -> [#("Expected", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_expected_attribute_value_struct(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_names {
+    option.Some(v) -> [#("ExpressionAttributeNames", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.expression_attribute_values {
+    option.Some(v) -> [#("ExpressionAttributeValues", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key {
+    option.Some(v) -> [#("Key", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_consumed_capacity {
+    option.Some(v) -> [#("ReturnConsumedCapacity", encode_return_consumed_capacity_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_item_collection_metrics {
+    option.Some(v) -> [#("ReturnItemCollectionMetrics", encode_return_item_collection_metrics_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values {
+    option.Some(v) -> [#("ReturnValues", encode_return_value_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.return_values_on_condition_check_failure {
+    option.Some(v) -> [#("ReturnValuesOnConditionCheckFailure", encode_return_values_on_condition_check_failure_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.update_expression {
+    option.Some(v) -> [#("UpdateExpression", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_update_item_input_struct_top(input: UpdateItemInput) -> json.Json {
   let pairs = []
   let pairs = case input.attribute_updates {
     option.Some(v) -> [#("AttributeUpdates", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_update_struct(pair.1)) })) }(v)), ..pairs]
@@ -12758,6 +16967,19 @@ pub fn encode_attribute_value_update_struct(input: AttributeValueUpdate) -> json
   json.object(pairs)
 }
 
+pub fn encode_attribute_value_update_struct_top(input: AttributeValueUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.action {
+    option.Some(v) -> [#("Action", encode_attribute_action_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.value {
+    option.Some(v) -> [#("Value", encode_attribute_value_union(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_attribute_value_update_struct() -> decode.Decoder(AttributeValueUpdate) {
   use action <- decode.optional_field("Action", option.None, decode.optional(decode_attribute_action_enum()))
   use value <- decode.optional_field("Value", option.None, decode.optional(decode_attribute_value_union()))
@@ -12826,6 +17048,23 @@ pub fn encode_update_item_output_struct(input: UpdateItemOutput) -> json.Json {
   json.object(pairs)
 }
 
+pub fn encode_update_item_output_struct_top(input: UpdateItemOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.attributes {
+    option.Some(v) -> [#("Attributes", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_attribute_value_union(pair.1)) })) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.consumed_capacity {
+    option.Some(v) -> [#("ConsumedCapacity", encode_consumed_capacity_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.item_collection_metrics {
+    option.Some(v) -> [#("ItemCollectionMetrics", encode_item_collection_metrics_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_update_item_output_struct() -> decode.Decoder(UpdateItemOutput) {
   use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct()))
@@ -12857,6 +17096,23 @@ pub type UpdateKinesisStreamingDestinationInput {
 }
 
 pub fn encode_update_kinesis_streaming_destination_input_struct(input: UpdateKinesisStreamingDestinationInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.stream_arn {
+    option.Some(v) -> [#("StreamArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.update_kinesis_streaming_configuration {
+    option.Some(v) -> [#("UpdateKinesisStreamingConfiguration", encode_update_kinesis_streaming_configuration_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_update_kinesis_streaming_destination_input_struct_top(input: UpdateKinesisStreamingDestinationInput) -> json.Json {
   let pairs = []
   let pairs = case input.stream_arn {
     option.Some(v) -> [#("StreamArn", json.string(v)), ..pairs]
@@ -12910,6 +17166,15 @@ pub fn encode_update_kinesis_streaming_configuration_struct(input: UpdateKinesis
   json.object(pairs)
 }
 
+pub fn encode_update_kinesis_streaming_configuration_struct_top(input: UpdateKinesisStreamingConfiguration) -> json.Json {
+  let pairs = []
+  let pairs = case input.approximate_creation_date_time_precision {
+    option.Some(v) -> [#("ApproximateCreationDateTimePrecision", encode_approximate_creation_date_time_precision_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_update_kinesis_streaming_configuration_struct() -> decode.Decoder(UpdateKinesisStreamingConfiguration) {
   use approximate_creation_date_time_precision <- decode.optional_field("ApproximateCreationDateTimePrecision", option.None, decode.optional(decode_approximate_creation_date_time_precision_enum()))
   decode.success(UpdateKinesisStreamingConfiguration(
@@ -12934,6 +17199,27 @@ pub type UpdateKinesisStreamingDestinationOutput {
 }
 
 pub fn encode_update_kinesis_streaming_destination_output_struct(input: UpdateKinesisStreamingDestinationOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.destination_status {
+    option.Some(v) -> [#("DestinationStatus", encode_destination_status_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.stream_arn {
+    option.Some(v) -> [#("StreamArn", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.update_kinesis_streaming_configuration {
+    option.Some(v) -> [#("UpdateKinesisStreamingConfiguration", encode_update_kinesis_streaming_configuration_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_update_kinesis_streaming_destination_output_struct_top(input: UpdateKinesisStreamingDestinationOutput) -> json.Json {
   let pairs = []
   let pairs = case input.destination_status {
     option.Some(v) -> [#("DestinationStatus", encode_destination_status_enum(v)), ..pairs]
@@ -13001,6 +17287,71 @@ pub type UpdateTableInput {
 }
 
 pub fn encode_update_table_input_struct(input: UpdateTableInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.attribute_definitions {
+    option.Some(v) -> [#("AttributeDefinitions", fn(xs) { json.array(xs, encode_attribute_definition_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.billing_mode {
+    option.Some(v) -> [#("BillingMode", encode_billing_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.deletion_protection_enabled {
+    option.Some(v) -> [#("DeletionProtectionEnabled", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_secondary_index_updates {
+    option.Some(v) -> [#("GlobalSecondaryIndexUpdates", fn(xs) { json.array(xs, encode_global_secondary_index_update_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_settings_replication_mode {
+    option.Some(v) -> [#("GlobalTableSettingsReplicationMode", encode_global_table_settings_replication_mode_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.global_table_witness_updates {
+    option.Some(v) -> [#("GlobalTableWitnessUpdates", fn(xs) { json.array(xs, encode_global_table_witness_group_update_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.multi_region_consistency {
+    option.Some(v) -> [#("MultiRegionConsistency", encode_multi_region_consistency_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput {
+    option.Some(v) -> [#("OnDemandThroughput", encode_on_demand_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput {
+    option.Some(v) -> [#("ProvisionedThroughput", encode_provisioned_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_updates {
+    option.Some(v) -> [#("ReplicaUpdates", fn(xs) { json.array(xs, encode_replication_group_update_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.sse_specification {
+    option.Some(v) -> [#("SSESpecification", encode_sse_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.stream_specification {
+    option.Some(v) -> [#("StreamSpecification", encode_stream_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_class {
+    option.Some(v) -> [#("TableClass", encode_table_class_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.warm_throughput {
+    option.Some(v) -> [#("WarmThroughput", encode_warm_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_update_table_input_struct_top(input: UpdateTableInput) -> json.Json {
   let pairs = []
   let pairs = case input.attribute_definitions {
     option.Some(v) -> [#("AttributeDefinitions", fn(xs) { json.array(xs, encode_attribute_definition_struct) }(v)), ..pairs]
@@ -13160,6 +17511,23 @@ pub fn encode_global_secondary_index_update_struct(input: GlobalSecondaryIndexUp
   json.object(pairs)
 }
 
+pub fn encode_global_secondary_index_update_struct_top(input: GlobalSecondaryIndexUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.create {
+    option.Some(v) -> [#("Create", encode_create_global_secondary_index_action_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.delete {
+    option.Some(v) -> [#("Delete", encode_delete_global_secondary_index_action_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.update {
+    option.Some(v) -> [#("Update", encode_update_global_secondary_index_action_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_global_secondary_index_update_struct() -> decode.Decoder(GlobalSecondaryIndexUpdate) {
   use create <- decode.optional_field("Create", option.None, decode.optional(decode_create_global_secondary_index_action_struct()))
   use delete <- decode.optional_field("Delete", option.None, decode.optional(decode_delete_global_secondary_index_action_struct()))
@@ -13194,6 +17562,35 @@ pub type CreateGlobalSecondaryIndexAction {
 }
 
 pub fn encode_create_global_secondary_index_action_struct(input: CreateGlobalSecondaryIndexAction) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.key_schema {
+    option.Some(v) -> [#("KeySchema", fn(xs) { json.array(xs, encode_key_schema_element_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput {
+    option.Some(v) -> [#("OnDemandThroughput", encode_on_demand_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.projection {
+    option.Some(v) -> [#("Projection", encode_projection_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput {
+    option.Some(v) -> [#("ProvisionedThroughput", encode_provisioned_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.warm_throughput {
+    option.Some(v) -> [#("WarmThroughput", encode_warm_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_create_global_secondary_index_action_struct_top(input: CreateGlobalSecondaryIndexAction) -> json.Json {
   let pairs = []
   let pairs = case input.index_name {
     option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
@@ -13271,6 +17668,15 @@ pub fn encode_delete_global_secondary_index_action_struct(input: DeleteGlobalSec
   json.object(pairs)
 }
 
+pub fn encode_delete_global_secondary_index_action_struct_top(input: DeleteGlobalSecondaryIndexAction) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_delete_global_secondary_index_action_struct() -> decode.Decoder(DeleteGlobalSecondaryIndexAction) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   decode.success(DeleteGlobalSecondaryIndexAction(
@@ -13295,6 +17701,27 @@ pub type UpdateGlobalSecondaryIndexAction {
 }
 
 pub fn encode_update_global_secondary_index_action_struct(input: UpdateGlobalSecondaryIndexAction) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput {
+    option.Some(v) -> [#("OnDemandThroughput", encode_on_demand_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput {
+    option.Some(v) -> [#("ProvisionedThroughput", encode_provisioned_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.warm_throughput {
+    option.Some(v) -> [#("WarmThroughput", encode_warm_throughput_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_update_global_secondary_index_action_struct_top(input: UpdateGlobalSecondaryIndexAction) -> json.Json {
   let pairs = []
   let pairs = case input.index_name {
     option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
@@ -13361,6 +17788,19 @@ pub fn encode_global_table_witness_group_update_struct(input: GlobalTableWitness
   json.object(pairs)
 }
 
+pub fn encode_global_table_witness_group_update_struct_top(input: GlobalTableWitnessGroupUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.create {
+    option.Some(v) -> [#("Create", encode_create_global_table_witness_group_member_action_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.delete {
+    option.Some(v) -> [#("Delete", encode_delete_global_table_witness_group_member_action_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_global_table_witness_group_update_struct() -> decode.Decoder(GlobalTableWitnessGroupUpdate) {
   use create <- decode.optional_field("Create", option.None, decode.optional(decode_create_global_table_witness_group_member_action_struct()))
   use delete <- decode.optional_field("Delete", option.None, decode.optional(decode_delete_global_table_witness_group_member_action_struct()))
@@ -13386,6 +17826,15 @@ pub type CreateGlobalTableWitnessGroupMemberAction {
 }
 
 pub fn encode_create_global_table_witness_group_member_action_struct(input: CreateGlobalTableWitnessGroupMemberAction) -> json.Json {
+  let pairs = []
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_create_global_table_witness_group_member_action_struct_top(input: CreateGlobalTableWitnessGroupMemberAction) -> json.Json {
   let pairs = []
   let pairs = case input.region_name {
     option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
@@ -13423,6 +17872,15 @@ pub fn encode_delete_global_table_witness_group_member_action_struct(input: Dele
   json.object(pairs)
 }
 
+pub fn encode_delete_global_table_witness_group_member_action_struct_top(input: DeleteGlobalTableWitnessGroupMemberAction) -> json.Json {
+  let pairs = []
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_delete_global_table_witness_group_member_action_struct() -> decode.Decoder(DeleteGlobalTableWitnessGroupMemberAction) {
   use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
   decode.success(DeleteGlobalTableWitnessGroupMemberAction(
@@ -13446,6 +17904,23 @@ pub type ReplicationGroupUpdate {
 }
 
 pub fn encode_replication_group_update_struct(input: ReplicationGroupUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.create {
+    option.Some(v) -> [#("Create", encode_create_replication_group_member_action_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.delete {
+    option.Some(v) -> [#("Delete", encode_delete_replication_group_member_action_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.update {
+    option.Some(v) -> [#("Update", encode_update_replication_group_member_action_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_replication_group_update_struct_top(input: ReplicationGroupUpdate) -> json.Json {
   let pairs = []
   let pairs = case input.create {
     option.Some(v) -> [#("Create", encode_create_replication_group_member_action_struct(v)), ..pairs]
@@ -13496,6 +17971,35 @@ pub type CreateReplicationGroupMemberAction {
 }
 
 pub fn encode_create_replication_group_member_action_struct(input: CreateReplicationGroupMemberAction) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_secondary_indexes {
+    option.Some(v) -> [#("GlobalSecondaryIndexes", fn(xs) { json.array(xs, encode_replica_global_secondary_index_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.kms_master_key_id {
+    option.Some(v) -> [#("KMSMasterKeyId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput_override {
+    option.Some(v) -> [#("OnDemandThroughputOverride", encode_on_demand_throughput_override_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput_override {
+    option.Some(v) -> [#("ProvisionedThroughputOverride", encode_provisioned_throughput_override_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_class_override {
+    option.Some(v) -> [#("TableClassOverride", encode_table_class_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_create_replication_group_member_action_struct_top(input: CreateReplicationGroupMemberAction) -> json.Json {
   let pairs = []
   let pairs = case input.global_secondary_indexes {
     option.Some(v) -> [#("GlobalSecondaryIndexes", fn(xs) { json.array(xs, encode_replica_global_secondary_index_struct) }(v)), ..pairs]
@@ -13583,6 +18087,23 @@ pub fn encode_replica_global_secondary_index_struct(input: ReplicaGlobalSecondar
   json.object(pairs)
 }
 
+pub fn encode_replica_global_secondary_index_struct_top(input: ReplicaGlobalSecondaryIndex) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput_override {
+    option.Some(v) -> [#("OnDemandThroughputOverride", encode_on_demand_throughput_override_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput_override {
+    option.Some(v) -> [#("ProvisionedThroughputOverride", encode_provisioned_throughput_override_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_replica_global_secondary_index_struct() -> decode.Decoder(ReplicaGlobalSecondaryIndex) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use on_demand_throughput_override <- decode.optional_field("OnDemandThroughputOverride", option.None, decode.optional(decode_on_demand_throughput_override_struct()))
@@ -13620,6 +18141,15 @@ pub fn encode_delete_replication_group_member_action_struct(input: DeleteReplica
   json.object(pairs)
 }
 
+pub fn encode_delete_replication_group_member_action_struct_top(input: DeleteReplicationGroupMemberAction) -> json.Json {
+  let pairs = []
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_delete_replication_group_member_action_struct() -> decode.Decoder(DeleteReplicationGroupMemberAction) {
   use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
   decode.success(DeleteReplicationGroupMemberAction(
@@ -13646,6 +18176,35 @@ pub type UpdateReplicationGroupMemberAction {
 }
 
 pub fn encode_update_replication_group_member_action_struct(input: UpdateReplicationGroupMemberAction) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_secondary_indexes {
+    option.Some(v) -> [#("GlobalSecondaryIndexes", fn(xs) { json.array(xs, encode_replica_global_secondary_index_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.kms_master_key_id {
+    option.Some(v) -> [#("KMSMasterKeyId", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.on_demand_throughput_override {
+    option.Some(v) -> [#("OnDemandThroughputOverride", encode_on_demand_throughput_override_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_throughput_override {
+    option.Some(v) -> [#("ProvisionedThroughputOverride", encode_provisioned_throughput_override_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_class_override {
+    option.Some(v) -> [#("TableClassOverride", encode_table_class_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_update_replication_group_member_action_struct_top(input: UpdateReplicationGroupMemberAction) -> json.Json {
   let pairs = []
   let pairs = case input.global_secondary_indexes {
     option.Some(v) -> [#("GlobalSecondaryIndexes", fn(xs) { json.array(xs, encode_replica_global_secondary_index_struct) }(v)), ..pairs]
@@ -13723,6 +18282,15 @@ pub fn encode_update_table_output_struct(input: UpdateTableOutput) -> json.Json 
   json.object(pairs)
 }
 
+pub fn encode_update_table_output_struct_top(input: UpdateTableOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_description {
+    option.Some(v) -> [#("TableDescription", encode_table_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_update_table_output_struct() -> decode.Decoder(UpdateTableOutput) {
   use table_description <- decode.optional_field("TableDescription", option.None, decode.optional(decode_table_description_struct()))
   decode.success(UpdateTableOutput(
@@ -13747,6 +18315,27 @@ pub type UpdateTableReplicaAutoScalingInput {
 }
 
 pub fn encode_update_table_replica_auto_scaling_input_struct(input: UpdateTableReplicaAutoScalingInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.global_secondary_index_updates {
+    option.Some(v) -> [#("GlobalSecondaryIndexUpdates", fn(xs) { json.array(xs, encode_global_secondary_index_auto_scaling_update_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_write_capacity_auto_scaling_update {
+    option.Some(v) -> [#("ProvisionedWriteCapacityAutoScalingUpdate", encode_auto_scaling_settings_update_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_updates {
+    option.Some(v) -> [#("ReplicaUpdates", fn(xs) { json.array(xs, encode_replica_auto_scaling_update_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_update_table_replica_auto_scaling_input_struct_top(input: UpdateTableReplicaAutoScalingInput) -> json.Json {
   let pairs = []
   let pairs = case input.global_secondary_index_updates {
     option.Some(v) -> [#("GlobalSecondaryIndexUpdates", fn(xs) { json.array(xs, encode_global_secondary_index_auto_scaling_update_struct) }(v)), ..pairs]
@@ -13813,6 +18402,19 @@ pub fn encode_global_secondary_index_auto_scaling_update_struct(input: GlobalSec
   json.object(pairs)
 }
 
+pub fn encode_global_secondary_index_auto_scaling_update_struct_top(input: GlobalSecondaryIndexAutoScalingUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_write_capacity_auto_scaling_update {
+    option.Some(v) -> [#("ProvisionedWriteCapacityAutoScalingUpdate", encode_auto_scaling_settings_update_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_global_secondary_index_auto_scaling_update_struct() -> decode.Decoder(GlobalSecondaryIndexAutoScalingUpdate) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use provisioned_write_capacity_auto_scaling_update <- decode.optional_field("ProvisionedWriteCapacityAutoScalingUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct()))
@@ -13840,6 +18442,23 @@ pub type ReplicaAutoScalingUpdate {
 }
 
 pub fn encode_replica_auto_scaling_update_struct(input: ReplicaAutoScalingUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.region_name {
+    option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_global_secondary_index_updates {
+    option.Some(v) -> [#("ReplicaGlobalSecondaryIndexUpdates", fn(xs) { json.array(xs, encode_replica_global_secondary_index_auto_scaling_update_struct) }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.replica_provisioned_read_capacity_auto_scaling_update {
+    option.Some(v) -> [#("ReplicaProvisionedReadCapacityAutoScalingUpdate", encode_auto_scaling_settings_update_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_replica_auto_scaling_update_struct_top(input: ReplicaAutoScalingUpdate) -> json.Json {
   let pairs = []
   let pairs = case input.region_name {
     option.Some(v) -> [#("RegionName", json.string(v)), ..pairs]
@@ -13898,6 +18517,19 @@ pub fn encode_replica_global_secondary_index_auto_scaling_update_struct(input: R
   json.object(pairs)
 }
 
+pub fn encode_replica_global_secondary_index_auto_scaling_update_struct_top(input: ReplicaGlobalSecondaryIndexAutoScalingUpdate) -> json.Json {
+  let pairs = []
+  let pairs = case input.index_name {
+    option.Some(v) -> [#("IndexName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.provisioned_read_capacity_auto_scaling_update {
+    option.Some(v) -> [#("ProvisionedReadCapacityAutoScalingUpdate", encode_auto_scaling_settings_update_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_replica_global_secondary_index_auto_scaling_update_struct() -> decode.Decoder(ReplicaGlobalSecondaryIndexAutoScalingUpdate) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use provisioned_read_capacity_auto_scaling_update <- decode.optional_field("ProvisionedReadCapacityAutoScalingUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct()))
@@ -13931,6 +18563,15 @@ pub fn encode_update_table_replica_auto_scaling_output_struct(input: UpdateTable
   json.object(pairs)
 }
 
+pub fn encode_update_table_replica_auto_scaling_output_struct_top(input: UpdateTableReplicaAutoScalingOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_auto_scaling_description {
+    option.Some(v) -> [#("TableAutoScalingDescription", encode_table_auto_scaling_description_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_update_table_replica_auto_scaling_output_struct() -> decode.Decoder(UpdateTableReplicaAutoScalingOutput) {
   use table_auto_scaling_description <- decode.optional_field("TableAutoScalingDescription", option.None, decode.optional(decode_table_auto_scaling_description_struct()))
   decode.success(UpdateTableReplicaAutoScalingOutput(
@@ -13953,6 +18594,19 @@ pub type UpdateTimeToLiveInput {
 }
 
 pub fn encode_update_time_to_live_input_struct(input: UpdateTimeToLiveInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.table_name {
+    option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.time_to_live_specification {
+    option.Some(v) -> [#("TimeToLiveSpecification", encode_time_to_live_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn encode_update_time_to_live_input_struct_top(input: UpdateTimeToLiveInput) -> json.Json {
   let pairs = []
   let pairs = case input.table_name {
     option.Some(v) -> [#("TableName", json.string(v)), ..pairs]
@@ -14003,6 +18657,19 @@ pub fn encode_time_to_live_specification_struct(input: TimeToLiveSpecification) 
   json.object(pairs)
 }
 
+pub fn encode_time_to_live_specification_struct_top(input: TimeToLiveSpecification) -> json.Json {
+  let pairs = []
+  let pairs = case input.attribute_name {
+    option.Some(v) -> [#("AttributeName", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.enabled {
+    option.Some(v) -> [#("Enabled", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_time_to_live_specification_struct() -> decode.Decoder(TimeToLiveSpecification) {
   use attribute_name <- decode.optional_field("AttributeName", option.None, decode.optional(decode.string))
   use enabled <- decode.optional_field("Enabled", option.None, decode.optional(decode.bool))
@@ -14036,6 +18703,15 @@ pub fn encode_update_time_to_live_output_struct(input: UpdateTimeToLiveOutput) -
   json.object(pairs)
 }
 
+pub fn encode_update_time_to_live_output_struct_top(input: UpdateTimeToLiveOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.time_to_live_specification {
+    option.Some(v) -> [#("TimeToLiveSpecification", encode_time_to_live_specification_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn decode_update_time_to_live_output_struct() -> decode.Decoder(UpdateTimeToLiveOutput) {
   use time_to_live_specification <- decode.optional_field("TimeToLiveSpecification", option.None, decode.optional(decode_time_to_live_specification_struct()))
   decode.success(UpdateTimeToLiveOutput(
@@ -14052,7 +18728,7 @@ pub fn decode_update_time_to_live_output_struct_params() -> decode.Decoder(Updat
 
 
 pub fn encode_batch_execute_statement_input(input: BatchExecuteStatementInput) -> String {
-  json.to_string(encode_batch_execute_statement_input_struct(input))
+  json.to_string(encode_batch_execute_statement_input_struct_top(input))
 }
 
 pub fn decode_batch_execute_statement_input(body: String) -> Result(BatchExecuteStatementInput, String) {
@@ -14148,7 +18824,7 @@ fn translate_batch_execute_statement_error(err: awsjson_client.ClientError) -> B
 
 
 pub fn encode_batch_get_item_input(input: BatchGetItemInput) -> String {
-  json.to_string(encode_batch_get_item_input_struct(input))
+  json.to_string(encode_batch_get_item_input_struct_top(input))
 }
 
 pub fn decode_batch_get_item_input(body: String) -> Result(BatchGetItemInput, String) {
@@ -14274,7 +18950,7 @@ fn translate_batch_get_item_error(err: awsjson_client.ClientError) -> BatchGetIt
 
 
 pub fn encode_batch_write_item_input(input: BatchWriteItemInput) -> String {
-  json.to_string(encode_batch_write_item_input_struct(input))
+  json.to_string(encode_batch_write_item_input_struct_top(input))
 }
 
 pub fn decode_batch_write_item_input(body: String) -> Result(BatchWriteItemInput, String) {
@@ -14420,7 +19096,7 @@ fn translate_batch_write_item_error(err: awsjson_client.ClientError) -> BatchWri
 
 
 pub fn encode_create_backup_input(input: CreateBackupInput) -> String {
-  json.to_string(encode_create_backup_input_struct(input))
+  json.to_string(encode_create_backup_input_struct_top(input))
 }
 
 pub fn decode_create_backup_input(body: String) -> Result(CreateBackupInput, String) {
@@ -14556,7 +19232,7 @@ fn translate_create_backup_error(err: awsjson_client.ClientError) -> CreateBacku
 
 
 pub fn encode_create_global_table_input(input: CreateGlobalTableInput) -> String {
-  json.to_string(encode_create_global_table_input_struct(input))
+  json.to_string(encode_create_global_table_input_struct_top(input))
 }
 
 pub fn decode_create_global_table_input(body: String) -> Result(CreateGlobalTableInput, String) {
@@ -14672,7 +19348,7 @@ fn translate_create_global_table_error(err: awsjson_client.ClientError) -> Creat
 
 
 pub fn encode_create_table_input(input: CreateTableInput) -> String {
-  json.to_string(encode_create_table_input_struct(input))
+  json.to_string(encode_create_table_input_struct_top(input))
 }
 
 pub fn decode_create_table_input(body: String) -> Result(CreateTableInput, String) {
@@ -14778,7 +19454,7 @@ fn translate_create_table_error(err: awsjson_client.ClientError) -> CreateTableE
 
 
 pub fn encode_delete_backup_input(input: DeleteBackupInput) -> String {
-  json.to_string(encode_delete_backup_input_struct(input))
+  json.to_string(encode_delete_backup_input_struct_top(input))
 }
 
 pub fn decode_delete_backup_input(body: String) -> Result(DeleteBackupInput, String) {
@@ -14894,7 +19570,7 @@ fn translate_delete_backup_error(err: awsjson_client.ClientError) -> DeleteBacku
 
 
 pub fn encode_delete_item_input(input: DeleteItemInput) -> String {
-  json.to_string(encode_delete_item_input_struct(input))
+  json.to_string(encode_delete_item_input_struct_top(input))
 }
 
 pub fn decode_delete_item_input(body: String) -> Result(DeleteItemInput, String) {
@@ -15060,7 +19736,7 @@ fn translate_delete_item_error(err: awsjson_client.ClientError) -> DeleteItemErr
 
 
 pub fn encode_delete_resource_policy_input(input: DeleteResourcePolicyInput) -> String {
-  json.to_string(encode_delete_resource_policy_input_struct(input))
+  json.to_string(encode_delete_resource_policy_input_struct_top(input))
 }
 
 pub fn decode_delete_resource_policy_input(body: String) -> Result(DeleteResourcePolicyInput, String) {
@@ -15186,7 +19862,7 @@ fn translate_delete_resource_policy_error(err: awsjson_client.ClientError) -> De
 
 
 pub fn encode_delete_table_input(input: DeleteTableInput) -> String {
-  json.to_string(encode_delete_table_input_struct(input))
+  json.to_string(encode_delete_table_input_struct_top(input))
 }
 
 pub fn decode_delete_table_input(body: String) -> Result(DeleteTableInput, String) {
@@ -15302,7 +19978,7 @@ fn translate_delete_table_error(err: awsjson_client.ClientError) -> DeleteTableE
 
 
 pub fn encode_describe_backup_input(input: DescribeBackupInput) -> String {
-  json.to_string(encode_describe_backup_input_struct(input))
+  json.to_string(encode_describe_backup_input_struct_top(input))
 }
 
 pub fn decode_describe_backup_input(body: String) -> Result(DescribeBackupInput, String) {
@@ -15398,7 +20074,7 @@ fn translate_describe_backup_error(err: awsjson_client.ClientError) -> DescribeB
 
 
 pub fn encode_describe_continuous_backups_input(input: DescribeContinuousBackupsInput) -> String {
-  json.to_string(encode_describe_continuous_backups_input_struct(input))
+  json.to_string(encode_describe_continuous_backups_input_struct_top(input))
 }
 
 pub fn decode_describe_continuous_backups_input(body: String) -> Result(DescribeContinuousBackupsInput, String) {
@@ -15494,7 +20170,7 @@ fn translate_describe_continuous_backups_error(err: awsjson_client.ClientError) 
 
 
 pub fn encode_describe_contributor_insights_input(input: DescribeContributorInsightsInput) -> String {
-  json.to_string(encode_describe_contributor_insights_input_struct(input))
+  json.to_string(encode_describe_contributor_insights_input_struct_top(input))
 }
 
 pub fn decode_describe_contributor_insights_input(body: String) -> Result(DescribeContributorInsightsInput, String) {
@@ -15580,7 +20256,7 @@ fn translate_describe_contributor_insights_error(err: awsjson_client.ClientError
 
 
 pub fn encode_describe_endpoints_input(input: DescribeEndpointsRequest) -> String {
-  json.to_string(encode_describe_endpoints_request_struct(input))
+  json.to_string(encode_describe_endpoints_request_struct_top(input))
 }
 
 pub fn decode_describe_endpoints_input(body: String) -> Result(DescribeEndpointsRequest, String) {
@@ -15646,7 +20322,7 @@ case bit_array.to_string(b) {
 
 
 pub fn encode_describe_export_input(input: DescribeExportInput) -> String {
-  json.to_string(encode_describe_export_input_struct(input))
+  json.to_string(encode_describe_export_input_struct_top(input))
 }
 
 pub fn decode_describe_export_input(body: String) -> Result(DescribeExportInput, String) {
@@ -15742,7 +20418,7 @@ fn translate_describe_export_error(err: awsjson_client.ClientError) -> DescribeE
 
 
 pub fn encode_describe_global_table_input(input: DescribeGlobalTableInput) -> String {
-  json.to_string(encode_describe_global_table_input_struct(input))
+  json.to_string(encode_describe_global_table_input_struct_top(input))
 }
 
 pub fn decode_describe_global_table_input(body: String) -> Result(DescribeGlobalTableInput, String) {
@@ -15838,7 +20514,7 @@ fn translate_describe_global_table_error(err: awsjson_client.ClientError) -> Des
 
 
 pub fn encode_describe_global_table_settings_input(input: DescribeGlobalTableSettingsInput) -> String {
-  json.to_string(encode_describe_global_table_settings_input_struct(input))
+  json.to_string(encode_describe_global_table_settings_input_struct_top(input))
 }
 
 pub fn decode_describe_global_table_settings_input(body: String) -> Result(DescribeGlobalTableSettingsInput, String) {
@@ -15934,7 +20610,7 @@ fn translate_describe_global_table_settings_error(err: awsjson_client.ClientErro
 
 
 pub fn encode_describe_import_input(input: DescribeImportInput) -> String {
-  json.to_string(encode_describe_import_input_struct(input))
+  json.to_string(encode_describe_import_input_struct_top(input))
 }
 
 pub fn decode_describe_import_input(body: String) -> Result(DescribeImportInput, String) {
@@ -16010,7 +20686,7 @@ fn translate_describe_import_error(err: awsjson_client.ClientError) -> DescribeI
 
 
 pub fn encode_describe_kinesis_streaming_destination_input(input: DescribeKinesisStreamingDestinationInput) -> String {
-  json.to_string(encode_describe_kinesis_streaming_destination_input_struct(input))
+  json.to_string(encode_describe_kinesis_streaming_destination_input_struct_top(input))
 }
 
 pub fn decode_describe_kinesis_streaming_destination_input(body: String) -> Result(DescribeKinesisStreamingDestinationInput, String) {
@@ -16106,7 +20782,7 @@ fn translate_describe_kinesis_streaming_destination_error(err: awsjson_client.Cl
 
 
 pub fn encode_describe_limits_input(input: DescribeLimitsInput) -> String {
-  json.to_string(encode_describe_limits_input_struct(input))
+  json.to_string(encode_describe_limits_input_struct_top(input))
 }
 
 pub fn decode_describe_limits_input(body: String) -> Result(DescribeLimitsInput, String) {
@@ -16192,7 +20868,7 @@ fn translate_describe_limits_error(err: awsjson_client.ClientError) -> DescribeL
 
 
 pub fn encode_describe_table_input(input: DescribeTableInput) -> String {
-  json.to_string(encode_describe_table_input_struct(input))
+  json.to_string(encode_describe_table_input_struct_top(input))
 }
 
 pub fn decode_describe_table_input(body: String) -> Result(DescribeTableInput, String) {
@@ -16288,7 +20964,7 @@ fn translate_describe_table_error(err: awsjson_client.ClientError) -> DescribeTa
 
 
 pub fn encode_describe_table_replica_auto_scaling_input(input: DescribeTableReplicaAutoScalingInput) -> String {
-  json.to_string(encode_describe_table_replica_auto_scaling_input_struct(input))
+  json.to_string(encode_describe_table_replica_auto_scaling_input_struct_top(input))
 }
 
 pub fn decode_describe_table_replica_auto_scaling_input(body: String) -> Result(DescribeTableReplicaAutoScalingInput, String) {
@@ -16374,7 +21050,7 @@ fn translate_describe_table_replica_auto_scaling_error(err: awsjson_client.Clien
 
 
 pub fn encode_describe_time_to_live_input(input: DescribeTimeToLiveInput) -> String {
-  json.to_string(encode_describe_time_to_live_input_struct(input))
+  json.to_string(encode_describe_time_to_live_input_struct_top(input))
 }
 
 pub fn decode_describe_time_to_live_input(body: String) -> Result(DescribeTimeToLiveInput, String) {
@@ -16470,7 +21146,7 @@ fn translate_describe_time_to_live_error(err: awsjson_client.ClientError) -> Des
 
 
 pub fn encode_disable_kinesis_streaming_destination_input(input: KinesisStreamingDestinationInput) -> String {
-  json.to_string(encode_kinesis_streaming_destination_input_struct(input))
+  json.to_string(encode_kinesis_streaming_destination_input_struct_top(input))
 }
 
 pub fn decode_disable_kinesis_streaming_destination_input(body: String) -> Result(KinesisStreamingDestinationInput, String) {
@@ -16586,7 +21262,7 @@ fn translate_disable_kinesis_streaming_destination_error(err: awsjson_client.Cli
 
 
 pub fn encode_enable_kinesis_streaming_destination_input(input: KinesisStreamingDestinationInput) -> String {
-  json.to_string(encode_kinesis_streaming_destination_input_struct(input))
+  json.to_string(encode_kinesis_streaming_destination_input_struct_top(input))
 }
 
 pub fn decode_enable_kinesis_streaming_destination_input(body: String) -> Result(KinesisStreamingDestinationInput, String) {
@@ -16702,7 +21378,7 @@ fn translate_enable_kinesis_streaming_destination_error(err: awsjson_client.Clie
 
 
 pub fn encode_execute_statement_input(input: ExecuteStatementInput) -> String {
-  json.to_string(encode_execute_statement_input_struct(input))
+  json.to_string(encode_execute_statement_input_struct_top(input))
 }
 
 pub fn decode_execute_statement_input(body: String) -> Result(ExecuteStatementInput, String) {
@@ -16858,7 +21534,7 @@ fn translate_execute_statement_error(err: awsjson_client.ClientError) -> Execute
 
 
 pub fn encode_execute_transaction_input(input: ExecuteTransactionInput) -> String {
-  json.to_string(encode_execute_transaction_input_struct(input))
+  json.to_string(encode_execute_transaction_input_struct_top(input))
 }
 
 pub fn decode_execute_transaction_input(body: String) -> Result(ExecuteTransactionInput, String) {
@@ -17004,7 +21680,7 @@ fn translate_execute_transaction_error(err: awsjson_client.ClientError) -> Execu
 
 
 pub fn encode_export_table_to_point_in_time_input(input: ExportTableToPointInTimeInput) -> String {
-  json.to_string(encode_export_table_to_point_in_time_input_struct(input))
+  json.to_string(encode_export_table_to_point_in_time_input_struct_top(input))
 }
 
 pub fn decode_export_table_to_point_in_time_input(body: String) -> Result(ExportTableToPointInTimeInput, String) {
@@ -17130,7 +21806,7 @@ fn translate_export_table_to_point_in_time_error(err: awsjson_client.ClientError
 
 
 pub fn encode_get_item_input(input: GetItemInput) -> String {
-  json.to_string(encode_get_item_input_struct(input))
+  json.to_string(encode_get_item_input_struct_top(input))
 }
 
 pub fn decode_get_item_input(body: String) -> Result(GetItemInput, String) {
@@ -17256,7 +21932,7 @@ fn translate_get_item_error(err: awsjson_client.ClientError) -> GetItemError {
 
 
 pub fn encode_get_resource_policy_input(input: GetResourcePolicyInput) -> String {
-  json.to_string(encode_get_resource_policy_input_struct(input))
+  json.to_string(encode_get_resource_policy_input_struct_top(input))
 }
 
 pub fn decode_get_resource_policy_input(body: String) -> Result(GetResourcePolicyInput, String) {
@@ -17362,7 +22038,7 @@ fn translate_get_resource_policy_error(err: awsjson_client.ClientError) -> GetRe
 
 
 pub fn encode_import_table_input(input: ImportTableInput) -> String {
-  json.to_string(encode_import_table_input_struct(input))
+  json.to_string(encode_import_table_input_struct_top(input))
 }
 
 pub fn decode_import_table_input(body: String) -> Result(ImportTableInput, String) {
@@ -17458,7 +22134,7 @@ fn translate_import_table_error(err: awsjson_client.ClientError) -> ImportTableE
 
 
 pub fn encode_list_backups_input(input: ListBackupsInput) -> String {
-  json.to_string(encode_list_backups_input_struct(input))
+  json.to_string(encode_list_backups_input_struct_top(input))
 }
 
 pub fn decode_list_backups_input(body: String) -> Result(ListBackupsInput, String) {
@@ -17544,7 +22220,7 @@ fn translate_list_backups_error(err: awsjson_client.ClientError) -> ListBackupsE
 
 
 pub fn encode_list_contributor_insights_input(input: ListContributorInsightsInput) -> String {
-  json.to_string(encode_list_contributor_insights_input_struct(input))
+  json.to_string(encode_list_contributor_insights_input_struct_top(input))
 }
 
 pub fn decode_list_contributor_insights_input(body: String) -> Result(ListContributorInsightsInput, String) {
@@ -17630,7 +22306,7 @@ fn translate_list_contributor_insights_error(err: awsjson_client.ClientError) ->
 
 
 pub fn encode_list_exports_input(input: ListExportsInput) -> String {
-  json.to_string(encode_list_exports_input_struct(input))
+  json.to_string(encode_list_exports_input_struct_top(input))
 }
 
 pub fn decode_list_exports_input(body: String) -> Result(ListExportsInput, String) {
@@ -17716,7 +22392,7 @@ fn translate_list_exports_error(err: awsjson_client.ClientError) -> ListExportsE
 
 
 pub fn encode_list_global_tables_input(input: ListGlobalTablesInput) -> String {
-  json.to_string(encode_list_global_tables_input_struct(input))
+  json.to_string(encode_list_global_tables_input_struct_top(input))
 }
 
 pub fn decode_list_global_tables_input(body: String) -> Result(ListGlobalTablesInput, String) {
@@ -17802,7 +22478,7 @@ fn translate_list_global_tables_error(err: awsjson_client.ClientError) -> ListGl
 
 
 pub fn encode_list_imports_input(input: ListImportsInput) -> String {
-  json.to_string(encode_list_imports_input_struct(input))
+  json.to_string(encode_list_imports_input_struct_top(input))
 }
 
 pub fn decode_list_imports_input(body: String) -> Result(ListImportsInput, String) {
@@ -17878,7 +22554,7 @@ fn translate_list_imports_error(err: awsjson_client.ClientError) -> ListImportsE
 
 
 pub fn encode_list_tables_input(input: ListTablesInput) -> String {
-  json.to_string(encode_list_tables_input_struct(input))
+  json.to_string(encode_list_tables_input_struct_top(input))
 }
 
 pub fn decode_list_tables_input(body: String) -> Result(ListTablesInput, String) {
@@ -17964,7 +22640,7 @@ fn translate_list_tables_error(err: awsjson_client.ClientError) -> ListTablesErr
 
 
 pub fn encode_list_tags_of_resource_input(input: ListTagsOfResourceInput) -> String {
-  json.to_string(encode_list_tags_of_resource_input_struct(input))
+  json.to_string(encode_list_tags_of_resource_input_struct_top(input))
 }
 
 pub fn decode_list_tags_of_resource_input(body: String) -> Result(ListTagsOfResourceInput, String) {
@@ -18060,7 +22736,7 @@ fn translate_list_tags_of_resource_error(err: awsjson_client.ClientError) -> Lis
 
 
 pub fn encode_put_item_input(input: PutItemInput) -> String {
-  json.to_string(encode_put_item_input_struct(input))
+  json.to_string(encode_put_item_input_struct_top(input))
 }
 
 pub fn decode_put_item_input(body: String) -> Result(PutItemInput, String) {
@@ -18226,7 +22902,7 @@ fn translate_put_item_error(err: awsjson_client.ClientError) -> PutItemError {
 
 
 pub fn encode_put_resource_policy_input(input: PutResourcePolicyInput) -> String {
-  json.to_string(encode_put_resource_policy_input_struct(input))
+  json.to_string(encode_put_resource_policy_input_struct_top(input))
 }
 
 pub fn decode_put_resource_policy_input(body: String) -> Result(PutResourcePolicyInput, String) {
@@ -18352,7 +23028,7 @@ fn translate_put_resource_policy_error(err: awsjson_client.ClientError) -> PutRe
 
 
 pub fn encode_query_input(input: QueryInput) -> String {
-  json.to_string(encode_query_input_struct(input))
+  json.to_string(encode_query_input_struct_top(input))
 }
 
 pub fn decode_query_input(body: String) -> Result(QueryInput, String) {
@@ -18478,7 +23154,7 @@ fn translate_query_error(err: awsjson_client.ClientError) -> QueryError {
 
 
 pub fn encode_restore_table_from_backup_input(input: RestoreTableFromBackupInput) -> String {
-  json.to_string(encode_restore_table_from_backup_input_struct(input))
+  json.to_string(encode_restore_table_from_backup_input_struct_top(input))
 }
 
 pub fn decode_restore_table_from_backup_input(body: String) -> Result(RestoreTableFromBackupInput, String) {
@@ -18614,7 +23290,7 @@ fn translate_restore_table_from_backup_error(err: awsjson_client.ClientError) ->
 
 
 pub fn encode_restore_table_to_point_in_time_input(input: RestoreTableToPointInTimeInput) -> String {
-  json.to_string(encode_restore_table_to_point_in_time_input_struct(input))
+  json.to_string(encode_restore_table_to_point_in_time_input_struct_top(input))
 }
 
 pub fn decode_restore_table_to_point_in_time_input(body: String) -> Result(RestoreTableToPointInTimeInput, String) {
@@ -18760,7 +23436,7 @@ fn translate_restore_table_to_point_in_time_error(err: awsjson_client.ClientErro
 
 
 pub fn encode_scan_input(input: ScanInput) -> String {
-  json.to_string(encode_scan_input_struct(input))
+  json.to_string(encode_scan_input_struct_top(input))
 }
 
 pub fn decode_scan_input(body: String) -> Result(ScanInput, String) {
@@ -18898,7 +23574,7 @@ pub fn decode_tag_resource_output_struct() -> decode.Decoder(TagResourceOutput) 
 }
 
 pub fn encode_tag_resource_input(input: TagResourceInput) -> String {
-  json.to_string(encode_tag_resource_input_struct(input))
+  json.to_string(encode_tag_resource_input_struct_top(input))
 }
 
 pub fn decode_tag_resource_input(body: String) -> Result(TagResourceInput, String) {
@@ -19014,7 +23690,7 @@ fn translate_tag_resource_error(err: awsjson_client.ClientError) -> TagResourceE
 
 
 pub fn encode_transact_get_items_input(input: TransactGetItemsInput) -> String {
-  json.to_string(encode_transact_get_items_input_struct(input))
+  json.to_string(encode_transact_get_items_input_struct_top(input))
 }
 
 pub fn decode_transact_get_items_input(body: String) -> Result(TransactGetItemsInput, String) {
@@ -19150,7 +23826,7 @@ fn translate_transact_get_items_error(err: awsjson_client.ClientError) -> Transa
 
 
 pub fn encode_transact_write_items_input(input: TransactWriteItemsInput) -> String {
-  json.to_string(encode_transact_write_items_input_struct(input))
+  json.to_string(encode_transact_write_items_input_struct_top(input))
 }
 
 pub fn decode_transact_write_items_input(body: String) -> Result(TransactWriteItemsInput, String) {
@@ -19318,7 +23994,7 @@ pub fn decode_untag_resource_output_struct() -> decode.Decoder(UntagResourceOutp
 }
 
 pub fn encode_untag_resource_input(input: UntagResourceInput) -> String {
-  json.to_string(encode_untag_resource_input_struct(input))
+  json.to_string(encode_untag_resource_input_struct_top(input))
 }
 
 pub fn decode_untag_resource_input(body: String) -> Result(UntagResourceInput, String) {
@@ -19434,7 +24110,7 @@ fn translate_untag_resource_error(err: awsjson_client.ClientError) -> UntagResou
 
 
 pub fn encode_update_continuous_backups_input(input: UpdateContinuousBackupsInput) -> String {
-  json.to_string(encode_update_continuous_backups_input_struct(input))
+  json.to_string(encode_update_continuous_backups_input_struct_top(input))
 }
 
 pub fn decode_update_continuous_backups_input(body: String) -> Result(UpdateContinuousBackupsInput, String) {
@@ -19540,7 +24216,7 @@ fn translate_update_continuous_backups_error(err: awsjson_client.ClientError) ->
 
 
 pub fn encode_update_contributor_insights_input(input: UpdateContributorInsightsInput) -> String {
-  json.to_string(encode_update_contributor_insights_input_struct(input))
+  json.to_string(encode_update_contributor_insights_input_struct_top(input))
 }
 
 pub fn decode_update_contributor_insights_input(body: String) -> Result(UpdateContributorInsightsInput, String) {
@@ -19626,7 +24302,7 @@ fn translate_update_contributor_insights_error(err: awsjson_client.ClientError) 
 
 
 pub fn encode_update_global_table_input(input: UpdateGlobalTableInput) -> String {
-  json.to_string(encode_update_global_table_input_struct(input))
+  json.to_string(encode_update_global_table_input_struct_top(input))
 }
 
 pub fn decode_update_global_table_input(body: String) -> Result(UpdateGlobalTableInput, String) {
@@ -19752,7 +24428,7 @@ fn translate_update_global_table_error(err: awsjson_client.ClientError) -> Updat
 
 
 pub fn encode_update_global_table_settings_input(input: UpdateGlobalTableSettingsInput) -> String {
-  json.to_string(encode_update_global_table_settings_input_struct(input))
+  json.to_string(encode_update_global_table_settings_input_struct_top(input))
 }
 
 pub fn decode_update_global_table_settings_input(body: String) -> Result(UpdateGlobalTableSettingsInput, String) {
@@ -19888,7 +24564,7 @@ fn translate_update_global_table_settings_error(err: awsjson_client.ClientError)
 
 
 pub fn encode_update_item_input(input: UpdateItemInput) -> String {
-  json.to_string(encode_update_item_input_struct(input))
+  json.to_string(encode_update_item_input_struct_top(input))
 }
 
 pub fn decode_update_item_input(body: String) -> Result(UpdateItemInput, String) {
@@ -20054,7 +24730,7 @@ fn translate_update_item_error(err: awsjson_client.ClientError) -> UpdateItemErr
 
 
 pub fn encode_update_kinesis_streaming_destination_input(input: UpdateKinesisStreamingDestinationInput) -> String {
-  json.to_string(encode_update_kinesis_streaming_destination_input_struct(input))
+  json.to_string(encode_update_kinesis_streaming_destination_input_struct_top(input))
 }
 
 pub fn decode_update_kinesis_streaming_destination_input(body: String) -> Result(UpdateKinesisStreamingDestinationInput, String) {
@@ -20170,7 +24846,7 @@ fn translate_update_kinesis_streaming_destination_error(err: awsjson_client.Clie
 
 
 pub fn encode_update_table_input(input: UpdateTableInput) -> String {
-  json.to_string(encode_update_table_input_struct(input))
+  json.to_string(encode_update_table_input_struct_top(input))
 }
 
 pub fn decode_update_table_input(body: String) -> Result(UpdateTableInput, String) {
@@ -20286,7 +24962,7 @@ fn translate_update_table_error(err: awsjson_client.ClientError) -> UpdateTableE
 
 
 pub fn encode_update_table_replica_auto_scaling_input(input: UpdateTableReplicaAutoScalingInput) -> String {
-  json.to_string(encode_update_table_replica_auto_scaling_input_struct(input))
+  json.to_string(encode_update_table_replica_auto_scaling_input_struct_top(input))
 }
 
 pub fn decode_update_table_replica_auto_scaling_input(body: String) -> Result(UpdateTableReplicaAutoScalingInput, String) {
@@ -20392,7 +25068,7 @@ fn translate_update_table_replica_auto_scaling_error(err: awsjson_client.ClientE
 
 
 pub fn encode_update_time_to_live_input(input: UpdateTimeToLiveInput) -> String {
-  json.to_string(encode_update_time_to_live_input_struct(input))
+  json.to_string(encode_update_time_to_live_input_struct_top(input))
 }
 
 pub fn decode_update_time_to_live_input(body: String) -> Result(UpdateTimeToLiveInput, String) {
