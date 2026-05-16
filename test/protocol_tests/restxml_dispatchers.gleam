@@ -39,7 +39,9 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(http_request_with_float_labels_dispatcher())
   |> dispatch.register(http_request_with_greedy_label_in_path_dispatcher())
   |> dispatch.register(http_request_with_labels_dispatcher())
-  |> dispatch.register(http_request_with_labels_and_timestamp_format_dispatcher())
+  |> dispatch.register(
+    http_request_with_labels_and_timestamp_format_dispatcher(),
+  )
   |> dispatch.register(http_response_code_dispatcher())
   |> dispatch.register(http_string_payload_dispatcher())
   |> dispatch.register(ignore_query_params_in_response_dispatcher())
@@ -136,7 +138,9 @@ fn constant_and_variable_query_string_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_constant_and_variable_query_string_response),
+    parse_response: response_parser(
+      svc.parse_constant_and_variable_query_string_response,
+    ),
   )
 }
 
@@ -220,7 +224,9 @@ fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_empty_input_and_empty_output_response),
+    parse_response: response_parser(
+      svc.parse_empty_input_and_empty_output_response,
+    ),
   )
 }
 
@@ -262,7 +268,9 @@ fn endpoint_with_host_label_header_operation_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_endpoint_with_host_label_header_operation_response),
+    parse_response: response_parser(
+      svc.parse_endpoint_with_host_label_header_operation_response,
+    ),
   )
 }
 
@@ -283,7 +291,9 @@ fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_endpoint_with_host_label_operation_response),
+    parse_response: response_parser(
+      svc.parse_endpoint_with_host_label_operation_response,
+    ),
   )
 }
 
@@ -325,7 +335,9 @@ fn flattened_xml_map_with_xml_name_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_flattened_xml_map_with_xml_name_response),
+    parse_response: response_parser(
+      svc.parse_flattened_xml_map_with_xml_name_response,
+    ),
   )
 }
 
@@ -346,7 +358,9 @@ fn flattened_xml_map_with_xml_namespace_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_flattened_xml_map_with_xml_namespace_response),
+    parse_response: response_parser(
+      svc.parse_flattened_xml_map_with_xml_namespace_response,
+    ),
   )
 }
 
@@ -409,7 +423,9 @@ fn http_empty_prefix_headers_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_http_empty_prefix_headers_response),
+    parse_response: response_parser(
+      svc.parse_http_empty_prefix_headers_response,
+    ),
   )
 }
 
@@ -472,7 +488,9 @@ fn http_payload_traits_with_media_type_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_http_payload_traits_with_media_type_response),
+    parse_response: response_parser(
+      svc.parse_http_payload_traits_with_media_type_response,
+    ),
   )
 }
 
@@ -493,7 +511,9 @@ fn http_payload_with_member_xml_name_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_http_payload_with_member_xml_name_response),
+    parse_response: response_parser(
+      svc.parse_http_payload_with_member_xml_name_response,
+    ),
   )
 }
 
@@ -514,7 +534,9 @@ fn http_payload_with_structure_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_http_payload_with_structure_response),
+    parse_response: response_parser(
+      svc.parse_http_payload_with_structure_response,
+    ),
   )
 }
 
@@ -556,7 +578,9 @@ fn http_payload_with_xml_name_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_http_payload_with_xml_name_response),
+    parse_response: response_parser(
+      svc.parse_http_payload_with_xml_name_response,
+    ),
   )
 }
 
@@ -577,7 +601,9 @@ fn http_payload_with_xml_namespace_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_http_payload_with_xml_namespace_response),
+    parse_response: response_parser(
+      svc.parse_http_payload_with_xml_namespace_response,
+    ),
   )
 }
 
@@ -598,7 +624,9 @@ fn http_payload_with_xml_namespace_and_prefix_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_http_payload_with_xml_namespace_and_prefix_response),
+    parse_response: response_parser(
+      svc.parse_http_payload_with_xml_namespace_and_prefix_response,
+    ),
   )
 }
 
@@ -640,7 +668,9 @@ fn http_request_with_float_labels_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_http_request_with_float_labels_response),
+    parse_response: response_parser(
+      svc.parse_http_request_with_float_labels_response,
+    ),
   )
 }
 
@@ -661,7 +691,9 @@ fn http_request_with_greedy_label_in_path_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_http_request_with_greedy_label_in_path_response),
+    parse_response: response_parser(
+      svc.parse_http_request_with_greedy_label_in_path_response,
+    ),
   )
 }
 
@@ -697,13 +729,17 @@ fn http_request_with_labels_and_timestamp_format_dispatcher() -> Dispatcher {
       case svc.decode_http_request_with_labels_and_timestamp_format_input(raw) {
         Ok(input) -> {
           let #(method, uri, headers, body) =
-            svc.build_http_request_with_labels_and_timestamp_format_request(input)
+            svc.build_http_request_with_labels_and_timestamp_format_request(
+              input,
+            )
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_http_request_with_labels_and_timestamp_format_response),
+    parse_response: response_parser(
+      svc.parse_http_request_with_labels_and_timestamp_format_response,
+    ),
   )
 }
 
@@ -766,7 +802,9 @@ fn ignore_query_params_in_response_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_ignore_query_params_in_response_response),
+    parse_response: response_parser(
+      svc.parse_ignore_query_params_in_response_response,
+    ),
   )
 }
 
@@ -787,7 +825,9 @@ fn input_and_output_with_headers_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_input_and_output_with_headers_response),
+    parse_response: response_parser(
+      svc.parse_input_and_output_with_headers_response,
+    ),
   )
 }
 
@@ -829,7 +869,9 @@ fn nested_xml_map_with_xml_name_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_nested_xml_map_with_xml_name_response),
+    parse_response: response_parser(
+      svc.parse_nested_xml_map_with_xml_name_response,
+    ),
   )
 }
 
@@ -892,7 +934,9 @@ fn null_and_empty_headers_client_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_null_and_empty_headers_client_response),
+    parse_response: response_parser(
+      svc.parse_null_and_empty_headers_client_response,
+    ),
   )
 }
 
@@ -913,7 +957,9 @@ fn null_and_empty_headers_server_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_null_and_empty_headers_server_response),
+    parse_response: response_parser(
+      svc.parse_null_and_empty_headers_server_response,
+    ),
   )
 }
 
@@ -934,7 +980,9 @@ fn omits_null_serializes_empty_string_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_omits_null_serializes_empty_string_response),
+    parse_response: response_parser(
+      svc.parse_omits_null_serializes_empty_string_response,
+    ),
   )
 }
 
@@ -955,7 +1003,9 @@ fn put_with_content_encoding_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_put_with_content_encoding_response),
+    parse_response: response_parser(
+      svc.parse_put_with_content_encoding_response,
+    ),
   )
 }
 
@@ -976,7 +1026,9 @@ fn query_idempotency_token_auto_fill_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_query_idempotency_token_auto_fill_response),
+    parse_response: response_parser(
+      svc.parse_query_idempotency_token_auto_fill_response,
+    ),
   )
 }
 
@@ -997,7 +1049,9 @@ fn query_params_as_string_list_map_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_query_params_as_string_list_map_response),
+    parse_response: response_parser(
+      svc.parse_query_params_as_string_list_map_response,
+    ),
   )
 }
 
@@ -1144,7 +1198,9 @@ fn xml_attributes_on_payload_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_xml_attributes_on_payload_response),
+    parse_response: response_parser(
+      svc.parse_xml_attributes_on_payload_response,
+    ),
   )
 }
 
@@ -1158,8 +1214,7 @@ fn xml_blobs_dispatcher() -> Dispatcher {
       }
       case svc.decode_xml_blobs_input(raw) {
         Ok(input) -> {
-          let #(method, uri, headers, body) =
-            svc.build_xml_blobs_request(input)
+          let #(method, uri, headers, body) = svc.build_xml_blobs_request(input)
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
@@ -1263,8 +1318,7 @@ fn xml_enums_dispatcher() -> Dispatcher {
       }
       case svc.decode_xml_enums_input(raw) {
         Ok(input) -> {
-          let #(method, uri, headers, body) =
-            svc.build_xml_enums_request(input)
+          let #(method, uri, headers, body) = svc.build_xml_enums_request(input)
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
@@ -1305,8 +1359,7 @@ fn xml_lists_dispatcher() -> Dispatcher {
       }
       case svc.decode_xml_lists_input(raw) {
         Ok(input) -> {
-          let #(method, uri, headers, body) =
-            svc.build_xml_lists_request(input)
+          let #(method, uri, headers, body) = svc.build_xml_lists_request(input)
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
@@ -1326,8 +1379,7 @@ fn xml_maps_dispatcher() -> Dispatcher {
       }
       case svc.decode_xml_maps_input(raw) {
         Ok(input) -> {
-          let #(method, uri, headers, body) =
-            svc.build_xml_maps_request(input)
+          let #(method, uri, headers, body) = svc.build_xml_maps_request(input)
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
@@ -1375,7 +1427,9 @@ fn xml_map_with_xml_namespace_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_xml_map_with_xml_namespace_response),
+    parse_response: response_parser(
+      svc.parse_xml_map_with_xml_namespace_response,
+    ),
   )
 }
 

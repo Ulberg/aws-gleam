@@ -188,18 +188,28 @@ pub fn float_text(e: Element) -> Result(Float, String) {
 /// where the wire form is already epoch seconds.
 pub fn timestamp_text(e: Element) -> Result(Int, String) {
   let t = string.trim(text_content(e))
+  // Try ISO 8601 first (the protocol default for body timestamps),
+  // then HTTP-date (`Tue, 29 Apr 2014 18:30:38 GMT`, used when
+  // `@timestampFormat("http-date")` is set), then plain epoch.
   case parse_iso8601_ffi(t) {
     Ok(secs) -> Ok(secs)
     Error(_) ->
-      case int.parse(t) {
-        Ok(n) -> Ok(n)
-        Error(_) -> Error("xml: invalid timestamp: " <> t)
+      case parse_http_date_ffi(t) {
+        Ok(secs) -> Ok(secs)
+        Error(_) ->
+          case int.parse(t) {
+            Ok(n) -> Ok(n)
+            Error(_) -> Error("xml: invalid timestamp: " <> t)
+          }
       }
   }
 }
 
 @external(erlang, "aws_ffi", "parse_iso8601")
 fn parse_iso8601_ffi(t: String) -> Result(Int, Nil)
+
+@external(erlang, "aws_ffi", "parse_http_date")
+fn parse_http_date_ffi(t: String) -> Result(Int, Nil)
 
 // ---------- struct-decoder helpers ----------
 

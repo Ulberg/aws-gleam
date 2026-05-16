@@ -558,14 +558,21 @@ fn extract_members(
   |> list.map(fn(pair) {
     let #(name, mem) = pair
     let ShapeId(target) = mem.target
-    // `@jsonName` overrides the wire key for awsJson and restJson1; if
-    // absent, the member name itself is the wire key. The Gleam-side
-    // record field always derives from the Smithy member name (so the
-    // user-facing API doesn't change when the service rebrands a
-    // wire field).
-    let wire_name = case dict.get(mem.traits, ShapeId("smithy.api#jsonName")) {
-      Ok(option.Some(trait.String(s))) -> s
-      _ -> name
+    // The wire-key resolution order is: `@xmlName` (XML-protocol
+    // override), then `@jsonName` (JSON-protocol override), then
+    // the Smithy member name. In practice a member only carries one
+    // of the two traits so order rarely matters; when both are set
+    // the XML override wins because restXml is the only consumer
+    // that reads `@xmlName`. The Gleam-side record field always
+    // derives from the Smithy member name so the user-facing API
+    // doesn't change when the service rebrands a wire field.
+    let wire_name = case
+      dict.get(mem.traits, ShapeId("smithy.api#xmlName")),
+      dict.get(mem.traits, ShapeId("smithy.api#jsonName"))
+    {
+      Ok(option.Some(trait.String(s))), _ -> s
+      _, Ok(option.Some(trait.String(s))) -> s
+      _, _ -> name
     }
     // `@mediaType` overrides Content-Type for `@httpPayload` members.
     // Falls back to the target shape's own `@mediaType` (S3 puts the

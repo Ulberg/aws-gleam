@@ -949,8 +949,15 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> String {
         RPrim(primitive: types.PString) -> "xml_decode.string_text"
         RPrim(primitive: types.PInt) -> "xml_decode.int_text"
         RPrim(primitive: types.PBool) -> "xml_decode.bool_text"
+        RPrim(primitive: types.PFloat) -> "xml_decode.float_text"
+        RTimestamp -> "xml_decode.timestamp_text"
         RStruct(local_name: n, ..) ->
           "decode_" <> stringutils.pascal_to_snake(n) <> "_xml"
+        // IntEnum / Enum / Union lists fall back to the unsupported
+        // placeholder for now — the typed record expects the enum
+        // constructor, but we only have the int / wire form. Inverse
+        // lookup helpers (Int → IntEnum, String → Enum) aren't
+        // emitted yet.
         _ -> "fn(_) { Error(\"xml: unsupported list element\") }"
       }
       "xml_decode.optional_list(elem, \""
@@ -1076,8 +1083,12 @@ fn xml_value_expr(m: MemberDef) -> String {
       <> "\", rest.enum_wire_value("
       <> types.json_encoder(m.target)
       <> "(v)))"
-    RIntEnum(local_name: _, ..) ->
-      "xml.element(\"" <> member_name <> "\", xml.int_text(case v { _ -> 0 }))"
+    RIntEnum(local_name: n, ..) ->
+      "xml.element(\""
+      <> member_name
+      <> "\", xml.int_text("
+      <> stringutils.pascal_to_snake(n)
+      <> "_int_value(v)))"
     RStruct(local_name: name, ..) ->
       "encode_"
       <> stringutils.pascal_to_snake(name)
@@ -1167,6 +1178,8 @@ fn xml_inner_expr_for_list_element(target: Resolved) -> String {
         RBlob -> "xml.blob_text(v)"
         RTimestamp -> "xml.int_text(v)"
         REnum(..) -> "rest.enum_wire_value(" <> types.json_encoder(e) <> "(v))"
+        RIntEnum(local_name: n, ..) ->
+          "xml.int_text(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))"
         RStruct(local_name: n, ..) ->
           // Lists of structs: each entry is an inline struct without
           // an outer wrapper (caller's `<member>...</member>` wraps).
@@ -1395,8 +1408,19 @@ fn emit_query_setup(
         Query(query_name: n) -> n
         _ -> m.json_name
       }
-      case m.target {
-        RList(element: e, ..) ->
+      case m.target, m.idempotency_token {
+        _, True ->
+          // `@idempotencyToken` query members auto-fill via the
+          // runtime FFI when the caller leaves them unset.
+          acc
+          <> "  let query = case input."
+          <> m.snake_name
+          <> " {\n    option.Some(v) -> rest.add_query(query, \""
+          <> query_name
+          <> "\", v)\n    option.None -> rest.add_query(query, \""
+          <> query_name
+          <> "\", rest.idempotency_token())\n  }\n"
+        RList(element: e, ..), _ ->
           acc
           <> "  let query = case input."
           <> m.snake_name
@@ -1405,7 +1429,7 @@ fn emit_query_setup(
           <> "\", "
           <> value_to_string_with_format(e, m.timestamp_format)
           <> ")\n    })\n    option.None -> query\n  }\n"
-        _ ->
+        _, _ ->
           acc
           <> "  let query = case input."
           <> m.snake_name
@@ -1491,27 +1515,47 @@ fn emit_header_setup(
 
 fn emit_payload_body(m: MemberDef) -> String {
   // @httpPayload — the member's value IS the body.
-  //   * blob: raw bytes
-  //   * string: raw string (no JSON quoting)
+  //   * blob: raw bytes; Content-Type defaults to
+  //     `application/octet-stream`, overridden by `@mediaType`.
+  //   * string: raw string (no JSON quoting); Content-Type defaults
+  //     to `text/plain`, overridden by `@mediaType`.
   //   * struct: XML element, root = member's wire name (or @xmlName)
   //   * other: fall back to JSON; restXml services don't put bare
   //     primitives or unions in @httpPayload position in practice.
+  let blob_ct = case m.media_type {
+    option.Some(mt) -> mt
+    option.None -> "application/octet-stream"
+  }
+  let string_ct = case m.media_type {
+    option.Some(mt) -> mt
+    option.None -> "text/plain"
+  }
   case m.target {
     types.RBlob ->
       "  let body = case input."
       <> m.snake_name
-      <> " {\n    option.Some(v) -> v\n    option.None -> <<>>\n  }\n  let content_type = \"application/octet-stream\"\n"
+      <> " {\n    option.Some(v) -> v\n    option.None -> <<>>\n  }\n  let content_type = \""
+      <> blob_ct
+      <> "\"\n"
     RPrim(primitive: types.PString) ->
       "  let body = case input."
       <> m.snake_name
-      <> " {\n    option.Some(v) -> bit_array.from_string(v)\n    option.None -> <<>>\n  }\n  let content_type = \"text/plain\"\n"
+      <> " {\n    option.Some(v) -> bit_array.from_string(v)\n    option.None -> <<>>\n  }\n  let content_type = \""
+      <> string_ct
+      <> "\"\n"
     RStruct(local_name: name, ..) ->
+      // Smithy `@httpPayload` for a struct member: the wire root
+      // element is the **target shape's local name** by default
+      // (`<NestedPayload>` when the payload member targets the
+      // `NestedPayload` struct). `@xmlName` on the target shape
+      // overrides that; on the member, it doesn't apply (the
+      // member is just a routing marker, not a wrapper).
       "  let body = case input."
       <> m.snake_name
       <> " {\n    option.Some(v) -> bit_array.from_string(encode_"
       <> stringutils.pascal_to_snake(name)
       <> "_xml(v, \""
-      <> m.json_name
+      <> name
       <> "\"))\n    option.None -> <<>>\n  }\n  let content_type = \"application/xml\"\n"
     _ ->
       "  let body = case input."
