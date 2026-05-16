@@ -1523,45 +1523,51 @@ fn emit_header_setup(
   headers: List(MemberDef),
   prefix_headers: List(MemberDef),
 ) -> String {
+  // Apply prefix-headers FIRST so explicit `@httpHeader` members
+  // win on key collision. Mirrors restjson; the prior restxml
+  // order let prefix headers shadow the specific binding
+  // (`HttpEmptyPrefixHeaders` test: `prefixHeaders.hello = "Hello"`
+  // and `specificHeader = "There"` bound to `@httpHeader("hello")`
+  // → wire `hello: There`).
   let initial = "  let headers = dict.new()\n"
-  let with_headers =
-    list.fold(headers, initial, fn(acc, m) {
-      let header_name = case m.binding {
-        Header(header_name: n) -> n
-        _ -> m.json_name
+  let with_prefix =
+    list.fold(prefix_headers, initial, fn(acc, m) {
+      let prefix = case m.binding {
+        PrefixHeaders(prefix: p) -> p
+        _ -> ""
       }
-      case m.target {
-        RList(element: e, ..) ->
-          acc
-          <> "  let headers = case input."
-          <> m.snake_name
-          <> " {\n    option.Some(xs) -> rest.maybe_set_list_header(headers, \""
-          <> header_name
-          <> "\", list.map(xs, fn(item) { let v = item "
-          <> value_to_string_for_header(e, m.timestamp_format)
-          <> " }))\n    option.None -> headers\n  }\n"
-        _ ->
-          acc
-          <> "  let headers = case input."
-          <> m.snake_name
-          <> " {\n    option.Some(v) -> rest.maybe_set_header(headers, \""
-          <> header_name
-          <> "\", "
-          <> value_to_string_for_header(m.target, m.timestamp_format)
-          <> ")\n    option.None -> headers\n  }\n"
-      }
+      acc
+      <> "  let headers = case input."
+      <> m.snake_name
+      <> " {\n    option.Some(m) -> rest.add_prefix_headers(headers, \""
+      <> prefix
+      <> "\", m)\n    option.None -> headers\n  }\n"
     })
-  list.fold(prefix_headers, with_headers, fn(acc, m) {
-    let prefix = case m.binding {
-      PrefixHeaders(prefix: p) -> p
-      _ -> ""
+  list.fold(headers, with_prefix, fn(acc, m) {
+    let header_name = case m.binding {
+      Header(header_name: n) -> n
+      _ -> m.json_name
     }
-    acc
-    <> "  let headers = case input."
-    <> m.snake_name
-    <> " {\n    option.Some(m) -> rest.add_prefix_headers(headers, \""
-    <> prefix
-    <> "\", m)\n    option.None -> headers\n  }\n"
+    case m.target {
+      RList(element: e, ..) ->
+        acc
+        <> "  let headers = case input."
+        <> m.snake_name
+        <> " {\n    option.Some(xs) -> rest.maybe_set_list_header(headers, \""
+        <> header_name
+        <> "\", list.map(xs, fn(item) { let v = item "
+        <> value_to_string_for_header(e, m.timestamp_format)
+        <> " }))\n    option.None -> headers\n  }\n"
+      _ ->
+        acc
+        <> "  let headers = case input."
+        <> m.snake_name
+        <> " {\n    option.Some(v) -> rest.maybe_set_header(headers, \""
+        <> header_name
+        <> "\", "
+        <> value_to_string_for_header(m.target, m.timestamp_format)
+        <> ")\n    option.None -> headers\n  }\n"
+    }
   })
 }
 
@@ -1593,6 +1599,17 @@ fn emit_payload_body(m: MemberDef) -> String {
       "  let body = case input."
       <> m.snake_name
       <> " {\n    option.Some(v) -> bit_array.from_string(v)\n    option.None -> <<>>\n  }\n  let content_type = \""
+      <> string_ct
+      <> "\"\n"
+    REnum(local_name: _, ..) ->
+      // `@httpPayload` enum: wire form is the enum's wire value as
+      // plain text. Default Content-Type is `text/plain` (same as
+      // string payloads), overridable via `@mediaType`.
+      "  let body = case input."
+      <> m.snake_name
+      <> " {\n    option.Some(v) -> bit_array.from_string(rest.enum_wire_value("
+      <> types.json_encoder(m.target)
+      <> "(v)))\n    option.None -> <<>>\n  }\n  let content_type = \""
       <> string_ct
       <> "\"\n"
     RStruct(local_name: name, xml_name: xn, ..) -> {

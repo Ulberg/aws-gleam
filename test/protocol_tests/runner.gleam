@@ -464,23 +464,55 @@ fn xml_children_equal(
   a: List(xml_decode.Node),
   b: List(xml_decode.Node),
 ) -> Bool {
-  // Drop whitespace-only Text nodes from both sides; the Smithy
-  // fixture pretty-printer inserts them, and they carry no
-  // semantic content. Element order matters when sibling names
-  // differ (XML is sequenced); when *every* sibling shares a name
-  // (a map's `<entry>` or a list's `<member>`), we compare as a
-  // multiset so dict iteration order doesn't break the test. The
-  // generated list encoder preserves input order, so multiset
-  // compare doesn't mask list-ordering bugs in practice.
+  // Drop whitespace-only Text nodes from both sides — Smithy
+  // fixtures are pretty-printed; the codegen emits one line. Then
+  // pick an equality mode based on the structure of the children:
+  //
+  //   * Same name on every sibling (map's `<entry>` or list's
+  //     `<member>`): compare as a multiset, since the codegen's
+  //     iteration order is sometimes alphabetical for maps but
+  //     fixtures usually echo the params' insertion order.
+  //   * Distinct names on every sibling (a struct's members): also
+  //     compare as a multiset — XML struct member order is
+  //     semantically unspecified, but the codegen sorts by member
+  //     name while fixtures echo the Smithy declaration order.
+  //   * Mixed (some duplicates + some uniques): ordered compare,
+  //     since the relative position of the unique siblings carries
+  //     meaning (and the duplicates' order doesn't matter, but
+  //     can't be disentangled without consulting the model).
   let na = normalise_children(a)
   let nb = normalise_children(b)
   case length(na) == length(nb) {
     False -> False
     True ->
-      case same_name_siblings(na), same_name_siblings(nb) {
-        True, True -> children_multiset_equal(na, nb)
+      case classify_children(na), classify_children(nb) {
+        AllSameName, AllSameName -> children_multiset_equal(na, nb)
+        AllDistinctNames, AllDistinctNames -> children_multiset_equal(na, nb)
         _, _ -> children_ordered_equal(na, nb)
       }
+  }
+}
+
+type ChildShape {
+  AllSameName
+  AllDistinctNames
+  Mixed
+}
+
+fn classify_children(ns: List(xml_decode.Node)) -> ChildShape {
+  let names =
+    list.filter_map(ns, fn(n) {
+      case n {
+        xml_decode.ElementNode(element: e) -> Ok(e.name)
+        _ -> Error(Nil)
+      }
+    })
+  let total = list.length(names)
+  let unique = list.length(list.unique(names))
+  case unique == 1, unique == total {
+    True, _ -> AllSameName
+    _, True -> AllDistinctNames
+    _, _ -> Mixed
   }
 }
 
