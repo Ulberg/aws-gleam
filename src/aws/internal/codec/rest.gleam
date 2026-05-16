@@ -80,9 +80,26 @@ pub fn maybe_set_list_header(
   name: String,
   values: List(String),
 ) -> Dict(String, String) {
-  case values {
-    [] -> headers
-    _ -> dict.insert(headers, name, string.join(values, ", "))
+  // Each entry arrives already rendered as a wire string. Strings are
+  // RFC 7230-quoted by `quote_list_string_entry` at the codegen layer
+  // (only that type needs quoting; numeric / boolean / http-date
+  // values are unambiguous by shape).
+  dict.insert(headers, name, string.join(values, ", "))
+}
+
+/// Generated `@idempotencyToken` value, used when a request member
+/// with that trait is left as `Option.None`. Backed by the runtime
+/// FFI so tests can pin a deterministic UUID via `application:set_env`.
+@external(erlang, "aws_ffi", "idempotency_token")
+pub fn idempotency_token() -> String
+
+/// RFC 7230 list-header quoting for string elements. Smithy applies
+/// this only to string-typed entries — timestamp values use the raw
+/// `Mon, 16 Dec ... GMT` form even though it contains a comma.
+pub fn quote_list_string_entry(v: String) -> String {
+  case string.contains(v, ",") || string.contains(v, "\"") {
+    True -> "\"" <> string.replace(v, "\"", "\\\"") <> "\""
+    False -> v
   }
 }
 
@@ -117,10 +134,10 @@ pub fn maybe_set_header(
   name: String,
   value: String,
 ) -> Dict(String, String) {
-  case value {
-    "" -> headers
-    _ -> dict.insert(headers, name, value)
-  }
+  // Always set, including empty-string values — Smithy's
+  // `@httpHeader` semantics treat `""` as a present (empty) header.
+  // Absent is expressed at the codegen layer by skipping the call.
+  dict.insert(headers, name, value)
 }
 
 /// Iterate `@httpPrefixHeaders` map members: for each entry,

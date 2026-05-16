@@ -7143,7 +7143,7 @@ pub fn build_document_type_as_payload_request(
   let headers = dict.new()
   let body = case input.document_value {
     option.Some(v) -> bit_array.from_string(json.to_string(fn(j) { j }(v)))
-    option.None -> bit_array.from_string("{}")
+    option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type, dict.has_key(headers, "Content-Type") {
@@ -7213,7 +7213,7 @@ pub fn build_duplex_stream_request(
   let headers = dict.new()
   let body = case input.stream {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
-    option.None -> bit_array.from_string("{}")
+    option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type, dict.has_key(headers, "Content-Type") {
@@ -7273,7 +7273,7 @@ pub fn build_duplex_stream_with_distinct_streams_request(
   let headers = dict.new()
   let body = case input.stream {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
-    option.None -> bit_array.from_string("{}")
+    option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type, dict.has_key(headers, "Content-Type") {
@@ -7337,7 +7337,7 @@ pub fn build_duplex_stream_with_initial_messages_request(
   }
   let body = case input.stream {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
-    option.None -> bit_array.from_string("{}")
+    option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type, dict.has_key(headers, "Content-Type") {
@@ -7816,12 +7816,12 @@ pub fn build_http_empty_prefix_headers_request(
   let path = "/HttpEmptyPrefixHeaders"
   let query = ""
   let headers = dict.new()
-  let headers = case input.specific_header {
-    option.Some(v) -> rest.maybe_set_header(headers, "hello", v)
-    option.None -> headers
-  }
   let headers = case input.prefix_headers {
     option.Some(m) -> rest.add_prefix_headers(headers, "", m)
+    option.None -> headers
+  }
+  let headers = case input.specific_header {
+    option.Some(v) -> rest.maybe_set_header(headers, "hello", v)
     option.None -> headers
   }
   let body = <<>>
@@ -8154,7 +8154,7 @@ pub fn build_http_payload_with_union_request(
   let headers = dict.new()
   let body = case input.nested {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_union_payload_union(v)))
-    option.None -> bit_array.from_string("{}")
+    option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type, dict.has_key(headers, "Content-Type") {
@@ -8212,12 +8212,12 @@ pub fn build_http_prefix_headers_request(
   let path = "/HttpPrefixHeaders"
   let query = ""
   let headers = dict.new()
-  let headers = case input.foo {
-    option.Some(v) -> rest.maybe_set_header(headers, "x-foo", v)
-    option.None -> headers
-  }
   let headers = case input.foo_map {
     option.Some(m) -> rest.add_prefix_headers(headers, "x-foo-", m)
+    option.None -> headers
+  }
+  let headers = case input.foo {
+    option.Some(v) -> rest.maybe_set_header(headers, "x-foo", v)
     option.None -> headers
   }
   let body = <<>>
@@ -9064,15 +9064,15 @@ pub fn build_input_and_output_with_headers_request(
     option.None -> headers
   }
   let headers = case input.header_string_list {
-    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-StringList", list.map(xs, fn(item) { let v = item v }))
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-StringList", list.map(xs, fn(item) { let v = item rest.quote_list_string_entry(v) }))
     option.None -> headers
   }
   let headers = case input.header_string_set {
-    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-StringSet", list.map(xs, fn(item) { let v = item v }))
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-StringSet", list.map(xs, fn(item) { let v = item rest.quote_list_string_entry(v) }))
     option.None -> headers
   }
   let headers = case input.header_timestamp_list {
-    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-TimestampList", list.map(xs, fn(item) { let v = item json_timestamp.format_iso8601(v) }))
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-TimestampList", list.map(xs, fn(item) { let v = item json_timestamp.format_http_date(v) }))
     option.None -> headers
   }
   let headers = case input.header_true_bool {
@@ -9151,7 +9151,7 @@ pub fn build_input_stream_request(
   let headers = dict.new()
   let body = case input.stream {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
-    option.None -> bit_array.from_string("{}")
+    option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type, dict.has_key(headers, "Content-Type") {
@@ -9222,7 +9222,7 @@ pub fn build_input_stream_with_initial_request_request(
   }
   let body = case input.stream {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
-    option.None -> bit_array.from_string("{}")
+    option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type, dict.has_key(headers, "Content-Type") {
@@ -11265,7 +11265,7 @@ pub fn build_malformed_string_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.blob {
-    option.Some(v) -> rest.maybe_set_header(headers, "amz-media-typed-header", v)
+    option.Some(v) -> rest.maybe_set_header(headers, "amz-media-typed-header", bit_array.base64_encode(bit_array.from_string(v), True))
     option.None -> headers
   }
   let body = <<>>
@@ -11611,7 +11611,7 @@ pub fn build_malformed_timestamp_header_default_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.timestamp {
-    option.Some(v) -> rest.maybe_set_header(headers, "timestamp", json_timestamp.format_iso8601(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "timestamp", json_timestamp.format_http_date(v))
     option.None -> headers
   }
   let body = <<>>
@@ -12213,7 +12213,7 @@ pub fn build_media_type_header_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.json {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-Json", v)
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Json", bit_array.base64_encode(bit_array.from_string(v), True))
     option.None -> headers
   }
   let body = <<>>
@@ -12429,7 +12429,7 @@ pub fn build_null_and_empty_headers_client_request(
     option.None -> headers
   }
   let headers = case input.c {
-    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-C", list.map(xs, fn(item) { let v = item v }))
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-C", list.map(xs, fn(item) { let v = item rest.quote_list_string_entry(v) }))
     option.None -> headers
   }
   let body = <<>>
@@ -12499,7 +12499,7 @@ pub fn build_null_and_empty_headers_server_request(
     option.None -> headers
   }
   let headers = case input.c {
-    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-C", list.map(xs, fn(item) { let v = item v }))
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-C", list.map(xs, fn(item) { let v = item rest.quote_list_string_entry(v) }))
     option.None -> headers
   }
   let body = <<>>
@@ -13239,7 +13239,7 @@ pub fn build_query_idempotency_token_auto_fill_request(
   let query = ""
   let query = case input.token {
     option.Some(v) -> rest.add_query(query, "token", v)
-    option.None -> query
+    option.None -> rest.add_query(query, "token", rest.idempotency_token())
   }
   let headers = dict.new()
   let body = <<>>
@@ -14552,7 +14552,7 @@ pub fn build_timestamp_format_headers_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.default_format {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-defaultFormat", json_timestamp.format_iso8601(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-defaultFormat", json_timestamp.format_http_date(v))
     option.None -> headers
   }
   let headers = case input.member_date_time {

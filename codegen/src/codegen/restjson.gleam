@@ -1090,8 +1090,19 @@ fn emit_query_setup(
         Query(query_name: n) -> n
         _ -> m.json_name
       }
-      case m.target {
-        RList(element: e, ..) ->
+      case m.target, m.idempotency_token {
+        _, True ->
+          // `@idempotencyToken` query members auto-fill via the
+          // runtime FFI when the caller leaves them unset.
+          acc
+          <> "  let query = case input."
+          <> m.snake_name
+          <> " {\n    option.Some(v) -> rest.add_query(query, \""
+          <> query_name
+          <> "\", v)\n    option.None -> rest.add_query(query, \""
+          <> query_name
+          <> "\", rest.idempotency_token())\n  }\n"
+        RList(element: e, ..), _ ->
           acc
           <> "  let query = case input."
           <> m.snake_name
@@ -1100,7 +1111,7 @@ fn emit_query_setup(
           <> "\", "
           <> value_to_string_with_format(e, m.timestamp_format)
           <> ")\n    })\n    option.None -> query\n  }\n"
-        _ ->
+        _, _ ->
           acc
           <> "  let query = case input."
           <> m.snake_name
@@ -1139,45 +1150,67 @@ fn emit_header_setup(
   headers: List(MemberDef),
   prefix_headers: List(MemberDef),
 ) -> String {
+  // Apply prefix-headers FIRST so explicit `@httpHeader` members
+  // override on key collision (`HttpEmptyPrefixHeaders` test:
+  // `prefixHeaders.hello = "Hello"` then `specificHeader = "There"`
+  // bound to `@httpHeader("hello")` → wire `hello: There`).
   let initial = "  let headers = dict.new()\n"
-  let with_headers =
-    list.fold(headers, initial, fn(acc, m) {
-      let header_name = case m.binding {
-        Header(header_name: n) -> n
-        _ -> m.json_name
+  let with_prefix =
+    list.fold(prefix_headers, initial, fn(acc, m) {
+      let prefix = case m.binding {
+        PrefixHeaders(prefix: p) -> p
+        _ -> ""
       }
-      case m.target {
-        RList(element: e, ..) ->
-          acc
-          <> "  let headers = case input."
-          <> m.snake_name
-          <> " {\n    option.Some(xs) -> rest.maybe_set_list_header(headers, \""
-          <> header_name
-          <> "\", list.map(xs, fn(item) { let v = item "
-          <> value_to_string_with_format(e, m.timestamp_format)
-          <> " }))\n    option.None -> headers\n  }\n"
-        _ ->
-          acc
-          <> "  let headers = case input."
-          <> m.snake_name
-          <> " {\n    option.Some(v) -> rest.maybe_set_header(headers, \""
-          <> header_name
-          <> "\", "
-          <> value_to_string_with_format(m.target, m.timestamp_format)
-          <> ")\n    option.None -> headers\n  }\n"
-      }
+      acc
+      <> "  let headers = case input."
+      <> m.snake_name
+      <> " {\n    option.Some(m) -> rest.add_prefix_headers(headers, \""
+      <> prefix
+      <> "\", m)\n    option.None -> headers\n  }\n"
     })
-  list.fold(prefix_headers, with_headers, fn(acc, m) {
-    let prefix = case m.binding {
-      PrefixHeaders(prefix: p) -> p
-      _ -> ""
+  list.fold(headers, with_prefix, fn(acc, m) {
+    let header_name = case m.binding {
+      Header(header_name: n) -> n
+      _ -> m.json_name
     }
-    acc
-    <> "  let headers = case input."
-    <> m.snake_name
-    <> " {\n    option.Some(m) -> rest.add_prefix_headers(headers, \""
-    <> prefix
-    <> "\", m)\n    option.None -> headers\n  }\n"
+    case m.target {
+      RList(element: e, ..) -> {
+        // String list-header entries get RFC 7230 list-quoting; other
+        // types (numbers, http-date timestamps, enums) use the raw
+        // wire form. Smithy's @httpHeader spec only quotes strings.
+        let render = case e {
+          RPrim(primitive: types.PString) ->
+            "rest.quote_list_string_entry(v)"
+          _ -> value_to_string_full(e, m.timestamp_format, "http-date")
+        }
+        acc
+        <> "  let headers = case input."
+        <> m.snake_name
+        <> " {\n    option.Some(xs) -> rest.maybe_set_list_header(headers, \""
+        <> header_name
+        <> "\", list.map(xs, fn(item) { let v = item "
+        <> render
+        <> " }))\n    option.None -> headers\n  }\n"
+      }
+      _ -> {
+        // `@mediaType` on a `@httpHeader` string member means the
+        // value is opaque to HTTP — base64 the JSON form so commas /
+        // quotes / linefeeds in the payload don't break header parsing.
+        let render = case m.target, m.media_type {
+          RPrim(primitive: types.PString), option.Some(_) ->
+            "bit_array.base64_encode(bit_array.from_string(v), True)"
+          _, _ -> value_to_string_full(m.target, m.timestamp_format, "http-date")
+        }
+        acc
+        <> "  let headers = case input."
+        <> m.snake_name
+        <> " {\n    option.Some(v) -> rest.maybe_set_header(headers, \""
+        <> header_name
+        <> "\", "
+        <> render
+        <> ")\n    option.None -> headers\n  }\n"
+      }
+    }
   })
 }
 
@@ -1253,6 +1286,14 @@ fn value_to_string_with_format(
   target: Resolved,
   timestamp_format: option.Option(String),
 ) -> String {
+  value_to_string_full(target, timestamp_format, "date-time")
+}
+
+fn value_to_string_full(
+  target: Resolved,
+  timestamp_format: option.Option(String),
+  default_ts_format: String,
+) -> String {
   case target {
     RPrim(primitive: types.PString) -> "v"
     RPrim(primitive: types.PInt) -> "rest.int_to_query(v)"
@@ -1265,13 +1306,17 @@ fn value_to_string_with_format(
       "rest.int_to_query("
       <> stringutils.pascal_to_snake(n)
       <> "_int_value(v))"
-    RTimestamp ->
-      case timestamp_format {
-        option.Some("epoch-seconds") -> "rest.int_to_query(v)"
-        option.Some("http-date") -> "json_timestamp.format_http_date(v)"
-        // date-time and the protocol default both produce ISO 8601.
+    RTimestamp -> {
+      let fmt = case timestamp_format {
+        option.Some(f) -> f
+        option.None -> default_ts_format
+      }
+      case fmt {
+        "epoch-seconds" -> "rest.int_to_query(v)"
+        "http-date" -> "json_timestamp.format_http_date(v)"
         _ -> "json_timestamp.format_iso8601(v)"
       }
+    }
     _ -> "\"\""
   }
 }

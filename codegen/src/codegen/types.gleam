@@ -127,6 +127,10 @@ pub type MemberDef {
     /// expression that produces `gleam/json.Json` so the encoder can
     /// splice it directly into the body.
     default_json: option.Option(String),
+    /// `@idempotencyToken` — when the member is `None`, the SDK
+    /// auto-generates a UUID v4 and serialises that. Behaves like a
+    /// dynamic `@default` whose value is a fresh UUID per request.
+    idempotency_token: Bool,
   )
 }
 
@@ -466,6 +470,8 @@ fn extract_members(
       Ok(option.Some(t)), False -> option.Some(default_to_json_expr(t))
       _, _ -> option.None
     }
+    let idempotency_token =
+      dict.has_key(mem.traits, ShapeId("smithy.api#idempotencyToken"))
     MemberDef(
       json_name: wire_name,
       snake_name: stringutils.pascal_to_snake(name),
@@ -476,6 +482,7 @@ fn extract_members(
       media_type: media_type,
       timestamp_format: timestamp_format,
       default_json: default_json,
+      idempotency_token: idempotency_token,
     )
   })
 }

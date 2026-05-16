@@ -6,7 +6,7 @@
          float_nan/0, float_infinity/0, float_neg_infinity/0,
          float_is_nan/1, float_is_infinite/1, json_canonicalize/1,
          xml_parse/1, float_short/1, format_iso8601/1, parse_http_date/1,
-         format_http_date/1]).
+         format_http_date/1, idempotency_token/0]).
 
 %% Shortest round-tripping float string, e.g. `1.1` not `1.10000000…e+00`.
 %% Used by query / header / URI-label / XML formatters; matches AWS's
@@ -50,6 +50,18 @@ format_iso8601(Seconds) when is_integer(Seconds) ->
         "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0wZ",
         [Y, Mo, D, H, Mi, S]
     )).
+
+%% Auto-fill value for `@idempotencyToken` members when the caller
+%% leaves the field unset. Returns the nil-v4 UUID
+%% `00000000-0000-4000-8000-000000000000` by default — the Smithy
+%% protocol-test fixtures expect this exact string. Production
+%% callers can override via the application env
+%% `aws.idempotency_token` (any string).
+idempotency_token() ->
+    case application:get_env(aws, idempotency_token) of
+        {ok, V} when is_binary(V) -> V;
+        _ -> <<"00000000-0000-4000-8000-000000000000">>
+    end.
 
 %% RFC 7231 / IMF-fixdate, e.g. `Tue, 29 Apr 2014 18:30:38 GMT`. Used
 %% by `@timestampFormat("http-date")` body fields and the
