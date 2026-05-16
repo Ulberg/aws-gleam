@@ -141,6 +141,7 @@ pub fn encode_all_query_string_types_input_struct(input: AllQueryStringTypesInpu
 }
 
 pub fn decode_all_query_string_types_input_struct() -> decode.Decoder(AllQueryStringTypesInput) {
+  use <- decode.recursive
   use query_boolean <- decode.optional_field("queryBoolean", option.None, decode.optional(decode.bool))
   use query_boolean_list <- decode.optional_field("queryBooleanList", option.None, decode.optional(decode.list(decode.bool)))
   use query_byte <- decode.optional_field("queryByte", option.None, decode.optional(decode.int))
@@ -188,6 +189,7 @@ pub fn decode_all_query_string_types_input_struct() -> decode.Decoder(AllQuerySt
 }
 
 pub fn decode_all_query_string_types_input_struct_params() -> decode.Decoder(AllQueryStringTypesInput) {
+  use <- decode.recursive
   use query_boolean <- decode.optional_field("queryBoolean", option.None, decode.optional(decode.bool))
   use query_boolean_list <- decode.optional_field("queryBooleanList", option.None, decode.optional(decode.list(decode.bool)))
   use query_byte <- decode.optional_field("queryByte", option.None, decode.optional(decode.int))
@@ -368,6 +370,7 @@ pub fn encode_body_with_xml_name_input_output_struct(input: BodyWithXmlNameInput
 }
 
 pub fn decode_body_with_xml_name_input_output_struct() -> decode.Decoder(BodyWithXmlNameInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_name_struct()))
   decode.success(BodyWithXmlNameInputOutput(
     nested: nested,
@@ -375,6 +378,7 @@ pub fn decode_body_with_xml_name_input_output_struct() -> decode.Decoder(BodyWit
 }
 
 pub fn decode_body_with_xml_name_input_output_struct_params() -> decode.Decoder(BodyWithXmlNameInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_name_struct_params()))
   decode.success(BodyWithXmlNameInputOutput(
     nested: nested,
@@ -415,6 +419,7 @@ pub fn encode_payload_with_xml_name_struct(input: PayloadWithXmlName) -> json.Js
 }
 
 pub fn decode_payload_with_xml_name_struct() -> decode.Decoder(PayloadWithXmlName) {
+  use <- decode.recursive
   use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
   decode.success(PayloadWithXmlName(
     name: name,
@@ -422,6 +427,7 @@ pub fn decode_payload_with_xml_name_struct() -> decode.Decoder(PayloadWithXmlNam
 }
 
 pub fn decode_payload_with_xml_name_struct_params() -> decode.Decoder(PayloadWithXmlName) {
+  use <- decode.recursive
   use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
   decode.success(PayloadWithXmlName(
     name: name,
@@ -466,6 +472,7 @@ pub fn encode_constant_and_variable_query_string_input_struct(input: ConstantAnd
 }
 
 pub fn decode_constant_and_variable_query_string_input_struct() -> decode.Decoder(ConstantAndVariableQueryStringInput) {
+  use <- decode.recursive
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   use maybe_set <- decode.optional_field("maybeSet", option.None, decode.optional(decode.string))
   decode.success(ConstantAndVariableQueryStringInput(
@@ -475,6 +482,7 @@ pub fn decode_constant_and_variable_query_string_input_struct() -> decode.Decode
 }
 
 pub fn decode_constant_and_variable_query_string_input_struct_params() -> decode.Decoder(ConstantAndVariableQueryStringInput) {
+  use <- decode.recursive
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   use maybe_set <- decode.optional_field("maybeSet", option.None, decode.optional(decode.string))
   decode.success(ConstantAndVariableQueryStringInput(
@@ -515,6 +523,7 @@ pub fn encode_constant_query_string_input_struct(input: ConstantQueryStringInput
 }
 
 pub fn decode_constant_query_string_input_struct() -> decode.Decoder(ConstantQueryStringInput) {
+  use <- decode.recursive
   use hello <- decode.optional_field("hello", option.None, decode.optional(decode.string))
   decode.success(ConstantQueryStringInput(
     hello: hello,
@@ -522,6 +531,7 @@ pub fn decode_constant_query_string_input_struct() -> decode.Decoder(ConstantQue
 }
 
 pub fn decode_constant_query_string_input_struct_params() -> decode.Decoder(ConstantQueryStringInput) {
+  use <- decode.recursive
   use hello <- decode.optional_field("hello", option.None, decode.optional(decode.string))
   decode.success(ConstantQueryStringInput(
     hello: hello,
@@ -558,6 +568,7 @@ pub fn encode_content_type_parameters_input_struct(input: ContentTypeParametersI
 }
 
 pub fn decode_content_type_parameters_input_struct() -> decode.Decoder(ContentTypeParametersInput) {
+  use <- decode.recursive
   use value <- decode.optional_field("value", option.None, decode.optional(decode.int))
   decode.success(ContentTypeParametersInput(
     value: value,
@@ -565,6 +576,7 @@ pub fn decode_content_type_parameters_input_struct() -> decode.Decoder(ContentTy
 }
 
 pub fn decode_content_type_parameters_input_struct_params() -> decode.Decoder(ContentTypeParametersInput) {
+  use <- decode.recursive
   use value <- decode.optional_field("value", option.None, decode.optional(decode.int))
   decode.success(ContentTypeParametersInput(
     value: value,
@@ -633,6 +645,7 @@ pub fn encode_datetime_offsets_output_struct(input: DatetimeOffsetsOutput) -> js
 }
 
 pub fn decode_datetime_offsets_output_struct() -> decode.Decoder(DatetimeOffsetsOutput) {
+  use <- decode.recursive
   use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(DatetimeOffsetsOutput(
     datetime: datetime,
@@ -640,6 +653,7 @@ pub fn decode_datetime_offsets_output_struct() -> decode.Decoder(DatetimeOffsets
 }
 
 pub fn decode_datetime_offsets_output_struct_params() -> decode.Decoder(DatetimeOffsetsOutput) {
+  use <- decode.recursive
   use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(DatetimeOffsetsOutput(
     datetime: datetime,
@@ -736,6 +750,7 @@ pub fn encode_host_label_header_input_struct(input: HostLabelHeaderInput) -> jso
 }
 
 pub fn decode_host_label_header_input_struct() -> decode.Decoder(HostLabelHeaderInput) {
+  use <- decode.recursive
   use account_id <- decode.optional_field("accountId", option.None, decode.optional(decode.string))
   decode.success(HostLabelHeaderInput(
     account_id: account_id,
@@ -743,6 +758,7 @@ pub fn decode_host_label_header_input_struct() -> decode.Decoder(HostLabelHeader
 }
 
 pub fn decode_host_label_header_input_struct_params() -> decode.Decoder(HostLabelHeaderInput) {
+  use <- decode.recursive
   use account_id <- decode.optional_field("accountId", option.None, decode.optional(decode.string))
   decode.success(HostLabelHeaderInput(
     account_id: account_id,
@@ -779,6 +795,7 @@ pub fn encode_endpoint_with_host_label_operation_request_struct(input: EndpointW
 }
 
 pub fn decode_endpoint_with_host_label_operation_request_struct() -> decode.Decoder(EndpointWithHostLabelOperationRequest) {
+  use <- decode.recursive
   use label <- decode.optional_field("label", option.None, decode.optional(decode.string))
   decode.success(EndpointWithHostLabelOperationRequest(
     label: label,
@@ -786,6 +803,7 @@ pub fn decode_endpoint_with_host_label_operation_request_struct() -> decode.Deco
 }
 
 pub fn decode_endpoint_with_host_label_operation_request_struct_params() -> decode.Decoder(EndpointWithHostLabelOperationRequest) {
+  use <- decode.recursive
   use label <- decode.optional_field("label", option.None, decode.optional(decode.string))
   decode.success(EndpointWithHostLabelOperationRequest(
     label: label,
@@ -826,6 +844,7 @@ pub fn encode_flattened_xml_map_request_struct(input: FlattenedXmlMapRequest) ->
 }
 
 pub fn decode_flattened_xml_map_request_struct() -> decode.Decoder(FlattenedXmlMapRequest) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_foo_enum_enum())))
   decode.success(FlattenedXmlMapRequest(
     my_map: my_map,
@@ -833,6 +852,7 @@ pub fn decode_flattened_xml_map_request_struct() -> decode.Decoder(FlattenedXmlM
 }
 
 pub fn decode_flattened_xml_map_request_struct_params() -> decode.Decoder(FlattenedXmlMapRequest) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_foo_enum_enum())))
   decode.success(FlattenedXmlMapRequest(
     my_map: my_map,
@@ -874,6 +894,7 @@ pub fn encode_flattened_xml_map_response_struct(input: FlattenedXmlMapResponse) 
 }
 
 pub fn decode_flattened_xml_map_response_struct() -> decode.Decoder(FlattenedXmlMapResponse) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_foo_enum_enum())))
   decode.success(FlattenedXmlMapResponse(
     my_map: my_map,
@@ -881,6 +902,7 @@ pub fn decode_flattened_xml_map_response_struct() -> decode.Decoder(FlattenedXml
 }
 
 pub fn decode_flattened_xml_map_response_struct_params() -> decode.Decoder(FlattenedXmlMapResponse) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_foo_enum_enum())))
   decode.success(FlattenedXmlMapResponse(
     my_map: my_map,
@@ -922,6 +944,7 @@ pub fn encode_flattened_xml_map_with_xml_name_request_struct(input: FlattenedXml
 }
 
 pub fn decode_flattened_xml_map_with_xml_name_request_struct() -> decode.Decoder(FlattenedXmlMapWithXmlNameRequest) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(FlattenedXmlMapWithXmlNameRequest(
     my_map: my_map,
@@ -929,6 +952,7 @@ pub fn decode_flattened_xml_map_with_xml_name_request_struct() -> decode.Decoder
 }
 
 pub fn decode_flattened_xml_map_with_xml_name_request_struct_params() -> decode.Decoder(FlattenedXmlMapWithXmlNameRequest) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(FlattenedXmlMapWithXmlNameRequest(
     my_map: my_map,
@@ -970,6 +994,7 @@ pub fn encode_flattened_xml_map_with_xml_name_response_struct(input: FlattenedXm
 }
 
 pub fn decode_flattened_xml_map_with_xml_name_response_struct() -> decode.Decoder(FlattenedXmlMapWithXmlNameResponse) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(FlattenedXmlMapWithXmlNameResponse(
     my_map: my_map,
@@ -977,6 +1002,7 @@ pub fn decode_flattened_xml_map_with_xml_name_response_struct() -> decode.Decode
 }
 
 pub fn decode_flattened_xml_map_with_xml_name_response_struct_params() -> decode.Decoder(FlattenedXmlMapWithXmlNameResponse) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(FlattenedXmlMapWithXmlNameResponse(
     my_map: my_map,
@@ -1018,6 +1044,7 @@ pub fn encode_flattened_xml_map_with_xml_namespace_output_struct(input: Flattene
 }
 
 pub fn decode_flattened_xml_map_with_xml_namespace_output_struct() -> decode.Decoder(FlattenedXmlMapWithXmlNamespaceOutput) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(FlattenedXmlMapWithXmlNamespaceOutput(
     my_map: my_map,
@@ -1025,6 +1052,7 @@ pub fn decode_flattened_xml_map_with_xml_namespace_output_struct() -> decode.Dec
 }
 
 pub fn decode_flattened_xml_map_with_xml_namespace_output_struct_params() -> decode.Decoder(FlattenedXmlMapWithXmlNamespaceOutput) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(FlattenedXmlMapWithXmlNamespaceOutput(
     my_map: my_map,
@@ -1066,6 +1094,7 @@ pub fn encode_fractional_seconds_output_struct(input: FractionalSecondsOutput) -
 }
 
 pub fn decode_fractional_seconds_output_struct() -> decode.Decoder(FractionalSecondsOutput) {
+  use <- decode.recursive
   use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(FractionalSecondsOutput(
     datetime: datetime,
@@ -1073,6 +1102,7 @@ pub fn decode_fractional_seconds_output_struct() -> decode.Decoder(FractionalSec
 }
 
 pub fn decode_fractional_seconds_output_struct_params() -> decode.Decoder(FractionalSecondsOutput) {
+  use <- decode.recursive
   use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(FractionalSecondsOutput(
     datetime: datetime,
@@ -1113,6 +1143,7 @@ pub fn encode_greeting_with_errors_output_struct(input: GreetingWithErrorsOutput
 }
 
 pub fn decode_greeting_with_errors_output_struct() -> decode.Decoder(GreetingWithErrorsOutput) {
+  use <- decode.recursive
   use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
   decode.success(GreetingWithErrorsOutput(
     greeting: greeting,
@@ -1120,6 +1151,7 @@ pub fn decode_greeting_with_errors_output_struct() -> decode.Decoder(GreetingWit
 }
 
 pub fn decode_greeting_with_errors_output_struct_params() -> decode.Decoder(GreetingWithErrorsOutput) {
+  use <- decode.recursive
   use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
   decode.success(GreetingWithErrorsOutput(
     greeting: greeting,
@@ -1164,6 +1196,7 @@ pub fn encode_complex_error_struct(input: ComplexError) -> json.Json {
 }
 
 pub fn decode_complex_error_struct() -> decode.Decoder(ComplexError) {
+  use <- decode.recursive
   use header <- decode.optional_field("Header", option.None, decode.optional(decode.string))
   use nested <- decode.optional_field("Nested", option.None, decode.optional(decode_complex_nested_error_data_struct()))
   use top_level <- decode.optional_field("TopLevel", option.None, decode.optional(decode.string))
@@ -1175,6 +1208,7 @@ pub fn decode_complex_error_struct() -> decode.Decoder(ComplexError) {
 }
 
 pub fn decode_complex_error_struct_params() -> decode.Decoder(ComplexError) {
+  use <- decode.recursive
   use header <- decode.optional_field("Header", option.None, decode.optional(decode.string))
   use nested <- decode.optional_field("Nested", option.None, decode.optional(decode_complex_nested_error_data_struct_params()))
   use top_level <- decode.optional_field("TopLevel", option.None, decode.optional(decode.string))
@@ -1227,6 +1261,7 @@ pub fn encode_complex_nested_error_data_struct(input: ComplexNestedErrorData) ->
 }
 
 pub fn decode_complex_nested_error_data_struct() -> decode.Decoder(ComplexNestedErrorData) {
+  use <- decode.recursive
   use foo <- decode.optional_field("Foo", option.None, decode.optional(decode.string))
   decode.success(ComplexNestedErrorData(
     foo: foo,
@@ -1234,6 +1269,7 @@ pub fn decode_complex_nested_error_data_struct() -> decode.Decoder(ComplexNested
 }
 
 pub fn decode_complex_nested_error_data_struct_params() -> decode.Decoder(ComplexNestedErrorData) {
+  use <- decode.recursive
   use foo <- decode.optional_field("Foo", option.None, decode.optional(decode.string))
   decode.success(ComplexNestedErrorData(
     foo: foo,
@@ -1274,6 +1310,7 @@ pub fn encode_invalid_greeting_struct(input: InvalidGreeting) -> json.Json {
 }
 
 pub fn decode_invalid_greeting_struct() -> decode.Decoder(InvalidGreeting) {
+  use <- decode.recursive
   use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
   decode.success(InvalidGreeting(
     message: message,
@@ -1281,6 +1318,7 @@ pub fn decode_invalid_greeting_struct() -> decode.Decoder(InvalidGreeting) {
 }
 
 pub fn decode_invalid_greeting_struct_params() -> decode.Decoder(InvalidGreeting) {
+  use <- decode.recursive
   use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
   decode.success(InvalidGreeting(
     message: message,
@@ -1325,6 +1363,7 @@ pub fn encode_http_empty_prefix_headers_input_struct(input: HttpEmptyPrefixHeade
 }
 
 pub fn decode_http_empty_prefix_headers_input_struct() -> decode.Decoder(HttpEmptyPrefixHeadersInput) {
+  use <- decode.recursive
   use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use specific_header <- decode.optional_field("specificHeader", option.None, decode.optional(decode.string))
   decode.success(HttpEmptyPrefixHeadersInput(
@@ -1334,6 +1373,7 @@ pub fn decode_http_empty_prefix_headers_input_struct() -> decode.Decoder(HttpEmp
 }
 
 pub fn decode_http_empty_prefix_headers_input_struct_params() -> decode.Decoder(HttpEmptyPrefixHeadersInput) {
+  use <- decode.recursive
   use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use specific_header <- decode.optional_field("specificHeader", option.None, decode.optional(decode.string))
   decode.success(HttpEmptyPrefixHeadersInput(
@@ -1378,6 +1418,7 @@ pub fn encode_http_empty_prefix_headers_output_struct(input: HttpEmptyPrefixHead
 }
 
 pub fn decode_http_empty_prefix_headers_output_struct() -> decode.Decoder(HttpEmptyPrefixHeadersOutput) {
+  use <- decode.recursive
   use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use specific_header <- decode.optional_field("specificHeader", option.None, decode.optional(decode.string))
   decode.success(HttpEmptyPrefixHeadersOutput(
@@ -1387,6 +1428,7 @@ pub fn decode_http_empty_prefix_headers_output_struct() -> decode.Decoder(HttpEm
 }
 
 pub fn decode_http_empty_prefix_headers_output_struct_params() -> decode.Decoder(HttpEmptyPrefixHeadersOutput) {
+  use <- decode.recursive
   use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use specific_header <- decode.optional_field("specificHeader", option.None, decode.optional(decode.string))
   decode.success(HttpEmptyPrefixHeadersOutput(
@@ -1427,6 +1469,7 @@ pub fn encode_enum_payload_input_struct(input: EnumPayloadInput) -> json.Json {
 }
 
 pub fn decode_enum_payload_input_struct() -> decode.Decoder(EnumPayloadInput) {
+  use <- decode.recursive
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_string_enum_enum()))
   decode.success(EnumPayloadInput(
     payload: payload,
@@ -1434,6 +1477,7 @@ pub fn decode_enum_payload_input_struct() -> decode.Decoder(EnumPayloadInput) {
 }
 
 pub fn decode_enum_payload_input_struct_params() -> decode.Decoder(EnumPayloadInput) {
+  use <- decode.recursive
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_string_enum_enum()))
   decode.success(EnumPayloadInput(
     payload: payload,
@@ -1493,6 +1537,7 @@ pub fn encode_http_payload_traits_input_output_struct(input: HttpPayloadTraitsIn
 }
 
 pub fn decode_http_payload_traits_input_output_struct() -> decode.Decoder(HttpPayloadTraitsInputOutput) {
+  use <- decode.recursive
   use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(HttpPayloadTraitsInputOutput(
@@ -1502,6 +1547,7 @@ pub fn decode_http_payload_traits_input_output_struct() -> decode.Decoder(HttpPa
 }
 
 pub fn decode_http_payload_traits_input_output_struct_params() -> decode.Decoder(HttpPayloadTraitsInputOutput) {
+  use <- decode.recursive
   use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(HttpPayloadTraitsInputOutput(
@@ -1546,6 +1592,7 @@ pub fn encode_http_payload_traits_with_media_type_input_output_struct(input: Htt
 }
 
 pub fn decode_http_payload_traits_with_media_type_input_output_struct() -> decode.Decoder(HttpPayloadTraitsWithMediaTypeInputOutput) {
+  use <- decode.recursive
   use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(HttpPayloadTraitsWithMediaTypeInputOutput(
@@ -1555,6 +1602,7 @@ pub fn decode_http_payload_traits_with_media_type_input_output_struct() -> decod
 }
 
 pub fn decode_http_payload_traits_with_media_type_input_output_struct_params() -> decode.Decoder(HttpPayloadTraitsWithMediaTypeInputOutput) {
+  use <- decode.recursive
   use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(HttpPayloadTraitsWithMediaTypeInputOutput(
@@ -1595,6 +1643,7 @@ pub fn encode_http_payload_with_member_xml_name_input_output_struct(input: HttpP
 }
 
 pub fn decode_http_payload_with_member_xml_name_input_output_struct() -> decode.Decoder(HttpPayloadWithMemberXmlNameInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_name_struct()))
   decode.success(HttpPayloadWithMemberXmlNameInputOutput(
     nested: nested,
@@ -1602,6 +1651,7 @@ pub fn decode_http_payload_with_member_xml_name_input_output_struct() -> decode.
 }
 
 pub fn decode_http_payload_with_member_xml_name_input_output_struct_params() -> decode.Decoder(HttpPayloadWithMemberXmlNameInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_name_struct_params()))
   decode.success(HttpPayloadWithMemberXmlNameInputOutput(
     nested: nested,
@@ -1638,6 +1688,7 @@ pub fn encode_http_payload_with_structure_input_output_struct(input: HttpPayload
 }
 
 pub fn decode_http_payload_with_structure_input_output_struct() -> decode.Decoder(HttpPayloadWithStructureInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_nested_payload_struct()))
   decode.success(HttpPayloadWithStructureInputOutput(
     nested: nested,
@@ -1645,6 +1696,7 @@ pub fn decode_http_payload_with_structure_input_output_struct() -> decode.Decode
 }
 
 pub fn decode_http_payload_with_structure_input_output_struct_params() -> decode.Decoder(HttpPayloadWithStructureInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_nested_payload_struct_params()))
   decode.success(HttpPayloadWithStructureInputOutput(
     nested: nested,
@@ -1685,6 +1737,7 @@ pub fn encode_nested_payload_struct(input: NestedPayload) -> json.Json {
 }
 
 pub fn decode_nested_payload_struct() -> decode.Decoder(NestedPayload) {
+  use <- decode.recursive
   use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
   use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
   decode.success(NestedPayload(
@@ -1694,6 +1747,7 @@ pub fn decode_nested_payload_struct() -> decode.Decoder(NestedPayload) {
 }
 
 pub fn decode_nested_payload_struct_params() -> decode.Decoder(NestedPayload) {
+  use <- decode.recursive
   use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
   use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
   decode.success(NestedPayload(
@@ -1742,6 +1796,7 @@ pub fn encode_http_payload_with_union_input_output_struct(input: HttpPayloadWith
 }
 
 pub fn decode_http_payload_with_union_input_output_struct() -> decode.Decoder(HttpPayloadWithUnionInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_union_payload_union()))
   decode.success(HttpPayloadWithUnionInputOutput(
     nested: nested,
@@ -1749,6 +1804,7 @@ pub fn decode_http_payload_with_union_input_output_struct() -> decode.Decoder(Ht
 }
 
 pub fn decode_http_payload_with_union_input_output_struct_params() -> decode.Decoder(HttpPayloadWithUnionInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_union_payload_union_params()))
   decode.success(HttpPayloadWithUnionInputOutput(
     nested: nested,
@@ -1782,6 +1838,7 @@ pub fn encode_union_payload_union(v: UnionPayload) -> json.Json {
 }
 
 pub fn decode_union_payload_union() -> decode.Decoder(UnionPayload) {
+  use <- decode.recursive
   decode.one_of(
     decode.field("greeting", decode.string, fn(x) { decode.success(UnionPayloadGreeting(x)) }),
     [
@@ -1790,6 +1847,7 @@ pub fn decode_union_payload_union() -> decode.Decoder(UnionPayload) {
 }
 
 pub fn decode_union_payload_union_params() -> decode.Decoder(UnionPayload) {
+  use <- decode.recursive
   decode.one_of(
     decode.field("greeting", decode.string, fn(x) { decode.success(UnionPayloadGreeting(x)) }),
     [
@@ -1811,6 +1869,7 @@ pub fn encode_http_payload_with_xml_name_input_output_struct(input: HttpPayloadW
 }
 
 pub fn decode_http_payload_with_xml_name_input_output_struct() -> decode.Decoder(HttpPayloadWithXmlNameInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_name_struct()))
   decode.success(HttpPayloadWithXmlNameInputOutput(
     nested: nested,
@@ -1818,6 +1877,7 @@ pub fn decode_http_payload_with_xml_name_input_output_struct() -> decode.Decoder
 }
 
 pub fn decode_http_payload_with_xml_name_input_output_struct_params() -> decode.Decoder(HttpPayloadWithXmlNameInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_name_struct_params()))
   decode.success(HttpPayloadWithXmlNameInputOutput(
     nested: nested,
@@ -1854,6 +1914,7 @@ pub fn encode_http_payload_with_xml_namespace_input_output_struct(input: HttpPay
 }
 
 pub fn decode_http_payload_with_xml_namespace_input_output_struct() -> decode.Decoder(HttpPayloadWithXmlNamespaceInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_namespace_struct()))
   decode.success(HttpPayloadWithXmlNamespaceInputOutput(
     nested: nested,
@@ -1861,6 +1922,7 @@ pub fn decode_http_payload_with_xml_namespace_input_output_struct() -> decode.De
 }
 
 pub fn decode_http_payload_with_xml_namespace_input_output_struct_params() -> decode.Decoder(HttpPayloadWithXmlNamespaceInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_namespace_struct_params()))
   decode.success(HttpPayloadWithXmlNamespaceInputOutput(
     nested: nested,
@@ -1897,6 +1959,7 @@ pub fn encode_payload_with_xml_namespace_struct(input: PayloadWithXmlNamespace) 
 }
 
 pub fn decode_payload_with_xml_namespace_struct() -> decode.Decoder(PayloadWithXmlNamespace) {
+  use <- decode.recursive
   use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
   decode.success(PayloadWithXmlNamespace(
     name: name,
@@ -1904,6 +1967,7 @@ pub fn decode_payload_with_xml_namespace_struct() -> decode.Decoder(PayloadWithX
 }
 
 pub fn decode_payload_with_xml_namespace_struct_params() -> decode.Decoder(PayloadWithXmlNamespace) {
+  use <- decode.recursive
   use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
   decode.success(PayloadWithXmlNamespace(
     name: name,
@@ -1944,6 +2008,7 @@ pub fn encode_http_payload_with_xml_namespace_and_prefix_input_output_struct(inp
 }
 
 pub fn decode_http_payload_with_xml_namespace_and_prefix_input_output_struct() -> decode.Decoder(HttpPayloadWithXmlNamespaceAndPrefixInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_namespace_and_prefix_struct()))
   decode.success(HttpPayloadWithXmlNamespaceAndPrefixInputOutput(
     nested: nested,
@@ -1951,6 +2016,7 @@ pub fn decode_http_payload_with_xml_namespace_and_prefix_input_output_struct() -
 }
 
 pub fn decode_http_payload_with_xml_namespace_and_prefix_input_output_struct_params() -> decode.Decoder(HttpPayloadWithXmlNamespaceAndPrefixInputOutput) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_namespace_and_prefix_struct_params()))
   decode.success(HttpPayloadWithXmlNamespaceAndPrefixInputOutput(
     nested: nested,
@@ -1987,6 +2053,7 @@ pub fn encode_payload_with_xml_namespace_and_prefix_struct(input: PayloadWithXml
 }
 
 pub fn decode_payload_with_xml_namespace_and_prefix_struct() -> decode.Decoder(PayloadWithXmlNamespaceAndPrefix) {
+  use <- decode.recursive
   use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
   decode.success(PayloadWithXmlNamespaceAndPrefix(
     name: name,
@@ -1994,6 +2061,7 @@ pub fn decode_payload_with_xml_namespace_and_prefix_struct() -> decode.Decoder(P
 }
 
 pub fn decode_payload_with_xml_namespace_and_prefix_struct_params() -> decode.Decoder(PayloadWithXmlNamespaceAndPrefix) {
+  use <- decode.recursive
   use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
   decode.success(PayloadWithXmlNamespaceAndPrefix(
     name: name,
@@ -2038,6 +2106,7 @@ pub fn encode_http_prefix_headers_input_output_struct(input: HttpPrefixHeadersIn
 }
 
 pub fn decode_http_prefix_headers_input_output_struct() -> decode.Decoder(HttpPrefixHeadersInputOutput) {
+  use <- decode.recursive
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   use foo_map <- decode.optional_field("fooMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(HttpPrefixHeadersInputOutput(
@@ -2047,6 +2116,7 @@ pub fn decode_http_prefix_headers_input_output_struct() -> decode.Decoder(HttpPr
 }
 
 pub fn decode_http_prefix_headers_input_output_struct_params() -> decode.Decoder(HttpPrefixHeadersInputOutput) {
+  use <- decode.recursive
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   use foo_map <- decode.optional_field("fooMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(HttpPrefixHeadersInputOutput(
@@ -2091,6 +2161,7 @@ pub fn encode_http_request_with_float_labels_input_struct(input: HttpRequestWith
 }
 
 pub fn decode_http_request_with_float_labels_input_struct() -> decode.Decoder(HttpRequestWithFloatLabelsInput) {
+  use <- decode.recursive
   use double <- decode.optional_field("double", option.None, decode.optional(json_float.decoder()))
   use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
   decode.success(HttpRequestWithFloatLabelsInput(
@@ -2100,6 +2171,7 @@ pub fn decode_http_request_with_float_labels_input_struct() -> decode.Decoder(Ht
 }
 
 pub fn decode_http_request_with_float_labels_input_struct_params() -> decode.Decoder(HttpRequestWithFloatLabelsInput) {
+  use <- decode.recursive
   use double <- decode.optional_field("double", option.None, decode.optional(json_float.decoder()))
   use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
   decode.success(HttpRequestWithFloatLabelsInput(
@@ -2144,6 +2216,7 @@ pub fn encode_http_request_with_greedy_label_in_path_input_struct(input: HttpReq
 }
 
 pub fn decode_http_request_with_greedy_label_in_path_input_struct() -> decode.Decoder(HttpRequestWithGreedyLabelInPathInput) {
+  use <- decode.recursive
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(HttpRequestWithGreedyLabelInPathInput(
@@ -2153,6 +2226,7 @@ pub fn decode_http_request_with_greedy_label_in_path_input_struct() -> decode.De
 }
 
 pub fn decode_http_request_with_greedy_label_in_path_input_struct_params() -> decode.Decoder(HttpRequestWithGreedyLabelInPathInput) {
+  use <- decode.recursive
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(HttpRequestWithGreedyLabelInPathInput(
@@ -2221,6 +2295,7 @@ pub fn encode_http_request_with_labels_input_struct(input: HttpRequestWithLabels
 }
 
 pub fn decode_http_request_with_labels_input_struct() -> decode.Decoder(HttpRequestWithLabelsInput) {
+  use <- decode.recursive
   use boolean <- decode.optional_field("boolean", option.None, decode.optional(decode.bool))
   use double <- decode.optional_field("double", option.None, decode.optional(json_float.decoder()))
   use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
@@ -2242,6 +2317,7 @@ pub fn decode_http_request_with_labels_input_struct() -> decode.Decoder(HttpRequ
 }
 
 pub fn decode_http_request_with_labels_input_struct_params() -> decode.Decoder(HttpRequestWithLabelsInput) {
+  use <- decode.recursive
   use boolean <- decode.optional_field("boolean", option.None, decode.optional(decode.bool))
   use double <- decode.optional_field("double", option.None, decode.optional(json_float.decoder()))
   use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
@@ -2330,6 +2406,7 @@ pub fn encode_http_request_with_labels_and_timestamp_format_input_struct(input: 
 }
 
 pub fn decode_http_request_with_labels_and_timestamp_format_input_struct() -> decode.Decoder(HttpRequestWithLabelsAndTimestampFormatInput) {
+  use <- decode.recursive
   use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(json_timestamp.decoder()))
   use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
@@ -2349,6 +2426,7 @@ pub fn decode_http_request_with_labels_and_timestamp_format_input_struct() -> de
 }
 
 pub fn decode_http_request_with_labels_and_timestamp_format_input_struct_params() -> decode.Decoder(HttpRequestWithLabelsAndTimestampFormatInput) {
+  use <- decode.recursive
   use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(json_timestamp.decoder()))
   use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
@@ -2409,6 +2487,7 @@ pub fn encode_http_response_code_output_struct(input: HttpResponseCodeOutput) ->
 }
 
 pub fn decode_http_response_code_output_struct() -> decode.Decoder(HttpResponseCodeOutput) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode.int))
   decode.success(HttpResponseCodeOutput(
     status: status,
@@ -2416,6 +2495,7 @@ pub fn decode_http_response_code_output_struct() -> decode.Decoder(HttpResponseC
 }
 
 pub fn decode_http_response_code_output_struct_params() -> decode.Decoder(HttpResponseCodeOutput) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode.int))
   decode.success(HttpResponseCodeOutput(
     status: status,
@@ -2452,6 +2532,7 @@ pub fn encode_string_payload_input_struct(input: StringPayloadInput) -> json.Jso
 }
 
 pub fn decode_string_payload_input_struct() -> decode.Decoder(StringPayloadInput) {
+  use <- decode.recursive
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
   decode.success(StringPayloadInput(
     payload: payload,
@@ -2459,6 +2540,7 @@ pub fn decode_string_payload_input_struct() -> decode.Decoder(StringPayloadInput
 }
 
 pub fn decode_string_payload_input_struct_params() -> decode.Decoder(StringPayloadInput) {
+  use <- decode.recursive
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
   decode.success(StringPayloadInput(
     payload: payload,
@@ -2495,6 +2577,7 @@ pub fn encode_ignore_query_params_in_response_output_struct(input: IgnoreQueryPa
 }
 
 pub fn decode_ignore_query_params_in_response_output_struct() -> decode.Decoder(IgnoreQueryParamsInResponseOutput) {
+  use <- decode.recursive
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   decode.success(IgnoreQueryParamsInResponseOutput(
     baz: baz,
@@ -2502,6 +2585,7 @@ pub fn decode_ignore_query_params_in_response_output_struct() -> decode.Decoder(
 }
 
 pub fn decode_ignore_query_params_in_response_output_struct_params() -> decode.Decoder(IgnoreQueryParamsInResponseOutput) {
+  use <- decode.recursive
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   decode.success(IgnoreQueryParamsInResponseOutput(
     baz: baz,
@@ -2598,6 +2682,7 @@ pub fn encode_input_and_output_with_headers_io_struct(input: InputAndOutputWithH
 }
 
 pub fn decode_input_and_output_with_headers_io_struct() -> decode.Decoder(InputAndOutputWithHeadersIO) {
+  use <- decode.recursive
   use header_boolean_list <- decode.optional_field("headerBooleanList", option.None, decode.optional(decode.list(decode.bool)))
   use header_byte <- decode.optional_field("headerByte", option.None, decode.optional(decode.int))
   use header_double <- decode.optional_field("headerDouble", option.None, decode.optional(json_float.decoder()))
@@ -2635,6 +2720,7 @@ pub fn decode_input_and_output_with_headers_io_struct() -> decode.Decoder(InputA
 }
 
 pub fn decode_input_and_output_with_headers_io_struct_params() -> decode.Decoder(InputAndOutputWithHeadersIO) {
+  use <- decode.recursive
   use header_boolean_list <- decode.optional_field("headerBooleanList", option.None, decode.optional(decode.list(decode.bool)))
   use header_byte <- decode.optional_field("headerByte", option.None, decode.optional(decode.int))
   use header_double <- decode.optional_field("headerDouble", option.None, decode.optional(json_float.decoder()))
@@ -2735,6 +2821,7 @@ pub fn encode_nested_xml_maps_request_struct(input: NestedXmlMapsRequest) -> jso
 }
 
 pub fn decode_nested_xml_maps_request_struct() -> decode.Decoder(NestedXmlMapsRequest) {
+  use <- decode.recursive
   use flat_nested_map <- decode.optional_field("flatNestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
   use nested_map <- decode.optional_field("nestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
   decode.success(NestedXmlMapsRequest(
@@ -2744,6 +2831,7 @@ pub fn decode_nested_xml_maps_request_struct() -> decode.Decoder(NestedXmlMapsRe
 }
 
 pub fn decode_nested_xml_maps_request_struct_params() -> decode.Decoder(NestedXmlMapsRequest) {
+  use <- decode.recursive
   use flat_nested_map <- decode.optional_field("flatNestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
   use nested_map <- decode.optional_field("nestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
   decode.success(NestedXmlMapsRequest(
@@ -2798,6 +2886,7 @@ pub fn encode_nested_xml_maps_response_struct(input: NestedXmlMapsResponse) -> j
 }
 
 pub fn decode_nested_xml_maps_response_struct() -> decode.Decoder(NestedXmlMapsResponse) {
+  use <- decode.recursive
   use flat_nested_map <- decode.optional_field("flatNestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
   use nested_map <- decode.optional_field("nestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
   decode.success(NestedXmlMapsResponse(
@@ -2807,6 +2896,7 @@ pub fn decode_nested_xml_maps_response_struct() -> decode.Decoder(NestedXmlMapsR
 }
 
 pub fn decode_nested_xml_maps_response_struct_params() -> decode.Decoder(NestedXmlMapsResponse) {
+  use <- decode.recursive
   use flat_nested_map <- decode.optional_field("flatNestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
   use nested_map <- decode.optional_field("nestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
   decode.success(NestedXmlMapsResponse(
@@ -2857,6 +2947,7 @@ pub fn encode_nested_xml_map_with_xml_name_request_struct(input: NestedXmlMapWit
 }
 
 pub fn decode_nested_xml_map_with_xml_name_request_struct() -> decode.Decoder(NestedXmlMapWithXmlNameRequest) {
+  use <- decode.recursive
   use nested_xml_map_with_xml_name_map <- decode.optional_field("nestedXmlMapWithXmlNameMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode.string))))
   decode.success(NestedXmlMapWithXmlNameRequest(
     nested_xml_map_with_xml_name_map: nested_xml_map_with_xml_name_map,
@@ -2864,6 +2955,7 @@ pub fn decode_nested_xml_map_with_xml_name_request_struct() -> decode.Decoder(Ne
 }
 
 pub fn decode_nested_xml_map_with_xml_name_request_struct_params() -> decode.Decoder(NestedXmlMapWithXmlNameRequest) {
+  use <- decode.recursive
   use nested_xml_map_with_xml_name_map <- decode.optional_field("nestedXmlMapWithXmlNameMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode.string))))
   decode.success(NestedXmlMapWithXmlNameRequest(
     nested_xml_map_with_xml_name_map: nested_xml_map_with_xml_name_map,
@@ -2905,6 +2997,7 @@ pub fn encode_nested_xml_map_with_xml_name_response_struct(input: NestedXmlMapWi
 }
 
 pub fn decode_nested_xml_map_with_xml_name_response_struct() -> decode.Decoder(NestedXmlMapWithXmlNameResponse) {
+  use <- decode.recursive
   use nested_xml_map_with_xml_name_map <- decode.optional_field("nestedXmlMapWithXmlNameMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode.string))))
   decode.success(NestedXmlMapWithXmlNameResponse(
     nested_xml_map_with_xml_name_map: nested_xml_map_with_xml_name_map,
@@ -2912,6 +3005,7 @@ pub fn decode_nested_xml_map_with_xml_name_response_struct() -> decode.Decoder(N
 }
 
 pub fn decode_nested_xml_map_with_xml_name_response_struct_params() -> decode.Decoder(NestedXmlMapWithXmlNameResponse) {
+  use <- decode.recursive
   use nested_xml_map_with_xml_name_map <- decode.optional_field("nestedXmlMapWithXmlNameMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode.string))))
   decode.success(NestedXmlMapWithXmlNameResponse(
     nested_xml_map_with_xml_name_map: nested_xml_map_with_xml_name_map,
@@ -2989,6 +3083,7 @@ pub fn encode_null_and_empty_headers_io_struct(input: NullAndEmptyHeadersIO) -> 
 }
 
 pub fn decode_null_and_empty_headers_io_struct() -> decode.Decoder(NullAndEmptyHeadersIO) {
+  use <- decode.recursive
   use a <- decode.optional_field("a", option.None, decode.optional(decode.string))
   use b <- decode.optional_field("b", option.None, decode.optional(decode.string))
   use c <- decode.optional_field("c", option.None, decode.optional(decode.list(decode.string)))
@@ -3000,6 +3095,7 @@ pub fn decode_null_and_empty_headers_io_struct() -> decode.Decoder(NullAndEmptyH
 }
 
 pub fn decode_null_and_empty_headers_io_struct_params() -> decode.Decoder(NullAndEmptyHeadersIO) {
+  use <- decode.recursive
   use a <- decode.optional_field("a", option.None, decode.optional(decode.string))
   use b <- decode.optional_field("b", option.None, decode.optional(decode.string))
   use c <- decode.optional_field("c", option.None, decode.optional(decode.list(decode.string)))
@@ -3048,6 +3144,7 @@ pub fn encode_omits_null_serializes_empty_string_input_struct(input: OmitsNullSe
 }
 
 pub fn decode_omits_null_serializes_empty_string_input_struct() -> decode.Decoder(OmitsNullSerializesEmptyStringInput) {
+  use <- decode.recursive
   use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
   use null_value <- decode.optional_field("nullValue", option.None, decode.optional(decode.string))
   decode.success(OmitsNullSerializesEmptyStringInput(
@@ -3057,6 +3154,7 @@ pub fn decode_omits_null_serializes_empty_string_input_struct() -> decode.Decode
 }
 
 pub fn decode_omits_null_serializes_empty_string_input_struct_params() -> decode.Decoder(OmitsNullSerializesEmptyStringInput) {
+  use <- decode.recursive
   use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
   use null_value <- decode.optional_field("nullValue", option.None, decode.optional(decode.string))
   decode.success(OmitsNullSerializesEmptyStringInput(
@@ -3101,6 +3199,7 @@ pub fn encode_put_with_content_encoding_input_struct(input: PutWithContentEncodi
 }
 
 pub fn decode_put_with_content_encoding_input_struct() -> decode.Decoder(PutWithContentEncodingInput) {
+  use <- decode.recursive
   use data <- decode.optional_field("data", option.None, decode.optional(decode.string))
   use encoding <- decode.optional_field("encoding", option.None, decode.optional(decode.string))
   decode.success(PutWithContentEncodingInput(
@@ -3110,6 +3209,7 @@ pub fn decode_put_with_content_encoding_input_struct() -> decode.Decoder(PutWith
 }
 
 pub fn decode_put_with_content_encoding_input_struct_params() -> decode.Decoder(PutWithContentEncodingInput) {
+  use <- decode.recursive
   use data <- decode.optional_field("data", option.None, decode.optional(decode.string))
   use encoding <- decode.optional_field("encoding", option.None, decode.optional(decode.string))
   decode.success(PutWithContentEncodingInput(
@@ -3154,6 +3254,7 @@ pub fn encode_query_idempotency_token_auto_fill_input_struct(input: QueryIdempot
 }
 
 pub fn decode_query_idempotency_token_auto_fill_input_struct() -> decode.Decoder(QueryIdempotencyTokenAutoFillInput) {
+  use <- decode.recursive
   use token <- decode.optional_field("token", option.None, decode.optional(decode.string))
   decode.success(QueryIdempotencyTokenAutoFillInput(
     token: token,
@@ -3161,6 +3262,7 @@ pub fn decode_query_idempotency_token_auto_fill_input_struct() -> decode.Decoder
 }
 
 pub fn decode_query_idempotency_token_auto_fill_input_struct_params() -> decode.Decoder(QueryIdempotencyTokenAutoFillInput) {
+  use <- decode.recursive
   use token <- decode.optional_field("token", option.None, decode.optional(decode.string))
   decode.success(QueryIdempotencyTokenAutoFillInput(
     token: token,
@@ -3201,6 +3303,7 @@ pub fn encode_query_params_as_string_list_map_input_struct(input: QueryParamsAsS
 }
 
 pub fn decode_query_params_as_string_list_map_input_struct() -> decode.Decoder(QueryParamsAsStringListMapInput) {
+  use <- decode.recursive
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
   use qux <- decode.optional_field("qux", option.None, decode.optional(decode.string))
   decode.success(QueryParamsAsStringListMapInput(
@@ -3210,6 +3313,7 @@ pub fn decode_query_params_as_string_list_map_input_struct() -> decode.Decoder(Q
 }
 
 pub fn decode_query_params_as_string_list_map_input_struct_params() -> decode.Decoder(QueryParamsAsStringListMapInput) {
+  use <- decode.recursive
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
   use qux <- decode.optional_field("qux", option.None, decode.optional(decode.string))
   decode.success(QueryParamsAsStringListMapInput(
@@ -3254,6 +3358,7 @@ pub fn encode_query_precedence_input_struct(input: QueryPrecedenceInput) -> json
 }
 
 pub fn decode_query_precedence_input_struct() -> decode.Decoder(QueryPrecedenceInput) {
+  use <- decode.recursive
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(QueryPrecedenceInput(
@@ -3263,6 +3368,7 @@ pub fn decode_query_precedence_input_struct() -> decode.Decoder(QueryPrecedenceI
 }
 
 pub fn decode_query_precedence_input_struct_params() -> decode.Decoder(QueryPrecedenceInput) {
+  use <- decode.recursive
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(QueryPrecedenceInput(
@@ -3303,6 +3409,7 @@ pub fn encode_recursive_shapes_request_struct(input: RecursiveShapesRequest) -> 
 }
 
 pub fn decode_recursive_shapes_request_struct() -> decode.Decoder(RecursiveShapesRequest) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct()))
   decode.success(RecursiveShapesRequest(
     nested: nested,
@@ -3310,6 +3417,7 @@ pub fn decode_recursive_shapes_request_struct() -> decode.Decoder(RecursiveShape
 }
 
 pub fn decode_recursive_shapes_request_struct_params() -> decode.Decoder(RecursiveShapesRequest) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct_params()))
   decode.success(RecursiveShapesRequest(
     nested: nested,
@@ -3354,6 +3462,7 @@ pub fn encode_recursive_shapes_input_output_nested1_struct(input: RecursiveShape
 }
 
 pub fn decode_recursive_shapes_input_output_nested1_struct() -> decode.Decoder(RecursiveShapesInputOutputNested1) {
+  use <- decode.recursive
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested2_struct()))
   decode.success(RecursiveShapesInputOutputNested1(
@@ -3363,6 +3472,7 @@ pub fn decode_recursive_shapes_input_output_nested1_struct() -> decode.Decoder(R
 }
 
 pub fn decode_recursive_shapes_input_output_nested1_struct_params() -> decode.Decoder(RecursiveShapesInputOutputNested1) {
+  use <- decode.recursive
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested2_struct_params()))
   decode.success(RecursiveShapesInputOutputNested1(
@@ -3415,6 +3525,7 @@ pub fn encode_recursive_shapes_input_output_nested2_struct(input: RecursiveShape
 }
 
 pub fn decode_recursive_shapes_input_output_nested2_struct() -> decode.Decoder(RecursiveShapesInputOutputNested2) {
+  use <- decode.recursive
   use bar <- decode.optional_field("bar", option.None, decode.optional(decode.string))
   use recursive_member <- decode.optional_field("recursiveMember", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct()))
   decode.success(RecursiveShapesInputOutputNested2(
@@ -3424,6 +3535,7 @@ pub fn decode_recursive_shapes_input_output_nested2_struct() -> decode.Decoder(R
 }
 
 pub fn decode_recursive_shapes_input_output_nested2_struct_params() -> decode.Decoder(RecursiveShapesInputOutputNested2) {
+  use <- decode.recursive
   use bar <- decode.optional_field("bar", option.None, decode.optional(decode.string))
   use recursive_member <- decode.optional_field("recursiveMember", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct_params()))
   decode.success(RecursiveShapesInputOutputNested2(
@@ -3472,6 +3584,7 @@ pub fn encode_recursive_shapes_response_struct(input: RecursiveShapesResponse) -
 }
 
 pub fn decode_recursive_shapes_response_struct() -> decode.Decoder(RecursiveShapesResponse) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct()))
   decode.success(RecursiveShapesResponse(
     nested: nested,
@@ -3479,6 +3592,7 @@ pub fn decode_recursive_shapes_response_struct() -> decode.Decoder(RecursiveShap
 }
 
 pub fn decode_recursive_shapes_response_struct_params() -> decode.Decoder(RecursiveShapesResponse) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct_params()))
   decode.success(RecursiveShapesResponse(
     nested: nested,
@@ -3555,6 +3669,7 @@ pub fn encode_simple_scalar_properties_request_struct(input: SimpleScalarPropert
 }
 
 pub fn decode_simple_scalar_properties_request_struct() -> decode.Decoder(SimpleScalarPropertiesRequest) {
+  use <- decode.recursive
   use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
   use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
   use false_boolean_value <- decode.optional_field("falseBooleanValue", option.None, decode.optional(decode.bool))
@@ -3580,6 +3695,7 @@ pub fn decode_simple_scalar_properties_request_struct() -> decode.Decoder(Simple
 }
 
 pub fn decode_simple_scalar_properties_request_struct_params() -> decode.Decoder(SimpleScalarPropertiesRequest) {
+  use <- decode.recursive
   use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
   use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
   use false_boolean_value <- decode.optional_field("falseBooleanValue", option.None, decode.optional(decode.bool))
@@ -3724,6 +3840,7 @@ pub fn encode_simple_scalar_properties_response_struct(input: SimpleScalarProper
 }
 
 pub fn decode_simple_scalar_properties_response_struct() -> decode.Decoder(SimpleScalarPropertiesResponse) {
+  use <- decode.recursive
   use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
   use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
   use false_boolean_value <- decode.optional_field("falseBooleanValue", option.None, decode.optional(decode.bool))
@@ -3749,6 +3866,7 @@ pub fn decode_simple_scalar_properties_response_struct() -> decode.Decoder(Simpl
 }
 
 pub fn decode_simple_scalar_properties_response_struct_params() -> decode.Decoder(SimpleScalarPropertiesResponse) {
+  use <- decode.recursive
   use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
   use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
   use false_boolean_value <- decode.optional_field("falseBooleanValue", option.None, decode.optional(decode.bool))
@@ -3881,6 +3999,7 @@ pub fn encode_timestamp_format_headers_io_struct(input: TimestampFormatHeadersIO
 }
 
 pub fn decode_timestamp_format_headers_io_struct() -> decode.Decoder(TimestampFormatHeadersIO) {
+  use <- decode.recursive
   use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(json_timestamp.decoder()))
   use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
@@ -3900,6 +4019,7 @@ pub fn decode_timestamp_format_headers_io_struct() -> decode.Decoder(TimestampFo
 }
 
 pub fn decode_timestamp_format_headers_io_struct_params() -> decode.Decoder(TimestampFormatHeadersIO) {
+  use <- decode.recursive
   use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(json_timestamp.decoder()))
   use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
@@ -3964,6 +4084,7 @@ pub fn encode_xml_attributes_request_struct(input: XmlAttributesRequest) -> json
 }
 
 pub fn decode_xml_attributes_request_struct() -> decode.Decoder(XmlAttributesRequest) {
+  use <- decode.recursive
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(XmlAttributesRequest(
@@ -3973,6 +4094,7 @@ pub fn decode_xml_attributes_request_struct() -> decode.Decoder(XmlAttributesReq
 }
 
 pub fn decode_xml_attributes_request_struct_params() -> decode.Decoder(XmlAttributesRequest) {
+  use <- decode.recursive
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(XmlAttributesRequest(
@@ -4025,6 +4147,7 @@ pub fn encode_xml_attributes_response_struct(input: XmlAttributesResponse) -> js
 }
 
 pub fn decode_xml_attributes_response_struct() -> decode.Decoder(XmlAttributesResponse) {
+  use <- decode.recursive
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(XmlAttributesResponse(
@@ -4034,6 +4157,7 @@ pub fn decode_xml_attributes_response_struct() -> decode.Decoder(XmlAttributesRe
 }
 
 pub fn decode_xml_attributes_response_struct_params() -> decode.Decoder(XmlAttributesResponse) {
+  use <- decode.recursive
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(XmlAttributesResponse(
@@ -4082,6 +4206,7 @@ pub fn encode_xml_attributes_in_middle_request_struct(input: XmlAttributesInMidd
 }
 
 pub fn decode_xml_attributes_in_middle_request_struct() -> decode.Decoder(XmlAttributesInMiddleRequest) {
+  use <- decode.recursive
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_xml_attributes_in_middle_payload_request_struct()))
   decode.success(XmlAttributesInMiddleRequest(
     payload: payload,
@@ -4089,6 +4214,7 @@ pub fn decode_xml_attributes_in_middle_request_struct() -> decode.Decoder(XmlAtt
 }
 
 pub fn decode_xml_attributes_in_middle_request_struct_params() -> decode.Decoder(XmlAttributesInMiddleRequest) {
+  use <- decode.recursive
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_xml_attributes_in_middle_payload_request_struct_params()))
   decode.success(XmlAttributesInMiddleRequest(
     payload: payload,
@@ -4133,6 +4259,7 @@ pub fn encode_xml_attributes_in_middle_payload_request_struct(input: XmlAttribut
 }
 
 pub fn decode_xml_attributes_in_middle_payload_request_struct() -> decode.Decoder(XmlAttributesInMiddlePayloadRequest) {
+  use <- decode.recursive
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
@@ -4144,6 +4271,7 @@ pub fn decode_xml_attributes_in_middle_payload_request_struct() -> decode.Decode
 }
 
 pub fn decode_xml_attributes_in_middle_payload_request_struct_params() -> decode.Decoder(XmlAttributesInMiddlePayloadRequest) {
+  use <- decode.recursive
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
@@ -4200,6 +4328,7 @@ pub fn encode_xml_attributes_in_middle_response_struct(input: XmlAttributesInMid
 }
 
 pub fn decode_xml_attributes_in_middle_response_struct() -> decode.Decoder(XmlAttributesInMiddleResponse) {
+  use <- decode.recursive
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_xml_attributes_in_middle_payload_response_struct()))
   decode.success(XmlAttributesInMiddleResponse(
     payload: payload,
@@ -4207,6 +4336,7 @@ pub fn decode_xml_attributes_in_middle_response_struct() -> decode.Decoder(XmlAt
 }
 
 pub fn decode_xml_attributes_in_middle_response_struct_params() -> decode.Decoder(XmlAttributesInMiddleResponse) {
+  use <- decode.recursive
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_xml_attributes_in_middle_payload_response_struct_params()))
   decode.success(XmlAttributesInMiddleResponse(
     payload: payload,
@@ -4251,6 +4381,7 @@ pub fn encode_xml_attributes_in_middle_payload_response_struct(input: XmlAttribu
 }
 
 pub fn decode_xml_attributes_in_middle_payload_response_struct() -> decode.Decoder(XmlAttributesInMiddlePayloadResponse) {
+  use <- decode.recursive
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
@@ -4262,6 +4393,7 @@ pub fn decode_xml_attributes_in_middle_payload_response_struct() -> decode.Decod
 }
 
 pub fn decode_xml_attributes_in_middle_payload_response_struct_params() -> decode.Decoder(XmlAttributesInMiddlePayloadResponse) {
+  use <- decode.recursive
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
@@ -4318,6 +4450,7 @@ pub fn encode_xml_attributes_on_payload_request_struct(input: XmlAttributesOnPay
 }
 
 pub fn decode_xml_attributes_on_payload_request_struct() -> decode.Decoder(XmlAttributesOnPayloadRequest) {
+  use <- decode.recursive
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_xml_attributes_payload_request_struct()))
   decode.success(XmlAttributesOnPayloadRequest(
     payload: payload,
@@ -4325,6 +4458,7 @@ pub fn decode_xml_attributes_on_payload_request_struct() -> decode.Decoder(XmlAt
 }
 
 pub fn decode_xml_attributes_on_payload_request_struct_params() -> decode.Decoder(XmlAttributesOnPayloadRequest) {
+  use <- decode.recursive
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_xml_attributes_payload_request_struct_params()))
   decode.success(XmlAttributesOnPayloadRequest(
     payload: payload,
@@ -4365,6 +4499,7 @@ pub fn encode_xml_attributes_payload_request_struct(input: XmlAttributesPayloadR
 }
 
 pub fn decode_xml_attributes_payload_request_struct() -> decode.Decoder(XmlAttributesPayloadRequest) {
+  use <- decode.recursive
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(XmlAttributesPayloadRequest(
@@ -4374,6 +4509,7 @@ pub fn decode_xml_attributes_payload_request_struct() -> decode.Decoder(XmlAttri
 }
 
 pub fn decode_xml_attributes_payload_request_struct_params() -> decode.Decoder(XmlAttributesPayloadRequest) {
+  use <- decode.recursive
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(XmlAttributesPayloadRequest(
@@ -4422,6 +4558,7 @@ pub fn encode_xml_attributes_on_payload_response_struct(input: XmlAttributesOnPa
 }
 
 pub fn decode_xml_attributes_on_payload_response_struct() -> decode.Decoder(XmlAttributesOnPayloadResponse) {
+  use <- decode.recursive
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_xml_attributes_payload_response_struct()))
   decode.success(XmlAttributesOnPayloadResponse(
     payload: payload,
@@ -4429,6 +4566,7 @@ pub fn decode_xml_attributes_on_payload_response_struct() -> decode.Decoder(XmlA
 }
 
 pub fn decode_xml_attributes_on_payload_response_struct_params() -> decode.Decoder(XmlAttributesOnPayloadResponse) {
+  use <- decode.recursive
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_xml_attributes_payload_response_struct_params()))
   decode.success(XmlAttributesOnPayloadResponse(
     payload: payload,
@@ -4469,6 +4607,7 @@ pub fn encode_xml_attributes_payload_response_struct(input: XmlAttributesPayload
 }
 
 pub fn decode_xml_attributes_payload_response_struct() -> decode.Decoder(XmlAttributesPayloadResponse) {
+  use <- decode.recursive
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(XmlAttributesPayloadResponse(
@@ -4478,6 +4617,7 @@ pub fn decode_xml_attributes_payload_response_struct() -> decode.Decoder(XmlAttr
 }
 
 pub fn decode_xml_attributes_payload_response_struct_params() -> decode.Decoder(XmlAttributesPayloadResponse) {
+  use <- decode.recursive
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(XmlAttributesPayloadResponse(
@@ -4526,6 +4666,7 @@ pub fn encode_xml_blobs_request_struct(input: XmlBlobsRequest) -> json.Json {
 }
 
 pub fn decode_xml_blobs_request_struct() -> decode.Decoder(XmlBlobsRequest) {
+  use <- decode.recursive
   use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(XmlBlobsRequest(
     data: data,
@@ -4533,6 +4674,7 @@ pub fn decode_xml_blobs_request_struct() -> decode.Decoder(XmlBlobsRequest) {
 }
 
 pub fn decode_xml_blobs_request_struct_params() -> decode.Decoder(XmlBlobsRequest) {
+  use <- decode.recursive
   use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(XmlBlobsRequest(
     data: data,
@@ -4573,6 +4715,7 @@ pub fn encode_xml_blobs_response_struct(input: XmlBlobsResponse) -> json.Json {
 }
 
 pub fn decode_xml_blobs_response_struct() -> decode.Decoder(XmlBlobsResponse) {
+  use <- decode.recursive
   use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(XmlBlobsResponse(
     data: data,
@@ -4580,6 +4723,7 @@ pub fn decode_xml_blobs_response_struct() -> decode.Decoder(XmlBlobsResponse) {
 }
 
 pub fn decode_xml_blobs_response_struct_params() -> decode.Decoder(XmlBlobsResponse) {
+  use <- decode.recursive
   use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(XmlBlobsResponse(
     data: data,
@@ -4620,6 +4764,7 @@ pub fn encode_xml_empty_blobs_request_struct(input: XmlEmptyBlobsRequest) -> jso
 }
 
 pub fn decode_xml_empty_blobs_request_struct() -> decode.Decoder(XmlEmptyBlobsRequest) {
+  use <- decode.recursive
   use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(XmlEmptyBlobsRequest(
     data: data,
@@ -4627,6 +4772,7 @@ pub fn decode_xml_empty_blobs_request_struct() -> decode.Decoder(XmlEmptyBlobsRe
 }
 
 pub fn decode_xml_empty_blobs_request_struct_params() -> decode.Decoder(XmlEmptyBlobsRequest) {
+  use <- decode.recursive
   use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(XmlEmptyBlobsRequest(
     data: data,
@@ -4667,6 +4813,7 @@ pub fn encode_xml_empty_blobs_response_struct(input: XmlEmptyBlobsResponse) -> j
 }
 
 pub fn decode_xml_empty_blobs_response_struct() -> decode.Decoder(XmlEmptyBlobsResponse) {
+  use <- decode.recursive
   use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(XmlEmptyBlobsResponse(
     data: data,
@@ -4674,6 +4821,7 @@ pub fn decode_xml_empty_blobs_response_struct() -> decode.Decoder(XmlEmptyBlobsR
 }
 
 pub fn decode_xml_empty_blobs_response_struct_params() -> decode.Decoder(XmlEmptyBlobsResponse) {
+  use <- decode.recursive
   use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(XmlEmptyBlobsResponse(
     data: data,
@@ -4770,6 +4918,7 @@ pub fn encode_xml_empty_lists_request_struct(input: XmlEmptyListsRequest) -> jso
 }
 
 pub fn decode_xml_empty_lists_request_struct() -> decode.Decoder(XmlEmptyListsRequest) {
+  use <- decode.recursive
   use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
   use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
   use flattened_list <- decode.optional_field("flattenedList", option.None, decode.optional(decode.list(decode.string)))
@@ -4805,6 +4954,7 @@ pub fn decode_xml_empty_lists_request_struct() -> decode.Decoder(XmlEmptyListsRe
 }
 
 pub fn decode_xml_empty_lists_request_struct_params() -> decode.Decoder(XmlEmptyListsRequest) {
+  use <- decode.recursive
   use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
   use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
   use flattened_list <- decode.optional_field("flattenedList", option.None, decode.optional(decode.list(decode.string)))
@@ -4961,6 +5111,7 @@ pub fn encode_structure_list_member_struct(input: StructureListMember) -> json.J
 }
 
 pub fn decode_structure_list_member_struct() -> decode.Decoder(StructureListMember) {
+  use <- decode.recursive
   use a <- decode.optional_field("a", option.None, decode.optional(decode.string))
   use b <- decode.optional_field("b", option.None, decode.optional(decode.string))
   decode.success(StructureListMember(
@@ -4970,6 +5121,7 @@ pub fn decode_structure_list_member_struct() -> decode.Decoder(StructureListMemb
 }
 
 pub fn decode_structure_list_member_struct_params() -> decode.Decoder(StructureListMember) {
+  use <- decode.recursive
   use a <- decode.optional_field("a", option.None, decode.optional(decode.string))
   use b <- decode.optional_field("b", option.None, decode.optional(decode.string))
   decode.success(StructureListMember(
@@ -5074,6 +5226,7 @@ pub fn encode_xml_empty_lists_response_struct(input: XmlEmptyListsResponse) -> j
 }
 
 pub fn decode_xml_empty_lists_response_struct() -> decode.Decoder(XmlEmptyListsResponse) {
+  use <- decode.recursive
   use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
   use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
   use flattened_list <- decode.optional_field("flattenedList", option.None, decode.optional(decode.list(decode.string)))
@@ -5109,6 +5262,7 @@ pub fn decode_xml_empty_lists_response_struct() -> decode.Decoder(XmlEmptyListsR
 }
 
 pub fn decode_xml_empty_lists_response_struct_params() -> decode.Decoder(XmlEmptyListsResponse) {
+  use <- decode.recursive
   use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
   use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
   use flattened_list <- decode.optional_field("flattenedList", option.None, decode.optional(decode.list(decode.string)))
@@ -5261,6 +5415,7 @@ pub fn encode_xml_empty_maps_request_struct(input: XmlEmptyMapsRequest) -> json.
 }
 
 pub fn decode_xml_empty_maps_request_struct() -> decode.Decoder(XmlEmptyMapsRequest) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())))
   decode.success(XmlEmptyMapsRequest(
     my_map: my_map,
@@ -5268,6 +5423,7 @@ pub fn decode_xml_empty_maps_request_struct() -> decode.Decoder(XmlEmptyMapsRequ
 }
 
 pub fn decode_xml_empty_maps_request_struct_params() -> decode.Decoder(XmlEmptyMapsRequest) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
   decode.success(XmlEmptyMapsRequest(
     my_map: my_map,
@@ -5309,6 +5465,7 @@ pub fn encode_greeting_struct_struct(input: GreetingStruct) -> json.Json {
 }
 
 pub fn decode_greeting_struct_struct() -> decode.Decoder(GreetingStruct) {
+  use <- decode.recursive
   use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
   decode.success(GreetingStruct(
     hi: hi,
@@ -5316,6 +5473,7 @@ pub fn decode_greeting_struct_struct() -> decode.Decoder(GreetingStruct) {
 }
 
 pub fn decode_greeting_struct_struct_params() -> decode.Decoder(GreetingStruct) {
+  use <- decode.recursive
   use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
   decode.success(GreetingStruct(
     hi: hi,
@@ -5356,6 +5514,7 @@ pub fn encode_xml_empty_maps_response_struct(input: XmlEmptyMapsResponse) -> jso
 }
 
 pub fn decode_xml_empty_maps_response_struct() -> decode.Decoder(XmlEmptyMapsResponse) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())))
   decode.success(XmlEmptyMapsResponse(
     my_map: my_map,
@@ -5363,6 +5522,7 @@ pub fn decode_xml_empty_maps_response_struct() -> decode.Decoder(XmlEmptyMapsRes
 }
 
 pub fn decode_xml_empty_maps_response_struct_params() -> decode.Decoder(XmlEmptyMapsResponse) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
   decode.success(XmlEmptyMapsResponse(
     my_map: my_map,
@@ -5404,6 +5564,7 @@ pub fn encode_xml_empty_strings_request_struct(input: XmlEmptyStringsRequest) ->
 }
 
 pub fn decode_xml_empty_strings_request_struct() -> decode.Decoder(XmlEmptyStringsRequest) {
+  use <- decode.recursive
   use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
   decode.success(XmlEmptyStringsRequest(
     empty_string: empty_string,
@@ -5411,6 +5572,7 @@ pub fn decode_xml_empty_strings_request_struct() -> decode.Decoder(XmlEmptyStrin
 }
 
 pub fn decode_xml_empty_strings_request_struct_params() -> decode.Decoder(XmlEmptyStringsRequest) {
+  use <- decode.recursive
   use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
   decode.success(XmlEmptyStringsRequest(
     empty_string: empty_string,
@@ -5451,6 +5613,7 @@ pub fn encode_xml_empty_strings_response_struct(input: XmlEmptyStringsResponse) 
 }
 
 pub fn decode_xml_empty_strings_response_struct() -> decode.Decoder(XmlEmptyStringsResponse) {
+  use <- decode.recursive
   use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
   decode.success(XmlEmptyStringsResponse(
     empty_string: empty_string,
@@ -5458,6 +5621,7 @@ pub fn decode_xml_empty_strings_response_struct() -> decode.Decoder(XmlEmptyStri
 }
 
 pub fn decode_xml_empty_strings_response_struct_params() -> decode.Decoder(XmlEmptyStringsResponse) {
+  use <- decode.recursive
   use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
   decode.success(XmlEmptyStringsResponse(
     empty_string: empty_string,
@@ -5518,6 +5682,7 @@ pub fn encode_xml_enums_request_struct(input: XmlEnumsRequest) -> json.Json {
 }
 
 pub fn decode_xml_enums_request_struct() -> decode.Decoder(XmlEnumsRequest) {
+  use <- decode.recursive
   use foo_enum1 <- decode.optional_field("fooEnum1", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum2 <- decode.optional_field("fooEnum2", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum3 <- decode.optional_field("fooEnum3", option.None, decode.optional(decode_foo_enum_enum()))
@@ -5535,6 +5700,7 @@ pub fn decode_xml_enums_request_struct() -> decode.Decoder(XmlEnumsRequest) {
 }
 
 pub fn decode_xml_enums_request_struct_params() -> decode.Decoder(XmlEnumsRequest) {
+  use <- decode.recursive
   use foo_enum1 <- decode.optional_field("fooEnum1", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum2 <- decode.optional_field("fooEnum2", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum3 <- decode.optional_field("fooEnum3", option.None, decode.optional(decode_foo_enum_enum()))
@@ -5639,6 +5805,7 @@ pub fn encode_xml_enums_response_struct(input: XmlEnumsResponse) -> json.Json {
 }
 
 pub fn decode_xml_enums_response_struct() -> decode.Decoder(XmlEnumsResponse) {
+  use <- decode.recursive
   use foo_enum1 <- decode.optional_field("fooEnum1", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum2 <- decode.optional_field("fooEnum2", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum3 <- decode.optional_field("fooEnum3", option.None, decode.optional(decode_foo_enum_enum()))
@@ -5656,6 +5823,7 @@ pub fn decode_xml_enums_response_struct() -> decode.Decoder(XmlEnumsResponse) {
 }
 
 pub fn decode_xml_enums_response_struct_params() -> decode.Decoder(XmlEnumsResponse) {
+  use <- decode.recursive
   use foo_enum1 <- decode.optional_field("fooEnum1", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum2 <- decode.optional_field("fooEnum2", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum3 <- decode.optional_field("fooEnum3", option.None, decode.optional(decode_foo_enum_enum()))
@@ -5760,6 +5928,7 @@ pub fn encode_xml_int_enums_request_struct(input: XmlIntEnumsRequest) -> json.Js
 }
 
 pub fn decode_xml_int_enums_request_struct() -> decode.Decoder(XmlIntEnumsRequest) {
+  use <- decode.recursive
   use int_enum1 <- decode.optional_field("intEnum1", option.None, decode.optional(decode_integer_enum_int_enum()))
   use int_enum2 <- decode.optional_field("intEnum2", option.None, decode.optional(decode_integer_enum_int_enum()))
   use int_enum3 <- decode.optional_field("intEnum3", option.None, decode.optional(decode_integer_enum_int_enum()))
@@ -5777,6 +5946,7 @@ pub fn decode_xml_int_enums_request_struct() -> decode.Decoder(XmlIntEnumsReques
 }
 
 pub fn decode_xml_int_enums_request_struct_params() -> decode.Decoder(XmlIntEnumsRequest) {
+  use <- decode.recursive
   use int_enum1 <- decode.optional_field("intEnum1", option.None, decode.optional(decode_integer_enum_int_enum()))
   use int_enum2 <- decode.optional_field("intEnum2", option.None, decode.optional(decode_integer_enum_int_enum()))
   use int_enum3 <- decode.optional_field("intEnum3", option.None, decode.optional(decode_integer_enum_int_enum()))
@@ -5881,6 +6051,7 @@ pub fn encode_xml_int_enums_response_struct(input: XmlIntEnumsResponse) -> json.
 }
 
 pub fn decode_xml_int_enums_response_struct() -> decode.Decoder(XmlIntEnumsResponse) {
+  use <- decode.recursive
   use int_enum1 <- decode.optional_field("intEnum1", option.None, decode.optional(decode_integer_enum_int_enum()))
   use int_enum2 <- decode.optional_field("intEnum2", option.None, decode.optional(decode_integer_enum_int_enum()))
   use int_enum3 <- decode.optional_field("intEnum3", option.None, decode.optional(decode_integer_enum_int_enum()))
@@ -5898,6 +6069,7 @@ pub fn decode_xml_int_enums_response_struct() -> decode.Decoder(XmlIntEnumsRespo
 }
 
 pub fn decode_xml_int_enums_response_struct_params() -> decode.Decoder(XmlIntEnumsResponse) {
+  use <- decode.recursive
   use int_enum1 <- decode.optional_field("intEnum1", option.None, decode.optional(decode_integer_enum_int_enum()))
   use int_enum2 <- decode.optional_field("intEnum2", option.None, decode.optional(decode_integer_enum_int_enum()))
   use int_enum3 <- decode.optional_field("intEnum3", option.None, decode.optional(decode_integer_enum_int_enum()))
@@ -6038,6 +6210,7 @@ pub fn encode_xml_lists_request_struct(input: XmlListsRequest) -> json.Json {
 }
 
 pub fn decode_xml_lists_request_struct() -> decode.Decoder(XmlListsRequest) {
+  use <- decode.recursive
   use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
   use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
   use flattened_list <- decode.optional_field("flattenedList", option.None, decode.optional(decode.list(decode.string)))
@@ -6073,6 +6246,7 @@ pub fn decode_xml_lists_request_struct() -> decode.Decoder(XmlListsRequest) {
 }
 
 pub fn decode_xml_lists_request_struct_params() -> decode.Decoder(XmlListsRequest) {
+  use <- decode.recursive
   use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
   use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
   use flattened_list <- decode.optional_field("flattenedList", option.None, decode.optional(decode.list(decode.string)))
@@ -6281,6 +6455,7 @@ pub fn encode_xml_lists_response_struct(input: XmlListsResponse) -> json.Json {
 }
 
 pub fn decode_xml_lists_response_struct() -> decode.Decoder(XmlListsResponse) {
+  use <- decode.recursive
   use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
   use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
   use flattened_list <- decode.optional_field("flattenedList", option.None, decode.optional(decode.list(decode.string)))
@@ -6316,6 +6491,7 @@ pub fn decode_xml_lists_response_struct() -> decode.Decoder(XmlListsResponse) {
 }
 
 pub fn decode_xml_lists_response_struct_params() -> decode.Decoder(XmlListsResponse) {
+  use <- decode.recursive
   use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
   use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
   use flattened_list <- decode.optional_field("flattenedList", option.None, decode.optional(decode.list(decode.string)))
@@ -6468,6 +6644,7 @@ pub fn encode_xml_maps_request_struct(input: XmlMapsRequest) -> json.Json {
 }
 
 pub fn decode_xml_maps_request_struct() -> decode.Decoder(XmlMapsRequest) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())))
   decode.success(XmlMapsRequest(
     my_map: my_map,
@@ -6475,6 +6652,7 @@ pub fn decode_xml_maps_request_struct() -> decode.Decoder(XmlMapsRequest) {
 }
 
 pub fn decode_xml_maps_request_struct_params() -> decode.Decoder(XmlMapsRequest) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
   decode.success(XmlMapsRequest(
     my_map: my_map,
@@ -6516,6 +6694,7 @@ pub fn encode_xml_maps_response_struct(input: XmlMapsResponse) -> json.Json {
 }
 
 pub fn decode_xml_maps_response_struct() -> decode.Decoder(XmlMapsResponse) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())))
   decode.success(XmlMapsResponse(
     my_map: my_map,
@@ -6523,6 +6702,7 @@ pub fn decode_xml_maps_response_struct() -> decode.Decoder(XmlMapsResponse) {
 }
 
 pub fn decode_xml_maps_response_struct_params() -> decode.Decoder(XmlMapsResponse) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
   decode.success(XmlMapsResponse(
     my_map: my_map,
@@ -6564,6 +6744,7 @@ pub fn encode_xml_maps_xml_name_request_struct(input: XmlMapsXmlNameRequest) -> 
 }
 
 pub fn decode_xml_maps_xml_name_request_struct() -> decode.Decoder(XmlMapsXmlNameRequest) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())))
   decode.success(XmlMapsXmlNameRequest(
     my_map: my_map,
@@ -6571,6 +6752,7 @@ pub fn decode_xml_maps_xml_name_request_struct() -> decode.Decoder(XmlMapsXmlNam
 }
 
 pub fn decode_xml_maps_xml_name_request_struct_params() -> decode.Decoder(XmlMapsXmlNameRequest) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
   decode.success(XmlMapsXmlNameRequest(
     my_map: my_map,
@@ -6612,6 +6794,7 @@ pub fn encode_xml_maps_xml_name_response_struct(input: XmlMapsXmlNameResponse) -
 }
 
 pub fn decode_xml_maps_xml_name_response_struct() -> decode.Decoder(XmlMapsXmlNameResponse) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())))
   decode.success(XmlMapsXmlNameResponse(
     my_map: my_map,
@@ -6619,6 +6802,7 @@ pub fn decode_xml_maps_xml_name_response_struct() -> decode.Decoder(XmlMapsXmlNa
 }
 
 pub fn decode_xml_maps_xml_name_response_struct_params() -> decode.Decoder(XmlMapsXmlNameResponse) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
   decode.success(XmlMapsXmlNameResponse(
     my_map: my_map,
@@ -6660,6 +6844,7 @@ pub fn encode_xml_map_with_xml_namespace_request_struct(input: XmlMapWithXmlName
 }
 
 pub fn decode_xml_map_with_xml_namespace_request_struct() -> decode.Decoder(XmlMapWithXmlNamespaceRequest) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(XmlMapWithXmlNamespaceRequest(
     my_map: my_map,
@@ -6667,6 +6852,7 @@ pub fn decode_xml_map_with_xml_namespace_request_struct() -> decode.Decoder(XmlM
 }
 
 pub fn decode_xml_map_with_xml_namespace_request_struct_params() -> decode.Decoder(XmlMapWithXmlNamespaceRequest) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(XmlMapWithXmlNamespaceRequest(
     my_map: my_map,
@@ -6708,6 +6894,7 @@ pub fn encode_xml_map_with_xml_namespace_response_struct(input: XmlMapWithXmlNam
 }
 
 pub fn decode_xml_map_with_xml_namespace_response_struct() -> decode.Decoder(XmlMapWithXmlNamespaceResponse) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(XmlMapWithXmlNamespaceResponse(
     my_map: my_map,
@@ -6715,6 +6902,7 @@ pub fn decode_xml_map_with_xml_namespace_response_struct() -> decode.Decoder(Xml
 }
 
 pub fn decode_xml_map_with_xml_namespace_response_struct_params() -> decode.Decoder(XmlMapWithXmlNamespaceResponse) {
+  use <- decode.recursive
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(XmlMapWithXmlNamespaceResponse(
     my_map: my_map,
@@ -6756,6 +6944,7 @@ pub fn encode_xml_namespaces_request_struct(input: XmlNamespacesRequest) -> json
 }
 
 pub fn decode_xml_namespaces_request_struct() -> decode.Decoder(XmlNamespacesRequest) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_xml_namespace_nested_struct()))
   decode.success(XmlNamespacesRequest(
     nested: nested,
@@ -6763,6 +6952,7 @@ pub fn decode_xml_namespaces_request_struct() -> decode.Decoder(XmlNamespacesReq
 }
 
 pub fn decode_xml_namespaces_request_struct_params() -> decode.Decoder(XmlNamespacesRequest) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_xml_namespace_nested_struct_params()))
   decode.success(XmlNamespacesRequest(
     nested: nested,
@@ -6807,6 +6997,7 @@ pub fn encode_xml_namespace_nested_struct(input: XmlNamespaceNested) -> json.Jso
 }
 
 pub fn decode_xml_namespace_nested_struct() -> decode.Decoder(XmlNamespaceNested) {
+  use <- decode.recursive
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   use values <- decode.optional_field("values", option.None, decode.optional(decode.list(decode.string)))
   decode.success(XmlNamespaceNested(
@@ -6816,6 +7007,7 @@ pub fn decode_xml_namespace_nested_struct() -> decode.Decoder(XmlNamespaceNested
 }
 
 pub fn decode_xml_namespace_nested_struct_params() -> decode.Decoder(XmlNamespaceNested) {
+  use <- decode.recursive
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   use values <- decode.optional_field("values", option.None, decode.optional(decode.list(decode.string)))
   decode.success(XmlNamespaceNested(
@@ -6864,6 +7056,7 @@ pub fn encode_xml_namespaces_response_struct(input: XmlNamespacesResponse) -> js
 }
 
 pub fn decode_xml_namespaces_response_struct() -> decode.Decoder(XmlNamespacesResponse) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_xml_namespace_nested_struct()))
   decode.success(XmlNamespacesResponse(
     nested: nested,
@@ -6871,6 +7064,7 @@ pub fn decode_xml_namespaces_response_struct() -> decode.Decoder(XmlNamespacesRe
 }
 
 pub fn decode_xml_namespaces_response_struct_params() -> decode.Decoder(XmlNamespacesResponse) {
+  use <- decode.recursive
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_xml_namespace_nested_struct_params()))
   decode.success(XmlNamespacesResponse(
     nested: nested,
@@ -6935,6 +7129,7 @@ pub fn encode_xml_timestamps_request_struct(input: XmlTimestampsRequest) -> json
 }
 
 pub fn decode_xml_timestamps_request_struct() -> decode.Decoder(XmlTimestampsRequest) {
+  use <- decode.recursive
   use date_time <- decode.optional_field("dateTime", option.None, decode.optional(json_timestamp.decoder()))
   use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(json_timestamp.decoder()))
   use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(json_timestamp.decoder()))
@@ -6954,6 +7149,7 @@ pub fn decode_xml_timestamps_request_struct() -> decode.Decoder(XmlTimestampsReq
 }
 
 pub fn decode_xml_timestamps_request_struct_params() -> decode.Decoder(XmlTimestampsRequest) {
+  use <- decode.recursive
   use date_time <- decode.optional_field("dateTime", option.None, decode.optional(json_timestamp.decoder()))
   use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(json_timestamp.decoder()))
   use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(json_timestamp.decoder()))
@@ -7066,6 +7262,7 @@ pub fn encode_xml_timestamps_response_struct(input: XmlTimestampsResponse) -> js
 }
 
 pub fn decode_xml_timestamps_response_struct() -> decode.Decoder(XmlTimestampsResponse) {
+  use <- decode.recursive
   use date_time <- decode.optional_field("dateTime", option.None, decode.optional(json_timestamp.decoder()))
   use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(json_timestamp.decoder()))
   use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(json_timestamp.decoder()))
@@ -7085,6 +7282,7 @@ pub fn decode_xml_timestamps_response_struct() -> decode.Decoder(XmlTimestampsRe
 }
 
 pub fn decode_xml_timestamps_response_struct_params() -> decode.Decoder(XmlTimestampsResponse) {
+  use <- decode.recursive
   use date_time <- decode.optional_field("dateTime", option.None, decode.optional(json_timestamp.decoder()))
   use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(json_timestamp.decoder()))
   use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(json_timestamp.decoder()))
@@ -7173,6 +7371,7 @@ pub fn encode_xml_unions_request_struct(input: XmlUnionsRequest) -> json.Json {
 }
 
 pub fn decode_xml_unions_request_struct() -> decode.Decoder(XmlUnionsRequest) {
+  use <- decode.recursive
   use union_value <- decode.optional_field("unionValue", option.None, decode.optional(decode_xml_union_shape_union()))
   decode.success(XmlUnionsRequest(
     union_value: union_value,
@@ -7180,6 +7379,7 @@ pub fn decode_xml_unions_request_struct() -> decode.Decoder(XmlUnionsRequest) {
 }
 
 pub fn decode_xml_unions_request_struct_params() -> decode.Decoder(XmlUnionsRequest) {
+  use <- decode.recursive
   use union_value <- decode.optional_field("unionValue", option.None, decode.optional(decode_xml_union_shape_union_params()))
   decode.success(XmlUnionsRequest(
     union_value: union_value,
@@ -7236,6 +7436,7 @@ pub fn encode_xml_union_shape_union(v: XmlUnionShape) -> json.Json {
 }
 
 pub fn decode_xml_union_shape_union() -> decode.Decoder(XmlUnionShape) {
+  use <- decode.recursive
   decode.one_of(
     decode.field("booleanValue", decode.bool, fn(x) { decode.success(XmlUnionShapeBooleanValue(x)) }),
     [
@@ -7253,6 +7454,7 @@ pub fn decode_xml_union_shape_union() -> decode.Decoder(XmlUnionShape) {
 }
 
 pub fn decode_xml_union_shape_union_params() -> decode.Decoder(XmlUnionShape) {
+  use <- decode.recursive
   decode.one_of(
     decode.field("booleanValue", decode.bool, fn(x) { decode.success(XmlUnionShapeBooleanValue(x)) }),
     [
@@ -7311,6 +7513,7 @@ pub fn encode_xml_nested_union_struct_struct(input: XmlNestedUnionStruct) -> jso
 }
 
 pub fn decode_xml_nested_union_struct_struct() -> decode.Decoder(XmlNestedUnionStruct) {
+  use <- decode.recursive
   use boolean_value <- decode.optional_field("booleanValue", option.None, decode.optional(decode.bool))
   use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
   use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
@@ -7332,6 +7535,7 @@ pub fn decode_xml_nested_union_struct_struct() -> decode.Decoder(XmlNestedUnionS
 }
 
 pub fn decode_xml_nested_union_struct_struct_params() -> decode.Decoder(XmlNestedUnionStruct) {
+  use <- decode.recursive
   use boolean_value <- decode.optional_field("booleanValue", option.None, decode.optional(decode.bool))
   use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
   use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
@@ -7428,6 +7632,7 @@ pub fn encode_xml_unions_response_struct(input: XmlUnionsResponse) -> json.Json 
 }
 
 pub fn decode_xml_unions_response_struct() -> decode.Decoder(XmlUnionsResponse) {
+  use <- decode.recursive
   use union_value <- decode.optional_field("unionValue", option.None, decode.optional(decode_xml_union_shape_union()))
   decode.success(XmlUnionsResponse(
     union_value: union_value,
@@ -7435,6 +7640,7 @@ pub fn decode_xml_unions_response_struct() -> decode.Decoder(XmlUnionsResponse) 
 }
 
 pub fn decode_xml_unions_response_struct_params() -> decode.Decoder(XmlUnionsResponse) {
+  use <- decode.recursive
   use union_value <- decode.optional_field("unionValue", option.None, decode.optional(decode_xml_union_shape_union_params()))
   decode.success(XmlUnionsResponse(
     union_value: union_value,

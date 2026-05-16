@@ -4,8 +4,8 @@
 
 import aws/services/protocoltests/json10 as svc
 import protocol_tests/dispatch.{
-  type Dispatcher, type ParsedResponseInput, type Registry,
-  BuiltRequest, Dispatcher, ParsedOutput,
+  type Dispatcher, type ParsedResponseInput, type Registry, BuiltRequest,
+  Dispatcher, ParsedOutput,
 }
 
 pub fn register_all(registry: Registry) -> Registry {
@@ -22,7 +22,9 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(operation_with_defaults_dispatcher())
   |> dispatch.register(operation_with_nested_structure_dispatcher())
   |> dispatch.register(operation_with_required_members_dispatcher())
-  |> dispatch.register(operation_with_required_members_with_defaults_dispatcher())
+  |> dispatch.register(
+    operation_with_required_members_with_defaults_dispatcher(),
+  )
   |> dispatch.register(query_incompatible_operation_dispatcher())
   |> dispatch.register(simple_scalar_properties_dispatcher())
 }
@@ -65,7 +67,9 @@ fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_empty_input_and_empty_output_response),
+    parse_response: response_parser(
+      svc.parse_empty_input_and_empty_output_response,
+    ),
   )
 }
 
@@ -107,7 +111,9 @@ fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_endpoint_with_host_label_operation_response),
+    parse_response: response_parser(
+      svc.parse_endpoint_with_host_label_operation_response,
+    ),
   )
 }
 
@@ -254,7 +260,9 @@ fn operation_with_nested_structure_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_operation_with_nested_structure_response),
+    parse_response: response_parser(
+      svc.parse_operation_with_nested_structure_response,
+    ),
   )
 }
 
@@ -275,7 +283,9 @@ fn operation_with_required_members_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_operation_with_required_members_response),
+    parse_response: response_parser(
+      svc.parse_operation_with_required_members_response,
+    ),
   )
 }
 
@@ -290,13 +300,17 @@ fn operation_with_required_members_with_defaults_dispatcher() -> Dispatcher {
       case svc.decode_operation_with_required_members_with_defaults_input(raw) {
         Ok(input) -> {
           let #(method, uri, headers, body) =
-            svc.build_operation_with_required_members_with_defaults_request(input)
+            svc.build_operation_with_required_members_with_defaults_request(
+              input,
+            )
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_operation_with_required_members_with_defaults_response),
+    parse_response: response_parser(
+      svc.parse_operation_with_required_members_with_defaults_response,
+    ),
   )
 }
 
@@ -317,7 +331,9 @@ fn query_incompatible_operation_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_query_incompatible_operation_response),
+    parse_response: response_parser(
+      svc.parse_query_incompatible_operation_response,
+    ),
   )
 }
 

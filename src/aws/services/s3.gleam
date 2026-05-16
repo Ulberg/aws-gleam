@@ -81,6 +81,7 @@ pub fn encode_abort_multipart_upload_request_struct(input: AbortMultipartUploadR
 }
 
 pub fn decode_abort_multipart_upload_request_struct() -> decode.Decoder(AbortMultipartUploadRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use if_match_initiated_time <- decode.optional_field("IfMatchInitiatedTime", option.None, decode.optional(json_timestamp.decoder()))
@@ -98,6 +99,7 @@ pub fn decode_abort_multipart_upload_request_struct() -> decode.Decoder(AbortMul
 }
 
 pub fn decode_abort_multipart_upload_request_struct_params() -> decode.Decoder(AbortMultipartUploadRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use if_match_initiated_time <- decode.optional_field("IfMatchInitiatedTime", option.None, decode.optional(json_timestamp.decoder()))
@@ -173,6 +175,7 @@ pub fn encode_abort_multipart_upload_output_struct(input: AbortMultipartUploadOu
 }
 
 pub fn decode_abort_multipart_upload_output_struct() -> decode.Decoder(AbortMultipartUploadOutput) {
+  use <- decode.recursive
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   decode.success(AbortMultipartUploadOutput(
     request_charged: request_charged,
@@ -180,6 +183,7 @@ pub fn decode_abort_multipart_upload_output_struct() -> decode.Decoder(AbortMult
 }
 
 pub fn decode_abort_multipart_upload_output_struct_params() -> decode.Decoder(AbortMultipartUploadOutput) {
+  use <- decode.recursive
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   decode.success(AbortMultipartUploadOutput(
     request_charged: request_charged,
@@ -351,6 +355,7 @@ pub fn encode_complete_multipart_upload_request_struct(input: CompleteMultipartU
 }
 
 pub fn decode_complete_multipart_upload_request_struct() -> decode.Decoder(CompleteMultipartUploadRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
@@ -402,6 +407,7 @@ pub fn decode_complete_multipart_upload_request_struct() -> decode.Decoder(Compl
 }
 
 pub fn decode_complete_multipart_upload_request_struct_params() -> decode.Decoder(CompleteMultipartUploadRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
@@ -548,6 +554,7 @@ pub fn encode_completed_multipart_upload_struct(input: CompletedMultipartUpload)
 }
 
 pub fn decode_completed_multipart_upload_struct() -> decode.Decoder(CompletedMultipartUpload) {
+  use <- decode.recursive
   use parts <- decode.optional_field("Parts", option.None, decode.optional(decode.list(decode_completed_part_struct())))
   decode.success(CompletedMultipartUpload(
     parts: parts,
@@ -555,6 +562,7 @@ pub fn decode_completed_multipart_upload_struct() -> decode.Decoder(CompletedMul
 }
 
 pub fn decode_completed_multipart_upload_struct_params() -> decode.Decoder(CompletedMultipartUpload) {
+  use <- decode.recursive
   use parts <- decode.optional_field("Parts", option.None, decode.optional(decode.list(decode_completed_part_struct_params())))
   decode.success(CompletedMultipartUpload(
     parts: parts,
@@ -639,6 +647,7 @@ pub fn encode_completed_part_struct(input: CompletedPart) -> json.Json {
 }
 
 pub fn decode_completed_part_struct() -> decode.Decoder(CompletedPart) {
+  use <- decode.recursive
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -668,6 +677,7 @@ pub fn decode_completed_part_struct() -> decode.Decoder(CompletedPart) {
 }
 
 pub fn decode_completed_part_struct_params() -> decode.Decoder(CompletedPart) {
+  use <- decode.recursive
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -876,6 +886,7 @@ pub fn encode_complete_multipart_upload_output_struct(input: CompleteMultipartUp
 }
 
 pub fn decode_complete_multipart_upload_output_struct() -> decode.Decoder(CompleteMultipartUploadOutput) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
@@ -923,6 +934,7 @@ pub fn decode_complete_multipart_upload_output_struct() -> decode.Decoder(Comple
 }
 
 pub fn decode_complete_multipart_upload_output_struct_params() -> decode.Decoder(CompleteMultipartUploadOutput) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
@@ -1296,6 +1308,7 @@ pub fn encode_copy_object_request_struct(input: CopyObjectRequest) -> json.Json 
 }
 
 pub fn decode_copy_object_request_struct() -> decode.Decoder(CopyObjectRequest) {
+  use <- decode.recursive
   use acl <- decode.optional_field("ACL", option.None, decode.optional(decode_object_canned_acl_enum()))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
@@ -1387,6 +1400,7 @@ pub fn decode_copy_object_request_struct() -> decode.Decoder(CopyObjectRequest) 
 }
 
 pub fn decode_copy_object_request_struct_params() -> decode.Decoder(CopyObjectRequest) {
+  use <- decode.recursive
   use acl <- decode.optional_field("ACL", option.None, decode.optional(decode_object_canned_acl_enum()))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
@@ -1857,6 +1871,7 @@ pub fn encode_copy_object_output_struct(input: CopyObjectOutput) -> json.Json {
 }
 
 pub fn decode_copy_object_output_struct() -> decode.Decoder(CopyObjectOutput) {
+  use <- decode.recursive
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
   use copy_object_result <- decode.optional_field("CopyObjectResult", option.None, decode.optional(decode_copy_object_result_struct()))
   use copy_source_version_id <- decode.optional_field("CopySourceVersionId", option.None, decode.optional(decode.string))
@@ -1884,6 +1899,7 @@ pub fn decode_copy_object_output_struct() -> decode.Decoder(CopyObjectOutput) {
 }
 
 pub fn decode_copy_object_output_struct_params() -> decode.Decoder(CopyObjectOutput) {
+  use <- decode.recursive
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
   use copy_object_result <- decode.optional_field("CopyObjectResult", option.None, decode.optional(decode_copy_object_result_struct_params()))
   use copy_source_version_id <- decode.optional_field("CopySourceVersionId", option.None, decode.optional(decode.string))
@@ -2008,6 +2024,7 @@ pub fn encode_copy_object_result_struct(input: CopyObjectResult) -> json.Json {
 }
 
 pub fn decode_copy_object_result_struct() -> decode.Decoder(CopyObjectResult) {
+  use <- decode.recursive
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -2039,6 +2056,7 @@ pub fn decode_copy_object_result_struct() -> decode.Decoder(CopyObjectResult) {
 }
 
 pub fn decode_copy_object_result_struct_params() -> decode.Decoder(CopyObjectResult) {
+  use <- decode.recursive
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -2244,6 +2262,7 @@ pub fn encode_create_bucket_request_struct(input: CreateBucketRequest) -> json.J
 }
 
 pub fn decode_create_bucket_request_struct() -> decode.Decoder(CreateBucketRequest) {
+  use <- decode.recursive
   use acl <- decode.optional_field("ACL", option.None, decode.optional(decode_bucket_canned_acl_enum()))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_namespace <- decode.optional_field("BucketNamespace", option.None, decode.optional(decode_bucket_namespace_enum()))
@@ -2271,6 +2290,7 @@ pub fn decode_create_bucket_request_struct() -> decode.Decoder(CreateBucketReque
 }
 
 pub fn decode_create_bucket_request_struct_params() -> decode.Decoder(CreateBucketRequest) {
+  use <- decode.recursive
   use acl <- decode.optional_field("ACL", option.None, decode.optional(decode_bucket_canned_acl_enum()))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_namespace <- decode.optional_field("BucketNamespace", option.None, decode.optional(decode_bucket_namespace_enum()))
@@ -2409,6 +2429,7 @@ pub fn encode_create_bucket_configuration_struct(input: CreateBucketConfiguratio
 }
 
 pub fn decode_create_bucket_configuration_struct() -> decode.Decoder(CreateBucketConfiguration) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode_bucket_info_struct()))
   use location <- decode.optional_field("Location", option.None, decode.optional(decode_location_info_struct()))
   use location_constraint <- decode.optional_field("LocationConstraint", option.None, decode.optional(decode_bucket_location_constraint_enum()))
@@ -2422,6 +2443,7 @@ pub fn decode_create_bucket_configuration_struct() -> decode.Decoder(CreateBucke
 }
 
 pub fn decode_create_bucket_configuration_struct_params() -> decode.Decoder(CreateBucketConfiguration) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode_bucket_info_struct_params()))
   use location <- decode.optional_field("Location", option.None, decode.optional(decode_location_info_struct_params()))
   use location_constraint <- decode.optional_field("LocationConstraint", option.None, decode.optional(decode_bucket_location_constraint_enum()))
@@ -2491,6 +2513,7 @@ pub fn encode_bucket_info_struct(input: BucketInfo) -> json.Json {
 }
 
 pub fn decode_bucket_info_struct() -> decode.Decoder(BucketInfo) {
+  use <- decode.recursive
   use data_redundancy <- decode.optional_field("DataRedundancy", option.None, decode.optional(decode_data_redundancy_enum()))
   use type_ <- decode.optional_field("Type", option.None, decode.optional(decode_bucket_type_enum()))
   decode.success(BucketInfo(
@@ -2500,6 +2523,7 @@ pub fn decode_bucket_info_struct() -> decode.Decoder(BucketInfo) {
 }
 
 pub fn decode_bucket_info_struct_params() -> decode.Decoder(BucketInfo) {
+  use <- decode.recursive
   use data_redundancy <- decode.optional_field("DataRedundancy", option.None, decode.optional(decode_data_redundancy_enum()))
   use type_ <- decode.optional_field("Type", option.None, decode.optional(decode_bucket_type_enum()))
   decode.success(BucketInfo(
@@ -2595,6 +2619,7 @@ pub fn encode_location_info_struct(input: LocationInfo) -> json.Json {
 }
 
 pub fn decode_location_info_struct() -> decode.Decoder(LocationInfo) {
+  use <- decode.recursive
   use name <- decode.optional_field("Name", option.None, decode.optional(decode.string))
   use type_ <- decode.optional_field("Type", option.None, decode.optional(decode_location_type_enum()))
   decode.success(LocationInfo(
@@ -2604,6 +2629,7 @@ pub fn decode_location_info_struct() -> decode.Decoder(LocationInfo) {
 }
 
 pub fn decode_location_info_struct_params() -> decode.Decoder(LocationInfo) {
+  use <- decode.recursive
   use name <- decode.optional_field("Name", option.None, decode.optional(decode.string))
   use type_ <- decode.optional_field("Type", option.None, decode.optional(decode_location_type_enum()))
   decode.success(LocationInfo(
@@ -2809,6 +2835,7 @@ pub fn encode_tag_struct(input: Tag) -> json.Json {
 }
 
 pub fn decode_tag_struct() -> decode.Decoder(Tag) {
+  use <- decode.recursive
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
   use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
   decode.success(Tag(
@@ -2818,6 +2845,7 @@ pub fn decode_tag_struct() -> decode.Decoder(Tag) {
 }
 
 pub fn decode_tag_struct_params() -> decode.Decoder(Tag) {
+  use <- decode.recursive
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
   use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
   decode.success(Tag(
@@ -2895,6 +2923,7 @@ pub fn encode_create_bucket_output_struct(input: CreateBucketOutput) -> json.Jso
 }
 
 pub fn decode_create_bucket_output_struct() -> decode.Decoder(CreateBucketOutput) {
+  use <- decode.recursive
   use bucket_arn <- decode.optional_field("BucketArn", option.None, decode.optional(decode.string))
   use location <- decode.optional_field("Location", option.None, decode.optional(decode.string))
   decode.success(CreateBucketOutput(
@@ -2904,6 +2933,7 @@ pub fn decode_create_bucket_output_struct() -> decode.Decoder(CreateBucketOutput
 }
 
 pub fn decode_create_bucket_output_struct_params() -> decode.Decoder(CreateBucketOutput) {
+  use <- decode.recursive
   use bucket_arn <- decode.optional_field("BucketArn", option.None, decode.optional(decode.string))
   use location <- decode.optional_field("Location", option.None, decode.optional(decode.string))
   decode.success(CreateBucketOutput(
@@ -3120,6 +3150,7 @@ pub fn encode_create_multipart_upload_request_struct(input: CreateMultipartUploa
 }
 
 pub fn decode_create_multipart_upload_request_struct() -> decode.Decoder(CreateMultipartUploadRequest) {
+  use <- decode.recursive
   use acl <- decode.optional_field("ACL", option.None, decode.optional(decode_object_canned_acl_enum()))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
@@ -3187,6 +3218,7 @@ pub fn decode_create_multipart_upload_request_struct() -> decode.Decoder(CreateM
 }
 
 pub fn decode_create_multipart_upload_request_struct_params() -> decode.Decoder(CreateMultipartUploadRequest) {
+  use <- decode.recursive
   use acl <- decode.optional_field("ACL", option.None, decode.optional(decode_object_canned_acl_enum()))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
@@ -3395,6 +3427,7 @@ pub fn encode_create_multipart_upload_output_struct(input: CreateMultipartUpload
 }
 
 pub fn decode_create_multipart_upload_output_struct() -> decode.Decoder(CreateMultipartUploadOutput) {
+  use <- decode.recursive
   use abort_date <- decode.optional_field("AbortDate", option.None, decode.optional(json_timestamp.decoder()))
   use abort_rule_id <- decode.optional_field("AbortRuleId", option.None, decode.optional(decode.string))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
@@ -3428,6 +3461,7 @@ pub fn decode_create_multipart_upload_output_struct() -> decode.Decoder(CreateMu
 }
 
 pub fn decode_create_multipart_upload_output_struct_params() -> decode.Decoder(CreateMultipartUploadOutput) {
+  use <- decode.recursive
   use abort_date <- decode.optional_field("AbortDate", option.None, decode.optional(json_timestamp.decoder()))
   use abort_rule_id <- decode.optional_field("AbortRuleId", option.None, decode.optional(decode.string))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
@@ -3548,6 +3582,7 @@ pub fn encode_create_session_request_struct(input: CreateSessionRequest) -> json
 }
 
 pub fn decode_create_session_request_struct() -> decode.Decoder(CreateSessionRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
   use ssekms_encryption_context <- decode.optional_field("SSEKMSEncryptionContext", option.None, decode.optional(decode.string))
@@ -3565,6 +3600,7 @@ pub fn decode_create_session_request_struct() -> decode.Decoder(CreateSessionReq
 }
 
 pub fn decode_create_session_request_struct_params() -> decode.Decoder(CreateSessionRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
   use ssekms_encryption_context <- decode.optional_field("SSEKMSEncryptionContext", option.None, decode.optional(decode.string))
@@ -3659,6 +3695,7 @@ pub fn encode_create_session_output_struct(input: CreateSessionOutput) -> json.J
 }
 
 pub fn decode_create_session_output_struct() -> decode.Decoder(CreateSessionOutput) {
+  use <- decode.recursive
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
   use credentials <- decode.optional_field("Credentials", option.None, decode.optional(decode_session_credentials_struct()))
   use ssekms_encryption_context <- decode.optional_field("SSEKMSEncryptionContext", option.None, decode.optional(decode.string))
@@ -3674,6 +3711,7 @@ pub fn decode_create_session_output_struct() -> decode.Decoder(CreateSessionOutp
 }
 
 pub fn decode_create_session_output_struct_params() -> decode.Decoder(CreateSessionOutput) {
+  use <- decode.recursive
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
   use credentials <- decode.optional_field("Credentials", option.None, decode.optional(decode_session_credentials_struct_params()))
   use ssekms_encryption_context <- decode.optional_field("SSEKMSEncryptionContext", option.None, decode.optional(decode.string))
@@ -3742,6 +3780,7 @@ pub fn encode_session_credentials_struct(input: SessionCredentials) -> json.Json
 }
 
 pub fn decode_session_credentials_struct() -> decode.Decoder(SessionCredentials) {
+  use <- decode.recursive
   use access_key_id <- decode.optional_field("AccessKeyId", option.None, decode.optional(decode.string))
   use expiration <- decode.optional_field("Expiration", option.None, decode.optional(json_timestamp.decoder()))
   use secret_access_key <- decode.optional_field("SecretAccessKey", option.None, decode.optional(decode.string))
@@ -3755,6 +3794,7 @@ pub fn decode_session_credentials_struct() -> decode.Decoder(SessionCredentials)
 }
 
 pub fn decode_session_credentials_struct_params() -> decode.Decoder(SessionCredentials) {
+  use <- decode.recursive
   use access_key_id <- decode.optional_field("AccessKeyId", option.None, decode.optional(decode.string))
   use expiration <- decode.optional_field("Expiration", option.None, decode.optional(json_timestamp.decoder()))
   use secret_access_key <- decode.optional_field("SecretAccessKey", option.None, decode.optional(decode.string))
@@ -3851,6 +3891,7 @@ pub fn encode_delete_bucket_request_struct(input: DeleteBucketRequest) -> json.J
 }
 
 pub fn decode_delete_bucket_request_struct() -> decode.Decoder(DeleteBucketRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketRequest(
@@ -3860,6 +3901,7 @@ pub fn decode_delete_bucket_request_struct() -> decode.Decoder(DeleteBucketReque
 }
 
 pub fn decode_delete_bucket_request_struct_params() -> decode.Decoder(DeleteBucketRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketRequest(
@@ -3908,6 +3950,7 @@ pub fn encode_delete_bucket_analytics_configuration_request_struct(input: Delete
 }
 
 pub fn decode_delete_bucket_analytics_configuration_request_struct() -> decode.Decoder(DeleteBucketAnalyticsConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -3919,6 +3962,7 @@ pub fn decode_delete_bucket_analytics_configuration_request_struct() -> decode.D
 }
 
 pub fn decode_delete_bucket_analytics_configuration_request_struct_params() -> decode.Decoder(DeleteBucketAnalyticsConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -3967,6 +4011,7 @@ pub fn encode_delete_bucket_cors_request_struct(input: DeleteBucketCorsRequest) 
 }
 
 pub fn decode_delete_bucket_cors_request_struct() -> decode.Decoder(DeleteBucketCorsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketCorsRequest(
@@ -3976,6 +4021,7 @@ pub fn decode_delete_bucket_cors_request_struct() -> decode.Decoder(DeleteBucket
 }
 
 pub fn decode_delete_bucket_cors_request_struct_params() -> decode.Decoder(DeleteBucketCorsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketCorsRequest(
@@ -4020,6 +4066,7 @@ pub fn encode_delete_bucket_encryption_request_struct(input: DeleteBucketEncrypt
 }
 
 pub fn decode_delete_bucket_encryption_request_struct() -> decode.Decoder(DeleteBucketEncryptionRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketEncryptionRequest(
@@ -4029,6 +4076,7 @@ pub fn decode_delete_bucket_encryption_request_struct() -> decode.Decoder(Delete
 }
 
 pub fn decode_delete_bucket_encryption_request_struct_params() -> decode.Decoder(DeleteBucketEncryptionRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketEncryptionRequest(
@@ -4077,6 +4125,7 @@ pub fn encode_delete_bucket_intelligent_tiering_configuration_request_struct(inp
 }
 
 pub fn decode_delete_bucket_intelligent_tiering_configuration_request_struct() -> decode.Decoder(DeleteBucketIntelligentTieringConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -4088,6 +4137,7 @@ pub fn decode_delete_bucket_intelligent_tiering_configuration_request_struct() -
 }
 
 pub fn decode_delete_bucket_intelligent_tiering_configuration_request_struct_params() -> decode.Decoder(DeleteBucketIntelligentTieringConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -4140,6 +4190,7 @@ pub fn encode_delete_bucket_inventory_configuration_request_struct(input: Delete
 }
 
 pub fn decode_delete_bucket_inventory_configuration_request_struct() -> decode.Decoder(DeleteBucketInventoryConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -4151,6 +4202,7 @@ pub fn decode_delete_bucket_inventory_configuration_request_struct() -> decode.D
 }
 
 pub fn decode_delete_bucket_inventory_configuration_request_struct_params() -> decode.Decoder(DeleteBucketInventoryConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -4199,6 +4251,7 @@ pub fn encode_delete_bucket_lifecycle_request_struct(input: DeleteBucketLifecycl
 }
 
 pub fn decode_delete_bucket_lifecycle_request_struct() -> decode.Decoder(DeleteBucketLifecycleRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketLifecycleRequest(
@@ -4208,6 +4261,7 @@ pub fn decode_delete_bucket_lifecycle_request_struct() -> decode.Decoder(DeleteB
 }
 
 pub fn decode_delete_bucket_lifecycle_request_struct_params() -> decode.Decoder(DeleteBucketLifecycleRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketLifecycleRequest(
@@ -4252,6 +4306,7 @@ pub fn encode_delete_bucket_metadata_configuration_request_struct(input: DeleteB
 }
 
 pub fn decode_delete_bucket_metadata_configuration_request_struct() -> decode.Decoder(DeleteBucketMetadataConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketMetadataConfigurationRequest(
@@ -4261,6 +4316,7 @@ pub fn decode_delete_bucket_metadata_configuration_request_struct() -> decode.De
 }
 
 pub fn decode_delete_bucket_metadata_configuration_request_struct_params() -> decode.Decoder(DeleteBucketMetadataConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketMetadataConfigurationRequest(
@@ -4305,6 +4361,7 @@ pub fn encode_delete_bucket_metadata_table_configuration_request_struct(input: D
 }
 
 pub fn decode_delete_bucket_metadata_table_configuration_request_struct() -> decode.Decoder(DeleteBucketMetadataTableConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketMetadataTableConfigurationRequest(
@@ -4314,6 +4371,7 @@ pub fn decode_delete_bucket_metadata_table_configuration_request_struct() -> dec
 }
 
 pub fn decode_delete_bucket_metadata_table_configuration_request_struct_params() -> decode.Decoder(DeleteBucketMetadataTableConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketMetadataTableConfigurationRequest(
@@ -4362,6 +4420,7 @@ pub fn encode_delete_bucket_metrics_configuration_request_struct(input: DeleteBu
 }
 
 pub fn decode_delete_bucket_metrics_configuration_request_struct() -> decode.Decoder(DeleteBucketMetricsConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -4373,6 +4432,7 @@ pub fn decode_delete_bucket_metrics_configuration_request_struct() -> decode.Dec
 }
 
 pub fn decode_delete_bucket_metrics_configuration_request_struct_params() -> decode.Decoder(DeleteBucketMetricsConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -4421,6 +4481,7 @@ pub fn encode_delete_bucket_ownership_controls_request_struct(input: DeleteBucke
 }
 
 pub fn decode_delete_bucket_ownership_controls_request_struct() -> decode.Decoder(DeleteBucketOwnershipControlsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketOwnershipControlsRequest(
@@ -4430,6 +4491,7 @@ pub fn decode_delete_bucket_ownership_controls_request_struct() -> decode.Decode
 }
 
 pub fn decode_delete_bucket_ownership_controls_request_struct_params() -> decode.Decoder(DeleteBucketOwnershipControlsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketOwnershipControlsRequest(
@@ -4474,6 +4536,7 @@ pub fn encode_delete_bucket_policy_request_struct(input: DeleteBucketPolicyReque
 }
 
 pub fn decode_delete_bucket_policy_request_struct() -> decode.Decoder(DeleteBucketPolicyRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketPolicyRequest(
@@ -4483,6 +4546,7 @@ pub fn decode_delete_bucket_policy_request_struct() -> decode.Decoder(DeleteBuck
 }
 
 pub fn decode_delete_bucket_policy_request_struct_params() -> decode.Decoder(DeleteBucketPolicyRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketPolicyRequest(
@@ -4527,6 +4591,7 @@ pub fn encode_delete_bucket_replication_request_struct(input: DeleteBucketReplic
 }
 
 pub fn decode_delete_bucket_replication_request_struct() -> decode.Decoder(DeleteBucketReplicationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketReplicationRequest(
@@ -4536,6 +4601,7 @@ pub fn decode_delete_bucket_replication_request_struct() -> decode.Decoder(Delet
 }
 
 pub fn decode_delete_bucket_replication_request_struct_params() -> decode.Decoder(DeleteBucketReplicationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketReplicationRequest(
@@ -4580,6 +4646,7 @@ pub fn encode_delete_bucket_tagging_request_struct(input: DeleteBucketTaggingReq
 }
 
 pub fn decode_delete_bucket_tagging_request_struct() -> decode.Decoder(DeleteBucketTaggingRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketTaggingRequest(
@@ -4589,6 +4656,7 @@ pub fn decode_delete_bucket_tagging_request_struct() -> decode.Decoder(DeleteBuc
 }
 
 pub fn decode_delete_bucket_tagging_request_struct_params() -> decode.Decoder(DeleteBucketTaggingRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketTaggingRequest(
@@ -4633,6 +4701,7 @@ pub fn encode_delete_bucket_website_request_struct(input: DeleteBucketWebsiteReq
 }
 
 pub fn decode_delete_bucket_website_request_struct() -> decode.Decoder(DeleteBucketWebsiteRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketWebsiteRequest(
@@ -4642,6 +4711,7 @@ pub fn decode_delete_bucket_website_request_struct() -> decode.Decoder(DeleteBuc
 }
 
 pub fn decode_delete_bucket_website_request_struct_params() -> decode.Decoder(DeleteBucketWebsiteRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketWebsiteRequest(
@@ -4718,6 +4788,7 @@ pub fn encode_delete_object_request_struct(input: DeleteObjectRequest) -> json.J
 }
 
 pub fn decode_delete_object_request_struct() -> decode.Decoder(DeleteObjectRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bypass_governance_retention <- decode.optional_field("BypassGovernanceRetention", option.None, decode.optional(decode.bool))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -4743,6 +4814,7 @@ pub fn decode_delete_object_request_struct() -> decode.Decoder(DeleteObjectReque
 }
 
 pub fn decode_delete_object_request_struct_params() -> decode.Decoder(DeleteObjectRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bypass_governance_retention <- decode.optional_field("BypassGovernanceRetention", option.None, decode.optional(decode.bool))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -4823,6 +4895,7 @@ pub fn encode_delete_object_output_struct(input: DeleteObjectOutput) -> json.Jso
 }
 
 pub fn decode_delete_object_output_struct() -> decode.Decoder(DeleteObjectOutput) {
+  use <- decode.recursive
   use delete_marker <- decode.optional_field("DeleteMarker", option.None, decode.optional(decode.bool))
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
@@ -4834,6 +4907,7 @@ pub fn decode_delete_object_output_struct() -> decode.Decoder(DeleteObjectOutput
 }
 
 pub fn decode_delete_object_output_struct_params() -> decode.Decoder(DeleteObjectOutput) {
+  use <- decode.recursive
   use delete_marker <- decode.optional_field("DeleteMarker", option.None, decode.optional(decode.bool))
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
@@ -4890,6 +4964,7 @@ pub fn encode_delete_object_tagging_request_struct(input: DeleteObjectTaggingReq
 }
 
 pub fn decode_delete_object_tagging_request_struct() -> decode.Decoder(DeleteObjectTaggingRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -4903,6 +4978,7 @@ pub fn decode_delete_object_tagging_request_struct() -> decode.Decoder(DeleteObj
 }
 
 pub fn decode_delete_object_tagging_request_struct_params() -> decode.Decoder(DeleteObjectTaggingRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -4951,6 +5027,7 @@ pub fn encode_delete_object_tagging_output_struct(input: DeleteObjectTaggingOutp
 }
 
 pub fn decode_delete_object_tagging_output_struct() -> decode.Decoder(DeleteObjectTaggingOutput) {
+  use <- decode.recursive
   use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
   decode.success(DeleteObjectTaggingOutput(
     version_id: version_id,
@@ -4958,6 +5035,7 @@ pub fn decode_delete_object_tagging_output_struct() -> decode.Decoder(DeleteObje
 }
 
 pub fn decode_delete_object_tagging_output_struct_params() -> decode.Decoder(DeleteObjectTaggingOutput) {
+  use <- decode.recursive
   use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
   decode.success(DeleteObjectTaggingOutput(
     version_id: version_id,
@@ -4998,6 +5076,7 @@ pub fn encode_delete_public_access_block_request_struct(input: DeletePublicAcces
 }
 
 pub fn decode_delete_public_access_block_request_struct() -> decode.Decoder(DeletePublicAccessBlockRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeletePublicAccessBlockRequest(
@@ -5007,6 +5086,7 @@ pub fn decode_delete_public_access_block_request_struct() -> decode.Decoder(Dele
 }
 
 pub fn decode_delete_public_access_block_request_struct_params() -> decode.Decoder(DeletePublicAccessBlockRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeletePublicAccessBlockRequest(
@@ -5051,6 +5131,7 @@ pub fn encode_get_bucket_abac_request_struct(input: GetBucketAbacRequest) -> jso
 }
 
 pub fn decode_get_bucket_abac_request_struct() -> decode.Decoder(GetBucketAbacRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketAbacRequest(
@@ -5060,6 +5141,7 @@ pub fn decode_get_bucket_abac_request_struct() -> decode.Decoder(GetBucketAbacRe
 }
 
 pub fn decode_get_bucket_abac_request_struct_params() -> decode.Decoder(GetBucketAbacRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketAbacRequest(
@@ -5100,6 +5182,7 @@ pub fn encode_get_bucket_abac_output_struct(input: GetBucketAbacOutput) -> json.
 }
 
 pub fn decode_get_bucket_abac_output_struct() -> decode.Decoder(GetBucketAbacOutput) {
+  use <- decode.recursive
   use abac_status <- decode.optional_field("AbacStatus", option.None, decode.optional(decode_abac_status_struct()))
   decode.success(GetBucketAbacOutput(
     abac_status: abac_status,
@@ -5107,6 +5190,7 @@ pub fn decode_get_bucket_abac_output_struct() -> decode.Decoder(GetBucketAbacOut
 }
 
 pub fn decode_get_bucket_abac_output_struct_params() -> decode.Decoder(GetBucketAbacOutput) {
+  use <- decode.recursive
   use abac_status <- decode.optional_field("AbacStatus", option.None, decode.optional(decode_abac_status_struct_params()))
   decode.success(GetBucketAbacOutput(
     abac_status: abac_status,
@@ -5143,6 +5227,7 @@ pub fn encode_abac_status_struct(input: AbacStatus) -> json.Json {
 }
 
 pub fn decode_abac_status_struct() -> decode.Decoder(AbacStatus) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_bucket_abac_status_enum()))
   decode.success(AbacStatus(
     status: status,
@@ -5150,6 +5235,7 @@ pub fn decode_abac_status_struct() -> decode.Decoder(AbacStatus) {
 }
 
 pub fn decode_abac_status_struct_params() -> decode.Decoder(AbacStatus) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_bucket_abac_status_enum()))
   decode.success(AbacStatus(
     status: status,
@@ -5221,6 +5307,7 @@ pub fn encode_get_bucket_accelerate_configuration_request_struct(input: GetBucke
 }
 
 pub fn decode_get_bucket_accelerate_configuration_request_struct() -> decode.Decoder(GetBucketAccelerateConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
@@ -5232,6 +5319,7 @@ pub fn decode_get_bucket_accelerate_configuration_request_struct() -> decode.Dec
 }
 
 pub fn decode_get_bucket_accelerate_configuration_request_struct_params() -> decode.Decoder(GetBucketAccelerateConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
@@ -5280,6 +5368,7 @@ pub fn encode_get_bucket_accelerate_configuration_output_struct(input: GetBucket
 }
 
 pub fn decode_get_bucket_accelerate_configuration_output_struct() -> decode.Decoder(GetBucketAccelerateConfigurationOutput) {
+  use <- decode.recursive
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_bucket_accelerate_status_enum()))
   decode.success(GetBucketAccelerateConfigurationOutput(
@@ -5289,6 +5378,7 @@ pub fn decode_get_bucket_accelerate_configuration_output_struct() -> decode.Deco
 }
 
 pub fn decode_get_bucket_accelerate_configuration_output_struct_params() -> decode.Decoder(GetBucketAccelerateConfigurationOutput) {
+  use <- decode.recursive
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_bucket_accelerate_status_enum()))
   decode.success(GetBucketAccelerateConfigurationOutput(
@@ -5360,6 +5450,7 @@ pub fn encode_get_bucket_acl_request_struct(input: GetBucketAclRequest) -> json.
 }
 
 pub fn decode_get_bucket_acl_request_struct() -> decode.Decoder(GetBucketAclRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketAclRequest(
@@ -5369,6 +5460,7 @@ pub fn decode_get_bucket_acl_request_struct() -> decode.Decoder(GetBucketAclRequ
 }
 
 pub fn decode_get_bucket_acl_request_struct_params() -> decode.Decoder(GetBucketAclRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketAclRequest(
@@ -5413,6 +5505,7 @@ pub fn encode_get_bucket_acl_output_struct(input: GetBucketAclOutput) -> json.Js
 }
 
 pub fn decode_get_bucket_acl_output_struct() -> decode.Decoder(GetBucketAclOutput) {
+  use <- decode.recursive
   use grants <- decode.optional_field("Grants", option.None, decode.optional(decode.list(decode_grant_struct())))
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct()))
   decode.success(GetBucketAclOutput(
@@ -5422,6 +5515,7 @@ pub fn decode_get_bucket_acl_output_struct() -> decode.Decoder(GetBucketAclOutpu
 }
 
 pub fn decode_get_bucket_acl_output_struct_params() -> decode.Decoder(GetBucketAclOutput) {
+  use <- decode.recursive
   use grants <- decode.optional_field("Grants", option.None, decode.optional(decode.list(decode_grant_struct_params())))
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct_params()))
   decode.success(GetBucketAclOutput(
@@ -5474,6 +5568,7 @@ pub fn encode_grant_struct(input: Grant) -> json.Json {
 }
 
 pub fn decode_grant_struct() -> decode.Decoder(Grant) {
+  use <- decode.recursive
   use grantee <- decode.optional_field("Grantee", option.None, decode.optional(decode_grantee_struct()))
   use permission <- decode.optional_field("Permission", option.None, decode.optional(decode_permission_enum()))
   decode.success(Grant(
@@ -5483,6 +5578,7 @@ pub fn decode_grant_struct() -> decode.Decoder(Grant) {
 }
 
 pub fn decode_grant_struct_params() -> decode.Decoder(Grant) {
+  use <- decode.recursive
   use grantee <- decode.optional_field("Grantee", option.None, decode.optional(decode_grantee_struct_params()))
   use permission <- decode.optional_field("Permission", option.None, decode.optional(decode_permission_enum()))
   decode.success(Grant(
@@ -5548,6 +5644,7 @@ pub fn encode_grantee_struct(input: Grantee) -> json.Json {
 }
 
 pub fn decode_grantee_struct() -> decode.Decoder(Grantee) {
+  use <- decode.recursive
   use display_name <- decode.optional_field("DisplayName", option.None, decode.optional(decode.string))
   use email_address <- decode.optional_field("EmailAddress", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
@@ -5563,6 +5660,7 @@ pub fn decode_grantee_struct() -> decode.Decoder(Grantee) {
 }
 
 pub fn decode_grantee_struct_params() -> decode.Decoder(Grantee) {
+  use <- decode.recursive
   use display_name <- decode.optional_field("DisplayName", option.None, decode.optional(decode.string))
   use email_address <- decode.optional_field("EmailAddress", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
@@ -5696,6 +5794,7 @@ pub fn encode_owner_struct(input: Owner) -> json.Json {
 }
 
 pub fn decode_owner_struct() -> decode.Decoder(Owner) {
+  use <- decode.recursive
   use display_name <- decode.optional_field("DisplayName", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
   decode.success(Owner(
@@ -5705,6 +5804,7 @@ pub fn decode_owner_struct() -> decode.Decoder(Owner) {
 }
 
 pub fn decode_owner_struct_params() -> decode.Decoder(Owner) {
+  use <- decode.recursive
   use display_name <- decode.optional_field("DisplayName", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
   decode.success(Owner(
@@ -5761,6 +5861,7 @@ pub fn encode_get_bucket_analytics_configuration_request_struct(input: GetBucket
 }
 
 pub fn decode_get_bucket_analytics_configuration_request_struct() -> decode.Decoder(GetBucketAnalyticsConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -5772,6 +5873,7 @@ pub fn decode_get_bucket_analytics_configuration_request_struct() -> decode.Deco
 }
 
 pub fn decode_get_bucket_analytics_configuration_request_struct_params() -> decode.Decoder(GetBucketAnalyticsConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -5816,6 +5918,7 @@ pub fn encode_get_bucket_analytics_configuration_output_struct(input: GetBucketA
 }
 
 pub fn decode_get_bucket_analytics_configuration_output_struct() -> decode.Decoder(GetBucketAnalyticsConfigurationOutput) {
+  use <- decode.recursive
   use analytics_configuration <- decode.optional_field("AnalyticsConfiguration", option.None, decode.optional(decode_analytics_configuration_struct()))
   decode.success(GetBucketAnalyticsConfigurationOutput(
     analytics_configuration: analytics_configuration,
@@ -5823,6 +5926,7 @@ pub fn decode_get_bucket_analytics_configuration_output_struct() -> decode.Decod
 }
 
 pub fn decode_get_bucket_analytics_configuration_output_struct_params() -> decode.Decoder(GetBucketAnalyticsConfigurationOutput) {
+  use <- decode.recursive
   use analytics_configuration <- decode.optional_field("AnalyticsConfiguration", option.None, decode.optional(decode_analytics_configuration_struct_params()))
   decode.success(GetBucketAnalyticsConfigurationOutput(
     analytics_configuration: analytics_configuration,
@@ -5867,6 +5971,7 @@ pub fn encode_analytics_configuration_struct(input: AnalyticsConfiguration) -> j
 }
 
 pub fn decode_analytics_configuration_struct() -> decode.Decoder(AnalyticsConfiguration) {
+  use <- decode.recursive
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_analytics_filter_union()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   use storage_class_analysis <- decode.optional_field("StorageClassAnalysis", option.None, decode.optional(decode_storage_class_analysis_struct()))
@@ -5878,6 +5983,7 @@ pub fn decode_analytics_configuration_struct() -> decode.Decoder(AnalyticsConfig
 }
 
 pub fn decode_analytics_configuration_struct_params() -> decode.Decoder(AnalyticsConfiguration) {
+  use <- decode.recursive
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_analytics_filter_union_params()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   use storage_class_analysis <- decode.optional_field("StorageClassAnalysis", option.None, decode.optional(decode_storage_class_analysis_struct_params()))
@@ -5936,6 +6042,7 @@ pub fn encode_analytics_filter_union(v: AnalyticsFilter) -> json.Json {
 }
 
 pub fn decode_analytics_filter_union() -> decode.Decoder(AnalyticsFilter) {
+  use <- decode.recursive
   decode.one_of(
     decode.field("And", decode_analytics_and_operator_struct(), fn(x) { decode.success(AnalyticsFilterAnd(x)) }),
     [
@@ -5946,6 +6053,7 @@ pub fn decode_analytics_filter_union() -> decode.Decoder(AnalyticsFilter) {
 }
 
 pub fn decode_analytics_filter_union_params() -> decode.Decoder(AnalyticsFilter) {
+  use <- decode.recursive
   decode.one_of(
     decode.field("And", decode_analytics_and_operator_struct_params(), fn(x) { decode.success(AnalyticsFilterAnd(x)) }),
     [
@@ -5973,6 +6081,7 @@ pub fn encode_analytics_and_operator_struct(input: AnalyticsAndOperator) -> json
 }
 
 pub fn decode_analytics_and_operator_struct() -> decode.Decoder(AnalyticsAndOperator) {
+  use <- decode.recursive
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct())))
   decode.success(AnalyticsAndOperator(
@@ -5982,6 +6091,7 @@ pub fn decode_analytics_and_operator_struct() -> decode.Decoder(AnalyticsAndOper
 }
 
 pub fn decode_analytics_and_operator_struct_params() -> decode.Decoder(AnalyticsAndOperator) {
+  use <- decode.recursive
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
   decode.success(AnalyticsAndOperator(
@@ -6030,6 +6140,7 @@ pub fn encode_storage_class_analysis_struct(input: StorageClassAnalysis) -> json
 }
 
 pub fn decode_storage_class_analysis_struct() -> decode.Decoder(StorageClassAnalysis) {
+  use <- decode.recursive
   use data_export <- decode.optional_field("DataExport", option.None, decode.optional(decode_storage_class_analysis_data_export_struct()))
   decode.success(StorageClassAnalysis(
     data_export: data_export,
@@ -6037,6 +6148,7 @@ pub fn decode_storage_class_analysis_struct() -> decode.Decoder(StorageClassAnal
 }
 
 pub fn decode_storage_class_analysis_struct_params() -> decode.Decoder(StorageClassAnalysis) {
+  use <- decode.recursive
   use data_export <- decode.optional_field("DataExport", option.None, decode.optional(decode_storage_class_analysis_data_export_struct_params()))
   decode.success(StorageClassAnalysis(
     data_export: data_export,
@@ -6081,6 +6193,7 @@ pub fn encode_storage_class_analysis_data_export_struct(input: StorageClassAnaly
 }
 
 pub fn decode_storage_class_analysis_data_export_struct() -> decode.Decoder(StorageClassAnalysisDataExport) {
+  use <- decode.recursive
   use destination <- decode.optional_field("Destination", option.None, decode.optional(decode_analytics_export_destination_struct()))
   use output_schema_version <- decode.optional_field("OutputSchemaVersion", option.None, decode.optional(decode_storage_class_analysis_schema_version_enum()))
   decode.success(StorageClassAnalysisDataExport(
@@ -6090,6 +6203,7 @@ pub fn decode_storage_class_analysis_data_export_struct() -> decode.Decoder(Stor
 }
 
 pub fn decode_storage_class_analysis_data_export_struct_params() -> decode.Decoder(StorageClassAnalysisDataExport) {
+  use <- decode.recursive
   use destination <- decode.optional_field("Destination", option.None, decode.optional(decode_analytics_export_destination_struct_params()))
   use output_schema_version <- decode.optional_field("OutputSchemaVersion", option.None, decode.optional(decode_storage_class_analysis_schema_version_enum()))
   decode.success(StorageClassAnalysisDataExport(
@@ -6139,6 +6253,7 @@ pub fn encode_analytics_export_destination_struct(input: AnalyticsExportDestinat
 }
 
 pub fn decode_analytics_export_destination_struct() -> decode.Decoder(AnalyticsExportDestination) {
+  use <- decode.recursive
   use s3_bucket_destination <- decode.optional_field("S3BucketDestination", option.None, decode.optional(decode_analytics_s3_bucket_destination_struct()))
   decode.success(AnalyticsExportDestination(
     s3_bucket_destination: s3_bucket_destination,
@@ -6146,6 +6261,7 @@ pub fn decode_analytics_export_destination_struct() -> decode.Decoder(AnalyticsE
 }
 
 pub fn decode_analytics_export_destination_struct_params() -> decode.Decoder(AnalyticsExportDestination) {
+  use <- decode.recursive
   use s3_bucket_destination <- decode.optional_field("S3BucketDestination", option.None, decode.optional(decode_analytics_s3_bucket_destination_struct_params()))
   decode.success(AnalyticsExportDestination(
     s3_bucket_destination: s3_bucket_destination,
@@ -6198,6 +6314,7 @@ pub fn encode_analytics_s3_bucket_destination_struct(input: AnalyticsS3BucketDes
 }
 
 pub fn decode_analytics_s3_bucket_destination_struct() -> decode.Decoder(AnalyticsS3BucketDestination) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_account_id <- decode.optional_field("BucketAccountId", option.None, decode.optional(decode.string))
   use format <- decode.optional_field("Format", option.None, decode.optional(decode_analytics_s3_export_file_format_enum()))
@@ -6211,6 +6328,7 @@ pub fn decode_analytics_s3_bucket_destination_struct() -> decode.Decoder(Analyti
 }
 
 pub fn decode_analytics_s3_bucket_destination_struct_params() -> decode.Decoder(AnalyticsS3BucketDestination) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_account_id <- decode.optional_field("BucketAccountId", option.None, decode.optional(decode.string))
   use format <- decode.optional_field("Format", option.None, decode.optional(decode_analytics_s3_export_file_format_enum()))
@@ -6318,6 +6436,7 @@ pub fn encode_get_bucket_cors_request_struct(input: GetBucketCorsRequest) -> jso
 }
 
 pub fn decode_get_bucket_cors_request_struct() -> decode.Decoder(GetBucketCorsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketCorsRequest(
@@ -6327,6 +6446,7 @@ pub fn decode_get_bucket_cors_request_struct() -> decode.Decoder(GetBucketCorsRe
 }
 
 pub fn decode_get_bucket_cors_request_struct_params() -> decode.Decoder(GetBucketCorsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketCorsRequest(
@@ -6367,6 +6487,7 @@ pub fn encode_get_bucket_cors_output_struct(input: GetBucketCorsOutput) -> json.
 }
 
 pub fn decode_get_bucket_cors_output_struct() -> decode.Decoder(GetBucketCorsOutput) {
+  use <- decode.recursive
   use cors_rules <- decode.optional_field("CORSRules", option.None, decode.optional(decode.list(decode_cors_rule_struct())))
   decode.success(GetBucketCorsOutput(
     cors_rules: cors_rules,
@@ -6374,6 +6495,7 @@ pub fn decode_get_bucket_cors_output_struct() -> decode.Decoder(GetBucketCorsOut
 }
 
 pub fn decode_get_bucket_cors_output_struct_params() -> decode.Decoder(GetBucketCorsOutput) {
+  use <- decode.recursive
   use cors_rules <- decode.optional_field("CORSRules", option.None, decode.optional(decode.list(decode_cors_rule_struct_params())))
   decode.success(GetBucketCorsOutput(
     cors_rules: cors_rules,
@@ -6434,6 +6556,7 @@ pub fn encode_cors_rule_struct(input: CORSRule) -> json.Json {
 }
 
 pub fn decode_cors_rule_struct() -> decode.Decoder(CORSRule) {
+  use <- decode.recursive
   use allowed_headers <- decode.optional_field("AllowedHeaders", option.None, decode.optional(decode.list(decode.string)))
   use allowed_methods <- decode.optional_field("AllowedMethods", option.None, decode.optional(decode.list(decode.string)))
   use allowed_origins <- decode.optional_field("AllowedOrigins", option.None, decode.optional(decode.list(decode.string)))
@@ -6451,6 +6574,7 @@ pub fn decode_cors_rule_struct() -> decode.Decoder(CORSRule) {
 }
 
 pub fn decode_cors_rule_struct_params() -> decode.Decoder(CORSRule) {
+  use <- decode.recursive
   use allowed_headers <- decode.optional_field("AllowedHeaders", option.None, decode.optional(decode.list(decode.string)))
   use allowed_methods <- decode.optional_field("AllowedMethods", option.None, decode.optional(decode.list(decode.string)))
   use allowed_origins <- decode.optional_field("AllowedOrigins", option.None, decode.optional(decode.list(decode.string)))
@@ -6535,6 +6659,7 @@ pub fn encode_get_bucket_encryption_request_struct(input: GetBucketEncryptionReq
 }
 
 pub fn decode_get_bucket_encryption_request_struct() -> decode.Decoder(GetBucketEncryptionRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketEncryptionRequest(
@@ -6544,6 +6669,7 @@ pub fn decode_get_bucket_encryption_request_struct() -> decode.Decoder(GetBucket
 }
 
 pub fn decode_get_bucket_encryption_request_struct_params() -> decode.Decoder(GetBucketEncryptionRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketEncryptionRequest(
@@ -6584,6 +6710,7 @@ pub fn encode_get_bucket_encryption_output_struct(input: GetBucketEncryptionOutp
 }
 
 pub fn decode_get_bucket_encryption_output_struct() -> decode.Decoder(GetBucketEncryptionOutput) {
+  use <- decode.recursive
   use server_side_encryption_configuration <- decode.optional_field("ServerSideEncryptionConfiguration", option.None, decode.optional(decode_server_side_encryption_configuration_struct()))
   decode.success(GetBucketEncryptionOutput(
     server_side_encryption_configuration: server_side_encryption_configuration,
@@ -6591,6 +6718,7 @@ pub fn decode_get_bucket_encryption_output_struct() -> decode.Decoder(GetBucketE
 }
 
 pub fn decode_get_bucket_encryption_output_struct_params() -> decode.Decoder(GetBucketEncryptionOutput) {
+  use <- decode.recursive
   use server_side_encryption_configuration <- decode.optional_field("ServerSideEncryptionConfiguration", option.None, decode.optional(decode_server_side_encryption_configuration_struct_params()))
   decode.success(GetBucketEncryptionOutput(
     server_side_encryption_configuration: server_side_encryption_configuration,
@@ -6627,6 +6755,7 @@ pub fn encode_server_side_encryption_configuration_struct(input: ServerSideEncry
 }
 
 pub fn decode_server_side_encryption_configuration_struct() -> decode.Decoder(ServerSideEncryptionConfiguration) {
+  use <- decode.recursive
   use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_server_side_encryption_rule_struct())))
   decode.success(ServerSideEncryptionConfiguration(
     rules: rules,
@@ -6634,6 +6763,7 @@ pub fn decode_server_side_encryption_configuration_struct() -> decode.Decoder(Se
 }
 
 pub fn decode_server_side_encryption_configuration_struct_params() -> decode.Decoder(ServerSideEncryptionConfiguration) {
+  use <- decode.recursive
   use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_server_side_encryption_rule_struct_params())))
   decode.success(ServerSideEncryptionConfiguration(
     rules: rules,
@@ -6682,6 +6812,7 @@ pub fn encode_server_side_encryption_rule_struct(input: ServerSideEncryptionRule
 }
 
 pub fn decode_server_side_encryption_rule_struct() -> decode.Decoder(ServerSideEncryptionRule) {
+  use <- decode.recursive
   use apply_server_side_encryption_by_default <- decode.optional_field("ApplyServerSideEncryptionByDefault", option.None, decode.optional(decode_server_side_encryption_by_default_struct()))
   use blocked_encryption_types <- decode.optional_field("BlockedEncryptionTypes", option.None, decode.optional(decode_blocked_encryption_types_struct()))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
@@ -6693,6 +6824,7 @@ pub fn decode_server_side_encryption_rule_struct() -> decode.Decoder(ServerSideE
 }
 
 pub fn decode_server_side_encryption_rule_struct_params() -> decode.Decoder(ServerSideEncryptionRule) {
+  use <- decode.recursive
   use apply_server_side_encryption_by_default <- decode.optional_field("ApplyServerSideEncryptionByDefault", option.None, decode.optional(decode_server_side_encryption_by_default_struct_params()))
   use blocked_encryption_types <- decode.optional_field("BlockedEncryptionTypes", option.None, decode.optional(decode_blocked_encryption_types_struct_params()))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
@@ -6753,6 +6885,7 @@ pub fn encode_server_side_encryption_by_default_struct(input: ServerSideEncrypti
 }
 
 pub fn decode_server_side_encryption_by_default_struct() -> decode.Decoder(ServerSideEncryptionByDefault) {
+  use <- decode.recursive
   use kms_master_key_id <- decode.optional_field("KMSMasterKeyID", option.None, decode.optional(decode.string))
   use sse_algorithm <- decode.optional_field("SSEAlgorithm", option.None, decode.optional(decode_server_side_encryption_enum()))
   decode.success(ServerSideEncryptionByDefault(
@@ -6762,6 +6895,7 @@ pub fn decode_server_side_encryption_by_default_struct() -> decode.Decoder(Serve
 }
 
 pub fn decode_server_side_encryption_by_default_struct_params() -> decode.Decoder(ServerSideEncryptionByDefault) {
+  use <- decode.recursive
   use kms_master_key_id <- decode.optional_field("KMSMasterKeyID", option.None, decode.optional(decode.string))
   use sse_algorithm <- decode.optional_field("SSEAlgorithm", option.None, decode.optional(decode_server_side_encryption_enum()))
   decode.success(ServerSideEncryptionByDefault(
@@ -6811,6 +6945,7 @@ pub fn encode_blocked_encryption_types_struct(input: BlockedEncryptionTypes) -> 
 }
 
 pub fn decode_blocked_encryption_types_struct() -> decode.Decoder(BlockedEncryptionTypes) {
+  use <- decode.recursive
   use encryption_type <- decode.optional_field("EncryptionType", option.None, decode.optional(decode.list(decode_encryption_type_enum())))
   decode.success(BlockedEncryptionTypes(
     encryption_type: encryption_type,
@@ -6818,6 +6953,7 @@ pub fn decode_blocked_encryption_types_struct() -> decode.Decoder(BlockedEncrypt
 }
 
 pub fn decode_blocked_encryption_types_struct_params() -> decode.Decoder(BlockedEncryptionTypes) {
+  use <- decode.recursive
   use encryption_type <- decode.optional_field("EncryptionType", option.None, decode.optional(decode.list(decode_encryption_type_enum())))
   decode.success(BlockedEncryptionTypes(
     encryption_type: encryption_type,
@@ -6888,6 +7024,7 @@ pub fn encode_get_bucket_intelligent_tiering_configuration_request_struct(input:
 }
 
 pub fn decode_get_bucket_intelligent_tiering_configuration_request_struct() -> decode.Decoder(GetBucketIntelligentTieringConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -6899,6 +7036,7 @@ pub fn decode_get_bucket_intelligent_tiering_configuration_request_struct() -> d
 }
 
 pub fn decode_get_bucket_intelligent_tiering_configuration_request_struct_params() -> decode.Decoder(GetBucketIntelligentTieringConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -6943,6 +7081,7 @@ pub fn encode_get_bucket_intelligent_tiering_configuration_output_struct(input: 
 }
 
 pub fn decode_get_bucket_intelligent_tiering_configuration_output_struct() -> decode.Decoder(GetBucketIntelligentTieringConfigurationOutput) {
+  use <- decode.recursive
   use intelligent_tiering_configuration <- decode.optional_field("IntelligentTieringConfiguration", option.None, decode.optional(decode_intelligent_tiering_configuration_struct()))
   decode.success(GetBucketIntelligentTieringConfigurationOutput(
     intelligent_tiering_configuration: intelligent_tiering_configuration,
@@ -6950,6 +7089,7 @@ pub fn decode_get_bucket_intelligent_tiering_configuration_output_struct() -> de
 }
 
 pub fn decode_get_bucket_intelligent_tiering_configuration_output_struct_params() -> decode.Decoder(GetBucketIntelligentTieringConfigurationOutput) {
+  use <- decode.recursive
   use intelligent_tiering_configuration <- decode.optional_field("IntelligentTieringConfiguration", option.None, decode.optional(decode_intelligent_tiering_configuration_struct_params()))
   decode.success(GetBucketIntelligentTieringConfigurationOutput(
     intelligent_tiering_configuration: intelligent_tiering_configuration,
@@ -6998,6 +7138,7 @@ pub fn encode_intelligent_tiering_configuration_struct(input: IntelligentTiering
 }
 
 pub fn decode_intelligent_tiering_configuration_struct() -> decode.Decoder(IntelligentTieringConfiguration) {
+  use <- decode.recursive
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_intelligent_tiering_filter_struct()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_intelligent_tiering_status_enum()))
@@ -7011,6 +7152,7 @@ pub fn decode_intelligent_tiering_configuration_struct() -> decode.Decoder(Intel
 }
 
 pub fn decode_intelligent_tiering_configuration_struct_params() -> decode.Decoder(IntelligentTieringConfiguration) {
+  use <- decode.recursive
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_intelligent_tiering_filter_struct_params()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_intelligent_tiering_status_enum()))
@@ -7084,6 +7226,7 @@ pub fn encode_intelligent_tiering_filter_struct(input: IntelligentTieringFilter)
 }
 
 pub fn decode_intelligent_tiering_filter_struct() -> decode.Decoder(IntelligentTieringFilter) {
+  use <- decode.recursive
   use and <- decode.optional_field("And", option.None, decode.optional(decode_intelligent_tiering_and_operator_struct()))
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tag <- decode.optional_field("Tag", option.None, decode.optional(decode_tag_struct()))
@@ -7095,6 +7238,7 @@ pub fn decode_intelligent_tiering_filter_struct() -> decode.Decoder(IntelligentT
 }
 
 pub fn decode_intelligent_tiering_filter_struct_params() -> decode.Decoder(IntelligentTieringFilter) {
+  use <- decode.recursive
   use and <- decode.optional_field("And", option.None, decode.optional(decode_intelligent_tiering_and_operator_struct_params()))
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tag <- decode.optional_field("Tag", option.None, decode.optional(decode_tag_struct_params()))
@@ -7155,6 +7299,7 @@ pub fn encode_intelligent_tiering_and_operator_struct(input: IntelligentTieringA
 }
 
 pub fn decode_intelligent_tiering_and_operator_struct() -> decode.Decoder(IntelligentTieringAndOperator) {
+  use <- decode.recursive
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct())))
   decode.success(IntelligentTieringAndOperator(
@@ -7164,6 +7309,7 @@ pub fn decode_intelligent_tiering_and_operator_struct() -> decode.Decoder(Intell
 }
 
 pub fn decode_intelligent_tiering_and_operator_struct_params() -> decode.Decoder(IntelligentTieringAndOperator) {
+  use <- decode.recursive
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
   decode.success(IntelligentTieringAndOperator(
@@ -7238,6 +7384,7 @@ pub fn encode_tiering_struct(input: Tiering) -> json.Json {
 }
 
 pub fn decode_tiering_struct() -> decode.Decoder(Tiering) {
+  use <- decode.recursive
   use access_tier <- decode.optional_field("AccessTier", option.None, decode.optional(decode_intelligent_tiering_access_tier_enum()))
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   decode.success(Tiering(
@@ -7247,6 +7394,7 @@ pub fn decode_tiering_struct() -> decode.Decoder(Tiering) {
 }
 
 pub fn decode_tiering_struct_params() -> decode.Decoder(Tiering) {
+  use <- decode.recursive
   use access_tier <- decode.optional_field("AccessTier", option.None, decode.optional(decode_intelligent_tiering_access_tier_enum()))
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   decode.success(Tiering(
@@ -7326,6 +7474,7 @@ pub fn encode_get_bucket_inventory_configuration_request_struct(input: GetBucket
 }
 
 pub fn decode_get_bucket_inventory_configuration_request_struct() -> decode.Decoder(GetBucketInventoryConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -7337,6 +7486,7 @@ pub fn decode_get_bucket_inventory_configuration_request_struct() -> decode.Deco
 }
 
 pub fn decode_get_bucket_inventory_configuration_request_struct_params() -> decode.Decoder(GetBucketInventoryConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -7381,6 +7531,7 @@ pub fn encode_get_bucket_inventory_configuration_output_struct(input: GetBucketI
 }
 
 pub fn decode_get_bucket_inventory_configuration_output_struct() -> decode.Decoder(GetBucketInventoryConfigurationOutput) {
+  use <- decode.recursive
   use inventory_configuration <- decode.optional_field("InventoryConfiguration", option.None, decode.optional(decode_inventory_configuration_struct()))
   decode.success(GetBucketInventoryConfigurationOutput(
     inventory_configuration: inventory_configuration,
@@ -7388,6 +7539,7 @@ pub fn decode_get_bucket_inventory_configuration_output_struct() -> decode.Decod
 }
 
 pub fn decode_get_bucket_inventory_configuration_output_struct_params() -> decode.Decoder(GetBucketInventoryConfigurationOutput) {
+  use <- decode.recursive
   use inventory_configuration <- decode.optional_field("InventoryConfiguration", option.None, decode.optional(decode_inventory_configuration_struct_params()))
   decode.success(GetBucketInventoryConfigurationOutput(
     inventory_configuration: inventory_configuration,
@@ -7448,6 +7600,7 @@ pub fn encode_inventory_configuration_struct(input: InventoryConfiguration) -> j
 }
 
 pub fn decode_inventory_configuration_struct() -> decode.Decoder(InventoryConfiguration) {
+  use <- decode.recursive
   use destination <- decode.optional_field("Destination", option.None, decode.optional(decode_inventory_destination_struct()))
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_inventory_filter_struct()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -7467,6 +7620,7 @@ pub fn decode_inventory_configuration_struct() -> decode.Decoder(InventoryConfig
 }
 
 pub fn decode_inventory_configuration_struct_params() -> decode.Decoder(InventoryConfiguration) {
+  use <- decode.recursive
   use destination <- decode.optional_field("Destination", option.None, decode.optional(decode_inventory_destination_struct_params()))
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_inventory_filter_struct_params()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -7556,6 +7710,7 @@ pub fn encode_inventory_destination_struct(input: InventoryDestination) -> json.
 }
 
 pub fn decode_inventory_destination_struct() -> decode.Decoder(InventoryDestination) {
+  use <- decode.recursive
   use s3_bucket_destination <- decode.optional_field("S3BucketDestination", option.None, decode.optional(decode_inventory_s3_bucket_destination_struct()))
   decode.success(InventoryDestination(
     s3_bucket_destination: s3_bucket_destination,
@@ -7563,6 +7718,7 @@ pub fn decode_inventory_destination_struct() -> decode.Decoder(InventoryDestinat
 }
 
 pub fn decode_inventory_destination_struct_params() -> decode.Decoder(InventoryDestination) {
+  use <- decode.recursive
   use s3_bucket_destination <- decode.optional_field("S3BucketDestination", option.None, decode.optional(decode_inventory_s3_bucket_destination_struct_params()))
   decode.success(InventoryDestination(
     s3_bucket_destination: s3_bucket_destination,
@@ -7619,6 +7775,7 @@ pub fn encode_inventory_s3_bucket_destination_struct(input: InventoryS3BucketDes
 }
 
 pub fn decode_inventory_s3_bucket_destination_struct() -> decode.Decoder(InventoryS3BucketDestination) {
+  use <- decode.recursive
   use account_id <- decode.optional_field("AccountId", option.None, decode.optional(decode.string))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use encryption <- decode.optional_field("Encryption", option.None, decode.optional(decode_inventory_encryption_struct()))
@@ -7634,6 +7791,7 @@ pub fn decode_inventory_s3_bucket_destination_struct() -> decode.Decoder(Invento
 }
 
 pub fn decode_inventory_s3_bucket_destination_struct_params() -> decode.Decoder(InventoryS3BucketDestination) {
+  use <- decode.recursive
   use account_id <- decode.optional_field("AccountId", option.None, decode.optional(decode.string))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use encryption <- decode.optional_field("Encryption", option.None, decode.optional(decode_inventory_encryption_struct_params()))
@@ -7711,6 +7869,7 @@ pub fn encode_inventory_encryption_struct(input: InventoryEncryption) -> json.Js
 }
 
 pub fn decode_inventory_encryption_struct() -> decode.Decoder(InventoryEncryption) {
+  use <- decode.recursive
   use ssekms <- decode.optional_field("SSEKMS", option.None, decode.optional(decode_ssekms_struct()))
   use sses3 <- decode.optional_field("SSES3", option.None, decode.optional(decode_sses3_struct()))
   decode.success(InventoryEncryption(
@@ -7720,6 +7879,7 @@ pub fn decode_inventory_encryption_struct() -> decode.Decoder(InventoryEncryptio
 }
 
 pub fn decode_inventory_encryption_struct_params() -> decode.Decoder(InventoryEncryption) {
+  use <- decode.recursive
   use ssekms <- decode.optional_field("SSEKMS", option.None, decode.optional(decode_ssekms_struct_params()))
   use sses3 <- decode.optional_field("SSES3", option.None, decode.optional(decode_sses3_struct_params()))
   decode.success(InventoryEncryption(
@@ -7768,6 +7928,7 @@ pub fn encode_ssekms_struct(input: SSEKMS) -> json.Json {
 }
 
 pub fn decode_ssekms_struct() -> decode.Decoder(SSEKMS) {
+  use <- decode.recursive
   use key_id <- decode.optional_field("KeyId", option.None, decode.optional(decode.string))
   decode.success(SSEKMS(
     key_id: key_id,
@@ -7775,6 +7936,7 @@ pub fn decode_ssekms_struct() -> decode.Decoder(SSEKMS) {
 }
 
 pub fn decode_ssekms_struct_params() -> decode.Decoder(SSEKMS) {
+  use <- decode.recursive
   use key_id <- decode.optional_field("KeyId", option.None, decode.optional(decode.string))
   decode.success(SSEKMS(
     key_id: key_id,
@@ -7868,6 +8030,7 @@ pub fn encode_inventory_filter_struct(input: InventoryFilter) -> json.Json {
 }
 
 pub fn decode_inventory_filter_struct() -> decode.Decoder(InventoryFilter) {
+  use <- decode.recursive
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   decode.success(InventoryFilter(
     prefix: prefix,
@@ -7875,6 +8038,7 @@ pub fn decode_inventory_filter_struct() -> decode.Decoder(InventoryFilter) {
 }
 
 pub fn decode_inventory_filter_struct_params() -> decode.Decoder(InventoryFilter) {
+  use <- decode.recursive
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   decode.success(InventoryFilter(
     prefix: prefix,
@@ -8001,6 +8165,7 @@ pub fn encode_inventory_schedule_struct(input: InventorySchedule) -> json.Json {
 }
 
 pub fn decode_inventory_schedule_struct() -> decode.Decoder(InventorySchedule) {
+  use <- decode.recursive
   use frequency <- decode.optional_field("Frequency", option.None, decode.optional(decode_inventory_frequency_enum()))
   decode.success(InventorySchedule(
     frequency: frequency,
@@ -8008,6 +8173,7 @@ pub fn decode_inventory_schedule_struct() -> decode.Decoder(InventorySchedule) {
 }
 
 pub fn decode_inventory_schedule_struct_params() -> decode.Decoder(InventorySchedule) {
+  use <- decode.recursive
   use frequency <- decode.optional_field("Frequency", option.None, decode.optional(decode_inventory_frequency_enum()))
   decode.success(InventorySchedule(
     frequency: frequency,
@@ -8075,6 +8241,7 @@ pub fn encode_get_bucket_lifecycle_configuration_request_struct(input: GetBucket
 }
 
 pub fn decode_get_bucket_lifecycle_configuration_request_struct() -> decode.Decoder(GetBucketLifecycleConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketLifecycleConfigurationRequest(
@@ -8084,6 +8251,7 @@ pub fn decode_get_bucket_lifecycle_configuration_request_struct() -> decode.Deco
 }
 
 pub fn decode_get_bucket_lifecycle_configuration_request_struct_params() -> decode.Decoder(GetBucketLifecycleConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketLifecycleConfigurationRequest(
@@ -8128,6 +8296,7 @@ pub fn encode_get_bucket_lifecycle_configuration_output_struct(input: GetBucketL
 }
 
 pub fn decode_get_bucket_lifecycle_configuration_output_struct() -> decode.Decoder(GetBucketLifecycleConfigurationOutput) {
+  use <- decode.recursive
   use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_lifecycle_rule_struct())))
   use transition_default_minimum_object_size <- decode.optional_field("TransitionDefaultMinimumObjectSize", option.None, decode.optional(decode_transition_default_minimum_object_size_enum()))
   decode.success(GetBucketLifecycleConfigurationOutput(
@@ -8137,6 +8306,7 @@ pub fn decode_get_bucket_lifecycle_configuration_output_struct() -> decode.Decod
 }
 
 pub fn decode_get_bucket_lifecycle_configuration_output_struct_params() -> decode.Decoder(GetBucketLifecycleConfigurationOutput) {
+  use <- decode.recursive
   use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_lifecycle_rule_struct_params())))
   use transition_default_minimum_object_size <- decode.optional_field("TransitionDefaultMinimumObjectSize", option.None, decode.optional(decode_transition_default_minimum_object_size_enum()))
   decode.success(GetBucketLifecycleConfigurationOutput(
@@ -8213,6 +8383,7 @@ pub fn encode_lifecycle_rule_struct(input: LifecycleRule) -> json.Json {
 }
 
 pub fn decode_lifecycle_rule_struct() -> decode.Decoder(LifecycleRule) {
+  use <- decode.recursive
   use abort_incomplete_multipart_upload <- decode.optional_field("AbortIncompleteMultipartUpload", option.None, decode.optional(decode_abort_incomplete_multipart_upload_struct()))
   use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode_lifecycle_expiration_struct()))
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_lifecycle_rule_filter_struct()))
@@ -8236,6 +8407,7 @@ pub fn decode_lifecycle_rule_struct() -> decode.Decoder(LifecycleRule) {
 }
 
 pub fn decode_lifecycle_rule_struct_params() -> decode.Decoder(LifecycleRule) {
+  use <- decode.recursive
   use abort_incomplete_multipart_upload <- decode.optional_field("AbortIncompleteMultipartUpload", option.None, decode.optional(decode_abort_incomplete_multipart_upload_struct_params()))
   use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode_lifecycle_expiration_struct_params()))
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_lifecycle_rule_filter_struct_params()))
@@ -8341,6 +8513,7 @@ pub fn encode_abort_incomplete_multipart_upload_struct(input: AbortIncompleteMul
 }
 
 pub fn decode_abort_incomplete_multipart_upload_struct() -> decode.Decoder(AbortIncompleteMultipartUpload) {
+  use <- decode.recursive
   use days_after_initiation <- decode.optional_field("DaysAfterInitiation", option.None, decode.optional(decode.int))
   decode.success(AbortIncompleteMultipartUpload(
     days_after_initiation: days_after_initiation,
@@ -8348,6 +8521,7 @@ pub fn decode_abort_incomplete_multipart_upload_struct() -> decode.Decoder(Abort
 }
 
 pub fn decode_abort_incomplete_multipart_upload_struct_params() -> decode.Decoder(AbortIncompleteMultipartUpload) {
+  use <- decode.recursive
   use days_after_initiation <- decode.optional_field("DaysAfterInitiation", option.None, decode.optional(decode.int))
   decode.success(AbortIncompleteMultipartUpload(
     days_after_initiation: days_after_initiation,
@@ -8396,6 +8570,7 @@ pub fn encode_lifecycle_expiration_struct(input: LifecycleExpiration) -> json.Js
 }
 
 pub fn decode_lifecycle_expiration_struct() -> decode.Decoder(LifecycleExpiration) {
+  use <- decode.recursive
   use date <- decode.optional_field("Date", option.None, decode.optional(json_timestamp.decoder()))
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   use expired_object_delete_marker <- decode.optional_field("ExpiredObjectDeleteMarker", option.None, decode.optional(decode.bool))
@@ -8407,6 +8582,7 @@ pub fn decode_lifecycle_expiration_struct() -> decode.Decoder(LifecycleExpiratio
 }
 
 pub fn decode_lifecycle_expiration_struct_params() -> decode.Decoder(LifecycleExpiration) {
+  use <- decode.recursive
   use date <- decode.optional_field("Date", option.None, decode.optional(json_timestamp.decoder()))
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   use expired_object_delete_marker <- decode.optional_field("ExpiredObjectDeleteMarker", option.None, decode.optional(decode.bool))
@@ -8479,6 +8655,7 @@ pub fn encode_lifecycle_rule_filter_struct(input: LifecycleRuleFilter) -> json.J
 }
 
 pub fn decode_lifecycle_rule_filter_struct() -> decode.Decoder(LifecycleRuleFilter) {
+  use <- decode.recursive
   use and <- decode.optional_field("And", option.None, decode.optional(decode_lifecycle_rule_and_operator_struct()))
   use object_size_greater_than <- decode.optional_field("ObjectSizeGreaterThan", option.None, decode.optional(decode.int))
   use object_size_less_than <- decode.optional_field("ObjectSizeLessThan", option.None, decode.optional(decode.int))
@@ -8494,6 +8671,7 @@ pub fn decode_lifecycle_rule_filter_struct() -> decode.Decoder(LifecycleRuleFilt
 }
 
 pub fn decode_lifecycle_rule_filter_struct_params() -> decode.Decoder(LifecycleRuleFilter) {
+  use <- decode.recursive
   use and <- decode.optional_field("And", option.None, decode.optional(decode_lifecycle_rule_and_operator_struct_params()))
   use object_size_greater_than <- decode.optional_field("ObjectSizeGreaterThan", option.None, decode.optional(decode.int))
   use object_size_less_than <- decode.optional_field("ObjectSizeLessThan", option.None, decode.optional(decode.int))
@@ -8578,6 +8756,7 @@ pub fn encode_lifecycle_rule_and_operator_struct(input: LifecycleRuleAndOperator
 }
 
 pub fn decode_lifecycle_rule_and_operator_struct() -> decode.Decoder(LifecycleRuleAndOperator) {
+  use <- decode.recursive
   use object_size_greater_than <- decode.optional_field("ObjectSizeGreaterThan", option.None, decode.optional(decode.int))
   use object_size_less_than <- decode.optional_field("ObjectSizeLessThan", option.None, decode.optional(decode.int))
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
@@ -8591,6 +8770,7 @@ pub fn decode_lifecycle_rule_and_operator_struct() -> decode.Decoder(LifecycleRu
 }
 
 pub fn decode_lifecycle_rule_and_operator_struct_params() -> decode.Decoder(LifecycleRuleAndOperator) {
+  use <- decode.recursive
   use object_size_greater_than <- decode.optional_field("ObjectSizeGreaterThan", option.None, decode.optional(decode.int))
   use object_size_less_than <- decode.optional_field("ObjectSizeLessThan", option.None, decode.optional(decode.int))
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
@@ -8659,6 +8839,7 @@ pub fn encode_noncurrent_version_expiration_struct(input: NoncurrentVersionExpir
 }
 
 pub fn decode_noncurrent_version_expiration_struct() -> decode.Decoder(NoncurrentVersionExpiration) {
+  use <- decode.recursive
   use newer_noncurrent_versions <- decode.optional_field("NewerNoncurrentVersions", option.None, decode.optional(decode.int))
   use noncurrent_days <- decode.optional_field("NoncurrentDays", option.None, decode.optional(decode.int))
   decode.success(NoncurrentVersionExpiration(
@@ -8668,6 +8849,7 @@ pub fn decode_noncurrent_version_expiration_struct() -> decode.Decoder(Noncurren
 }
 
 pub fn decode_noncurrent_version_expiration_struct_params() -> decode.Decoder(NoncurrentVersionExpiration) {
+  use <- decode.recursive
   use newer_noncurrent_versions <- decode.optional_field("NewerNoncurrentVersions", option.None, decode.optional(decode.int))
   use noncurrent_days <- decode.optional_field("NoncurrentDays", option.None, decode.optional(decode.int))
   decode.success(NoncurrentVersionExpiration(
@@ -8724,6 +8906,7 @@ pub fn encode_noncurrent_version_transition_struct(input: NoncurrentVersionTrans
 }
 
 pub fn decode_noncurrent_version_transition_struct() -> decode.Decoder(NoncurrentVersionTransition) {
+  use <- decode.recursive
   use newer_noncurrent_versions <- decode.optional_field("NewerNoncurrentVersions", option.None, decode.optional(decode.int))
   use noncurrent_days <- decode.optional_field("NoncurrentDays", option.None, decode.optional(decode.int))
   use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_transition_storage_class_enum()))
@@ -8735,6 +8918,7 @@ pub fn decode_noncurrent_version_transition_struct() -> decode.Decoder(Noncurren
 }
 
 pub fn decode_noncurrent_version_transition_struct_params() -> decode.Decoder(NoncurrentVersionTransition) {
+  use <- decode.recursive
   use newer_noncurrent_versions <- decode.optional_field("NewerNoncurrentVersions", option.None, decode.optional(decode.int))
   use noncurrent_days <- decode.optional_field("NoncurrentDays", option.None, decode.optional(decode.int))
   use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_transition_storage_class_enum()))
@@ -8856,6 +9040,7 @@ pub fn encode_transition_struct(input: Transition) -> json.Json {
 }
 
 pub fn decode_transition_struct() -> decode.Decoder(Transition) {
+  use <- decode.recursive
   use date <- decode.optional_field("Date", option.None, decode.optional(json_timestamp.decoder()))
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_transition_storage_class_enum()))
@@ -8867,6 +9052,7 @@ pub fn decode_transition_struct() -> decode.Decoder(Transition) {
 }
 
 pub fn decode_transition_struct_params() -> decode.Decoder(Transition) {
+  use <- decode.recursive
   use date <- decode.optional_field("Date", option.None, decode.optional(json_timestamp.decoder()))
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_transition_storage_class_enum()))
@@ -8950,6 +9136,7 @@ pub fn encode_get_bucket_location_request_struct(input: GetBucketLocationRequest
 }
 
 pub fn decode_get_bucket_location_request_struct() -> decode.Decoder(GetBucketLocationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketLocationRequest(
@@ -8959,6 +9146,7 @@ pub fn decode_get_bucket_location_request_struct() -> decode.Decoder(GetBucketLo
 }
 
 pub fn decode_get_bucket_location_request_struct_params() -> decode.Decoder(GetBucketLocationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketLocationRequest(
@@ -8999,6 +9187,7 @@ pub fn encode_get_bucket_location_output_struct(input: GetBucketLocationOutput) 
 }
 
 pub fn decode_get_bucket_location_output_struct() -> decode.Decoder(GetBucketLocationOutput) {
+  use <- decode.recursive
   use location_constraint <- decode.optional_field("LocationConstraint", option.None, decode.optional(decode_bucket_location_constraint_enum()))
   decode.success(GetBucketLocationOutput(
     location_constraint: location_constraint,
@@ -9006,6 +9195,7 @@ pub fn decode_get_bucket_location_output_struct() -> decode.Decoder(GetBucketLoc
 }
 
 pub fn decode_get_bucket_location_output_struct_params() -> decode.Decoder(GetBucketLocationOutput) {
+  use <- decode.recursive
   use location_constraint <- decode.optional_field("LocationConstraint", option.None, decode.optional(decode_bucket_location_constraint_enum()))
   decode.success(GetBucketLocationOutput(
     location_constraint: location_constraint,
@@ -9051,6 +9241,7 @@ pub fn encode_get_bucket_logging_request_struct(input: GetBucketLoggingRequest) 
 }
 
 pub fn decode_get_bucket_logging_request_struct() -> decode.Decoder(GetBucketLoggingRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketLoggingRequest(
@@ -9060,6 +9251,7 @@ pub fn decode_get_bucket_logging_request_struct() -> decode.Decoder(GetBucketLog
 }
 
 pub fn decode_get_bucket_logging_request_struct_params() -> decode.Decoder(GetBucketLoggingRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketLoggingRequest(
@@ -9100,6 +9292,7 @@ pub fn encode_get_bucket_logging_output_struct(input: GetBucketLoggingOutput) ->
 }
 
 pub fn decode_get_bucket_logging_output_struct() -> decode.Decoder(GetBucketLoggingOutput) {
+  use <- decode.recursive
   use logging_enabled <- decode.optional_field("LoggingEnabled", option.None, decode.optional(decode_logging_enabled_struct()))
   decode.success(GetBucketLoggingOutput(
     logging_enabled: logging_enabled,
@@ -9107,6 +9300,7 @@ pub fn decode_get_bucket_logging_output_struct() -> decode.Decoder(GetBucketLogg
 }
 
 pub fn decode_get_bucket_logging_output_struct_params() -> decode.Decoder(GetBucketLoggingOutput) {
+  use <- decode.recursive
   use logging_enabled <- decode.optional_field("LoggingEnabled", option.None, decode.optional(decode_logging_enabled_struct_params()))
   decode.success(GetBucketLoggingOutput(
     logging_enabled: logging_enabled,
@@ -9159,6 +9353,7 @@ pub fn encode_logging_enabled_struct(input: LoggingEnabled) -> json.Json {
 }
 
 pub fn decode_logging_enabled_struct() -> decode.Decoder(LoggingEnabled) {
+  use <- decode.recursive
   use target_bucket <- decode.optional_field("TargetBucket", option.None, decode.optional(decode.string))
   use target_grants <- decode.optional_field("TargetGrants", option.None, decode.optional(decode.list(decode_target_grant_struct())))
   use target_object_key_format <- decode.optional_field("TargetObjectKeyFormat", option.None, decode.optional(decode_target_object_key_format_struct()))
@@ -9172,6 +9367,7 @@ pub fn decode_logging_enabled_struct() -> decode.Decoder(LoggingEnabled) {
 }
 
 pub fn decode_logging_enabled_struct_params() -> decode.Decoder(LoggingEnabled) {
+  use <- decode.recursive
   use target_bucket <- decode.optional_field("TargetBucket", option.None, decode.optional(decode.string))
   use target_grants <- decode.optional_field("TargetGrants", option.None, decode.optional(decode.list(decode_target_grant_struct_params())))
   use target_object_key_format <- decode.optional_field("TargetObjectKeyFormat", option.None, decode.optional(decode_target_object_key_format_struct_params()))
@@ -9240,6 +9436,7 @@ pub fn encode_target_grant_struct(input: TargetGrant) -> json.Json {
 }
 
 pub fn decode_target_grant_struct() -> decode.Decoder(TargetGrant) {
+  use <- decode.recursive
   use grantee <- decode.optional_field("Grantee", option.None, decode.optional(decode_grantee_struct()))
   use permission <- decode.optional_field("Permission", option.None, decode.optional(decode_bucket_logs_permission_enum()))
   decode.success(TargetGrant(
@@ -9249,6 +9446,7 @@ pub fn decode_target_grant_struct() -> decode.Decoder(TargetGrant) {
 }
 
 pub fn decode_target_grant_struct_params() -> decode.Decoder(TargetGrant) {
+  use <- decode.recursive
   use grantee <- decode.optional_field("Grantee", option.None, decode.optional(decode_grantee_struct_params()))
   use permission <- decode.optional_field("Permission", option.None, decode.optional(decode_bucket_logs_permission_enum()))
   decode.success(TargetGrant(
@@ -9327,6 +9525,7 @@ pub fn encode_target_object_key_format_struct(input: TargetObjectKeyFormat) -> j
 }
 
 pub fn decode_target_object_key_format_struct() -> decode.Decoder(TargetObjectKeyFormat) {
+  use <- decode.recursive
   use partitioned_prefix <- decode.optional_field("PartitionedPrefix", option.None, decode.optional(decode_partitioned_prefix_struct()))
   use simple_prefix <- decode.optional_field("SimplePrefix", option.None, decode.optional(decode_simple_prefix_struct()))
   decode.success(TargetObjectKeyFormat(
@@ -9336,6 +9535,7 @@ pub fn decode_target_object_key_format_struct() -> decode.Decoder(TargetObjectKe
 }
 
 pub fn decode_target_object_key_format_struct_params() -> decode.Decoder(TargetObjectKeyFormat) {
+  use <- decode.recursive
   use partitioned_prefix <- decode.optional_field("PartitionedPrefix", option.None, decode.optional(decode_partitioned_prefix_struct_params()))
   use simple_prefix <- decode.optional_field("SimplePrefix", option.None, decode.optional(decode_simple_prefix_struct_params()))
   decode.success(TargetObjectKeyFormat(
@@ -9384,6 +9584,7 @@ pub fn encode_partitioned_prefix_struct(input: PartitionedPrefix) -> json.Json {
 }
 
 pub fn decode_partitioned_prefix_struct() -> decode.Decoder(PartitionedPrefix) {
+  use <- decode.recursive
   use partition_date_source <- decode.optional_field("PartitionDateSource", option.None, decode.optional(decode_partition_date_source_enum()))
   decode.success(PartitionedPrefix(
     partition_date_source: partition_date_source,
@@ -9391,6 +9592,7 @@ pub fn decode_partitioned_prefix_struct() -> decode.Decoder(PartitionedPrefix) {
 }
 
 pub fn decode_partitioned_prefix_struct_params() -> decode.Decoder(PartitionedPrefix) {
+  use <- decode.recursive
   use partition_date_source <- decode.optional_field("PartitionDateSource", option.None, decode.optional(decode_partition_date_source_enum()))
   decode.success(PartitionedPrefix(
     partition_date_source: partition_date_source,
@@ -9486,6 +9688,7 @@ pub fn encode_get_bucket_metadata_configuration_request_struct(input: GetBucketM
 }
 
 pub fn decode_get_bucket_metadata_configuration_request_struct() -> decode.Decoder(GetBucketMetadataConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketMetadataConfigurationRequest(
@@ -9495,6 +9698,7 @@ pub fn decode_get_bucket_metadata_configuration_request_struct() -> decode.Decod
 }
 
 pub fn decode_get_bucket_metadata_configuration_request_struct_params() -> decode.Decoder(GetBucketMetadataConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketMetadataConfigurationRequest(
@@ -9535,6 +9739,7 @@ pub fn encode_get_bucket_metadata_configuration_output_struct(input: GetBucketMe
 }
 
 pub fn decode_get_bucket_metadata_configuration_output_struct() -> decode.Decoder(GetBucketMetadataConfigurationOutput) {
+  use <- decode.recursive
   use get_bucket_metadata_configuration_result <- decode.optional_field("GetBucketMetadataConfigurationResult", option.None, decode.optional(decode_get_bucket_metadata_configuration_result_struct()))
   decode.success(GetBucketMetadataConfigurationOutput(
     get_bucket_metadata_configuration_result: get_bucket_metadata_configuration_result,
@@ -9542,6 +9747,7 @@ pub fn decode_get_bucket_metadata_configuration_output_struct() -> decode.Decode
 }
 
 pub fn decode_get_bucket_metadata_configuration_output_struct_params() -> decode.Decoder(GetBucketMetadataConfigurationOutput) {
+  use <- decode.recursive
   use get_bucket_metadata_configuration_result <- decode.optional_field("GetBucketMetadataConfigurationResult", option.None, decode.optional(decode_get_bucket_metadata_configuration_result_struct_params()))
   decode.success(GetBucketMetadataConfigurationOutput(
     get_bucket_metadata_configuration_result: get_bucket_metadata_configuration_result,
@@ -9578,6 +9784,7 @@ pub fn encode_get_bucket_metadata_configuration_result_struct(input: GetBucketMe
 }
 
 pub fn decode_get_bucket_metadata_configuration_result_struct() -> decode.Decoder(GetBucketMetadataConfigurationResult) {
+  use <- decode.recursive
   use metadata_configuration_result <- decode.optional_field("MetadataConfigurationResult", option.None, decode.optional(decode_metadata_configuration_result_struct()))
   decode.success(GetBucketMetadataConfigurationResult(
     metadata_configuration_result: metadata_configuration_result,
@@ -9585,6 +9792,7 @@ pub fn decode_get_bucket_metadata_configuration_result_struct() -> decode.Decode
 }
 
 pub fn decode_get_bucket_metadata_configuration_result_struct_params() -> decode.Decoder(GetBucketMetadataConfigurationResult) {
+  use <- decode.recursive
   use metadata_configuration_result <- decode.optional_field("MetadataConfigurationResult", option.None, decode.optional(decode_metadata_configuration_result_struct_params()))
   decode.success(GetBucketMetadataConfigurationResult(
     metadata_configuration_result: metadata_configuration_result,
@@ -9633,6 +9841,7 @@ pub fn encode_metadata_configuration_result_struct(input: MetadataConfigurationR
 }
 
 pub fn decode_metadata_configuration_result_struct() -> decode.Decoder(MetadataConfigurationResult) {
+  use <- decode.recursive
   use destination_result <- decode.optional_field("DestinationResult", option.None, decode.optional(decode_destination_result_struct()))
   use inventory_table_configuration_result <- decode.optional_field("InventoryTableConfigurationResult", option.None, decode.optional(decode_inventory_table_configuration_result_struct()))
   use journal_table_configuration_result <- decode.optional_field("JournalTableConfigurationResult", option.None, decode.optional(decode_journal_table_configuration_result_struct()))
@@ -9644,6 +9853,7 @@ pub fn decode_metadata_configuration_result_struct() -> decode.Decoder(MetadataC
 }
 
 pub fn decode_metadata_configuration_result_struct_params() -> decode.Decoder(MetadataConfigurationResult) {
+  use <- decode.recursive
   use destination_result <- decode.optional_field("DestinationResult", option.None, decode.optional(decode_destination_result_struct_params()))
   use inventory_table_configuration_result <- decode.optional_field("InventoryTableConfigurationResult", option.None, decode.optional(decode_inventory_table_configuration_result_struct_params()))
   use journal_table_configuration_result <- decode.optional_field("JournalTableConfigurationResult", option.None, decode.optional(decode_journal_table_configuration_result_struct_params()))
@@ -9708,6 +9918,7 @@ pub fn encode_destination_result_struct(input: DestinationResult) -> json.Json {
 }
 
 pub fn decode_destination_result_struct() -> decode.Decoder(DestinationResult) {
+  use <- decode.recursive
   use table_bucket_arn <- decode.optional_field("TableBucketArn", option.None, decode.optional(decode.string))
   use table_bucket_type <- decode.optional_field("TableBucketType", option.None, decode.optional(decode_s3_tables_bucket_type_enum()))
   use table_namespace <- decode.optional_field("TableNamespace", option.None, decode.optional(decode.string))
@@ -9719,6 +9930,7 @@ pub fn decode_destination_result_struct() -> decode.Decoder(DestinationResult) {
 }
 
 pub fn decode_destination_result_struct_params() -> decode.Decoder(DestinationResult) {
+  use <- decode.recursive
   use table_bucket_arn <- decode.optional_field("TableBucketArn", option.None, decode.optional(decode.string))
   use table_bucket_type <- decode.optional_field("TableBucketType", option.None, decode.optional(decode_s3_tables_bucket_type_enum()))
   use table_namespace <- decode.optional_field("TableNamespace", option.None, decode.optional(decode.string))
@@ -9814,6 +10026,7 @@ pub fn encode_inventory_table_configuration_result_struct(input: InventoryTableC
 }
 
 pub fn decode_inventory_table_configuration_result_struct() -> decode.Decoder(InventoryTableConfigurationResult) {
+  use <- decode.recursive
   use configuration_state <- decode.optional_field("ConfigurationState", option.None, decode.optional(decode_inventory_configuration_state_enum()))
   use error <- decode.optional_field("Error", option.None, decode.optional(decode_error_details_struct()))
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
@@ -9829,6 +10042,7 @@ pub fn decode_inventory_table_configuration_result_struct() -> decode.Decoder(In
 }
 
 pub fn decode_inventory_table_configuration_result_struct_params() -> decode.Decoder(InventoryTableConfigurationResult) {
+  use <- decode.recursive
   use configuration_state <- decode.optional_field("ConfigurationState", option.None, decode.optional(decode_inventory_configuration_state_enum()))
   use error <- decode.optional_field("Error", option.None, decode.optional(decode_error_details_struct_params()))
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
@@ -9928,6 +10142,7 @@ pub fn encode_error_details_struct(input: ErrorDetails) -> json.Json {
 }
 
 pub fn decode_error_details_struct() -> decode.Decoder(ErrorDetails) {
+  use <- decode.recursive
   use error_code <- decode.optional_field("ErrorCode", option.None, decode.optional(decode.string))
   use error_message <- decode.optional_field("ErrorMessage", option.None, decode.optional(decode.string))
   decode.success(ErrorDetails(
@@ -9937,6 +10152,7 @@ pub fn decode_error_details_struct() -> decode.Decoder(ErrorDetails) {
 }
 
 pub fn decode_error_details_struct_params() -> decode.Decoder(ErrorDetails) {
+  use <- decode.recursive
   use error_code <- decode.optional_field("ErrorCode", option.None, decode.optional(decode.string))
   use error_message <- decode.optional_field("ErrorMessage", option.None, decode.optional(decode.string))
   decode.success(ErrorDetails(
@@ -10001,6 +10217,7 @@ pub fn encode_journal_table_configuration_result_struct(input: JournalTableConfi
 }
 
 pub fn decode_journal_table_configuration_result_struct() -> decode.Decoder(JournalTableConfigurationResult) {
+  use <- decode.recursive
   use error <- decode.optional_field("Error", option.None, decode.optional(decode_error_details_struct()))
   use record_expiration <- decode.optional_field("RecordExpiration", option.None, decode.optional(decode_record_expiration_struct()))
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
@@ -10016,6 +10233,7 @@ pub fn decode_journal_table_configuration_result_struct() -> decode.Decoder(Jour
 }
 
 pub fn decode_journal_table_configuration_result_struct_params() -> decode.Decoder(JournalTableConfigurationResult) {
+  use <- decode.recursive
   use error <- decode.optional_field("Error", option.None, decode.optional(decode_error_details_struct_params()))
   use record_expiration <- decode.optional_field("RecordExpiration", option.None, decode.optional(decode_record_expiration_struct_params()))
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
@@ -10092,6 +10310,7 @@ pub fn encode_record_expiration_struct(input: RecordExpiration) -> json.Json {
 }
 
 pub fn decode_record_expiration_struct() -> decode.Decoder(RecordExpiration) {
+  use <- decode.recursive
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode_expiration_state_enum()))
   decode.success(RecordExpiration(
@@ -10101,6 +10320,7 @@ pub fn decode_record_expiration_struct() -> decode.Decoder(RecordExpiration) {
 }
 
 pub fn decode_record_expiration_struct_params() -> decode.Decoder(RecordExpiration) {
+  use <- decode.recursive
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode_expiration_state_enum()))
   decode.success(RecordExpiration(
@@ -10176,6 +10396,7 @@ pub fn encode_get_bucket_metadata_table_configuration_request_struct(input: GetB
 }
 
 pub fn decode_get_bucket_metadata_table_configuration_request_struct() -> decode.Decoder(GetBucketMetadataTableConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketMetadataTableConfigurationRequest(
@@ -10185,6 +10406,7 @@ pub fn decode_get_bucket_metadata_table_configuration_request_struct() -> decode
 }
 
 pub fn decode_get_bucket_metadata_table_configuration_request_struct_params() -> decode.Decoder(GetBucketMetadataTableConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketMetadataTableConfigurationRequest(
@@ -10225,6 +10447,7 @@ pub fn encode_get_bucket_metadata_table_configuration_output_struct(input: GetBu
 }
 
 pub fn decode_get_bucket_metadata_table_configuration_output_struct() -> decode.Decoder(GetBucketMetadataTableConfigurationOutput) {
+  use <- decode.recursive
   use get_bucket_metadata_table_configuration_result <- decode.optional_field("GetBucketMetadataTableConfigurationResult", option.None, decode.optional(decode_get_bucket_metadata_table_configuration_result_struct()))
   decode.success(GetBucketMetadataTableConfigurationOutput(
     get_bucket_metadata_table_configuration_result: get_bucket_metadata_table_configuration_result,
@@ -10232,6 +10455,7 @@ pub fn decode_get_bucket_metadata_table_configuration_output_struct() -> decode.
 }
 
 pub fn decode_get_bucket_metadata_table_configuration_output_struct_params() -> decode.Decoder(GetBucketMetadataTableConfigurationOutput) {
+  use <- decode.recursive
   use get_bucket_metadata_table_configuration_result <- decode.optional_field("GetBucketMetadataTableConfigurationResult", option.None, decode.optional(decode_get_bucket_metadata_table_configuration_result_struct_params()))
   decode.success(GetBucketMetadataTableConfigurationOutput(
     get_bucket_metadata_table_configuration_result: get_bucket_metadata_table_configuration_result,
@@ -10276,6 +10500,7 @@ pub fn encode_get_bucket_metadata_table_configuration_result_struct(input: GetBu
 }
 
 pub fn decode_get_bucket_metadata_table_configuration_result_struct() -> decode.Decoder(GetBucketMetadataTableConfigurationResult) {
+  use <- decode.recursive
   use error <- decode.optional_field("Error", option.None, decode.optional(decode_error_details_struct()))
   use metadata_table_configuration_result <- decode.optional_field("MetadataTableConfigurationResult", option.None, decode.optional(decode_metadata_table_configuration_result_struct()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode.string))
@@ -10287,6 +10512,7 @@ pub fn decode_get_bucket_metadata_table_configuration_result_struct() -> decode.
 }
 
 pub fn decode_get_bucket_metadata_table_configuration_result_struct_params() -> decode.Decoder(GetBucketMetadataTableConfigurationResult) {
+  use <- decode.recursive
   use error <- decode.optional_field("Error", option.None, decode.optional(decode_error_details_struct_params()))
   use metadata_table_configuration_result <- decode.optional_field("MetadataTableConfigurationResult", option.None, decode.optional(decode_metadata_table_configuration_result_struct_params()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode.string))
@@ -10343,6 +10569,7 @@ pub fn encode_metadata_table_configuration_result_struct(input: MetadataTableCon
 }
 
 pub fn decode_metadata_table_configuration_result_struct() -> decode.Decoder(MetadataTableConfigurationResult) {
+  use <- decode.recursive
   use s3_tables_destination_result <- decode.optional_field("S3TablesDestinationResult", option.None, decode.optional(decode_s3_tables_destination_result_struct()))
   decode.success(MetadataTableConfigurationResult(
     s3_tables_destination_result: s3_tables_destination_result,
@@ -10350,6 +10577,7 @@ pub fn decode_metadata_table_configuration_result_struct() -> decode.Decoder(Met
 }
 
 pub fn decode_metadata_table_configuration_result_struct_params() -> decode.Decoder(MetadataTableConfigurationResult) {
+  use <- decode.recursive
   use s3_tables_destination_result <- decode.optional_field("S3TablesDestinationResult", option.None, decode.optional(decode_s3_tables_destination_result_struct_params()))
   decode.success(MetadataTableConfigurationResult(
     s3_tables_destination_result: s3_tables_destination_result,
@@ -10402,6 +10630,7 @@ pub fn encode_s3_tables_destination_result_struct(input: S3TablesDestinationResu
 }
 
 pub fn decode_s3_tables_destination_result_struct() -> decode.Decoder(S3TablesDestinationResult) {
+  use <- decode.recursive
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
   use table_bucket_arn <- decode.optional_field("TableBucketArn", option.None, decode.optional(decode.string))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
@@ -10415,6 +10644,7 @@ pub fn decode_s3_tables_destination_result_struct() -> decode.Decoder(S3TablesDe
 }
 
 pub fn decode_s3_tables_destination_result_struct_params() -> decode.Decoder(S3TablesDestinationResult) {
+  use <- decode.recursive
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
   use table_bucket_arn <- decode.optional_field("TableBucketArn", option.None, decode.optional(decode.string))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
@@ -10487,6 +10717,7 @@ pub fn encode_get_bucket_metrics_configuration_request_struct(input: GetBucketMe
 }
 
 pub fn decode_get_bucket_metrics_configuration_request_struct() -> decode.Decoder(GetBucketMetricsConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -10498,6 +10729,7 @@ pub fn decode_get_bucket_metrics_configuration_request_struct() -> decode.Decode
 }
 
 pub fn decode_get_bucket_metrics_configuration_request_struct_params() -> decode.Decoder(GetBucketMetricsConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -10542,6 +10774,7 @@ pub fn encode_get_bucket_metrics_configuration_output_struct(input: GetBucketMet
 }
 
 pub fn decode_get_bucket_metrics_configuration_output_struct() -> decode.Decoder(GetBucketMetricsConfigurationOutput) {
+  use <- decode.recursive
   use metrics_configuration <- decode.optional_field("MetricsConfiguration", option.None, decode.optional(decode_metrics_configuration_struct()))
   decode.success(GetBucketMetricsConfigurationOutput(
     metrics_configuration: metrics_configuration,
@@ -10549,6 +10782,7 @@ pub fn decode_get_bucket_metrics_configuration_output_struct() -> decode.Decoder
 }
 
 pub fn decode_get_bucket_metrics_configuration_output_struct_params() -> decode.Decoder(GetBucketMetricsConfigurationOutput) {
+  use <- decode.recursive
   use metrics_configuration <- decode.optional_field("MetricsConfiguration", option.None, decode.optional(decode_metrics_configuration_struct_params()))
   decode.success(GetBucketMetricsConfigurationOutput(
     metrics_configuration: metrics_configuration,
@@ -10589,6 +10823,7 @@ pub fn encode_metrics_configuration_struct(input: MetricsConfiguration) -> json.
 }
 
 pub fn decode_metrics_configuration_struct() -> decode.Decoder(MetricsConfiguration) {
+  use <- decode.recursive
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_metrics_filter_union()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   decode.success(MetricsConfiguration(
@@ -10598,6 +10833,7 @@ pub fn decode_metrics_configuration_struct() -> decode.Decoder(MetricsConfigurat
 }
 
 pub fn decode_metrics_configuration_struct_params() -> decode.Decoder(MetricsConfiguration) {
+  use <- decode.recursive
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_metrics_filter_union_params()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   decode.success(MetricsConfiguration(
@@ -10650,6 +10886,7 @@ pub fn encode_metrics_filter_union(v: MetricsFilter) -> json.Json {
 }
 
 pub fn decode_metrics_filter_union() -> decode.Decoder(MetricsFilter) {
+  use <- decode.recursive
   decode.one_of(
     decode.field("AccessPointArn", decode.string, fn(x) { decode.success(MetricsFilterAccessPointArn(x)) }),
     [
@@ -10661,6 +10898,7 @@ pub fn decode_metrics_filter_union() -> decode.Decoder(MetricsFilter) {
 }
 
 pub fn decode_metrics_filter_union_params() -> decode.Decoder(MetricsFilter) {
+  use <- decode.recursive
   decode.one_of(
     decode.field("AccessPointArn", decode.string, fn(x) { decode.success(MetricsFilterAccessPointArn(x)) }),
     [
@@ -10693,6 +10931,7 @@ pub fn encode_metrics_and_operator_struct(input: MetricsAndOperator) -> json.Jso
 }
 
 pub fn decode_metrics_and_operator_struct() -> decode.Decoder(MetricsAndOperator) {
+  use <- decode.recursive
   use access_point_arn <- decode.optional_field("AccessPointArn", option.None, decode.optional(decode.string))
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct())))
@@ -10704,6 +10943,7 @@ pub fn decode_metrics_and_operator_struct() -> decode.Decoder(MetricsAndOperator
 }
 
 pub fn decode_metrics_and_operator_struct_params() -> decode.Decoder(MetricsAndOperator) {
+  use <- decode.recursive
   use access_point_arn <- decode.optional_field("AccessPointArn", option.None, decode.optional(decode.string))
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
@@ -10764,6 +11004,7 @@ pub fn encode_get_bucket_notification_configuration_request_struct(input: GetBuc
 }
 
 pub fn decode_get_bucket_notification_configuration_request_struct() -> decode.Decoder(GetBucketNotificationConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketNotificationConfigurationRequest(
@@ -10773,6 +11014,7 @@ pub fn decode_get_bucket_notification_configuration_request_struct() -> decode.D
 }
 
 pub fn decode_get_bucket_notification_configuration_request_struct_params() -> decode.Decoder(GetBucketNotificationConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketNotificationConfigurationRequest(
@@ -10825,6 +11067,7 @@ pub fn encode_notification_configuration_struct(input: NotificationConfiguration
 }
 
 pub fn decode_notification_configuration_struct() -> decode.Decoder(NotificationConfiguration) {
+  use <- decode.recursive
   use event_bridge_configuration <- decode.optional_field("EventBridgeConfiguration", option.None, decode.optional(decode_event_bridge_configuration_struct()))
   use lambda_function_configurations <- decode.optional_field("LambdaFunctionConfigurations", option.None, decode.optional(decode.list(decode_lambda_function_configuration_struct())))
   use queue_configurations <- decode.optional_field("QueueConfigurations", option.None, decode.optional(decode.list(decode_queue_configuration_struct())))
@@ -10838,6 +11081,7 @@ pub fn decode_notification_configuration_struct() -> decode.Decoder(Notification
 }
 
 pub fn decode_notification_configuration_struct_params() -> decode.Decoder(NotificationConfiguration) {
+  use <- decode.recursive
   use event_bridge_configuration <- decode.optional_field("EventBridgeConfiguration", option.None, decode.optional(decode_event_bridge_configuration_struct_params()))
   use lambda_function_configurations <- decode.optional_field("LambdaFunctionConfigurations", option.None, decode.optional(decode.list(decode_lambda_function_configuration_struct_params())))
   use queue_configurations <- decode.optional_field("QueueConfigurations", option.None, decode.optional(decode.list(decode_queue_configuration_struct_params())))
@@ -10942,6 +11186,7 @@ pub fn encode_lambda_function_configuration_struct(input: LambdaFunctionConfigur
 }
 
 pub fn decode_lambda_function_configuration_struct() -> decode.Decoder(LambdaFunctionConfiguration) {
+  use <- decode.recursive
   use events <- decode.optional_field("Events", option.None, decode.optional(decode.list(decode_event_enum())))
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_notification_configuration_filter_struct()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -10955,6 +11200,7 @@ pub fn decode_lambda_function_configuration_struct() -> decode.Decoder(LambdaFun
 }
 
 pub fn decode_lambda_function_configuration_struct_params() -> decode.Decoder(LambdaFunctionConfiguration) {
+  use <- decode.recursive
   use events <- decode.optional_field("Events", option.None, decode.optional(decode.list(decode_event_enum())))
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_notification_configuration_filter_struct_params()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -11116,6 +11362,7 @@ pub fn encode_notification_configuration_filter_struct(input: NotificationConfig
 }
 
 pub fn decode_notification_configuration_filter_struct() -> decode.Decoder(NotificationConfigurationFilter) {
+  use <- decode.recursive
   use key <- decode.optional_field("Key", option.None, decode.optional(decode_s3_key_filter_struct()))
   decode.success(NotificationConfigurationFilter(
     key: key,
@@ -11123,6 +11370,7 @@ pub fn decode_notification_configuration_filter_struct() -> decode.Decoder(Notif
 }
 
 pub fn decode_notification_configuration_filter_struct_params() -> decode.Decoder(NotificationConfigurationFilter) {
+  use <- decode.recursive
   use key <- decode.optional_field("Key", option.None, decode.optional(decode_s3_key_filter_struct_params()))
   decode.success(NotificationConfigurationFilter(
     key: key,
@@ -11163,6 +11411,7 @@ pub fn encode_s3_key_filter_struct(input: S3KeyFilter) -> json.Json {
 }
 
 pub fn decode_s3_key_filter_struct() -> decode.Decoder(S3KeyFilter) {
+  use <- decode.recursive
   use filter_rules <- decode.optional_field("FilterRules", option.None, decode.optional(decode.list(decode_filter_rule_struct())))
   decode.success(S3KeyFilter(
     filter_rules: filter_rules,
@@ -11170,6 +11419,7 @@ pub fn decode_s3_key_filter_struct() -> decode.Decoder(S3KeyFilter) {
 }
 
 pub fn decode_s3_key_filter_struct_params() -> decode.Decoder(S3KeyFilter) {
+  use <- decode.recursive
   use filter_rules <- decode.optional_field("FilterRules", option.None, decode.optional(decode.list(decode_filter_rule_struct_params())))
   decode.success(S3KeyFilter(
     filter_rules: filter_rules,
@@ -11214,6 +11464,7 @@ pub fn encode_filter_rule_struct(input: FilterRule) -> json.Json {
 }
 
 pub fn decode_filter_rule_struct() -> decode.Decoder(FilterRule) {
+  use <- decode.recursive
   use name <- decode.optional_field("Name", option.None, decode.optional(decode_filter_rule_name_enum()))
   use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
   decode.success(FilterRule(
@@ -11223,6 +11474,7 @@ pub fn decode_filter_rule_struct() -> decode.Decoder(FilterRule) {
 }
 
 pub fn decode_filter_rule_struct_params() -> decode.Decoder(FilterRule) {
+  use <- decode.recursive
   use name <- decode.optional_field("Name", option.None, decode.optional(decode_filter_rule_name_enum()))
   use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
   decode.success(FilterRule(
@@ -11306,6 +11558,7 @@ pub fn encode_queue_configuration_struct(input: QueueConfiguration) -> json.Json
 }
 
 pub fn decode_queue_configuration_struct() -> decode.Decoder(QueueConfiguration) {
+  use <- decode.recursive
   use events <- decode.optional_field("Events", option.None, decode.optional(decode.list(decode_event_enum())))
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_notification_configuration_filter_struct()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -11319,6 +11572,7 @@ pub fn decode_queue_configuration_struct() -> decode.Decoder(QueueConfiguration)
 }
 
 pub fn decode_queue_configuration_struct_params() -> decode.Decoder(QueueConfiguration) {
+  use <- decode.recursive
   use events <- decode.optional_field("Events", option.None, decode.optional(decode.list(decode_event_enum())))
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_notification_configuration_filter_struct_params()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -11395,6 +11649,7 @@ pub fn encode_topic_configuration_struct(input: TopicConfiguration) -> json.Json
 }
 
 pub fn decode_topic_configuration_struct() -> decode.Decoder(TopicConfiguration) {
+  use <- decode.recursive
   use events <- decode.optional_field("Events", option.None, decode.optional(decode.list(decode_event_enum())))
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_notification_configuration_filter_struct()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -11408,6 +11663,7 @@ pub fn decode_topic_configuration_struct() -> decode.Decoder(TopicConfiguration)
 }
 
 pub fn decode_topic_configuration_struct_params() -> decode.Decoder(TopicConfiguration) {
+  use <- decode.recursive
   use events <- decode.optional_field("Events", option.None, decode.optional(decode.list(decode_event_enum())))
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_notification_configuration_filter_struct_params()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -11476,6 +11732,7 @@ pub fn encode_get_bucket_ownership_controls_request_struct(input: GetBucketOwner
 }
 
 pub fn decode_get_bucket_ownership_controls_request_struct() -> decode.Decoder(GetBucketOwnershipControlsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketOwnershipControlsRequest(
@@ -11485,6 +11742,7 @@ pub fn decode_get_bucket_ownership_controls_request_struct() -> decode.Decoder(G
 }
 
 pub fn decode_get_bucket_ownership_controls_request_struct_params() -> decode.Decoder(GetBucketOwnershipControlsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketOwnershipControlsRequest(
@@ -11525,6 +11783,7 @@ pub fn encode_get_bucket_ownership_controls_output_struct(input: GetBucketOwners
 }
 
 pub fn decode_get_bucket_ownership_controls_output_struct() -> decode.Decoder(GetBucketOwnershipControlsOutput) {
+  use <- decode.recursive
   use ownership_controls <- decode.optional_field("OwnershipControls", option.None, decode.optional(decode_ownership_controls_struct()))
   decode.success(GetBucketOwnershipControlsOutput(
     ownership_controls: ownership_controls,
@@ -11532,6 +11791,7 @@ pub fn decode_get_bucket_ownership_controls_output_struct() -> decode.Decoder(Ge
 }
 
 pub fn decode_get_bucket_ownership_controls_output_struct_params() -> decode.Decoder(GetBucketOwnershipControlsOutput) {
+  use <- decode.recursive
   use ownership_controls <- decode.optional_field("OwnershipControls", option.None, decode.optional(decode_ownership_controls_struct_params()))
   decode.success(GetBucketOwnershipControlsOutput(
     ownership_controls: ownership_controls,
@@ -11568,6 +11828,7 @@ pub fn encode_ownership_controls_struct(input: OwnershipControls) -> json.Json {
 }
 
 pub fn decode_ownership_controls_struct() -> decode.Decoder(OwnershipControls) {
+  use <- decode.recursive
   use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_ownership_controls_rule_struct())))
   decode.success(OwnershipControls(
     rules: rules,
@@ -11575,6 +11836,7 @@ pub fn decode_ownership_controls_struct() -> decode.Decoder(OwnershipControls) {
 }
 
 pub fn decode_ownership_controls_struct_params() -> decode.Decoder(OwnershipControls) {
+  use <- decode.recursive
   use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_ownership_controls_rule_struct_params())))
   decode.success(OwnershipControls(
     rules: rules,
@@ -11615,6 +11877,7 @@ pub fn encode_ownership_controls_rule_struct(input: OwnershipControlsRule) -> js
 }
 
 pub fn decode_ownership_controls_rule_struct() -> decode.Decoder(OwnershipControlsRule) {
+  use <- decode.recursive
   use object_ownership <- decode.optional_field("ObjectOwnership", option.None, decode.optional(decode_object_ownership_enum()))
   decode.success(OwnershipControlsRule(
     object_ownership: object_ownership,
@@ -11622,6 +11885,7 @@ pub fn decode_ownership_controls_rule_struct() -> decode.Decoder(OwnershipContro
 }
 
 pub fn decode_ownership_controls_rule_struct_params() -> decode.Decoder(OwnershipControlsRule) {
+  use <- decode.recursive
   use object_ownership <- decode.optional_field("ObjectOwnership", option.None, decode.optional(decode_object_ownership_enum()))
   decode.success(OwnershipControlsRule(
     object_ownership: object_ownership,
@@ -11667,6 +11931,7 @@ pub fn encode_get_bucket_policy_request_struct(input: GetBucketPolicyRequest) ->
 }
 
 pub fn decode_get_bucket_policy_request_struct() -> decode.Decoder(GetBucketPolicyRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketPolicyRequest(
@@ -11676,6 +11941,7 @@ pub fn decode_get_bucket_policy_request_struct() -> decode.Decoder(GetBucketPoli
 }
 
 pub fn decode_get_bucket_policy_request_struct_params() -> decode.Decoder(GetBucketPolicyRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketPolicyRequest(
@@ -11716,6 +11982,7 @@ pub fn encode_get_bucket_policy_output_struct(input: GetBucketPolicyOutput) -> j
 }
 
 pub fn decode_get_bucket_policy_output_struct() -> decode.Decoder(GetBucketPolicyOutput) {
+  use <- decode.recursive
   use policy <- decode.optional_field("Policy", option.None, decode.optional(decode.string))
   decode.success(GetBucketPolicyOutput(
     policy: policy,
@@ -11723,6 +11990,7 @@ pub fn decode_get_bucket_policy_output_struct() -> decode.Decoder(GetBucketPolic
 }
 
 pub fn decode_get_bucket_policy_output_struct_params() -> decode.Decoder(GetBucketPolicyOutput) {
+  use <- decode.recursive
   use policy <- decode.optional_field("Policy", option.None, decode.optional(decode.string))
   decode.success(GetBucketPolicyOutput(
     policy: policy,
@@ -11763,6 +12031,7 @@ pub fn encode_get_bucket_policy_status_request_struct(input: GetBucketPolicyStat
 }
 
 pub fn decode_get_bucket_policy_status_request_struct() -> decode.Decoder(GetBucketPolicyStatusRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketPolicyStatusRequest(
@@ -11772,6 +12041,7 @@ pub fn decode_get_bucket_policy_status_request_struct() -> decode.Decoder(GetBuc
 }
 
 pub fn decode_get_bucket_policy_status_request_struct_params() -> decode.Decoder(GetBucketPolicyStatusRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketPolicyStatusRequest(
@@ -11812,6 +12082,7 @@ pub fn encode_get_bucket_policy_status_output_struct(input: GetBucketPolicyStatu
 }
 
 pub fn decode_get_bucket_policy_status_output_struct() -> decode.Decoder(GetBucketPolicyStatusOutput) {
+  use <- decode.recursive
   use policy_status <- decode.optional_field("PolicyStatus", option.None, decode.optional(decode_policy_status_struct()))
   decode.success(GetBucketPolicyStatusOutput(
     policy_status: policy_status,
@@ -11819,6 +12090,7 @@ pub fn decode_get_bucket_policy_status_output_struct() -> decode.Decoder(GetBuck
 }
 
 pub fn decode_get_bucket_policy_status_output_struct_params() -> decode.Decoder(GetBucketPolicyStatusOutput) {
+  use <- decode.recursive
   use policy_status <- decode.optional_field("PolicyStatus", option.None, decode.optional(decode_policy_status_struct_params()))
   decode.success(GetBucketPolicyStatusOutput(
     policy_status: policy_status,
@@ -11855,6 +12127,7 @@ pub fn encode_policy_status_struct(input: PolicyStatus) -> json.Json {
 }
 
 pub fn decode_policy_status_struct() -> decode.Decoder(PolicyStatus) {
+  use <- decode.recursive
   use is_public <- decode.optional_field("IsPublic", option.None, decode.optional(decode.bool))
   decode.success(PolicyStatus(
     is_public: is_public,
@@ -11862,6 +12135,7 @@ pub fn decode_policy_status_struct() -> decode.Decoder(PolicyStatus) {
 }
 
 pub fn decode_policy_status_struct_params() -> decode.Decoder(PolicyStatus) {
+  use <- decode.recursive
   use is_public <- decode.optional_field("IsPublic", option.None, decode.optional(decode.bool))
   decode.success(PolicyStatus(
     is_public: is_public,
@@ -11906,6 +12180,7 @@ pub fn encode_get_bucket_replication_request_struct(input: GetBucketReplicationR
 }
 
 pub fn decode_get_bucket_replication_request_struct() -> decode.Decoder(GetBucketReplicationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketReplicationRequest(
@@ -11915,6 +12190,7 @@ pub fn decode_get_bucket_replication_request_struct() -> decode.Decoder(GetBucke
 }
 
 pub fn decode_get_bucket_replication_request_struct_params() -> decode.Decoder(GetBucketReplicationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketReplicationRequest(
@@ -11955,6 +12231,7 @@ pub fn encode_get_bucket_replication_output_struct(input: GetBucketReplicationOu
 }
 
 pub fn decode_get_bucket_replication_output_struct() -> decode.Decoder(GetBucketReplicationOutput) {
+  use <- decode.recursive
   use replication_configuration <- decode.optional_field("ReplicationConfiguration", option.None, decode.optional(decode_replication_configuration_struct()))
   decode.success(GetBucketReplicationOutput(
     replication_configuration: replication_configuration,
@@ -11962,6 +12239,7 @@ pub fn decode_get_bucket_replication_output_struct() -> decode.Decoder(GetBucket
 }
 
 pub fn decode_get_bucket_replication_output_struct_params() -> decode.Decoder(GetBucketReplicationOutput) {
+  use <- decode.recursive
   use replication_configuration <- decode.optional_field("ReplicationConfiguration", option.None, decode.optional(decode_replication_configuration_struct_params()))
   decode.success(GetBucketReplicationOutput(
     replication_configuration: replication_configuration,
@@ -12002,6 +12280,7 @@ pub fn encode_replication_configuration_struct(input: ReplicationConfiguration) 
 }
 
 pub fn decode_replication_configuration_struct() -> decode.Decoder(ReplicationConfiguration) {
+  use <- decode.recursive
   use role <- decode.optional_field("Role", option.None, decode.optional(decode.string))
   use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_replication_rule_struct())))
   decode.success(ReplicationConfiguration(
@@ -12011,6 +12290,7 @@ pub fn decode_replication_configuration_struct() -> decode.Decoder(ReplicationCo
 }
 
 pub fn decode_replication_configuration_struct_params() -> decode.Decoder(ReplicationConfiguration) {
+  use <- decode.recursive
   use role <- decode.optional_field("Role", option.None, decode.optional(decode.string))
   use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_replication_rule_struct_params())))
   decode.success(ReplicationConfiguration(
@@ -12091,6 +12371,7 @@ pub fn encode_replication_rule_struct(input: ReplicationRule) -> json.Json {
 }
 
 pub fn decode_replication_rule_struct() -> decode.Decoder(ReplicationRule) {
+  use <- decode.recursive
   use delete_marker_replication <- decode.optional_field("DeleteMarkerReplication", option.None, decode.optional(decode_delete_marker_replication_struct()))
   use destination <- decode.optional_field("Destination", option.None, decode.optional(decode_destination_struct()))
   use existing_object_replication <- decode.optional_field("ExistingObjectReplication", option.None, decode.optional(decode_existing_object_replication_struct()))
@@ -12114,6 +12395,7 @@ pub fn decode_replication_rule_struct() -> decode.Decoder(ReplicationRule) {
 }
 
 pub fn decode_replication_rule_struct_params() -> decode.Decoder(ReplicationRule) {
+  use <- decode.recursive
   use delete_marker_replication <- decode.optional_field("DeleteMarkerReplication", option.None, decode.optional(decode_delete_marker_replication_struct_params()))
   use destination <- decode.optional_field("Destination", option.None, decode.optional(decode_destination_struct_params()))
   use existing_object_replication <- decode.optional_field("ExistingObjectReplication", option.None, decode.optional(decode_existing_object_replication_struct_params()))
@@ -12219,6 +12501,7 @@ pub fn encode_delete_marker_replication_struct(input: DeleteMarkerReplication) -
 }
 
 pub fn decode_delete_marker_replication_struct() -> decode.Decoder(DeleteMarkerReplication) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_delete_marker_replication_status_enum()))
   decode.success(DeleteMarkerReplication(
     status: status,
@@ -12226,6 +12509,7 @@ pub fn decode_delete_marker_replication_struct() -> decode.Decoder(DeleteMarkerR
 }
 
 pub fn decode_delete_marker_replication_struct_params() -> decode.Decoder(DeleteMarkerReplication) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_delete_marker_replication_status_enum()))
   decode.success(DeleteMarkerReplication(
     status: status,
@@ -12313,6 +12597,7 @@ pub fn encode_destination_struct(input: Destination) -> json.Json {
 }
 
 pub fn decode_destination_struct() -> decode.Decoder(Destination) {
+  use <- decode.recursive
   use access_control_translation <- decode.optional_field("AccessControlTranslation", option.None, decode.optional(decode_access_control_translation_struct()))
   use account <- decode.optional_field("Account", option.None, decode.optional(decode.string))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
@@ -12332,6 +12617,7 @@ pub fn decode_destination_struct() -> decode.Decoder(Destination) {
 }
 
 pub fn decode_destination_struct_params() -> decode.Decoder(Destination) {
+  use <- decode.recursive
   use access_control_translation <- decode.optional_field("AccessControlTranslation", option.None, decode.optional(decode_access_control_translation_struct_params()))
   use account <- decode.optional_field("Account", option.None, decode.optional(decode.string))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
@@ -12421,6 +12707,7 @@ pub fn encode_access_control_translation_struct(input: AccessControlTranslation)
 }
 
 pub fn decode_access_control_translation_struct() -> decode.Decoder(AccessControlTranslation) {
+  use <- decode.recursive
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_override_enum()))
   decode.success(AccessControlTranslation(
     owner: owner,
@@ -12428,6 +12715,7 @@ pub fn decode_access_control_translation_struct() -> decode.Decoder(AccessContro
 }
 
 pub fn decode_access_control_translation_struct_params() -> decode.Decoder(AccessControlTranslation) {
+  use <- decode.recursive
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_override_enum()))
   decode.success(AccessControlTranslation(
     owner: owner,
@@ -12488,6 +12776,7 @@ pub fn encode_encryption_configuration_struct(input: EncryptionConfiguration) ->
 }
 
 pub fn decode_encryption_configuration_struct() -> decode.Decoder(EncryptionConfiguration) {
+  use <- decode.recursive
   use replica_kms_key_id <- decode.optional_field("ReplicaKmsKeyID", option.None, decode.optional(decode.string))
   decode.success(EncryptionConfiguration(
     replica_kms_key_id: replica_kms_key_id,
@@ -12495,6 +12784,7 @@ pub fn decode_encryption_configuration_struct() -> decode.Decoder(EncryptionConf
 }
 
 pub fn decode_encryption_configuration_struct_params() -> decode.Decoder(EncryptionConfiguration) {
+  use <- decode.recursive
   use replica_kms_key_id <- decode.optional_field("ReplicaKmsKeyID", option.None, decode.optional(decode.string))
   decode.success(EncryptionConfiguration(
     replica_kms_key_id: replica_kms_key_id,
@@ -12539,6 +12829,7 @@ pub fn encode_metrics_struct(input: Metrics) -> json.Json {
 }
 
 pub fn decode_metrics_struct() -> decode.Decoder(Metrics) {
+  use <- decode.recursive
   use event_threshold <- decode.optional_field("EventThreshold", option.None, decode.optional(decode_replication_time_value_struct()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_metrics_status_enum()))
   decode.success(Metrics(
@@ -12548,6 +12839,7 @@ pub fn decode_metrics_struct() -> decode.Decoder(Metrics) {
 }
 
 pub fn decode_metrics_struct_params() -> decode.Decoder(Metrics) {
+  use <- decode.recursive
   use event_threshold <- decode.optional_field("EventThreshold", option.None, decode.optional(decode_replication_time_value_struct_params()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_metrics_status_enum()))
   decode.success(Metrics(
@@ -12597,6 +12889,7 @@ pub fn encode_replication_time_value_struct(input: ReplicationTimeValue) -> json
 }
 
 pub fn decode_replication_time_value_struct() -> decode.Decoder(ReplicationTimeValue) {
+  use <- decode.recursive
   use minutes <- decode.optional_field("Minutes", option.None, decode.optional(decode.int))
   decode.success(ReplicationTimeValue(
     minutes: minutes,
@@ -12604,6 +12897,7 @@ pub fn decode_replication_time_value_struct() -> decode.Decoder(ReplicationTimeV
 }
 
 pub fn decode_replication_time_value_struct_params() -> decode.Decoder(ReplicationTimeValue) {
+  use <- decode.recursive
   use minutes <- decode.optional_field("Minutes", option.None, decode.optional(decode.int))
   decode.success(ReplicationTimeValue(
     minutes: minutes,
@@ -12670,6 +12964,7 @@ pub fn encode_replication_time_struct(input: ReplicationTime) -> json.Json {
 }
 
 pub fn decode_replication_time_struct() -> decode.Decoder(ReplicationTime) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_replication_time_status_enum()))
   use time <- decode.optional_field("Time", option.None, decode.optional(decode_replication_time_value_struct()))
   decode.success(ReplicationTime(
@@ -12679,6 +12974,7 @@ pub fn decode_replication_time_struct() -> decode.Decoder(ReplicationTime) {
 }
 
 pub fn decode_replication_time_struct_params() -> decode.Decoder(ReplicationTime) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_replication_time_status_enum()))
   use time <- decode.optional_field("Time", option.None, decode.optional(decode_replication_time_value_struct_params()))
   decode.success(ReplicationTime(
@@ -12750,6 +13046,7 @@ pub fn encode_existing_object_replication_struct(input: ExistingObjectReplicatio
 }
 
 pub fn decode_existing_object_replication_struct() -> decode.Decoder(ExistingObjectReplication) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_existing_object_replication_status_enum()))
   decode.success(ExistingObjectReplication(
     status: status,
@@ -12757,6 +13054,7 @@ pub fn decode_existing_object_replication_struct() -> decode.Decoder(ExistingObj
 }
 
 pub fn decode_existing_object_replication_struct_params() -> decode.Decoder(ExistingObjectReplication) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_existing_object_replication_status_enum()))
   decode.success(ExistingObjectReplication(
     status: status,
@@ -12828,6 +13126,7 @@ pub fn encode_replication_rule_filter_struct(input: ReplicationRuleFilter) -> js
 }
 
 pub fn decode_replication_rule_filter_struct() -> decode.Decoder(ReplicationRuleFilter) {
+  use <- decode.recursive
   use and <- decode.optional_field("And", option.None, decode.optional(decode_replication_rule_and_operator_struct()))
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tag <- decode.optional_field("Tag", option.None, decode.optional(decode_tag_struct()))
@@ -12839,6 +13138,7 @@ pub fn decode_replication_rule_filter_struct() -> decode.Decoder(ReplicationRule
 }
 
 pub fn decode_replication_rule_filter_struct_params() -> decode.Decoder(ReplicationRuleFilter) {
+  use <- decode.recursive
   use and <- decode.optional_field("And", option.None, decode.optional(decode_replication_rule_and_operator_struct_params()))
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tag <- decode.optional_field("Tag", option.None, decode.optional(decode_tag_struct_params()))
@@ -12899,6 +13199,7 @@ pub fn encode_replication_rule_and_operator_struct(input: ReplicationRuleAndOper
 }
 
 pub fn decode_replication_rule_and_operator_struct() -> decode.Decoder(ReplicationRuleAndOperator) {
+  use <- decode.recursive
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct())))
   decode.success(ReplicationRuleAndOperator(
@@ -12908,6 +13209,7 @@ pub fn decode_replication_rule_and_operator_struct() -> decode.Decoder(Replicati
 }
 
 pub fn decode_replication_rule_and_operator_struct_params() -> decode.Decoder(ReplicationRuleAndOperator) {
+  use <- decode.recursive
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
   decode.success(ReplicationRuleAndOperator(
@@ -12960,6 +13262,7 @@ pub fn encode_source_selection_criteria_struct(input: SourceSelectionCriteria) -
 }
 
 pub fn decode_source_selection_criteria_struct() -> decode.Decoder(SourceSelectionCriteria) {
+  use <- decode.recursive
   use replica_modifications <- decode.optional_field("ReplicaModifications", option.None, decode.optional(decode_replica_modifications_struct()))
   use sse_kms_encrypted_objects <- decode.optional_field("SseKmsEncryptedObjects", option.None, decode.optional(decode_sse_kms_encrypted_objects_struct()))
   decode.success(SourceSelectionCriteria(
@@ -12969,6 +13272,7 @@ pub fn decode_source_selection_criteria_struct() -> decode.Decoder(SourceSelecti
 }
 
 pub fn decode_source_selection_criteria_struct_params() -> decode.Decoder(SourceSelectionCriteria) {
+  use <- decode.recursive
   use replica_modifications <- decode.optional_field("ReplicaModifications", option.None, decode.optional(decode_replica_modifications_struct_params()))
   use sse_kms_encrypted_objects <- decode.optional_field("SseKmsEncryptedObjects", option.None, decode.optional(decode_sse_kms_encrypted_objects_struct_params()))
   decode.success(SourceSelectionCriteria(
@@ -13017,6 +13321,7 @@ pub fn encode_replica_modifications_struct(input: ReplicaModifications) -> json.
 }
 
 pub fn decode_replica_modifications_struct() -> decode.Decoder(ReplicaModifications) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_replica_modifications_status_enum()))
   decode.success(ReplicaModifications(
     status: status,
@@ -13024,6 +13329,7 @@ pub fn decode_replica_modifications_struct() -> decode.Decoder(ReplicaModificati
 }
 
 pub fn decode_replica_modifications_struct_params() -> decode.Decoder(ReplicaModifications) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_replica_modifications_status_enum()))
   decode.success(ReplicaModifications(
     status: status,
@@ -13087,6 +13393,7 @@ pub fn encode_sse_kms_encrypted_objects_struct(input: SseKmsEncryptedObjects) ->
 }
 
 pub fn decode_sse_kms_encrypted_objects_struct() -> decode.Decoder(SseKmsEncryptedObjects) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_sse_kms_encrypted_objects_status_enum()))
   decode.success(SseKmsEncryptedObjects(
     status: status,
@@ -13094,6 +13401,7 @@ pub fn decode_sse_kms_encrypted_objects_struct() -> decode.Decoder(SseKmsEncrypt
 }
 
 pub fn decode_sse_kms_encrypted_objects_struct_params() -> decode.Decoder(SseKmsEncryptedObjects) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_sse_kms_encrypted_objects_status_enum()))
   decode.success(SseKmsEncryptedObjects(
     status: status,
@@ -13183,6 +13491,7 @@ pub fn encode_get_bucket_request_payment_request_struct(input: GetBucketRequestP
 }
 
 pub fn decode_get_bucket_request_payment_request_struct() -> decode.Decoder(GetBucketRequestPaymentRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketRequestPaymentRequest(
@@ -13192,6 +13501,7 @@ pub fn decode_get_bucket_request_payment_request_struct() -> decode.Decoder(GetB
 }
 
 pub fn decode_get_bucket_request_payment_request_struct_params() -> decode.Decoder(GetBucketRequestPaymentRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketRequestPaymentRequest(
@@ -13232,6 +13542,7 @@ pub fn encode_get_bucket_request_payment_output_struct(input: GetBucketRequestPa
 }
 
 pub fn decode_get_bucket_request_payment_output_struct() -> decode.Decoder(GetBucketRequestPaymentOutput) {
+  use <- decode.recursive
   use payer <- decode.optional_field("Payer", option.None, decode.optional(decode_payer_enum()))
   decode.success(GetBucketRequestPaymentOutput(
     payer: payer,
@@ -13239,6 +13550,7 @@ pub fn decode_get_bucket_request_payment_output_struct() -> decode.Decoder(GetBu
 }
 
 pub fn decode_get_bucket_request_payment_output_struct_params() -> decode.Decoder(GetBucketRequestPaymentOutput) {
+  use <- decode.recursive
   use payer <- decode.optional_field("Payer", option.None, decode.optional(decode_payer_enum()))
   decode.success(GetBucketRequestPaymentOutput(
     payer: payer,
@@ -13306,6 +13618,7 @@ pub fn encode_get_bucket_tagging_request_struct(input: GetBucketTaggingRequest) 
 }
 
 pub fn decode_get_bucket_tagging_request_struct() -> decode.Decoder(GetBucketTaggingRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketTaggingRequest(
@@ -13315,6 +13628,7 @@ pub fn decode_get_bucket_tagging_request_struct() -> decode.Decoder(GetBucketTag
 }
 
 pub fn decode_get_bucket_tagging_request_struct_params() -> decode.Decoder(GetBucketTaggingRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketTaggingRequest(
@@ -13355,6 +13669,7 @@ pub fn encode_get_bucket_tagging_output_struct(input: GetBucketTaggingOutput) ->
 }
 
 pub fn decode_get_bucket_tagging_output_struct() -> decode.Decoder(GetBucketTaggingOutput) {
+  use <- decode.recursive
   use tag_set <- decode.optional_field("TagSet", option.None, decode.optional(decode.list(decode_tag_struct())))
   decode.success(GetBucketTaggingOutput(
     tag_set: tag_set,
@@ -13362,6 +13677,7 @@ pub fn decode_get_bucket_tagging_output_struct() -> decode.Decoder(GetBucketTagg
 }
 
 pub fn decode_get_bucket_tagging_output_struct_params() -> decode.Decoder(GetBucketTaggingOutput) {
+  use <- decode.recursive
   use tag_set <- decode.optional_field("TagSet", option.None, decode.optional(decode.list(decode_tag_struct_params())))
   decode.success(GetBucketTaggingOutput(
     tag_set: tag_set,
@@ -13406,6 +13722,7 @@ pub fn encode_get_bucket_versioning_request_struct(input: GetBucketVersioningReq
 }
 
 pub fn decode_get_bucket_versioning_request_struct() -> decode.Decoder(GetBucketVersioningRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketVersioningRequest(
@@ -13415,6 +13732,7 @@ pub fn decode_get_bucket_versioning_request_struct() -> decode.Decoder(GetBucket
 }
 
 pub fn decode_get_bucket_versioning_request_struct_params() -> decode.Decoder(GetBucketVersioningRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketVersioningRequest(
@@ -13459,6 +13777,7 @@ pub fn encode_get_bucket_versioning_output_struct(input: GetBucketVersioningOutp
 }
 
 pub fn decode_get_bucket_versioning_output_struct() -> decode.Decoder(GetBucketVersioningOutput) {
+  use <- decode.recursive
   use mfa_delete <- decode.optional_field("MFADelete", option.None, decode.optional(decode_mfa_delete_status_enum()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_bucket_versioning_status_enum()))
   decode.success(GetBucketVersioningOutput(
@@ -13468,6 +13787,7 @@ pub fn decode_get_bucket_versioning_output_struct() -> decode.Decoder(GetBucketV
 }
 
 pub fn decode_get_bucket_versioning_output_struct_params() -> decode.Decoder(GetBucketVersioningOutput) {
+  use <- decode.recursive
   use mfa_delete <- decode.optional_field("MFADelete", option.None, decode.optional(decode_mfa_delete_status_enum()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_bucket_versioning_status_enum()))
   decode.success(GetBucketVersioningOutput(
@@ -13566,6 +13886,7 @@ pub fn encode_get_bucket_website_request_struct(input: GetBucketWebsiteRequest) 
 }
 
 pub fn decode_get_bucket_website_request_struct() -> decode.Decoder(GetBucketWebsiteRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketWebsiteRequest(
@@ -13575,6 +13896,7 @@ pub fn decode_get_bucket_website_request_struct() -> decode.Decoder(GetBucketWeb
 }
 
 pub fn decode_get_bucket_website_request_struct_params() -> decode.Decoder(GetBucketWebsiteRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketWebsiteRequest(
@@ -13627,6 +13949,7 @@ pub fn encode_get_bucket_website_output_struct(input: GetBucketWebsiteOutput) ->
 }
 
 pub fn decode_get_bucket_website_output_struct() -> decode.Decoder(GetBucketWebsiteOutput) {
+  use <- decode.recursive
   use error_document <- decode.optional_field("ErrorDocument", option.None, decode.optional(decode_error_document_struct()))
   use index_document <- decode.optional_field("IndexDocument", option.None, decode.optional(decode_index_document_struct()))
   use redirect_all_requests_to <- decode.optional_field("RedirectAllRequestsTo", option.None, decode.optional(decode_redirect_all_requests_to_struct()))
@@ -13640,6 +13963,7 @@ pub fn decode_get_bucket_website_output_struct() -> decode.Decoder(GetBucketWebs
 }
 
 pub fn decode_get_bucket_website_output_struct_params() -> decode.Decoder(GetBucketWebsiteOutput) {
+  use <- decode.recursive
   use error_document <- decode.optional_field("ErrorDocument", option.None, decode.optional(decode_error_document_struct_params()))
   use index_document <- decode.optional_field("IndexDocument", option.None, decode.optional(decode_index_document_struct_params()))
   use redirect_all_requests_to <- decode.optional_field("RedirectAllRequestsTo", option.None, decode.optional(decode_redirect_all_requests_to_struct_params()))
@@ -13704,6 +14028,7 @@ pub fn encode_error_document_struct(input: ErrorDocument) -> json.Json {
 }
 
 pub fn decode_error_document_struct() -> decode.Decoder(ErrorDocument) {
+  use <- decode.recursive
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
   decode.success(ErrorDocument(
     key: key,
@@ -13711,6 +14036,7 @@ pub fn decode_error_document_struct() -> decode.Decoder(ErrorDocument) {
 }
 
 pub fn decode_error_document_struct_params() -> decode.Decoder(ErrorDocument) {
+  use <- decode.recursive
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
   decode.success(ErrorDocument(
     key: key,
@@ -13751,6 +14077,7 @@ pub fn encode_index_document_struct(input: IndexDocument) -> json.Json {
 }
 
 pub fn decode_index_document_struct() -> decode.Decoder(IndexDocument) {
+  use <- decode.recursive
   use suffix <- decode.optional_field("Suffix", option.None, decode.optional(decode.string))
   decode.success(IndexDocument(
     suffix: suffix,
@@ -13758,6 +14085,7 @@ pub fn decode_index_document_struct() -> decode.Decoder(IndexDocument) {
 }
 
 pub fn decode_index_document_struct_params() -> decode.Decoder(IndexDocument) {
+  use <- decode.recursive
   use suffix <- decode.optional_field("Suffix", option.None, decode.optional(decode.string))
   decode.success(IndexDocument(
     suffix: suffix,
@@ -13802,6 +14130,7 @@ pub fn encode_redirect_all_requests_to_struct(input: RedirectAllRequestsTo) -> j
 }
 
 pub fn decode_redirect_all_requests_to_struct() -> decode.Decoder(RedirectAllRequestsTo) {
+  use <- decode.recursive
   use host_name <- decode.optional_field("HostName", option.None, decode.optional(decode.string))
   use protocol <- decode.optional_field("Protocol", option.None, decode.optional(decode_protocol_enum()))
   decode.success(RedirectAllRequestsTo(
@@ -13811,6 +14140,7 @@ pub fn decode_redirect_all_requests_to_struct() -> decode.Decoder(RedirectAllReq
 }
 
 pub fn decode_redirect_all_requests_to_struct_params() -> decode.Decoder(RedirectAllRequestsTo) {
+  use <- decode.recursive
   use host_name <- decode.optional_field("HostName", option.None, decode.optional(decode.string))
   use protocol <- decode.optional_field("Protocol", option.None, decode.optional(decode_protocol_enum()))
   decode.success(RedirectAllRequestsTo(
@@ -13886,6 +14216,7 @@ pub fn encode_routing_rule_struct(input: RoutingRule) -> json.Json {
 }
 
 pub fn decode_routing_rule_struct() -> decode.Decoder(RoutingRule) {
+  use <- decode.recursive
   use condition <- decode.optional_field("Condition", option.None, decode.optional(decode_condition_struct()))
   use redirect <- decode.optional_field("Redirect", option.None, decode.optional(decode_redirect_struct()))
   decode.success(RoutingRule(
@@ -13895,6 +14226,7 @@ pub fn decode_routing_rule_struct() -> decode.Decoder(RoutingRule) {
 }
 
 pub fn decode_routing_rule_struct_params() -> decode.Decoder(RoutingRule) {
+  use <- decode.recursive
   use condition <- decode.optional_field("Condition", option.None, decode.optional(decode_condition_struct_params()))
   use redirect <- decode.optional_field("Redirect", option.None, decode.optional(decode_redirect_struct_params()))
   decode.success(RoutingRule(
@@ -13947,6 +14279,7 @@ pub fn encode_condition_struct(input: Condition) -> json.Json {
 }
 
 pub fn decode_condition_struct() -> decode.Decoder(Condition) {
+  use <- decode.recursive
   use http_error_code_returned_equals <- decode.optional_field("HttpErrorCodeReturnedEquals", option.None, decode.optional(decode.string))
   use key_prefix_equals <- decode.optional_field("KeyPrefixEquals", option.None, decode.optional(decode.string))
   decode.success(Condition(
@@ -13956,6 +14289,7 @@ pub fn decode_condition_struct() -> decode.Decoder(Condition) {
 }
 
 pub fn decode_condition_struct_params() -> decode.Decoder(Condition) {
+  use <- decode.recursive
   use http_error_code_returned_equals <- decode.optional_field("HttpErrorCodeReturnedEquals", option.None, decode.optional(decode.string))
   use key_prefix_equals <- decode.optional_field("KeyPrefixEquals", option.None, decode.optional(decode.string))
   decode.success(Condition(
@@ -14020,6 +14354,7 @@ pub fn encode_redirect_struct(input: Redirect) -> json.Json {
 }
 
 pub fn decode_redirect_struct() -> decode.Decoder(Redirect) {
+  use <- decode.recursive
   use host_name <- decode.optional_field("HostName", option.None, decode.optional(decode.string))
   use http_redirect_code <- decode.optional_field("HttpRedirectCode", option.None, decode.optional(decode.string))
   use protocol <- decode.optional_field("Protocol", option.None, decode.optional(decode_protocol_enum()))
@@ -14035,6 +14370,7 @@ pub fn decode_redirect_struct() -> decode.Decoder(Redirect) {
 }
 
 pub fn decode_redirect_struct_params() -> decode.Decoder(Redirect) {
+  use <- decode.recursive
   use host_name <- decode.optional_field("HostName", option.None, decode.optional(decode.string))
   use http_redirect_code <- decode.optional_field("HttpRedirectCode", option.None, decode.optional(decode.string))
   use protocol <- decode.optional_field("Protocol", option.None, decode.optional(decode_protocol_enum()))
@@ -14124,6 +14460,7 @@ pub fn encode_get_object_acl_request_struct(input: GetObjectAclRequest) -> json.
 }
 
 pub fn decode_get_object_acl_request_struct() -> decode.Decoder(GetObjectAclRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -14139,6 +14476,7 @@ pub fn decode_get_object_acl_request_struct() -> decode.Decoder(GetObjectAclRequ
 }
 
 pub fn decode_get_object_acl_request_struct_params() -> decode.Decoder(GetObjectAclRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -14199,6 +14537,7 @@ pub fn encode_get_object_acl_output_struct(input: GetObjectAclOutput) -> json.Js
 }
 
 pub fn decode_get_object_acl_output_struct() -> decode.Decoder(GetObjectAclOutput) {
+  use <- decode.recursive
   use grants <- decode.optional_field("Grants", option.None, decode.optional(decode.list(decode_grant_struct())))
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct()))
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
@@ -14210,6 +14549,7 @@ pub fn decode_get_object_acl_output_struct() -> decode.Decoder(GetObjectAclOutpu
 }
 
 pub fn decode_get_object_acl_output_struct_params() -> decode.Decoder(GetObjectAclOutput) {
+  use <- decode.recursive
   use grants <- decode.optional_field("Grants", option.None, decode.optional(decode.list(decode_grant_struct_params())))
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct_params()))
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
@@ -14330,6 +14670,7 @@ pub fn encode_get_object_attributes_request_struct(input: GetObjectAttributesReq
 }
 
 pub fn decode_get_object_attributes_request_struct() -> decode.Decoder(GetObjectAttributesRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -14357,6 +14698,7 @@ pub fn decode_get_object_attributes_request_struct() -> decode.Decoder(GetObject
 }
 
 pub fn decode_get_object_attributes_request_struct_params() -> decode.Decoder(GetObjectAttributesRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -14496,6 +14838,7 @@ pub fn encode_get_object_attributes_output_struct(input: GetObjectAttributesOutp
 }
 
 pub fn decode_get_object_attributes_output_struct() -> decode.Decoder(GetObjectAttributesOutput) {
+  use <- decode.recursive
   use checksum <- decode.optional_field("Checksum", option.None, decode.optional(decode_checksum_struct()))
   use delete_marker <- decode.optional_field("DeleteMarker", option.None, decode.optional(decode.bool))
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
@@ -14519,6 +14862,7 @@ pub fn decode_get_object_attributes_output_struct() -> decode.Decoder(GetObjectA
 }
 
 pub fn decode_get_object_attributes_output_struct_params() -> decode.Decoder(GetObjectAttributesOutput) {
+  use <- decode.recursive
   use checksum <- decode.optional_field("Checksum", option.None, decode.optional(decode_checksum_struct_params()))
   use delete_marker <- decode.optional_field("DeleteMarker", option.None, decode.optional(decode.bool))
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
@@ -14648,6 +14992,7 @@ pub fn encode_checksum_struct(input: Checksum) -> json.Json {
 }
 
 pub fn decode_checksum_struct() -> decode.Decoder(Checksum) {
+  use <- decode.recursive
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -14675,6 +15020,7 @@ pub fn decode_checksum_struct() -> decode.Decoder(Checksum) {
 }
 
 pub fn decode_checksum_struct_params() -> decode.Decoder(Checksum) {
+  use <- decode.recursive
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -14816,6 +15162,7 @@ pub fn encode_get_object_attributes_parts_struct(input: GetObjectAttributesParts
 }
 
 pub fn decode_get_object_attributes_parts_struct() -> decode.Decoder(GetObjectAttributesParts) {
+  use <- decode.recursive
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
   use max_parts <- decode.optional_field("MaxParts", option.None, decode.optional(decode.int))
   use next_part_number_marker <- decode.optional_field("NextPartNumberMarker", option.None, decode.optional(decode.string))
@@ -14833,6 +15180,7 @@ pub fn decode_get_object_attributes_parts_struct() -> decode.Decoder(GetObjectAt
 }
 
 pub fn decode_get_object_attributes_parts_struct_params() -> decode.Decoder(GetObjectAttributesParts) {
+  use <- decode.recursive
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
   use max_parts <- decode.optional_field("MaxParts", option.None, decode.optional(decode.int))
   use next_part_number_marker <- decode.optional_field("NextPartNumberMarker", option.None, decode.optional(decode.string))
@@ -14957,6 +15305,7 @@ pub fn encode_object_part_struct(input: ObjectPart) -> json.Json {
 }
 
 pub fn decode_object_part_struct() -> decode.Decoder(ObjectPart) {
+  use <- decode.recursive
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -14986,6 +15335,7 @@ pub fn decode_object_part_struct() -> decode.Decoder(ObjectPart) {
 }
 
 pub fn decode_object_part_struct_params() -> decode.Decoder(ObjectPart) {
+  use <- decode.recursive
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -15130,6 +15480,7 @@ pub fn encode_get_object_legal_hold_request_struct(input: GetObjectLegalHoldRequ
 }
 
 pub fn decode_get_object_legal_hold_request_struct() -> decode.Decoder(GetObjectLegalHoldRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -15145,6 +15496,7 @@ pub fn decode_get_object_legal_hold_request_struct() -> decode.Decoder(GetObject
 }
 
 pub fn decode_get_object_legal_hold_request_struct_params() -> decode.Decoder(GetObjectLegalHoldRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -15197,6 +15549,7 @@ pub fn encode_get_object_legal_hold_output_struct(input: GetObjectLegalHoldOutpu
 }
 
 pub fn decode_get_object_legal_hold_output_struct() -> decode.Decoder(GetObjectLegalHoldOutput) {
+  use <- decode.recursive
   use legal_hold <- decode.optional_field("LegalHold", option.None, decode.optional(decode_object_lock_legal_hold_struct()))
   decode.success(GetObjectLegalHoldOutput(
     legal_hold: legal_hold,
@@ -15204,6 +15557,7 @@ pub fn decode_get_object_legal_hold_output_struct() -> decode.Decoder(GetObjectL
 }
 
 pub fn decode_get_object_legal_hold_output_struct_params() -> decode.Decoder(GetObjectLegalHoldOutput) {
+  use <- decode.recursive
   use legal_hold <- decode.optional_field("LegalHold", option.None, decode.optional(decode_object_lock_legal_hold_struct_params()))
   decode.success(GetObjectLegalHoldOutput(
     legal_hold: legal_hold,
@@ -15240,6 +15594,7 @@ pub fn encode_object_lock_legal_hold_struct(input: ObjectLockLegalHold) -> json.
 }
 
 pub fn decode_object_lock_legal_hold_struct() -> decode.Decoder(ObjectLockLegalHold) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_object_lock_legal_hold_status_enum()))
   decode.success(ObjectLockLegalHold(
     status: status,
@@ -15247,6 +15602,7 @@ pub fn decode_object_lock_legal_hold_struct() -> decode.Decoder(ObjectLockLegalH
 }
 
 pub fn decode_object_lock_legal_hold_struct_params() -> decode.Decoder(ObjectLockLegalHold) {
+  use <- decode.recursive
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_object_lock_legal_hold_status_enum()))
   decode.success(ObjectLockLegalHold(
     status: status,
@@ -15292,6 +15648,7 @@ pub fn encode_get_object_lock_configuration_request_struct(input: GetObjectLockC
 }
 
 pub fn decode_get_object_lock_configuration_request_struct() -> decode.Decoder(GetObjectLockConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetObjectLockConfigurationRequest(
@@ -15301,6 +15658,7 @@ pub fn decode_get_object_lock_configuration_request_struct() -> decode.Decoder(G
 }
 
 pub fn decode_get_object_lock_configuration_request_struct_params() -> decode.Decoder(GetObjectLockConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetObjectLockConfigurationRequest(
@@ -15341,6 +15699,7 @@ pub fn encode_get_object_lock_configuration_output_struct(input: GetObjectLockCo
 }
 
 pub fn decode_get_object_lock_configuration_output_struct() -> decode.Decoder(GetObjectLockConfigurationOutput) {
+  use <- decode.recursive
   use object_lock_configuration <- decode.optional_field("ObjectLockConfiguration", option.None, decode.optional(decode_object_lock_configuration_struct()))
   decode.success(GetObjectLockConfigurationOutput(
     object_lock_configuration: object_lock_configuration,
@@ -15348,6 +15707,7 @@ pub fn decode_get_object_lock_configuration_output_struct() -> decode.Decoder(Ge
 }
 
 pub fn decode_get_object_lock_configuration_output_struct_params() -> decode.Decoder(GetObjectLockConfigurationOutput) {
+  use <- decode.recursive
   use object_lock_configuration <- decode.optional_field("ObjectLockConfiguration", option.None, decode.optional(decode_object_lock_configuration_struct_params()))
   decode.success(GetObjectLockConfigurationOutput(
     object_lock_configuration: object_lock_configuration,
@@ -15388,6 +15748,7 @@ pub fn encode_object_lock_configuration_struct(input: ObjectLockConfiguration) -
 }
 
 pub fn decode_object_lock_configuration_struct() -> decode.Decoder(ObjectLockConfiguration) {
+  use <- decode.recursive
   use object_lock_enabled <- decode.optional_field("ObjectLockEnabled", option.None, decode.optional(decode_object_lock_enabled_enum()))
   use rule <- decode.optional_field("Rule", option.None, decode.optional(decode_object_lock_rule_struct()))
   decode.success(ObjectLockConfiguration(
@@ -15397,6 +15758,7 @@ pub fn decode_object_lock_configuration_struct() -> decode.Decoder(ObjectLockCon
 }
 
 pub fn decode_object_lock_configuration_struct_params() -> decode.Decoder(ObjectLockConfiguration) {
+  use <- decode.recursive
   use object_lock_enabled <- decode.optional_field("ObjectLockEnabled", option.None, decode.optional(decode_object_lock_enabled_enum()))
   use rule <- decode.optional_field("Rule", option.None, decode.optional(decode_object_lock_rule_struct_params()))
   decode.success(ObjectLockConfiguration(
@@ -15465,6 +15827,7 @@ pub fn encode_object_lock_rule_struct(input: ObjectLockRule) -> json.Json {
 }
 
 pub fn decode_object_lock_rule_struct() -> decode.Decoder(ObjectLockRule) {
+  use <- decode.recursive
   use default_retention <- decode.optional_field("DefaultRetention", option.None, decode.optional(decode_default_retention_struct()))
   decode.success(ObjectLockRule(
     default_retention: default_retention,
@@ -15472,6 +15835,7 @@ pub fn decode_object_lock_rule_struct() -> decode.Decoder(ObjectLockRule) {
 }
 
 pub fn decode_object_lock_rule_struct_params() -> decode.Decoder(ObjectLockRule) {
+  use <- decode.recursive
   use default_retention <- decode.optional_field("DefaultRetention", option.None, decode.optional(decode_default_retention_struct_params()))
   decode.success(ObjectLockRule(
     default_retention: default_retention,
@@ -15520,6 +15884,7 @@ pub fn encode_default_retention_struct(input: DefaultRetention) -> json.Json {
 }
 
 pub fn decode_default_retention_struct() -> decode.Decoder(DefaultRetention) {
+  use <- decode.recursive
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   use mode <- decode.optional_field("Mode", option.None, decode.optional(decode_object_lock_retention_mode_enum()))
   use years <- decode.optional_field("Years", option.None, decode.optional(decode.int))
@@ -15531,6 +15896,7 @@ pub fn decode_default_retention_struct() -> decode.Decoder(DefaultRetention) {
 }
 
 pub fn decode_default_retention_struct_params() -> decode.Decoder(DefaultRetention) {
+  use <- decode.recursive
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   use mode <- decode.optional_field("Mode", option.None, decode.optional(decode_object_lock_retention_mode_enum()))
   use years <- decode.optional_field("Years", option.None, decode.optional(decode.int))
@@ -15626,6 +15992,7 @@ pub fn encode_get_object_retention_request_struct(input: GetObjectRetentionReque
 }
 
 pub fn decode_get_object_retention_request_struct() -> decode.Decoder(GetObjectRetentionRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -15641,6 +16008,7 @@ pub fn decode_get_object_retention_request_struct() -> decode.Decoder(GetObjectR
 }
 
 pub fn decode_get_object_retention_request_struct_params() -> decode.Decoder(GetObjectRetentionRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -15693,6 +16061,7 @@ pub fn encode_get_object_retention_output_struct(input: GetObjectRetentionOutput
 }
 
 pub fn decode_get_object_retention_output_struct() -> decode.Decoder(GetObjectRetentionOutput) {
+  use <- decode.recursive
   use retention <- decode.optional_field("Retention", option.None, decode.optional(decode_object_lock_retention_struct()))
   decode.success(GetObjectRetentionOutput(
     retention: retention,
@@ -15700,6 +16069,7 @@ pub fn decode_get_object_retention_output_struct() -> decode.Decoder(GetObjectRe
 }
 
 pub fn decode_get_object_retention_output_struct_params() -> decode.Decoder(GetObjectRetentionOutput) {
+  use <- decode.recursive
   use retention <- decode.optional_field("Retention", option.None, decode.optional(decode_object_lock_retention_struct_params()))
   decode.success(GetObjectRetentionOutput(
     retention: retention,
@@ -15740,6 +16110,7 @@ pub fn encode_object_lock_retention_struct(input: ObjectLockRetention) -> json.J
 }
 
 pub fn decode_object_lock_retention_struct() -> decode.Decoder(ObjectLockRetention) {
+  use <- decode.recursive
   use mode <- decode.optional_field("Mode", option.None, decode.optional(decode_object_lock_retention_mode_enum()))
   use retain_until_date <- decode.optional_field("RetainUntilDate", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(ObjectLockRetention(
@@ -15749,6 +16120,7 @@ pub fn decode_object_lock_retention_struct() -> decode.Decoder(ObjectLockRetenti
 }
 
 pub fn decode_object_lock_retention_struct_params() -> decode.Decoder(ObjectLockRetention) {
+  use <- decode.recursive
   use mode <- decode.optional_field("Mode", option.None, decode.optional(decode_object_lock_retention_mode_enum()))
   use retain_until_date <- decode.optional_field("RetainUntilDate", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(ObjectLockRetention(
@@ -15814,6 +16186,7 @@ pub fn encode_get_object_tagging_request_struct(input: GetObjectTaggingRequest) 
 }
 
 pub fn decode_get_object_tagging_request_struct() -> decode.Decoder(GetObjectTaggingRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -15829,6 +16202,7 @@ pub fn decode_get_object_tagging_request_struct() -> decode.Decoder(GetObjectTag
 }
 
 pub fn decode_get_object_tagging_request_struct_params() -> decode.Decoder(GetObjectTaggingRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -15885,6 +16259,7 @@ pub fn encode_get_object_tagging_output_struct(input: GetObjectTaggingOutput) ->
 }
 
 pub fn decode_get_object_tagging_output_struct() -> decode.Decoder(GetObjectTaggingOutput) {
+  use <- decode.recursive
   use tag_set <- decode.optional_field("TagSet", option.None, decode.optional(decode.list(decode_tag_struct())))
   use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
   decode.success(GetObjectTaggingOutput(
@@ -15894,6 +16269,7 @@ pub fn decode_get_object_tagging_output_struct() -> decode.Decoder(GetObjectTagg
 }
 
 pub fn decode_get_object_tagging_output_struct_params() -> decode.Decoder(GetObjectTaggingOutput) {
+  use <- decode.recursive
   use tag_set <- decode.optional_field("TagSet", option.None, decode.optional(decode.list(decode_tag_struct_params())))
   use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
   decode.success(GetObjectTaggingOutput(
@@ -15950,6 +16326,7 @@ pub fn encode_get_object_torrent_request_struct(input: GetObjectTorrentRequest) 
 }
 
 pub fn decode_get_object_torrent_request_struct() -> decode.Decoder(GetObjectTorrentRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -15963,6 +16340,7 @@ pub fn decode_get_object_torrent_request_struct() -> decode.Decoder(GetObjectTor
 }
 
 pub fn decode_get_object_torrent_request_struct_params() -> decode.Decoder(GetObjectTorrentRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -16015,6 +16393,7 @@ pub fn encode_get_object_torrent_output_struct(input: GetObjectTorrentOutput) ->
 }
 
 pub fn decode_get_object_torrent_output_struct() -> decode.Decoder(GetObjectTorrentOutput) {
+  use <- decode.recursive
   use body <- decode.optional_field("Body", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   decode.success(GetObjectTorrentOutput(
@@ -16024,6 +16403,7 @@ pub fn decode_get_object_torrent_output_struct() -> decode.Decoder(GetObjectTorr
 }
 
 pub fn decode_get_object_torrent_output_struct_params() -> decode.Decoder(GetObjectTorrentOutput) {
+  use <- decode.recursive
   use body <- decode.optional_field("Body", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   decode.success(GetObjectTorrentOutput(
@@ -16068,6 +16448,7 @@ pub fn encode_get_public_access_block_request_struct(input: GetPublicAccessBlock
 }
 
 pub fn decode_get_public_access_block_request_struct() -> decode.Decoder(GetPublicAccessBlockRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetPublicAccessBlockRequest(
@@ -16077,6 +16458,7 @@ pub fn decode_get_public_access_block_request_struct() -> decode.Decoder(GetPubl
 }
 
 pub fn decode_get_public_access_block_request_struct_params() -> decode.Decoder(GetPublicAccessBlockRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetPublicAccessBlockRequest(
@@ -16117,6 +16499,7 @@ pub fn encode_get_public_access_block_output_struct(input: GetPublicAccessBlockO
 }
 
 pub fn decode_get_public_access_block_output_struct() -> decode.Decoder(GetPublicAccessBlockOutput) {
+  use <- decode.recursive
   use public_access_block_configuration <- decode.optional_field("PublicAccessBlockConfiguration", option.None, decode.optional(decode_public_access_block_configuration_struct()))
   decode.success(GetPublicAccessBlockOutput(
     public_access_block_configuration: public_access_block_configuration,
@@ -16124,6 +16507,7 @@ pub fn decode_get_public_access_block_output_struct() -> decode.Decoder(GetPubli
 }
 
 pub fn decode_get_public_access_block_output_struct_params() -> decode.Decoder(GetPublicAccessBlockOutput) {
+  use <- decode.recursive
   use public_access_block_configuration <- decode.optional_field("PublicAccessBlockConfiguration", option.None, decode.optional(decode_public_access_block_configuration_struct_params()))
   decode.success(GetPublicAccessBlockOutput(
     public_access_block_configuration: public_access_block_configuration,
@@ -16172,6 +16556,7 @@ pub fn encode_public_access_block_configuration_struct(input: PublicAccessBlockC
 }
 
 pub fn decode_public_access_block_configuration_struct() -> decode.Decoder(PublicAccessBlockConfiguration) {
+  use <- decode.recursive
   use block_public_acls <- decode.optional_field("BlockPublicAcls", option.None, decode.optional(decode.bool))
   use block_public_policy <- decode.optional_field("BlockPublicPolicy", option.None, decode.optional(decode.bool))
   use ignore_public_acls <- decode.optional_field("IgnorePublicAcls", option.None, decode.optional(decode.bool))
@@ -16185,6 +16570,7 @@ pub fn decode_public_access_block_configuration_struct() -> decode.Decoder(Publi
 }
 
 pub fn decode_public_access_block_configuration_struct_params() -> decode.Decoder(PublicAccessBlockConfiguration) {
+  use <- decode.recursive
   use block_public_acls <- decode.optional_field("BlockPublicAcls", option.None, decode.optional(decode.bool))
   use block_public_policy <- decode.optional_field("BlockPublicPolicy", option.None, decode.optional(decode.bool))
   use ignore_public_acls <- decode.optional_field("IgnorePublicAcls", option.None, decode.optional(decode.bool))
@@ -16253,6 +16639,7 @@ pub fn encode_head_bucket_request_struct(input: HeadBucketRequest) -> json.Json 
 }
 
 pub fn decode_head_bucket_request_struct() -> decode.Decoder(HeadBucketRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(HeadBucketRequest(
@@ -16262,6 +16649,7 @@ pub fn decode_head_bucket_request_struct() -> decode.Decoder(HeadBucketRequest) 
 }
 
 pub fn decode_head_bucket_request_struct_params() -> decode.Decoder(HeadBucketRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(HeadBucketRequest(
@@ -16318,6 +16706,7 @@ pub fn encode_head_bucket_output_struct(input: HeadBucketOutput) -> json.Json {
 }
 
 pub fn decode_head_bucket_output_struct() -> decode.Decoder(HeadBucketOutput) {
+  use <- decode.recursive
   use access_point_alias <- decode.optional_field("AccessPointAlias", option.None, decode.optional(decode.bool))
   use bucket_arn <- decode.optional_field("BucketArn", option.None, decode.optional(decode.string))
   use bucket_location_name <- decode.optional_field("BucketLocationName", option.None, decode.optional(decode.string))
@@ -16333,6 +16722,7 @@ pub fn decode_head_bucket_output_struct() -> decode.Decoder(HeadBucketOutput) {
 }
 
 pub fn decode_head_bucket_output_struct_params() -> decode.Decoder(HeadBucketOutput) {
+  use <- decode.recursive
   use access_point_alias <- decode.optional_field("AccessPointAlias", option.None, decode.optional(decode.bool))
   use bucket_arn <- decode.optional_field("BucketArn", option.None, decode.optional(decode.string))
   use bucket_location_name <- decode.optional_field("BucketLocationName", option.None, decode.optional(decode.string))
@@ -16493,6 +16883,7 @@ pub fn encode_head_object_request_struct(input: HeadObjectRequest) -> json.Json 
 }
 
 pub fn decode_head_object_request_struct() -> decode.Decoder(HeadObjectRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use checksum_mode <- decode.optional_field("ChecksumMode", option.None, decode.optional(decode_checksum_mode_enum()))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -16540,6 +16931,7 @@ pub fn decode_head_object_request_struct() -> decode.Decoder(HeadObjectRequest) 
 }
 
 pub fn decode_head_object_request_struct_params() -> decode.Decoder(HeadObjectRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use checksum_mode <- decode.optional_field("ChecksumMode", option.None, decode.optional(decode_checksum_mode_enum()))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -16843,6 +17235,7 @@ pub fn encode_head_object_output_struct(input: HeadObjectOutput) -> json.Json {
 }
 
 pub fn decode_head_object_output_struct() -> decode.Decoder(HeadObjectOutput) {
+  use <- decode.recursive
   use accept_ranges <- decode.optional_field("AcceptRanges", option.None, decode.optional(decode.string))
   use archive_status <- decode.optional_field("ArchiveStatus", option.None, decode.optional(decode_archive_status_enum()))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
@@ -16934,6 +17327,7 @@ pub fn decode_head_object_output_struct() -> decode.Decoder(HeadObjectOutput) {
 }
 
 pub fn decode_head_object_output_struct_params() -> decode.Decoder(HeadObjectOutput) {
+  use <- decode.recursive
   use accept_ranges <- decode.optional_field("AcceptRanges", option.None, decode.optional(decode.string))
   use archive_status <- decode.optional_field("ArchiveStatus", option.None, decode.optional(decode_archive_status_enum()))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
@@ -17199,6 +17593,7 @@ pub fn encode_list_bucket_analytics_configurations_request_struct(input: ListBuc
 }
 
 pub fn decode_list_bucket_analytics_configurations_request_struct() -> decode.Decoder(ListBucketAnalyticsConfigurationsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -17210,6 +17605,7 @@ pub fn decode_list_bucket_analytics_configurations_request_struct() -> decode.De
 }
 
 pub fn decode_list_bucket_analytics_configurations_request_struct_params() -> decode.Decoder(ListBucketAnalyticsConfigurationsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -17266,6 +17662,7 @@ pub fn encode_list_bucket_analytics_configurations_output_struct(input: ListBuck
 }
 
 pub fn decode_list_bucket_analytics_configurations_output_struct() -> decode.Decoder(ListBucketAnalyticsConfigurationsOutput) {
+  use <- decode.recursive
   use analytics_configuration_list <- decode.optional_field("AnalyticsConfigurationList", option.None, decode.optional(decode.list(decode_analytics_configuration_struct())))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
@@ -17279,6 +17676,7 @@ pub fn decode_list_bucket_analytics_configurations_output_struct() -> decode.Dec
 }
 
 pub fn decode_list_bucket_analytics_configurations_output_struct_params() -> decode.Decoder(ListBucketAnalyticsConfigurationsOutput) {
+  use <- decode.recursive
   use analytics_configuration_list <- decode.optional_field("AnalyticsConfigurationList", option.None, decode.optional(decode.list(decode_analytics_configuration_struct_params())))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
@@ -17351,6 +17749,7 @@ pub fn encode_list_bucket_intelligent_tiering_configurations_request_struct(inpu
 }
 
 pub fn decode_list_bucket_intelligent_tiering_configurations_request_struct() -> decode.Decoder(ListBucketIntelligentTieringConfigurationsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -17362,6 +17761,7 @@ pub fn decode_list_bucket_intelligent_tiering_configurations_request_struct() ->
 }
 
 pub fn decode_list_bucket_intelligent_tiering_configurations_request_struct_params() -> decode.Decoder(ListBucketIntelligentTieringConfigurationsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -17418,6 +17818,7 @@ pub fn encode_list_bucket_intelligent_tiering_configurations_output_struct(input
 }
 
 pub fn decode_list_bucket_intelligent_tiering_configurations_output_struct() -> decode.Decoder(ListBucketIntelligentTieringConfigurationsOutput) {
+  use <- decode.recursive
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use intelligent_tiering_configuration_list <- decode.optional_field("IntelligentTieringConfigurationList", option.None, decode.optional(decode.list(decode_intelligent_tiering_configuration_struct())))
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
@@ -17431,6 +17832,7 @@ pub fn decode_list_bucket_intelligent_tiering_configurations_output_struct() -> 
 }
 
 pub fn decode_list_bucket_intelligent_tiering_configurations_output_struct_params() -> decode.Decoder(ListBucketIntelligentTieringConfigurationsOutput) {
+  use <- decode.recursive
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use intelligent_tiering_configuration_list <- decode.optional_field("IntelligentTieringConfigurationList", option.None, decode.optional(decode.list(decode_intelligent_tiering_configuration_struct_params())))
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
@@ -17503,6 +17905,7 @@ pub fn encode_list_bucket_inventory_configurations_request_struct(input: ListBuc
 }
 
 pub fn decode_list_bucket_inventory_configurations_request_struct() -> decode.Decoder(ListBucketInventoryConfigurationsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -17514,6 +17917,7 @@ pub fn decode_list_bucket_inventory_configurations_request_struct() -> decode.De
 }
 
 pub fn decode_list_bucket_inventory_configurations_request_struct_params() -> decode.Decoder(ListBucketInventoryConfigurationsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -17570,6 +17974,7 @@ pub fn encode_list_bucket_inventory_configurations_output_struct(input: ListBuck
 }
 
 pub fn decode_list_bucket_inventory_configurations_output_struct() -> decode.Decoder(ListBucketInventoryConfigurationsOutput) {
+  use <- decode.recursive
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use inventory_configuration_list <- decode.optional_field("InventoryConfigurationList", option.None, decode.optional(decode.list(decode_inventory_configuration_struct())))
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
@@ -17583,6 +17988,7 @@ pub fn decode_list_bucket_inventory_configurations_output_struct() -> decode.Dec
 }
 
 pub fn decode_list_bucket_inventory_configurations_output_struct_params() -> decode.Decoder(ListBucketInventoryConfigurationsOutput) {
+  use <- decode.recursive
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use inventory_configuration_list <- decode.optional_field("InventoryConfigurationList", option.None, decode.optional(decode.list(decode_inventory_configuration_struct_params())))
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
@@ -17655,6 +18061,7 @@ pub fn encode_list_bucket_metrics_configurations_request_struct(input: ListBucke
 }
 
 pub fn decode_list_bucket_metrics_configurations_request_struct() -> decode.Decoder(ListBucketMetricsConfigurationsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -17666,6 +18073,7 @@ pub fn decode_list_bucket_metrics_configurations_request_struct() -> decode.Deco
 }
 
 pub fn decode_list_bucket_metrics_configurations_request_struct_params() -> decode.Decoder(ListBucketMetricsConfigurationsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -17722,6 +18130,7 @@ pub fn encode_list_bucket_metrics_configurations_output_struct(input: ListBucket
 }
 
 pub fn decode_list_bucket_metrics_configurations_output_struct() -> decode.Decoder(ListBucketMetricsConfigurationsOutput) {
+  use <- decode.recursive
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
   use metrics_configuration_list <- decode.optional_field("MetricsConfigurationList", option.None, decode.optional(decode.list(decode_metrics_configuration_struct())))
@@ -17735,6 +18144,7 @@ pub fn decode_list_bucket_metrics_configurations_output_struct() -> decode.Decod
 }
 
 pub fn decode_list_bucket_metrics_configurations_output_struct_params() -> decode.Decoder(ListBucketMetricsConfigurationsOutput) {
+  use <- decode.recursive
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
   use metrics_configuration_list <- decode.optional_field("MetricsConfigurationList", option.None, decode.optional(decode.list(decode_metrics_configuration_struct_params())))
@@ -17811,6 +18221,7 @@ pub fn encode_list_buckets_request_struct(input: ListBucketsRequest) -> json.Jso
 }
 
 pub fn decode_list_buckets_request_struct() -> decode.Decoder(ListBucketsRequest) {
+  use <- decode.recursive
   use bucket_region <- decode.optional_field("BucketRegion", option.None, decode.optional(decode.string))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use max_buckets <- decode.optional_field("MaxBuckets", option.None, decode.optional(decode.int))
@@ -17824,6 +18235,7 @@ pub fn decode_list_buckets_request_struct() -> decode.Decoder(ListBucketsRequest
 }
 
 pub fn decode_list_buckets_request_struct_params() -> decode.Decoder(ListBucketsRequest) {
+  use <- decode.recursive
   use bucket_region <- decode.optional_field("BucketRegion", option.None, decode.optional(decode.string))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use max_buckets <- decode.optional_field("MaxBuckets", option.None, decode.optional(decode.int))
@@ -17884,6 +18296,7 @@ pub fn encode_list_buckets_output_struct(input: ListBucketsOutput) -> json.Json 
 }
 
 pub fn decode_list_buckets_output_struct() -> decode.Decoder(ListBucketsOutput) {
+  use <- decode.recursive
   use buckets <- decode.optional_field("Buckets", option.None, decode.optional(decode.list(decode_bucket_struct())))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct()))
@@ -17897,6 +18310,7 @@ pub fn decode_list_buckets_output_struct() -> decode.Decoder(ListBucketsOutput) 
 }
 
 pub fn decode_list_buckets_output_struct_params() -> decode.Decoder(ListBucketsOutput) {
+  use <- decode.recursive
   use buckets <- decode.optional_field("Buckets", option.None, decode.optional(decode.list(decode_bucket_struct_params())))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct_params()))
@@ -17973,6 +18387,7 @@ pub fn encode_bucket_struct(input: Bucket) -> json.Json {
 }
 
 pub fn decode_bucket_struct() -> decode.Decoder(Bucket) {
+  use <- decode.recursive
   use bucket_arn <- decode.optional_field("BucketArn", option.None, decode.optional(decode.string))
   use bucket_region <- decode.optional_field("BucketRegion", option.None, decode.optional(decode.string))
   use creation_date <- decode.optional_field("CreationDate", option.None, decode.optional(json_timestamp.decoder()))
@@ -17986,6 +18401,7 @@ pub fn decode_bucket_struct() -> decode.Decoder(Bucket) {
 }
 
 pub fn decode_bucket_struct_params() -> decode.Decoder(Bucket) {
+  use <- decode.recursive
   use bucket_arn <- decode.optional_field("BucketArn", option.None, decode.optional(decode.string))
   use bucket_region <- decode.optional_field("BucketRegion", option.None, decode.optional(decode.string))
   use creation_date <- decode.optional_field("CreationDate", option.None, decode.optional(json_timestamp.decoder()))
@@ -18054,6 +18470,7 @@ pub fn encode_list_directory_buckets_request_struct(input: ListDirectoryBucketsR
 }
 
 pub fn decode_list_directory_buckets_request_struct() -> decode.Decoder(ListDirectoryBucketsRequest) {
+  use <- decode.recursive
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use max_directory_buckets <- decode.optional_field("MaxDirectoryBuckets", option.None, decode.optional(decode.int))
   decode.success(ListDirectoryBucketsRequest(
@@ -18063,6 +18480,7 @@ pub fn decode_list_directory_buckets_request_struct() -> decode.Decoder(ListDire
 }
 
 pub fn decode_list_directory_buckets_request_struct_params() -> decode.Decoder(ListDirectoryBucketsRequest) {
+  use <- decode.recursive
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use max_directory_buckets <- decode.optional_field("MaxDirectoryBuckets", option.None, decode.optional(decode.int))
   decode.success(ListDirectoryBucketsRequest(
@@ -18107,6 +18525,7 @@ pub fn encode_list_directory_buckets_output_struct(input: ListDirectoryBucketsOu
 }
 
 pub fn decode_list_directory_buckets_output_struct() -> decode.Decoder(ListDirectoryBucketsOutput) {
+  use <- decode.recursive
   use buckets <- decode.optional_field("Buckets", option.None, decode.optional(decode.list(decode_bucket_struct())))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   decode.success(ListDirectoryBucketsOutput(
@@ -18116,6 +18535,7 @@ pub fn decode_list_directory_buckets_output_struct() -> decode.Decoder(ListDirec
 }
 
 pub fn decode_list_directory_buckets_output_struct_params() -> decode.Decoder(ListDirectoryBucketsOutput) {
+  use <- decode.recursive
   use buckets <- decode.optional_field("Buckets", option.None, decode.optional(decode.list(decode_bucket_struct_params())))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   decode.success(ListDirectoryBucketsOutput(
@@ -18196,6 +18616,7 @@ pub fn encode_list_multipart_uploads_request_struct(input: ListMultipartUploadsR
 }
 
 pub fn decode_list_multipart_uploads_request_struct() -> decode.Decoder(ListMultipartUploadsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
   use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
@@ -18219,6 +18640,7 @@ pub fn decode_list_multipart_uploads_request_struct() -> decode.Decoder(ListMult
 }
 
 pub fn decode_list_multipart_uploads_request_struct_params() -> decode.Decoder(ListMultipartUploadsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
   use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
@@ -18354,6 +18776,7 @@ pub fn encode_list_multipart_uploads_output_struct(input: ListMultipartUploadsOu
 }
 
 pub fn decode_list_multipart_uploads_output_struct() -> decode.Decoder(ListMultipartUploadsOutput) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct())))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
@@ -18385,6 +18808,7 @@ pub fn decode_list_multipart_uploads_output_struct() -> decode.Decoder(ListMulti
 }
 
 pub fn decode_list_multipart_uploads_output_struct_params() -> decode.Decoder(ListMultipartUploadsOutput) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct_params())))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
@@ -18518,6 +18942,7 @@ pub fn encode_common_prefix_struct(input: CommonPrefix) -> json.Json {
 }
 
 pub fn decode_common_prefix_struct() -> decode.Decoder(CommonPrefix) {
+  use <- decode.recursive
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   decode.success(CommonPrefix(
     prefix: prefix,
@@ -18525,6 +18950,7 @@ pub fn decode_common_prefix_struct() -> decode.Decoder(CommonPrefix) {
 }
 
 pub fn decode_common_prefix_struct_params() -> decode.Decoder(CommonPrefix) {
+  use <- decode.recursive
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   decode.success(CommonPrefix(
     prefix: prefix,
@@ -18593,6 +19019,7 @@ pub fn encode_multipart_upload_struct(input: MultipartUpload) -> json.Json {
 }
 
 pub fn decode_multipart_upload_struct() -> decode.Decoder(MultipartUpload) {
+  use <- decode.recursive
   use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode_checksum_algorithm_enum()))
   use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
   use initiated <- decode.optional_field("Initiated", option.None, decode.optional(json_timestamp.decoder()))
@@ -18614,6 +19041,7 @@ pub fn decode_multipart_upload_struct() -> decode.Decoder(MultipartUpload) {
 }
 
 pub fn decode_multipart_upload_struct_params() -> decode.Decoder(MultipartUpload) {
+  use <- decode.recursive
   use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode_checksum_algorithm_enum()))
   use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
   use initiated <- decode.optional_field("Initiated", option.None, decode.optional(json_timestamp.decoder()))
@@ -18717,6 +19145,7 @@ pub fn encode_initiator_struct(input: Initiator) -> json.Json {
 }
 
 pub fn decode_initiator_struct() -> decode.Decoder(Initiator) {
+  use <- decode.recursive
   use display_name <- decode.optional_field("DisplayName", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
   decode.success(Initiator(
@@ -18726,6 +19155,7 @@ pub fn decode_initiator_struct() -> decode.Decoder(Initiator) {
 }
 
 pub fn decode_initiator_struct_params() -> decode.Decoder(Initiator) {
+  use <- decode.recursive
   use display_name <- decode.optional_field("DisplayName", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
   decode.success(Initiator(
@@ -18806,6 +19236,7 @@ pub fn encode_list_objects_request_struct(input: ListObjectsRequest) -> json.Jso
 }
 
 pub fn decode_list_objects_request_struct() -> decode.Decoder(ListObjectsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
   use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
@@ -18829,6 +19260,7 @@ pub fn decode_list_objects_request_struct() -> decode.Decoder(ListObjectsRequest
 }
 
 pub fn decode_list_objects_request_struct_params() -> decode.Decoder(ListObjectsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
   use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
@@ -18956,6 +19388,7 @@ pub fn encode_list_objects_output_struct(input: ListObjectsOutput) -> json.Json 
 }
 
 pub fn decode_list_objects_output_struct() -> decode.Decoder(ListObjectsOutput) {
+  use <- decode.recursive
   use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct())))
   use contents <- decode.optional_field("Contents", option.None, decode.optional(decode.list(decode_object_struct())))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
@@ -18983,6 +19416,7 @@ pub fn decode_list_objects_output_struct() -> decode.Decoder(ListObjectsOutput) 
 }
 
 pub fn decode_list_objects_output_struct_params() -> decode.Decoder(ListObjectsOutput) {
+  use <- decode.recursive
   use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct_params())))
   use contents <- decode.optional_field("Contents", option.None, decode.optional(decode.list(decode_object_struct_params())))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
@@ -19132,6 +19566,7 @@ pub fn encode_object_struct(input: Object) -> json.Json {
 }
 
 pub fn decode_object_struct() -> decode.Decoder(Object) {
+  use <- decode.recursive
   use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode.list(decode_checksum_algorithm_enum())))
   use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
@@ -19155,6 +19590,7 @@ pub fn decode_object_struct() -> decode.Decoder(Object) {
 }
 
 pub fn decode_object_struct_params() -> decode.Decoder(Object) {
+  use <- decode.recursive
   use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode.list(decode_checksum_algorithm_enum())))
   use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
@@ -19265,6 +19701,7 @@ pub fn encode_restore_status_struct(input: RestoreStatus) -> json.Json {
 }
 
 pub fn decode_restore_status_struct() -> decode.Decoder(RestoreStatus) {
+  use <- decode.recursive
   use is_restore_in_progress <- decode.optional_field("IsRestoreInProgress", option.None, decode.optional(decode.bool))
   use restore_expiry_date <- decode.optional_field("RestoreExpiryDate", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(RestoreStatus(
@@ -19274,6 +19711,7 @@ pub fn decode_restore_status_struct() -> decode.Decoder(RestoreStatus) {
 }
 
 pub fn decode_restore_status_struct_params() -> decode.Decoder(RestoreStatus) {
+  use <- decode.recursive
   use is_restore_in_progress <- decode.optional_field("IsRestoreInProgress", option.None, decode.optional(decode.bool))
   use restore_expiry_date <- decode.optional_field("RestoreExpiryDate", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(RestoreStatus(
@@ -19417,6 +19855,7 @@ pub fn encode_list_objects_v2_request_struct(input: ListObjectsV2Request) -> jso
 }
 
 pub fn decode_list_objects_v2_request_struct() -> decode.Decoder(ListObjectsV2Request) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
@@ -19444,6 +19883,7 @@ pub fn decode_list_objects_v2_request_struct() -> decode.Decoder(ListObjectsV2Re
 }
 
 pub fn decode_list_objects_v2_request_struct_params() -> decode.Decoder(ListObjectsV2Request) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
@@ -19568,6 +20008,7 @@ pub fn encode_list_objects_v2_output_struct(input: ListObjectsV2Output) -> json.
 }
 
 pub fn decode_list_objects_v2_output_struct() -> decode.Decoder(ListObjectsV2Output) {
+  use <- decode.recursive
   use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct())))
   use contents <- decode.optional_field("Contents", option.None, decode.optional(decode.list(decode_object_struct())))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
@@ -19599,6 +20040,7 @@ pub fn decode_list_objects_v2_output_struct() -> decode.Decoder(ListObjectsV2Out
 }
 
 pub fn decode_list_objects_v2_output_struct_params() -> decode.Decoder(ListObjectsV2Output) {
+  use <- decode.recursive
   use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct_params())))
   use contents <- decode.optional_field("Contents", option.None, decode.optional(decode.list(decode_object_struct_params())))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
@@ -19768,6 +20210,7 @@ pub fn encode_list_object_versions_request_struct(input: ListObjectVersionsReque
 }
 
 pub fn decode_list_object_versions_request_struct() -> decode.Decoder(ListObjectVersionsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
   use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
@@ -19793,6 +20236,7 @@ pub fn decode_list_object_versions_request_struct() -> decode.Decoder(ListObject
 }
 
 pub fn decode_list_object_versions_request_struct_params() -> decode.Decoder(ListObjectVersionsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
   use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
@@ -19917,6 +20361,7 @@ pub fn encode_list_object_versions_output_struct(input: ListObjectVersionsOutput
 }
 
 pub fn decode_list_object_versions_output_struct() -> decode.Decoder(ListObjectVersionsOutput) {
+  use <- decode.recursive
   use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct())))
   use delete_markers <- decode.optional_field("DeleteMarkers", option.None, decode.optional(decode.list(decode_delete_marker_entry_struct())))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
@@ -19950,6 +20395,7 @@ pub fn decode_list_object_versions_output_struct() -> decode.Decoder(ListObjectV
 }
 
 pub fn decode_list_object_versions_output_struct_params() -> decode.Decoder(ListObjectVersionsOutput) {
+  use <- decode.recursive
   use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct_params())))
   use delete_markers <- decode.optional_field("DeleteMarkers", option.None, decode.optional(decode.list(decode_delete_marker_entry_struct_params())))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
@@ -20107,6 +20553,7 @@ pub fn encode_delete_marker_entry_struct(input: DeleteMarkerEntry) -> json.Json 
 }
 
 pub fn decode_delete_marker_entry_struct() -> decode.Decoder(DeleteMarkerEntry) {
+  use <- decode.recursive
   use is_latest <- decode.optional_field("IsLatest", option.None, decode.optional(decode.bool))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
   use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
@@ -20122,6 +20569,7 @@ pub fn decode_delete_marker_entry_struct() -> decode.Decoder(DeleteMarkerEntry) 
 }
 
 pub fn decode_delete_marker_entry_struct_params() -> decode.Decoder(DeleteMarkerEntry) {
+  use <- decode.recursive
   use is_latest <- decode.optional_field("IsLatest", option.None, decode.optional(decode.bool))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
   use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
@@ -20234,6 +20682,7 @@ pub fn encode_object_version_struct(input: ObjectVersion) -> json.Json {
 }
 
 pub fn decode_object_version_struct() -> decode.Decoder(ObjectVersion) {
+  use <- decode.recursive
   use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode.list(decode_checksum_algorithm_enum())))
   use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
@@ -20261,6 +20710,7 @@ pub fn decode_object_version_struct() -> decode.Decoder(ObjectVersion) {
 }
 
 pub fn decode_object_version_struct_params() -> decode.Decoder(ObjectVersion) {
+  use <- decode.recursive
   use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode.list(decode_checksum_algorithm_enum())))
   use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
@@ -20438,6 +20888,7 @@ pub fn encode_list_parts_request_struct(input: ListPartsRequest) -> json.Json {
 }
 
 pub fn decode_list_parts_request_struct() -> decode.Decoder(ListPartsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -20463,6 +20914,7 @@ pub fn decode_list_parts_request_struct() -> decode.Decoder(ListPartsRequest) {
 }
 
 pub fn decode_list_parts_request_struct_params() -> decode.Decoder(ListPartsRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -20595,6 +21047,7 @@ pub fn encode_list_parts_output_struct(input: ListPartsOutput) -> json.Json {
 }
 
 pub fn decode_list_parts_output_struct() -> decode.Decoder(ListPartsOutput) {
+  use <- decode.recursive
   use abort_date <- decode.optional_field("AbortDate", option.None, decode.optional(json_timestamp.decoder()))
   use abort_rule_id <- decode.optional_field("AbortRuleId", option.None, decode.optional(decode.string))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
@@ -20632,6 +21085,7 @@ pub fn decode_list_parts_output_struct() -> decode.Decoder(ListPartsOutput) {
 }
 
 pub fn decode_list_parts_output_struct_params() -> decode.Decoder(ListPartsOutput) {
+  use <- decode.recursive
   use abort_date <- decode.optional_field("AbortDate", option.None, decode.optional(json_timestamp.decoder()))
   use abort_rule_id <- decode.optional_field("AbortRuleId", option.None, decode.optional(decode.string))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
@@ -20835,6 +21289,7 @@ pub fn encode_part_struct(input: Part) -> json.Json {
 }
 
 pub fn decode_part_struct() -> decode.Decoder(Part) {
+  use <- decode.recursive
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -20868,6 +21323,7 @@ pub fn decode_part_struct() -> decode.Decoder(Part) {
 }
 
 pub fn decode_part_struct_params() -> decode.Decoder(Part) {
+  use <- decode.recursive
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -21024,6 +21480,7 @@ pub fn encode_put_bucket_analytics_configuration_request_struct(input: PutBucket
 }
 
 pub fn decode_put_bucket_analytics_configuration_request_struct() -> decode.Decoder(PutBucketAnalyticsConfigurationRequest) {
+  use <- decode.recursive
   use analytics_configuration <- decode.optional_field("AnalyticsConfiguration", option.None, decode.optional(decode_analytics_configuration_struct()))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -21037,6 +21494,7 @@ pub fn decode_put_bucket_analytics_configuration_request_struct() -> decode.Deco
 }
 
 pub fn decode_put_bucket_analytics_configuration_request_struct_params() -> decode.Decoder(PutBucketAnalyticsConfigurationRequest) {
+  use <- decode.recursive
   use analytics_configuration <- decode.optional_field("AnalyticsConfiguration", option.None, decode.optional(decode_analytics_configuration_struct_params()))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
@@ -21097,6 +21555,7 @@ pub fn encode_put_bucket_intelligent_tiering_configuration_request_struct(input:
 }
 
 pub fn decode_put_bucket_intelligent_tiering_configuration_request_struct() -> decode.Decoder(PutBucketIntelligentTieringConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -21110,6 +21569,7 @@ pub fn decode_put_bucket_intelligent_tiering_configuration_request_struct() -> d
 }
 
 pub fn decode_put_bucket_intelligent_tiering_configuration_request_struct_params() -> decode.Decoder(PutBucketIntelligentTieringConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -21170,6 +21630,7 @@ pub fn encode_put_bucket_inventory_configuration_request_struct(input: PutBucket
 }
 
 pub fn decode_put_bucket_inventory_configuration_request_struct() -> decode.Decoder(PutBucketInventoryConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -21183,6 +21644,7 @@ pub fn decode_put_bucket_inventory_configuration_request_struct() -> decode.Deco
 }
 
 pub fn decode_put_bucket_inventory_configuration_request_struct_params() -> decode.Decoder(PutBucketInventoryConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -21243,6 +21705,7 @@ pub fn encode_put_bucket_metrics_configuration_request_struct(input: PutBucketMe
 }
 
 pub fn decode_put_bucket_metrics_configuration_request_struct() -> decode.Decoder(PutBucketMetricsConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -21256,6 +21719,7 @@ pub fn decode_put_bucket_metrics_configuration_request_struct() -> decode.Decode
 }
 
 pub fn decode_put_bucket_metrics_configuration_request_struct_params() -> decode.Decoder(PutBucketMetricsConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -21316,6 +21780,7 @@ pub fn encode_put_bucket_notification_configuration_request_struct(input: PutBuc
 }
 
 pub fn decode_put_bucket_notification_configuration_request_struct() -> decode.Decoder(PutBucketNotificationConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use notification_configuration <- decode.optional_field("NotificationConfiguration", option.None, decode.optional(decode_notification_configuration_struct()))
@@ -21329,6 +21794,7 @@ pub fn decode_put_bucket_notification_configuration_request_struct() -> decode.D
 }
 
 pub fn decode_put_bucket_notification_configuration_request_struct_params() -> decode.Decoder(PutBucketNotificationConfigurationRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use notification_configuration <- decode.optional_field("NotificationConfiguration", option.None, decode.optional(decode_notification_configuration_struct_params()))
@@ -21421,6 +21887,7 @@ pub fn encode_rename_object_request_struct(input: RenameObjectRequest) -> json.J
 }
 
 pub fn decode_rename_object_request_struct() -> decode.Decoder(RenameObjectRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use client_token <- decode.optional_field("ClientToken", option.None, decode.optional(decode.string))
   use destination_if_match <- decode.optional_field("DestinationIfMatch", option.None, decode.optional(decode.string))
@@ -21450,6 +21917,7 @@ pub fn decode_rename_object_request_struct() -> decode.Decoder(RenameObjectReque
 }
 
 pub fn decode_rename_object_request_struct_params() -> decode.Decoder(RenameObjectRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use client_token <- decode.optional_field("ClientToken", option.None, decode.optional(decode.string))
   use destination_if_match <- decode.optional_field("DestinationIfMatch", option.None, decode.optional(decode.string))
@@ -21630,6 +22098,7 @@ pub fn encode_select_object_content_request_struct(input: SelectObjectContentReq
 }
 
 pub fn decode_select_object_content_request_struct() -> decode.Decoder(SelectObjectContentRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use expression <- decode.optional_field("Expression", option.None, decode.optional(decode.string))
@@ -21659,6 +22128,7 @@ pub fn decode_select_object_content_request_struct() -> decode.Decoder(SelectObj
 }
 
 pub fn decode_select_object_content_request_struct_params() -> decode.Decoder(SelectObjectContentRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use expression <- decode.optional_field("Expression", option.None, decode.optional(decode.string))
@@ -21795,6 +22265,7 @@ pub fn encode_input_serialization_struct(input: InputSerialization) -> json.Json
 }
 
 pub fn decode_input_serialization_struct() -> decode.Decoder(InputSerialization) {
+  use <- decode.recursive
   use csv <- decode.optional_field("CSV", option.None, decode.optional(decode_csv_input_struct()))
   use compression_type <- decode.optional_field("CompressionType", option.None, decode.optional(decode_compression_type_enum()))
   use json <- decode.optional_field("JSON", option.None, decode.optional(decode_json_input_struct()))
@@ -21808,6 +22279,7 @@ pub fn decode_input_serialization_struct() -> decode.Decoder(InputSerialization)
 }
 
 pub fn decode_input_serialization_struct_params() -> decode.Decoder(InputSerialization) {
+  use <- decode.recursive
   use csv <- decode.optional_field("CSV", option.None, decode.optional(decode_csv_input_struct_params()))
   use compression_type <- decode.optional_field("CompressionType", option.None, decode.optional(decode_compression_type_enum()))
   use json <- decode.optional_field("JSON", option.None, decode.optional(decode_json_input_struct_params()))
@@ -21897,6 +22369,7 @@ pub fn encode_csv_input_struct(input: CSVInput) -> json.Json {
 }
 
 pub fn decode_csv_input_struct() -> decode.Decoder(CSVInput) {
+  use <- decode.recursive
   use allow_quoted_record_delimiter <- decode.optional_field("AllowQuotedRecordDelimiter", option.None, decode.optional(decode.bool))
   use comments <- decode.optional_field("Comments", option.None, decode.optional(decode.string))
   use field_delimiter <- decode.optional_field("FieldDelimiter", option.None, decode.optional(decode.string))
@@ -21916,6 +22389,7 @@ pub fn decode_csv_input_struct() -> decode.Decoder(CSVInput) {
 }
 
 pub fn decode_csv_input_struct_params() -> decode.Decoder(CSVInput) {
+  use <- decode.recursive
   use allow_quoted_record_delimiter <- decode.optional_field("AllowQuotedRecordDelimiter", option.None, decode.optional(decode.bool))
   use comments <- decode.optional_field("Comments", option.None, decode.optional(decode.string))
   use field_delimiter <- decode.optional_field("FieldDelimiter", option.None, decode.optional(decode.string))
@@ -22055,6 +22529,7 @@ pub fn encode_json_input_struct(input: JSONInput) -> json.Json {
 }
 
 pub fn decode_json_input_struct() -> decode.Decoder(JSONInput) {
+  use <- decode.recursive
   use type_ <- decode.optional_field("Type", option.None, decode.optional(decode_json_type_enum()))
   decode.success(JSONInput(
     type_: type_,
@@ -22062,6 +22537,7 @@ pub fn decode_json_input_struct() -> decode.Decoder(JSONInput) {
 }
 
 pub fn decode_json_input_struct_params() -> decode.Decoder(JSONInput) {
+  use <- decode.recursive
   use type_ <- decode.optional_field("Type", option.None, decode.optional(decode_json_type_enum()))
   decode.success(JSONInput(
     type_: type_,
@@ -22157,6 +22633,7 @@ pub fn encode_output_serialization_struct(input: OutputSerialization) -> json.Js
 }
 
 pub fn decode_output_serialization_struct() -> decode.Decoder(OutputSerialization) {
+  use <- decode.recursive
   use csv <- decode.optional_field("CSV", option.None, decode.optional(decode_csv_output_struct()))
   use json <- decode.optional_field("JSON", option.None, decode.optional(decode_json_output_struct()))
   decode.success(OutputSerialization(
@@ -22166,6 +22643,7 @@ pub fn decode_output_serialization_struct() -> decode.Decoder(OutputSerializatio
 }
 
 pub fn decode_output_serialization_struct_params() -> decode.Decoder(OutputSerialization) {
+  use <- decode.recursive
   use csv <- decode.optional_field("CSV", option.None, decode.optional(decode_csv_output_struct_params()))
   use json <- decode.optional_field("JSON", option.None, decode.optional(decode_json_output_struct_params()))
   decode.success(OutputSerialization(
@@ -22230,6 +22708,7 @@ pub fn encode_csv_output_struct(input: CSVOutput) -> json.Json {
 }
 
 pub fn decode_csv_output_struct() -> decode.Decoder(CSVOutput) {
+  use <- decode.recursive
   use field_delimiter <- decode.optional_field("FieldDelimiter", option.None, decode.optional(decode.string))
   use quote_character <- decode.optional_field("QuoteCharacter", option.None, decode.optional(decode.string))
   use quote_escape_character <- decode.optional_field("QuoteEscapeCharacter", option.None, decode.optional(decode.string))
@@ -22245,6 +22724,7 @@ pub fn decode_csv_output_struct() -> decode.Decoder(CSVOutput) {
 }
 
 pub fn decode_csv_output_struct_params() -> decode.Decoder(CSVOutput) {
+  use <- decode.recursive
   use field_delimiter <- decode.optional_field("FieldDelimiter", option.None, decode.optional(decode.string))
   use quote_character <- decode.optional_field("QuoteCharacter", option.None, decode.optional(decode.string))
   use quote_escape_character <- decode.optional_field("QuoteEscapeCharacter", option.None, decode.optional(decode.string))
@@ -22340,6 +22820,7 @@ pub fn encode_json_output_struct(input: JSONOutput) -> json.Json {
 }
 
 pub fn decode_json_output_struct() -> decode.Decoder(JSONOutput) {
+  use <- decode.recursive
   use record_delimiter <- decode.optional_field("RecordDelimiter", option.None, decode.optional(decode.string))
   decode.success(JSONOutput(
     record_delimiter: record_delimiter,
@@ -22347,6 +22828,7 @@ pub fn decode_json_output_struct() -> decode.Decoder(JSONOutput) {
 }
 
 pub fn decode_json_output_struct_params() -> decode.Decoder(JSONOutput) {
+  use <- decode.recursive
   use record_delimiter <- decode.optional_field("RecordDelimiter", option.None, decode.optional(decode.string))
   decode.success(JSONOutput(
     record_delimiter: record_delimiter,
@@ -22387,6 +22869,7 @@ pub fn encode_request_progress_struct(input: RequestProgress) -> json.Json {
 }
 
 pub fn decode_request_progress_struct() -> decode.Decoder(RequestProgress) {
+  use <- decode.recursive
   use enabled <- decode.optional_field("Enabled", option.None, decode.optional(decode.bool))
   decode.success(RequestProgress(
     enabled: enabled,
@@ -22394,6 +22877,7 @@ pub fn decode_request_progress_struct() -> decode.Decoder(RequestProgress) {
 }
 
 pub fn decode_request_progress_struct_params() -> decode.Decoder(RequestProgress) {
+  use <- decode.recursive
   use enabled <- decode.optional_field("Enabled", option.None, decode.optional(decode.bool))
   decode.success(RequestProgress(
     enabled: enabled,
@@ -22438,6 +22922,7 @@ pub fn encode_scan_range_struct(input: ScanRange) -> json.Json {
 }
 
 pub fn decode_scan_range_struct() -> decode.Decoder(ScanRange) {
+  use <- decode.recursive
   use end <- decode.optional_field("End", option.None, decode.optional(decode.int))
   use start <- decode.optional_field("Start", option.None, decode.optional(decode.int))
   decode.success(ScanRange(
@@ -22447,6 +22932,7 @@ pub fn decode_scan_range_struct() -> decode.Decoder(ScanRange) {
 }
 
 pub fn decode_scan_range_struct_params() -> decode.Decoder(ScanRange) {
+  use <- decode.recursive
   use end <- decode.optional_field("End", option.None, decode.optional(decode.int))
   use start <- decode.optional_field("Start", option.None, decode.optional(decode.int))
   decode.success(ScanRange(
@@ -22495,6 +22981,7 @@ pub fn encode_select_object_content_output_struct(input: SelectObjectContentOutp
 }
 
 pub fn decode_select_object_content_output_struct() -> decode.Decoder(SelectObjectContentOutput) {
+  use <- decode.recursive
   use payload <- decode.optional_field("Payload", option.None, decode.optional(decode_select_object_content_event_stream_union()))
   decode.success(SelectObjectContentOutput(
     payload: payload,
@@ -22502,6 +22989,7 @@ pub fn decode_select_object_content_output_struct() -> decode.Decoder(SelectObje
 }
 
 pub fn decode_select_object_content_output_struct_params() -> decode.Decoder(SelectObjectContentOutput) {
+  use <- decode.recursive
   use payload <- decode.optional_field("Payload", option.None, decode.optional(decode_select_object_content_event_stream_union_params()))
   decode.success(SelectObjectContentOutput(
     payload: payload,
@@ -22543,6 +23031,7 @@ pub fn encode_select_object_content_event_stream_union(v: SelectObjectContentEve
 }
 
 pub fn decode_select_object_content_event_stream_union() -> decode.Decoder(SelectObjectContentEventStream) {
+  use <- decode.recursive
   decode.one_of(
     decode.field("Cont", decode_continuation_event_struct(), fn(x) { decode.success(SelectObjectContentEventStreamCont(x)) }),
     [
@@ -22555,6 +23044,7 @@ pub fn decode_select_object_content_event_stream_union() -> decode.Decoder(Selec
 }
 
 pub fn decode_select_object_content_event_stream_union_params() -> decode.Decoder(SelectObjectContentEventStream) {
+  use <- decode.recursive
   decode.one_of(
     decode.field("Cont", decode_continuation_event_struct_params(), fn(x) { decode.success(SelectObjectContentEventStreamCont(x)) }),
     [
@@ -22636,6 +23126,7 @@ pub fn encode_progress_event_struct(input: ProgressEvent) -> json.Json {
 }
 
 pub fn decode_progress_event_struct() -> decode.Decoder(ProgressEvent) {
+  use <- decode.recursive
   use details <- decode.optional_field("Details", option.None, decode.optional(decode_progress_struct()))
   decode.success(ProgressEvent(
     details: details,
@@ -22643,6 +23134,7 @@ pub fn decode_progress_event_struct() -> decode.Decoder(ProgressEvent) {
 }
 
 pub fn decode_progress_event_struct_params() -> decode.Decoder(ProgressEvent) {
+  use <- decode.recursive
   use details <- decode.optional_field("Details", option.None, decode.optional(decode_progress_struct_params()))
   decode.success(ProgressEvent(
     details: details,
@@ -22691,6 +23183,7 @@ pub fn encode_progress_struct(input: Progress) -> json.Json {
 }
 
 pub fn decode_progress_struct() -> decode.Decoder(Progress) {
+  use <- decode.recursive
   use bytes_processed <- decode.optional_field("BytesProcessed", option.None, decode.optional(decode.int))
   use bytes_returned <- decode.optional_field("BytesReturned", option.None, decode.optional(decode.int))
   use bytes_scanned <- decode.optional_field("BytesScanned", option.None, decode.optional(decode.int))
@@ -22702,6 +23195,7 @@ pub fn decode_progress_struct() -> decode.Decoder(Progress) {
 }
 
 pub fn decode_progress_struct_params() -> decode.Decoder(Progress) {
+  use <- decode.recursive
   use bytes_processed <- decode.optional_field("BytesProcessed", option.None, decode.optional(decode.int))
   use bytes_returned <- decode.optional_field("BytesReturned", option.None, decode.optional(decode.int))
   use bytes_scanned <- decode.optional_field("BytesScanned", option.None, decode.optional(decode.int))
@@ -22758,6 +23252,7 @@ pub fn encode_records_event_struct(input: RecordsEvent) -> json.Json {
 }
 
 pub fn decode_records_event_struct() -> decode.Decoder(RecordsEvent) {
+  use <- decode.recursive
   use payload <- decode.optional_field("Payload", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(RecordsEvent(
     payload: payload,
@@ -22765,6 +23260,7 @@ pub fn decode_records_event_struct() -> decode.Decoder(RecordsEvent) {
 }
 
 pub fn decode_records_event_struct_params() -> decode.Decoder(RecordsEvent) {
+  use <- decode.recursive
   use payload <- decode.optional_field("Payload", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(RecordsEvent(
     payload: payload,
@@ -22805,6 +23301,7 @@ pub fn encode_stats_event_struct(input: StatsEvent) -> json.Json {
 }
 
 pub fn decode_stats_event_struct() -> decode.Decoder(StatsEvent) {
+  use <- decode.recursive
   use details <- decode.optional_field("Details", option.None, decode.optional(decode_stats_struct()))
   decode.success(StatsEvent(
     details: details,
@@ -22812,6 +23309,7 @@ pub fn decode_stats_event_struct() -> decode.Decoder(StatsEvent) {
 }
 
 pub fn decode_stats_event_struct_params() -> decode.Decoder(StatsEvent) {
+  use <- decode.recursive
   use details <- decode.optional_field("Details", option.None, decode.optional(decode_stats_struct_params()))
   decode.success(StatsEvent(
     details: details,
@@ -22860,6 +23358,7 @@ pub fn encode_stats_struct(input: Stats) -> json.Json {
 }
 
 pub fn decode_stats_struct() -> decode.Decoder(Stats) {
+  use <- decode.recursive
   use bytes_processed <- decode.optional_field("BytesProcessed", option.None, decode.optional(decode.int))
   use bytes_returned <- decode.optional_field("BytesReturned", option.None, decode.optional(decode.int))
   use bytes_scanned <- decode.optional_field("BytesScanned", option.None, decode.optional(decode.int))
@@ -22871,6 +23370,7 @@ pub fn decode_stats_struct() -> decode.Decoder(Stats) {
 }
 
 pub fn decode_stats_struct_params() -> decode.Decoder(Stats) {
+  use <- decode.recursive
   use bytes_processed <- decode.optional_field("BytesProcessed", option.None, decode.optional(decode.int))
   use bytes_returned <- decode.optional_field("BytesReturned", option.None, decode.optional(decode.int))
   use bytes_scanned <- decode.optional_field("BytesScanned", option.None, decode.optional(decode.int))
@@ -22999,6 +23499,7 @@ pub fn encode_upload_part_copy_request_struct(input: UploadPartCopyRequest) -> j
 }
 
 pub fn decode_upload_part_copy_request_struct() -> decode.Decoder(UploadPartCopyRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use copy_source <- decode.optional_field("CopySource", option.None, decode.optional(decode.string))
   use copy_source_if_match <- decode.optional_field("CopySourceIfMatch", option.None, decode.optional(decode.string))
@@ -23042,6 +23543,7 @@ pub fn decode_upload_part_copy_request_struct() -> decode.Decoder(UploadPartCopy
 }
 
 pub fn decode_upload_part_copy_request_struct_params() -> decode.Decoder(UploadPartCopyRequest) {
+  use <- decode.recursive
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use copy_source <- decode.optional_field("CopySource", option.None, decode.optional(decode.string))
   use copy_source_if_match <- decode.optional_field("CopySourceIfMatch", option.None, decode.optional(decode.string))
@@ -23178,6 +23680,7 @@ pub fn encode_upload_part_copy_output_struct(input: UploadPartCopyOutput) -> jso
 }
 
 pub fn decode_upload_part_copy_output_struct() -> decode.Decoder(UploadPartCopyOutput) {
+  use <- decode.recursive
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
   use copy_part_result <- decode.optional_field("CopyPartResult", option.None, decode.optional(decode_copy_part_result_struct()))
   use copy_source_version_id <- decode.optional_field("CopySourceVersionId", option.None, decode.optional(decode.string))
@@ -23199,6 +23702,7 @@ pub fn decode_upload_part_copy_output_struct() -> decode.Decoder(UploadPartCopyO
 }
 
 pub fn decode_upload_part_copy_output_struct_params() -> decode.Decoder(UploadPartCopyOutput) {
+  use <- decode.recursive
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
   use copy_part_result <- decode.optional_field("CopyPartResult", option.None, decode.optional(decode_copy_part_result_struct_params()))
   use copy_source_version_id <- decode.optional_field("CopySourceVersionId", option.None, decode.optional(decode.string))
@@ -23307,6 +23811,7 @@ pub fn encode_copy_part_result_struct(input: CopyPartResult) -> json.Json {
 }
 
 pub fn decode_copy_part_result_struct() -> decode.Decoder(CopyPartResult) {
+  use <- decode.recursive
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -23336,6 +23841,7 @@ pub fn decode_copy_part_result_struct() -> decode.Decoder(CopyPartResult) {
 }
 
 pub fn decode_copy_part_result_struct_params() -> decode.Decoder(CopyPartResult) {
+  use <- decode.recursive
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -23644,6 +24150,7 @@ pub fn encode_write_get_object_response_request_struct(input: WriteGetObjectResp
 }
 
 pub fn decode_write_get_object_response_request_struct() -> decode.Decoder(WriteGetObjectResponseRequest) {
+  use <- decode.recursive
   use accept_ranges <- decode.optional_field("AcceptRanges", option.None, decode.optional(decode.string))
   use body <- decode.optional_field("Body", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
@@ -23741,6 +24248,7 @@ pub fn decode_write_get_object_response_request_struct() -> decode.Decoder(Write
 }
 
 pub fn decode_write_get_object_response_request_struct_params() -> decode.Decoder(WriteGetObjectResponseRequest) {
+  use <- decode.recursive
   use accept_ranges <- decode.optional_field("AcceptRanges", option.None, decode.optional(decode.string))
   use body <- decode.optional_field("Body", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))

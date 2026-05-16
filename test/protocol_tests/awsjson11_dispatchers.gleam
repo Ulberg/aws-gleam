@@ -4,8 +4,8 @@
 
 import aws/services/protocoltests/json11 as svc
 import protocol_tests/dispatch.{
-  type Dispatcher, type ParsedResponseInput, type Registry,
-  BuiltRequest, Dispatcher, ParsedOutput,
+  type Dispatcher, type ParsedResponseInput, type Registry, BuiltRequest,
+  Dispatcher, ParsedOutput,
 }
 
 pub fn register_all(registry: Registry) -> Registry {
@@ -130,7 +130,9 @@ fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_endpoint_with_host_label_operation_response),
+    parse_response: response_parser(
+      svc.parse_endpoint_with_host_label_operation_response,
+    ),
   )
 }
 
@@ -319,7 +321,9 @@ fn operation_with_optional_input_output_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_operation_with_optional_input_output_response),
+    parse_response: response_parser(
+      svc.parse_operation_with_optional_input_output_response,
+    ),
   )
 }
 
@@ -340,7 +344,9 @@ fn put_and_get_inline_documents_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(svc.parse_put_and_get_inline_documents_response),
+    parse_response: response_parser(
+      svc.parse_put_and_get_inline_documents_response,
+    ),
   )
 }
 
