@@ -156,7 +156,7 @@ pub fn decode_batch_statement_request_struct() -> decode.Decoder(BatchStatementR
 
 pub fn decode_batch_statement_request_struct_params() -> decode.Decoder(BatchStatementRequest) {
   use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
-  use parameters <- decode.optional_field("Parameters", option.None, decode.optional(decode.list(decode_attribute_value_union())))
+  use parameters <- decode.optional_field("Parameters", option.None, decode.optional(decode.list(decode_attribute_value_union_params())))
   use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
   use statement <- decode.optional_field("Statement", option.None, decode.optional(decode.string))
   decode.success(BatchStatementRequest(
@@ -203,6 +203,23 @@ pub fn decode_attribute_value_union() -> decode.Decoder(AttributeValue) {
       decode.field("BS", decode.list(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })), fn(x) { decode.success(AttributeValueBS(x)) }),
       decode.field("L", decode.list(decode_attribute_value_union()), fn(x) { decode.success(AttributeValueL(x)) }),
       decode.field("M", decode.dict(decode.string, decode_attribute_value_union()), fn(x) { decode.success(AttributeValueM(x)) }),
+      decode.field("N", decode.string, fn(x) { decode.success(AttributeValueN(x)) }),
+      decode.field("NS", decode.list(decode.string), fn(x) { decode.success(AttributeValueNS(x)) }),
+      decode.field("NULL", decode.bool, fn(x) { decode.success(AttributeValueNULL(x)) }),
+      decode.field("S", decode.string, fn(x) { decode.success(AttributeValueS(x)) }),
+      decode.field("SS", decode.list(decode.string), fn(x) { decode.success(AttributeValueSS(x)) }),
+    ],
+  )
+}
+
+pub fn decode_attribute_value_union_params() -> decode.Decoder(AttributeValue) {
+  decode.one_of(
+    decode.field("B", decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) }), fn(x) { decode.success(AttributeValueB(x)) }),
+    [
+      decode.field("BOOL", decode.bool, fn(x) { decode.success(AttributeValueBOOL(x)) }),
+      decode.field("BS", decode.list(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })), fn(x) { decode.success(AttributeValueBS(x)) }),
+      decode.field("L", decode.list(decode_attribute_value_union_params()), fn(x) { decode.success(AttributeValueL(x)) }),
+      decode.field("M", decode.dict(decode.string, decode_attribute_value_union_params()), fn(x) { decode.success(AttributeValueM(x)) }),
       decode.field("N", decode.string, fn(x) { decode.success(AttributeValueN(x)) }),
       decode.field("NS", decode.list(decode.string), fn(x) { decode.success(AttributeValueNS(x)) }),
       decode.field("NULL", decode.bool, fn(x) { decode.success(AttributeValueNULL(x)) }),
@@ -440,7 +457,7 @@ pub fn decode_batch_statement_response_struct() -> decode.Decoder(BatchStatement
 
 pub fn decode_batch_statement_response_struct_params() -> decode.Decoder(BatchStatementResponse) {
   use error <- decode.optional_field("Error", option.None, decode.optional(decode_batch_statement_error_struct_params()))
-  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(BatchStatementResponse(
     error: error,
@@ -487,7 +504,7 @@ pub fn decode_batch_statement_error_struct() -> decode.Decoder(BatchStatementErr
 
 pub fn decode_batch_statement_error_struct_params() -> decode.Decoder(BatchStatementError) {
   use code <- decode.optional_field("Code", option.None, decode.optional(decode_batch_statement_error_code_enum_enum()))
-  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
   decode.success(BatchStatementError(
     code: code,
@@ -780,7 +797,7 @@ pub fn decode_keys_and_attributes_struct_params() -> decode.Decoder(KeysAndAttri
   use attributes_to_get <- decode.optional_field("AttributesToGet", option.None, decode.optional(decode.list(decode.string)))
   use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use keys <- decode.optional_field("Keys", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union()))))
+  use keys <- decode.optional_field("Keys", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union_params()))))
   use projection_expression <- decode.optional_field("ProjectionExpression", option.None, decode.optional(decode.string))
   decode.success(KeysAndAttributes(
     attributes_to_get: attributes_to_get,
@@ -829,7 +846,7 @@ pub fn decode_batch_get_item_output_struct() -> decode.Decoder(BatchGetItemOutpu
 
 pub fn decode_batch_get_item_output_struct_params() -> decode.Decoder(BatchGetItemOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct_params())))
-  use responses <- decode.optional_field("Responses", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.dict(decode.string, decode_attribute_value_union())))))
+  use responses <- decode.optional_field("Responses", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.dict(decode.string, decode_attribute_value_union_params())))))
   use unprocessed_keys <- decode.optional_field("UnprocessedKeys", option.None, decode.optional(decode.dict(decode.string, decode_keys_and_attributes_struct_params())))
   decode.success(BatchGetItemOutput(
     consumed_capacity: consumed_capacity,
@@ -1042,7 +1059,7 @@ pub fn decode_delete_request_struct() -> decode.Decoder(DeleteRequest) {
 }
 
 pub fn decode_delete_request_struct_params() -> decode.Decoder(DeleteRequest) {
-  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   decode.success(DeleteRequest(
     key: key,
   ))
@@ -1071,7 +1088,7 @@ pub fn decode_put_request_struct() -> decode.Decoder(PutRequest) {
 }
 
 pub fn decode_put_request_struct_params() -> decode.Decoder(PutRequest) {
-  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   decode.success(PutRequest(
     item: item,
   ))
@@ -1176,7 +1193,7 @@ pub fn decode_item_collection_metrics_struct() -> decode.Decoder(ItemCollectionM
 }
 
 pub fn decode_item_collection_metrics_struct_params() -> decode.Decoder(ItemCollectionMetrics) {
-  use item_collection_key <- decode.optional_field("ItemCollectionKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use item_collection_key <- decode.optional_field("ItemCollectionKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use size_estimate_range_gb <- decode.optional_field("SizeEstimateRangeGB", option.None, decode.optional(decode.list(json_float.decoder())))
   decode.success(ItemCollectionMetrics(
     item_collection_key: item_collection_key,
@@ -4623,8 +4640,8 @@ pub fn decode_delete_item_input_struct_params() -> decode.Decoder(DeleteItemInpu
   use conditional_operator <- decode.optional_field("ConditionalOperator", option.None, decode.optional(decode_conditional_operator_enum()))
   use expected <- decode.optional_field("Expected", option.None, decode.optional(decode.dict(decode.string, decode_expected_attribute_value_struct_params())))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
-  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
   use return_item_collection_metrics <- decode.optional_field("ReturnItemCollectionMetrics", option.None, decode.optional(decode_return_item_collection_metrics_enum()))
   use return_values <- decode.optional_field("ReturnValues", option.None, decode.optional(decode_return_value_enum()))
@@ -4711,10 +4728,10 @@ pub fn decode_expected_attribute_value_struct() -> decode.Decoder(ExpectedAttrib
 }
 
 pub fn decode_expected_attribute_value_struct_params() -> decode.Decoder(ExpectedAttributeValue) {
-  use attribute_value_list <- decode.optional_field("AttributeValueList", option.None, decode.optional(decode.list(decode_attribute_value_union())))
+  use attribute_value_list <- decode.optional_field("AttributeValueList", option.None, decode.optional(decode.list(decode_attribute_value_union_params())))
   use comparison_operator <- decode.optional_field("ComparisonOperator", option.None, decode.optional(decode_comparison_operator_enum()))
   use exists <- decode.optional_field("Exists", option.None, decode.optional(decode.bool))
-  use value <- decode.optional_field("Value", option.None, decode.optional(decode_attribute_value_union()))
+  use value <- decode.optional_field("Value", option.None, decode.optional(decode_attribute_value_union_params()))
   decode.success(ExpectedAttributeValue(
     attribute_value_list: attribute_value_list,
     comparison_operator: comparison_operator,
@@ -4846,7 +4863,7 @@ pub fn decode_delete_item_output_struct() -> decode.Decoder(DeleteItemOutput) {
 }
 
 pub fn decode_delete_item_output_struct_params() -> decode.Decoder(DeleteItemOutput) {
-  use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
   use item_collection_metrics <- decode.optional_field("ItemCollectionMetrics", option.None, decode.optional(decode_item_collection_metrics_struct_params()))
   decode.success(DeleteItemOutput(
@@ -4886,7 +4903,7 @@ pub fn decode_conditional_check_failed_exception_struct() -> decode.Decoder(Cond
 }
 
 pub fn decode_conditional_check_failed_exception_struct_params() -> decode.Decoder(ConditionalCheckFailedException) {
-  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ConditionalCheckFailedException(
     item: item,
@@ -7928,7 +7945,7 @@ pub fn decode_execute_statement_input_struct_params() -> decode.Decoder(ExecuteS
   use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
   use limit <- decode.optional_field("Limit", option.None, decode.optional(decode.int))
   use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
-  use parameters <- decode.optional_field("Parameters", option.None, decode.optional(decode.list(decode_attribute_value_union())))
+  use parameters <- decode.optional_field("Parameters", option.None, decode.optional(decode.list(decode_attribute_value_union_params())))
   use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
   use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
   use statement <- decode.optional_field("Statement", option.None, decode.optional(decode.string))
@@ -7988,8 +8005,8 @@ pub fn decode_execute_statement_output_struct() -> decode.Decoder(ExecuteStateme
 
 pub fn decode_execute_statement_output_struct_params() -> decode.Decoder(ExecuteStatementOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
-  use items <- decode.optional_field("Items", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union()))))
-  use last_evaluated_key <- decode.optional_field("LastEvaluatedKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use items <- decode.optional_field("Items", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union_params()))))
+  use last_evaluated_key <- decode.optional_field("LastEvaluatedKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
   decode.success(ExecuteStatementOutput(
     consumed_capacity: consumed_capacity,
@@ -8112,7 +8129,7 @@ pub fn decode_parameterized_statement_struct() -> decode.Decoder(ParameterizedSt
 }
 
 pub fn decode_parameterized_statement_struct_params() -> decode.Decoder(ParameterizedStatement) {
-  use parameters <- decode.optional_field("Parameters", option.None, decode.optional(decode.list(decode_attribute_value_union())))
+  use parameters <- decode.optional_field("Parameters", option.None, decode.optional(decode.list(decode_attribute_value_union_params())))
   use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
   use statement <- decode.optional_field("Statement", option.None, decode.optional(decode.string))
   decode.success(ParameterizedStatement(
@@ -8183,7 +8200,7 @@ pub fn decode_item_response_struct() -> decode.Decoder(ItemResponse) {
 }
 
 pub fn decode_item_response_struct_params() -> decode.Decoder(ItemResponse) {
-  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   decode.success(ItemResponse(
     item: item,
   ))
@@ -8294,7 +8311,7 @@ pub fn decode_cancellation_reason_struct() -> decode.Decoder(CancellationReason)
 
 pub fn decode_cancellation_reason_struct_params() -> decode.Decoder(CancellationReason) {
   use code <- decode.optional_field("Code", option.None, decode.optional(decode.string))
-  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
   decode.success(CancellationReason(
     code: code,
@@ -8635,7 +8652,7 @@ pub fn decode_get_item_input_struct_params() -> decode.Decoder(GetItemInput) {
   use attributes_to_get <- decode.optional_field("AttributesToGet", option.None, decode.optional(decode.list(decode.string)))
   use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use projection_expression <- decode.optional_field("ProjectionExpression", option.None, decode.optional(decode.string))
   use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
@@ -8681,7 +8698,7 @@ pub fn decode_get_item_output_struct() -> decode.Decoder(GetItemOutput) {
 
 pub fn decode_get_item_output_struct_params() -> decode.Decoder(GetItemOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
-  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   decode.success(GetItemOutput(
     consumed_capacity: consumed_capacity,
     item: item,
@@ -9959,8 +9976,8 @@ pub fn decode_put_item_input_struct_params() -> decode.Decoder(PutItemInput) {
   use conditional_operator <- decode.optional_field("ConditionalOperator", option.None, decode.optional(decode_conditional_operator_enum()))
   use expected <- decode.optional_field("Expected", option.None, decode.optional(decode.dict(decode.string, decode_expected_attribute_value_struct_params())))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
-  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
   use return_item_collection_metrics <- decode.optional_field("ReturnItemCollectionMetrics", option.None, decode.optional(decode_return_item_collection_metrics_enum()))
   use return_values <- decode.optional_field("ReturnValues", option.None, decode.optional(decode_return_value_enum()))
@@ -10018,7 +10035,7 @@ pub fn decode_put_item_output_struct() -> decode.Decoder(PutItemOutput) {
 }
 
 pub fn decode_put_item_output_struct_params() -> decode.Decoder(PutItemOutput) {
-  use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
   use item_collection_metrics <- decode.optional_field("ItemCollectionMetrics", option.None, decode.optional(decode_item_collection_metrics_struct_params()))
   decode.success(PutItemOutput(
@@ -10251,9 +10268,9 @@ pub fn decode_query_input_struct_params() -> decode.Decoder(QueryInput) {
   use attributes_to_get <- decode.optional_field("AttributesToGet", option.None, decode.optional(decode.list(decode.string)))
   use conditional_operator <- decode.optional_field("ConditionalOperator", option.None, decode.optional(decode_conditional_operator_enum()))
   use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
-  use exclusive_start_key <- decode.optional_field("ExclusiveStartKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use exclusive_start_key <- decode.optional_field("ExclusiveStartKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use filter_expression <- decode.optional_field("FilterExpression", option.None, decode.optional(decode.string))
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use key_condition_expression <- decode.optional_field("KeyConditionExpression", option.None, decode.optional(decode.string))
@@ -10316,7 +10333,7 @@ pub fn decode_condition_struct() -> decode.Decoder(Condition) {
 }
 
 pub fn decode_condition_struct_params() -> decode.Decoder(Condition) {
-  use attribute_value_list <- decode.optional_field("AttributeValueList", option.None, decode.optional(decode.list(decode_attribute_value_union())))
+  use attribute_value_list <- decode.optional_field("AttributeValueList", option.None, decode.optional(decode.list(decode_attribute_value_union_params())))
   use comparison_operator <- decode.optional_field("ComparisonOperator", option.None, decode.optional(decode_comparison_operator_enum()))
   decode.success(Condition(
     attribute_value_list: attribute_value_list,
@@ -10405,8 +10422,8 @@ pub fn decode_query_output_struct() -> decode.Decoder(QueryOutput) {
 pub fn decode_query_output_struct_params() -> decode.Decoder(QueryOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
   use count <- decode.optional_field("Count", option.None, decode.optional(decode.int))
-  use items <- decode.optional_field("Items", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union()))))
-  use last_evaluated_key <- decode.optional_field("LastEvaluatedKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use items <- decode.optional_field("Items", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union_params()))))
+  use last_evaluated_key <- decode.optional_field("LastEvaluatedKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use scanned_count <- decode.optional_field("ScannedCount", option.None, decode.optional(decode.int))
   decode.success(QueryOutput(
     consumed_capacity: consumed_capacity,
@@ -10875,9 +10892,9 @@ pub fn decode_scan_input_struct_params() -> decode.Decoder(ScanInput) {
   use attributes_to_get <- decode.optional_field("AttributesToGet", option.None, decode.optional(decode.list(decode.string)))
   use conditional_operator <- decode.optional_field("ConditionalOperator", option.None, decode.optional(decode_conditional_operator_enum()))
   use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
-  use exclusive_start_key <- decode.optional_field("ExclusiveStartKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use exclusive_start_key <- decode.optional_field("ExclusiveStartKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use filter_expression <- decode.optional_field("FilterExpression", option.None, decode.optional(decode.string))
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use limit <- decode.optional_field("Limit", option.None, decode.optional(decode.int))
@@ -10961,8 +10978,8 @@ pub fn decode_scan_output_struct() -> decode.Decoder(ScanOutput) {
 pub fn decode_scan_output_struct_params() -> decode.Decoder(ScanOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
   use count <- decode.optional_field("Count", option.None, decode.optional(decode.int))
-  use items <- decode.optional_field("Items", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union()))))
-  use last_evaluated_key <- decode.optional_field("LastEvaluatedKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use items <- decode.optional_field("Items", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union_params()))))
+  use last_evaluated_key <- decode.optional_field("LastEvaluatedKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use scanned_count <- decode.optional_field("ScannedCount", option.None, decode.optional(decode.int))
   decode.success(ScanOutput(
     consumed_capacity: consumed_capacity,
@@ -11123,7 +11140,7 @@ pub fn decode_get_struct() -> decode.Decoder(Get) {
 
 pub fn decode_get_struct_params() -> decode.Decoder(Get) {
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use projection_expression <- decode.optional_field("ProjectionExpression", option.None, decode.optional(decode.string))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(Get(
@@ -11344,8 +11361,8 @@ pub fn decode_condition_check_struct() -> decode.Decoder(ConditionCheck) {
 pub fn decode_condition_check_struct_params() -> decode.Decoder(ConditionCheck) {
   use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
-  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(ConditionCheck(
@@ -11418,8 +11435,8 @@ pub fn decode_delete_struct() -> decode.Decoder(Delete) {
 pub fn decode_delete_struct_params() -> decode.Decoder(Delete) {
   use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
-  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(Delete(
@@ -11492,8 +11509,8 @@ pub fn decode_put_struct() -> decode.Decoder(Put) {
 pub fn decode_put_struct_params() -> decode.Decoder(Put) {
   use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
-  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(Put(
@@ -11573,8 +11590,8 @@ pub fn decode_update_struct() -> decode.Decoder(Update) {
 pub fn decode_update_struct_params() -> decode.Decoder(Update) {
   use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
-  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   use update_expression <- decode.optional_field("UpdateExpression", option.None, decode.optional(decode.string))
@@ -12696,8 +12713,8 @@ pub fn decode_update_item_input_struct_params() -> decode.Decoder(UpdateItemInpu
   use conditional_operator <- decode.optional_field("ConditionalOperator", option.None, decode.optional(decode_conditional_operator_enum()))
   use expected <- decode.optional_field("Expected", option.None, decode.optional(decode.dict(decode.string, decode_expected_attribute_value_struct_params())))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
-  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
   use return_item_collection_metrics <- decode.optional_field("ReturnItemCollectionMetrics", option.None, decode.optional(decode_return_item_collection_metrics_enum()))
   use return_values <- decode.optional_field("ReturnValues", option.None, decode.optional(decode_return_value_enum()))
@@ -12752,7 +12769,7 @@ pub fn decode_attribute_value_update_struct() -> decode.Decoder(AttributeValueUp
 
 pub fn decode_attribute_value_update_struct_params() -> decode.Decoder(AttributeValueUpdate) {
   use action <- decode.optional_field("Action", option.None, decode.optional(decode_attribute_action_enum()))
-  use value <- decode.optional_field("Value", option.None, decode.optional(decode_attribute_value_union()))
+  use value <- decode.optional_field("Value", option.None, decode.optional(decode_attribute_value_union_params()))
   decode.success(AttributeValueUpdate(
     action: action,
     value: value,
@@ -12821,7 +12838,7 @@ pub fn decode_update_item_output_struct() -> decode.Decoder(UpdateItemOutput) {
 }
 
 pub fn decode_update_item_output_struct_params() -> decode.Decoder(UpdateItemOutput) {
-  use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union_params())))
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
   use item_collection_metrics <- decode.optional_field("ItemCollectionMetrics", option.None, decode.optional(decode_item_collection_metrics_struct_params()))
   decode.success(UpdateItemOutput(

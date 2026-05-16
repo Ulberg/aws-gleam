@@ -347,7 +347,7 @@ pub fn decode_json_unions_input_struct() -> decode.Decoder(JsonUnionsInput) {
 }
 
 pub fn decode_json_unions_input_struct_params() -> decode.Decoder(JsonUnionsInput) {
-  use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union()))
+  use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union_params()))
   decode.success(JsonUnionsInput(
     contents: contents,
   ))
@@ -393,6 +393,23 @@ pub fn decode_my_union_union() -> decode.Decoder(MyUnion) {
       decode.field("numberValue", decode.int, fn(x) { decode.success(MyUnionNumberValue(x)) }),
       decode.field("stringValue", decode.string, fn(x) { decode.success(MyUnionStringValue(x)) }),
       decode.field("structureValue", decode_greeting_struct_struct(), fn(x) { decode.success(MyUnionStructureValue(x)) }),
+      decode.field("timestampValue", json_timestamp.decoder(), fn(x) { decode.success(MyUnionTimestampValue(x)) }),
+    ],
+  )
+}
+
+pub fn decode_my_union_union_params() -> decode.Decoder(MyUnion) {
+  decode.one_of(
+    decode.field("blobValue", decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) }), fn(x) { decode.success(MyUnionBlobValue(x)) }),
+    [
+      decode.field("booleanValue", decode.bool, fn(x) { decode.success(MyUnionBooleanValue(x)) }),
+      decode.field("enumValue", decode_foo_enum_enum(), fn(x) { decode.success(MyUnionEnumValue(x)) }),
+      decode.field("intEnumValue", decode_integer_enum_int_enum(), fn(x) { decode.success(MyUnionIntEnumValue(x)) }),
+      decode.field("listValue", decode.list(decode.string), fn(x) { decode.success(MyUnionListValue(x)) }),
+      decode.field("mapValue", decode.dict(decode.string, decode.string), fn(x) { decode.success(MyUnionMapValue(x)) }),
+      decode.field("numberValue", decode.int, fn(x) { decode.success(MyUnionNumberValue(x)) }),
+      decode.field("stringValue", decode.string, fn(x) { decode.success(MyUnionStringValue(x)) }),
+      decode.field("structureValue", decode_greeting_struct_struct_params(), fn(x) { decode.success(MyUnionStructureValue(x)) }),
       decode.field("timestampValue", json_timestamp.decoder(), fn(x) { decode.success(MyUnionTimestampValue(x)) }),
     ],
   )
@@ -506,7 +523,7 @@ pub fn decode_json_unions_output_struct() -> decode.Decoder(JsonUnionsOutput) {
 }
 
 pub fn decode_json_unions_output_struct_params() -> decode.Decoder(JsonUnionsOutput) {
-  use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union()))
+  use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union_params()))
   decode.success(JsonUnionsOutput(
     contents: contents,
   ))

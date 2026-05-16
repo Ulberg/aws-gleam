@@ -6225,7 +6225,7 @@ pub fn decode_analytics_configuration_struct() -> decode.Decoder(AnalyticsConfig
 }
 
 pub fn decode_analytics_configuration_struct_params() -> decode.Decoder(AnalyticsConfiguration) {
-  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_analytics_filter_union()))
+  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_analytics_filter_union_params()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   use storage_class_analysis <- decode.optional_field("StorageClassAnalysis", option.None, decode.optional(decode_storage_class_analysis_struct_params()))
   decode.success(AnalyticsConfiguration(
@@ -6288,6 +6288,16 @@ pub fn decode_analytics_filter_union() -> decode.Decoder(AnalyticsFilter) {
     [
       decode.field("Prefix", decode.string, fn(x) { decode.success(AnalyticsFilterPrefix(x)) }),
       decode.field("Tag", decode_tag_struct(), fn(x) { decode.success(AnalyticsFilterTag(x)) }),
+    ],
+  )
+}
+
+pub fn decode_analytics_filter_union_params() -> decode.Decoder(AnalyticsFilter) {
+  decode.one_of(
+    decode.field("And", decode_analytics_and_operator_struct_params(), fn(x) { decode.success(AnalyticsFilterAnd(x)) }),
+    [
+      decode.field("Prefix", decode.string, fn(x) { decode.success(AnalyticsFilterPrefix(x)) }),
+      decode.field("Tag", decode_tag_struct_params(), fn(x) { decode.success(AnalyticsFilterTag(x)) }),
     ],
   )
 }
@@ -11155,7 +11165,7 @@ pub fn decode_metrics_configuration_struct() -> decode.Decoder(MetricsConfigurat
 }
 
 pub fn decode_metrics_configuration_struct_params() -> decode.Decoder(MetricsConfiguration) {
-  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_metrics_filter_union()))
+  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_metrics_filter_union_params()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   decode.success(MetricsConfiguration(
     filter: filter,
@@ -11213,6 +11223,17 @@ pub fn decode_metrics_filter_union() -> decode.Decoder(MetricsFilter) {
       decode.field("And", decode_metrics_and_operator_struct(), fn(x) { decode.success(MetricsFilterAnd(x)) }),
       decode.field("Prefix", decode.string, fn(x) { decode.success(MetricsFilterPrefix(x)) }),
       decode.field("Tag", decode_tag_struct(), fn(x) { decode.success(MetricsFilterTag(x)) }),
+    ],
+  )
+}
+
+pub fn decode_metrics_filter_union_params() -> decode.Decoder(MetricsFilter) {
+  decode.one_of(
+    decode.field("AccessPointArn", decode.string, fn(x) { decode.success(MetricsFilterAccessPointArn(x)) }),
+    [
+      decode.field("And", decode_metrics_and_operator_struct_params(), fn(x) { decode.success(MetricsFilterAnd(x)) }),
+      decode.field("Prefix", decode.string, fn(x) { decode.success(MetricsFilterPrefix(x)) }),
+      decode.field("Tag", decode_tag_struct_params(), fn(x) { decode.success(MetricsFilterTag(x)) }),
     ],
   )
 }
@@ -23730,7 +23751,7 @@ pub fn decode_select_object_content_output_struct() -> decode.Decoder(SelectObje
 }
 
 pub fn decode_select_object_content_output_struct_params() -> decode.Decoder(SelectObjectContentOutput) {
-  use payload <- decode.optional_field("Payload", option.None, decode.optional(decode_select_object_content_event_stream_union()))
+  use payload <- decode.optional_field("Payload", option.None, decode.optional(decode_select_object_content_event_stream_union_params()))
   decode.success(SelectObjectContentOutput(
     payload: payload,
   ))
@@ -23778,6 +23799,18 @@ pub fn decode_select_object_content_event_stream_union() -> decode.Decoder(Selec
       decode.field("Progress", decode_progress_event_struct(), fn(x) { decode.success(SelectObjectContentEventStreamProgress(x)) }),
       decode.field("Records", decode_records_event_struct(), fn(x) { decode.success(SelectObjectContentEventStreamRecords(x)) }),
       decode.field("Stats", decode_stats_event_struct(), fn(x) { decode.success(SelectObjectContentEventStreamStats(x)) }),
+    ],
+  )
+}
+
+pub fn decode_select_object_content_event_stream_union_params() -> decode.Decoder(SelectObjectContentEventStream) {
+  decode.one_of(
+    decode.field("Cont", decode_continuation_event_struct_params(), fn(x) { decode.success(SelectObjectContentEventStreamCont(x)) }),
+    [
+      decode.field("End", decode_end_event_struct_params(), fn(x) { decode.success(SelectObjectContentEventStreamEnd(x)) }),
+      decode.field("Progress", decode_progress_event_struct_params(), fn(x) { decode.success(SelectObjectContentEventStreamProgress(x)) }),
+      decode.field("Records", decode_records_event_struct_params(), fn(x) { decode.success(SelectObjectContentEventStreamRecords(x)) }),
+      decode.field("Stats", decode_stats_event_struct_params(), fn(x) { decode.success(SelectObjectContentEventStreamStats(x)) }),
     ],
   )
 }
@@ -25317,9 +25350,10 @@ pub fn build_abort_multipart_upload_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -25468,9 +25502,10 @@ pub fn build_complete_multipart_upload_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -25700,9 +25735,10 @@ pub fn build_copy_object_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -25822,9 +25858,10 @@ pub fn build_create_bucket_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26006,9 +26043,10 @@ pub fn build_create_multipart_upload_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26090,9 +26128,10 @@ pub fn build_create_session_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26170,9 +26209,10 @@ pub fn build_delete_bucket_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26245,9 +26285,10 @@ pub fn build_delete_bucket_analytics_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26316,9 +26357,10 @@ pub fn build_delete_bucket_cors_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26387,9 +26429,10 @@ pub fn build_delete_bucket_encryption_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26462,9 +26505,10 @@ pub fn build_delete_bucket_intelligent_tiering_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26537,9 +26581,10 @@ pub fn build_delete_bucket_inventory_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26608,9 +26653,10 @@ pub fn build_delete_bucket_lifecycle_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26679,9 +26725,10 @@ pub fn build_delete_bucket_metadata_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26750,9 +26797,10 @@ pub fn build_delete_bucket_metadata_table_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26825,9 +26873,10 @@ pub fn build_delete_bucket_metrics_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26896,9 +26945,10 @@ pub fn build_delete_bucket_ownership_controls_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -26967,9 +27017,10 @@ pub fn build_delete_bucket_policy_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27038,9 +27089,10 @@ pub fn build_delete_bucket_replication_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27109,9 +27161,10 @@ pub fn build_delete_bucket_tagging_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27180,9 +27233,10 @@ pub fn build_delete_bucket_website_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27271,9 +27325,10 @@ pub fn build_delete_object_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27347,9 +27402,10 @@ pub fn build_delete_object_tagging_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27427,9 +27483,10 @@ pub fn build_delete_public_access_block_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27486,9 +27543,10 @@ pub fn build_get_bucket_abac_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27567,9 +27625,10 @@ pub fn build_get_bucket_accelerate_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27635,9 +27694,10 @@ pub fn build_get_bucket_acl_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27707,9 +27767,10 @@ pub fn build_get_bucket_analytics_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27784,9 +27845,10 @@ pub fn build_get_bucket_cors_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27852,9 +27914,10 @@ pub fn build_get_bucket_encryption_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -27933,9 +27996,10 @@ pub fn build_get_bucket_intelligent_tiering_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28014,9 +28078,10 @@ pub fn build_get_bucket_inventory_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28091,9 +28156,10 @@ pub fn build_get_bucket_lifecycle_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28159,9 +28225,10 @@ pub fn build_get_bucket_location_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28227,9 +28294,10 @@ pub fn build_get_bucket_logging_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28295,9 +28363,10 @@ pub fn build_get_bucket_metadata_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28372,9 +28441,10 @@ pub fn build_get_bucket_metadata_table_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28453,9 +28523,10 @@ pub fn build_get_bucket_metrics_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28530,9 +28601,10 @@ pub fn build_get_bucket_notification_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28598,9 +28670,10 @@ pub fn build_get_bucket_ownership_controls_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28675,9 +28748,10 @@ pub fn build_get_bucket_policy_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28742,9 +28816,10 @@ pub fn build_get_bucket_policy_status_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28819,9 +28894,10 @@ pub fn build_get_bucket_replication_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28896,9 +28972,10 @@ pub fn build_get_bucket_request_payment_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -28964,9 +29041,10 @@ pub fn build_get_bucket_tagging_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -29032,9 +29110,10 @@ pub fn build_get_bucket_versioning_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -29100,9 +29179,10 @@ pub fn build_get_bucket_website_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -29180,9 +29260,10 @@ pub fn build_get_object_acl_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -29284,9 +29365,10 @@ pub fn build_get_object_attributes_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -29364,9 +29446,10 @@ pub fn build_get_object_legal_hold_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -29441,9 +29524,10 @@ pub fn build_get_object_lock_configuration_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -29530,9 +29614,10 @@ pub fn build_get_object_retention_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -29619,9 +29704,10 @@ pub fn build_get_object_tagging_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -29695,9 +29781,10 @@ pub fn build_get_object_torrent_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -29760,9 +29847,10 @@ pub fn build_get_public_access_block_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -29837,9 +29925,10 @@ pub fn build_head_bucket_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -29981,9 +30070,10 @@ pub fn build_head_object_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -30053,9 +30143,10 @@ pub fn build_list_bucket_analytics_configurations_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -30125,9 +30216,10 @@ pub fn build_list_bucket_intelligent_tiering_configurations_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -30197,9 +30289,10 @@ pub fn build_list_bucket_inventory_configurations_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -30269,9 +30362,10 @@ pub fn build_list_bucket_metrics_configurations_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -30345,9 +30439,10 @@ pub fn build_list_buckets_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -30413,9 +30508,10 @@ pub fn build_list_directory_buckets_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -30509,9 +30605,10 @@ pub fn build_list_multipart_uploads_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -30605,9 +30702,10 @@ pub fn build_list_objects_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -30709,9 +30807,10 @@ pub fn build_list_objects_v2_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -30809,9 +30908,10 @@ pub fn build_list_object_versions_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -30909,9 +31009,10 @@ pub fn build_list_parts_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -30996,9 +31097,10 @@ pub fn build_put_bucket_analytics_configuration_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -31074,9 +31176,10 @@ pub fn build_put_bucket_intelligent_tiering_configuration_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -31152,9 +31255,10 @@ pub fn build_put_bucket_inventory_configuration_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -31230,9 +31334,10 @@ pub fn build_put_bucket_metrics_configuration_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -31308,9 +31413,10 @@ pub fn build_put_bucket_notification_configuration_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -31407,9 +31513,10 @@ pub fn build_rename_object_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -31492,9 +31599,10 @@ pub fn build_select_object_content_request(
   let body_xml = encode_select_object_content_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -31624,9 +31732,10 @@ pub fn build_upload_part_copy_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -31895,9 +32004,10 @@ pub fn build_write_get_object_response_request(
     option.None -> <<>>
   }
   let content_type = "application/octet-stream"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers

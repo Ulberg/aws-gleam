@@ -110,7 +110,52 @@ pub type MemberDef {
     /// trait — they're serialised into the JSON / XML body alongside
     /// other body members.
     binding: HttpBinding,
+    /// `@mediaType("...")` — sets Content-Type on the request for
+    /// `@httpPayload` members whose wire form is intrinsically opaque
+    /// (Blob, raw String). `None` falls back to the protocol default.
+    media_type: option.Option(String),
   )
+}
+
+fn media_type_of_target(model: Model, target_id: String) -> option.Option(String) {
+  case model.lookup(model, target_id) {
+    Ok(sh) ->
+      case shape_traits(sh) {
+        traits ->
+          case dict.get(traits, ShapeId("smithy.api#mediaType")) {
+            Ok(option.Some(trait.String(s))) -> option.Some(s)
+            _ -> option.None
+          }
+      }
+    _ -> option.None
+  }
+}
+
+fn shape_traits(sh: shape.Shape) -> Dict(ShapeId, option.Option(trait.Trait)) {
+  case sh {
+    shape.Blob(traits: t) -> t
+    shape.Bool(traits: t) -> t
+    shape.String(traits: t) -> t
+    shape.Byte(traits: t) -> t
+    shape.Short(traits: t) -> t
+    shape.Integer(traits: t) -> t
+    shape.Long(traits: t) -> t
+    shape.Float(traits: t) -> t
+    shape.Double(traits: t) -> t
+    shape.BigInteger(traits: t) -> t
+    shape.BigDecimal(traits: t) -> t
+    shape.Timestamp(traits: t) -> t
+    shape.Document(traits: t) -> t
+    shape.List(traits: t, ..) -> t
+    shape.Map(traits: t, ..) -> t
+    shape.Structure(traits: t, ..) -> t
+    shape.Union(traits: t, ..) -> t
+    shape.IntEnum(traits: t, ..) -> t
+    shape.Enum(traits: t, ..) -> t
+    shape.Service(traits: t, ..) -> t
+    shape.Resource(traits: t, ..) -> t
+    shape.Operation(traits: t, ..) -> t
+  }
 }
 
 pub type HttpBinding {
@@ -292,6 +337,14 @@ fn extract_members(
       Ok(option.Some(trait.String(s))) -> s
       _ -> name
     }
+    // `@mediaType` overrides Content-Type for `@httpPayload` members.
+    // Falls back to the target shape's own `@mediaType` (S3 puts the
+    // trait on the wrapping `StreamingBlob` shape rather than each op
+    // member).
+    let media_type = case dict.get(mem.traits, ShapeId("smithy.api#mediaType")) {
+      Ok(option.Some(trait.String(s))) -> option.Some(s)
+      _ -> media_type_of_target(model, target)
+    }
     MemberDef(
       json_name: wire_name,
       snake_name: stringutils.pascal_to_snake(name),
@@ -299,6 +352,7 @@ fn extract_members(
       target: resolve(model, target),
       required: dict.has_key(mem.traits, ShapeId("smithy.api#required")),
       binding: binding_of(mem.traits),
+      media_type: media_type,
     )
   })
 }
@@ -430,6 +484,8 @@ pub fn json_decoder_params(r: Resolved) -> String {
   case r {
     RStruct(local_name: n, ..) ->
       "decode_" <> stringutils.pascal_to_snake(n) <> "_struct_params()"
+    RUnion(local_name: n, ..) ->
+      "decode_" <> stringutils.pascal_to_snake(n) <> "_union_params()"
     RList(element: e, ..) ->
       "decode.list(" <> json_decoder_params(e) <> ")"
     RMap(value: v, ..) ->

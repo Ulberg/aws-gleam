@@ -567,7 +567,7 @@ pub fn decode_duplex_stream_input_struct() -> decode.Decoder(DuplexStreamInput) 
 }
 
 pub fn decode_duplex_stream_input_struct_params() -> decode.Decoder(DuplexStreamInput) {
-  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union_params()))
   decode.success(DuplexStreamInput(
     stream: stream,
   ))
@@ -608,6 +608,21 @@ pub fn decode_event_stream_union() -> decode.Decoder(EventStream) {
       decode.field("stringPayload", decode_string_payload_event_struct(), fn(x) { decode.success(EventStreamStringPayload(x)) }),
       decode.field("structurePayload", decode_structure_payload_event_struct(), fn(x) { decode.success(EventStreamStructurePayload(x)) }),
       decode.field("unionPayload", decode_union_payload_event_struct(), fn(x) { decode.success(EventStreamUnionPayload(x)) }),
+    ],
+  )
+}
+
+pub fn decode_event_stream_union_params() -> decode.Decoder(EventStream) {
+  decode.one_of(
+    decode.field("blobPayload", decode_blob_payload_event_struct_params(), fn(x) { decode.success(EventStreamBlobPayload(x)) }),
+    [
+      decode.field("error", decode_error_event_struct_params(), fn(x) { decode.success(EventStreamError(x)) }),
+      decode.field("headers", decode_headers_event_struct_params(), fn(x) { decode.success(EventStreamHeaders(x)) }),
+      decode.field("headersAndExplicitPayload", decode_headers_and_explicit_payload_event_struct_params(), fn(x) { decode.success(EventStreamHeadersAndExplicitPayload(x)) }),
+      decode.field("headersAndImplicitPayload", decode_headers_and_implicit_payload_event_struct_params(), fn(x) { decode.success(EventStreamHeadersAndImplicitPayload(x)) }),
+      decode.field("stringPayload", decode_string_payload_event_struct_params(), fn(x) { decode.success(EventStreamStringPayload(x)) }),
+      decode.field("structurePayload", decode_structure_payload_event_struct_params(), fn(x) { decode.success(EventStreamStructurePayload(x)) }),
+      decode.field("unionPayload", decode_union_payload_event_struct_params(), fn(x) { decode.success(EventStreamUnionPayload(x)) }),
     ],
   )
 }
@@ -948,7 +963,7 @@ pub fn decode_union_payload_event_struct() -> decode.Decoder(UnionPayloadEvent) 
 }
 
 pub fn decode_union_payload_event_struct_params() -> decode.Decoder(UnionPayloadEvent) {
-  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_payload_union_union()))
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_payload_union_union_params()))
   decode.success(UnionPayloadEvent(
     payload: payload,
   ))
@@ -965,6 +980,14 @@ pub fn encode_payload_union_union(v: PayloadUnion) -> json.Json {
 }
 
 pub fn decode_payload_union_union() -> decode.Decoder(PayloadUnion) {
+  decode.one_of(
+    decode.field("unionMember", decode.string, fn(x) { decode.success(PayloadUnionUnionMember(x)) }),
+    [
+    ],
+  )
+}
+
+pub fn decode_payload_union_union_params() -> decode.Decoder(PayloadUnion) {
   decode.one_of(
     decode.field("unionMember", decode.string, fn(x) { decode.success(PayloadUnionUnionMember(x)) }),
     [
@@ -995,7 +1018,7 @@ pub fn decode_duplex_stream_output_struct() -> decode.Decoder(DuplexStreamOutput
 }
 
 pub fn decode_duplex_stream_output_struct_params() -> decode.Decoder(DuplexStreamOutput) {
-  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union_params()))
   decode.success(DuplexStreamOutput(
     stream: stream,
   ))
@@ -1024,7 +1047,7 @@ pub fn decode_duplex_stream_with_distinct_streams_input_struct() -> decode.Decod
 }
 
 pub fn decode_duplex_stream_with_distinct_streams_input_struct_params() -> decode.Decoder(DuplexStreamWithDistinctStreamsInput) {
-  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union_params()))
   decode.success(DuplexStreamWithDistinctStreamsInput(
     stream: stream,
   ))
@@ -1053,7 +1076,7 @@ pub fn decode_duplex_stream_with_distinct_streams_output_struct() -> decode.Deco
 }
 
 pub fn decode_duplex_stream_with_distinct_streams_output_struct_params() -> decode.Decoder(DuplexStreamWithDistinctStreamsOutput) {
-  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_singleton_event_stream_union()))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_singleton_event_stream_union_params()))
   decode.success(DuplexStreamWithDistinctStreamsOutput(
     stream: stream,
   ))
@@ -1072,6 +1095,14 @@ pub fn encode_singleton_event_stream_union(v: SingletonEventStream) -> json.Json
 pub fn decode_singleton_event_stream_union() -> decode.Decoder(SingletonEventStream) {
   decode.one_of(
     decode.field("singleton", decode_singleton_event_struct(), fn(x) { decode.success(SingletonEventStreamSingleton(x)) }),
+    [
+    ],
+  )
+}
+
+pub fn decode_singleton_event_stream_union_params() -> decode.Decoder(SingletonEventStream) {
+  decode.one_of(
+    decode.field("singleton", decode_singleton_event_struct_params(), fn(x) { decode.success(SingletonEventStreamSingleton(x)) }),
     [
     ],
   )
@@ -1137,7 +1168,7 @@ pub fn decode_duplex_stream_with_initial_messages_input_struct() -> decode.Decod
 
 pub fn decode_duplex_stream_with_initial_messages_input_struct_params() -> decode.Decoder(DuplexStreamWithInitialMessagesInput) {
   use initial_request_member <- decode.optional_field("initialRequestMember", option.None, decode.optional(decode.string))
-  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union_params()))
   decode.success(DuplexStreamWithInitialMessagesInput(
     initial_request_member: initial_request_member,
     stream: stream,
@@ -1175,7 +1206,7 @@ pub fn decode_duplex_stream_with_initial_messages_output_struct() -> decode.Deco
 
 pub fn decode_duplex_stream_with_initial_messages_output_struct_params() -> decode.Decoder(DuplexStreamWithInitialMessagesOutput) {
   use initial_response_member <- decode.optional_field("initialResponseMember", option.None, decode.optional(decode.string))
-  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union_params()))
   decode.success(DuplexStreamWithInitialMessagesOutput(
     initial_response_member: initial_response_member,
     stream: stream,
@@ -1741,7 +1772,7 @@ pub fn decode_http_payload_with_union_input_output_struct() -> decode.Decoder(Ht
 }
 
 pub fn decode_http_payload_with_union_input_output_struct_params() -> decode.Decoder(HttpPayloadWithUnionInputOutput) {
-  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_union_payload_union()))
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_union_payload_union_params()))
   decode.success(HttpPayloadWithUnionInputOutput(
     nested: nested,
   ))
@@ -1758,6 +1789,14 @@ pub fn encode_union_payload_union(v: UnionPayload) -> json.Json {
 }
 
 pub fn decode_union_payload_union() -> decode.Decoder(UnionPayload) {
+  decode.one_of(
+    decode.field("greeting", decode.string, fn(x) { decode.success(UnionPayloadGreeting(x)) }),
+    [
+    ],
+  )
+}
+
+pub fn decode_union_payload_union_params() -> decode.Decoder(UnionPayload) {
   decode.one_of(
     decode.field("greeting", decode.string, fn(x) { decode.success(UnionPayloadGreeting(x)) }),
     [
@@ -2487,7 +2526,7 @@ pub fn decode_input_stream_input_struct() -> decode.Decoder(InputStreamInput) {
 }
 
 pub fn decode_input_stream_input_struct_params() -> decode.Decoder(InputStreamInput) {
-  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union_params()))
   decode.success(InputStreamInput(
     stream: stream,
   ))
@@ -2524,7 +2563,7 @@ pub fn decode_input_stream_with_initial_request_input_struct() -> decode.Decoder
 
 pub fn decode_input_stream_with_initial_request_input_struct_params() -> decode.Decoder(InputStreamWithInitialRequestInput) {
   use initial_request_member <- decode.optional_field("initialRequestMember", option.None, decode.optional(decode.string))
-  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union_params()))
   decode.success(InputStreamWithInitialRequestInput(
     initial_request_member: initial_request_member,
     stream: stream,
@@ -3047,7 +3086,7 @@ pub fn decode_union_input_output_struct() -> decode.Decoder(UnionInputOutput) {
 }
 
 pub fn decode_union_input_output_struct_params() -> decode.Decoder(UnionInputOutput) {
-  use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union()))
+  use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union_params()))
   decode.success(UnionInputOutput(
     contents: contents,
   ))
@@ -3093,6 +3132,23 @@ pub fn decode_my_union_union() -> decode.Decoder(MyUnion) {
       decode.field("renamedStructureValue", decode_greeting_struct_struct(), fn(x) { decode.success(MyUnionRenamedStructureValue(x)) }),
       decode.field("stringValue", decode.string, fn(x) { decode.success(MyUnionStringValue(x)) }),
       decode.field("structureValue", decode_greeting_struct_struct(), fn(x) { decode.success(MyUnionStructureValue(x)) }),
+      decode.field("timestampValue", json_timestamp.decoder(), fn(x) { decode.success(MyUnionTimestampValue(x)) }),
+    ],
+  )
+}
+
+pub fn decode_my_union_union_params() -> decode.Decoder(MyUnion) {
+  decode.one_of(
+    decode.field("blobValue", decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) }), fn(x) { decode.success(MyUnionBlobValue(x)) }),
+    [
+      decode.field("booleanValue", decode.bool, fn(x) { decode.success(MyUnionBooleanValue(x)) }),
+      decode.field("enumValue", decode_foo_enum_enum(), fn(x) { decode.success(MyUnionEnumValue(x)) }),
+      decode.field("listValue", decode.list(decode.string), fn(x) { decode.success(MyUnionListValue(x)) }),
+      decode.field("mapValue", decode.dict(decode.string, decode.string), fn(x) { decode.success(MyUnionMapValue(x)) }),
+      decode.field("numberValue", decode.int, fn(x) { decode.success(MyUnionNumberValue(x)) }),
+      decode.field("renamedStructureValue", decode_greeting_struct_struct_params(), fn(x) { decode.success(MyUnionRenamedStructureValue(x)) }),
+      decode.field("stringValue", decode.string, fn(x) { decode.success(MyUnionStringValue(x)) }),
+      decode.field("structureValue", decode_greeting_struct_struct_params(), fn(x) { decode.success(MyUnionStructureValue(x)) }),
       decode.field("timestampValue", json_timestamp.decoder(), fn(x) { decode.success(MyUnionTimestampValue(x)) }),
     ],
   )
@@ -4160,7 +4216,7 @@ pub fn decode_malformed_union_input_struct() -> decode.Decoder(MalformedUnionInp
 }
 
 pub fn decode_malformed_union_input_struct_params() -> decode.Decoder(MalformedUnionInput) {
-  use union <- decode.optional_field("union", option.None, decode.optional(decode_simple_union_union()))
+  use union <- decode.optional_field("union", option.None, decode.optional(decode_simple_union_union_params()))
   decode.success(MalformedUnionInput(
     union: union,
   ))
@@ -4179,6 +4235,15 @@ pub fn encode_simple_union_union(v: SimpleUnion) -> json.Json {
 }
 
 pub fn decode_simple_union_union() -> decode.Decoder(SimpleUnion) {
+  decode.one_of(
+    decode.field("int", decode.int, fn(x) { decode.success(SimpleUnionInt(x)) }),
+    [
+      decode.field("string", decode.string, fn(x) { decode.success(SimpleUnionString(x)) }),
+    ],
+  )
+}
+
+pub fn decode_simple_union_union_params() -> decode.Decoder(SimpleUnion) {
   decode.one_of(
     decode.field("int", decode.int, fn(x) { decode.success(SimpleUnionInt(x)) }),
     [
@@ -5327,7 +5392,7 @@ pub fn decode_output_stream_output_struct() -> decode.Decoder(OutputStreamOutput
 }
 
 pub fn decode_output_stream_output_struct_params() -> decode.Decoder(OutputStreamOutput) {
-  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union_params()))
   decode.success(OutputStreamOutput(
     stream: stream,
   ))
@@ -5364,7 +5429,7 @@ pub fn decode_output_stream_with_initial_response_output_struct() -> decode.Deco
 
 pub fn decode_output_stream_with_initial_response_output_struct_params() -> decode.Decoder(OutputStreamWithInitialResponseOutput) {
   use initial_response_member <- decode.optional_field("initialResponseMember", option.None, decode.optional(decode.string))
-  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union_params()))
   decode.success(OutputStreamWithInitialResponseOutput(
     initial_response_member: initial_response_member,
     stream: stream,
@@ -5394,7 +5459,7 @@ pub fn decode_post_player_action_input_struct() -> decode.Decoder(PostPlayerActi
 }
 
 pub fn decode_post_player_action_input_struct_params() -> decode.Decoder(PostPlayerActionInput) {
-  use action <- decode.optional_field("action", option.None, decode.optional(decode_player_action_union()))
+  use action <- decode.optional_field("action", option.None, decode.optional(decode_player_action_union_params()))
   decode.success(PostPlayerActionInput(
     action: action,
   ))
@@ -5411,6 +5476,14 @@ pub fn encode_player_action_union(v: PlayerAction) -> json.Json {
 }
 
 pub fn decode_player_action_union() -> decode.Decoder(PlayerAction) {
+  decode.one_of(
+    decode.field("quit", decode.success(Nil), fn(x) { decode.success(PlayerActionQuit(x)) }),
+    [
+    ],
+  )
+}
+
+pub fn decode_player_action_union_params() -> decode.Decoder(PlayerAction) {
   decode.one_of(
     decode.field("quit", decode.success(Nil), fn(x) { decode.success(PlayerActionQuit(x)) }),
     [
@@ -5441,7 +5514,7 @@ pub fn decode_post_player_action_output_struct() -> decode.Decoder(PostPlayerAct
 }
 
 pub fn decode_post_player_action_output_struct_params() -> decode.Decoder(PostPlayerActionOutput) {
-  use action <- decode.optional_field("action", option.None, decode.optional(decode_player_action_union()))
+  use action <- decode.optional_field("action", option.None, decode.optional(decode_player_action_union_params()))
   decode.success(PostPlayerActionOutput(
     action: action,
   ))
@@ -5470,7 +5543,7 @@ pub fn decode_post_union_with_json_name_input_struct() -> decode.Decoder(PostUni
 }
 
 pub fn decode_post_union_with_json_name_input_struct_params() -> decode.Decoder(PostUnionWithJsonNameInput) {
-  use value <- decode.optional_field("value", option.None, decode.optional(decode_union_with_json_name_union()))
+  use value <- decode.optional_field("value", option.None, decode.optional(decode_union_with_json_name_union_params()))
   decode.success(PostUnionWithJsonNameInput(
     value: value,
   ))
@@ -5500,6 +5573,16 @@ pub fn decode_union_with_json_name_union() -> decode.Decoder(UnionWithJsonName) 
   )
 }
 
+pub fn decode_union_with_json_name_union_params() -> decode.Decoder(UnionWithJsonName) {
+  decode.one_of(
+    decode.field("bar", decode.string, fn(x) { decode.success(UnionWithJsonNameBar(x)) }),
+    [
+      decode.field("baz", decode.string, fn(x) { decode.success(UnionWithJsonNameBaz(x)) }),
+      decode.field("foo", decode.string, fn(x) { decode.success(UnionWithJsonNameFoo(x)) }),
+    ],
+  )
+}
+
 pub type PostUnionWithJsonNameOutput {
   PostUnionWithJsonNameOutput(
     value: option.Option(UnionWithJsonName),
@@ -5523,7 +5606,7 @@ pub fn decode_post_union_with_json_name_output_struct() -> decode.Decoder(PostUn
 }
 
 pub fn decode_post_union_with_json_name_output_struct_params() -> decode.Decoder(PostUnionWithJsonNameOutput) {
-  use value <- decode.optional_field("value", option.None, decode.optional(decode_union_with_json_name_union()))
+  use value <- decode.optional_field("value", option.None, decode.optional(decode_union_with_json_name_union_params()))
   decode.success(PostUnionWithJsonNameOutput(
     value: value,
   ))
@@ -6587,9 +6670,10 @@ pub fn build_all_query_string_types_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -6658,9 +6742,10 @@ pub fn build_constant_and_variable_query_string_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -6725,9 +6810,10 @@ pub fn build_constant_query_string_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -6782,9 +6868,10 @@ pub fn build_content_type_parameters_request(
   let body_json = encode_content_type_parameters_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -6851,9 +6938,10 @@ pub fn build_datetime_offsets_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -6918,9 +7006,10 @@ pub fn build_document_type_request(
   let body_json = encode_document_type_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -6981,9 +7070,10 @@ pub fn build_document_type_as_map_value_request(
   let body_json = encode_document_type_as_map_value_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7038,12 +7128,13 @@ pub fn build_document_type_as_payload_request(
   let headers = dict.new()
   let body = case input.document_value {
     option.Some(v) -> bit_array.from_string(json.to_string(fn(j) { j }(v)))
-    option.None -> <<>>
+    option.None -> bit_array.from_string("{}")
   }
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7107,12 +7198,13 @@ pub fn build_duplex_stream_request(
   let headers = dict.new()
   let body = case input.stream {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
-    option.None -> <<>>
+    option.None -> bit_array.from_string("{}")
   }
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7166,12 +7258,13 @@ pub fn build_duplex_stream_with_distinct_streams_request(
   let headers = dict.new()
   let body = case input.stream {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
-    option.None -> <<>>
+    option.None -> bit_array.from_string("{}")
   }
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7229,12 +7322,13 @@ pub fn build_duplex_stream_with_initial_messages_request(
   }
   let body = case input.stream {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
-    option.None -> <<>>
+    option.None -> bit_array.from_string("{}")
   }
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7289,9 +7383,10 @@ pub fn build_empty_input_and_empty_output_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7370,9 +7465,10 @@ pub fn build_endpoint_operation_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7439,9 +7535,10 @@ pub fn build_endpoint_with_host_label_operation_request(
   let body_json = encode_endpoint_with_host_label_operation_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7502,9 +7599,10 @@ pub fn build_fractional_seconds_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7571,9 +7669,10 @@ pub fn build_greeting_with_errors_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7652,9 +7751,10 @@ pub fn build_host_with_path_operation_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7711,9 +7811,10 @@ pub fn build_http_empty_prefix_headers_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7767,13 +7868,14 @@ pub fn build_http_enum_payload_request(
   let query = ""
   let headers = dict.new()
   let body = case input.payload {
-    option.Some(v) -> bit_array.from_string(json.to_string(encode_string_enum_enum(v)))
+    option.Some(v) -> bit_array.from_string(rest.enum_wire_value(encode_string_enum_enum(v)))
     option.None -> <<>>
   }
-  let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let content_type = "text/plain"
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7844,9 +7946,10 @@ pub fn build_http_payload_traits_request(
     option.None -> <<>>
   }
   let content_type = "application/octet-stream"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7907,10 +8010,11 @@ pub fn build_http_payload_traits_with_media_type_request(
     option.Some(v) -> v
     option.None -> <<>>
   }
-  let content_type = "application/octet-stream"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let content_type = "text/plain"
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -7965,12 +8069,13 @@ pub fn build_http_payload_with_structure_request(
   let headers = dict.new()
   let body = case input.nested {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_nested_payload_struct(v)))
-    option.None -> <<>>
+    option.None -> bit_array.from_string("{}")
   }
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8034,12 +8139,13 @@ pub fn build_http_payload_with_union_request(
   let headers = dict.new()
   let body = case input.nested {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_union_payload_union(v)))
-    option.None -> <<>>
+    option.None -> bit_array.from_string("{}")
   }
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8101,9 +8207,10 @@ pub fn build_http_prefix_headers_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8158,9 +8265,10 @@ pub fn build_http_prefix_headers_in_response_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8231,9 +8339,10 @@ pub fn build_http_query_params_only_operation_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8302,9 +8411,10 @@ pub fn build_http_request_with_float_labels_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8373,9 +8483,10 @@ pub fn build_http_request_with_greedy_label_in_path_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8468,9 +8579,10 @@ pub fn build_http_request_with_labels_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8559,9 +8671,10 @@ pub fn build_http_request_with_labels_and_timestamp_format_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8626,9 +8739,10 @@ pub fn build_http_request_with_regex_literal_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8689,9 +8803,10 @@ pub fn build_http_response_code_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8749,9 +8864,10 @@ pub fn build_http_string_payload_request(
     option.None -> <<>>
   }
   let content_type = "text/plain"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8820,9 +8936,10 @@ pub fn build_ignore_query_params_in_response_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8949,9 +9066,10 @@ pub fn build_input_and_output_with_headers_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9018,12 +9136,13 @@ pub fn build_input_stream_request(
   let headers = dict.new()
   let body = case input.stream {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
-    option.None -> <<>>
+    option.None -> bit_array.from_string("{}")
   }
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9088,12 +9207,13 @@ pub fn build_input_stream_with_initial_request_request(
   }
   let body = case input.stream {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
-    option.None -> <<>>
+    option.None -> bit_array.from_string("{}")
   }
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9148,9 +9268,10 @@ pub fn build_json_blobs_request(
   let body_json = encode_json_blobs_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9231,9 +9352,10 @@ pub fn build_json_enums_request(
   let body_json = encode_json_enums_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9314,9 +9436,10 @@ pub fn build_json_int_enums_request(
   let body_json = encode_json_int_enums_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9409,9 +9532,10 @@ pub fn build_json_lists_request(
   let body_json = encode_json_lists_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9488,9 +9612,10 @@ pub fn build_json_maps_request(
   let body_json = encode_json_maps_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9575,9 +9700,10 @@ pub fn build_json_timestamps_request(
   let body_json = encode_json_timestamps_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9638,9 +9764,10 @@ pub fn build_json_unions_request(
   let body_json = encode_json_unions_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9707,9 +9834,10 @@ pub fn build_malformed_accept_with_body_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9776,9 +9904,10 @@ pub fn build_malformed_accept_with_generic_string_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9847,9 +9976,10 @@ pub fn build_malformed_accept_with_payload_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9921,9 +10051,10 @@ pub fn build_malformed_blob_request(
   let body_json = encode_malformed_blob_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10002,9 +10133,10 @@ pub fn build_malformed_boolean_request(
   let body_json = encode_malformed_boolean_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10083,9 +10215,10 @@ pub fn build_malformed_byte_request(
   let body_json = encode_malformed_byte_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10152,9 +10285,10 @@ pub fn build_malformed_content_type_with_body_request(
   let body_json = encode_malformed_content_type_with_body_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10218,9 +10352,10 @@ pub fn build_malformed_content_type_with_generic_string_request(
     option.None -> <<>>
   }
   let content_type = "text/plain"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10293,9 +10428,10 @@ pub fn build_malformed_content_type_without_body_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10360,9 +10496,10 @@ pub fn build_malformed_content_type_without_body_empty_input_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10425,10 +10562,11 @@ pub fn build_malformed_content_type_with_payload_request(
     option.Some(v) -> v
     option.None -> <<>>
   }
-  let content_type = "application/octet-stream"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let content_type = "image/jpeg"
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10507,9 +10645,10 @@ pub fn build_malformed_double_request(
   let body_json = encode_malformed_double_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10588,9 +10727,10 @@ pub fn build_malformed_float_request(
   let body_json = encode_malformed_float_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10669,9 +10809,10 @@ pub fn build_malformed_integer_request(
   let body_json = encode_malformed_integer_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10738,9 +10879,10 @@ pub fn build_malformed_list_request(
   let body_json = encode_malformed_list_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10819,9 +10961,10 @@ pub fn build_malformed_long_request(
   let body_json = encode_malformed_long_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10888,9 +11031,10 @@ pub fn build_malformed_map_request(
   let body_json = encode_malformed_map_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10961,9 +11105,10 @@ pub fn build_malformed_request_body_request(
   let body_json = encode_malformed_request_body_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11042,9 +11187,10 @@ pub fn build_malformed_short_request(
   let body_json = encode_malformed_short_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11109,9 +11255,10 @@ pub fn build_malformed_string_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11178,9 +11325,10 @@ pub fn build_malformed_timestamp_body_date_time_request(
   let body_json = encode_malformed_timestamp_body_date_time_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11247,9 +11395,10 @@ pub fn build_malformed_timestamp_body_default_request(
   let body_json = encode_malformed_timestamp_body_default_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11316,9 +11465,10 @@ pub fn build_malformed_timestamp_body_http_date_request(
   let body_json = encode_malformed_timestamp_body_http_date_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11383,9 +11533,10 @@ pub fn build_malformed_timestamp_header_date_time_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11450,9 +11601,10 @@ pub fn build_malformed_timestamp_header_default_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11517,9 +11669,10 @@ pub fn build_malformed_timestamp_header_epoch_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11584,9 +11737,10 @@ pub fn build_malformed_timestamp_path_default_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11651,9 +11805,10 @@ pub fn build_malformed_timestamp_path_epoch_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11718,9 +11873,10 @@ pub fn build_malformed_timestamp_path_http_date_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11785,9 +11941,10 @@ pub fn build_malformed_timestamp_query_default_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11852,9 +12009,10 @@ pub fn build_malformed_timestamp_query_epoch_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11919,9 +12077,10 @@ pub fn build_malformed_timestamp_query_http_date_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11988,9 +12147,10 @@ pub fn build_malformed_union_request(
   let body_json = encode_malformed_union_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12043,9 +12203,10 @@ pub fn build_media_type_header_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12124,9 +12285,10 @@ pub fn build_no_input_and_no_output_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12187,9 +12349,10 @@ pub fn build_no_input_and_output_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12256,9 +12419,10 @@ pub fn build_null_and_empty_headers_client_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12325,9 +12489,10 @@ pub fn build_null_and_empty_headers_server_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12402,9 +12567,10 @@ pub fn build_omits_null_serializes_empty_string_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12514,9 +12680,10 @@ pub fn build_omits_serializing_empty_lists_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12583,9 +12750,10 @@ pub fn build_operation_with_defaults_request(
   let body_json = encode_operation_with_defaults_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12646,9 +12814,10 @@ pub fn build_operation_with_nested_structure_request(
   let body_json = encode_operation_with_nested_structure_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12715,9 +12884,10 @@ pub fn build_output_stream_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12783,9 +12953,10 @@ pub fn build_output_stream_with_initial_response_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12846,9 +13017,10 @@ pub fn build_post_player_action_request(
   let body_json = encode_post_player_action_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12909,9 +13081,10 @@ pub fn build_post_union_with_json_name_request(
   let body_json = encode_post_union_with_json_name_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12988,9 +13161,10 @@ pub fn build_put_with_content_encoding_request(
   let body_json = encode_put_with_content_encoding_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13055,9 +13229,10 @@ pub fn build_query_idempotency_token_auto_fill_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13126,9 +13301,10 @@ pub fn build_query_params_as_string_list_map_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13197,9 +13373,10 @@ pub fn build_query_precedence_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13254,9 +13431,10 @@ pub fn build_recursive_shapes_request(
   let body_json = encode_recursive_shapes_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13311,9 +13489,10 @@ pub fn build_response_code_http_fallback_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13380,9 +13559,10 @@ pub fn build_response_code_required_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13479,9 +13659,10 @@ pub fn build_simple_scalar_properties_request(
   let body_json = encode_simple_scalar_properties_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13546,9 +13727,10 @@ pub fn build_sparse_json_lists_request(
   let body_json = encode_sparse_json_lists_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13625,9 +13807,10 @@ pub fn build_sparse_json_maps_request(
   let body_json = encode_sparse_json_maps_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13689,9 +13872,10 @@ pub fn build_streaming_traits_request(
     option.None -> <<>>
   }
   let content_type = "application/octet-stream"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13765,9 +13949,10 @@ pub fn build_streaming_traits_require_length_request(
     option.None -> <<>>
   }
   let content_type = "application/octet-stream"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13822,10 +14007,11 @@ pub fn build_streaming_traits_with_media_type_request(
     option.Some(v) -> v
     option.None -> <<>>
   }
-  let content_type = "application/octet-stream"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let content_type = "text/plain"
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13890,9 +14076,10 @@ pub fn build_test_body_structure_request(
   let body_json = encode_test_body_structure_body(input)
   let body = bit_array.from_string(json.to_string(body_json))
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -13959,9 +14146,10 @@ pub fn build_test_get_no_input_no_payload_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -14020,9 +14208,10 @@ pub fn build_test_get_no_payload_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -14084,9 +14273,10 @@ pub fn build_test_payload_blob_request(
     option.None -> <<>>
   }
   let content_type = "application/octet-stream"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -14145,12 +14335,13 @@ pub fn build_test_payload_structure_request(
   }
   let body = case input.payload_config {
     option.Some(v) -> bit_array.from_string(json.to_string(encode_payload_config_struct(v)))
-    option.None -> <<>>
+    option.None -> bit_array.from_string("{}")
   }
   let content_type = "application/json"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -14227,9 +14418,10 @@ pub fn build_test_post_no_input_no_payload_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -14288,9 +14480,10 @@ pub fn build_test_post_no_payload_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -14373,9 +14566,10 @@ pub fn build_timestamp_format_headers_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -14454,9 +14648,10 @@ pub fn build_unit_input_and_output_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers

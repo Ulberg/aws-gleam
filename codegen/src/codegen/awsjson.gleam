@@ -939,7 +939,26 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
     <> ") {\n"
     <> dec_body
     <> "}\n\n"
-  enc <> dec
+  let dec_params_body = case members {
+    [] -> "  decode.failure(" <> name <> "Empty, \"empty union\")\n"
+    [first, ..rest] ->
+      "  decode.one_of(\n    "
+      <> emit_union_branch_params(name, first)
+      <> ",\n    ["
+      <> list.fold(rest, "", fn(acc, m) {
+        acc <> "\n      " <> emit_union_branch_params(name, m) <> ","
+      })
+      <> "\n    ],\n  )\n"
+  }
+  let dec_params =
+    "pub fn decode_"
+    <> snake
+    <> "_union_params() -> decode.Decoder("
+    <> name
+    <> ") {\n"
+    <> dec_params_body
+    <> "}\n\n"
+  enc <> dec <> dec_params
 }
 
 fn emit_union_branch(union_name: String, m: MemberDef) -> String {
@@ -947,6 +966,17 @@ fn emit_union_branch(union_name: String, m: MemberDef) -> String {
   <> m.json_name
   <> "\", "
   <> types.json_decoder(m.target)
+  <> ", fn(x) { decode.success("
+  <> union_name
+  <> pascalize_member(m.member_name)
+  <> "(x)) })"
+}
+
+fn emit_union_branch_params(union_name: String, m: MemberDef) -> String {
+  "decode.field(\""
+  <> m.member_name
+  <> "\", "
+  <> types.json_decoder_params(m.target)
   <> ", fn(x) { decode.success("
   <> union_name
   <> pascalize_member(m.member_name)

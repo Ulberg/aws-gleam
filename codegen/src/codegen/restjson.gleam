@@ -884,7 +884,30 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
     <> ") {\n"
     <> dec_body
     <> "}\n\n"
-  enc <> dec
+  // Parallel decoder keyed by member names — used by the protocol-test
+  // dispatchers. Unions in `params` have variant tags identified by
+  // Smithy member names (lowercase `foo`), while the wire form uses
+  // `@jsonName` overrides (uppercase `FOO`).
+  let dec_params_body = case members {
+    [] -> "  decode.failure(" <> name <> "Empty, \"empty union\")\n"
+    [first, ..rest] ->
+      "  decode.one_of(\n    "
+      <> emit_union_branch_params(name, first)
+      <> ",\n    ["
+      <> list.fold(rest, "", fn(acc, m) {
+        acc <> "\n      " <> emit_union_branch_params(name, m) <> ","
+      })
+      <> "\n    ],\n  )\n"
+  }
+  let dec_params =
+    "pub fn decode_"
+    <> snake
+    <> "_union_params() -> decode.Decoder("
+    <> name
+    <> ") {\n"
+    <> dec_params_body
+    <> "}\n\n"
+  enc <> dec <> dec_params
 }
 
 fn emit_union_branch(union_name: String, m: MemberDef) -> String {
@@ -892,6 +915,17 @@ fn emit_union_branch(union_name: String, m: MemberDef) -> String {
   <> m.json_name
   <> "\", "
   <> types.json_decoder(m.target)
+  <> ", fn(x) { decode.success("
+  <> union_name
+  <> pascalize_member(m.member_name)
+  <> "(x)) })"
+}
+
+fn emit_union_branch_params(union_name: String, m: MemberDef) -> String {
+  "decode.field(\""
+  <> m.member_name
+  <> "\", "
+  <> types.json_decoder_params(m.target)
   <> ", fn(x) { decode.success("
   <> union_name
   <> pascalize_member(m.member_name)
@@ -995,7 +1029,7 @@ fn emit_build(
   <> query_setup
   <> header_setup
   <> body_setup
-  <> "  let headers = case content_type {\n    \"\" -> headers\n    _ -> dict.insert(headers, \"Content-Type\", content_type)\n  }\n  let headers = case content_type {\n    \"\" -> headers\n    _ -> dict.insert(headers, \"Content-Length\", int.to_string(bit_array.byte_size(body)))\n  }\n  let path = rest.build_path(path, query)\n  #(\""
+  <> "  let headers = case content_type, dict.has_key(headers, \"Content-Type\") {\n    \"\", _ -> headers\n    _, True -> headers\n    _, False -> dict.insert(headers, \"Content-Type\", content_type)\n  }\n  let headers = case content_type {\n    \"\" -> headers\n    _ -> dict.insert(headers, \"Content-Length\", int.to_string(bit_array.byte_size(body)))\n  }\n  let path = rest.build_path(path, query)\n  #(\""
   <> http.method
   <> "\", path, headers, body)\n}\n\n"
 }
@@ -1135,21 +1169,53 @@ fn emit_payload_body(m: MemberDef) -> String {
   // @httpPayload — the member's value IS the body. For blob members
   // the body is the raw bytes; for struct/string members it's the
   // JSON-encoded value; for primitive strings, the raw string.
+  // `@mediaType` (on the member or its target shape) overrides
+  // Content-Type for opaque-payload members.
   case m.target {
-    types.RBlob ->
+    types.RBlob -> {
+      let ct = case m.media_type {
+        Some(s) -> s
+        None -> "application/octet-stream"
+      }
       "  let body = case input."
       <> m.snake_name
-      <> " {\n    option.Some(v) -> v\n    option.None -> <<>>\n  }\n  let content_type = \"application/octet-stream\"\n"
-    RPrim(primitive: types.PString) ->
+      <> " {\n    option.Some(v) -> v\n    option.None -> <<>>\n  }\n  let content_type = \""
+      <> ct
+      <> "\"\n"
+    }
+    RPrim(primitive: types.PString) -> {
+      let ct = case m.media_type {
+        Some(s) -> s
+        None -> "text/plain"
+      }
       "  let body = case input."
       <> m.snake_name
-      <> " {\n    option.Some(v) -> bit_array.from_string(v)\n    option.None -> <<>>\n  }\n  let content_type = \"text/plain\"\n"
+      <> " {\n    option.Some(v) -> bit_array.from_string(v)\n    option.None -> <<>>\n  }\n  let content_type = \""
+      <> ct
+      <> "\"\n"
+    }
+    REnum(..) -> {
+      let ct = case m.media_type {
+        Some(s) -> s
+        None -> "text/plain"
+      }
+      "  let body = case input."
+      <> m.snake_name
+      <> " {\n    option.Some(v) -> bit_array.from_string(rest.enum_wire_value("
+      <> types.json_encoder(m.target)
+      <> "(v)))\n    option.None -> <<>>\n  }\n  let content_type = \""
+      <> ct
+      <> "\"\n"
+    }
     _ ->
+      // Absent struct / document `@httpPayload` ⇒ `{}` rather than
+      // empty bytes — restJson1 servers expect to JSON-parse a
+      // structured body even when every field is null.
       "  let body = case input."
       <> m.snake_name
       <> " {\n    option.Some(v) -> bit_array.from_string(json.to_string("
       <> types.json_encoder(m.target)
-      <> "(v)))\n    option.None -> <<>>\n  }\n  let content_type = \"application/json\"\n"
+      <> "(v)))\n    option.None -> bit_array.from_string(\"{}\")\n  }\n  let content_type = \"application/json\"\n"
   }
 }
 

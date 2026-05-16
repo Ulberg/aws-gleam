@@ -1822,7 +1822,7 @@ pub fn decode_http_payload_with_union_input_output_struct() -> decode.Decoder(Ht
 }
 
 pub fn decode_http_payload_with_union_input_output_struct_params() -> decode.Decoder(HttpPayloadWithUnionInputOutput) {
-  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_union_payload_union()))
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_union_payload_union_params()))
   decode.success(HttpPayloadWithUnionInputOutput(
     nested: nested,
   ))
@@ -1855,6 +1855,14 @@ pub fn encode_union_payload_union(v: UnionPayload) -> json.Json {
 }
 
 pub fn decode_union_payload_union() -> decode.Decoder(UnionPayload) {
+  decode.one_of(
+    decode.field("greeting", decode.string, fn(x) { decode.success(UnionPayloadGreeting(x)) }),
+    [
+    ],
+  )
+}
+
+pub fn decode_union_payload_union_params() -> decode.Decoder(UnionPayload) {
   decode.one_of(
     decode.field("greeting", decode.string, fn(x) { decode.success(UnionPayloadGreeting(x)) }),
     [
@@ -7550,7 +7558,7 @@ pub fn decode_xml_unions_request_struct() -> decode.Decoder(XmlUnionsRequest) {
 }
 
 pub fn decode_xml_unions_request_struct_params() -> decode.Decoder(XmlUnionsRequest) {
-  use union_value <- decode.optional_field("unionValue", option.None, decode.optional(decode_xml_union_shape_union()))
+  use union_value <- decode.optional_field("unionValue", option.None, decode.optional(decode_xml_union_shape_union_params()))
   decode.success(XmlUnionsRequest(
     union_value: union_value,
   ))
@@ -7618,6 +7626,23 @@ pub fn decode_xml_union_shape_union() -> decode.Decoder(XmlUnionShape) {
       decode.field("stringValue", decode.string, fn(x) { decode.success(XmlUnionShapeStringValue(x)) }),
       decode.field("structValue", decode_xml_nested_union_struct_struct(), fn(x) { decode.success(XmlUnionShapeStructValue(x)) }),
       decode.field("unionValue", decode_xml_union_shape_union(), fn(x) { decode.success(XmlUnionShapeUnionValue(x)) }),
+    ],
+  )
+}
+
+pub fn decode_xml_union_shape_union_params() -> decode.Decoder(XmlUnionShape) {
+  decode.one_of(
+    decode.field("booleanValue", decode.bool, fn(x) { decode.success(XmlUnionShapeBooleanValue(x)) }),
+    [
+      decode.field("byteValue", decode.int, fn(x) { decode.success(XmlUnionShapeByteValue(x)) }),
+      decode.field("doubleValue", json_float.decoder(), fn(x) { decode.success(XmlUnionShapeDoubleValue(x)) }),
+      decode.field("floatValue", json_float.decoder(), fn(x) { decode.success(XmlUnionShapeFloatValue(x)) }),
+      decode.field("integerValue", decode.int, fn(x) { decode.success(XmlUnionShapeIntegerValue(x)) }),
+      decode.field("longValue", decode.int, fn(x) { decode.success(XmlUnionShapeLongValue(x)) }),
+      decode.field("shortValue", decode.int, fn(x) { decode.success(XmlUnionShapeShortValue(x)) }),
+      decode.field("stringValue", decode.string, fn(x) { decode.success(XmlUnionShapeStringValue(x)) }),
+      decode.field("structValue", decode_xml_nested_union_struct_struct_params(), fn(x) { decode.success(XmlUnionShapeStructValue(x)) }),
+      decode.field("unionValue", decode_xml_union_shape_union_params(), fn(x) { decode.success(XmlUnionShapeUnionValue(x)) }),
     ],
   )
 }
@@ -7799,7 +7824,7 @@ pub fn decode_xml_unions_response_struct() -> decode.Decoder(XmlUnionsResponse) 
 }
 
 pub fn decode_xml_unions_response_struct_params() -> decode.Decoder(XmlUnionsResponse) {
-  use union_value <- decode.optional_field("unionValue", option.None, decode.optional(decode_xml_union_shape_union()))
+  use union_value <- decode.optional_field("unionValue", option.None, decode.optional(decode_xml_union_shape_union_params()))
   decode.success(XmlUnionsResponse(
     union_value: union_value,
   ))
@@ -7980,9 +8005,10 @@ pub fn build_all_query_string_types_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8032,9 +8058,10 @@ pub fn build_body_with_xml_name_request(
   let body_xml = encode_body_with_xml_name_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8112,9 +8139,10 @@ pub fn build_constant_and_variable_query_string_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8179,9 +8207,10 @@ pub fn build_constant_query_string_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8231,9 +8260,10 @@ pub fn build_content_type_parameters_request(
   let body_xml = encode_content_type_parameters_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8303,9 +8333,10 @@ pub fn build_datetime_offsets_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8363,9 +8394,10 @@ pub fn build_empty_input_and_empty_output_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8447,9 +8479,10 @@ pub fn build_endpoint_operation_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8514,9 +8547,10 @@ pub fn build_endpoint_with_host_label_header_operation_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8578,9 +8612,10 @@ pub fn build_endpoint_with_host_label_operation_request(
   let body_xml = encode_endpoint_with_host_label_operation_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8630,9 +8665,10 @@ pub fn build_flattened_xml_map_request(
   let body_xml = encode_flattened_xml_map_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8691,9 +8727,10 @@ pub fn build_flattened_xml_map_with_xml_name_request(
   let body_xml = encode_flattened_xml_map_with_xml_name_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8763,9 +8800,10 @@ pub fn build_flattened_xml_map_with_xml_namespace_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8835,9 +8873,10 @@ pub fn build_fractional_seconds_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8907,9 +8946,10 @@ pub fn build_greeting_with_errors_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -8975,9 +9015,10 @@ pub fn build_http_empty_prefix_headers_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9038,9 +9079,10 @@ pub fn build_http_enum_payload_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9101,9 +9143,10 @@ pub fn build_http_payload_traits_request(
     option.None -> <<>>
   }
   let content_type = "application/octet-stream"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9165,9 +9208,10 @@ pub fn build_http_payload_traits_with_media_type_request(
     option.None -> <<>>
   }
   let content_type = "application/octet-stream"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9225,9 +9269,10 @@ pub fn build_http_payload_with_member_xml_name_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9297,9 +9342,10 @@ pub fn build_http_payload_with_structure_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9369,9 +9415,10 @@ pub fn build_http_payload_with_union_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9428,9 +9475,10 @@ pub fn build_http_payload_with_xml_name_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9500,9 +9548,10 @@ pub fn build_http_payload_with_xml_namespace_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9572,9 +9621,10 @@ pub fn build_http_payload_with_xml_namespace_and_prefix_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9649,9 +9699,10 @@ pub fn build_http_prefix_headers_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9729,9 +9780,10 @@ pub fn build_http_request_with_float_labels_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9800,9 +9852,10 @@ pub fn build_http_request_with_greedy_label_in_path_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9895,9 +9948,10 @@ pub fn build_http_request_with_labels_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -9986,9 +10040,10 @@ pub fn build_http_request_with_labels_and_timestamp_format_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10049,9 +10104,10 @@ pub fn build_http_response_code_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10112,9 +10168,10 @@ pub fn build_http_string_payload_request(
     option.None -> <<>>
   }
   let content_type = "text/plain"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10183,9 +10240,10 @@ pub fn build_ignore_query_params_in_response_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10307,9 +10365,10 @@ pub fn build_input_and_output_with_headers_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10368,9 +10427,10 @@ pub fn build_nested_xml_maps_request(
   let body_xml = encode_nested_xml_maps_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10429,9 +10489,10 @@ pub fn build_nested_xml_map_with_xml_name_request(
   let body_xml = encode_nested_xml_map_with_xml_name_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10513,9 +10574,10 @@ pub fn build_no_input_and_no_output_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10576,9 +10638,10 @@ pub fn build_no_input_and_output_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10648,9 +10711,10 @@ pub fn build_null_and_empty_headers_client_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10720,9 +10784,10 @@ pub fn build_null_and_empty_headers_server_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10800,9 +10865,10 @@ pub fn build_omits_null_serializes_empty_string_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10868,9 +10934,10 @@ pub fn build_put_with_content_encoding_request(
   let body_xml = encode_put_with_content_encoding_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -10935,9 +11002,10 @@ pub fn build_query_idempotency_token_auto_fill_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11006,9 +11074,10 @@ pub fn build_query_params_as_string_list_map_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11077,9 +11146,10 @@ pub fn build_query_precedence_request(
   let headers = dict.new()
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11129,9 +11199,10 @@ pub fn build_recursive_shapes_request(
   let body_xml = encode_recursive_shapes_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11194,9 +11265,10 @@ pub fn build_simple_scalar_properties_request(
   let body_xml = encode_simple_scalar_properties_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11282,9 +11354,10 @@ pub fn build_timestamp_format_headers_request(
   }
   let body = <<>>
   let content_type = ""
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11343,9 +11416,10 @@ pub fn build_xml_attributes_request(
   let body_xml = encode_xml_attributes_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11406,9 +11480,10 @@ pub fn build_xml_attributes_in_middle_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11478,9 +11553,10 @@ pub fn build_xml_attributes_on_payload_request(
     option.None -> <<>>
   }
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11548,9 +11624,10 @@ pub fn build_xml_blobs_request(
   let body_xml = encode_xml_blobs_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11609,9 +11686,10 @@ pub fn build_xml_empty_blobs_request(
   let body_xml = encode_xml_empty_blobs_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11670,9 +11748,10 @@ pub fn build_xml_empty_lists_request(
   let body_xml = encode_xml_empty_lists_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11731,9 +11810,10 @@ pub fn build_xml_empty_maps_request(
   let body_xml = encode_xml_empty_maps_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11792,9 +11872,10 @@ pub fn build_xml_empty_strings_request(
   let body_xml = encode_xml_empty_strings_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11853,9 +11934,10 @@ pub fn build_xml_enums_request(
   let body_xml = encode_xml_enums_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11914,9 +11996,10 @@ pub fn build_xml_int_enums_request(
   let body_xml = encode_xml_int_enums_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -11975,9 +12058,10 @@ pub fn build_xml_lists_request(
   let body_xml = encode_xml_lists_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12036,9 +12120,10 @@ pub fn build_xml_maps_request(
   let body_xml = encode_xml_maps_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12097,9 +12182,10 @@ pub fn build_xml_maps_xml_name_request(
   let body_xml = encode_xml_maps_xml_name_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12158,9 +12244,10 @@ pub fn build_xml_map_with_xml_namespace_request(
   let body_xml = encode_xml_map_with_xml_namespace_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12219,9 +12306,10 @@ pub fn build_xml_namespaces_request(
   let body_xml = encode_xml_namespaces_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12280,9 +12368,10 @@ pub fn build_xml_timestamps_request(
   let body_xml = encode_xml_timestamps_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
@@ -12341,9 +12430,10 @@ pub fn build_xml_unions_request(
   let body_xml = encode_xml_unions_body_xml(input)
   let body = bit_array.from_string(body_xml)
   let content_type = "application/xml"
-  let headers = case content_type {
-    "" -> headers
-    _ -> dict.insert(headers, "Content-Type", content_type)
+  let headers = case content_type, dict.has_key(headers, "Content-Type") {
+    "", _ -> headers
+    _, True -> headers
+    _, False -> dict.insert(headers, "Content-Type", content_type)
   }
   let headers = case content_type {
     "" -> headers
