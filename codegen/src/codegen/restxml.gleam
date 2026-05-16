@@ -419,64 +419,30 @@ fn emit_operation(
   let in_info = resolve_io_type(model, pascal <> "Input", in_r)
   let out_info = resolve_io_type(model, pascal <> "Output", out_r)
 
+  // For Unit inputs we synthesise a singleton record + member-keyed
+  // params decoder. `_input_struct` is the params decoder reached
+  // by `decode_<op>_input` (the dispatcher's params-blob entry
+  // point). The corresponding JSON encoder is omitted: restXml wire
+  // is XML, so no caller ever serialises Unit input as JSON.
   let synth_in = case in_info.synthesise {
     True ->
       emit_record_def(in_info.type_name, [])
-      <> code.render(struct_codec.encoder(
-        "encode_" <> snake <> "_input_struct",
-        in_info.type_name,
-        [],
-        False,
-        False,
-      ))
-      <> "\n"
       <> code.render(struct_codec.decoder(
         "decode_" <> snake <> "_input_struct",
         in_info.type_name,
         [],
-        False,
+        True,
       ))
       <> "\n"
     False -> ""
   }
+  // Unit outputs: the XML response decoder builds the Unit value
+  // directly, so no JSON output codec is needed. The synthesised
+  // record def is still useful for the public typed surface.
   let synth_out = case out_info.synthesise {
-    True ->
-      emit_record_def(out_info.type_name, [])
-      <> code.render(struct_codec.encoder(
-        "encode_" <> snake <> "_output_struct",
-        out_info.type_name,
-        [],
-        False,
-        False,
-      ))
-      <> "\n"
-      <> code.render(struct_codec.decoder(
-        "decode_" <> snake <> "_output_struct",
-        out_info.type_name,
-        [],
-        False,
-      ))
-      <> "\n"
+    True -> emit_record_def(out_info.type_name, [])
     False -> ""
   }
-  let in_struct_encoder_name = case in_info.synthesise {
-    True -> "encode_" <> snake <> "_input_struct"
-    False ->
-      "encode_" <> stringutils.pascal_to_snake(in_info.type_name) <> "_struct"
-  }
-  let out_struct_decoder_name = case out_info.synthesise {
-    True -> "decode_" <> snake <> "_output_struct"
-    False ->
-      "decode_" <> stringutils.pascal_to_snake(out_info.type_name) <> "_struct"
-  }
-  let in_encoder =
-    "pub fn encode_"
-    <> snake
-    <> "_input(input: "
-    <> in_info.type_name
-    <> ") -> String {\n  json.to_string("
-    <> in_struct_encoder_name
-    <> "(input))\n}\n\n"
   let in_decoder =
     emit_parse_via_decoder(
       "decode_" <> snake <> "_input",
@@ -489,12 +455,6 @@ fn emit_operation(
           <> "_struct_params"
       },
     )
-  let out_decoder =
-    emit_parse_via_decoder(
-      "decode_" <> snake <> "_output",
-      out_info.type_name,
-      out_struct_decoder_name,
-    )
   let in_members = in_info.members
   let body_encoder =
     emit_body_encoder_xml(snake, in_info.type_name, local, in_info.synthesise)
@@ -504,9 +464,7 @@ fn emit_operation(
   "\n"
   <> synth_in
   <> synth_out
-  <> in_encoder
   <> in_decoder
-  <> out_decoder
   <> body_encoder
   <> build
   <> parse
@@ -713,31 +671,30 @@ fn emit_int_enum_codec(
 
 fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
   let snake = stringutils.pascal_to_snake(name)
-  let json_pair =
-    [
-      struct_codec.encoder(
-        "encode_" <> snake <> "_struct",
-        name,
-        members,
-        False,
-        False,
-      ),
-      struct_codec.decoder(
-        "decode_" <> snake <> "_struct",
-        name,
-        members,
-        False,
-      ),
-      struct_codec.decoder(
-        "decode_" <> snake <> "_struct_params",
-        name,
-        members,
-        True,
-      ),
-    ]
-    |> list.map(code.render)
-    |> list.fold("", fn(acc, s) { acc <> s <> "\n" })
-  json_pair
+  // restXml wire is XML, so the wire-keyed JSON decoder
+  // (`decode_<X>_struct`) is unreachable from build/parse and is
+  // dropped — that's where the bulk of the previous LOC bloat lived
+  // (`optional_field` plumbing per member). The JSON encoder
+  // survives because union encoders (`@httpPayload` fallback) refer
+  // to it; the params decoder survives because the dispatcher's
+  // `decode_<op>_input` chain reaches it.
+  [
+    struct_codec.encoder(
+      "encode_" <> snake <> "_struct",
+      name,
+      members,
+      False,
+      False,
+    ),
+    struct_codec.decoder(
+      "decode_" <> snake <> "_struct_params",
+      name,
+      members,
+      True,
+    ),
+  ]
+  |> list.map(code.render)
+  |> list.fold("", fn(acc, s) { acc <> s <> "\n" })
   <> emit_struct_xml_inner_encoder(
     name,
     "encode_" <> snake <> "_xml_inner",
@@ -1016,6 +973,12 @@ fn xml_inner_expr_for_list_element(target: Resolved) -> String {
   }
 }
 
+/// restXml union codec: the wire-keyed decoder is unreachable
+/// (build/parse use XML), so it is dropped. The encoder survives
+/// because `@httpPayload` Union members fall back to a JSON body —
+/// proper XML union emission is not yet implemented (see the file
+/// header). The `_union_params` decoder is reached by the
+/// dispatcher's params-blob decode chain.
 fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
   let snake = stringutils.pascal_to_snake(name)
   let enc =
@@ -1036,30 +999,10 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       <> "(x))])\n"
     })
     <> "  }\n}\n\n"
-  let dec_body = case members {
-    [] -> "  decode.failure(" <> name <> "Empty, \"empty union\")\n"
-    [first, ..rest] ->
-      "  decode.one_of(\n    "
-      <> emit_union_branch(name, first)
-      <> ",\n    ["
-      <> list.fold(rest, "", fn(acc, m) {
-        acc <> "\n      " <> emit_union_branch(name, m) <> ","
-      })
-      <> "\n    ],\n  )\n"
-  }
   let lazy_wrap = case members {
     [] -> ""
     _ -> "  use <- decode.recursive\n"
   }
-  let dec =
-    "pub fn decode_"
-    <> snake
-    <> "_union() -> decode.Decoder("
-    <> name
-    <> ") {\n"
-    <> lazy_wrap
-    <> dec_body
-    <> "}\n\n"
   let dec_params_body = case members {
     [] -> "  decode.failure(" <> name <> "Empty, \"empty union\")\n"
     [first, ..rest] ->
@@ -1080,18 +1023,7 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
     <> lazy_wrap
     <> dec_params_body
     <> "}\n\n"
-  enc <> dec <> dec_params
-}
-
-fn emit_union_branch(union_name: String, m: MemberDef) -> String {
-  "decode.field(\""
-  <> m.json_name
-  <> "\", "
-  <> types.json_decoder(m.target)
-  <> ", fn(x) { decode.success("
-  <> union_name
-  <> pascalize_member(m.member_name)
-  <> "(x)) })"
+  enc <> dec_params
 }
 
 fn emit_union_branch_params(union_name: String, m: MemberDef) -> String {

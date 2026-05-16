@@ -262,6 +262,11 @@ fn do_render_expr(c: Code, indent: Int) -> String {
     Concat(parts: ps) -> render_concat(ps, indent)
     Tuple(items: xs) -> render_tuple(xs, indent)
     ListLit(items: xs, tail: t) -> render_list(xs, t, indent)
+    // `case` is itself an expression in Gleam; render it inline
+    // without the explicit-block braces the fallback would wrap it
+    // in. Skipping the wrap matches the hand-written style and
+    // avoids artificial indentation on `let x = case ... { ... }`.
+    Case(..) -> string.trim_start(do_render(c, indent))
     _ ->
       // Larger constructs in expression position fall back to the
       // statement renderer — Gleam allows blocks as expressions when
