@@ -44,15 +44,21 @@ pub type ClientError {
   ServiceError(status: Int, error_type: String, body: BitArray)
 }
 
-/// Sensible default config given a credentials provider and a region.
+/// Sensible default config given a region. Credentials default to
+/// the standard chain (env → web-identity → SSO → profile → process →
+/// ECS → IMDS); callers swap in a custom provider via
+/// `with_credentials_provider`, matching the convention every other
+/// AWS SDK follows.
 pub fn default_config(
-  provider: Provider,
   region: String,
   endpoint_prefix: String,
   signing_name: String,
 ) -> ClientConfig {
   ClientConfig(
-    provider: provider,
+    provider: credentials.default_chain(
+      send: http_send.default_send,
+      profile: "default",
+    ),
     region: region,
     endpoint_prefix: endpoint_prefix,
     signing_name: signing_name,
@@ -64,6 +70,15 @@ pub fn default_config(
 
 pub fn default_endpoint(endpoint_prefix: String, region: String) -> String {
   "https://" <> endpoint_prefix <> "." <> region <> ".amazonaws.com"
+}
+
+/// Override the credentials provider — use for non-default profiles,
+/// in-process static creds, or any custom resolution chain.
+pub fn with_credentials_provider(
+  config: ClientConfig,
+  provider: Provider,
+) -> ClientConfig {
+  ClientConfig(..config, provider: provider)
 }
 
 pub fn with_endpoint_url(config: ClientConfig, url: String) -> ClientConfig {

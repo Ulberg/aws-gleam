@@ -19,33 +19,27 @@ pub opaque type Client {
   Client(config: awsjson_client.ClientConfig)
 }
 
-/// Build a Client given a credentials provider and an AWS region. The
-/// generated module hard-codes the service's endpoint prefix and SigV4
-/// signing name; everything else is configurable via the `with_*`
-/// helpers below.
-pub fn new(
-  provider provider: credentials.Provider,
-  region region: String,
-) -> Client {
-  Client(config: awsjson_client.default_config(
-    provider,
-    region,
-    "jsonrpc10",
-    "jsonrpc10",
-  ))
+/// Build a Client for an AWS region. Credentials resolve through
+/// the default chain (env → web-identity → SSO → profile → process
+/// → ECS → IMDS); use `with_credentials_provider` to override.
+pub fn new(region region: String) -> Client {
+  Client(awsjson_client.default_config(region, "jsonrpc10", "jsonrpc10"))
+}
+
+/// Override the credentials provider — use for non-default
+/// profiles, in-process static credentials, or a custom chain.
+pub fn with_credentials_provider(client: Client, provider: credentials.Provider) -> Client {
+  Client(awsjson_client.with_credentials_provider(client.config, provider))
 }
 
 /// Override the endpoint URL (LocalStack, FIPS endpoints, custom DNS).
 pub fn with_endpoint_url(client: Client, url: String) -> Client {
-  Client(config: awsjson_client.with_endpoint_url(client.config, url))
+  Client(awsjson_client.with_endpoint_url(client.config, url))
 }
 
 /// Swap the HTTP transport — useful for canned-response test doubles.
-pub fn with_http_send(
-  client: Client,
-  send: http_send.Send,
-) -> Client {
-  Client(config: awsjson_client.with_http_send(client.config, send))
+pub fn with_http_send(client: Client, send: http_send.Send) -> Client {
+  Client(awsjson_client.with_http_send(client.config, send))
 }
 
 pub type ContentTypeParametersInput {

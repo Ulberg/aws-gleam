@@ -15,6 +15,7 @@
 //// the protocol-test runner's `skip_no_dispatcher` bucket rather than
 //// producing broken Gleam.
 
+import codegen/client
 import codegen/types.{
   type MemberDef, type Resolved, REnum, RIntEnum, RList, RMap, RStruct, RUnion,
 }
@@ -192,40 +193,7 @@ fn string_field_under(
 }
 
 fn emit_client(metadata: Metadata) -> String {
-  "pub opaque type Client {
-  Client(config: awsjson_client.ClientConfig)
-}
-
-/// Build a Client given a credentials provider and an AWS region. The
-/// generated module hard-codes the service's endpoint prefix and SigV4
-/// signing name; everything else is configurable via the `with_*`
-/// helpers below.
-pub fn new(
-  provider provider: credentials.Provider,
-  region region: String,
-) -> Client {
-  Client(config: awsjson_client.default_config(
-    provider,
-    region,
-    \"" <> metadata.endpoint_prefix <> "\",
-    \"" <> metadata.signing_name <> "\",
-  ))
-}
-
-/// Override the endpoint URL (LocalStack, FIPS endpoints, custom DNS).
-pub fn with_endpoint_url(client: Client, url: String) -> Client {
-  Client(config: awsjson_client.with_endpoint_url(client.config, url))
-}
-
-/// Swap the HTTP transport — useful for canned-response test doubles.
-pub fn with_http_send(
-  client: Client,
-  send: http_send.Send,
-) -> Client {
-  Client(config: awsjson_client.with_http_send(client.config, send))
-}
-
-"
+  client.render(metadata.endpoint_prefix, metadata.signing_name)
 }
 
 fn emit_invoke(spec: OpSpec) -> String {

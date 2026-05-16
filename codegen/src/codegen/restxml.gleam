@@ -24,6 +24,7 @@
 ////     does not yet read response headers into the typed output.
 ////   * Unions and maps in XML bodies are not yet implemented.
 
+import codegen/client
 import codegen/types.{
   type MemberDef, type Resolved, Body, Header, Label, Payload, PrefixHeaders,
   Query, QueryParams, RBlob, RDocument, REnum, RIntEnum, RList, RMap, RPrim,
@@ -192,31 +193,7 @@ fn string_field_under(
 }
 
 fn emit_client(metadata: Metadata) -> String {
-  "pub opaque type Client {
-  Client(config: awsjson_client.ClientConfig)
-}
-
-pub fn new(
-  provider provider: credentials.Provider,
-  region region: String,
-) -> Client {
-  Client(config: awsjson_client.default_config(
-    provider,
-    region,
-    \"" <> metadata.endpoint_prefix <> "\",
-    \"" <> metadata.signing_name <> "\",
-  ))
-}
-
-pub fn with_endpoint_url(client: Client, url: String) -> Client {
-  Client(config: awsjson_client.with_endpoint_url(client.config, url))
-}
-
-pub fn with_http_send(client: Client, send: http_send.Send) -> Client {
-  Client(config: awsjson_client.with_http_send(client.config, send))
-}
-
-"
+  client.render(metadata.endpoint_prefix, metadata.signing_name)
 }
 
 fn emit_invoke(spec: OpSpec) -> String {

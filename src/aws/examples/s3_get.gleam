@@ -12,8 +12,6 @@
 //// Run as: `gleam run -m aws/examples/s3_get`
 //// Requires AWS credentials reachable by the default chain.
 
-import aws/credentials
-import aws/internal/http_send
 import aws/region as aws_region
 import aws/services/s3
 import gleam/int
@@ -26,15 +24,12 @@ const fallback_region: String = "eu-north-1"
 const profile: String = "default"
 
 pub fn main() {
-  let send = http_send.default_send
-  let provider = credentials.default_chain(send: send, profile: profile)
-
   let resolved_region = case aws_region.resolve(profile: profile) {
     Ok(r) -> r
     Error(_) -> fallback_region
   }
 
-  let client = s3.new(provider: provider, region: resolved_region)
+  let client = s3.new(region: resolved_region)
 
   let input =
     s3.ListBucketsRequest(

@@ -13,12 +13,9 @@
 ////
 ////   gleam run -m aws/examples/dynamodb_list_tables
 ////
-//// Set `AWS_REGION` (and credentials, via env or `~/.aws/credentials`
-//// or `aws sso login`) before invoking. Or edit the `region` constant
-//// below.
+//// Set credentials via env or `~/.aws/credentials` (or `aws sso
+//// login`) before invoking. Edit `region` below if needed.
 
-import aws/credentials
-import aws/internal/http_send
 import aws/services/dynamodb
 import gleam/int
 import gleam/io
@@ -27,12 +24,8 @@ import gleam/option
 
 const region: String = "us-east-1"
 
-const profile: String = "default"
-
 pub fn main() {
-  let send = http_send.default_send
-  let provider = credentials.default_chain(send: send, profile: profile)
-  let client = dynamodb.new(provider: provider, region: region)
+  let client = dynamodb.new(region: region)
 
   let input =
     dynamodb.ListTablesInput(
