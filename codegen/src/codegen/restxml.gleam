@@ -496,7 +496,7 @@ fn emit_operation(
         False ->
           "decode_"
           <> stringutils.pascal_to_snake(in_info.type_name)
-          <> "_struct"
+          <> "_struct_params"
       },
     )
   let out_decoder =
@@ -663,7 +663,7 @@ fn emit_union_def(name: String, members: List(MemberDef)) -> String {
         acc
         <> "  "
         <> name
-        <> pascalize_member(m.json_name)
+        <> pascalize_member(m.member_name)
         <> "("
         <> types.gleam_type(m.target)
         <> ")\n"
@@ -763,6 +763,11 @@ fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
   let snake = stringutils.pascal_to_snake(name)
   emit_struct_encoder(name, "encode_" <> snake <> "_struct", members)
   <> emit_struct_decoder(name, "decode_" <> snake <> "_struct", members)
+  <> emit_struct_decoder_params(
+    name,
+    "decode_" <> snake <> "_struct_params",
+    members,
+  )
   <> emit_struct_xml_inner_encoder(
     name,
     "encode_" <> snake <> "_xml_inner",
@@ -770,6 +775,46 @@ fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
   )
   <> emit_struct_xml_encoder(name, "encode_" <> snake <> "_xml", snake)
   <> emit_struct_xml_decoder(name, "decode_" <> snake <> "_xml", members)
+}
+
+fn emit_struct_decoder_params(
+  type_name: String,
+  fn_name: String,
+  members: List(MemberDef),
+) -> String {
+  case members {
+    [] ->
+      "pub fn "
+      <> fn_name
+      <> "() -> decode.Decoder("
+      <> type_name
+      <> ") {\n  decode.success("
+      <> type_name
+      <> ")\n}\n\n"
+    _ ->
+      "pub fn "
+      <> fn_name
+      <> "() -> decode.Decoder("
+      <> type_name
+      <> ") {\n"
+      <> list.fold(members, "", fn(acc, m) {
+        acc
+        <> "  use "
+        <> m.snake_name
+        <> " <- decode.optional_field(\""
+        <> m.member_name
+        <> "\", option.None, decode.optional("
+        <> types.json_decoder_params(m.target)
+        <> "))\n"
+      })
+      <> "  decode.success("
+      <> type_name
+      <> "(\n"
+      <> list.fold(members, "", fn(acc, m) {
+        acc <> "    " <> m.snake_name <> ": " <> m.snake_name <> ",\n"
+      })
+      <> "  ))\n}\n\n"
+  }
 }
 
 /// Emit `decode_<snake>_xml(elem) -> Result(<Type>, String)`. Reads
@@ -1125,7 +1170,7 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       acc
       <> "    "
       <> name
-      <> pascalize_member(m.json_name)
+      <> pascalize_member(m.member_name)
       <> "(x) -> json.object([#(\""
       <> m.json_name
       <> "\", "
@@ -1162,7 +1207,7 @@ fn emit_union_branch(union_name: String, m: MemberDef) -> String {
   <> types.json_decoder(m.target)
   <> ", fn(x) { decode.success("
   <> union_name
-  <> pascalize_member(m.json_name)
+  <> pascalize_member(m.member_name)
   <> "(x)) })"
 }
 
@@ -1454,8 +1499,15 @@ fn value_to_string(target: Resolved) -> String {
 /// constructor is invoked directly.
 fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
   let output_type = out_info.type_name
-  case out_info.synthesise {
-    True ->
+  let payload =
+    list.find(out_info.members, fn(m) {
+      case m.binding {
+        Payload -> True
+        _ -> False
+      }
+    })
+  case payload, out_info.synthesise {
+    _, True ->
       "pub fn parse_"
       <> snake
       <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  _body: BitArray,\n) -> Result("
@@ -1463,7 +1515,8 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
       <> ", String) {\n  Ok("
       <> output_type
       <> ")\n}\n\n"
-    False -> {
+    Ok(p), False -> emit_parse_with_payload(out_info, snake, p)
+    Error(_), False -> {
       let decoder =
         "decode_" <> stringutils.pascal_to_snake(output_type) <> "_xml"
       "pub fn parse_"
@@ -1479,13 +1532,54 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
   }
 }
 
+fn emit_parse_with_payload(
+  out_info: IOTypeInfo,
+  snake: String,
+  payload: MemberDef,
+) -> String {
+  let output_type = out_info.type_name
+  let constructor_fields =
+    list.fold(out_info.members, "", fn(acc, m) {
+      let value = case m.snake_name == payload.snake_name {
+        True -> "payload"
+        False -> "option.None"
+      }
+      acc <> "    " <> m.snake_name <> ": " <> value <> ",\n"
+    })
+  let payload_decode = case payload.target {
+    RBlob -> "let payload = option.Some(body)"
+    RPrim(primitive: types.PString) ->
+      "use payload <- result.try(case bit_array.to_string(body) {\n      Ok(s) -> Ok(option.Some(s))\n      Error(_) -> Error(\"non-utf8 payload\")\n    })"
+    RStruct(local_name: name, ..) -> {
+      let decoder = "decode_" <> stringutils.pascal_to_snake(name) <> "_xml"
+      "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case xml_decode.parse(text) {\n        Ok(root) -> case "
+      <> decoder
+      <> "(root) {\n          Ok(v) -> Ok(option.Some(v))\n          Error(r) -> Error(r)\n        }\n        Error(r) -> Error(r)\n      }\n    })"
+    }
+    _ -> "let payload = option.None"
+  }
+  "pub fn parse_"
+  <> snake
+  <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  body: BitArray,\n) -> Result("
+  <> output_type
+  <> ", String) {\n  {\n    "
+  <> payload_decode
+  <> "\n    Ok("
+  <> output_type
+  <> "(\n"
+  <> constructor_fields
+  <> "    ))\n  }\n}\n\n"
+}
+
 fn file_header(service_id: String) -> String {
   "//// Generated from " <> service_id <> " (restXml).
 //// DO NOT EDIT. Re-generate via the codegen subproject.
 
 import aws/credentials
 import aws/internal/client/awsjson as awsjson_client
+import aws/internal/codec/json_document
 import aws/internal/codec/json_float
+import aws/internal/codec/json_timestamp
 import aws/internal/codec/rest
 import aws/internal/codec/xml
 import aws/internal/codec/xml_decode

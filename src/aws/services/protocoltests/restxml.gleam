@@ -3,7 +3,9 @@
 
 import aws/credentials
 import aws/internal/client/awsjson as awsjson_client
+import aws/internal/codec/json_document
 import aws/internal/codec/json_float
+import aws/internal/codec/json_timestamp
 import aws/internal/codec/rest
 import aws/internal/codec/xml
 import aws/internal/codec/xml_decode
@@ -177,8 +179,55 @@ pub fn decode_all_query_string_types_input_struct() -> decode.Decoder(AllQuerySt
   use query_string <- decode.optional_field("queryString", option.None, decode.optional(decode.string))
   use query_string_list <- decode.optional_field("queryStringList", option.None, decode.optional(decode.list(decode.string)))
   use query_string_set <- decode.optional_field("queryStringSet", option.None, decode.optional(decode.list(decode.string)))
-  use query_timestamp <- decode.optional_field("queryTimestamp", option.None, decode.optional(decode.int))
-  use query_timestamp_list <- decode.optional_field("queryTimestampList", option.None, decode.optional(decode.list(decode.int)))
+  use query_timestamp <- decode.optional_field("queryTimestamp", option.None, decode.optional(json_timestamp.decoder()))
+  use query_timestamp_list <- decode.optional_field("queryTimestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
+  decode.success(AllQueryStringTypesInput(
+    query_boolean: query_boolean,
+    query_boolean_list: query_boolean_list,
+    query_byte: query_byte,
+    query_double: query_double,
+    query_double_list: query_double_list,
+    query_enum: query_enum,
+    query_enum_list: query_enum_list,
+    query_float: query_float,
+    query_integer: query_integer,
+    query_integer_enum: query_integer_enum,
+    query_integer_enum_list: query_integer_enum_list,
+    query_integer_list: query_integer_list,
+    query_integer_set: query_integer_set,
+    query_long: query_long,
+    query_params_map_of_strings: query_params_map_of_strings,
+    query_short: query_short,
+    query_string: query_string,
+    query_string_list: query_string_list,
+    query_string_set: query_string_set,
+    query_timestamp: query_timestamp,
+    query_timestamp_list: query_timestamp_list,
+  ))
+}
+
+pub fn decode_all_query_string_types_input_struct_params() -> decode.Decoder(AllQueryStringTypesInput) {
+  use query_boolean <- decode.optional_field("queryBoolean", option.None, decode.optional(decode.bool))
+  use query_boolean_list <- decode.optional_field("queryBooleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use query_byte <- decode.optional_field("queryByte", option.None, decode.optional(decode.int))
+  use query_double <- decode.optional_field("queryDouble", option.None, decode.optional(json_float.decoder()))
+  use query_double_list <- decode.optional_field("queryDoubleList", option.None, decode.optional(decode.list(json_float.decoder())))
+  use query_enum <- decode.optional_field("queryEnum", option.None, decode.optional(decode_foo_enum_enum()))
+  use query_enum_list <- decode.optional_field("queryEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use query_float <- decode.optional_field("queryFloat", option.None, decode.optional(json_float.decoder()))
+  use query_integer <- decode.optional_field("queryInteger", option.None, decode.optional(decode.int))
+  use query_integer_enum <- decode.optional_field("queryIntegerEnum", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use query_integer_enum_list <- decode.optional_field("queryIntegerEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use query_integer_list <- decode.optional_field("queryIntegerList", option.None, decode.optional(decode.list(decode.int)))
+  use query_integer_set <- decode.optional_field("queryIntegerSet", option.None, decode.optional(decode.list(decode.int)))
+  use query_long <- decode.optional_field("queryLong", option.None, decode.optional(decode.int))
+  use query_params_map_of_strings <- decode.optional_field("queryParamsMapOfStrings", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use query_short <- decode.optional_field("queryShort", option.None, decode.optional(decode.int))
+  use query_string <- decode.optional_field("queryString", option.None, decode.optional(decode.string))
+  use query_string_list <- decode.optional_field("queryStringList", option.None, decode.optional(decode.list(decode.string)))
+  use query_string_set <- decode.optional_field("queryStringSet", option.None, decode.optional(decode.list(decode.string)))
+  use query_timestamp <- decode.optional_field("queryTimestamp", option.None, decode.optional(json_timestamp.decoder()))
+  use query_timestamp_list <- decode.optional_field("queryTimestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
   decode.success(AllQueryStringTypesInput(
     query_boolean: query_boolean,
     query_boolean_list: query_boolean_list,
@@ -338,6 +387,13 @@ pub fn decode_body_with_xml_name_input_output_struct() -> decode.Decoder(BodyWit
   ))
 }
 
+pub fn decode_body_with_xml_name_input_output_struct_params() -> decode.Decoder(BodyWithXmlNameInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_name_struct_params()))
+  decode.success(BodyWithXmlNameInputOutput(
+    nested: nested,
+  ))
+}
+
 pub fn encode_body_with_xml_name_input_output_xml_inner(input: BodyWithXmlNameInputOutput) -> String {
   let inner = ""
   let inner = case input.nested {
@@ -374,6 +430,13 @@ pub fn encode_payload_with_xml_name_struct(input: PayloadWithXmlName) -> json.Js
 }
 
 pub fn decode_payload_with_xml_name_struct() -> decode.Decoder(PayloadWithXmlName) {
+  use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
+  decode.success(PayloadWithXmlName(
+    name: name,
+  ))
+}
+
+pub fn decode_payload_with_xml_name_struct_params() -> decode.Decoder(PayloadWithXmlName) {
   use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
   decode.success(PayloadWithXmlName(
     name: name,
@@ -429,6 +492,15 @@ pub fn decode_constant_and_variable_query_string_input_struct() -> decode.Decode
   ))
 }
 
+pub fn decode_constant_and_variable_query_string_input_struct_params() -> decode.Decoder(ConstantAndVariableQueryStringInput) {
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
+  use maybe_set <- decode.optional_field("maybeSet", option.None, decode.optional(decode.string))
+  decode.success(ConstantAndVariableQueryStringInput(
+    baz: baz,
+    maybe_set: maybe_set,
+  ))
+}
+
 pub fn encode_constant_and_variable_query_string_input_xml_inner(input: ConstantAndVariableQueryStringInput) -> String {
   let inner = ""
   inner
@@ -463,6 +535,13 @@ pub fn encode_constant_query_string_input_struct(input: ConstantQueryStringInput
 }
 
 pub fn decode_constant_query_string_input_struct() -> decode.Decoder(ConstantQueryStringInput) {
+  use hello <- decode.optional_field("hello", option.None, decode.optional(decode.string))
+  decode.success(ConstantQueryStringInput(
+    hello: hello,
+  ))
+}
+
+pub fn decode_constant_query_string_input_struct_params() -> decode.Decoder(ConstantQueryStringInput) {
   use hello <- decode.optional_field("hello", option.None, decode.optional(decode.string))
   decode.success(ConstantQueryStringInput(
     hello: hello,
@@ -507,6 +586,13 @@ pub fn decode_content_type_parameters_input_struct() -> decode.Decoder(ContentTy
   ))
 }
 
+pub fn decode_content_type_parameters_input_struct_params() -> decode.Decoder(ContentTypeParametersInput) {
+  use value <- decode.optional_field("value", option.None, decode.optional(decode.int))
+  decode.success(ContentTypeParametersInput(
+    value: value,
+  ))
+}
+
 pub fn encode_content_type_parameters_input_xml_inner(input: ContentTypeParametersInput) -> String {
   let inner = ""
   let inner = case input.value {
@@ -539,6 +625,10 @@ pub fn decode_content_type_parameters_output_struct() -> decode.Decoder(ContentT
   decode.success(ContentTypeParametersOutput)
 }
 
+pub fn decode_content_type_parameters_output_struct_params() -> decode.Decoder(ContentTypeParametersOutput) {
+  decode.success(ContentTypeParametersOutput)
+}
+
 pub fn encode_content_type_parameters_output_xml_inner(_input: ContentTypeParametersOutput) -> String {
   ""
 }
@@ -567,7 +657,14 @@ pub fn encode_datetime_offsets_output_struct(input: DatetimeOffsetsOutput) -> js
 }
 
 pub fn decode_datetime_offsets_output_struct() -> decode.Decoder(DatetimeOffsetsOutput) {
-  use datetime <- decode.optional_field("datetime", option.None, decode.optional(decode.int))
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(DatetimeOffsetsOutput(
+    datetime: datetime,
+  ))
+}
+
+pub fn decode_datetime_offsets_output_struct_params() -> decode.Decoder(DatetimeOffsetsOutput) {
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(DatetimeOffsetsOutput(
     datetime: datetime,
   ))
@@ -605,6 +702,10 @@ pub fn decode_empty_input_and_empty_output_input_struct() -> decode.Decoder(Empt
   decode.success(EmptyInputAndEmptyOutputInput)
 }
 
+pub fn decode_empty_input_and_empty_output_input_struct_params() -> decode.Decoder(EmptyInputAndEmptyOutputInput) {
+  decode.success(EmptyInputAndEmptyOutputInput)
+}
+
 pub fn encode_empty_input_and_empty_output_input_xml_inner(_input: EmptyInputAndEmptyOutputInput) -> String {
   ""
 }
@@ -626,6 +727,10 @@ pub fn encode_empty_input_and_empty_output_output_struct(_v: EmptyInputAndEmptyO
 }
 
 pub fn decode_empty_input_and_empty_output_output_struct() -> decode.Decoder(EmptyInputAndEmptyOutputOutput) {
+  decode.success(EmptyInputAndEmptyOutputOutput)
+}
+
+pub fn decode_empty_input_and_empty_output_output_struct_params() -> decode.Decoder(EmptyInputAndEmptyOutputOutput) {
   decode.success(EmptyInputAndEmptyOutputOutput)
 }
 
@@ -657,6 +762,13 @@ pub fn encode_host_label_header_input_struct(input: HostLabelHeaderInput) -> jso
 }
 
 pub fn decode_host_label_header_input_struct() -> decode.Decoder(HostLabelHeaderInput) {
+  use account_id <- decode.optional_field("accountId", option.None, decode.optional(decode.string))
+  decode.success(HostLabelHeaderInput(
+    account_id: account_id,
+  ))
+}
+
+pub fn decode_host_label_header_input_struct_params() -> decode.Decoder(HostLabelHeaderInput) {
   use account_id <- decode.optional_field("accountId", option.None, decode.optional(decode.string))
   decode.success(HostLabelHeaderInput(
     account_id: account_id,
@@ -701,6 +813,13 @@ pub fn decode_endpoint_with_host_label_operation_request_struct() -> decode.Deco
   ))
 }
 
+pub fn decode_endpoint_with_host_label_operation_request_struct_params() -> decode.Decoder(EndpointWithHostLabelOperationRequest) {
+  use label <- decode.optional_field("label", option.None, decode.optional(decode.string))
+  decode.success(EndpointWithHostLabelOperationRequest(
+    label: label,
+  ))
+}
+
 pub fn encode_endpoint_with_host_label_operation_request_xml_inner(input: EndpointWithHostLabelOperationRequest) -> String {
   let inner = ""
   let inner = case input.label {
@@ -737,6 +856,13 @@ pub fn encode_flattened_xml_map_request_struct(input: FlattenedXmlMapRequest) ->
 }
 
 pub fn decode_flattened_xml_map_request_struct() -> decode.Decoder(FlattenedXmlMapRequest) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_foo_enum_enum())))
+  decode.success(FlattenedXmlMapRequest(
+    my_map: my_map,
+  ))
+}
+
+pub fn decode_flattened_xml_map_request_struct_params() -> decode.Decoder(FlattenedXmlMapRequest) {
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_foo_enum_enum())))
   decode.success(FlattenedXmlMapRequest(
     my_map: my_map,
@@ -786,6 +912,13 @@ pub fn decode_flattened_xml_map_response_struct() -> decode.Decoder(FlattenedXml
   ))
 }
 
+pub fn decode_flattened_xml_map_response_struct_params() -> decode.Decoder(FlattenedXmlMapResponse) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_foo_enum_enum())))
+  decode.success(FlattenedXmlMapResponse(
+    my_map: my_map,
+  ))
+}
+
 pub fn encode_flattened_xml_map_response_xml_inner(input: FlattenedXmlMapResponse) -> String {
   let inner = ""
   let inner = case input.my_map {
@@ -823,6 +956,13 @@ pub fn encode_flattened_xml_map_with_xml_name_request_struct(input: FlattenedXml
 }
 
 pub fn decode_flattened_xml_map_with_xml_name_request_struct() -> decode.Decoder(FlattenedXmlMapWithXmlNameRequest) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(FlattenedXmlMapWithXmlNameRequest(
+    my_map: my_map,
+  ))
+}
+
+pub fn decode_flattened_xml_map_with_xml_name_request_struct_params() -> decode.Decoder(FlattenedXmlMapWithXmlNameRequest) {
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(FlattenedXmlMapWithXmlNameRequest(
     my_map: my_map,
@@ -872,6 +1012,13 @@ pub fn decode_flattened_xml_map_with_xml_name_response_struct() -> decode.Decode
   ))
 }
 
+pub fn decode_flattened_xml_map_with_xml_name_response_struct_params() -> decode.Decoder(FlattenedXmlMapWithXmlNameResponse) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(FlattenedXmlMapWithXmlNameResponse(
+    my_map: my_map,
+  ))
+}
+
 pub fn encode_flattened_xml_map_with_xml_name_response_xml_inner(input: FlattenedXmlMapWithXmlNameResponse) -> String {
   let inner = ""
   let inner = case input.my_map {
@@ -915,6 +1062,13 @@ pub fn decode_flattened_xml_map_with_xml_namespace_output_struct() -> decode.Dec
   ))
 }
 
+pub fn decode_flattened_xml_map_with_xml_namespace_output_struct_params() -> decode.Decoder(FlattenedXmlMapWithXmlNamespaceOutput) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(FlattenedXmlMapWithXmlNamespaceOutput(
+    my_map: my_map,
+  ))
+}
+
 pub fn encode_flattened_xml_map_with_xml_namespace_output_xml_inner(input: FlattenedXmlMapWithXmlNamespaceOutput) -> String {
   let inner = ""
   let inner = case input.my_map {
@@ -952,7 +1106,14 @@ pub fn encode_fractional_seconds_output_struct(input: FractionalSecondsOutput) -
 }
 
 pub fn decode_fractional_seconds_output_struct() -> decode.Decoder(FractionalSecondsOutput) {
-  use datetime <- decode.optional_field("datetime", option.None, decode.optional(decode.int))
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(FractionalSecondsOutput(
+    datetime: datetime,
+  ))
+}
+
+pub fn decode_fractional_seconds_output_struct_params() -> decode.Decoder(FractionalSecondsOutput) {
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(FractionalSecondsOutput(
     datetime: datetime,
   ))
@@ -994,6 +1155,13 @@ pub fn encode_greeting_with_errors_output_struct(input: GreetingWithErrorsOutput
 }
 
 pub fn decode_greeting_with_errors_output_struct() -> decode.Decoder(GreetingWithErrorsOutput) {
+  use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
+  decode.success(GreetingWithErrorsOutput(
+    greeting: greeting,
+  ))
+}
+
+pub fn decode_greeting_with_errors_output_struct_params() -> decode.Decoder(GreetingWithErrorsOutput) {
   use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
   decode.success(GreetingWithErrorsOutput(
     greeting: greeting,
@@ -1052,6 +1220,17 @@ pub fn decode_complex_error_struct() -> decode.Decoder(ComplexError) {
   ))
 }
 
+pub fn decode_complex_error_struct_params() -> decode.Decoder(ComplexError) {
+  use header <- decode.optional_field("Header", option.None, decode.optional(decode.string))
+  use nested <- decode.optional_field("Nested", option.None, decode.optional(decode_complex_nested_error_data_struct_params()))
+  use top_level <- decode.optional_field("TopLevel", option.None, decode.optional(decode.string))
+  decode.success(ComplexError(
+    header: header,
+    nested: nested,
+    top_level: top_level,
+  ))
+}
+
 pub fn encode_complex_error_xml_inner(input: ComplexError) -> String {
   let inner = ""
   let inner = case input.nested {
@@ -1102,6 +1281,13 @@ pub fn decode_complex_nested_error_data_struct() -> decode.Decoder(ComplexNested
   ))
 }
 
+pub fn decode_complex_nested_error_data_struct_params() -> decode.Decoder(ComplexNestedErrorData) {
+  use foo <- decode.optional_field("Foo", option.None, decode.optional(decode.string))
+  decode.success(ComplexNestedErrorData(
+    foo: foo,
+  ))
+}
+
 pub fn encode_complex_nested_error_data_xml_inner(input: ComplexNestedErrorData) -> String {
   let inner = ""
   let inner = case input.foo {
@@ -1138,6 +1324,13 @@ pub fn encode_invalid_greeting_struct(input: InvalidGreeting) -> json.Json {
 }
 
 pub fn decode_invalid_greeting_struct() -> decode.Decoder(InvalidGreeting) {
+  use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
+  decode.success(InvalidGreeting(
+    message: message,
+  ))
+}
+
+pub fn decode_invalid_greeting_struct_params() -> decode.Decoder(InvalidGreeting) {
   use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
   decode.success(InvalidGreeting(
     message: message,
@@ -1193,6 +1386,15 @@ pub fn decode_http_empty_prefix_headers_input_struct() -> decode.Decoder(HttpEmp
   ))
 }
 
+pub fn decode_http_empty_prefix_headers_input_struct_params() -> decode.Decoder(HttpEmptyPrefixHeadersInput) {
+  use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use specific_header <- decode.optional_field("specificHeader", option.None, decode.optional(decode.string))
+  decode.success(HttpEmptyPrefixHeadersInput(
+    prefix_headers: prefix_headers,
+    specific_header: specific_header,
+  ))
+}
+
 pub fn encode_http_empty_prefix_headers_input_xml_inner(input: HttpEmptyPrefixHeadersInput) -> String {
   let inner = ""
   inner
@@ -1240,6 +1442,15 @@ pub fn decode_http_empty_prefix_headers_output_struct() -> decode.Decoder(HttpEm
   ))
 }
 
+pub fn decode_http_empty_prefix_headers_output_struct_params() -> decode.Decoder(HttpEmptyPrefixHeadersOutput) {
+  use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use specific_header <- decode.optional_field("specificHeader", option.None, decode.optional(decode.string))
+  decode.success(HttpEmptyPrefixHeadersOutput(
+    prefix_headers: prefix_headers,
+    specific_header: specific_header,
+  ))
+}
+
 pub fn encode_http_empty_prefix_headers_output_xml_inner(input: HttpEmptyPrefixHeadersOutput) -> String {
   let inner = ""
   inner
@@ -1274,6 +1485,13 @@ pub fn encode_enum_payload_input_struct(input: EnumPayloadInput) -> json.Json {
 }
 
 pub fn decode_enum_payload_input_struct() -> decode.Decoder(EnumPayloadInput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_string_enum_enum()))
+  decode.success(EnumPayloadInput(
+    payload: payload,
+  ))
+}
+
+pub fn decode_enum_payload_input_struct_params() -> decode.Decoder(EnumPayloadInput) {
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_string_enum_enum()))
   decode.success(EnumPayloadInput(
     payload: payload,
@@ -1344,6 +1562,15 @@ pub fn decode_http_payload_traits_input_output_struct() -> decode.Decoder(HttpPa
   ))
 }
 
+pub fn decode_http_payload_traits_input_output_struct_params() -> decode.Decoder(HttpPayloadTraitsInputOutput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(HttpPayloadTraitsInputOutput(
+    blob: blob,
+    foo: foo,
+  ))
+}
+
 pub fn encode_http_payload_traits_input_output_xml_inner(input: HttpPayloadTraitsInputOutput) -> String {
   let inner = ""
   inner
@@ -1383,6 +1610,15 @@ pub fn encode_http_payload_traits_with_media_type_input_output_struct(input: Htt
 }
 
 pub fn decode_http_payload_traits_with_media_type_input_output_struct() -> decode.Decoder(HttpPayloadTraitsWithMediaTypeInputOutput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(HttpPayloadTraitsWithMediaTypeInputOutput(
+    blob: blob,
+    foo: foo,
+  ))
+}
+
+pub fn decode_http_payload_traits_with_media_type_input_output_struct_params() -> decode.Decoder(HttpPayloadTraitsWithMediaTypeInputOutput) {
   use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(HttpPayloadTraitsWithMediaTypeInputOutput(
@@ -1431,6 +1667,13 @@ pub fn decode_http_payload_with_member_xml_name_input_output_struct() -> decode.
   ))
 }
 
+pub fn decode_http_payload_with_member_xml_name_input_output_struct_params() -> decode.Decoder(HttpPayloadWithMemberXmlNameInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_name_struct_params()))
+  decode.success(HttpPayloadWithMemberXmlNameInputOutput(
+    nested: nested,
+  ))
+}
+
 pub fn encode_http_payload_with_member_xml_name_input_output_xml_inner(input: HttpPayloadWithMemberXmlNameInputOutput) -> String {
   let inner = ""
   inner
@@ -1464,6 +1707,13 @@ pub fn encode_http_payload_with_structure_input_output_struct(input: HttpPayload
 
 pub fn decode_http_payload_with_structure_input_output_struct() -> decode.Decoder(HttpPayloadWithStructureInputOutput) {
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_nested_payload_struct()))
+  decode.success(HttpPayloadWithStructureInputOutput(
+    nested: nested,
+  ))
+}
+
+pub fn decode_http_payload_with_structure_input_output_struct_params() -> decode.Decoder(HttpPayloadWithStructureInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_nested_payload_struct_params()))
   decode.success(HttpPayloadWithStructureInputOutput(
     nested: nested,
   ))
@@ -1514,6 +1764,15 @@ pub fn decode_nested_payload_struct() -> decode.Decoder(NestedPayload) {
   ))
 }
 
+pub fn decode_nested_payload_struct_params() -> decode.Decoder(NestedPayload) {
+  use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
+  use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
+  decode.success(NestedPayload(
+    greeting: greeting,
+    name: name,
+  ))
+}
+
 pub fn encode_nested_payload_xml_inner(input: NestedPayload) -> String {
   let inner = ""
   let inner = case input.greeting {
@@ -1556,6 +1815,13 @@ pub fn encode_http_payload_with_union_input_output_struct(input: HttpPayloadWith
 }
 
 pub fn decode_http_payload_with_union_input_output_struct() -> decode.Decoder(HttpPayloadWithUnionInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_union_payload_union()))
+  decode.success(HttpPayloadWithUnionInputOutput(
+    nested: nested,
+  ))
+}
+
+pub fn decode_http_payload_with_union_input_output_struct_params() -> decode.Decoder(HttpPayloadWithUnionInputOutput) {
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_union_payload_union()))
   decode.success(HttpPayloadWithUnionInputOutput(
     nested: nested,
@@ -1618,6 +1884,13 @@ pub fn decode_http_payload_with_xml_name_input_output_struct() -> decode.Decoder
   ))
 }
 
+pub fn decode_http_payload_with_xml_name_input_output_struct_params() -> decode.Decoder(HttpPayloadWithXmlNameInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_name_struct_params()))
+  decode.success(HttpPayloadWithXmlNameInputOutput(
+    nested: nested,
+  ))
+}
+
 pub fn encode_http_payload_with_xml_name_input_output_xml_inner(input: HttpPayloadWithXmlNameInputOutput) -> String {
   let inner = ""
   inner
@@ -1656,6 +1929,13 @@ pub fn decode_http_payload_with_xml_namespace_input_output_struct() -> decode.De
   ))
 }
 
+pub fn decode_http_payload_with_xml_namespace_input_output_struct_params() -> decode.Decoder(HttpPayloadWithXmlNamespaceInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_namespace_struct_params()))
+  decode.success(HttpPayloadWithXmlNamespaceInputOutput(
+    nested: nested,
+  ))
+}
+
 pub fn encode_http_payload_with_xml_namespace_input_output_xml_inner(input: HttpPayloadWithXmlNamespaceInputOutput) -> String {
   let inner = ""
   inner
@@ -1688,6 +1968,13 @@ pub fn encode_payload_with_xml_namespace_struct(input: PayloadWithXmlNamespace) 
 }
 
 pub fn decode_payload_with_xml_namespace_struct() -> decode.Decoder(PayloadWithXmlNamespace) {
+  use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
+  decode.success(PayloadWithXmlNamespace(
+    name: name,
+  ))
+}
+
+pub fn decode_payload_with_xml_namespace_struct_params() -> decode.Decoder(PayloadWithXmlNamespace) {
   use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
   decode.success(PayloadWithXmlNamespace(
     name: name,
@@ -1736,6 +2023,13 @@ pub fn decode_http_payload_with_xml_namespace_and_prefix_input_output_struct() -
   ))
 }
 
+pub fn decode_http_payload_with_xml_namespace_and_prefix_input_output_struct_params() -> decode.Decoder(HttpPayloadWithXmlNamespaceAndPrefixInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_payload_with_xml_namespace_and_prefix_struct_params()))
+  decode.success(HttpPayloadWithXmlNamespaceAndPrefixInputOutput(
+    nested: nested,
+  ))
+}
+
 pub fn encode_http_payload_with_xml_namespace_and_prefix_input_output_xml_inner(input: HttpPayloadWithXmlNamespaceAndPrefixInputOutput) -> String {
   let inner = ""
   inner
@@ -1768,6 +2062,13 @@ pub fn encode_payload_with_xml_namespace_and_prefix_struct(input: PayloadWithXml
 }
 
 pub fn decode_payload_with_xml_namespace_and_prefix_struct() -> decode.Decoder(PayloadWithXmlNamespaceAndPrefix) {
+  use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
+  decode.success(PayloadWithXmlNamespaceAndPrefix(
+    name: name,
+  ))
+}
+
+pub fn decode_payload_with_xml_namespace_and_prefix_struct_params() -> decode.Decoder(PayloadWithXmlNamespaceAndPrefix) {
   use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
   decode.success(PayloadWithXmlNamespaceAndPrefix(
     name: name,
@@ -1823,6 +2124,15 @@ pub fn decode_http_prefix_headers_input_output_struct() -> decode.Decoder(HttpPr
   ))
 }
 
+pub fn decode_http_prefix_headers_input_output_struct_params() -> decode.Decoder(HttpPrefixHeadersInputOutput) {
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use foo_map <- decode.optional_field("fooMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(HttpPrefixHeadersInputOutput(
+    foo: foo,
+    foo_map: foo_map,
+  ))
+}
+
 pub fn encode_http_prefix_headers_input_output_xml_inner(input: HttpPrefixHeadersInputOutput) -> String {
   let inner = ""
   inner
@@ -1870,6 +2180,15 @@ pub fn decode_http_request_with_float_labels_input_struct() -> decode.Decoder(Ht
   ))
 }
 
+pub fn decode_http_request_with_float_labels_input_struct_params() -> decode.Decoder(HttpRequestWithFloatLabelsInput) {
+  use double <- decode.optional_field("double", option.None, decode.optional(json_float.decoder()))
+  use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
+  decode.success(HttpRequestWithFloatLabelsInput(
+    double: double,
+    float: float,
+  ))
+}
+
 pub fn encode_http_request_with_float_labels_input_xml_inner(input: HttpRequestWithFloatLabelsInput) -> String {
   let inner = ""
   inner
@@ -1909,6 +2228,15 @@ pub fn encode_http_request_with_greedy_label_in_path_input_struct(input: HttpReq
 }
 
 pub fn decode_http_request_with_greedy_label_in_path_input_struct() -> decode.Decoder(HttpRequestWithGreedyLabelInPathInput) {
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(HttpRequestWithGreedyLabelInPathInput(
+    baz: baz,
+    foo: foo,
+  ))
+}
+
+pub fn decode_http_request_with_greedy_label_in_path_input_struct_params() -> decode.Decoder(HttpRequestWithGreedyLabelInPathInput) {
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(HttpRequestWithGreedyLabelInPathInput(
@@ -1993,7 +2321,28 @@ pub fn decode_http_request_with_labels_input_struct() -> decode.Decoder(HttpRequ
   use long <- decode.optional_field("long", option.None, decode.optional(decode.int))
   use short <- decode.optional_field("short", option.None, decode.optional(decode.int))
   use string <- decode.optional_field("string", option.None, decode.optional(decode.string))
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(HttpRequestWithLabelsInput(
+    boolean: boolean,
+    double: double,
+    float: float,
+    integer: integer,
+    long: long,
+    short: short,
+    string: string,
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_http_request_with_labels_input_struct_params() -> decode.Decoder(HttpRequestWithLabelsInput) {
+  use boolean <- decode.optional_field("boolean", option.None, decode.optional(decode.bool))
+  use double <- decode.optional_field("double", option.None, decode.optional(json_float.decoder()))
+  use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
+  use integer <- decode.optional_field("integer", option.None, decode.optional(decode.int))
+  use long <- decode.optional_field("long", option.None, decode.optional(decode.int))
+  use short <- decode.optional_field("short", option.None, decode.optional(decode.int))
+  use string <- decode.optional_field("string", option.None, decode.optional(decode.string))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(HttpRequestWithLabelsInput(
     boolean: boolean,
     double: double,
@@ -2082,13 +2431,32 @@ pub fn encode_http_request_with_labels_and_timestamp_format_input_struct(input: 
 }
 
 pub fn decode_http_request_with_labels_and_timestamp_format_input_struct() -> decode.Decoder(HttpRequestWithLabelsAndTimestampFormatInput) {
-  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(decode.int))
-  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(decode.int))
-  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(decode.int))
-  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(decode.int))
-  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(decode.int))
-  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(decode.int))
-  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(decode.int))
+  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(json_timestamp.decoder()))
+  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(HttpRequestWithLabelsAndTimestampFormatInput(
+    default_format: default_format,
+    member_date_time: member_date_time,
+    member_epoch_seconds: member_epoch_seconds,
+    member_http_date: member_http_date,
+    target_date_time: target_date_time,
+    target_epoch_seconds: target_epoch_seconds,
+    target_http_date: target_http_date,
+  ))
+}
+
+pub fn decode_http_request_with_labels_and_timestamp_format_input_struct_params() -> decode.Decoder(HttpRequestWithLabelsAndTimestampFormatInput) {
+  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(json_timestamp.decoder()))
+  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(HttpRequestWithLabelsAndTimestampFormatInput(
     default_format: default_format,
     member_date_time: member_date_time,
@@ -2150,6 +2518,13 @@ pub fn decode_http_response_code_output_struct() -> decode.Decoder(HttpResponseC
   ))
 }
 
+pub fn decode_http_response_code_output_struct_params() -> decode.Decoder(HttpResponseCodeOutput) {
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode.int))
+  decode.success(HttpResponseCodeOutput(
+    status: status,
+  ))
+}
+
 pub fn encode_http_response_code_output_xml_inner(input: HttpResponseCodeOutput) -> String {
   let inner = ""
   inner
@@ -2188,6 +2563,13 @@ pub fn decode_string_payload_input_struct() -> decode.Decoder(StringPayloadInput
   ))
 }
 
+pub fn decode_string_payload_input_struct_params() -> decode.Decoder(StringPayloadInput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
+  decode.success(StringPayloadInput(
+    payload: payload,
+  ))
+}
+
 pub fn encode_string_payload_input_xml_inner(input: StringPayloadInput) -> String {
   let inner = ""
   inner
@@ -2220,6 +2602,13 @@ pub fn encode_ignore_query_params_in_response_output_struct(input: IgnoreQueryPa
 }
 
 pub fn decode_ignore_query_params_in_response_output_struct() -> decode.Decoder(IgnoreQueryParamsInResponseOutput) {
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
+  decode.success(IgnoreQueryParamsInResponseOutput(
+    baz: baz,
+  ))
+}
+
+pub fn decode_ignore_query_params_in_response_output_struct_params() -> decode.Decoder(IgnoreQueryParamsInResponseOutput) {
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   decode.success(IgnoreQueryParamsInResponseOutput(
     baz: baz,
@@ -2347,7 +2736,44 @@ pub fn decode_input_and_output_with_headers_io_struct() -> decode.Decoder(InputA
   use header_string <- decode.optional_field("headerString", option.None, decode.optional(decode.string))
   use header_string_list <- decode.optional_field("headerStringList", option.None, decode.optional(decode.list(decode.string)))
   use header_string_set <- decode.optional_field("headerStringSet", option.None, decode.optional(decode.list(decode.string)))
-  use header_timestamp_list <- decode.optional_field("headerTimestampList", option.None, decode.optional(decode.list(decode.int)))
+  use header_timestamp_list <- decode.optional_field("headerTimestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
+  use header_true_bool <- decode.optional_field("headerTrueBool", option.None, decode.optional(decode.bool))
+  decode.success(InputAndOutputWithHeadersIO(
+    header_boolean_list: header_boolean_list,
+    header_byte: header_byte,
+    header_double: header_double,
+    header_enum: header_enum,
+    header_enum_list: header_enum_list,
+    header_false_bool: header_false_bool,
+    header_float: header_float,
+    header_integer: header_integer,
+    header_integer_list: header_integer_list,
+    header_long: header_long,
+    header_short: header_short,
+    header_string: header_string,
+    header_string_list: header_string_list,
+    header_string_set: header_string_set,
+    header_timestamp_list: header_timestamp_list,
+    header_true_bool: header_true_bool,
+  ))
+}
+
+pub fn decode_input_and_output_with_headers_io_struct_params() -> decode.Decoder(InputAndOutputWithHeadersIO) {
+  use header_boolean_list <- decode.optional_field("headerBooleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use header_byte <- decode.optional_field("headerByte", option.None, decode.optional(decode.int))
+  use header_double <- decode.optional_field("headerDouble", option.None, decode.optional(json_float.decoder()))
+  use header_enum <- decode.optional_field("headerEnum", option.None, decode.optional(decode_foo_enum_enum()))
+  use header_enum_list <- decode.optional_field("headerEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use header_false_bool <- decode.optional_field("headerFalseBool", option.None, decode.optional(decode.bool))
+  use header_float <- decode.optional_field("headerFloat", option.None, decode.optional(json_float.decoder()))
+  use header_integer <- decode.optional_field("headerInteger", option.None, decode.optional(decode.int))
+  use header_integer_list <- decode.optional_field("headerIntegerList", option.None, decode.optional(decode.list(decode.int)))
+  use header_long <- decode.optional_field("headerLong", option.None, decode.optional(decode.int))
+  use header_short <- decode.optional_field("headerShort", option.None, decode.optional(decode.int))
+  use header_string <- decode.optional_field("headerString", option.None, decode.optional(decode.string))
+  use header_string_list <- decode.optional_field("headerStringList", option.None, decode.optional(decode.list(decode.string)))
+  use header_string_set <- decode.optional_field("headerStringSet", option.None, decode.optional(decode.list(decode.string)))
+  use header_timestamp_list <- decode.optional_field("headerTimestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
   use header_true_bool <- decode.optional_field("headerTrueBool", option.None, decode.optional(decode.bool))
   decode.success(InputAndOutputWithHeadersIO(
     header_boolean_list: header_boolean_list,
@@ -2444,6 +2870,15 @@ pub fn decode_nested_xml_maps_request_struct() -> decode.Decoder(NestedXmlMapsRe
   ))
 }
 
+pub fn decode_nested_xml_maps_request_struct_params() -> decode.Decoder(NestedXmlMapsRequest) {
+  use flat_nested_map <- decode.optional_field("flatNestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
+  use nested_map <- decode.optional_field("nestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
+  decode.success(NestedXmlMapsRequest(
+    flat_nested_map: flat_nested_map,
+    nested_map: nested_map,
+  ))
+}
+
 pub fn encode_nested_xml_maps_request_xml_inner(input: NestedXmlMapsRequest) -> String {
   let inner = ""
   let inner = case input.flat_nested_map {
@@ -2493,6 +2928,15 @@ pub fn encode_nested_xml_maps_response_struct(input: NestedXmlMapsResponse) -> j
 }
 
 pub fn decode_nested_xml_maps_response_struct() -> decode.Decoder(NestedXmlMapsResponse) {
+  use flat_nested_map <- decode.optional_field("flatNestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
+  use nested_map <- decode.optional_field("nestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
+  decode.success(NestedXmlMapsResponse(
+    flat_nested_map: flat_nested_map,
+    nested_map: nested_map,
+  ))
+}
+
+pub fn decode_nested_xml_maps_response_struct_params() -> decode.Decoder(NestedXmlMapsResponse) {
   use flat_nested_map <- decode.optional_field("flatNestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
   use nested_map <- decode.optional_field("nestedMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode_foo_enum_enum()))))
   decode.success(NestedXmlMapsResponse(
@@ -2551,6 +2995,13 @@ pub fn decode_nested_xml_map_with_xml_name_request_struct() -> decode.Decoder(Ne
   ))
 }
 
+pub fn decode_nested_xml_map_with_xml_name_request_struct_params() -> decode.Decoder(NestedXmlMapWithXmlNameRequest) {
+  use nested_xml_map_with_xml_name_map <- decode.optional_field("nestedXmlMapWithXmlNameMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode.string))))
+  decode.success(NestedXmlMapWithXmlNameRequest(
+    nested_xml_map_with_xml_name_map: nested_xml_map_with_xml_name_map,
+  ))
+}
+
 pub fn encode_nested_xml_map_with_xml_name_request_xml_inner(input: NestedXmlMapWithXmlNameRequest) -> String {
   let inner = ""
   let inner = case input.nested_xml_map_with_xml_name_map {
@@ -2594,6 +3045,13 @@ pub fn decode_nested_xml_map_with_xml_name_response_struct() -> decode.Decoder(N
   ))
 }
 
+pub fn decode_nested_xml_map_with_xml_name_response_struct_params() -> decode.Decoder(NestedXmlMapWithXmlNameResponse) {
+  use nested_xml_map_with_xml_name_map <- decode.optional_field("nestedXmlMapWithXmlNameMap", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode.string))))
+  decode.success(NestedXmlMapWithXmlNameResponse(
+    nested_xml_map_with_xml_name_map: nested_xml_map_with_xml_name_map,
+  ))
+}
+
 pub fn encode_nested_xml_map_with_xml_name_response_xml_inner(input: NestedXmlMapWithXmlNameResponse) -> String {
   let inner = ""
   let inner = case input.nested_xml_map_with_xml_name_map {
@@ -2624,6 +3082,10 @@ pub fn encode_no_input_and_output_output_struct(_v: NoInputAndOutputOutput) -> j
 }
 
 pub fn decode_no_input_and_output_output_struct() -> decode.Decoder(NoInputAndOutputOutput) {
+  decode.success(NoInputAndOutputOutput)
+}
+
+pub fn decode_no_input_and_output_output_struct_params() -> decode.Decoder(NoInputAndOutputOutput) {
   decode.success(NoInputAndOutputOutput)
 }
 
@@ -2665,6 +3127,17 @@ pub fn encode_null_and_empty_headers_io_struct(input: NullAndEmptyHeadersIO) -> 
 }
 
 pub fn decode_null_and_empty_headers_io_struct() -> decode.Decoder(NullAndEmptyHeadersIO) {
+  use a <- decode.optional_field("a", option.None, decode.optional(decode.string))
+  use b <- decode.optional_field("b", option.None, decode.optional(decode.string))
+  use c <- decode.optional_field("c", option.None, decode.optional(decode.list(decode.string)))
+  decode.success(NullAndEmptyHeadersIO(
+    a: a,
+    b: b,
+    c: c,
+  ))
+}
+
+pub fn decode_null_and_empty_headers_io_struct_params() -> decode.Decoder(NullAndEmptyHeadersIO) {
   use a <- decode.optional_field("a", option.None, decode.optional(decode.string))
   use b <- decode.optional_field("b", option.None, decode.optional(decode.string))
   use c <- decode.optional_field("c", option.None, decode.optional(decode.list(decode.string)))
@@ -2724,6 +3197,15 @@ pub fn decode_omits_null_serializes_empty_string_input_struct() -> decode.Decode
   ))
 }
 
+pub fn decode_omits_null_serializes_empty_string_input_struct_params() -> decode.Decoder(OmitsNullSerializesEmptyStringInput) {
+  use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
+  use null_value <- decode.optional_field("nullValue", option.None, decode.optional(decode.string))
+  decode.success(OmitsNullSerializesEmptyStringInput(
+    empty_string: empty_string,
+    null_value: null_value,
+  ))
+}
+
 pub fn encode_omits_null_serializes_empty_string_input_xml_inner(input: OmitsNullSerializesEmptyStringInput) -> String {
   let inner = ""
   inner
@@ -2763,6 +3245,15 @@ pub fn encode_put_with_content_encoding_input_struct(input: PutWithContentEncodi
 }
 
 pub fn decode_put_with_content_encoding_input_struct() -> decode.Decoder(PutWithContentEncodingInput) {
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.string))
+  use encoding <- decode.optional_field("encoding", option.None, decode.optional(decode.string))
+  decode.success(PutWithContentEncodingInput(
+    data: data,
+    encoding: encoding,
+  ))
+}
+
+pub fn decode_put_with_content_encoding_input_struct_params() -> decode.Decoder(PutWithContentEncodingInput) {
   use data <- decode.optional_field("data", option.None, decode.optional(decode.string))
   use encoding <- decode.optional_field("encoding", option.None, decode.optional(decode.string))
   decode.success(PutWithContentEncodingInput(
@@ -2815,6 +3306,13 @@ pub fn decode_query_idempotency_token_auto_fill_input_struct() -> decode.Decoder
   ))
 }
 
+pub fn decode_query_idempotency_token_auto_fill_input_struct_params() -> decode.Decoder(QueryIdempotencyTokenAutoFillInput) {
+  use token <- decode.optional_field("token", option.None, decode.optional(decode.string))
+  decode.success(QueryIdempotencyTokenAutoFillInput(
+    token: token,
+  ))
+}
+
 pub fn encode_query_idempotency_token_auto_fill_input_xml_inner(input: QueryIdempotencyTokenAutoFillInput) -> String {
   let inner = ""
   inner
@@ -2852,6 +3350,15 @@ pub fn encode_query_params_as_string_list_map_input_struct(input: QueryParamsAsS
 }
 
 pub fn decode_query_params_as_string_list_map_input_struct() -> decode.Decoder(QueryParamsAsStringListMapInput) {
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
+  use qux <- decode.optional_field("qux", option.None, decode.optional(decode.string))
+  decode.success(QueryParamsAsStringListMapInput(
+    foo: foo,
+    qux: qux,
+  ))
+}
+
+pub fn decode_query_params_as_string_list_map_input_struct_params() -> decode.Decoder(QueryParamsAsStringListMapInput) {
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
   use qux <- decode.optional_field("qux", option.None, decode.optional(decode.string))
   decode.success(QueryParamsAsStringListMapInput(
@@ -2907,6 +3414,15 @@ pub fn decode_query_precedence_input_struct() -> decode.Decoder(QueryPrecedenceI
   ))
 }
 
+pub fn decode_query_precedence_input_struct_params() -> decode.Decoder(QueryPrecedenceInput) {
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(QueryPrecedenceInput(
+    baz: baz,
+    foo: foo,
+  ))
+}
+
 pub fn encode_query_precedence_input_xml_inner(input: QueryPrecedenceInput) -> String {
   let inner = ""
   inner
@@ -2942,6 +3458,13 @@ pub fn encode_recursive_shapes_request_struct(input: RecursiveShapesRequest) -> 
 
 pub fn decode_recursive_shapes_request_struct() -> decode.Decoder(RecursiveShapesRequest) {
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct()))
+  decode.success(RecursiveShapesRequest(
+    nested: nested,
+  ))
+}
+
+pub fn decode_recursive_shapes_request_struct_params() -> decode.Decoder(RecursiveShapesRequest) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct_params()))
   decode.success(RecursiveShapesRequest(
     nested: nested,
   ))
@@ -2990,6 +3513,15 @@ pub fn encode_recursive_shapes_input_output_nested1_struct(input: RecursiveShape
 pub fn decode_recursive_shapes_input_output_nested1_struct() -> decode.Decoder(RecursiveShapesInputOutputNested1) {
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested2_struct()))
+  decode.success(RecursiveShapesInputOutputNested1(
+    foo: foo,
+    nested: nested,
+  ))
+}
+
+pub fn decode_recursive_shapes_input_output_nested1_struct_params() -> decode.Decoder(RecursiveShapesInputOutputNested1) {
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested2_struct_params()))
   decode.success(RecursiveShapesInputOutputNested1(
     foo: foo,
     nested: nested,
@@ -3051,6 +3583,15 @@ pub fn decode_recursive_shapes_input_output_nested2_struct() -> decode.Decoder(R
   ))
 }
 
+pub fn decode_recursive_shapes_input_output_nested2_struct_params() -> decode.Decoder(RecursiveShapesInputOutputNested2) {
+  use bar <- decode.optional_field("bar", option.None, decode.optional(decode.string))
+  use recursive_member <- decode.optional_field("recursiveMember", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct_params()))
+  decode.success(RecursiveShapesInputOutputNested2(
+    bar: bar,
+    recursive_member: recursive_member,
+  ))
+}
+
 pub fn encode_recursive_shapes_input_output_nested2_xml_inner(input: RecursiveShapesInputOutputNested2) -> String {
   let inner = ""
   let inner = case input.bar {
@@ -3094,6 +3635,13 @@ pub fn encode_recursive_shapes_response_struct(input: RecursiveShapesResponse) -
 
 pub fn decode_recursive_shapes_response_struct() -> decode.Decoder(RecursiveShapesResponse) {
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct()))
+  decode.success(RecursiveShapesResponse(
+    nested: nested,
+  ))
+}
+
+pub fn decode_recursive_shapes_response_struct_params() -> decode.Decoder(RecursiveShapesResponse) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct_params()))
   decode.success(RecursiveShapesResponse(
     nested: nested,
   ))
@@ -3180,6 +3728,31 @@ pub fn encode_simple_scalar_properties_request_struct(input: SimpleScalarPropert
 }
 
 pub fn decode_simple_scalar_properties_request_struct() -> decode.Decoder(SimpleScalarPropertiesRequest) {
+  use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
+  use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
+  use false_boolean_value <- decode.optional_field("falseBooleanValue", option.None, decode.optional(decode.bool))
+  use float_value <- decode.optional_field("floatValue", option.None, decode.optional(json_float.decoder()))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use integer_value <- decode.optional_field("integerValue", option.None, decode.optional(decode.int))
+  use long_value <- decode.optional_field("longValue", option.None, decode.optional(decode.int))
+  use short_value <- decode.optional_field("shortValue", option.None, decode.optional(decode.int))
+  use string_value <- decode.optional_field("stringValue", option.None, decode.optional(decode.string))
+  use true_boolean_value <- decode.optional_field("trueBooleanValue", option.None, decode.optional(decode.bool))
+  decode.success(SimpleScalarPropertiesRequest(
+    byte_value: byte_value,
+    double_value: double_value,
+    false_boolean_value: false_boolean_value,
+    float_value: float_value,
+    foo: foo,
+    integer_value: integer_value,
+    long_value: long_value,
+    short_value: short_value,
+    string_value: string_value,
+    true_boolean_value: true_boolean_value,
+  ))
+}
+
+pub fn decode_simple_scalar_properties_request_struct_params() -> decode.Decoder(SimpleScalarPropertiesRequest) {
   use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
   use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
   use false_boolean_value <- decode.optional_field("falseBooleanValue", option.None, decode.optional(decode.bool))
@@ -3359,6 +3932,31 @@ pub fn decode_simple_scalar_properties_response_struct() -> decode.Decoder(Simpl
   ))
 }
 
+pub fn decode_simple_scalar_properties_response_struct_params() -> decode.Decoder(SimpleScalarPropertiesResponse) {
+  use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
+  use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
+  use false_boolean_value <- decode.optional_field("falseBooleanValue", option.None, decode.optional(decode.bool))
+  use float_value <- decode.optional_field("floatValue", option.None, decode.optional(json_float.decoder()))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use integer_value <- decode.optional_field("integerValue", option.None, decode.optional(decode.int))
+  use long_value <- decode.optional_field("longValue", option.None, decode.optional(decode.int))
+  use short_value <- decode.optional_field("shortValue", option.None, decode.optional(decode.int))
+  use string_value <- decode.optional_field("stringValue", option.None, decode.optional(decode.string))
+  use true_boolean_value <- decode.optional_field("trueBooleanValue", option.None, decode.optional(decode.bool))
+  decode.success(SimpleScalarPropertiesResponse(
+    byte_value: byte_value,
+    double_value: double_value,
+    false_boolean_value: false_boolean_value,
+    float_value: float_value,
+    foo: foo,
+    integer_value: integer_value,
+    long_value: long_value,
+    short_value: short_value,
+    string_value: string_value,
+    true_boolean_value: true_boolean_value,
+  ))
+}
+
 pub fn encode_simple_scalar_properties_response_xml_inner(input: SimpleScalarPropertiesResponse) -> String {
   let inner = ""
   let inner = case input.byte_value {
@@ -3475,13 +4073,32 @@ pub fn encode_timestamp_format_headers_io_struct(input: TimestampFormatHeadersIO
 }
 
 pub fn decode_timestamp_format_headers_io_struct() -> decode.Decoder(TimestampFormatHeadersIO) {
-  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(decode.int))
-  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(decode.int))
-  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(decode.int))
-  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(decode.int))
-  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(decode.int))
-  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(decode.int))
-  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(decode.int))
+  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(json_timestamp.decoder()))
+  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(TimestampFormatHeadersIO(
+    default_format: default_format,
+    member_date_time: member_date_time,
+    member_epoch_seconds: member_epoch_seconds,
+    member_http_date: member_http_date,
+    target_date_time: target_date_time,
+    target_epoch_seconds: target_epoch_seconds,
+    target_http_date: target_http_date,
+  ))
+}
+
+pub fn decode_timestamp_format_headers_io_struct_params() -> decode.Decoder(TimestampFormatHeadersIO) {
+  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(json_timestamp.decoder()))
+  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(TimestampFormatHeadersIO(
     default_format: default_format,
     member_date_time: member_date_time,
@@ -3550,6 +4167,15 @@ pub fn decode_xml_attributes_request_struct() -> decode.Decoder(XmlAttributesReq
   ))
 }
 
+pub fn decode_xml_attributes_request_struct_params() -> decode.Decoder(XmlAttributesRequest) {
+  use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(XmlAttributesRequest(
+    attr: attr,
+    foo: foo,
+  ))
+}
+
 pub fn encode_xml_attributes_request_xml_inner(input: XmlAttributesRequest) -> String {
   let inner = ""
   let inner = case input.attr {
@@ -3597,6 +4223,15 @@ pub fn encode_xml_attributes_response_struct(input: XmlAttributesResponse) -> js
 }
 
 pub fn decode_xml_attributes_response_struct() -> decode.Decoder(XmlAttributesResponse) {
+  use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(XmlAttributesResponse(
+    attr: attr,
+    foo: foo,
+  ))
+}
+
+pub fn decode_xml_attributes_response_struct_params() -> decode.Decoder(XmlAttributesResponse) {
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(XmlAttributesResponse(
@@ -3653,6 +4288,13 @@ pub fn decode_xml_attributes_in_middle_request_struct() -> decode.Decoder(XmlAtt
   ))
 }
 
+pub fn decode_xml_attributes_in_middle_request_struct_params() -> decode.Decoder(XmlAttributesInMiddleRequest) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_xml_attributes_in_middle_payload_request_struct_params()))
+  decode.success(XmlAttributesInMiddleRequest(
+    payload: payload,
+  ))
+}
+
 pub fn encode_xml_attributes_in_middle_request_xml_inner(input: XmlAttributesInMiddleRequest) -> String {
   let inner = ""
   inner
@@ -3695,6 +4337,17 @@ pub fn encode_xml_attributes_in_middle_payload_request_struct(input: XmlAttribut
 }
 
 pub fn decode_xml_attributes_in_middle_payload_request_struct() -> decode.Decoder(XmlAttributesInMiddlePayloadRequest) {
+  use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(XmlAttributesInMiddlePayloadRequest(
+    attr: attr,
+    baz: baz,
+    foo: foo,
+  ))
+}
+
+pub fn decode_xml_attributes_in_middle_payload_request_struct_params() -> decode.Decoder(XmlAttributesInMiddlePayloadRequest) {
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
@@ -3759,6 +4412,13 @@ pub fn decode_xml_attributes_in_middle_response_struct() -> decode.Decoder(XmlAt
   ))
 }
 
+pub fn decode_xml_attributes_in_middle_response_struct_params() -> decode.Decoder(XmlAttributesInMiddleResponse) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_xml_attributes_in_middle_payload_response_struct_params()))
+  decode.success(XmlAttributesInMiddleResponse(
+    payload: payload,
+  ))
+}
+
 pub fn encode_xml_attributes_in_middle_response_xml_inner(input: XmlAttributesInMiddleResponse) -> String {
   let inner = ""
   inner
@@ -3801,6 +4461,17 @@ pub fn encode_xml_attributes_in_middle_payload_response_struct(input: XmlAttribu
 }
 
 pub fn decode_xml_attributes_in_middle_payload_response_struct() -> decode.Decoder(XmlAttributesInMiddlePayloadResponse) {
+  use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(XmlAttributesInMiddlePayloadResponse(
+    attr: attr,
+    baz: baz,
+    foo: foo,
+  ))
+}
+
+pub fn decode_xml_attributes_in_middle_payload_response_struct_params() -> decode.Decoder(XmlAttributesInMiddlePayloadResponse) {
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
@@ -3865,6 +4536,13 @@ pub fn decode_xml_attributes_on_payload_request_struct() -> decode.Decoder(XmlAt
   ))
 }
 
+pub fn decode_xml_attributes_on_payload_request_struct_params() -> decode.Decoder(XmlAttributesOnPayloadRequest) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_xml_attributes_payload_request_struct_params()))
+  decode.success(XmlAttributesOnPayloadRequest(
+    payload: payload,
+  ))
+}
+
 pub fn encode_xml_attributes_on_payload_request_xml_inner(input: XmlAttributesOnPayloadRequest) -> String {
   let inner = ""
   inner
@@ -3902,6 +4580,15 @@ pub fn encode_xml_attributes_payload_request_struct(input: XmlAttributesPayloadR
 }
 
 pub fn decode_xml_attributes_payload_request_struct() -> decode.Decoder(XmlAttributesPayloadRequest) {
+  use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(XmlAttributesPayloadRequest(
+    attr: attr,
+    foo: foo,
+  ))
+}
+
+pub fn decode_xml_attributes_payload_request_struct_params() -> decode.Decoder(XmlAttributesPayloadRequest) {
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(XmlAttributesPayloadRequest(
@@ -3958,6 +4645,13 @@ pub fn decode_xml_attributes_on_payload_response_struct() -> decode.Decoder(XmlA
   ))
 }
 
+pub fn decode_xml_attributes_on_payload_response_struct_params() -> decode.Decoder(XmlAttributesOnPayloadResponse) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_xml_attributes_payload_response_struct_params()))
+  decode.success(XmlAttributesOnPayloadResponse(
+    payload: payload,
+  ))
+}
+
 pub fn encode_xml_attributes_on_payload_response_xml_inner(input: XmlAttributesOnPayloadResponse) -> String {
   let inner = ""
   inner
@@ -3995,6 +4689,15 @@ pub fn encode_xml_attributes_payload_response_struct(input: XmlAttributesPayload
 }
 
 pub fn decode_xml_attributes_payload_response_struct() -> decode.Decoder(XmlAttributesPayloadResponse) {
+  use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(XmlAttributesPayloadResponse(
+    attr: attr,
+    foo: foo,
+  ))
+}
+
+pub fn decode_xml_attributes_payload_response_struct_params() -> decode.Decoder(XmlAttributesPayloadResponse) {
   use attr <- decode.optional_field("attr", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(XmlAttributesPayloadResponse(
@@ -4051,6 +4754,13 @@ pub fn decode_xml_blobs_request_struct() -> decode.Decoder(XmlBlobsRequest) {
   ))
 }
 
+pub fn decode_xml_blobs_request_struct_params() -> decode.Decoder(XmlBlobsRequest) {
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(XmlBlobsRequest(
+    data: data,
+  ))
+}
+
 pub fn encode_xml_blobs_request_xml_inner(input: XmlBlobsRequest) -> String {
   let inner = ""
   let inner = case input.data {
@@ -4087,6 +4797,13 @@ pub fn encode_xml_blobs_response_struct(input: XmlBlobsResponse) -> json.Json {
 }
 
 pub fn decode_xml_blobs_response_struct() -> decode.Decoder(XmlBlobsResponse) {
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(XmlBlobsResponse(
+    data: data,
+  ))
+}
+
+pub fn decode_xml_blobs_response_struct_params() -> decode.Decoder(XmlBlobsResponse) {
   use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(XmlBlobsResponse(
     data: data,
@@ -4135,6 +4852,13 @@ pub fn decode_xml_empty_blobs_request_struct() -> decode.Decoder(XmlEmptyBlobsRe
   ))
 }
 
+pub fn decode_xml_empty_blobs_request_struct_params() -> decode.Decoder(XmlEmptyBlobsRequest) {
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(XmlEmptyBlobsRequest(
+    data: data,
+  ))
+}
+
 pub fn encode_xml_empty_blobs_request_xml_inner(input: XmlEmptyBlobsRequest) -> String {
   let inner = ""
   let inner = case input.data {
@@ -4171,6 +4895,13 @@ pub fn encode_xml_empty_blobs_response_struct(input: XmlEmptyBlobsResponse) -> j
 }
 
 pub fn decode_xml_empty_blobs_response_struct() -> decode.Decoder(XmlEmptyBlobsResponse) {
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(XmlEmptyBlobsResponse(
+    data: data,
+  ))
+}
+
+pub fn decode_xml_empty_blobs_response_struct_params() -> decode.Decoder(XmlEmptyBlobsResponse) {
   use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(XmlEmptyBlobsResponse(
     data: data,
@@ -4297,7 +5028,42 @@ pub fn decode_xml_empty_lists_request_struct() -> decode.Decoder(XmlEmptyListsRe
   use string_list <- decode.optional_field("stringList", option.None, decode.optional(decode.list(decode.string)))
   use string_set <- decode.optional_field("stringSet", option.None, decode.optional(decode.list(decode.string)))
   use structure_list <- decode.optional_field("structureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct())))
-  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(decode.int)))
+  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
+  decode.success(XmlEmptyListsRequest(
+    boolean_list: boolean_list,
+    enum_list: enum_list,
+    flattened_list: flattened_list,
+    flattened_list2: flattened_list2,
+    flattened_list_with_member_namespace: flattened_list_with_member_namespace,
+    flattened_list_with_namespace: flattened_list_with_namespace,
+    flattened_structure_list: flattened_structure_list,
+    int_enum_list: int_enum_list,
+    integer_list: integer_list,
+    nested_string_list: nested_string_list,
+    renamed_list_members: renamed_list_members,
+    string_list: string_list,
+    string_set: string_set,
+    structure_list: structure_list,
+    timestamp_list: timestamp_list,
+  ))
+}
+
+pub fn decode_xml_empty_lists_request_struct_params() -> decode.Decoder(XmlEmptyListsRequest) {
+  use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use flattened_list <- decode.optional_field("flattenedList", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_list2 <- decode.optional_field("flattenedList2", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_list_with_member_namespace <- decode.optional_field("flattenedListWithMemberNamespace", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_list_with_namespace <- decode.optional_field("flattenedListWithNamespace", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_structure_list <- decode.optional_field("flattenedStructureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct_params())))
+  use int_enum_list <- decode.optional_field("intEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use integer_list <- decode.optional_field("integerList", option.None, decode.optional(decode.list(decode.int)))
+  use nested_string_list <- decode.optional_field("nestedStringList", option.None, decode.optional(decode.list(decode.list(decode.string))))
+  use renamed_list_members <- decode.optional_field("renamedListMembers", option.None, decode.optional(decode.list(decode.string)))
+  use string_list <- decode.optional_field("stringList", option.None, decode.optional(decode.list(decode.string)))
+  use string_set <- decode.optional_field("stringSet", option.None, decode.optional(decode.list(decode.string)))
+  use structure_list <- decode.optional_field("structureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct_params())))
+  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
   decode.success(XmlEmptyListsRequest(
     boolean_list: boolean_list,
     enum_list: enum_list,
@@ -4450,6 +5216,15 @@ pub fn decode_structure_list_member_struct() -> decode.Decoder(StructureListMemb
   ))
 }
 
+pub fn decode_structure_list_member_struct_params() -> decode.Decoder(StructureListMember) {
+  use a <- decode.optional_field("a", option.None, decode.optional(decode.string))
+  use b <- decode.optional_field("b", option.None, decode.optional(decode.string))
+  decode.success(StructureListMember(
+    a: a,
+    b: b,
+  ))
+}
+
 pub fn encode_structure_list_member_xml_inner(input: StructureListMember) -> String {
   let inner = ""
   let inner = case input.a {
@@ -4576,7 +5351,42 @@ pub fn decode_xml_empty_lists_response_struct() -> decode.Decoder(XmlEmptyListsR
   use string_list <- decode.optional_field("stringList", option.None, decode.optional(decode.list(decode.string)))
   use string_set <- decode.optional_field("stringSet", option.None, decode.optional(decode.list(decode.string)))
   use structure_list <- decode.optional_field("structureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct())))
-  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(decode.int)))
+  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
+  decode.success(XmlEmptyListsResponse(
+    boolean_list: boolean_list,
+    enum_list: enum_list,
+    flattened_list: flattened_list,
+    flattened_list2: flattened_list2,
+    flattened_list_with_member_namespace: flattened_list_with_member_namespace,
+    flattened_list_with_namespace: flattened_list_with_namespace,
+    flattened_structure_list: flattened_structure_list,
+    int_enum_list: int_enum_list,
+    integer_list: integer_list,
+    nested_string_list: nested_string_list,
+    renamed_list_members: renamed_list_members,
+    string_list: string_list,
+    string_set: string_set,
+    structure_list: structure_list,
+    timestamp_list: timestamp_list,
+  ))
+}
+
+pub fn decode_xml_empty_lists_response_struct_params() -> decode.Decoder(XmlEmptyListsResponse) {
+  use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use flattened_list <- decode.optional_field("flattenedList", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_list2 <- decode.optional_field("flattenedList2", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_list_with_member_namespace <- decode.optional_field("flattenedListWithMemberNamespace", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_list_with_namespace <- decode.optional_field("flattenedListWithNamespace", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_structure_list <- decode.optional_field("flattenedStructureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct_params())))
+  use int_enum_list <- decode.optional_field("intEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use integer_list <- decode.optional_field("integerList", option.None, decode.optional(decode.list(decode.int)))
+  use nested_string_list <- decode.optional_field("nestedStringList", option.None, decode.optional(decode.list(decode.list(decode.string))))
+  use renamed_list_members <- decode.optional_field("renamedListMembers", option.None, decode.optional(decode.list(decode.string)))
+  use string_list <- decode.optional_field("stringList", option.None, decode.optional(decode.list(decode.string)))
+  use string_set <- decode.optional_field("stringSet", option.None, decode.optional(decode.list(decode.string)))
+  use structure_list <- decode.optional_field("structureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct_params())))
+  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
   decode.success(XmlEmptyListsResponse(
     boolean_list: boolean_list,
     enum_list: enum_list,
@@ -4722,6 +5532,13 @@ pub fn decode_xml_empty_maps_request_struct() -> decode.Decoder(XmlEmptyMapsRequ
   ))
 }
 
+pub fn decode_xml_empty_maps_request_struct_params() -> decode.Decoder(XmlEmptyMapsRequest) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
+  decode.success(XmlEmptyMapsRequest(
+    my_map: my_map,
+  ))
+}
+
 pub fn encode_xml_empty_maps_request_xml_inner(input: XmlEmptyMapsRequest) -> String {
   let inner = ""
   let inner = case input.my_map {
@@ -4759,6 +5576,13 @@ pub fn encode_greeting_struct_struct(input: GreetingStruct) -> json.Json {
 }
 
 pub fn decode_greeting_struct_struct() -> decode.Decoder(GreetingStruct) {
+  use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
+  decode.success(GreetingStruct(
+    hi: hi,
+  ))
+}
+
+pub fn decode_greeting_struct_struct_params() -> decode.Decoder(GreetingStruct) {
   use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
   decode.success(GreetingStruct(
     hi: hi,
@@ -4807,6 +5631,13 @@ pub fn decode_xml_empty_maps_response_struct() -> decode.Decoder(XmlEmptyMapsRes
   ))
 }
 
+pub fn decode_xml_empty_maps_response_struct_params() -> decode.Decoder(XmlEmptyMapsResponse) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
+  decode.success(XmlEmptyMapsResponse(
+    my_map: my_map,
+  ))
+}
+
 pub fn encode_xml_empty_maps_response_xml_inner(input: XmlEmptyMapsResponse) -> String {
   let inner = ""
   let inner = case input.my_map {
@@ -4850,6 +5681,13 @@ pub fn decode_xml_empty_strings_request_struct() -> decode.Decoder(XmlEmptyStrin
   ))
 }
 
+pub fn decode_xml_empty_strings_request_struct_params() -> decode.Decoder(XmlEmptyStringsRequest) {
+  use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
+  decode.success(XmlEmptyStringsRequest(
+    empty_string: empty_string,
+  ))
+}
+
 pub fn encode_xml_empty_strings_request_xml_inner(input: XmlEmptyStringsRequest) -> String {
   let inner = ""
   let inner = case input.empty_string {
@@ -4886,6 +5724,13 @@ pub fn encode_xml_empty_strings_response_struct(input: XmlEmptyStringsResponse) 
 }
 
 pub fn decode_xml_empty_strings_response_struct() -> decode.Decoder(XmlEmptyStringsResponse) {
+  use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
+  decode.success(XmlEmptyStringsResponse(
+    empty_string: empty_string,
+  ))
+}
+
+pub fn decode_xml_empty_strings_response_struct_params() -> decode.Decoder(XmlEmptyStringsResponse) {
   use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
   decode.success(XmlEmptyStringsResponse(
     empty_string: empty_string,
@@ -4953,6 +5798,23 @@ pub fn encode_xml_enums_request_struct(input: XmlEnumsRequest) -> json.Json {
 }
 
 pub fn decode_xml_enums_request_struct() -> decode.Decoder(XmlEnumsRequest) {
+  use foo_enum1 <- decode.optional_field("fooEnum1", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum2 <- decode.optional_field("fooEnum2", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum3 <- decode.optional_field("fooEnum3", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum_list <- decode.optional_field("fooEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use foo_enum_map <- decode.optional_field("fooEnumMap", option.None, decode.optional(decode.dict(decode.string, decode_foo_enum_enum())))
+  use foo_enum_set <- decode.optional_field("fooEnumSet", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  decode.success(XmlEnumsRequest(
+    foo_enum1: foo_enum1,
+    foo_enum2: foo_enum2,
+    foo_enum3: foo_enum3,
+    foo_enum_list: foo_enum_list,
+    foo_enum_map: foo_enum_map,
+    foo_enum_set: foo_enum_set,
+  ))
+}
+
+pub fn decode_xml_enums_request_struct_params() -> decode.Decoder(XmlEnumsRequest) {
   use foo_enum1 <- decode.optional_field("fooEnum1", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum2 <- decode.optional_field("fooEnum2", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum3 <- decode.optional_field("fooEnum3", option.None, decode.optional(decode_foo_enum_enum()))
@@ -5080,6 +5942,23 @@ pub fn decode_xml_enums_response_struct() -> decode.Decoder(XmlEnumsResponse) {
   ))
 }
 
+pub fn decode_xml_enums_response_struct_params() -> decode.Decoder(XmlEnumsResponse) {
+  use foo_enum1 <- decode.optional_field("fooEnum1", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum2 <- decode.optional_field("fooEnum2", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum3 <- decode.optional_field("fooEnum3", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum_list <- decode.optional_field("fooEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use foo_enum_map <- decode.optional_field("fooEnumMap", option.None, decode.optional(decode.dict(decode.string, decode_foo_enum_enum())))
+  use foo_enum_set <- decode.optional_field("fooEnumSet", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  decode.success(XmlEnumsResponse(
+    foo_enum1: foo_enum1,
+    foo_enum2: foo_enum2,
+    foo_enum3: foo_enum3,
+    foo_enum_list: foo_enum_list,
+    foo_enum_map: foo_enum_map,
+    foo_enum_set: foo_enum_set,
+  ))
+}
+
 pub fn encode_xml_enums_response_xml_inner(input: XmlEnumsResponse) -> String {
   let inner = ""
   let inner = case input.foo_enum1 {
@@ -5191,6 +6070,23 @@ pub fn decode_xml_int_enums_request_struct() -> decode.Decoder(XmlIntEnumsReques
   ))
 }
 
+pub fn decode_xml_int_enums_request_struct_params() -> decode.Decoder(XmlIntEnumsRequest) {
+  use int_enum1 <- decode.optional_field("intEnum1", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use int_enum2 <- decode.optional_field("intEnum2", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use int_enum3 <- decode.optional_field("intEnum3", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use int_enum_list <- decode.optional_field("intEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use int_enum_map <- decode.optional_field("intEnumMap", option.None, decode.optional(decode.dict(decode.string, decode_integer_enum_int_enum())))
+  use int_enum_set <- decode.optional_field("intEnumSet", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  decode.success(XmlIntEnumsRequest(
+    int_enum1: int_enum1,
+    int_enum2: int_enum2,
+    int_enum3: int_enum3,
+    int_enum_list: int_enum_list,
+    int_enum_map: int_enum_map,
+    int_enum_set: int_enum_set,
+  ))
+}
+
 pub fn encode_xml_int_enums_request_xml_inner(input: XmlIntEnumsRequest) -> String {
   let inner = ""
   let inner = case input.int_enum1 {
@@ -5286,6 +6182,23 @@ pub fn encode_xml_int_enums_response_struct(input: XmlIntEnumsResponse) -> json.
 }
 
 pub fn decode_xml_int_enums_response_struct() -> decode.Decoder(XmlIntEnumsResponse) {
+  use int_enum1 <- decode.optional_field("intEnum1", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use int_enum2 <- decode.optional_field("intEnum2", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use int_enum3 <- decode.optional_field("intEnum3", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use int_enum_list <- decode.optional_field("intEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use int_enum_map <- decode.optional_field("intEnumMap", option.None, decode.optional(decode.dict(decode.string, decode_integer_enum_int_enum())))
+  use int_enum_set <- decode.optional_field("intEnumSet", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  decode.success(XmlIntEnumsResponse(
+    int_enum1: int_enum1,
+    int_enum2: int_enum2,
+    int_enum3: int_enum3,
+    int_enum_list: int_enum_list,
+    int_enum_map: int_enum_map,
+    int_enum_set: int_enum_set,
+  ))
+}
+
+pub fn decode_xml_int_enums_response_struct_params() -> decode.Decoder(XmlIntEnumsResponse) {
   use int_enum1 <- decode.optional_field("intEnum1", option.None, decode.optional(decode_integer_enum_int_enum()))
   use int_enum2 <- decode.optional_field("intEnum2", option.None, decode.optional(decode_integer_enum_int_enum()))
   use int_enum3 <- decode.optional_field("intEnum3", option.None, decode.optional(decode_integer_enum_int_enum()))
@@ -5456,7 +6369,42 @@ pub fn decode_xml_lists_request_struct() -> decode.Decoder(XmlListsRequest) {
   use string_list <- decode.optional_field("stringList", option.None, decode.optional(decode.list(decode.string)))
   use string_set <- decode.optional_field("stringSet", option.None, decode.optional(decode.list(decode.string)))
   use structure_list <- decode.optional_field("structureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct())))
-  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(decode.int)))
+  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
+  decode.success(XmlListsRequest(
+    boolean_list: boolean_list,
+    enum_list: enum_list,
+    flattened_list: flattened_list,
+    flattened_list2: flattened_list2,
+    flattened_list_with_member_namespace: flattened_list_with_member_namespace,
+    flattened_list_with_namespace: flattened_list_with_namespace,
+    flattened_structure_list: flattened_structure_list,
+    int_enum_list: int_enum_list,
+    integer_list: integer_list,
+    nested_string_list: nested_string_list,
+    renamed_list_members: renamed_list_members,
+    string_list: string_list,
+    string_set: string_set,
+    structure_list: structure_list,
+    timestamp_list: timestamp_list,
+  ))
+}
+
+pub fn decode_xml_lists_request_struct_params() -> decode.Decoder(XmlListsRequest) {
+  use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use flattened_list <- decode.optional_field("flattenedList", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_list2 <- decode.optional_field("flattenedList2", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_list_with_member_namespace <- decode.optional_field("flattenedListWithMemberNamespace", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_list_with_namespace <- decode.optional_field("flattenedListWithNamespace", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_structure_list <- decode.optional_field("flattenedStructureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct_params())))
+  use int_enum_list <- decode.optional_field("intEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use integer_list <- decode.optional_field("integerList", option.None, decode.optional(decode.list(decode.int)))
+  use nested_string_list <- decode.optional_field("nestedStringList", option.None, decode.optional(decode.list(decode.list(decode.string))))
+  use renamed_list_members <- decode.optional_field("renamedListMembers", option.None, decode.optional(decode.list(decode.string)))
+  use string_list <- decode.optional_field("stringList", option.None, decode.optional(decode.list(decode.string)))
+  use string_set <- decode.optional_field("stringSet", option.None, decode.optional(decode.list(decode.string)))
+  use structure_list <- decode.optional_field("structureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct_params())))
+  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
   decode.success(XmlListsRequest(
     boolean_list: boolean_list,
     enum_list: enum_list,
@@ -5680,7 +6628,42 @@ pub fn decode_xml_lists_response_struct() -> decode.Decoder(XmlListsResponse) {
   use string_list <- decode.optional_field("stringList", option.None, decode.optional(decode.list(decode.string)))
   use string_set <- decode.optional_field("stringSet", option.None, decode.optional(decode.list(decode.string)))
   use structure_list <- decode.optional_field("structureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct())))
-  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(decode.int)))
+  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
+  decode.success(XmlListsResponse(
+    boolean_list: boolean_list,
+    enum_list: enum_list,
+    flattened_list: flattened_list,
+    flattened_list2: flattened_list2,
+    flattened_list_with_member_namespace: flattened_list_with_member_namespace,
+    flattened_list_with_namespace: flattened_list_with_namespace,
+    flattened_structure_list: flattened_structure_list,
+    int_enum_list: int_enum_list,
+    integer_list: integer_list,
+    nested_string_list: nested_string_list,
+    renamed_list_members: renamed_list_members,
+    string_list: string_list,
+    string_set: string_set,
+    structure_list: structure_list,
+    timestamp_list: timestamp_list,
+  ))
+}
+
+pub fn decode_xml_lists_response_struct_params() -> decode.Decoder(XmlListsResponse) {
+  use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use flattened_list <- decode.optional_field("flattenedList", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_list2 <- decode.optional_field("flattenedList2", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_list_with_member_namespace <- decode.optional_field("flattenedListWithMemberNamespace", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_list_with_namespace <- decode.optional_field("flattenedListWithNamespace", option.None, decode.optional(decode.list(decode.string)))
+  use flattened_structure_list <- decode.optional_field("flattenedStructureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct_params())))
+  use int_enum_list <- decode.optional_field("intEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use integer_list <- decode.optional_field("integerList", option.None, decode.optional(decode.list(decode.int)))
+  use nested_string_list <- decode.optional_field("nestedStringList", option.None, decode.optional(decode.list(decode.list(decode.string))))
+  use renamed_list_members <- decode.optional_field("renamedListMembers", option.None, decode.optional(decode.list(decode.string)))
+  use string_list <- decode.optional_field("stringList", option.None, decode.optional(decode.list(decode.string)))
+  use string_set <- decode.optional_field("stringSet", option.None, decode.optional(decode.list(decode.string)))
+  use structure_list <- decode.optional_field("structureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct_params())))
+  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
   decode.success(XmlListsResponse(
     boolean_list: boolean_list,
     enum_list: enum_list,
@@ -5826,6 +6809,13 @@ pub fn decode_xml_maps_request_struct() -> decode.Decoder(XmlMapsRequest) {
   ))
 }
 
+pub fn decode_xml_maps_request_struct_params() -> decode.Decoder(XmlMapsRequest) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
+  decode.success(XmlMapsRequest(
+    my_map: my_map,
+  ))
+}
+
 pub fn encode_xml_maps_request_xml_inner(input: XmlMapsRequest) -> String {
   let inner = ""
   let inner = case input.my_map {
@@ -5864,6 +6854,13 @@ pub fn encode_xml_maps_response_struct(input: XmlMapsResponse) -> json.Json {
 
 pub fn decode_xml_maps_response_struct() -> decode.Decoder(XmlMapsResponse) {
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())))
+  decode.success(XmlMapsResponse(
+    my_map: my_map,
+  ))
+}
+
+pub fn decode_xml_maps_response_struct_params() -> decode.Decoder(XmlMapsResponse) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
   decode.success(XmlMapsResponse(
     my_map: my_map,
   ))
@@ -5912,6 +6909,13 @@ pub fn decode_xml_maps_xml_name_request_struct() -> decode.Decoder(XmlMapsXmlNam
   ))
 }
 
+pub fn decode_xml_maps_xml_name_request_struct_params() -> decode.Decoder(XmlMapsXmlNameRequest) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
+  decode.success(XmlMapsXmlNameRequest(
+    my_map: my_map,
+  ))
+}
+
 pub fn encode_xml_maps_xml_name_request_xml_inner(input: XmlMapsXmlNameRequest) -> String {
   let inner = ""
   let inner = case input.my_map {
@@ -5955,6 +6959,13 @@ pub fn decode_xml_maps_xml_name_response_struct() -> decode.Decoder(XmlMapsXmlNa
   ))
 }
 
+pub fn decode_xml_maps_xml_name_response_struct_params() -> decode.Decoder(XmlMapsXmlNameResponse) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
+  decode.success(XmlMapsXmlNameResponse(
+    my_map: my_map,
+  ))
+}
+
 pub fn encode_xml_maps_xml_name_response_xml_inner(input: XmlMapsXmlNameResponse) -> String {
   let inner = ""
   let inner = case input.my_map {
@@ -5992,6 +7003,13 @@ pub fn encode_xml_map_with_xml_namespace_request_struct(input: XmlMapWithXmlName
 }
 
 pub fn decode_xml_map_with_xml_namespace_request_struct() -> decode.Decoder(XmlMapWithXmlNamespaceRequest) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(XmlMapWithXmlNamespaceRequest(
+    my_map: my_map,
+  ))
+}
+
+pub fn decode_xml_map_with_xml_namespace_request_struct_params() -> decode.Decoder(XmlMapWithXmlNamespaceRequest) {
   use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(XmlMapWithXmlNamespaceRequest(
     my_map: my_map,
@@ -6041,6 +7059,13 @@ pub fn decode_xml_map_with_xml_namespace_response_struct() -> decode.Decoder(Xml
   ))
 }
 
+pub fn decode_xml_map_with_xml_namespace_response_struct_params() -> decode.Decoder(XmlMapWithXmlNamespaceResponse) {
+  use my_map <- decode.optional_field("myMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(XmlMapWithXmlNamespaceResponse(
+    my_map: my_map,
+  ))
+}
+
 pub fn encode_xml_map_with_xml_namespace_response_xml_inner(input: XmlMapWithXmlNamespaceResponse) -> String {
   let inner = ""
   let inner = case input.my_map {
@@ -6079,6 +7104,13 @@ pub fn encode_xml_namespaces_request_struct(input: XmlNamespacesRequest) -> json
 
 pub fn decode_xml_namespaces_request_struct() -> decode.Decoder(XmlNamespacesRequest) {
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_xml_namespace_nested_struct()))
+  decode.success(XmlNamespacesRequest(
+    nested: nested,
+  ))
+}
+
+pub fn decode_xml_namespaces_request_struct_params() -> decode.Decoder(XmlNamespacesRequest) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_xml_namespace_nested_struct_params()))
   decode.success(XmlNamespacesRequest(
     nested: nested,
   ))
@@ -6133,6 +7165,15 @@ pub fn decode_xml_namespace_nested_struct() -> decode.Decoder(XmlNamespaceNested
   ))
 }
 
+pub fn decode_xml_namespace_nested_struct_params() -> decode.Decoder(XmlNamespaceNested) {
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use values <- decode.optional_field("values", option.None, decode.optional(decode.list(decode.string)))
+  decode.success(XmlNamespaceNested(
+    foo: foo,
+    values: values,
+  ))
+}
+
 pub fn encode_xml_namespace_nested_xml_inner(input: XmlNamespaceNested) -> String {
   let inner = ""
   let inner = case input.foo {
@@ -6176,6 +7217,13 @@ pub fn encode_xml_namespaces_response_struct(input: XmlNamespacesResponse) -> js
 
 pub fn decode_xml_namespaces_response_struct() -> decode.Decoder(XmlNamespacesResponse) {
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_xml_namespace_nested_struct()))
+  decode.success(XmlNamespacesResponse(
+    nested: nested,
+  ))
+}
+
+pub fn decode_xml_namespaces_response_struct_params() -> decode.Decoder(XmlNamespacesResponse) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_xml_namespace_nested_struct_params()))
   decode.success(XmlNamespacesResponse(
     nested: nested,
   ))
@@ -6247,13 +7295,32 @@ pub fn encode_xml_timestamps_request_struct(input: XmlTimestampsRequest) -> json
 }
 
 pub fn decode_xml_timestamps_request_struct() -> decode.Decoder(XmlTimestampsRequest) {
-  use date_time <- decode.optional_field("dateTime", option.None, decode.optional(decode.int))
-  use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(decode.int))
-  use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(decode.int))
-  use epoch_seconds_on_target <- decode.optional_field("epochSecondsOnTarget", option.None, decode.optional(decode.int))
-  use http_date <- decode.optional_field("httpDate", option.None, decode.optional(decode.int))
-  use http_date_on_target <- decode.optional_field("httpDateOnTarget", option.None, decode.optional(decode.int))
-  use normal <- decode.optional_field("normal", option.None, decode.optional(decode.int))
+  use date_time <- decode.optional_field("dateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use epoch_seconds_on_target <- decode.optional_field("epochSecondsOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use http_date <- decode.optional_field("httpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use http_date_on_target <- decode.optional_field("httpDateOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use normal <- decode.optional_field("normal", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(XmlTimestampsRequest(
+    date_time: date_time,
+    date_time_on_target: date_time_on_target,
+    epoch_seconds: epoch_seconds,
+    epoch_seconds_on_target: epoch_seconds_on_target,
+    http_date: http_date,
+    http_date_on_target: http_date_on_target,
+    normal: normal,
+  ))
+}
+
+pub fn decode_xml_timestamps_request_struct_params() -> decode.Decoder(XmlTimestampsRequest) {
+  use date_time <- decode.optional_field("dateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use epoch_seconds_on_target <- decode.optional_field("epochSecondsOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use http_date <- decode.optional_field("httpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use http_date_on_target <- decode.optional_field("httpDateOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use normal <- decode.optional_field("normal", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(XmlTimestampsRequest(
     date_time: date_time,
     date_time_on_target: date_time_on_target,
@@ -6367,13 +7434,32 @@ pub fn encode_xml_timestamps_response_struct(input: XmlTimestampsResponse) -> js
 }
 
 pub fn decode_xml_timestamps_response_struct() -> decode.Decoder(XmlTimestampsResponse) {
-  use date_time <- decode.optional_field("dateTime", option.None, decode.optional(decode.int))
-  use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(decode.int))
-  use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(decode.int))
-  use epoch_seconds_on_target <- decode.optional_field("epochSecondsOnTarget", option.None, decode.optional(decode.int))
-  use http_date <- decode.optional_field("httpDate", option.None, decode.optional(decode.int))
-  use http_date_on_target <- decode.optional_field("httpDateOnTarget", option.None, decode.optional(decode.int))
-  use normal <- decode.optional_field("normal", option.None, decode.optional(decode.int))
+  use date_time <- decode.optional_field("dateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use epoch_seconds_on_target <- decode.optional_field("epochSecondsOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use http_date <- decode.optional_field("httpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use http_date_on_target <- decode.optional_field("httpDateOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use normal <- decode.optional_field("normal", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(XmlTimestampsResponse(
+    date_time: date_time,
+    date_time_on_target: date_time_on_target,
+    epoch_seconds: epoch_seconds,
+    epoch_seconds_on_target: epoch_seconds_on_target,
+    http_date: http_date,
+    http_date_on_target: http_date_on_target,
+    normal: normal,
+  ))
+}
+
+pub fn decode_xml_timestamps_response_struct_params() -> decode.Decoder(XmlTimestampsResponse) {
+  use date_time <- decode.optional_field("dateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use epoch_seconds_on_target <- decode.optional_field("epochSecondsOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use http_date <- decode.optional_field("httpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use http_date_on_target <- decode.optional_field("httpDateOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use normal <- decode.optional_field("normal", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(XmlTimestampsResponse(
     date_time: date_time,
     date_time_on_target: date_time_on_target,
@@ -6457,6 +7543,13 @@ pub fn encode_xml_unions_request_struct(input: XmlUnionsRequest) -> json.Json {
 }
 
 pub fn decode_xml_unions_request_struct() -> decode.Decoder(XmlUnionsRequest) {
+  use union_value <- decode.optional_field("unionValue", option.None, decode.optional(decode_xml_union_shape_union()))
+  decode.success(XmlUnionsRequest(
+    union_value: union_value,
+  ))
+}
+
+pub fn decode_xml_unions_request_struct_params() -> decode.Decoder(XmlUnionsRequest) {
   use union_value <- decode.optional_field("unionValue", option.None, decode.optional(decode_xml_union_shape_union()))
   decode.success(XmlUnionsRequest(
     union_value: union_value,
@@ -6600,6 +7693,27 @@ pub fn decode_xml_nested_union_struct_struct() -> decode.Decoder(XmlNestedUnionS
   ))
 }
 
+pub fn decode_xml_nested_union_struct_struct_params() -> decode.Decoder(XmlNestedUnionStruct) {
+  use boolean_value <- decode.optional_field("booleanValue", option.None, decode.optional(decode.bool))
+  use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
+  use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
+  use float_value <- decode.optional_field("floatValue", option.None, decode.optional(json_float.decoder()))
+  use integer_value <- decode.optional_field("integerValue", option.None, decode.optional(decode.int))
+  use long_value <- decode.optional_field("longValue", option.None, decode.optional(decode.int))
+  use short_value <- decode.optional_field("shortValue", option.None, decode.optional(decode.int))
+  use string_value <- decode.optional_field("stringValue", option.None, decode.optional(decode.string))
+  decode.success(XmlNestedUnionStruct(
+    boolean_value: boolean_value,
+    byte_value: byte_value,
+    double_value: double_value,
+    float_value: float_value,
+    integer_value: integer_value,
+    long_value: long_value,
+    short_value: short_value,
+    string_value: string_value,
+  ))
+}
+
 pub fn encode_xml_nested_union_struct_xml_inner(input: XmlNestedUnionStruct) -> String {
   let inner = ""
   let inner = case input.boolean_value {
@@ -6684,6 +7798,13 @@ pub fn decode_xml_unions_response_struct() -> decode.Decoder(XmlUnionsResponse) 
   ))
 }
 
+pub fn decode_xml_unions_response_struct_params() -> decode.Decoder(XmlUnionsResponse) {
+  use union_value <- decode.optional_field("unionValue", option.None, decode.optional(decode_xml_union_shape_union()))
+  decode.success(XmlUnionsResponse(
+    union_value: union_value,
+  ))
+}
+
 pub fn encode_xml_unions_response_xml_inner(input: XmlUnionsResponse) -> String {
   let inner = ""
   let inner = case input.union_value {
@@ -6723,7 +7844,7 @@ pub fn encode_all_query_string_types_input(input: AllQueryStringTypesInput) -> S
 }
 
 pub fn decode_all_query_string_types_input(body: String) -> Result(AllQueryStringTypesInput, String) {
-  case json.parse(body, decode_all_query_string_types_input_struct()) {
+  case json.parse(body, decode_all_query_string_types_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6863,9 +7984,9 @@ pub fn build_all_query_string_types_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -6885,7 +8006,7 @@ pub fn encode_body_with_xml_name_input(input: BodyWithXmlNameInputOutput) -> Str
 }
 
 pub fn decode_body_with_xml_name_input(body: String) -> Result(BodyWithXmlNameInputOutput, String) {
-  case json.parse(body, decode_body_with_xml_name_input_output_struct()) {
+  case json.parse(body, decode_body_with_xml_name_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6915,9 +8036,9 @@ pub fn build_body_with_xml_name_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -6958,7 +8079,7 @@ pub fn encode_constant_and_variable_query_string_input(input: ConstantAndVariabl
 }
 
 pub fn decode_constant_and_variable_query_string_input(body: String) -> Result(ConstantAndVariableQueryStringInput, String) {
-  case json.parse(body, decode_constant_and_variable_query_string_input_struct()) {
+  case json.parse(body, decode_constant_and_variable_query_string_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6995,9 +8116,9 @@ pub fn build_constant_and_variable_query_string_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -7029,7 +8150,7 @@ pub fn encode_constant_query_string_input(input: ConstantQueryStringInput) -> St
 }
 
 pub fn decode_constant_query_string_input(body: String) -> Result(ConstantQueryStringInput, String) {
-  case json.parse(body, decode_constant_query_string_input_struct()) {
+  case json.parse(body, decode_constant_query_string_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7062,9 +8183,9 @@ pub fn build_constant_query_string_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -7084,7 +8205,7 @@ pub fn encode_content_type_parameters_input(input: ContentTypeParametersInput) -
 }
 
 pub fn decode_content_type_parameters_input(body: String) -> Result(ContentTypeParametersInput, String) {
-  case json.parse(body, decode_content_type_parameters_input_struct()) {
+  case json.parse(body, decode_content_type_parameters_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7114,9 +8235,9 @@ pub fn build_content_type_parameters_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -7186,9 +8307,9 @@ pub fn build_datetime_offsets_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -7217,7 +8338,7 @@ pub fn encode_empty_input_and_empty_output_input(input: EmptyInputAndEmptyOutput
 }
 
 pub fn decode_empty_input_and_empty_output_input(body: String) -> Result(EmptyInputAndEmptyOutputInput, String) {
-  case json.parse(body, decode_empty_input_and_empty_output_input_struct()) {
+  case json.parse(body, decode_empty_input_and_empty_output_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7246,9 +8367,9 @@ pub fn build_empty_input_and_empty_output_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -7330,9 +8451,9 @@ pub fn build_endpoint_operation_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -7364,7 +8485,7 @@ pub fn encode_endpoint_with_host_label_header_operation_input(input: HostLabelHe
 }
 
 pub fn decode_endpoint_with_host_label_header_operation_input(body: String) -> Result(HostLabelHeaderInput, String) {
-  case json.parse(body, decode_host_label_header_input_struct()) {
+  case json.parse(body, decode_host_label_header_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7397,9 +8518,9 @@ pub fn build_endpoint_with_host_label_header_operation_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -7431,7 +8552,7 @@ pub fn encode_endpoint_with_host_label_operation_input(input: EndpointWithHostLa
 }
 
 pub fn decode_endpoint_with_host_label_operation_input(body: String) -> Result(EndpointWithHostLabelOperationRequest, String) {
-  case json.parse(body, decode_endpoint_with_host_label_operation_request_struct()) {
+  case json.parse(body, decode_endpoint_with_host_label_operation_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7461,9 +8582,9 @@ pub fn build_endpoint_with_host_label_operation_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -7483,7 +8604,7 @@ pub fn encode_flattened_xml_map_input(input: FlattenedXmlMapRequest) -> String {
 }
 
 pub fn decode_flattened_xml_map_input(body: String) -> Result(FlattenedXmlMapRequest, String) {
-  case json.parse(body, decode_flattened_xml_map_request_struct()) {
+  case json.parse(body, decode_flattened_xml_map_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7513,9 +8634,9 @@ pub fn build_flattened_xml_map_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -7544,7 +8665,7 @@ pub fn encode_flattened_xml_map_with_xml_name_input(input: FlattenedXmlMapWithXm
 }
 
 pub fn decode_flattened_xml_map_with_xml_name_input(body: String) -> Result(FlattenedXmlMapWithXmlNameRequest, String) {
-  case json.parse(body, decode_flattened_xml_map_with_xml_name_request_struct()) {
+  case json.parse(body, decode_flattened_xml_map_with_xml_name_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7574,9 +8695,9 @@ pub fn build_flattened_xml_map_with_xml_name_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -7646,9 +8767,9 @@ pub fn build_flattened_xml_map_with_xml_namespace_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -7718,9 +8839,9 @@ pub fn build_fractional_seconds_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -7790,9 +8911,9 @@ pub fn build_greeting_with_errors_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -7821,7 +8942,7 @@ pub fn encode_http_empty_prefix_headers_input(input: HttpEmptyPrefixHeadersInput
 }
 
 pub fn decode_http_empty_prefix_headers_input(body: String) -> Result(HttpEmptyPrefixHeadersInput, String) {
-  case json.parse(body, decode_http_empty_prefix_headers_input_struct()) {
+  case json.parse(body, decode_http_empty_prefix_headers_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7858,9 +8979,9 @@ pub fn build_http_empty_prefix_headers_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -7889,7 +9010,7 @@ pub fn encode_http_enum_payload_input(input: EnumPayloadInput) -> String {
 }
 
 pub fn decode_http_enum_payload_input(body: String) -> Result(EnumPayloadInput, String) {
-  case json.parse(body, decode_enum_payload_input_struct()) {
+  case json.parse(body, decode_enum_payload_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7921,9 +9042,9 @@ pub fn build_http_enum_payload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -7934,15 +9055,11 @@ pub fn parse_http_enum_payload_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(EnumPayloadInput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_enum_payload_input_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
-      _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_enum_payload_input_xml(root)
-        Error(r) -> Error(r)
-      }
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.None
+    Ok(EnumPayloadInput(
+    payload: payload,
+    ))
   }
 }
 
@@ -7952,7 +9069,7 @@ pub fn encode_http_payload_traits_input(input: HttpPayloadTraitsInputOutput) -> 
 }
 
 pub fn decode_http_payload_traits_input(body: String) -> Result(HttpPayloadTraitsInputOutput, String) {
-  case json.parse(body, decode_http_payload_traits_input_output_struct()) {
+  case json.parse(body, decode_http_payload_traits_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7988,9 +9105,9 @@ pub fn build_http_payload_traits_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -8001,15 +9118,12 @@ pub fn parse_http_payload_traits_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(HttpPayloadTraitsInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_payload_traits_input_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
-      _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_http_payload_traits_input_output_xml(root)
-        Error(r) -> Error(r)
-      }
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.Some(body)
+    Ok(HttpPayloadTraitsInputOutput(
+    blob: payload,
+    foo: option.None,
+    ))
   }
 }
 
@@ -8019,7 +9133,7 @@ pub fn encode_http_payload_traits_with_media_type_input(input: HttpPayloadTraits
 }
 
 pub fn decode_http_payload_traits_with_media_type_input(body: String) -> Result(HttpPayloadTraitsWithMediaTypeInputOutput, String) {
-  case json.parse(body, decode_http_payload_traits_with_media_type_input_output_struct()) {
+  case json.parse(body, decode_http_payload_traits_with_media_type_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8055,9 +9169,9 @@ pub fn build_http_payload_traits_with_media_type_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -8068,15 +9182,12 @@ pub fn parse_http_payload_traits_with_media_type_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(HttpPayloadTraitsWithMediaTypeInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_payload_traits_with_media_type_input_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
-      _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_http_payload_traits_with_media_type_input_output_xml(root)
-        Error(r) -> Error(r)
-      }
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.Some(body)
+    Ok(HttpPayloadTraitsWithMediaTypeInputOutput(
+    blob: payload,
+    foo: option.None,
+    ))
   }
 }
 
@@ -8086,7 +9197,7 @@ pub fn encode_http_payload_with_member_xml_name_input(input: HttpPayloadWithMemb
 }
 
 pub fn decode_http_payload_with_member_xml_name_input(body: String) -> Result(HttpPayloadWithMemberXmlNameInputOutput, String) {
-  case json.parse(body, decode_http_payload_with_member_xml_name_input_output_struct()) {
+  case json.parse(body, decode_http_payload_with_member_xml_name_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8118,9 +9229,9 @@ pub fn build_http_payload_with_member_xml_name_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -8131,15 +9242,24 @@ pub fn parse_http_payload_with_member_xml_name_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(HttpPayloadWithMemberXmlNameInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_payload_with_member_xml_name_input_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_http_payload_with_member_xml_name_input_output_xml(root)
+        Ok(root) -> case decode_payload_with_xml_name_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(HttpPayloadWithMemberXmlNameInputOutput(
+    nested: payload,
+    ))
   }
 }
 
@@ -8149,7 +9269,7 @@ pub fn encode_http_payload_with_structure_input(input: HttpPayloadWithStructureI
 }
 
 pub fn decode_http_payload_with_structure_input(body: String) -> Result(HttpPayloadWithStructureInputOutput, String) {
-  case json.parse(body, decode_http_payload_with_structure_input_output_struct()) {
+  case json.parse(body, decode_http_payload_with_structure_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8181,9 +9301,9 @@ pub fn build_http_payload_with_structure_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -8194,15 +9314,24 @@ pub fn parse_http_payload_with_structure_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(HttpPayloadWithStructureInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_payload_with_structure_input_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_http_payload_with_structure_input_output_xml(root)
+        Ok(root) -> case decode_nested_payload_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(HttpPayloadWithStructureInputOutput(
+    nested: payload,
+    ))
   }
 }
 
@@ -8212,7 +9341,7 @@ pub fn encode_http_payload_with_union_input(input: HttpPayloadWithUnionInputOutp
 }
 
 pub fn decode_http_payload_with_union_input(body: String) -> Result(HttpPayloadWithUnionInputOutput, String) {
-  case json.parse(body, decode_http_payload_with_union_input_output_struct()) {
+  case json.parse(body, decode_http_payload_with_union_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8244,9 +9373,9 @@ pub fn build_http_payload_with_union_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -8257,15 +9386,11 @@ pub fn parse_http_payload_with_union_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(HttpPayloadWithUnionInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_payload_with_union_input_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
-      _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_http_payload_with_union_input_output_xml(root)
-        Error(r) -> Error(r)
-      }
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.None
+    Ok(HttpPayloadWithUnionInputOutput(
+    nested: payload,
+    ))
   }
 }
 
@@ -8275,7 +9400,7 @@ pub fn encode_http_payload_with_xml_name_input(input: HttpPayloadWithXmlNameInpu
 }
 
 pub fn decode_http_payload_with_xml_name_input(body: String) -> Result(HttpPayloadWithXmlNameInputOutput, String) {
-  case json.parse(body, decode_http_payload_with_xml_name_input_output_struct()) {
+  case json.parse(body, decode_http_payload_with_xml_name_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8307,9 +9432,9 @@ pub fn build_http_payload_with_xml_name_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -8320,15 +9445,24 @@ pub fn parse_http_payload_with_xml_name_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(HttpPayloadWithXmlNameInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_payload_with_xml_name_input_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_http_payload_with_xml_name_input_output_xml(root)
+        Ok(root) -> case decode_payload_with_xml_name_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(HttpPayloadWithXmlNameInputOutput(
+    nested: payload,
+    ))
   }
 }
 
@@ -8338,7 +9472,7 @@ pub fn encode_http_payload_with_xml_namespace_input(input: HttpPayloadWithXmlNam
 }
 
 pub fn decode_http_payload_with_xml_namespace_input(body: String) -> Result(HttpPayloadWithXmlNamespaceInputOutput, String) {
-  case json.parse(body, decode_http_payload_with_xml_namespace_input_output_struct()) {
+  case json.parse(body, decode_http_payload_with_xml_namespace_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8370,9 +9504,9 @@ pub fn build_http_payload_with_xml_namespace_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -8383,15 +9517,24 @@ pub fn parse_http_payload_with_xml_namespace_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(HttpPayloadWithXmlNamespaceInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_payload_with_xml_namespace_input_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_http_payload_with_xml_namespace_input_output_xml(root)
+        Ok(root) -> case decode_payload_with_xml_namespace_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(HttpPayloadWithXmlNamespaceInputOutput(
+    nested: payload,
+    ))
   }
 }
 
@@ -8401,7 +9544,7 @@ pub fn encode_http_payload_with_xml_namespace_and_prefix_input(input: HttpPayloa
 }
 
 pub fn decode_http_payload_with_xml_namespace_and_prefix_input(body: String) -> Result(HttpPayloadWithXmlNamespaceAndPrefixInputOutput, String) {
-  case json.parse(body, decode_http_payload_with_xml_namespace_and_prefix_input_output_struct()) {
+  case json.parse(body, decode_http_payload_with_xml_namespace_and_prefix_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8433,9 +9576,9 @@ pub fn build_http_payload_with_xml_namespace_and_prefix_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -8446,15 +9589,24 @@ pub fn parse_http_payload_with_xml_namespace_and_prefix_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(HttpPayloadWithXmlNamespaceAndPrefixInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_payload_with_xml_namespace_and_prefix_input_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_http_payload_with_xml_namespace_and_prefix_input_output_xml(root)
+        Ok(root) -> case decode_payload_with_xml_namespace_and_prefix_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(HttpPayloadWithXmlNamespaceAndPrefixInputOutput(
+    nested: payload,
+    ))
   }
 }
 
@@ -8464,7 +9616,7 @@ pub fn encode_http_prefix_headers_input(input: HttpPrefixHeadersInputOutput) -> 
 }
 
 pub fn decode_http_prefix_headers_input(body: String) -> Result(HttpPrefixHeadersInputOutput, String) {
-  case json.parse(body, decode_http_prefix_headers_input_output_struct()) {
+  case json.parse(body, decode_http_prefix_headers_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8501,9 +9653,9 @@ pub fn build_http_prefix_headers_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -8544,7 +9696,7 @@ pub fn encode_http_request_with_float_labels_input(input: HttpRequestWithFloatLa
 }
 
 pub fn decode_http_request_with_float_labels_input(body: String) -> Result(HttpRequestWithFloatLabelsInput, String) {
-  case json.parse(body, decode_http_request_with_float_labels_input_struct()) {
+  case json.parse(body, decode_http_request_with_float_labels_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8581,9 +9733,9 @@ pub fn build_http_request_with_float_labels_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -8615,7 +9767,7 @@ pub fn encode_http_request_with_greedy_label_in_path_input(input: HttpRequestWit
 }
 
 pub fn decode_http_request_with_greedy_label_in_path_input(body: String) -> Result(HttpRequestWithGreedyLabelInPathInput, String) {
-  case json.parse(body, decode_http_request_with_greedy_label_in_path_input_struct()) {
+  case json.parse(body, decode_http_request_with_greedy_label_in_path_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8652,9 +9804,9 @@ pub fn build_http_request_with_greedy_label_in_path_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -8686,7 +9838,7 @@ pub fn encode_http_request_with_labels_input(input: HttpRequestWithLabelsInput) 
 }
 
 pub fn decode_http_request_with_labels_input(body: String) -> Result(HttpRequestWithLabelsInput, String) {
-  case json.parse(body, decode_http_request_with_labels_input_struct()) {
+  case json.parse(body, decode_http_request_with_labels_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8747,9 +9899,9 @@ pub fn build_http_request_with_labels_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -8781,7 +9933,7 @@ pub fn encode_http_request_with_labels_and_timestamp_format_input(input: HttpReq
 }
 
 pub fn decode_http_request_with_labels_and_timestamp_format_input(body: String) -> Result(HttpRequestWithLabelsAndTimestampFormatInput, String) {
-  case json.parse(body, decode_http_request_with_labels_and_timestamp_format_input_struct()) {
+  case json.parse(body, decode_http_request_with_labels_and_timestamp_format_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8838,9 +9990,9 @@ pub fn build_http_request_with_labels_and_timestamp_format_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -8901,9 +10053,9 @@ pub fn build_http_response_code_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -8932,7 +10084,7 @@ pub fn encode_http_string_payload_input(input: StringPayloadInput) -> String {
 }
 
 pub fn decode_http_string_payload_input(body: String) -> Result(StringPayloadInput, String) {
-  case json.parse(body, decode_string_payload_input_struct()) {
+  case json.parse(body, decode_string_payload_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8964,9 +10116,9 @@ pub fn build_http_string_payload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -8977,15 +10129,14 @@ pub fn parse_http_string_payload_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(StringPayloadInput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_string_payload_input_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
-      _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_string_payload_input_xml(root)
-        Error(r) -> Error(r)
-      }
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    use payload <- result.try(case bit_array.to_string(body) {
+      Ok(s) -> Ok(option.Some(s))
+      Error(_) -> Error("non-utf8 payload")
+    })
+    Ok(StringPayloadInput(
+    payload: payload,
+    ))
   }
 }
 
@@ -9036,9 +10187,9 @@ pub fn build_ignore_query_params_in_response_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -9067,7 +10218,7 @@ pub fn encode_input_and_output_with_headers_input(input: InputAndOutputWithHeade
 }
 
 pub fn decode_input_and_output_with_headers_input(body: String) -> Result(InputAndOutputWithHeadersIO, String) {
-  case json.parse(body, decode_input_and_output_with_headers_io_struct()) {
+  case json.parse(body, decode_input_and_output_with_headers_io_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9160,9 +10311,9 @@ pub fn build_input_and_output_with_headers_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -9191,7 +10342,7 @@ pub fn encode_nested_xml_maps_input(input: NestedXmlMapsRequest) -> String {
 }
 
 pub fn decode_nested_xml_maps_input(body: String) -> Result(NestedXmlMapsRequest, String) {
-  case json.parse(body, decode_nested_xml_maps_request_struct()) {
+  case json.parse(body, decode_nested_xml_maps_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9221,9 +10372,9 @@ pub fn build_nested_xml_maps_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -9252,7 +10403,7 @@ pub fn encode_nested_xml_map_with_xml_name_input(input: NestedXmlMapWithXmlNameR
 }
 
 pub fn decode_nested_xml_map_with_xml_name_input(body: String) -> Result(NestedXmlMapWithXmlNameRequest, String) {
-  case json.parse(body, decode_nested_xml_map_with_xml_name_request_struct()) {
+  case json.parse(body, decode_nested_xml_map_with_xml_name_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9282,9 +10433,9 @@ pub fn build_nested_xml_map_with_xml_name_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -9366,9 +10517,9 @@ pub fn build_no_input_and_no_output_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -9429,9 +10580,9 @@ pub fn build_no_input_and_output_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -9460,7 +10611,7 @@ pub fn encode_null_and_empty_headers_client_input(input: NullAndEmptyHeadersIO) 
 }
 
 pub fn decode_null_and_empty_headers_client_input(body: String) -> Result(NullAndEmptyHeadersIO, String) {
-  case json.parse(body, decode_null_and_empty_headers_io_struct()) {
+  case json.parse(body, decode_null_and_empty_headers_io_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9501,9 +10652,9 @@ pub fn build_null_and_empty_headers_client_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -9532,7 +10683,7 @@ pub fn encode_null_and_empty_headers_server_input(input: NullAndEmptyHeadersIO) 
 }
 
 pub fn decode_null_and_empty_headers_server_input(body: String) -> Result(NullAndEmptyHeadersIO, String) {
-  case json.parse(body, decode_null_and_empty_headers_io_struct()) {
+  case json.parse(body, decode_null_and_empty_headers_io_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9573,9 +10724,9 @@ pub fn build_null_and_empty_headers_server_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -9616,7 +10767,7 @@ pub fn encode_omits_null_serializes_empty_string_input(input: OmitsNullSerialize
 }
 
 pub fn decode_omits_null_serializes_empty_string_input(body: String) -> Result(OmitsNullSerializesEmptyStringInput, String) {
-  case json.parse(body, decode_omits_null_serializes_empty_string_input_struct()) {
+  case json.parse(body, decode_omits_null_serializes_empty_string_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9653,9 +10804,9 @@ pub fn build_omits_null_serializes_empty_string_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -9687,7 +10838,7 @@ pub fn encode_put_with_content_encoding_input(input: PutWithContentEncodingInput
 }
 
 pub fn decode_put_with_content_encoding_input(body: String) -> Result(PutWithContentEncodingInput, String) {
-  case json.parse(body, decode_put_with_content_encoding_input_struct()) {
+  case json.parse(body, decode_put_with_content_encoding_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9721,9 +10872,9 @@ pub fn build_put_with_content_encoding_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -9755,7 +10906,7 @@ pub fn encode_query_idempotency_token_auto_fill_input(input: QueryIdempotencyTok
 }
 
 pub fn decode_query_idempotency_token_auto_fill_input(body: String) -> Result(QueryIdempotencyTokenAutoFillInput, String) {
-  case json.parse(body, decode_query_idempotency_token_auto_fill_input_struct()) {
+  case json.parse(body, decode_query_idempotency_token_auto_fill_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9788,9 +10939,9 @@ pub fn build_query_idempotency_token_auto_fill_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -9822,7 +10973,7 @@ pub fn encode_query_params_as_string_list_map_input(input: QueryParamsAsStringLi
 }
 
 pub fn decode_query_params_as_string_list_map_input(body: String) -> Result(QueryParamsAsStringListMapInput, String) {
-  case json.parse(body, decode_query_params_as_string_list_map_input_struct()) {
+  case json.parse(body, decode_query_params_as_string_list_map_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9859,9 +11010,9 @@ pub fn build_query_params_as_string_list_map_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -9893,7 +11044,7 @@ pub fn encode_query_precedence_input(input: QueryPrecedenceInput) -> String {
 }
 
 pub fn decode_query_precedence_input(body: String) -> Result(QueryPrecedenceInput, String) {
-  case json.parse(body, decode_query_precedence_input_struct()) {
+  case json.parse(body, decode_query_precedence_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9930,9 +11081,9 @@ pub fn build_query_precedence_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -9952,7 +11103,7 @@ pub fn encode_recursive_shapes_input(input: RecursiveShapesRequest) -> String {
 }
 
 pub fn decode_recursive_shapes_input(body: String) -> Result(RecursiveShapesRequest, String) {
-  case json.parse(body, decode_recursive_shapes_request_struct()) {
+  case json.parse(body, decode_recursive_shapes_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9982,9 +11133,9 @@ pub fn build_recursive_shapes_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -10013,7 +11164,7 @@ pub fn encode_simple_scalar_properties_input(input: SimpleScalarPropertiesReques
 }
 
 pub fn decode_simple_scalar_properties_input(body: String) -> Result(SimpleScalarPropertiesRequest, String) {
-  case json.parse(body, decode_simple_scalar_properties_request_struct()) {
+  case json.parse(body, decode_simple_scalar_properties_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10047,9 +11198,9 @@ pub fn build_simple_scalar_properties_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -10078,7 +11229,7 @@ pub fn encode_timestamp_format_headers_input(input: TimestampFormatHeadersIO) ->
 }
 
 pub fn decode_timestamp_format_headers_input(body: String) -> Result(TimestampFormatHeadersIO, String) {
-  case json.parse(body, decode_timestamp_format_headers_io_struct()) {
+  case json.parse(body, decode_timestamp_format_headers_io_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10135,9 +11286,9 @@ pub fn build_timestamp_format_headers_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -10166,7 +11317,7 @@ pub fn encode_xml_attributes_input(input: XmlAttributesRequest) -> String {
 }
 
 pub fn decode_xml_attributes_input(body: String) -> Result(XmlAttributesRequest, String) {
-  case json.parse(body, decode_xml_attributes_request_struct()) {
+  case json.parse(body, decode_xml_attributes_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10196,9 +11347,9 @@ pub fn build_xml_attributes_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -10227,7 +11378,7 @@ pub fn encode_xml_attributes_in_middle_input(input: XmlAttributesInMiddleRequest
 }
 
 pub fn decode_xml_attributes_in_middle_input(body: String) -> Result(XmlAttributesInMiddleRequest, String) {
-  case json.parse(body, decode_xml_attributes_in_middle_request_struct()) {
+  case json.parse(body, decode_xml_attributes_in_middle_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10259,9 +11410,9 @@ pub fn build_xml_attributes_in_middle_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -10272,15 +11423,24 @@ pub fn parse_xml_attributes_in_middle_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(XmlAttributesInMiddleResponse, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_xml_attributes_in_middle_response_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_xml_attributes_in_middle_response_xml(root)
+        Ok(root) -> case decode_xml_attributes_in_middle_payload_response_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(XmlAttributesInMiddleResponse(
+    payload: payload,
+    ))
   }
 }
 
@@ -10290,7 +11450,7 @@ pub fn encode_xml_attributes_on_payload_input(input: XmlAttributesOnPayloadReque
 }
 
 pub fn decode_xml_attributes_on_payload_input(body: String) -> Result(XmlAttributesOnPayloadRequest, String) {
-  case json.parse(body, decode_xml_attributes_on_payload_request_struct()) {
+  case json.parse(body, decode_xml_attributes_on_payload_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10322,9 +11482,9 @@ pub fn build_xml_attributes_on_payload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -10335,15 +11495,24 @@ pub fn parse_xml_attributes_on_payload_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(XmlAttributesOnPayloadResponse, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_xml_attributes_on_payload_response_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_xml_attributes_on_payload_response_xml(root)
+        Ok(root) -> case decode_xml_attributes_payload_response_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(XmlAttributesOnPayloadResponse(
+    payload: payload,
+    ))
   }
 }
 
@@ -10353,7 +11522,7 @@ pub fn encode_xml_blobs_input(input: XmlBlobsRequest) -> String {
 }
 
 pub fn decode_xml_blobs_input(body: String) -> Result(XmlBlobsRequest, String) {
-  case json.parse(body, decode_xml_blobs_request_struct()) {
+  case json.parse(body, decode_xml_blobs_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10383,9 +11552,9 @@ pub fn build_xml_blobs_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -10414,7 +11583,7 @@ pub fn encode_xml_empty_blobs_input(input: XmlEmptyBlobsRequest) -> String {
 }
 
 pub fn decode_xml_empty_blobs_input(body: String) -> Result(XmlEmptyBlobsRequest, String) {
-  case json.parse(body, decode_xml_empty_blobs_request_struct()) {
+  case json.parse(body, decode_xml_empty_blobs_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10444,9 +11613,9 @@ pub fn build_xml_empty_blobs_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -10475,7 +11644,7 @@ pub fn encode_xml_empty_lists_input(input: XmlEmptyListsRequest) -> String {
 }
 
 pub fn decode_xml_empty_lists_input(body: String) -> Result(XmlEmptyListsRequest, String) {
-  case json.parse(body, decode_xml_empty_lists_request_struct()) {
+  case json.parse(body, decode_xml_empty_lists_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10505,9 +11674,9 @@ pub fn build_xml_empty_lists_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -10536,7 +11705,7 @@ pub fn encode_xml_empty_maps_input(input: XmlEmptyMapsRequest) -> String {
 }
 
 pub fn decode_xml_empty_maps_input(body: String) -> Result(XmlEmptyMapsRequest, String) {
-  case json.parse(body, decode_xml_empty_maps_request_struct()) {
+  case json.parse(body, decode_xml_empty_maps_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10566,9 +11735,9 @@ pub fn build_xml_empty_maps_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -10597,7 +11766,7 @@ pub fn encode_xml_empty_strings_input(input: XmlEmptyStringsRequest) -> String {
 }
 
 pub fn decode_xml_empty_strings_input(body: String) -> Result(XmlEmptyStringsRequest, String) {
-  case json.parse(body, decode_xml_empty_strings_request_struct()) {
+  case json.parse(body, decode_xml_empty_strings_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10627,9 +11796,9 @@ pub fn build_xml_empty_strings_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -10658,7 +11827,7 @@ pub fn encode_xml_enums_input(input: XmlEnumsRequest) -> String {
 }
 
 pub fn decode_xml_enums_input(body: String) -> Result(XmlEnumsRequest, String) {
-  case json.parse(body, decode_xml_enums_request_struct()) {
+  case json.parse(body, decode_xml_enums_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10688,9 +11857,9 @@ pub fn build_xml_enums_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -10719,7 +11888,7 @@ pub fn encode_xml_int_enums_input(input: XmlIntEnumsRequest) -> String {
 }
 
 pub fn decode_xml_int_enums_input(body: String) -> Result(XmlIntEnumsRequest, String) {
-  case json.parse(body, decode_xml_int_enums_request_struct()) {
+  case json.parse(body, decode_xml_int_enums_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10749,9 +11918,9 @@ pub fn build_xml_int_enums_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -10780,7 +11949,7 @@ pub fn encode_xml_lists_input(input: XmlListsRequest) -> String {
 }
 
 pub fn decode_xml_lists_input(body: String) -> Result(XmlListsRequest, String) {
-  case json.parse(body, decode_xml_lists_request_struct()) {
+  case json.parse(body, decode_xml_lists_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10810,9 +11979,9 @@ pub fn build_xml_lists_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -10841,7 +12010,7 @@ pub fn encode_xml_maps_input(input: XmlMapsRequest) -> String {
 }
 
 pub fn decode_xml_maps_input(body: String) -> Result(XmlMapsRequest, String) {
-  case json.parse(body, decode_xml_maps_request_struct()) {
+  case json.parse(body, decode_xml_maps_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10871,9 +12040,9 @@ pub fn build_xml_maps_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -10902,7 +12071,7 @@ pub fn encode_xml_maps_xml_name_input(input: XmlMapsXmlNameRequest) -> String {
 }
 
 pub fn decode_xml_maps_xml_name_input(body: String) -> Result(XmlMapsXmlNameRequest, String) {
-  case json.parse(body, decode_xml_maps_xml_name_request_struct()) {
+  case json.parse(body, decode_xml_maps_xml_name_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10932,9 +12101,9 @@ pub fn build_xml_maps_xml_name_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -10963,7 +12132,7 @@ pub fn encode_xml_map_with_xml_namespace_input(input: XmlMapWithXmlNamespaceRequ
 }
 
 pub fn decode_xml_map_with_xml_namespace_input(body: String) -> Result(XmlMapWithXmlNamespaceRequest, String) {
-  case json.parse(body, decode_xml_map_with_xml_namespace_request_struct()) {
+  case json.parse(body, decode_xml_map_with_xml_namespace_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10993,9 +12162,9 @@ pub fn build_xml_map_with_xml_namespace_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -11024,7 +12193,7 @@ pub fn encode_xml_namespaces_input(input: XmlNamespacesRequest) -> String {
 }
 
 pub fn decode_xml_namespaces_input(body: String) -> Result(XmlNamespacesRequest, String) {
-  case json.parse(body, decode_xml_namespaces_request_struct()) {
+  case json.parse(body, decode_xml_namespaces_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11054,9 +12223,9 @@ pub fn build_xml_namespaces_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -11085,7 +12254,7 @@ pub fn encode_xml_timestamps_input(input: XmlTimestampsRequest) -> String {
 }
 
 pub fn decode_xml_timestamps_input(body: String) -> Result(XmlTimestampsRequest, String) {
-  case json.parse(body, decode_xml_timestamps_request_struct()) {
+  case json.parse(body, decode_xml_timestamps_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11115,9 +12284,9 @@ pub fn build_xml_timestamps_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -11146,7 +12315,7 @@ pub fn encode_xml_unions_input(input: XmlUnionsRequest) -> String {
 }
 
 pub fn decode_xml_unions_input(body: String) -> Result(XmlUnionsRequest, String) {
-  case json.parse(body, decode_xml_unions_request_struct()) {
+  case json.parse(body, decode_xml_unions_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11176,9 +12345,9 @@ pub fn build_xml_unions_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = case bit_array.byte_size(body) {
-    0 -> headers
-    n -> dict.insert(headers, "Content-Length", int.to_string(n))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)

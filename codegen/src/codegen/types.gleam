@@ -88,8 +88,20 @@ pub type IntEnumVariant {
 
 pub type MemberDef {
   MemberDef(
+    /// The wire key — what shows up in JSON bodies, query strings, or
+    /// XML element names. Honours `@jsonName` / `@xmlName` overrides;
+    /// otherwise the Smithy member name.
     json_name: String,
+    /// Gleam record-field name, always derived from the original
+    /// Smithy member name (Pascal → snake_case + reserved-keyword
+    /// escape). Stable across `@jsonName` changes so the user-facing
+    /// API doesn't churn when a service rebrands a wire field.
     snake_name: String,
+    /// Original Smithy member name (PascalCase). Used to build union
+    /// variant constructor names (which must be valid Gleam
+    /// identifiers — the wire name may include leading underscores or
+    /// other non-Gleam characters that Smithy permits in `@jsonName`).
+    member_name: String,
     target: Resolved,
     required: Bool,
     /// HTTP binding the member carries. Used by rest-protocol emitters
@@ -271,9 +283,19 @@ fn extract_members(
   |> list.map(fn(pair) {
     let #(name, mem) = pair
     let ShapeId(target) = mem.target
+    // `@jsonName` overrides the wire key for awsJson and restJson1; if
+    // absent, the member name itself is the wire key. The Gleam-side
+    // record field always derives from the Smithy member name (so the
+    // user-facing API doesn't change when the service rebrands a
+    // wire field).
+    let wire_name = case dict.get(mem.traits, ShapeId("smithy.api#jsonName")) {
+      Ok(option.Some(trait.String(s))) -> s
+      _ -> name
+    }
     MemberDef(
-      json_name: name,
+      json_name: wire_name,
       snake_name: stringutils.pascal_to_snake(name),
+      member_name: name,
       target: resolve(model, target),
       required: dict.has_key(mem.traits, ShapeId("smithy.api#required")),
       binding: binding_of(mem.traits),
@@ -398,6 +420,24 @@ pub fn json_encoder(r: Resolved) -> String {
   }
 }
 
+/// Same shape as `json_decoder`, but every nested struct/union
+/// reference points at the `_struct_params` variant (member-name
+/// keyed). Used by the protocol-test dispatchers, whose `params`
+/// blobs are keyed by Smithy member names, not by `@jsonName`
+/// overrides. List and map element decoders recurse via this same
+/// function so the member-keyed convention reaches the leaves.
+pub fn json_decoder_params(r: Resolved) -> String {
+  case r {
+    RStruct(local_name: n, ..) ->
+      "decode_" <> stringutils.pascal_to_snake(n) <> "_struct_params()"
+    RList(element: e, ..) ->
+      "decode.list(" <> json_decoder_params(e) <> ")"
+    RMap(value: v, ..) ->
+      "decode.dict(decode.string, " <> json_decoder_params(v) <> ")"
+    _ -> json_decoder(r)
+  }
+}
+
 /// JSON decoder expression — produces a Gleam `Decoder(t)` value.
 pub fn json_decoder(r: Resolved) -> String {
   case r {
@@ -416,13 +456,13 @@ pub fn json_decoder(r: Resolved) -> String {
       "decode_" <> stringutils.pascal_to_snake(n) <> "_struct()"
     RUnion(local_name: n, ..) ->
       "decode_" <> stringutils.pascal_to_snake(n) <> "_union()"
-    RTimestamp -> "decode.int"
+    RTimestamp -> "json_timestamp.decoder()"
     RBlob ->
       // Smithy protocol-test params encode blobs as UTF-8 strings, not
       // base64. The on-the-wire response form IS base64 — a wire-side
       // decoder lands when real-response tests do.
       "decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })"
-    RDocument -> "decode.dynamic |> decode.map(fn(_) { json.null() })"
+    RDocument -> "json_document.decoder()"
     RUnit -> "decode.success(Nil)"
     Unsupported(..) -> "decode.success(Nil)"
   }

@@ -3,7 +3,9 @@
 
 import aws/credentials
 import aws/internal/client/awsjson as awsjson_client
+import aws/internal/codec/json_document
 import aws/internal/codec/json_float
+import aws/internal/codec/json_timestamp
 import aws/internal/http_send
 import gleam/bit_array
 import gleam/dict
@@ -75,6 +77,15 @@ pub fn decode_batch_execute_statement_input_struct() -> decode.Decoder(BatchExec
   ))
 }
 
+pub fn decode_batch_execute_statement_input_struct_params() -> decode.Decoder(BatchExecuteStatementInput) {
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  use statements <- decode.optional_field("Statements", option.None, decode.optional(decode.list(decode_batch_statement_request_struct_params())))
+  decode.success(BatchExecuteStatementInput(
+    return_consumed_capacity: return_consumed_capacity,
+    statements: statements,
+  ))
+}
+
 pub type ReturnConsumedCapacity {
   ReturnConsumedCapacityIndexes
   ReturnConsumedCapacityNone
@@ -131,6 +142,19 @@ pub fn encode_batch_statement_request_struct(input: BatchStatementRequest) -> js
 }
 
 pub fn decode_batch_statement_request_struct() -> decode.Decoder(BatchStatementRequest) {
+  use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
+  use parameters <- decode.optional_field("Parameters", option.None, decode.optional(decode.list(decode_attribute_value_union())))
+  use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
+  use statement <- decode.optional_field("Statement", option.None, decode.optional(decode.string))
+  decode.success(BatchStatementRequest(
+    consistent_read: consistent_read,
+    parameters: parameters,
+    return_values_on_condition_check_failure: return_values_on_condition_check_failure,
+    statement: statement,
+  ))
+}
+
+pub fn decode_batch_statement_request_struct_params() -> decode.Decoder(BatchStatementRequest) {
   use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
   use parameters <- decode.optional_field("Parameters", option.None, decode.optional(decode.list(decode_attribute_value_union())))
   use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
@@ -239,6 +263,15 @@ pub fn decode_batch_execute_statement_output_struct() -> decode.Decoder(BatchExe
   ))
 }
 
+pub fn decode_batch_execute_statement_output_struct_params() -> decode.Decoder(BatchExecuteStatementOutput) {
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct_params())))
+  use responses <- decode.optional_field("Responses", option.None, decode.optional(decode.list(decode_batch_statement_response_struct_params())))
+  decode.success(BatchExecuteStatementOutput(
+    consumed_capacity: consumed_capacity,
+    responses: responses,
+  ))
+}
+
 pub type ConsumedCapacity {
   ConsumedCapacity(
     capacity_units: option.Option(json_float.SmithyFloat),
@@ -303,6 +336,25 @@ pub fn decode_consumed_capacity_struct() -> decode.Decoder(ConsumedCapacity) {
   ))
 }
 
+pub fn decode_consumed_capacity_struct_params() -> decode.Decoder(ConsumedCapacity) {
+  use capacity_units <- decode.optional_field("CapacityUnits", option.None, decode.optional(json_float.decoder()))
+  use global_secondary_indexes <- decode.optional_field("GlobalSecondaryIndexes", option.None, decode.optional(decode.dict(decode.string, decode_capacity_struct_params())))
+  use local_secondary_indexes <- decode.optional_field("LocalSecondaryIndexes", option.None, decode.optional(decode.dict(decode.string, decode_capacity_struct_params())))
+  use read_capacity_units <- decode.optional_field("ReadCapacityUnits", option.None, decode.optional(json_float.decoder()))
+  use table <- decode.optional_field("Table", option.None, decode.optional(decode_capacity_struct_params()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use write_capacity_units <- decode.optional_field("WriteCapacityUnits", option.None, decode.optional(json_float.decoder()))
+  decode.success(ConsumedCapacity(
+    capacity_units: capacity_units,
+    global_secondary_indexes: global_secondary_indexes,
+    local_secondary_indexes: local_secondary_indexes,
+    read_capacity_units: read_capacity_units,
+    table: table,
+    table_name: table_name,
+    write_capacity_units: write_capacity_units,
+  ))
+}
+
 pub type Capacity {
   Capacity(
     capacity_units: option.Option(json_float.SmithyFloat),
@@ -329,6 +381,17 @@ pub fn encode_capacity_struct(input: Capacity) -> json.Json {
 }
 
 pub fn decode_capacity_struct() -> decode.Decoder(Capacity) {
+  use capacity_units <- decode.optional_field("CapacityUnits", option.None, decode.optional(json_float.decoder()))
+  use read_capacity_units <- decode.optional_field("ReadCapacityUnits", option.None, decode.optional(json_float.decoder()))
+  use write_capacity_units <- decode.optional_field("WriteCapacityUnits", option.None, decode.optional(json_float.decoder()))
+  decode.success(Capacity(
+    capacity_units: capacity_units,
+    read_capacity_units: read_capacity_units,
+    write_capacity_units: write_capacity_units,
+  ))
+}
+
+pub fn decode_capacity_struct_params() -> decode.Decoder(Capacity) {
   use capacity_units <- decode.optional_field("CapacityUnits", option.None, decode.optional(json_float.decoder()))
   use read_capacity_units <- decode.optional_field("ReadCapacityUnits", option.None, decode.optional(json_float.decoder()))
   use write_capacity_units <- decode.optional_field("WriteCapacityUnits", option.None, decode.optional(json_float.decoder()))
@@ -375,6 +438,17 @@ pub fn decode_batch_statement_response_struct() -> decode.Decoder(BatchStatement
   ))
 }
 
+pub fn decode_batch_statement_response_struct_params() -> decode.Decoder(BatchStatementResponse) {
+  use error <- decode.optional_field("Error", option.None, decode.optional(decode_batch_statement_error_struct_params()))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(BatchStatementResponse(
+    error: error,
+    item: item,
+    table_name: table_name,
+  ))
+}
+
 pub type BatchStatementError {
   BatchStatementError(
     code: option.Option(BatchStatementErrorCodeEnum),
@@ -401,6 +475,17 @@ pub fn encode_batch_statement_error_struct(input: BatchStatementError) -> json.J
 }
 
 pub fn decode_batch_statement_error_struct() -> decode.Decoder(BatchStatementError) {
+  use code <- decode.optional_field("Code", option.None, decode.optional(decode_batch_statement_error_code_enum_enum()))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
+  decode.success(BatchStatementError(
+    code: code,
+    item: item,
+    message: message,
+  ))
+}
+
+pub fn decode_batch_statement_error_struct_params() -> decode.Decoder(BatchStatementError) {
   use code <- decode.optional_field("Code", option.None, decode.optional(decode_batch_statement_error_code_enum_enum()))
   use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
   use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
@@ -482,6 +567,13 @@ pub fn decode_internal_server_error_struct() -> decode.Decoder(InternalServerErr
   ))
 }
 
+pub fn decode_internal_server_error_struct_params() -> decode.Decoder(InternalServerError) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(InternalServerError(
+    message: message,
+  ))
+}
+
 pub type RequestLimitExceeded {
   RequestLimitExceeded(
     throttling_reasons: option.Option(List(ThrottlingReason)),
@@ -511,6 +603,15 @@ pub fn decode_request_limit_exceeded_struct() -> decode.Decoder(RequestLimitExce
   ))
 }
 
+pub fn decode_request_limit_exceeded_struct_params() -> decode.Decoder(RequestLimitExceeded) {
+  use throttling_reasons <- decode.optional_field("ThrottlingReasons", option.None, decode.optional(decode.list(decode_throttling_reason_struct_params())))
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(RequestLimitExceeded(
+    throttling_reasons: throttling_reasons,
+    message: message,
+  ))
+}
+
 pub type ThrottlingReason {
   ThrottlingReason(
     reason: option.Option(String),
@@ -532,6 +633,15 @@ pub fn encode_throttling_reason_struct(input: ThrottlingReason) -> json.Json {
 }
 
 pub fn decode_throttling_reason_struct() -> decode.Decoder(ThrottlingReason) {
+  use reason <- decode.optional_field("reason", option.None, decode.optional(decode.string))
+  use resource <- decode.optional_field("resource", option.None, decode.optional(decode.string))
+  decode.success(ThrottlingReason(
+    reason: reason,
+    resource: resource,
+  ))
+}
+
+pub fn decode_throttling_reason_struct_params() -> decode.Decoder(ThrottlingReason) {
   use reason <- decode.optional_field("reason", option.None, decode.optional(decode.string))
   use resource <- decode.optional_field("resource", option.None, decode.optional(decode.string))
   decode.success(ThrottlingReason(
@@ -569,6 +679,15 @@ pub fn decode_throttling_exception_struct() -> decode.Decoder(ThrottlingExceptio
   ))
 }
 
+pub fn decode_throttling_exception_struct_params() -> decode.Decoder(ThrottlingException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  use throttling_reasons <- decode.optional_field("throttlingReasons", option.None, decode.optional(decode.list(decode_throttling_reason_struct_params())))
+  decode.success(ThrottlingException(
+    message: message,
+    throttling_reasons: throttling_reasons,
+  ))
+}
+
 pub type BatchGetItemInput {
   BatchGetItemInput(
     request_items: option.Option(dict.Dict(String, KeysAndAttributes)),
@@ -591,6 +710,15 @@ pub fn encode_batch_get_item_input_struct(input: BatchGetItemInput) -> json.Json
 
 pub fn decode_batch_get_item_input_struct() -> decode.Decoder(BatchGetItemInput) {
   use request_items <- decode.optional_field("RequestItems", option.None, decode.optional(decode.dict(decode.string, decode_keys_and_attributes_struct())))
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  decode.success(BatchGetItemInput(
+    request_items: request_items,
+    return_consumed_capacity: return_consumed_capacity,
+  ))
+}
+
+pub fn decode_batch_get_item_input_struct_params() -> decode.Decoder(BatchGetItemInput) {
+  use request_items <- decode.optional_field("RequestItems", option.None, decode.optional(decode.dict(decode.string, decode_keys_and_attributes_struct_params())))
   use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
   decode.success(BatchGetItemInput(
     request_items: request_items,
@@ -648,6 +776,21 @@ pub fn decode_keys_and_attributes_struct() -> decode.Decoder(KeysAndAttributes) 
   ))
 }
 
+pub fn decode_keys_and_attributes_struct_params() -> decode.Decoder(KeysAndAttributes) {
+  use attributes_to_get <- decode.optional_field("AttributesToGet", option.None, decode.optional(decode.list(decode.string)))
+  use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
+  use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use keys <- decode.optional_field("Keys", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union()))))
+  use projection_expression <- decode.optional_field("ProjectionExpression", option.None, decode.optional(decode.string))
+  decode.success(KeysAndAttributes(
+    attributes_to_get: attributes_to_get,
+    consistent_read: consistent_read,
+    expression_attribute_names: expression_attribute_names,
+    keys: keys,
+    projection_expression: projection_expression,
+  ))
+}
+
 pub type BatchGetItemOutput {
   BatchGetItemOutput(
     consumed_capacity: option.Option(List(ConsumedCapacity)),
@@ -684,6 +827,17 @@ pub fn decode_batch_get_item_output_struct() -> decode.Decoder(BatchGetItemOutpu
   ))
 }
 
+pub fn decode_batch_get_item_output_struct_params() -> decode.Decoder(BatchGetItemOutput) {
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct_params())))
+  use responses <- decode.optional_field("Responses", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.dict(decode.string, decode_attribute_value_union())))))
+  use unprocessed_keys <- decode.optional_field("UnprocessedKeys", option.None, decode.optional(decode.dict(decode.string, decode_keys_and_attributes_struct_params())))
+  decode.success(BatchGetItemOutput(
+    consumed_capacity: consumed_capacity,
+    responses: responses,
+    unprocessed_keys: unprocessed_keys,
+  ))
+}
+
 pub type InvalidEndpointException {
   InvalidEndpointException(
     message: option.Option(String),
@@ -700,6 +854,13 @@ pub fn encode_invalid_endpoint_exception_struct(input: InvalidEndpointException)
 }
 
 pub fn decode_invalid_endpoint_exception_struct() -> decode.Decoder(InvalidEndpointException) {
+  use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
+  decode.success(InvalidEndpointException(
+    message: message,
+  ))
+}
+
+pub fn decode_invalid_endpoint_exception_struct_params() -> decode.Decoder(InvalidEndpointException) {
   use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
   decode.success(InvalidEndpointException(
     message: message,
@@ -735,6 +896,15 @@ pub fn decode_provisioned_throughput_exceeded_exception_struct() -> decode.Decod
   ))
 }
 
+pub fn decode_provisioned_throughput_exceeded_exception_struct_params() -> decode.Decoder(ProvisionedThroughputExceededException) {
+  use throttling_reasons <- decode.optional_field("ThrottlingReasons", option.None, decode.optional(decode.list(decode_throttling_reason_struct_params())))
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ProvisionedThroughputExceededException(
+    throttling_reasons: throttling_reasons,
+    message: message,
+  ))
+}
+
 pub type ResourceNotFoundException {
   ResourceNotFoundException(
     message: option.Option(String),
@@ -751,6 +921,13 @@ pub fn encode_resource_not_found_exception_struct(input: ResourceNotFoundExcepti
 }
 
 pub fn decode_resource_not_found_exception_struct() -> decode.Decoder(ResourceNotFoundException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ResourceNotFoundException(
+    message: message,
+  ))
+}
+
+pub fn decode_resource_not_found_exception_struct_params() -> decode.Decoder(ResourceNotFoundException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ResourceNotFoundException(
     message: message,
@@ -793,6 +970,17 @@ pub fn decode_batch_write_item_input_struct() -> decode.Decoder(BatchWriteItemIn
   ))
 }
 
+pub fn decode_batch_write_item_input_struct_params() -> decode.Decoder(BatchWriteItemInput) {
+  use request_items <- decode.optional_field("RequestItems", option.None, decode.optional(decode.dict(decode.string, decode.list(decode_write_request_struct_params()))))
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  use return_item_collection_metrics <- decode.optional_field("ReturnItemCollectionMetrics", option.None, decode.optional(decode_return_item_collection_metrics_enum()))
+  decode.success(BatchWriteItemInput(
+    request_items: request_items,
+    return_consumed_capacity: return_consumed_capacity,
+    return_item_collection_metrics: return_item_collection_metrics,
+  ))
+}
+
 pub type WriteRequest {
   WriteRequest(
     delete_request: option.Option(DeleteRequest),
@@ -822,6 +1010,15 @@ pub fn decode_write_request_struct() -> decode.Decoder(WriteRequest) {
   ))
 }
 
+pub fn decode_write_request_struct_params() -> decode.Decoder(WriteRequest) {
+  use delete_request <- decode.optional_field("DeleteRequest", option.None, decode.optional(decode_delete_request_struct_params()))
+  use put_request <- decode.optional_field("PutRequest", option.None, decode.optional(decode_put_request_struct_params()))
+  decode.success(WriteRequest(
+    delete_request: delete_request,
+    put_request: put_request,
+  ))
+}
+
 pub type DeleteRequest {
   DeleteRequest(
     key: option.Option(dict.Dict(String, AttributeValue)),
@@ -844,6 +1041,13 @@ pub fn decode_delete_request_struct() -> decode.Decoder(DeleteRequest) {
   ))
 }
 
+pub fn decode_delete_request_struct_params() -> decode.Decoder(DeleteRequest) {
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  decode.success(DeleteRequest(
+    key: key,
+  ))
+}
+
 pub type PutRequest {
   PutRequest(
     item: option.Option(dict.Dict(String, AttributeValue)),
@@ -860,6 +1064,13 @@ pub fn encode_put_request_struct(input: PutRequest) -> json.Json {
 }
 
 pub fn decode_put_request_struct() -> decode.Decoder(PutRequest) {
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  decode.success(PutRequest(
+    item: item,
+  ))
+}
+
+pub fn decode_put_request_struct_params() -> decode.Decoder(PutRequest) {
   use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
   decode.success(PutRequest(
     item: item,
@@ -924,6 +1135,17 @@ pub fn decode_batch_write_item_output_struct() -> decode.Decoder(BatchWriteItemO
   ))
 }
 
+pub fn decode_batch_write_item_output_struct_params() -> decode.Decoder(BatchWriteItemOutput) {
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct_params())))
+  use item_collection_metrics <- decode.optional_field("ItemCollectionMetrics", option.None, decode.optional(decode.dict(decode.string, decode.list(decode_item_collection_metrics_struct_params()))))
+  use unprocessed_items <- decode.optional_field("UnprocessedItems", option.None, decode.optional(decode.dict(decode.string, decode.list(decode_write_request_struct_params()))))
+  decode.success(BatchWriteItemOutput(
+    consumed_capacity: consumed_capacity,
+    item_collection_metrics: item_collection_metrics,
+    unprocessed_items: unprocessed_items,
+  ))
+}
+
 pub type ItemCollectionMetrics {
   ItemCollectionMetrics(
     item_collection_key: option.Option(dict.Dict(String, AttributeValue)),
@@ -945,6 +1167,15 @@ pub fn encode_item_collection_metrics_struct(input: ItemCollectionMetrics) -> js
 }
 
 pub fn decode_item_collection_metrics_struct() -> decode.Decoder(ItemCollectionMetrics) {
+  use item_collection_key <- decode.optional_field("ItemCollectionKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use size_estimate_range_gb <- decode.optional_field("SizeEstimateRangeGB", option.None, decode.optional(decode.list(json_float.decoder())))
+  decode.success(ItemCollectionMetrics(
+    item_collection_key: item_collection_key,
+    size_estimate_range_gb: size_estimate_range_gb,
+  ))
+}
+
+pub fn decode_item_collection_metrics_struct_params() -> decode.Decoder(ItemCollectionMetrics) {
   use item_collection_key <- decode.optional_field("ItemCollectionKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
   use size_estimate_range_gb <- decode.optional_field("SizeEstimateRangeGB", option.None, decode.optional(decode.list(json_float.decoder())))
   decode.success(ItemCollectionMetrics(
@@ -975,6 +1206,13 @@ pub fn decode_item_collection_size_limit_exceeded_exception_struct() -> decode.D
   ))
 }
 
+pub fn decode_item_collection_size_limit_exceeded_exception_struct_params() -> decode.Decoder(ItemCollectionSizeLimitExceededException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ItemCollectionSizeLimitExceededException(
+    message: message,
+  ))
+}
+
 pub type ReplicatedWriteConflictException {
   ReplicatedWriteConflictException(
     message: option.Option(String),
@@ -991,6 +1229,13 @@ pub fn encode_replicated_write_conflict_exception_struct(input: ReplicatedWriteC
 }
 
 pub fn decode_replicated_write_conflict_exception_struct() -> decode.Decoder(ReplicatedWriteConflictException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ReplicatedWriteConflictException(
+    message: message,
+  ))
+}
+
+pub fn decode_replicated_write_conflict_exception_struct_params() -> decode.Decoder(ReplicatedWriteConflictException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ReplicatedWriteConflictException(
     message: message,
@@ -1026,6 +1271,15 @@ pub fn decode_create_backup_input_struct() -> decode.Decoder(CreateBackupInput) 
   ))
 }
 
+pub fn decode_create_backup_input_struct_params() -> decode.Decoder(CreateBackupInput) {
+  use backup_name <- decode.optional_field("BackupName", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(CreateBackupInput(
+    backup_name: backup_name,
+    table_name: table_name,
+  ))
+}
+
 pub type CreateBackupOutput {
   CreateBackupOutput(
     backup_details: option.Option(BackupDetails),
@@ -1043,6 +1297,13 @@ pub fn encode_create_backup_output_struct(input: CreateBackupOutput) -> json.Jso
 
 pub fn decode_create_backup_output_struct() -> decode.Decoder(CreateBackupOutput) {
   use backup_details <- decode.optional_field("BackupDetails", option.None, decode.optional(decode_backup_details_struct()))
+  decode.success(CreateBackupOutput(
+    backup_details: backup_details,
+  ))
+}
+
+pub fn decode_create_backup_output_struct_params() -> decode.Decoder(CreateBackupOutput) {
+  use backup_details <- decode.optional_field("BackupDetails", option.None, decode.optional(decode_backup_details_struct_params()))
   decode.success(CreateBackupOutput(
     backup_details: backup_details,
   ))
@@ -1095,8 +1356,27 @@ pub fn encode_backup_details_struct(input: BackupDetails) -> json.Json {
 
 pub fn decode_backup_details_struct() -> decode.Decoder(BackupDetails) {
   use backup_arn <- decode.optional_field("BackupArn", option.None, decode.optional(decode.string))
-  use backup_creation_date_time <- decode.optional_field("BackupCreationDateTime", option.None, decode.optional(decode.int))
-  use backup_expiry_date_time <- decode.optional_field("BackupExpiryDateTime", option.None, decode.optional(decode.int))
+  use backup_creation_date_time <- decode.optional_field("BackupCreationDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use backup_expiry_date_time <- decode.optional_field("BackupExpiryDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use backup_name <- decode.optional_field("BackupName", option.None, decode.optional(decode.string))
+  use backup_size_bytes <- decode.optional_field("BackupSizeBytes", option.None, decode.optional(decode.int))
+  use backup_status <- decode.optional_field("BackupStatus", option.None, decode.optional(decode_backup_status_enum()))
+  use backup_type <- decode.optional_field("BackupType", option.None, decode.optional(decode_backup_type_enum()))
+  decode.success(BackupDetails(
+    backup_arn: backup_arn,
+    backup_creation_date_time: backup_creation_date_time,
+    backup_expiry_date_time: backup_expiry_date_time,
+    backup_name: backup_name,
+    backup_size_bytes: backup_size_bytes,
+    backup_status: backup_status,
+    backup_type: backup_type,
+  ))
+}
+
+pub fn decode_backup_details_struct_params() -> decode.Decoder(BackupDetails) {
+  use backup_arn <- decode.optional_field("BackupArn", option.None, decode.optional(decode.string))
+  use backup_creation_date_time <- decode.optional_field("BackupCreationDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use backup_expiry_date_time <- decode.optional_field("BackupExpiryDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use backup_name <- decode.optional_field("BackupName", option.None, decode.optional(decode.string))
   use backup_size_bytes <- decode.optional_field("BackupSizeBytes", option.None, decode.optional(decode.int))
   use backup_status <- decode.optional_field("BackupStatus", option.None, decode.optional(decode_backup_status_enum()))
@@ -1184,6 +1464,13 @@ pub fn decode_backup_in_use_exception_struct() -> decode.Decoder(BackupInUseExce
   ))
 }
 
+pub fn decode_backup_in_use_exception_struct_params() -> decode.Decoder(BackupInUseException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(BackupInUseException(
+    message: message,
+  ))
+}
+
 pub type ContinuousBackupsUnavailableException {
   ContinuousBackupsUnavailableException(
     message: option.Option(String),
@@ -1200,6 +1487,13 @@ pub fn encode_continuous_backups_unavailable_exception_struct(input: ContinuousB
 }
 
 pub fn decode_continuous_backups_unavailable_exception_struct() -> decode.Decoder(ContinuousBackupsUnavailableException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ContinuousBackupsUnavailableException(
+    message: message,
+  ))
+}
+
+pub fn decode_continuous_backups_unavailable_exception_struct_params() -> decode.Decoder(ContinuousBackupsUnavailableException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ContinuousBackupsUnavailableException(
     message: message,
@@ -1228,6 +1522,13 @@ pub fn decode_limit_exceeded_exception_struct() -> decode.Decoder(LimitExceededE
   ))
 }
 
+pub fn decode_limit_exceeded_exception_struct_params() -> decode.Decoder(LimitExceededException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(LimitExceededException(
+    message: message,
+  ))
+}
+
 pub type TableInUseException {
   TableInUseException(
     message: option.Option(String),
@@ -1250,6 +1551,13 @@ pub fn decode_table_in_use_exception_struct() -> decode.Decoder(TableInUseExcept
   ))
 }
 
+pub fn decode_table_in_use_exception_struct_params() -> decode.Decoder(TableInUseException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(TableInUseException(
+    message: message,
+  ))
+}
+
 pub type TableNotFoundException {
   TableNotFoundException(
     message: option.Option(String),
@@ -1266,6 +1574,13 @@ pub fn encode_table_not_found_exception_struct(input: TableNotFoundException) ->
 }
 
 pub fn decode_table_not_found_exception_struct() -> decode.Decoder(TableNotFoundException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(TableNotFoundException(
+    message: message,
+  ))
+}
+
+pub fn decode_table_not_found_exception_struct_params() -> decode.Decoder(TableNotFoundException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(TableNotFoundException(
     message: message,
@@ -1301,6 +1616,15 @@ pub fn decode_create_global_table_input_struct() -> decode.Decoder(CreateGlobalT
   ))
 }
 
+pub fn decode_create_global_table_input_struct_params() -> decode.Decoder(CreateGlobalTableInput) {
+  use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
+  use replication_group <- decode.optional_field("ReplicationGroup", option.None, decode.optional(decode.list(decode_replica_struct_params())))
+  decode.success(CreateGlobalTableInput(
+    global_table_name: global_table_name,
+    replication_group: replication_group,
+  ))
+}
+
 pub type Replica {
   Replica(
     region_name: option.Option(String),
@@ -1317,6 +1641,13 @@ pub fn encode_replica_struct(input: Replica) -> json.Json {
 }
 
 pub fn decode_replica_struct() -> decode.Decoder(Replica) {
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  decode.success(Replica(
+    region_name: region_name,
+  ))
+}
+
+pub fn decode_replica_struct_params() -> decode.Decoder(Replica) {
   use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
   decode.success(Replica(
     region_name: region_name,
@@ -1340,6 +1671,13 @@ pub fn encode_create_global_table_output_struct(input: CreateGlobalTableOutput) 
 
 pub fn decode_create_global_table_output_struct() -> decode.Decoder(CreateGlobalTableOutput) {
   use global_table_description <- decode.optional_field("GlobalTableDescription", option.None, decode.optional(decode_global_table_description_struct()))
+  decode.success(CreateGlobalTableOutput(
+    global_table_description: global_table_description,
+  ))
+}
+
+pub fn decode_create_global_table_output_struct_params() -> decode.Decoder(CreateGlobalTableOutput) {
+  use global_table_description <- decode.optional_field("GlobalTableDescription", option.None, decode.optional(decode_global_table_description_struct_params()))
   decode.success(CreateGlobalTableOutput(
     global_table_description: global_table_description,
   ))
@@ -1381,11 +1719,26 @@ pub fn encode_global_table_description_struct(input: GlobalTableDescription) -> 
 }
 
 pub fn decode_global_table_description_struct() -> decode.Decoder(GlobalTableDescription) {
-  use creation_date_time <- decode.optional_field("CreationDateTime", option.None, decode.optional(decode.int))
+  use creation_date_time <- decode.optional_field("CreationDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use global_table_arn <- decode.optional_field("GlobalTableArn", option.None, decode.optional(decode.string))
   use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
   use global_table_status <- decode.optional_field("GlobalTableStatus", option.None, decode.optional(decode_global_table_status_enum()))
   use replication_group <- decode.optional_field("ReplicationGroup", option.None, decode.optional(decode.list(decode_replica_description_struct())))
+  decode.success(GlobalTableDescription(
+    creation_date_time: creation_date_time,
+    global_table_arn: global_table_arn,
+    global_table_name: global_table_name,
+    global_table_status: global_table_status,
+    replication_group: replication_group,
+  ))
+}
+
+pub fn decode_global_table_description_struct_params() -> decode.Decoder(GlobalTableDescription) {
+  use creation_date_time <- decode.optional_field("CreationDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use global_table_arn <- decode.optional_field("GlobalTableArn", option.None, decode.optional(decode.string))
+  use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
+  use global_table_status <- decode.optional_field("GlobalTableStatus", option.None, decode.optional(decode_global_table_status_enum()))
+  use replication_group <- decode.optional_field("ReplicationGroup", option.None, decode.optional(decode.list(decode_replica_description_struct_params())))
   decode.success(GlobalTableDescription(
     creation_date_time: creation_date_time,
     global_table_arn: global_table_arn,
@@ -1506,12 +1859,43 @@ pub fn decode_replica_description_struct() -> decode.Decoder(ReplicaDescription)
   use provisioned_throughput_override <- decode.optional_field("ProvisionedThroughputOverride", option.None, decode.optional(decode_provisioned_throughput_override_struct()))
   use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
   use replica_arn <- decode.optional_field("ReplicaArn", option.None, decode.optional(decode.string))
-  use replica_inaccessible_date_time <- decode.optional_field("ReplicaInaccessibleDateTime", option.None, decode.optional(decode.int))
+  use replica_inaccessible_date_time <- decode.optional_field("ReplicaInaccessibleDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use replica_status <- decode.optional_field("ReplicaStatus", option.None, decode.optional(decode_replica_status_enum()))
   use replica_status_description <- decode.optional_field("ReplicaStatusDescription", option.None, decode.optional(decode.string))
   use replica_status_percent_progress <- decode.optional_field("ReplicaStatusPercentProgress", option.None, decode.optional(decode.string))
   use replica_table_class_summary <- decode.optional_field("ReplicaTableClassSummary", option.None, decode.optional(decode_table_class_summary_struct()))
   use warm_throughput <- decode.optional_field("WarmThroughput", option.None, decode.optional(decode_table_warm_throughput_description_struct()))
+  decode.success(ReplicaDescription(
+    global_secondary_indexes: global_secondary_indexes,
+    global_table_settings_replication_mode: global_table_settings_replication_mode,
+    kms_master_key_id: kms_master_key_id,
+    on_demand_throughput_override: on_demand_throughput_override,
+    provisioned_throughput_override: provisioned_throughput_override,
+    region_name: region_name,
+    replica_arn: replica_arn,
+    replica_inaccessible_date_time: replica_inaccessible_date_time,
+    replica_status: replica_status,
+    replica_status_description: replica_status_description,
+    replica_status_percent_progress: replica_status_percent_progress,
+    replica_table_class_summary: replica_table_class_summary,
+    warm_throughput: warm_throughput,
+  ))
+}
+
+pub fn decode_replica_description_struct_params() -> decode.Decoder(ReplicaDescription) {
+  use global_secondary_indexes <- decode.optional_field("GlobalSecondaryIndexes", option.None, decode.optional(decode.list(decode_replica_global_secondary_index_description_struct_params())))
+  use global_table_settings_replication_mode <- decode.optional_field("GlobalTableSettingsReplicationMode", option.None, decode.optional(decode_global_table_settings_replication_mode_enum()))
+  use kms_master_key_id <- decode.optional_field("KMSMasterKeyId", option.None, decode.optional(decode.string))
+  use on_demand_throughput_override <- decode.optional_field("OnDemandThroughputOverride", option.None, decode.optional(decode_on_demand_throughput_override_struct_params()))
+  use provisioned_throughput_override <- decode.optional_field("ProvisionedThroughputOverride", option.None, decode.optional(decode_provisioned_throughput_override_struct_params()))
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  use replica_arn <- decode.optional_field("ReplicaArn", option.None, decode.optional(decode.string))
+  use replica_inaccessible_date_time <- decode.optional_field("ReplicaInaccessibleDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use replica_status <- decode.optional_field("ReplicaStatus", option.None, decode.optional(decode_replica_status_enum()))
+  use replica_status_description <- decode.optional_field("ReplicaStatusDescription", option.None, decode.optional(decode.string))
+  use replica_status_percent_progress <- decode.optional_field("ReplicaStatusPercentProgress", option.None, decode.optional(decode.string))
+  use replica_table_class_summary <- decode.optional_field("ReplicaTableClassSummary", option.None, decode.optional(decode_table_class_summary_struct_params()))
+  use warm_throughput <- decode.optional_field("WarmThroughput", option.None, decode.optional(decode_table_warm_throughput_description_struct_params()))
   decode.success(ReplicaDescription(
     global_secondary_indexes: global_secondary_indexes,
     global_table_settings_replication_mode: global_table_settings_replication_mode,
@@ -1572,6 +1956,19 @@ pub fn decode_replica_global_secondary_index_description_struct() -> decode.Deco
   ))
 }
 
+pub fn decode_replica_global_secondary_index_description_struct_params() -> decode.Decoder(ReplicaGlobalSecondaryIndexDescription) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use on_demand_throughput_override <- decode.optional_field("OnDemandThroughputOverride", option.None, decode.optional(decode_on_demand_throughput_override_struct_params()))
+  use provisioned_throughput_override <- decode.optional_field("ProvisionedThroughputOverride", option.None, decode.optional(decode_provisioned_throughput_override_struct_params()))
+  use warm_throughput <- decode.optional_field("WarmThroughput", option.None, decode.optional(decode_global_secondary_index_warm_throughput_description_struct_params()))
+  decode.success(ReplicaGlobalSecondaryIndexDescription(
+    index_name: index_name,
+    on_demand_throughput_override: on_demand_throughput_override,
+    provisioned_throughput_override: provisioned_throughput_override,
+    warm_throughput: warm_throughput,
+  ))
+}
+
 pub type OnDemandThroughputOverride {
   OnDemandThroughputOverride(
     max_read_request_units: option.Option(Int),
@@ -1594,6 +1991,13 @@ pub fn decode_on_demand_throughput_override_struct() -> decode.Decoder(OnDemandT
   ))
 }
 
+pub fn decode_on_demand_throughput_override_struct_params() -> decode.Decoder(OnDemandThroughputOverride) {
+  use max_read_request_units <- decode.optional_field("MaxReadRequestUnits", option.None, decode.optional(decode.int))
+  decode.success(OnDemandThroughputOverride(
+    max_read_request_units: max_read_request_units,
+  ))
+}
+
 pub type ProvisionedThroughputOverride {
   ProvisionedThroughputOverride(
     read_capacity_units: option.Option(Int),
@@ -1610,6 +2014,13 @@ pub fn encode_provisioned_throughput_override_struct(input: ProvisionedThroughpu
 }
 
 pub fn decode_provisioned_throughput_override_struct() -> decode.Decoder(ProvisionedThroughputOverride) {
+  use read_capacity_units <- decode.optional_field("ReadCapacityUnits", option.None, decode.optional(decode.int))
+  decode.success(ProvisionedThroughputOverride(
+    read_capacity_units: read_capacity_units,
+  ))
+}
+
+pub fn decode_provisioned_throughput_override_struct_params() -> decode.Decoder(ProvisionedThroughputOverride) {
   use read_capacity_units <- decode.optional_field("ReadCapacityUnits", option.None, decode.optional(decode.int))
   decode.success(ProvisionedThroughputOverride(
     read_capacity_units: read_capacity_units,
@@ -1642,6 +2053,17 @@ pub fn encode_global_secondary_index_warm_throughput_description_struct(input: G
 }
 
 pub fn decode_global_secondary_index_warm_throughput_description_struct() -> decode.Decoder(GlobalSecondaryIndexWarmThroughputDescription) {
+  use read_units_per_second <- decode.optional_field("ReadUnitsPerSecond", option.None, decode.optional(decode.int))
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_index_status_enum()))
+  use write_units_per_second <- decode.optional_field("WriteUnitsPerSecond", option.None, decode.optional(decode.int))
+  decode.success(GlobalSecondaryIndexWarmThroughputDescription(
+    read_units_per_second: read_units_per_second,
+    status: status,
+    write_units_per_second: write_units_per_second,
+  ))
+}
+
+pub fn decode_global_secondary_index_warm_throughput_description_struct_params() -> decode.Decoder(GlobalSecondaryIndexWarmThroughputDescription) {
   use read_units_per_second <- decode.optional_field("ReadUnitsPerSecond", option.None, decode.optional(decode.int))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_index_status_enum()))
   use write_units_per_second <- decode.optional_field("WriteUnitsPerSecond", option.None, decode.optional(decode.int))
@@ -1772,7 +2194,16 @@ pub fn encode_table_class_summary_struct(input: TableClassSummary) -> json.Json 
 }
 
 pub fn decode_table_class_summary_struct() -> decode.Decoder(TableClassSummary) {
-  use last_update_date_time <- decode.optional_field("LastUpdateDateTime", option.None, decode.optional(decode.int))
+  use last_update_date_time <- decode.optional_field("LastUpdateDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use table_class <- decode.optional_field("TableClass", option.None, decode.optional(decode_table_class_enum()))
+  decode.success(TableClassSummary(
+    last_update_date_time: last_update_date_time,
+    table_class: table_class,
+  ))
+}
+
+pub fn decode_table_class_summary_struct_params() -> decode.Decoder(TableClassSummary) {
+  use last_update_date_time <- decode.optional_field("LastUpdateDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use table_class <- decode.optional_field("TableClass", option.None, decode.optional(decode_table_class_enum()))
   decode.success(TableClassSummary(
     last_update_date_time: last_update_date_time,
@@ -1828,6 +2259,17 @@ pub fn encode_table_warm_throughput_description_struct(input: TableWarmThroughpu
 }
 
 pub fn decode_table_warm_throughput_description_struct() -> decode.Decoder(TableWarmThroughputDescription) {
+  use read_units_per_second <- decode.optional_field("ReadUnitsPerSecond", option.None, decode.optional(decode.int))
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_table_status_enum()))
+  use write_units_per_second <- decode.optional_field("WriteUnitsPerSecond", option.None, decode.optional(decode.int))
+  decode.success(TableWarmThroughputDescription(
+    read_units_per_second: read_units_per_second,
+    status: status,
+    write_units_per_second: write_units_per_second,
+  ))
+}
+
+pub fn decode_table_warm_throughput_description_struct_params() -> decode.Decoder(TableWarmThroughputDescription) {
   use read_units_per_second <- decode.optional_field("ReadUnitsPerSecond", option.None, decode.optional(decode.int))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_table_status_enum()))
   use write_units_per_second <- decode.optional_field("WriteUnitsPerSecond", option.None, decode.optional(decode.int))
@@ -1894,6 +2336,13 @@ pub fn encode_global_table_already_exists_exception_struct(input: GlobalTableAlr
 }
 
 pub fn decode_global_table_already_exists_exception_struct() -> decode.Decoder(GlobalTableAlreadyExistsException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(GlobalTableAlreadyExistsException(
+    message: message,
+  ))
+}
+
+pub fn decode_global_table_already_exists_exception_struct_params() -> decode.Decoder(GlobalTableAlreadyExistsException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(GlobalTableAlreadyExistsException(
     message: message,
@@ -2034,6 +2483,45 @@ pub fn decode_create_table_input_struct() -> decode.Decoder(CreateTableInput) {
   ))
 }
 
+pub fn decode_create_table_input_struct_params() -> decode.Decoder(CreateTableInput) {
+  use attribute_definitions <- decode.optional_field("AttributeDefinitions", option.None, decode.optional(decode.list(decode_attribute_definition_struct_params())))
+  use billing_mode <- decode.optional_field("BillingMode", option.None, decode.optional(decode_billing_mode_enum()))
+  use deletion_protection_enabled <- decode.optional_field("DeletionProtectionEnabled", option.None, decode.optional(decode.bool))
+  use global_secondary_indexes <- decode.optional_field("GlobalSecondaryIndexes", option.None, decode.optional(decode.list(decode_global_secondary_index_struct_params())))
+  use global_table_settings_replication_mode <- decode.optional_field("GlobalTableSettingsReplicationMode", option.None, decode.optional(decode_global_table_settings_replication_mode_enum()))
+  use global_table_source_arn <- decode.optional_field("GlobalTableSourceArn", option.None, decode.optional(decode.string))
+  use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct_params())))
+  use local_secondary_indexes <- decode.optional_field("LocalSecondaryIndexes", option.None, decode.optional(decode.list(decode_local_secondary_index_struct_params())))
+  use on_demand_throughput <- decode.optional_field("OnDemandThroughput", option.None, decode.optional(decode_on_demand_throughput_struct_params()))
+  use provisioned_throughput <- decode.optional_field("ProvisionedThroughput", option.None, decode.optional(decode_provisioned_throughput_struct_params()))
+  use resource_policy <- decode.optional_field("ResourcePolicy", option.None, decode.optional(decode.string))
+  use sse_specification <- decode.optional_field("SSESpecification", option.None, decode.optional(decode_sse_specification_struct_params()))
+  use stream_specification <- decode.optional_field("StreamSpecification", option.None, decode.optional(decode_stream_specification_struct_params()))
+  use table_class <- decode.optional_field("TableClass", option.None, decode.optional(decode_table_class_enum()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
+  use warm_throughput <- decode.optional_field("WarmThroughput", option.None, decode.optional(decode_warm_throughput_struct_params()))
+  decode.success(CreateTableInput(
+    attribute_definitions: attribute_definitions,
+    billing_mode: billing_mode,
+    deletion_protection_enabled: deletion_protection_enabled,
+    global_secondary_indexes: global_secondary_indexes,
+    global_table_settings_replication_mode: global_table_settings_replication_mode,
+    global_table_source_arn: global_table_source_arn,
+    key_schema: key_schema,
+    local_secondary_indexes: local_secondary_indexes,
+    on_demand_throughput: on_demand_throughput,
+    provisioned_throughput: provisioned_throughput,
+    resource_policy: resource_policy,
+    sse_specification: sse_specification,
+    stream_specification: stream_specification,
+    table_class: table_class,
+    table_name: table_name,
+    tags: tags,
+    warm_throughput: warm_throughput,
+  ))
+}
+
 pub type AttributeDefinition {
   AttributeDefinition(
     attribute_name: option.Option(String),
@@ -2055,6 +2543,15 @@ pub fn encode_attribute_definition_struct(input: AttributeDefinition) -> json.Js
 }
 
 pub fn decode_attribute_definition_struct() -> decode.Decoder(AttributeDefinition) {
+  use attribute_name <- decode.optional_field("AttributeName", option.None, decode.optional(decode.string))
+  use attribute_type <- decode.optional_field("AttributeType", option.None, decode.optional(decode_scalar_attribute_type_enum()))
+  decode.success(AttributeDefinition(
+    attribute_name: attribute_name,
+    attribute_type: attribute_type,
+  ))
+}
+
+pub fn decode_attribute_definition_struct_params() -> decode.Decoder(AttributeDefinition) {
   use attribute_name <- decode.optional_field("AttributeName", option.None, decode.optional(decode.string))
   use attribute_type <- decode.optional_field("AttributeType", option.None, decode.optional(decode_scalar_attribute_type_enum()))
   decode.success(AttributeDefinition(
@@ -2167,6 +2664,23 @@ pub fn decode_global_secondary_index_struct() -> decode.Decoder(GlobalSecondaryI
   ))
 }
 
+pub fn decode_global_secondary_index_struct_params() -> decode.Decoder(GlobalSecondaryIndex) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct_params())))
+  use on_demand_throughput <- decode.optional_field("OnDemandThroughput", option.None, decode.optional(decode_on_demand_throughput_struct_params()))
+  use projection <- decode.optional_field("Projection", option.None, decode.optional(decode_projection_struct_params()))
+  use provisioned_throughput <- decode.optional_field("ProvisionedThroughput", option.None, decode.optional(decode_provisioned_throughput_struct_params()))
+  use warm_throughput <- decode.optional_field("WarmThroughput", option.None, decode.optional(decode_warm_throughput_struct_params()))
+  decode.success(GlobalSecondaryIndex(
+    index_name: index_name,
+    key_schema: key_schema,
+    on_demand_throughput: on_demand_throughput,
+    projection: projection,
+    provisioned_throughput: provisioned_throughput,
+    warm_throughput: warm_throughput,
+  ))
+}
+
 pub type KeySchemaElement {
   KeySchemaElement(
     attribute_name: option.Option(String),
@@ -2188,6 +2702,15 @@ pub fn encode_key_schema_element_struct(input: KeySchemaElement) -> json.Json {
 }
 
 pub fn decode_key_schema_element_struct() -> decode.Decoder(KeySchemaElement) {
+  use attribute_name <- decode.optional_field("AttributeName", option.None, decode.optional(decode.string))
+  use key_type <- decode.optional_field("KeyType", option.None, decode.optional(decode_key_type_enum()))
+  decode.success(KeySchemaElement(
+    attribute_name: attribute_name,
+    key_type: key_type,
+  ))
+}
+
+pub fn decode_key_schema_element_struct_params() -> decode.Decoder(KeySchemaElement) {
   use attribute_name <- decode.optional_field("AttributeName", option.None, decode.optional(decode.string))
   use key_type <- decode.optional_field("KeyType", option.None, decode.optional(decode_key_type_enum()))
   decode.success(KeySchemaElement(
@@ -2247,6 +2770,15 @@ pub fn decode_on_demand_throughput_struct() -> decode.Decoder(OnDemandThroughput
   ))
 }
 
+pub fn decode_on_demand_throughput_struct_params() -> decode.Decoder(OnDemandThroughput) {
+  use max_read_request_units <- decode.optional_field("MaxReadRequestUnits", option.None, decode.optional(decode.int))
+  use max_write_request_units <- decode.optional_field("MaxWriteRequestUnits", option.None, decode.optional(decode.int))
+  decode.success(OnDemandThroughput(
+    max_read_request_units: max_read_request_units,
+    max_write_request_units: max_write_request_units,
+  ))
+}
+
 pub type Projection {
   Projection(
     non_key_attributes: option.Option(List(String)),
@@ -2268,6 +2800,15 @@ pub fn encode_projection_struct(input: Projection) -> json.Json {
 }
 
 pub fn decode_projection_struct() -> decode.Decoder(Projection) {
+  use non_key_attributes <- decode.optional_field("NonKeyAttributes", option.None, decode.optional(decode.list(decode.string)))
+  use projection_type <- decode.optional_field("ProjectionType", option.None, decode.optional(decode_projection_type_enum()))
+  decode.success(Projection(
+    non_key_attributes: non_key_attributes,
+    projection_type: projection_type,
+  ))
+}
+
+pub fn decode_projection_struct_params() -> decode.Decoder(Projection) {
   use non_key_attributes <- decode.optional_field("NonKeyAttributes", option.None, decode.optional(decode.list(decode.string)))
   use projection_type <- decode.optional_field("ProjectionType", option.None, decode.optional(decode_projection_type_enum()))
   decode.success(Projection(
@@ -2330,6 +2871,15 @@ pub fn decode_provisioned_throughput_struct() -> decode.Decoder(ProvisionedThrou
   ))
 }
 
+pub fn decode_provisioned_throughput_struct_params() -> decode.Decoder(ProvisionedThroughput) {
+  use read_capacity_units <- decode.optional_field("ReadCapacityUnits", option.None, decode.optional(decode.int))
+  use write_capacity_units <- decode.optional_field("WriteCapacityUnits", option.None, decode.optional(decode.int))
+  decode.success(ProvisionedThroughput(
+    read_capacity_units: read_capacity_units,
+    write_capacity_units: write_capacity_units,
+  ))
+}
+
 pub type WarmThroughput {
   WarmThroughput(
     read_units_per_second: option.Option(Int),
@@ -2351,6 +2901,15 @@ pub fn encode_warm_throughput_struct(input: WarmThroughput) -> json.Json {
 }
 
 pub fn decode_warm_throughput_struct() -> decode.Decoder(WarmThroughput) {
+  use read_units_per_second <- decode.optional_field("ReadUnitsPerSecond", option.None, decode.optional(decode.int))
+  use write_units_per_second <- decode.optional_field("WriteUnitsPerSecond", option.None, decode.optional(decode.int))
+  decode.success(WarmThroughput(
+    read_units_per_second: read_units_per_second,
+    write_units_per_second: write_units_per_second,
+  ))
+}
+
+pub fn decode_warm_throughput_struct_params() -> decode.Decoder(WarmThroughput) {
   use read_units_per_second <- decode.optional_field("ReadUnitsPerSecond", option.None, decode.optional(decode.int))
   use write_units_per_second <- decode.optional_field("WriteUnitsPerSecond", option.None, decode.optional(decode.int))
   decode.success(WarmThroughput(
@@ -2395,6 +2954,17 @@ pub fn decode_local_secondary_index_struct() -> decode.Decoder(LocalSecondaryInd
   ))
 }
 
+pub fn decode_local_secondary_index_struct_params() -> decode.Decoder(LocalSecondaryIndex) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct_params())))
+  use projection <- decode.optional_field("Projection", option.None, decode.optional(decode_projection_struct_params()))
+  decode.success(LocalSecondaryIndex(
+    index_name: index_name,
+    key_schema: key_schema,
+    projection: projection,
+  ))
+}
+
 pub type SSESpecification {
   SSESpecification(
     enabled: option.Option(Bool),
@@ -2421,6 +2991,17 @@ pub fn encode_sse_specification_struct(input: SSESpecification) -> json.Json {
 }
 
 pub fn decode_sse_specification_struct() -> decode.Decoder(SSESpecification) {
+  use enabled <- decode.optional_field("Enabled", option.None, decode.optional(decode.bool))
+  use kms_master_key_id <- decode.optional_field("KMSMasterKeyId", option.None, decode.optional(decode.string))
+  use sse_type <- decode.optional_field("SSEType", option.None, decode.optional(decode_sse_type_enum()))
+  decode.success(SSESpecification(
+    enabled: enabled,
+    kms_master_key_id: kms_master_key_id,
+    sse_type: sse_type,
+  ))
+}
+
+pub fn decode_sse_specification_struct_params() -> decode.Decoder(SSESpecification) {
   use enabled <- decode.optional_field("Enabled", option.None, decode.optional(decode.bool))
   use kms_master_key_id <- decode.optional_field("KMSMasterKeyId", option.None, decode.optional(decode.string))
   use sse_type <- decode.optional_field("SSEType", option.None, decode.optional(decode_sse_type_enum()))
@@ -2474,6 +3055,15 @@ pub fn encode_stream_specification_struct(input: StreamSpecification) -> json.Js
 }
 
 pub fn decode_stream_specification_struct() -> decode.Decoder(StreamSpecification) {
+  use stream_enabled <- decode.optional_field("StreamEnabled", option.None, decode.optional(decode.bool))
+  use stream_view_type <- decode.optional_field("StreamViewType", option.None, decode.optional(decode_stream_view_type_enum()))
+  decode.success(StreamSpecification(
+    stream_enabled: stream_enabled,
+    stream_view_type: stream_view_type,
+  ))
+}
+
+pub fn decode_stream_specification_struct_params() -> decode.Decoder(StreamSpecification) {
   use stream_enabled <- decode.optional_field("StreamEnabled", option.None, decode.optional(decode.bool))
   use stream_view_type <- decode.optional_field("StreamViewType", option.None, decode.optional(decode_stream_view_type_enum()))
   decode.success(StreamSpecification(
@@ -2539,6 +3129,15 @@ pub fn decode_tag_struct() -> decode.Decoder(Tag) {
   ))
 }
 
+pub fn decode_tag_struct_params() -> decode.Decoder(Tag) {
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
+  decode.success(Tag(
+    key: key,
+    value: value,
+  ))
+}
+
 pub type CreateTableOutput {
   CreateTableOutput(
     table_description: option.Option(TableDescription),
@@ -2556,6 +3155,13 @@ pub fn encode_create_table_output_struct(input: CreateTableOutput) -> json.Json 
 
 pub fn decode_create_table_output_struct() -> decode.Decoder(CreateTableOutput) {
   use table_description <- decode.optional_field("TableDescription", option.None, decode.optional(decode_table_description_struct()))
+  decode.success(CreateTableOutput(
+    table_description: table_description,
+  ))
+}
+
+pub fn decode_create_table_output_struct_params() -> decode.Decoder(CreateTableOutput) {
+  use table_description <- decode.optional_field("TableDescription", option.None, decode.optional(decode_table_description_struct_params()))
   decode.success(CreateTableOutput(
     table_description: table_description,
   ))
@@ -2715,7 +3321,7 @@ pub fn decode_table_description_struct() -> decode.Decoder(TableDescription) {
   use archival_summary <- decode.optional_field("ArchivalSummary", option.None, decode.optional(decode_archival_summary_struct()))
   use attribute_definitions <- decode.optional_field("AttributeDefinitions", option.None, decode.optional(decode.list(decode_attribute_definition_struct())))
   use billing_mode_summary <- decode.optional_field("BillingModeSummary", option.None, decode.optional(decode_billing_mode_summary_struct()))
-  use creation_date_time <- decode.optional_field("CreationDateTime", option.None, decode.optional(decode.int))
+  use creation_date_time <- decode.optional_field("CreationDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use deletion_protection_enabled <- decode.optional_field("DeletionProtectionEnabled", option.None, decode.optional(decode.bool))
   use global_secondary_indexes <- decode.optional_field("GlobalSecondaryIndexes", option.None, decode.optional(decode.list(decode_global_secondary_index_description_struct())))
   use global_table_settings_replication_mode <- decode.optional_field("GlobalTableSettingsReplicationMode", option.None, decode.optional(decode_global_table_settings_replication_mode_enum()))
@@ -2740,6 +3346,67 @@ pub fn decode_table_description_struct() -> decode.Decoder(TableDescription) {
   use table_size_bytes <- decode.optional_field("TableSizeBytes", option.None, decode.optional(decode.int))
   use table_status <- decode.optional_field("TableStatus", option.None, decode.optional(decode_table_status_enum()))
   use warm_throughput <- decode.optional_field("WarmThroughput", option.None, decode.optional(decode_table_warm_throughput_description_struct()))
+  decode.success(TableDescription(
+    archival_summary: archival_summary,
+    attribute_definitions: attribute_definitions,
+    billing_mode_summary: billing_mode_summary,
+    creation_date_time: creation_date_time,
+    deletion_protection_enabled: deletion_protection_enabled,
+    global_secondary_indexes: global_secondary_indexes,
+    global_table_settings_replication_mode: global_table_settings_replication_mode,
+    global_table_version: global_table_version,
+    global_table_witnesses: global_table_witnesses,
+    item_count: item_count,
+    key_schema: key_schema,
+    latest_stream_arn: latest_stream_arn,
+    latest_stream_label: latest_stream_label,
+    local_secondary_indexes: local_secondary_indexes,
+    multi_region_consistency: multi_region_consistency,
+    on_demand_throughput: on_demand_throughput,
+    provisioned_throughput: provisioned_throughput,
+    replicas: replicas,
+    restore_summary: restore_summary,
+    sse_description: sse_description,
+    stream_specification: stream_specification,
+    table_arn: table_arn,
+    table_class_summary: table_class_summary,
+    table_id: table_id,
+    table_name: table_name,
+    table_size_bytes: table_size_bytes,
+    table_status: table_status,
+    warm_throughput: warm_throughput,
+  ))
+}
+
+pub fn decode_table_description_struct_params() -> decode.Decoder(TableDescription) {
+  use archival_summary <- decode.optional_field("ArchivalSummary", option.None, decode.optional(decode_archival_summary_struct_params()))
+  use attribute_definitions <- decode.optional_field("AttributeDefinitions", option.None, decode.optional(decode.list(decode_attribute_definition_struct_params())))
+  use billing_mode_summary <- decode.optional_field("BillingModeSummary", option.None, decode.optional(decode_billing_mode_summary_struct_params()))
+  use creation_date_time <- decode.optional_field("CreationDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use deletion_protection_enabled <- decode.optional_field("DeletionProtectionEnabled", option.None, decode.optional(decode.bool))
+  use global_secondary_indexes <- decode.optional_field("GlobalSecondaryIndexes", option.None, decode.optional(decode.list(decode_global_secondary_index_description_struct_params())))
+  use global_table_settings_replication_mode <- decode.optional_field("GlobalTableSettingsReplicationMode", option.None, decode.optional(decode_global_table_settings_replication_mode_enum()))
+  use global_table_version <- decode.optional_field("GlobalTableVersion", option.None, decode.optional(decode.string))
+  use global_table_witnesses <- decode.optional_field("GlobalTableWitnesses", option.None, decode.optional(decode.list(decode_global_table_witness_description_struct_params())))
+  use item_count <- decode.optional_field("ItemCount", option.None, decode.optional(decode.int))
+  use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct_params())))
+  use latest_stream_arn <- decode.optional_field("LatestStreamArn", option.None, decode.optional(decode.string))
+  use latest_stream_label <- decode.optional_field("LatestStreamLabel", option.None, decode.optional(decode.string))
+  use local_secondary_indexes <- decode.optional_field("LocalSecondaryIndexes", option.None, decode.optional(decode.list(decode_local_secondary_index_description_struct_params())))
+  use multi_region_consistency <- decode.optional_field("MultiRegionConsistency", option.None, decode.optional(decode_multi_region_consistency_enum()))
+  use on_demand_throughput <- decode.optional_field("OnDemandThroughput", option.None, decode.optional(decode_on_demand_throughput_struct_params()))
+  use provisioned_throughput <- decode.optional_field("ProvisionedThroughput", option.None, decode.optional(decode_provisioned_throughput_description_struct_params()))
+  use replicas <- decode.optional_field("Replicas", option.None, decode.optional(decode.list(decode_replica_description_struct_params())))
+  use restore_summary <- decode.optional_field("RestoreSummary", option.None, decode.optional(decode_restore_summary_struct_params()))
+  use sse_description <- decode.optional_field("SSEDescription", option.None, decode.optional(decode_sse_description_struct_params()))
+  use stream_specification <- decode.optional_field("StreamSpecification", option.None, decode.optional(decode_stream_specification_struct_params()))
+  use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
+  use table_class_summary <- decode.optional_field("TableClassSummary", option.None, decode.optional(decode_table_class_summary_struct_params()))
+  use table_id <- decode.optional_field("TableId", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use table_size_bytes <- decode.optional_field("TableSizeBytes", option.None, decode.optional(decode.int))
+  use table_status <- decode.optional_field("TableStatus", option.None, decode.optional(decode_table_status_enum()))
+  use warm_throughput <- decode.optional_field("WarmThroughput", option.None, decode.optional(decode_table_warm_throughput_description_struct_params()))
   decode.success(TableDescription(
     archival_summary: archival_summary,
     attribute_definitions: attribute_definitions,
@@ -2799,7 +3466,18 @@ pub fn encode_archival_summary_struct(input: ArchivalSummary) -> json.Json {
 
 pub fn decode_archival_summary_struct() -> decode.Decoder(ArchivalSummary) {
   use archival_backup_arn <- decode.optional_field("ArchivalBackupArn", option.None, decode.optional(decode.string))
-  use archival_date_time <- decode.optional_field("ArchivalDateTime", option.None, decode.optional(decode.int))
+  use archival_date_time <- decode.optional_field("ArchivalDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use archival_reason <- decode.optional_field("ArchivalReason", option.None, decode.optional(decode.string))
+  decode.success(ArchivalSummary(
+    archival_backup_arn: archival_backup_arn,
+    archival_date_time: archival_date_time,
+    archival_reason: archival_reason,
+  ))
+}
+
+pub fn decode_archival_summary_struct_params() -> decode.Decoder(ArchivalSummary) {
+  use archival_backup_arn <- decode.optional_field("ArchivalBackupArn", option.None, decode.optional(decode.string))
+  use archival_date_time <- decode.optional_field("ArchivalDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use archival_reason <- decode.optional_field("ArchivalReason", option.None, decode.optional(decode.string))
   decode.success(ArchivalSummary(
     archival_backup_arn: archival_backup_arn,
@@ -2830,7 +3508,16 @@ pub fn encode_billing_mode_summary_struct(input: BillingModeSummary) -> json.Jso
 
 pub fn decode_billing_mode_summary_struct() -> decode.Decoder(BillingModeSummary) {
   use billing_mode <- decode.optional_field("BillingMode", option.None, decode.optional(decode_billing_mode_enum()))
-  use last_update_to_pay_per_request_date_time <- decode.optional_field("LastUpdateToPayPerRequestDateTime", option.None, decode.optional(decode.int))
+  use last_update_to_pay_per_request_date_time <- decode.optional_field("LastUpdateToPayPerRequestDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(BillingModeSummary(
+    billing_mode: billing_mode,
+    last_update_to_pay_per_request_date_time: last_update_to_pay_per_request_date_time,
+  ))
+}
+
+pub fn decode_billing_mode_summary_struct_params() -> decode.Decoder(BillingModeSummary) {
+  use billing_mode <- decode.optional_field("BillingMode", option.None, decode.optional(decode_billing_mode_enum()))
+  use last_update_to_pay_per_request_date_time <- decode.optional_field("LastUpdateToPayPerRequestDateTime", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(BillingModeSummary(
     billing_mode: billing_mode,
     last_update_to_pay_per_request_date_time: last_update_to_pay_per_request_date_time,
@@ -2929,6 +3616,33 @@ pub fn decode_global_secondary_index_description_struct() -> decode.Decoder(Glob
   ))
 }
 
+pub fn decode_global_secondary_index_description_struct_params() -> decode.Decoder(GlobalSecondaryIndexDescription) {
+  use backfilling <- decode.optional_field("Backfilling", option.None, decode.optional(decode.bool))
+  use index_arn <- decode.optional_field("IndexArn", option.None, decode.optional(decode.string))
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use index_size_bytes <- decode.optional_field("IndexSizeBytes", option.None, decode.optional(decode.int))
+  use index_status <- decode.optional_field("IndexStatus", option.None, decode.optional(decode_index_status_enum()))
+  use item_count <- decode.optional_field("ItemCount", option.None, decode.optional(decode.int))
+  use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct_params())))
+  use on_demand_throughput <- decode.optional_field("OnDemandThroughput", option.None, decode.optional(decode_on_demand_throughput_struct_params()))
+  use projection <- decode.optional_field("Projection", option.None, decode.optional(decode_projection_struct_params()))
+  use provisioned_throughput <- decode.optional_field("ProvisionedThroughput", option.None, decode.optional(decode_provisioned_throughput_description_struct_params()))
+  use warm_throughput <- decode.optional_field("WarmThroughput", option.None, decode.optional(decode_global_secondary_index_warm_throughput_description_struct_params()))
+  decode.success(GlobalSecondaryIndexDescription(
+    backfilling: backfilling,
+    index_arn: index_arn,
+    index_name: index_name,
+    index_size_bytes: index_size_bytes,
+    index_status: index_status,
+    item_count: item_count,
+    key_schema: key_schema,
+    on_demand_throughput: on_demand_throughput,
+    projection: projection,
+    provisioned_throughput: provisioned_throughput,
+    warm_throughput: warm_throughput,
+  ))
+}
+
 pub type ProvisionedThroughputDescription {
   ProvisionedThroughputDescription(
     last_decrease_date_time: option.Option(Int),
@@ -2965,8 +3679,23 @@ pub fn encode_provisioned_throughput_description_struct(input: ProvisionedThroug
 }
 
 pub fn decode_provisioned_throughput_description_struct() -> decode.Decoder(ProvisionedThroughputDescription) {
-  use last_decrease_date_time <- decode.optional_field("LastDecreaseDateTime", option.None, decode.optional(decode.int))
-  use last_increase_date_time <- decode.optional_field("LastIncreaseDateTime", option.None, decode.optional(decode.int))
+  use last_decrease_date_time <- decode.optional_field("LastDecreaseDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use last_increase_date_time <- decode.optional_field("LastIncreaseDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use number_of_decreases_today <- decode.optional_field("NumberOfDecreasesToday", option.None, decode.optional(decode.int))
+  use read_capacity_units <- decode.optional_field("ReadCapacityUnits", option.None, decode.optional(decode.int))
+  use write_capacity_units <- decode.optional_field("WriteCapacityUnits", option.None, decode.optional(decode.int))
+  decode.success(ProvisionedThroughputDescription(
+    last_decrease_date_time: last_decrease_date_time,
+    last_increase_date_time: last_increase_date_time,
+    number_of_decreases_today: number_of_decreases_today,
+    read_capacity_units: read_capacity_units,
+    write_capacity_units: write_capacity_units,
+  ))
+}
+
+pub fn decode_provisioned_throughput_description_struct_params() -> decode.Decoder(ProvisionedThroughputDescription) {
+  use last_decrease_date_time <- decode.optional_field("LastDecreaseDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use last_increase_date_time <- decode.optional_field("LastIncreaseDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use number_of_decreases_today <- decode.optional_field("NumberOfDecreasesToday", option.None, decode.optional(decode.int))
   use read_capacity_units <- decode.optional_field("ReadCapacityUnits", option.None, decode.optional(decode.int))
   use write_capacity_units <- decode.optional_field("WriteCapacityUnits", option.None, decode.optional(decode.int))
@@ -3000,6 +3729,15 @@ pub fn encode_global_table_witness_description_struct(input: GlobalTableWitnessD
 }
 
 pub fn decode_global_table_witness_description_struct() -> decode.Decoder(GlobalTableWitnessDescription) {
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  use witness_status <- decode.optional_field("WitnessStatus", option.None, decode.optional(decode_witness_status_enum()))
+  decode.success(GlobalTableWitnessDescription(
+    region_name: region_name,
+    witness_status: witness_status,
+  ))
+}
+
+pub fn decode_global_table_witness_description_struct_params() -> decode.Decoder(GlobalTableWitnessDescription) {
   use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
   use witness_status <- decode.optional_field("WitnessStatus", option.None, decode.optional(decode_witness_status_enum()))
   decode.success(GlobalTableWitnessDescription(
@@ -3090,6 +3828,23 @@ pub fn decode_local_secondary_index_description_struct() -> decode.Decoder(Local
   ))
 }
 
+pub fn decode_local_secondary_index_description_struct_params() -> decode.Decoder(LocalSecondaryIndexDescription) {
+  use index_arn <- decode.optional_field("IndexArn", option.None, decode.optional(decode.string))
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use index_size_bytes <- decode.optional_field("IndexSizeBytes", option.None, decode.optional(decode.int))
+  use item_count <- decode.optional_field("ItemCount", option.None, decode.optional(decode.int))
+  use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct_params())))
+  use projection <- decode.optional_field("Projection", option.None, decode.optional(decode_projection_struct_params()))
+  decode.success(LocalSecondaryIndexDescription(
+    index_arn: index_arn,
+    index_name: index_name,
+    index_size_bytes: index_size_bytes,
+    item_count: item_count,
+    key_schema: key_schema,
+    projection: projection,
+  ))
+}
+
 pub type MultiRegionConsistency {
   MultiRegionConsistencyEventual
   MultiRegionConsistencyStrong
@@ -3143,7 +3898,20 @@ pub fn encode_restore_summary_struct(input: RestoreSummary) -> json.Json {
 }
 
 pub fn decode_restore_summary_struct() -> decode.Decoder(RestoreSummary) {
-  use restore_date_time <- decode.optional_field("RestoreDateTime", option.None, decode.optional(decode.int))
+  use restore_date_time <- decode.optional_field("RestoreDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use restore_in_progress <- decode.optional_field("RestoreInProgress", option.None, decode.optional(decode.bool))
+  use source_backup_arn <- decode.optional_field("SourceBackupArn", option.None, decode.optional(decode.string))
+  use source_table_arn <- decode.optional_field("SourceTableArn", option.None, decode.optional(decode.string))
+  decode.success(RestoreSummary(
+    restore_date_time: restore_date_time,
+    restore_in_progress: restore_in_progress,
+    source_backup_arn: source_backup_arn,
+    source_table_arn: source_table_arn,
+  ))
+}
+
+pub fn decode_restore_summary_struct_params() -> decode.Decoder(RestoreSummary) {
+  use restore_date_time <- decode.optional_field("RestoreDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use restore_in_progress <- decode.optional_field("RestoreInProgress", option.None, decode.optional(decode.bool))
   use source_backup_arn <- decode.optional_field("SourceBackupArn", option.None, decode.optional(decode.string))
   use source_table_arn <- decode.optional_field("SourceTableArn", option.None, decode.optional(decode.string))
@@ -3186,7 +3954,20 @@ pub fn encode_sse_description_struct(input: SSEDescription) -> json.Json {
 }
 
 pub fn decode_sse_description_struct() -> decode.Decoder(SSEDescription) {
-  use inaccessible_encryption_date_time <- decode.optional_field("InaccessibleEncryptionDateTime", option.None, decode.optional(decode.int))
+  use inaccessible_encryption_date_time <- decode.optional_field("InaccessibleEncryptionDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use kms_master_key_arn <- decode.optional_field("KMSMasterKeyArn", option.None, decode.optional(decode.string))
+  use sse_type <- decode.optional_field("SSEType", option.None, decode.optional(decode_sse_type_enum()))
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_sse_status_enum()))
+  decode.success(SSEDescription(
+    inaccessible_encryption_date_time: inaccessible_encryption_date_time,
+    kms_master_key_arn: kms_master_key_arn,
+    sse_type: sse_type,
+    status: status,
+  ))
+}
+
+pub fn decode_sse_description_struct_params() -> decode.Decoder(SSEDescription) {
+  use inaccessible_encryption_date_time <- decode.optional_field("InaccessibleEncryptionDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use kms_master_key_arn <- decode.optional_field("KMSMasterKeyArn", option.None, decode.optional(decode.string))
   use sse_type <- decode.optional_field("SSEType", option.None, decode.optional(decode_sse_type_enum()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_sse_status_enum()))
@@ -3251,6 +4032,13 @@ pub fn decode_resource_in_use_exception_struct() -> decode.Decoder(ResourceInUse
   ))
 }
 
+pub fn decode_resource_in_use_exception_struct_params() -> decode.Decoder(ResourceInUseException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ResourceInUseException(
+    message: message,
+  ))
+}
+
 pub type DeleteBackupInput {
   DeleteBackupInput(
     backup_arn: option.Option(String),
@@ -3267,6 +4055,13 @@ pub fn encode_delete_backup_input_struct(input: DeleteBackupInput) -> json.Json 
 }
 
 pub fn decode_delete_backup_input_struct() -> decode.Decoder(DeleteBackupInput) {
+  use backup_arn <- decode.optional_field("BackupArn", option.None, decode.optional(decode.string))
+  decode.success(DeleteBackupInput(
+    backup_arn: backup_arn,
+  ))
+}
+
+pub fn decode_delete_backup_input_struct_params() -> decode.Decoder(DeleteBackupInput) {
   use backup_arn <- decode.optional_field("BackupArn", option.None, decode.optional(decode.string))
   decode.success(DeleteBackupInput(
     backup_arn: backup_arn,
@@ -3290,6 +4085,13 @@ pub fn encode_delete_backup_output_struct(input: DeleteBackupOutput) -> json.Jso
 
 pub fn decode_delete_backup_output_struct() -> decode.Decoder(DeleteBackupOutput) {
   use backup_description <- decode.optional_field("BackupDescription", option.None, decode.optional(decode_backup_description_struct()))
+  decode.success(DeleteBackupOutput(
+    backup_description: backup_description,
+  ))
+}
+
+pub fn decode_delete_backup_output_struct_params() -> decode.Decoder(DeleteBackupOutput) {
+  use backup_description <- decode.optional_field("BackupDescription", option.None, decode.optional(decode_backup_description_struct_params()))
   decode.success(DeleteBackupOutput(
     backup_description: backup_description,
   ))
@@ -3324,6 +4126,17 @@ pub fn decode_backup_description_struct() -> decode.Decoder(BackupDescription) {
   use backup_details <- decode.optional_field("BackupDetails", option.None, decode.optional(decode_backup_details_struct()))
   use source_table_details <- decode.optional_field("SourceTableDetails", option.None, decode.optional(decode_source_table_details_struct()))
   use source_table_feature_details <- decode.optional_field("SourceTableFeatureDetails", option.None, decode.optional(decode_source_table_feature_details_struct()))
+  decode.success(BackupDescription(
+    backup_details: backup_details,
+    source_table_details: source_table_details,
+    source_table_feature_details: source_table_feature_details,
+  ))
+}
+
+pub fn decode_backup_description_struct_params() -> decode.Decoder(BackupDescription) {
+  use backup_details <- decode.optional_field("BackupDetails", option.None, decode.optional(decode_backup_details_struct_params()))
+  use source_table_details <- decode.optional_field("SourceTableDetails", option.None, decode.optional(decode_source_table_details_struct_params()))
+  use source_table_feature_details <- decode.optional_field("SourceTableFeatureDetails", option.None, decode.optional(decode_source_table_feature_details_struct_params()))
   decode.success(BackupDescription(
     backup_details: backup_details,
     source_table_details: source_table_details,
@@ -3398,7 +4211,32 @@ pub fn decode_source_table_details_struct() -> decode.Decoder(SourceTableDetails
   use on_demand_throughput <- decode.optional_field("OnDemandThroughput", option.None, decode.optional(decode_on_demand_throughput_struct()))
   use provisioned_throughput <- decode.optional_field("ProvisionedThroughput", option.None, decode.optional(decode_provisioned_throughput_struct()))
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
-  use table_creation_date_time <- decode.optional_field("TableCreationDateTime", option.None, decode.optional(decode.int))
+  use table_creation_date_time <- decode.optional_field("TableCreationDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use table_id <- decode.optional_field("TableId", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use table_size_bytes <- decode.optional_field("TableSizeBytes", option.None, decode.optional(decode.int))
+  decode.success(SourceTableDetails(
+    billing_mode: billing_mode,
+    item_count: item_count,
+    key_schema: key_schema,
+    on_demand_throughput: on_demand_throughput,
+    provisioned_throughput: provisioned_throughput,
+    table_arn: table_arn,
+    table_creation_date_time: table_creation_date_time,
+    table_id: table_id,
+    table_name: table_name,
+    table_size_bytes: table_size_bytes,
+  ))
+}
+
+pub fn decode_source_table_details_struct_params() -> decode.Decoder(SourceTableDetails) {
+  use billing_mode <- decode.optional_field("BillingMode", option.None, decode.optional(decode_billing_mode_enum()))
+  use item_count <- decode.optional_field("ItemCount", option.None, decode.optional(decode.int))
+  use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct_params())))
+  use on_demand_throughput <- decode.optional_field("OnDemandThroughput", option.None, decode.optional(decode_on_demand_throughput_struct_params()))
+  use provisioned_throughput <- decode.optional_field("ProvisionedThroughput", option.None, decode.optional(decode_provisioned_throughput_struct_params()))
+  use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
+  use table_creation_date_time <- decode.optional_field("TableCreationDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use table_id <- decode.optional_field("TableId", option.None, decode.optional(decode.string))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   use table_size_bytes <- decode.optional_field("TableSizeBytes", option.None, decode.optional(decode.int))
@@ -3466,6 +4304,21 @@ pub fn decode_source_table_feature_details_struct() -> decode.Decoder(SourceTabl
   ))
 }
 
+pub fn decode_source_table_feature_details_struct_params() -> decode.Decoder(SourceTableFeatureDetails) {
+  use global_secondary_indexes <- decode.optional_field("GlobalSecondaryIndexes", option.None, decode.optional(decode.list(decode_global_secondary_index_info_struct_params())))
+  use local_secondary_indexes <- decode.optional_field("LocalSecondaryIndexes", option.None, decode.optional(decode.list(decode_local_secondary_index_info_struct_params())))
+  use sse_description <- decode.optional_field("SSEDescription", option.None, decode.optional(decode_sse_description_struct_params()))
+  use stream_description <- decode.optional_field("StreamDescription", option.None, decode.optional(decode_stream_specification_struct_params()))
+  use time_to_live_description <- decode.optional_field("TimeToLiveDescription", option.None, decode.optional(decode_time_to_live_description_struct_params()))
+  decode.success(SourceTableFeatureDetails(
+    global_secondary_indexes: global_secondary_indexes,
+    local_secondary_indexes: local_secondary_indexes,
+    sse_description: sse_description,
+    stream_description: stream_description,
+    time_to_live_description: time_to_live_description,
+  ))
+}
+
 pub type GlobalSecondaryIndexInfo {
   GlobalSecondaryIndexInfo(
     index_name: option.Option(String),
@@ -3516,6 +4369,21 @@ pub fn decode_global_secondary_index_info_struct() -> decode.Decoder(GlobalSecon
   ))
 }
 
+pub fn decode_global_secondary_index_info_struct_params() -> decode.Decoder(GlobalSecondaryIndexInfo) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct_params())))
+  use on_demand_throughput <- decode.optional_field("OnDemandThroughput", option.None, decode.optional(decode_on_demand_throughput_struct_params()))
+  use projection <- decode.optional_field("Projection", option.None, decode.optional(decode_projection_struct_params()))
+  use provisioned_throughput <- decode.optional_field("ProvisionedThroughput", option.None, decode.optional(decode_provisioned_throughput_struct_params()))
+  decode.success(GlobalSecondaryIndexInfo(
+    index_name: index_name,
+    key_schema: key_schema,
+    on_demand_throughput: on_demand_throughput,
+    projection: projection,
+    provisioned_throughput: provisioned_throughput,
+  ))
+}
+
 pub type LocalSecondaryIndexInfo {
   LocalSecondaryIndexInfo(
     index_name: option.Option(String),
@@ -3552,6 +4420,17 @@ pub fn decode_local_secondary_index_info_struct() -> decode.Decoder(LocalSeconda
   ))
 }
 
+pub fn decode_local_secondary_index_info_struct_params() -> decode.Decoder(LocalSecondaryIndexInfo) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct_params())))
+  use projection <- decode.optional_field("Projection", option.None, decode.optional(decode_projection_struct_params()))
+  decode.success(LocalSecondaryIndexInfo(
+    index_name: index_name,
+    key_schema: key_schema,
+    projection: projection,
+  ))
+}
+
 pub type TimeToLiveDescription {
   TimeToLiveDescription(
     attribute_name: option.Option(String),
@@ -3573,6 +4452,15 @@ pub fn encode_time_to_live_description_struct(input: TimeToLiveDescription) -> j
 }
 
 pub fn decode_time_to_live_description_struct() -> decode.Decoder(TimeToLiveDescription) {
+  use attribute_name <- decode.optional_field("AttributeName", option.None, decode.optional(decode.string))
+  use time_to_live_status <- decode.optional_field("TimeToLiveStatus", option.None, decode.optional(decode_time_to_live_status_enum()))
+  decode.success(TimeToLiveDescription(
+    attribute_name: attribute_name,
+    time_to_live_status: time_to_live_status,
+  ))
+}
+
+pub fn decode_time_to_live_description_struct_params() -> decode.Decoder(TimeToLiveDescription) {
   use attribute_name <- decode.optional_field("AttributeName", option.None, decode.optional(decode.string))
   use time_to_live_status <- decode.optional_field("TimeToLiveStatus", option.None, decode.optional(decode_time_to_live_status_enum()))
   decode.success(TimeToLiveDescription(
@@ -3625,6 +4513,13 @@ pub fn encode_backup_not_found_exception_struct(input: BackupNotFoundException) 
 }
 
 pub fn decode_backup_not_found_exception_struct() -> decode.Decoder(BackupNotFoundException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(BackupNotFoundException(
+    message: message,
+  ))
+}
+
+pub fn decode_backup_not_found_exception_struct_params() -> decode.Decoder(BackupNotFoundException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(BackupNotFoundException(
     message: message,
@@ -3723,6 +4618,33 @@ pub fn decode_delete_item_input_struct() -> decode.Decoder(DeleteItemInput) {
   ))
 }
 
+pub fn decode_delete_item_input_struct_params() -> decode.Decoder(DeleteItemInput) {
+  use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
+  use conditional_operator <- decode.optional_field("ConditionalOperator", option.None, decode.optional(decode_conditional_operator_enum()))
+  use expected <- decode.optional_field("Expected", option.None, decode.optional(decode.dict(decode.string, decode_expected_attribute_value_struct_params())))
+  use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  use return_item_collection_metrics <- decode.optional_field("ReturnItemCollectionMetrics", option.None, decode.optional(decode_return_item_collection_metrics_enum()))
+  use return_values <- decode.optional_field("ReturnValues", option.None, decode.optional(decode_return_value_enum()))
+  use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(DeleteItemInput(
+    condition_expression: condition_expression,
+    conditional_operator: conditional_operator,
+    expected: expected,
+    expression_attribute_names: expression_attribute_names,
+    expression_attribute_values: expression_attribute_values,
+    key: key,
+    return_consumed_capacity: return_consumed_capacity,
+    return_item_collection_metrics: return_item_collection_metrics,
+    return_values: return_values,
+    return_values_on_condition_check_failure: return_values_on_condition_check_failure,
+    table_name: table_name,
+  ))
+}
+
 pub type ConditionalOperator {
   ConditionalOperatorAnd
   ConditionalOperatorOr
@@ -3776,6 +4698,19 @@ pub fn encode_expected_attribute_value_struct(input: ExpectedAttributeValue) -> 
 }
 
 pub fn decode_expected_attribute_value_struct() -> decode.Decoder(ExpectedAttributeValue) {
+  use attribute_value_list <- decode.optional_field("AttributeValueList", option.None, decode.optional(decode.list(decode_attribute_value_union())))
+  use comparison_operator <- decode.optional_field("ComparisonOperator", option.None, decode.optional(decode_comparison_operator_enum()))
+  use exists <- decode.optional_field("Exists", option.None, decode.optional(decode.bool))
+  use value <- decode.optional_field("Value", option.None, decode.optional(decode_attribute_value_union()))
+  decode.success(ExpectedAttributeValue(
+    attribute_value_list: attribute_value_list,
+    comparison_operator: comparison_operator,
+    exists: exists,
+    value: value,
+  ))
+}
+
+pub fn decode_expected_attribute_value_struct_params() -> decode.Decoder(ExpectedAttributeValue) {
   use attribute_value_list <- decode.optional_field("AttributeValueList", option.None, decode.optional(decode.list(decode_attribute_value_union())))
   use comparison_operator <- decode.optional_field("ComparisonOperator", option.None, decode.optional(decode_comparison_operator_enum()))
   use exists <- decode.optional_field("Exists", option.None, decode.optional(decode.bool))
@@ -3910,6 +4845,17 @@ pub fn decode_delete_item_output_struct() -> decode.Decoder(DeleteItemOutput) {
   ))
 }
 
+pub fn decode_delete_item_output_struct_params() -> decode.Decoder(DeleteItemOutput) {
+  use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
+  use item_collection_metrics <- decode.optional_field("ItemCollectionMetrics", option.None, decode.optional(decode_item_collection_metrics_struct_params()))
+  decode.success(DeleteItemOutput(
+    attributes: attributes,
+    consumed_capacity: consumed_capacity,
+    item_collection_metrics: item_collection_metrics,
+  ))
+}
+
 pub type ConditionalCheckFailedException {
   ConditionalCheckFailedException(
     item: option.Option(dict.Dict(String, AttributeValue)),
@@ -3939,6 +4885,15 @@ pub fn decode_conditional_check_failed_exception_struct() -> decode.Decoder(Cond
   ))
 }
 
+pub fn decode_conditional_check_failed_exception_struct_params() -> decode.Decoder(ConditionalCheckFailedException) {
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ConditionalCheckFailedException(
+    item: item,
+    message: message,
+  ))
+}
+
 pub type TransactionConflictException {
   TransactionConflictException(
     message: option.Option(String),
@@ -3955,6 +4910,13 @@ pub fn encode_transaction_conflict_exception_struct(input: TransactionConflictEx
 }
 
 pub fn decode_transaction_conflict_exception_struct() -> decode.Decoder(TransactionConflictException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(TransactionConflictException(
+    message: message,
+  ))
+}
+
+pub fn decode_transaction_conflict_exception_struct_params() -> decode.Decoder(TransactionConflictException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(TransactionConflictException(
     message: message,
@@ -3990,6 +4952,15 @@ pub fn decode_delete_resource_policy_input_struct() -> decode.Decoder(DeleteReso
   ))
 }
 
+pub fn decode_delete_resource_policy_input_struct_params() -> decode.Decoder(DeleteResourcePolicyInput) {
+  use expected_revision_id <- decode.optional_field("ExpectedRevisionId", option.None, decode.optional(decode.string))
+  use resource_arn <- decode.optional_field("ResourceArn", option.None, decode.optional(decode.string))
+  decode.success(DeleteResourcePolicyInput(
+    expected_revision_id: expected_revision_id,
+    resource_arn: resource_arn,
+  ))
+}
+
 pub type DeleteResourcePolicyOutput {
   DeleteResourcePolicyOutput(
     revision_id: option.Option(String),
@@ -4006,6 +4977,13 @@ pub fn encode_delete_resource_policy_output_struct(input: DeleteResourcePolicyOu
 }
 
 pub fn decode_delete_resource_policy_output_struct() -> decode.Decoder(DeleteResourcePolicyOutput) {
+  use revision_id <- decode.optional_field("RevisionId", option.None, decode.optional(decode.string))
+  decode.success(DeleteResourcePolicyOutput(
+    revision_id: revision_id,
+  ))
+}
+
+pub fn decode_delete_resource_policy_output_struct_params() -> decode.Decoder(DeleteResourcePolicyOutput) {
   use revision_id <- decode.optional_field("RevisionId", option.None, decode.optional(decode.string))
   decode.success(DeleteResourcePolicyOutput(
     revision_id: revision_id,
@@ -4034,6 +5012,13 @@ pub fn decode_policy_not_found_exception_struct() -> decode.Decoder(PolicyNotFou
   ))
 }
 
+pub fn decode_policy_not_found_exception_struct_params() -> decode.Decoder(PolicyNotFoundException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(PolicyNotFoundException(
+    message: message,
+  ))
+}
+
 pub type DeleteTableInput {
   DeleteTableInput(
     table_name: option.Option(String),
@@ -4050,6 +5035,13 @@ pub fn encode_delete_table_input_struct(input: DeleteTableInput) -> json.Json {
 }
 
 pub fn decode_delete_table_input_struct() -> decode.Decoder(DeleteTableInput) {
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(DeleteTableInput(
+    table_name: table_name,
+  ))
+}
+
+pub fn decode_delete_table_input_struct_params() -> decode.Decoder(DeleteTableInput) {
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(DeleteTableInput(
     table_name: table_name,
@@ -4078,6 +5070,13 @@ pub fn decode_delete_table_output_struct() -> decode.Decoder(DeleteTableOutput) 
   ))
 }
 
+pub fn decode_delete_table_output_struct_params() -> decode.Decoder(DeleteTableOutput) {
+  use table_description <- decode.optional_field("TableDescription", option.None, decode.optional(decode_table_description_struct_params()))
+  decode.success(DeleteTableOutput(
+    table_description: table_description,
+  ))
+}
+
 pub type DescribeBackupInput {
   DescribeBackupInput(
     backup_arn: option.Option(String),
@@ -4094,6 +5093,13 @@ pub fn encode_describe_backup_input_struct(input: DescribeBackupInput) -> json.J
 }
 
 pub fn decode_describe_backup_input_struct() -> decode.Decoder(DescribeBackupInput) {
+  use backup_arn <- decode.optional_field("BackupArn", option.None, decode.optional(decode.string))
+  decode.success(DescribeBackupInput(
+    backup_arn: backup_arn,
+  ))
+}
+
+pub fn decode_describe_backup_input_struct_params() -> decode.Decoder(DescribeBackupInput) {
   use backup_arn <- decode.optional_field("BackupArn", option.None, decode.optional(decode.string))
   decode.success(DescribeBackupInput(
     backup_arn: backup_arn,
@@ -4122,6 +5128,13 @@ pub fn decode_describe_backup_output_struct() -> decode.Decoder(DescribeBackupOu
   ))
 }
 
+pub fn decode_describe_backup_output_struct_params() -> decode.Decoder(DescribeBackupOutput) {
+  use backup_description <- decode.optional_field("BackupDescription", option.None, decode.optional(decode_backup_description_struct_params()))
+  decode.success(DescribeBackupOutput(
+    backup_description: backup_description,
+  ))
+}
+
 pub type DescribeContinuousBackupsInput {
   DescribeContinuousBackupsInput(
     table_name: option.Option(String),
@@ -4138,6 +5151,13 @@ pub fn encode_describe_continuous_backups_input_struct(input: DescribeContinuous
 }
 
 pub fn decode_describe_continuous_backups_input_struct() -> decode.Decoder(DescribeContinuousBackupsInput) {
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(DescribeContinuousBackupsInput(
+    table_name: table_name,
+  ))
+}
+
+pub fn decode_describe_continuous_backups_input_struct_params() -> decode.Decoder(DescribeContinuousBackupsInput) {
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(DescribeContinuousBackupsInput(
     table_name: table_name,
@@ -4166,6 +5186,13 @@ pub fn decode_describe_continuous_backups_output_struct() -> decode.Decoder(Desc
   ))
 }
 
+pub fn decode_describe_continuous_backups_output_struct_params() -> decode.Decoder(DescribeContinuousBackupsOutput) {
+  use continuous_backups_description <- decode.optional_field("ContinuousBackupsDescription", option.None, decode.optional(decode_continuous_backups_description_struct_params()))
+  decode.success(DescribeContinuousBackupsOutput(
+    continuous_backups_description: continuous_backups_description,
+  ))
+}
+
 pub type ContinuousBackupsDescription {
   ContinuousBackupsDescription(
     continuous_backups_status: option.Option(ContinuousBackupsStatus),
@@ -4189,6 +5216,15 @@ pub fn encode_continuous_backups_description_struct(input: ContinuousBackupsDesc
 pub fn decode_continuous_backups_description_struct() -> decode.Decoder(ContinuousBackupsDescription) {
   use continuous_backups_status <- decode.optional_field("ContinuousBackupsStatus", option.None, decode.optional(decode_continuous_backups_status_enum()))
   use point_in_time_recovery_description <- decode.optional_field("PointInTimeRecoveryDescription", option.None, decode.optional(decode_point_in_time_recovery_description_struct()))
+  decode.success(ContinuousBackupsDescription(
+    continuous_backups_status: continuous_backups_status,
+    point_in_time_recovery_description: point_in_time_recovery_description,
+  ))
+}
+
+pub fn decode_continuous_backups_description_struct_params() -> decode.Decoder(ContinuousBackupsDescription) {
+  use continuous_backups_status <- decode.optional_field("ContinuousBackupsStatus", option.None, decode.optional(decode_continuous_backups_status_enum()))
+  use point_in_time_recovery_description <- decode.optional_field("PointInTimeRecoveryDescription", option.None, decode.optional(decode_point_in_time_recovery_description_struct_params()))
   decode.success(ContinuousBackupsDescription(
     continuous_backups_status: continuous_backups_status,
     point_in_time_recovery_description: point_in_time_recovery_description,
@@ -4248,8 +5284,21 @@ pub fn encode_point_in_time_recovery_description_struct(input: PointInTimeRecove
 }
 
 pub fn decode_point_in_time_recovery_description_struct() -> decode.Decoder(PointInTimeRecoveryDescription) {
-  use earliest_restorable_date_time <- decode.optional_field("EarliestRestorableDateTime", option.None, decode.optional(decode.int))
-  use latest_restorable_date_time <- decode.optional_field("LatestRestorableDateTime", option.None, decode.optional(decode.int))
+  use earliest_restorable_date_time <- decode.optional_field("EarliestRestorableDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use latest_restorable_date_time <- decode.optional_field("LatestRestorableDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use point_in_time_recovery_status <- decode.optional_field("PointInTimeRecoveryStatus", option.None, decode.optional(decode_point_in_time_recovery_status_enum()))
+  use recovery_period_in_days <- decode.optional_field("RecoveryPeriodInDays", option.None, decode.optional(decode.int))
+  decode.success(PointInTimeRecoveryDescription(
+    earliest_restorable_date_time: earliest_restorable_date_time,
+    latest_restorable_date_time: latest_restorable_date_time,
+    point_in_time_recovery_status: point_in_time_recovery_status,
+    recovery_period_in_days: recovery_period_in_days,
+  ))
+}
+
+pub fn decode_point_in_time_recovery_description_struct_params() -> decode.Decoder(PointInTimeRecoveryDescription) {
+  use earliest_restorable_date_time <- decode.optional_field("EarliestRestorableDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use latest_restorable_date_time <- decode.optional_field("LatestRestorableDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use point_in_time_recovery_status <- decode.optional_field("PointInTimeRecoveryStatus", option.None, decode.optional(decode_point_in_time_recovery_status_enum()))
   use recovery_period_in_days <- decode.optional_field("RecoveryPeriodInDays", option.None, decode.optional(decode.int))
   decode.success(PointInTimeRecoveryDescription(
@@ -4311,6 +5360,15 @@ pub fn decode_describe_contributor_insights_input_struct() -> decode.Decoder(Des
   ))
 }
 
+pub fn decode_describe_contributor_insights_input_struct_params() -> decode.Decoder(DescribeContributorInsightsInput) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(DescribeContributorInsightsInput(
+    index_name: index_name,
+    table_name: table_name,
+  ))
+}
+
 pub type DescribeContributorInsightsOutput {
   DescribeContributorInsightsOutput(
     contributor_insights_mode: option.Option(ContributorInsightsMode),
@@ -4362,7 +5420,26 @@ pub fn decode_describe_contributor_insights_output_struct() -> decode.Decoder(De
   use contributor_insights_status <- decode.optional_field("ContributorInsightsStatus", option.None, decode.optional(decode_contributor_insights_status_enum()))
   use failure_exception <- decode.optional_field("FailureException", option.None, decode.optional(decode_failure_exception_struct()))
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
-  use last_update_date_time <- decode.optional_field("LastUpdateDateTime", option.None, decode.optional(decode.int))
+  use last_update_date_time <- decode.optional_field("LastUpdateDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(DescribeContributorInsightsOutput(
+    contributor_insights_mode: contributor_insights_mode,
+    contributor_insights_rule_list: contributor_insights_rule_list,
+    contributor_insights_status: contributor_insights_status,
+    failure_exception: failure_exception,
+    index_name: index_name,
+    last_update_date_time: last_update_date_time,
+    table_name: table_name,
+  ))
+}
+
+pub fn decode_describe_contributor_insights_output_struct_params() -> decode.Decoder(DescribeContributorInsightsOutput) {
+  use contributor_insights_mode <- decode.optional_field("ContributorInsightsMode", option.None, decode.optional(decode_contributor_insights_mode_enum()))
+  use contributor_insights_rule_list <- decode.optional_field("ContributorInsightsRuleList", option.None, decode.optional(decode.list(decode.string)))
+  use contributor_insights_status <- decode.optional_field("ContributorInsightsStatus", option.None, decode.optional(decode_contributor_insights_status_enum()))
+  use failure_exception <- decode.optional_field("FailureException", option.None, decode.optional(decode_failure_exception_struct_params()))
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use last_update_date_time <- decode.optional_field("LastUpdateDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(DescribeContributorInsightsOutput(
     contributor_insights_mode: contributor_insights_mode,
@@ -4457,6 +5534,15 @@ pub fn decode_failure_exception_struct() -> decode.Decoder(FailureException) {
   ))
 }
 
+pub fn decode_failure_exception_struct_params() -> decode.Decoder(FailureException) {
+  use exception_description <- decode.optional_field("ExceptionDescription", option.None, decode.optional(decode.string))
+  use exception_name <- decode.optional_field("ExceptionName", option.None, decode.optional(decode.string))
+  decode.success(FailureException(
+    exception_description: exception_description,
+    exception_name: exception_name,
+  ))
+}
+
 pub type DescribeEndpointsRequest {
   DescribeEndpointsRequest
 }
@@ -4466,6 +5552,10 @@ pub fn encode_describe_endpoints_request_struct(_v: DescribeEndpointsRequest) ->
 }
 
 pub fn decode_describe_endpoints_request_struct() -> decode.Decoder(DescribeEndpointsRequest) {
+  decode.success(DescribeEndpointsRequest)
+}
+
+pub fn decode_describe_endpoints_request_struct_params() -> decode.Decoder(DescribeEndpointsRequest) {
   decode.success(DescribeEndpointsRequest)
 }
 
@@ -4486,6 +5576,13 @@ pub fn encode_describe_endpoints_response_struct(input: DescribeEndpointsRespons
 
 pub fn decode_describe_endpoints_response_struct() -> decode.Decoder(DescribeEndpointsResponse) {
   use endpoints <- decode.optional_field("Endpoints", option.None, decode.optional(decode.list(decode_endpoint_struct())))
+  decode.success(DescribeEndpointsResponse(
+    endpoints: endpoints,
+  ))
+}
+
+pub fn decode_describe_endpoints_response_struct_params() -> decode.Decoder(DescribeEndpointsResponse) {
+  use endpoints <- decode.optional_field("Endpoints", option.None, decode.optional(decode.list(decode_endpoint_struct_params())))
   decode.success(DescribeEndpointsResponse(
     endpoints: endpoints,
   ))
@@ -4520,6 +5617,15 @@ pub fn decode_endpoint_struct() -> decode.Decoder(Endpoint) {
   ))
 }
 
+pub fn decode_endpoint_struct_params() -> decode.Decoder(Endpoint) {
+  use address <- decode.optional_field("Address", option.None, decode.optional(decode.string))
+  use cache_period_in_minutes <- decode.optional_field("CachePeriodInMinutes", option.None, decode.optional(decode.int))
+  decode.success(Endpoint(
+    address: address,
+    cache_period_in_minutes: cache_period_in_minutes,
+  ))
+}
+
 pub type DescribeExportInput {
   DescribeExportInput(
     export_arn: option.Option(String),
@@ -4536,6 +5642,13 @@ pub fn encode_describe_export_input_struct(input: DescribeExportInput) -> json.J
 }
 
 pub fn decode_describe_export_input_struct() -> decode.Decoder(DescribeExportInput) {
+  use export_arn <- decode.optional_field("ExportArn", option.None, decode.optional(decode.string))
+  decode.success(DescribeExportInput(
+    export_arn: export_arn,
+  ))
+}
+
+pub fn decode_describe_export_input_struct_params() -> decode.Decoder(DescribeExportInput) {
   use export_arn <- decode.optional_field("ExportArn", option.None, decode.optional(decode.string))
   decode.success(DescribeExportInput(
     export_arn: export_arn,
@@ -4559,6 +5672,13 @@ pub fn encode_describe_export_output_struct(input: DescribeExportOutput) -> json
 
 pub fn decode_describe_export_output_struct() -> decode.Decoder(DescribeExportOutput) {
   use export_description <- decode.optional_field("ExportDescription", option.None, decode.optional(decode_export_description_struct()))
+  decode.success(DescribeExportOutput(
+    export_description: export_description,
+  ))
+}
+
+pub fn decode_describe_export_output_struct_params() -> decode.Decoder(DescribeExportOutput) {
+  use export_description <- decode.optional_field("ExportDescription", option.None, decode.optional(decode_export_description_struct_params()))
   decode.success(DescribeExportOutput(
     export_description: export_description,
   ))
@@ -4682,12 +5802,12 @@ pub fn encode_export_description_struct(input: ExportDescription) -> json.Json {
 pub fn decode_export_description_struct() -> decode.Decoder(ExportDescription) {
   use billed_size_bytes <- decode.optional_field("BilledSizeBytes", option.None, decode.optional(decode.int))
   use client_token <- decode.optional_field("ClientToken", option.None, decode.optional(decode.string))
-  use end_time <- decode.optional_field("EndTime", option.None, decode.optional(decode.int))
+  use end_time <- decode.optional_field("EndTime", option.None, decode.optional(json_timestamp.decoder()))
   use export_arn <- decode.optional_field("ExportArn", option.None, decode.optional(decode.string))
   use export_format <- decode.optional_field("ExportFormat", option.None, decode.optional(decode_export_format_enum()))
   use export_manifest <- decode.optional_field("ExportManifest", option.None, decode.optional(decode.string))
   use export_status <- decode.optional_field("ExportStatus", option.None, decode.optional(decode_export_status_enum()))
-  use export_time <- decode.optional_field("ExportTime", option.None, decode.optional(decode.int))
+  use export_time <- decode.optional_field("ExportTime", option.None, decode.optional(json_timestamp.decoder()))
   use export_type <- decode.optional_field("ExportType", option.None, decode.optional(decode_export_type_enum()))
   use failure_code <- decode.optional_field("FailureCode", option.None, decode.optional(decode.string))
   use failure_message <- decode.optional_field("FailureMessage", option.None, decode.optional(decode.string))
@@ -4698,7 +5818,54 @@ pub fn decode_export_description_struct() -> decode.Decoder(ExportDescription) {
   use s3_prefix <- decode.optional_field("S3Prefix", option.None, decode.optional(decode.string))
   use s3_sse_algorithm <- decode.optional_field("S3SseAlgorithm", option.None, decode.optional(decode_s3_sse_algorithm_enum()))
   use s3_sse_kms_key_id <- decode.optional_field("S3SseKmsKeyId", option.None, decode.optional(decode.string))
-  use start_time <- decode.optional_field("StartTime", option.None, decode.optional(decode.int))
+  use start_time <- decode.optional_field("StartTime", option.None, decode.optional(json_timestamp.decoder()))
+  use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
+  use table_id <- decode.optional_field("TableId", option.None, decode.optional(decode.string))
+  decode.success(ExportDescription(
+    billed_size_bytes: billed_size_bytes,
+    client_token: client_token,
+    end_time: end_time,
+    export_arn: export_arn,
+    export_format: export_format,
+    export_manifest: export_manifest,
+    export_status: export_status,
+    export_time: export_time,
+    export_type: export_type,
+    failure_code: failure_code,
+    failure_message: failure_message,
+    incremental_export_specification: incremental_export_specification,
+    item_count: item_count,
+    s3_bucket: s3_bucket,
+    s3_bucket_owner: s3_bucket_owner,
+    s3_prefix: s3_prefix,
+    s3_sse_algorithm: s3_sse_algorithm,
+    s3_sse_kms_key_id: s3_sse_kms_key_id,
+    start_time: start_time,
+    table_arn: table_arn,
+    table_id: table_id,
+  ))
+}
+
+pub fn decode_export_description_struct_params() -> decode.Decoder(ExportDescription) {
+  use billed_size_bytes <- decode.optional_field("BilledSizeBytes", option.None, decode.optional(decode.int))
+  use client_token <- decode.optional_field("ClientToken", option.None, decode.optional(decode.string))
+  use end_time <- decode.optional_field("EndTime", option.None, decode.optional(json_timestamp.decoder()))
+  use export_arn <- decode.optional_field("ExportArn", option.None, decode.optional(decode.string))
+  use export_format <- decode.optional_field("ExportFormat", option.None, decode.optional(decode_export_format_enum()))
+  use export_manifest <- decode.optional_field("ExportManifest", option.None, decode.optional(decode.string))
+  use export_status <- decode.optional_field("ExportStatus", option.None, decode.optional(decode_export_status_enum()))
+  use export_time <- decode.optional_field("ExportTime", option.None, decode.optional(json_timestamp.decoder()))
+  use export_type <- decode.optional_field("ExportType", option.None, decode.optional(decode_export_type_enum()))
+  use failure_code <- decode.optional_field("FailureCode", option.None, decode.optional(decode.string))
+  use failure_message <- decode.optional_field("FailureMessage", option.None, decode.optional(decode.string))
+  use incremental_export_specification <- decode.optional_field("IncrementalExportSpecification", option.None, decode.optional(decode_incremental_export_specification_struct_params()))
+  use item_count <- decode.optional_field("ItemCount", option.None, decode.optional(decode.int))
+  use s3_bucket <- decode.optional_field("S3Bucket", option.None, decode.optional(decode.string))
+  use s3_bucket_owner <- decode.optional_field("S3BucketOwner", option.None, decode.optional(decode.string))
+  use s3_prefix <- decode.optional_field("S3Prefix", option.None, decode.optional(decode.string))
+  use s3_sse_algorithm <- decode.optional_field("S3SseAlgorithm", option.None, decode.optional(decode_s3_sse_algorithm_enum()))
+  use s3_sse_kms_key_id <- decode.optional_field("S3SseKmsKeyId", option.None, decode.optional(decode.string))
+  use start_time <- decode.optional_field("StartTime", option.None, decode.optional(json_timestamp.decoder()))
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
   use table_id <- decode.optional_field("TableId", option.None, decode.optional(decode.string))
   decode.success(ExportDescription(
@@ -4821,8 +5988,19 @@ pub fn encode_incremental_export_specification_struct(input: IncrementalExportSp
 }
 
 pub fn decode_incremental_export_specification_struct() -> decode.Decoder(IncrementalExportSpecification) {
-  use export_from_time <- decode.optional_field("ExportFromTime", option.None, decode.optional(decode.int))
-  use export_to_time <- decode.optional_field("ExportToTime", option.None, decode.optional(decode.int))
+  use export_from_time <- decode.optional_field("ExportFromTime", option.None, decode.optional(json_timestamp.decoder()))
+  use export_to_time <- decode.optional_field("ExportToTime", option.None, decode.optional(json_timestamp.decoder()))
+  use export_view_type <- decode.optional_field("ExportViewType", option.None, decode.optional(decode_export_view_type_enum()))
+  decode.success(IncrementalExportSpecification(
+    export_from_time: export_from_time,
+    export_to_time: export_to_time,
+    export_view_type: export_view_type,
+  ))
+}
+
+pub fn decode_incremental_export_specification_struct_params() -> decode.Decoder(IncrementalExportSpecification) {
+  use export_from_time <- decode.optional_field("ExportFromTime", option.None, decode.optional(json_timestamp.decoder()))
+  use export_to_time <- decode.optional_field("ExportToTime", option.None, decode.optional(json_timestamp.decoder()))
   use export_view_type <- decode.optional_field("ExportViewType", option.None, decode.optional(decode_export_view_type_enum()))
   decode.success(IncrementalExportSpecification(
     export_from_time: export_from_time,
@@ -4897,6 +6075,13 @@ pub fn decode_export_not_found_exception_struct() -> decode.Decoder(ExportNotFou
   ))
 }
 
+pub fn decode_export_not_found_exception_struct_params() -> decode.Decoder(ExportNotFoundException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ExportNotFoundException(
+    message: message,
+  ))
+}
+
 pub type DescribeGlobalTableInput {
   DescribeGlobalTableInput(
     global_table_name: option.Option(String),
@@ -4913,6 +6098,13 @@ pub fn encode_describe_global_table_input_struct(input: DescribeGlobalTableInput
 }
 
 pub fn decode_describe_global_table_input_struct() -> decode.Decoder(DescribeGlobalTableInput) {
+  use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
+  decode.success(DescribeGlobalTableInput(
+    global_table_name: global_table_name,
+  ))
+}
+
+pub fn decode_describe_global_table_input_struct_params() -> decode.Decoder(DescribeGlobalTableInput) {
   use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
   decode.success(DescribeGlobalTableInput(
     global_table_name: global_table_name,
@@ -4941,6 +6133,13 @@ pub fn decode_describe_global_table_output_struct() -> decode.Decoder(DescribeGl
   ))
 }
 
+pub fn decode_describe_global_table_output_struct_params() -> decode.Decoder(DescribeGlobalTableOutput) {
+  use global_table_description <- decode.optional_field("GlobalTableDescription", option.None, decode.optional(decode_global_table_description_struct_params()))
+  decode.success(DescribeGlobalTableOutput(
+    global_table_description: global_table_description,
+  ))
+}
+
 pub type GlobalTableNotFoundException {
   GlobalTableNotFoundException(
     message: option.Option(String),
@@ -4963,6 +6162,13 @@ pub fn decode_global_table_not_found_exception_struct() -> decode.Decoder(Global
   ))
 }
 
+pub fn decode_global_table_not_found_exception_struct_params() -> decode.Decoder(GlobalTableNotFoundException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(GlobalTableNotFoundException(
+    message: message,
+  ))
+}
+
 pub type DescribeGlobalTableSettingsInput {
   DescribeGlobalTableSettingsInput(
     global_table_name: option.Option(String),
@@ -4979,6 +6185,13 @@ pub fn encode_describe_global_table_settings_input_struct(input: DescribeGlobalT
 }
 
 pub fn decode_describe_global_table_settings_input_struct() -> decode.Decoder(DescribeGlobalTableSettingsInput) {
+  use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
+  decode.success(DescribeGlobalTableSettingsInput(
+    global_table_name: global_table_name,
+  ))
+}
+
+pub fn decode_describe_global_table_settings_input_struct_params() -> decode.Decoder(DescribeGlobalTableSettingsInput) {
   use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
   decode.success(DescribeGlobalTableSettingsInput(
     global_table_name: global_table_name,
@@ -5008,6 +6221,15 @@ pub fn encode_describe_global_table_settings_output_struct(input: DescribeGlobal
 pub fn decode_describe_global_table_settings_output_struct() -> decode.Decoder(DescribeGlobalTableSettingsOutput) {
   use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
   use replica_settings <- decode.optional_field("ReplicaSettings", option.None, decode.optional(decode.list(decode_replica_settings_description_struct())))
+  decode.success(DescribeGlobalTableSettingsOutput(
+    global_table_name: global_table_name,
+    replica_settings: replica_settings,
+  ))
+}
+
+pub fn decode_describe_global_table_settings_output_struct_params() -> decode.Decoder(DescribeGlobalTableSettingsOutput) {
+  use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
+  use replica_settings <- decode.optional_field("ReplicaSettings", option.None, decode.optional(decode.list(decode_replica_settings_description_struct_params())))
   decode.success(DescribeGlobalTableSettingsOutput(
     global_table_name: global_table_name,
     replica_settings: replica_settings,
@@ -5092,6 +6314,29 @@ pub fn decode_replica_settings_description_struct() -> decode.Decoder(ReplicaSet
   ))
 }
 
+pub fn decode_replica_settings_description_struct_params() -> decode.Decoder(ReplicaSettingsDescription) {
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  use replica_billing_mode_summary <- decode.optional_field("ReplicaBillingModeSummary", option.None, decode.optional(decode_billing_mode_summary_struct_params()))
+  use replica_global_secondary_index_settings <- decode.optional_field("ReplicaGlobalSecondaryIndexSettings", option.None, decode.optional(decode.list(decode_replica_global_secondary_index_settings_description_struct_params())))
+  use replica_provisioned_read_capacity_auto_scaling_settings <- decode.optional_field("ReplicaProvisionedReadCapacityAutoScalingSettings", option.None, decode.optional(decode_auto_scaling_settings_description_struct_params()))
+  use replica_provisioned_read_capacity_units <- decode.optional_field("ReplicaProvisionedReadCapacityUnits", option.None, decode.optional(decode.int))
+  use replica_provisioned_write_capacity_auto_scaling_settings <- decode.optional_field("ReplicaProvisionedWriteCapacityAutoScalingSettings", option.None, decode.optional(decode_auto_scaling_settings_description_struct_params()))
+  use replica_provisioned_write_capacity_units <- decode.optional_field("ReplicaProvisionedWriteCapacityUnits", option.None, decode.optional(decode.int))
+  use replica_status <- decode.optional_field("ReplicaStatus", option.None, decode.optional(decode_replica_status_enum()))
+  use replica_table_class_summary <- decode.optional_field("ReplicaTableClassSummary", option.None, decode.optional(decode_table_class_summary_struct_params()))
+  decode.success(ReplicaSettingsDescription(
+    region_name: region_name,
+    replica_billing_mode_summary: replica_billing_mode_summary,
+    replica_global_secondary_index_settings: replica_global_secondary_index_settings,
+    replica_provisioned_read_capacity_auto_scaling_settings: replica_provisioned_read_capacity_auto_scaling_settings,
+    replica_provisioned_read_capacity_units: replica_provisioned_read_capacity_units,
+    replica_provisioned_write_capacity_auto_scaling_settings: replica_provisioned_write_capacity_auto_scaling_settings,
+    replica_provisioned_write_capacity_units: replica_provisioned_write_capacity_units,
+    replica_status: replica_status,
+    replica_table_class_summary: replica_table_class_summary,
+  ))
+}
+
 pub type ReplicaGlobalSecondaryIndexSettingsDescription {
   ReplicaGlobalSecondaryIndexSettingsDescription(
     index_name: option.Option(String),
@@ -5138,6 +6383,23 @@ pub fn decode_replica_global_secondary_index_settings_description_struct() -> de
   use provisioned_read_capacity_auto_scaling_settings <- decode.optional_field("ProvisionedReadCapacityAutoScalingSettings", option.None, decode.optional(decode_auto_scaling_settings_description_struct()))
   use provisioned_read_capacity_units <- decode.optional_field("ProvisionedReadCapacityUnits", option.None, decode.optional(decode.int))
   use provisioned_write_capacity_auto_scaling_settings <- decode.optional_field("ProvisionedWriteCapacityAutoScalingSettings", option.None, decode.optional(decode_auto_scaling_settings_description_struct()))
+  use provisioned_write_capacity_units <- decode.optional_field("ProvisionedWriteCapacityUnits", option.None, decode.optional(decode.int))
+  decode.success(ReplicaGlobalSecondaryIndexSettingsDescription(
+    index_name: index_name,
+    index_status: index_status,
+    provisioned_read_capacity_auto_scaling_settings: provisioned_read_capacity_auto_scaling_settings,
+    provisioned_read_capacity_units: provisioned_read_capacity_units,
+    provisioned_write_capacity_auto_scaling_settings: provisioned_write_capacity_auto_scaling_settings,
+    provisioned_write_capacity_units: provisioned_write_capacity_units,
+  ))
+}
+
+pub fn decode_replica_global_secondary_index_settings_description_struct_params() -> decode.Decoder(ReplicaGlobalSecondaryIndexSettingsDescription) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use index_status <- decode.optional_field("IndexStatus", option.None, decode.optional(decode_index_status_enum()))
+  use provisioned_read_capacity_auto_scaling_settings <- decode.optional_field("ProvisionedReadCapacityAutoScalingSettings", option.None, decode.optional(decode_auto_scaling_settings_description_struct_params()))
+  use provisioned_read_capacity_units <- decode.optional_field("ProvisionedReadCapacityUnits", option.None, decode.optional(decode.int))
+  use provisioned_write_capacity_auto_scaling_settings <- decode.optional_field("ProvisionedWriteCapacityAutoScalingSettings", option.None, decode.optional(decode_auto_scaling_settings_description_struct_params()))
   use provisioned_write_capacity_units <- decode.optional_field("ProvisionedWriteCapacityUnits", option.None, decode.optional(decode.int))
   decode.success(ReplicaGlobalSecondaryIndexSettingsDescription(
     index_name: index_name,
@@ -5199,6 +6461,21 @@ pub fn decode_auto_scaling_settings_description_struct() -> decode.Decoder(AutoS
   ))
 }
 
+pub fn decode_auto_scaling_settings_description_struct_params() -> decode.Decoder(AutoScalingSettingsDescription) {
+  use auto_scaling_disabled <- decode.optional_field("AutoScalingDisabled", option.None, decode.optional(decode.bool))
+  use auto_scaling_role_arn <- decode.optional_field("AutoScalingRoleArn", option.None, decode.optional(decode.string))
+  use maximum_units <- decode.optional_field("MaximumUnits", option.None, decode.optional(decode.int))
+  use minimum_units <- decode.optional_field("MinimumUnits", option.None, decode.optional(decode.int))
+  use scaling_policies <- decode.optional_field("ScalingPolicies", option.None, decode.optional(decode.list(decode_auto_scaling_policy_description_struct_params())))
+  decode.success(AutoScalingSettingsDescription(
+    auto_scaling_disabled: auto_scaling_disabled,
+    auto_scaling_role_arn: auto_scaling_role_arn,
+    maximum_units: maximum_units,
+    minimum_units: minimum_units,
+    scaling_policies: scaling_policies,
+  ))
+}
+
 pub type AutoScalingPolicyDescription {
   AutoScalingPolicyDescription(
     policy_name: option.Option(String),
@@ -5222,6 +6499,15 @@ pub fn encode_auto_scaling_policy_description_struct(input: AutoScalingPolicyDes
 pub fn decode_auto_scaling_policy_description_struct() -> decode.Decoder(AutoScalingPolicyDescription) {
   use policy_name <- decode.optional_field("PolicyName", option.None, decode.optional(decode.string))
   use target_tracking_scaling_policy_configuration <- decode.optional_field("TargetTrackingScalingPolicyConfiguration", option.None, decode.optional(decode_auto_scaling_target_tracking_scaling_policy_configuration_description_struct()))
+  decode.success(AutoScalingPolicyDescription(
+    policy_name: policy_name,
+    target_tracking_scaling_policy_configuration: target_tracking_scaling_policy_configuration,
+  ))
+}
+
+pub fn decode_auto_scaling_policy_description_struct_params() -> decode.Decoder(AutoScalingPolicyDescription) {
+  use policy_name <- decode.optional_field("PolicyName", option.None, decode.optional(decode.string))
+  use target_tracking_scaling_policy_configuration <- decode.optional_field("TargetTrackingScalingPolicyConfiguration", option.None, decode.optional(decode_auto_scaling_target_tracking_scaling_policy_configuration_description_struct_params()))
   decode.success(AutoScalingPolicyDescription(
     policy_name: policy_name,
     target_tracking_scaling_policy_configuration: target_tracking_scaling_policy_configuration,
@@ -5271,6 +6557,19 @@ pub fn decode_auto_scaling_target_tracking_scaling_policy_configuration_descript
   ))
 }
 
+pub fn decode_auto_scaling_target_tracking_scaling_policy_configuration_description_struct_params() -> decode.Decoder(AutoScalingTargetTrackingScalingPolicyConfigurationDescription) {
+  use disable_scale_in <- decode.optional_field("DisableScaleIn", option.None, decode.optional(decode.bool))
+  use scale_in_cooldown <- decode.optional_field("ScaleInCooldown", option.None, decode.optional(decode.int))
+  use scale_out_cooldown <- decode.optional_field("ScaleOutCooldown", option.None, decode.optional(decode.int))
+  use target_value <- decode.optional_field("TargetValue", option.None, decode.optional(json_float.decoder()))
+  decode.success(AutoScalingTargetTrackingScalingPolicyConfigurationDescription(
+    disable_scale_in: disable_scale_in,
+    scale_in_cooldown: scale_in_cooldown,
+    scale_out_cooldown: scale_out_cooldown,
+    target_value: target_value,
+  ))
+}
+
 pub type DescribeImportInput {
   DescribeImportInput(
     import_arn: option.Option(String),
@@ -5287,6 +6586,13 @@ pub fn encode_describe_import_input_struct(input: DescribeImportInput) -> json.J
 }
 
 pub fn decode_describe_import_input_struct() -> decode.Decoder(DescribeImportInput) {
+  use import_arn <- decode.optional_field("ImportArn", option.None, decode.optional(decode.string))
+  decode.success(DescribeImportInput(
+    import_arn: import_arn,
+  ))
+}
+
+pub fn decode_describe_import_input_struct_params() -> decode.Decoder(DescribeImportInput) {
   use import_arn <- decode.optional_field("ImportArn", option.None, decode.optional(decode.string))
   decode.success(DescribeImportInput(
     import_arn: import_arn,
@@ -5310,6 +6616,13 @@ pub fn encode_describe_import_output_struct(input: DescribeImportOutput) -> json
 
 pub fn decode_describe_import_output_struct() -> decode.Decoder(DescribeImportOutput) {
   use import_table_description <- decode.optional_field("ImportTableDescription", option.None, decode.optional(decode_import_table_description_struct()))
+  decode.success(DescribeImportOutput(
+    import_table_description: import_table_description,
+  ))
+}
+
+pub fn decode_describe_import_output_struct_params() -> decode.Decoder(DescribeImportOutput) {
+  use import_table_description <- decode.optional_field("ImportTableDescription", option.None, decode.optional(decode_import_table_description_struct_params()))
   decode.success(DescribeImportOutput(
     import_table_description: import_table_description,
   ))
@@ -5423,7 +6736,7 @@ pub fn encode_import_table_description_struct(input: ImportTableDescription) -> 
 pub fn decode_import_table_description_struct() -> decode.Decoder(ImportTableDescription) {
   use client_token <- decode.optional_field("ClientToken", option.None, decode.optional(decode.string))
   use cloud_watch_log_group_arn <- decode.optional_field("CloudWatchLogGroupArn", option.None, decode.optional(decode.string))
-  use end_time <- decode.optional_field("EndTime", option.None, decode.optional(decode.int))
+  use end_time <- decode.optional_field("EndTime", option.None, decode.optional(json_timestamp.decoder()))
   use error_count <- decode.optional_field("ErrorCount", option.None, decode.optional(decode.int))
   use failure_code <- decode.optional_field("FailureCode", option.None, decode.optional(decode.string))
   use failure_message <- decode.optional_field("FailureMessage", option.None, decode.optional(decode.string))
@@ -5436,9 +6749,52 @@ pub fn decode_import_table_description_struct() -> decode.Decoder(ImportTableDes
   use processed_item_count <- decode.optional_field("ProcessedItemCount", option.None, decode.optional(decode.int))
   use processed_size_bytes <- decode.optional_field("ProcessedSizeBytes", option.None, decode.optional(decode.int))
   use s3_bucket_source <- decode.optional_field("S3BucketSource", option.None, decode.optional(decode_s3_bucket_source_struct()))
-  use start_time <- decode.optional_field("StartTime", option.None, decode.optional(decode.int))
+  use start_time <- decode.optional_field("StartTime", option.None, decode.optional(json_timestamp.decoder()))
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
   use table_creation_parameters <- decode.optional_field("TableCreationParameters", option.None, decode.optional(decode_table_creation_parameters_struct()))
+  use table_id <- decode.optional_field("TableId", option.None, decode.optional(decode.string))
+  decode.success(ImportTableDescription(
+    client_token: client_token,
+    cloud_watch_log_group_arn: cloud_watch_log_group_arn,
+    end_time: end_time,
+    error_count: error_count,
+    failure_code: failure_code,
+    failure_message: failure_message,
+    import_arn: import_arn,
+    import_status: import_status,
+    imported_item_count: imported_item_count,
+    input_compression_type: input_compression_type,
+    input_format: input_format,
+    input_format_options: input_format_options,
+    processed_item_count: processed_item_count,
+    processed_size_bytes: processed_size_bytes,
+    s3_bucket_source: s3_bucket_source,
+    start_time: start_time,
+    table_arn: table_arn,
+    table_creation_parameters: table_creation_parameters,
+    table_id: table_id,
+  ))
+}
+
+pub fn decode_import_table_description_struct_params() -> decode.Decoder(ImportTableDescription) {
+  use client_token <- decode.optional_field("ClientToken", option.None, decode.optional(decode.string))
+  use cloud_watch_log_group_arn <- decode.optional_field("CloudWatchLogGroupArn", option.None, decode.optional(decode.string))
+  use end_time <- decode.optional_field("EndTime", option.None, decode.optional(json_timestamp.decoder()))
+  use error_count <- decode.optional_field("ErrorCount", option.None, decode.optional(decode.int))
+  use failure_code <- decode.optional_field("FailureCode", option.None, decode.optional(decode.string))
+  use failure_message <- decode.optional_field("FailureMessage", option.None, decode.optional(decode.string))
+  use import_arn <- decode.optional_field("ImportArn", option.None, decode.optional(decode.string))
+  use import_status <- decode.optional_field("ImportStatus", option.None, decode.optional(decode_import_status_enum()))
+  use imported_item_count <- decode.optional_field("ImportedItemCount", option.None, decode.optional(decode.int))
+  use input_compression_type <- decode.optional_field("InputCompressionType", option.None, decode.optional(decode_input_compression_type_enum()))
+  use input_format <- decode.optional_field("InputFormat", option.None, decode.optional(decode_input_format_enum()))
+  use input_format_options <- decode.optional_field("InputFormatOptions", option.None, decode.optional(decode_input_format_options_struct_params()))
+  use processed_item_count <- decode.optional_field("ProcessedItemCount", option.None, decode.optional(decode.int))
+  use processed_size_bytes <- decode.optional_field("ProcessedSizeBytes", option.None, decode.optional(decode.int))
+  use s3_bucket_source <- decode.optional_field("S3BucketSource", option.None, decode.optional(decode_s3_bucket_source_struct_params()))
+  use start_time <- decode.optional_field("StartTime", option.None, decode.optional(json_timestamp.decoder()))
+  use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
+  use table_creation_parameters <- decode.optional_field("TableCreationParameters", option.None, decode.optional(decode_table_creation_parameters_struct_params()))
   use table_id <- decode.optional_field("TableId", option.None, decode.optional(decode.string))
   decode.success(ImportTableDescription(
     client_token: client_token,
@@ -5566,6 +6922,13 @@ pub fn decode_input_format_options_struct() -> decode.Decoder(InputFormatOptions
   ))
 }
 
+pub fn decode_input_format_options_struct_params() -> decode.Decoder(InputFormatOptions) {
+  use csv <- decode.optional_field("Csv", option.None, decode.optional(decode_csv_options_struct_params()))
+  decode.success(InputFormatOptions(
+    csv: csv,
+  ))
+}
+
 pub type CsvOptions {
   CsvOptions(
     delimiter: option.Option(String),
@@ -5587,6 +6950,15 @@ pub fn encode_csv_options_struct(input: CsvOptions) -> json.Json {
 }
 
 pub fn decode_csv_options_struct() -> decode.Decoder(CsvOptions) {
+  use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
+  use header_list <- decode.optional_field("HeaderList", option.None, decode.optional(decode.list(decode.string)))
+  decode.success(CsvOptions(
+    delimiter: delimiter,
+    header_list: header_list,
+  ))
+}
+
+pub fn decode_csv_options_struct_params() -> decode.Decoder(CsvOptions) {
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
   use header_list <- decode.optional_field("HeaderList", option.None, decode.optional(decode.list(decode.string)))
   decode.success(CsvOptions(
@@ -5621,6 +6993,17 @@ pub fn encode_s3_bucket_source_struct(input: S3BucketSource) -> json.Json {
 }
 
 pub fn decode_s3_bucket_source_struct() -> decode.Decoder(S3BucketSource) {
+  use s3_bucket <- decode.optional_field("S3Bucket", option.None, decode.optional(decode.string))
+  use s3_bucket_owner <- decode.optional_field("S3BucketOwner", option.None, decode.optional(decode.string))
+  use s3_key_prefix <- decode.optional_field("S3KeyPrefix", option.None, decode.optional(decode.string))
+  decode.success(S3BucketSource(
+    s3_bucket: s3_bucket,
+    s3_bucket_owner: s3_bucket_owner,
+    s3_key_prefix: s3_key_prefix,
+  ))
+}
+
+pub fn decode_s3_bucket_source_struct_params() -> decode.Decoder(S3BucketSource) {
   use s3_bucket <- decode.optional_field("S3Bucket", option.None, decode.optional(decode.string))
   use s3_bucket_owner <- decode.optional_field("S3BucketOwner", option.None, decode.optional(decode.string))
   use s3_key_prefix <- decode.optional_field("S3KeyPrefix", option.None, decode.optional(decode.string))
@@ -5702,6 +7085,27 @@ pub fn decode_table_creation_parameters_struct() -> decode.Decoder(TableCreation
   ))
 }
 
+pub fn decode_table_creation_parameters_struct_params() -> decode.Decoder(TableCreationParameters) {
+  use attribute_definitions <- decode.optional_field("AttributeDefinitions", option.None, decode.optional(decode.list(decode_attribute_definition_struct_params())))
+  use billing_mode <- decode.optional_field("BillingMode", option.None, decode.optional(decode_billing_mode_enum()))
+  use global_secondary_indexes <- decode.optional_field("GlobalSecondaryIndexes", option.None, decode.optional(decode.list(decode_global_secondary_index_struct_params())))
+  use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct_params())))
+  use on_demand_throughput <- decode.optional_field("OnDemandThroughput", option.None, decode.optional(decode_on_demand_throughput_struct_params()))
+  use provisioned_throughput <- decode.optional_field("ProvisionedThroughput", option.None, decode.optional(decode_provisioned_throughput_struct_params()))
+  use sse_specification <- decode.optional_field("SSESpecification", option.None, decode.optional(decode_sse_specification_struct_params()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(TableCreationParameters(
+    attribute_definitions: attribute_definitions,
+    billing_mode: billing_mode,
+    global_secondary_indexes: global_secondary_indexes,
+    key_schema: key_schema,
+    on_demand_throughput: on_demand_throughput,
+    provisioned_throughput: provisioned_throughput,
+    sse_specification: sse_specification,
+    table_name: table_name,
+  ))
+}
+
 pub type ImportNotFoundException {
   ImportNotFoundException(
     message: option.Option(String),
@@ -5718,6 +7122,13 @@ pub fn encode_import_not_found_exception_struct(input: ImportNotFoundException) 
 }
 
 pub fn decode_import_not_found_exception_struct() -> decode.Decoder(ImportNotFoundException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ImportNotFoundException(
+    message: message,
+  ))
+}
+
+pub fn decode_import_not_found_exception_struct_params() -> decode.Decoder(ImportNotFoundException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ImportNotFoundException(
     message: message,
@@ -5746,6 +7157,13 @@ pub fn decode_describe_kinesis_streaming_destination_input_struct() -> decode.De
   ))
 }
 
+pub fn decode_describe_kinesis_streaming_destination_input_struct_params() -> decode.Decoder(DescribeKinesisStreamingDestinationInput) {
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(DescribeKinesisStreamingDestinationInput(
+    table_name: table_name,
+  ))
+}
+
 pub type DescribeKinesisStreamingDestinationOutput {
   DescribeKinesisStreamingDestinationOutput(
     kinesis_data_stream_destinations: option.Option(List(KinesisDataStreamDestination)),
@@ -5768,6 +7186,15 @@ pub fn encode_describe_kinesis_streaming_destination_output_struct(input: Descri
 
 pub fn decode_describe_kinesis_streaming_destination_output_struct() -> decode.Decoder(DescribeKinesisStreamingDestinationOutput) {
   use kinesis_data_stream_destinations <- decode.optional_field("KinesisDataStreamDestinations", option.None, decode.optional(decode.list(decode_kinesis_data_stream_destination_struct())))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(DescribeKinesisStreamingDestinationOutput(
+    kinesis_data_stream_destinations: kinesis_data_stream_destinations,
+    table_name: table_name,
+  ))
+}
+
+pub fn decode_describe_kinesis_streaming_destination_output_struct_params() -> decode.Decoder(DescribeKinesisStreamingDestinationOutput) {
+  use kinesis_data_stream_destinations <- decode.optional_field("KinesisDataStreamDestinations", option.None, decode.optional(decode.list(decode_kinesis_data_stream_destination_struct_params())))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(DescribeKinesisStreamingDestinationOutput(
     kinesis_data_stream_destinations: kinesis_data_stream_destinations,
@@ -5806,6 +7233,19 @@ pub fn encode_kinesis_data_stream_destination_struct(input: KinesisDataStreamDes
 }
 
 pub fn decode_kinesis_data_stream_destination_struct() -> decode.Decoder(KinesisDataStreamDestination) {
+  use approximate_creation_date_time_precision <- decode.optional_field("ApproximateCreationDateTimePrecision", option.None, decode.optional(decode_approximate_creation_date_time_precision_enum()))
+  use destination_status <- decode.optional_field("DestinationStatus", option.None, decode.optional(decode_destination_status_enum()))
+  use destination_status_description <- decode.optional_field("DestinationStatusDescription", option.None, decode.optional(decode.string))
+  use stream_arn <- decode.optional_field("StreamArn", option.None, decode.optional(decode.string))
+  decode.success(KinesisDataStreamDestination(
+    approximate_creation_date_time_precision: approximate_creation_date_time_precision,
+    destination_status: destination_status,
+    destination_status_description: destination_status_description,
+    stream_arn: stream_arn,
+  ))
+}
+
+pub fn decode_kinesis_data_stream_destination_struct_params() -> decode.Decoder(KinesisDataStreamDestination) {
   use approximate_creation_date_time_precision <- decode.optional_field("ApproximateCreationDateTimePrecision", option.None, decode.optional(decode_approximate_creation_date_time_precision_enum()))
   use destination_status <- decode.optional_field("DestinationStatus", option.None, decode.optional(decode_destination_status_enum()))
   use destination_status_description <- decode.optional_field("DestinationStatusDescription", option.None, decode.optional(decode.string))
@@ -5886,6 +7326,10 @@ pub fn decode_describe_limits_input_struct() -> decode.Decoder(DescribeLimitsInp
   decode.success(DescribeLimitsInput)
 }
 
+pub fn decode_describe_limits_input_struct_params() -> decode.Decoder(DescribeLimitsInput) {
+  decode.success(DescribeLimitsInput)
+}
+
 pub type DescribeLimitsOutput {
   DescribeLimitsOutput(
     account_max_read_capacity_units: option.Option(Int),
@@ -5929,6 +7373,19 @@ pub fn decode_describe_limits_output_struct() -> decode.Decoder(DescribeLimitsOu
   ))
 }
 
+pub fn decode_describe_limits_output_struct_params() -> decode.Decoder(DescribeLimitsOutput) {
+  use account_max_read_capacity_units <- decode.optional_field("AccountMaxReadCapacityUnits", option.None, decode.optional(decode.int))
+  use account_max_write_capacity_units <- decode.optional_field("AccountMaxWriteCapacityUnits", option.None, decode.optional(decode.int))
+  use table_max_read_capacity_units <- decode.optional_field("TableMaxReadCapacityUnits", option.None, decode.optional(decode.int))
+  use table_max_write_capacity_units <- decode.optional_field("TableMaxWriteCapacityUnits", option.None, decode.optional(decode.int))
+  decode.success(DescribeLimitsOutput(
+    account_max_read_capacity_units: account_max_read_capacity_units,
+    account_max_write_capacity_units: account_max_write_capacity_units,
+    table_max_read_capacity_units: table_max_read_capacity_units,
+    table_max_write_capacity_units: table_max_write_capacity_units,
+  ))
+}
+
 pub type DescribeTableInput {
   DescribeTableInput(
     table_name: option.Option(String),
@@ -5945,6 +7402,13 @@ pub fn encode_describe_table_input_struct(input: DescribeTableInput) -> json.Jso
 }
 
 pub fn decode_describe_table_input_struct() -> decode.Decoder(DescribeTableInput) {
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(DescribeTableInput(
+    table_name: table_name,
+  ))
+}
+
+pub fn decode_describe_table_input_struct_params() -> decode.Decoder(DescribeTableInput) {
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(DescribeTableInput(
     table_name: table_name,
@@ -5973,6 +7437,13 @@ pub fn decode_describe_table_output_struct() -> decode.Decoder(DescribeTableOutp
   ))
 }
 
+pub fn decode_describe_table_output_struct_params() -> decode.Decoder(DescribeTableOutput) {
+  use table <- decode.optional_field("Table", option.None, decode.optional(decode_table_description_struct_params()))
+  decode.success(DescribeTableOutput(
+    table: table,
+  ))
+}
+
 pub type DescribeTableReplicaAutoScalingInput {
   DescribeTableReplicaAutoScalingInput(
     table_name: option.Option(String),
@@ -5989,6 +7460,13 @@ pub fn encode_describe_table_replica_auto_scaling_input_struct(input: DescribeTa
 }
 
 pub fn decode_describe_table_replica_auto_scaling_input_struct() -> decode.Decoder(DescribeTableReplicaAutoScalingInput) {
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(DescribeTableReplicaAutoScalingInput(
+    table_name: table_name,
+  ))
+}
+
+pub fn decode_describe_table_replica_auto_scaling_input_struct_params() -> decode.Decoder(DescribeTableReplicaAutoScalingInput) {
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(DescribeTableReplicaAutoScalingInput(
     table_name: table_name,
@@ -6012,6 +7490,13 @@ pub fn encode_describe_table_replica_auto_scaling_output_struct(input: DescribeT
 
 pub fn decode_describe_table_replica_auto_scaling_output_struct() -> decode.Decoder(DescribeTableReplicaAutoScalingOutput) {
   use table_auto_scaling_description <- decode.optional_field("TableAutoScalingDescription", option.None, decode.optional(decode_table_auto_scaling_description_struct()))
+  decode.success(DescribeTableReplicaAutoScalingOutput(
+    table_auto_scaling_description: table_auto_scaling_description,
+  ))
+}
+
+pub fn decode_describe_table_replica_auto_scaling_output_struct_params() -> decode.Decoder(DescribeTableReplicaAutoScalingOutput) {
+  use table_auto_scaling_description <- decode.optional_field("TableAutoScalingDescription", option.None, decode.optional(decode_table_auto_scaling_description_struct_params()))
   decode.success(DescribeTableReplicaAutoScalingOutput(
     table_auto_scaling_description: table_auto_scaling_description,
   ))
@@ -6044,6 +7529,17 @@ pub fn encode_table_auto_scaling_description_struct(input: TableAutoScalingDescr
 
 pub fn decode_table_auto_scaling_description_struct() -> decode.Decoder(TableAutoScalingDescription) {
   use replicas <- decode.optional_field("Replicas", option.None, decode.optional(decode.list(decode_replica_auto_scaling_description_struct())))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use table_status <- decode.optional_field("TableStatus", option.None, decode.optional(decode_table_status_enum()))
+  decode.success(TableAutoScalingDescription(
+    replicas: replicas,
+    table_name: table_name,
+    table_status: table_status,
+  ))
+}
+
+pub fn decode_table_auto_scaling_description_struct_params() -> decode.Decoder(TableAutoScalingDescription) {
+  use replicas <- decode.optional_field("Replicas", option.None, decode.optional(decode.list(decode_replica_auto_scaling_description_struct_params())))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   use table_status <- decode.optional_field("TableStatus", option.None, decode.optional(decode_table_status_enum()))
   decode.success(TableAutoScalingDescription(
@@ -6103,6 +7599,21 @@ pub fn decode_replica_auto_scaling_description_struct() -> decode.Decoder(Replic
   ))
 }
 
+pub fn decode_replica_auto_scaling_description_struct_params() -> decode.Decoder(ReplicaAutoScalingDescription) {
+  use global_secondary_indexes <- decode.optional_field("GlobalSecondaryIndexes", option.None, decode.optional(decode.list(decode_replica_global_secondary_index_auto_scaling_description_struct_params())))
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  use replica_provisioned_read_capacity_auto_scaling_settings <- decode.optional_field("ReplicaProvisionedReadCapacityAutoScalingSettings", option.None, decode.optional(decode_auto_scaling_settings_description_struct_params()))
+  use replica_provisioned_write_capacity_auto_scaling_settings <- decode.optional_field("ReplicaProvisionedWriteCapacityAutoScalingSettings", option.None, decode.optional(decode_auto_scaling_settings_description_struct_params()))
+  use replica_status <- decode.optional_field("ReplicaStatus", option.None, decode.optional(decode_replica_status_enum()))
+  decode.success(ReplicaAutoScalingDescription(
+    global_secondary_indexes: global_secondary_indexes,
+    region_name: region_name,
+    replica_provisioned_read_capacity_auto_scaling_settings: replica_provisioned_read_capacity_auto_scaling_settings,
+    replica_provisioned_write_capacity_auto_scaling_settings: replica_provisioned_write_capacity_auto_scaling_settings,
+    replica_status: replica_status,
+  ))
+}
+
 pub type ReplicaGlobalSecondaryIndexAutoScalingDescription {
   ReplicaGlobalSecondaryIndexAutoScalingDescription(
     index_name: option.Option(String),
@@ -6146,6 +7657,19 @@ pub fn decode_replica_global_secondary_index_auto_scaling_description_struct() -
   ))
 }
 
+pub fn decode_replica_global_secondary_index_auto_scaling_description_struct_params() -> decode.Decoder(ReplicaGlobalSecondaryIndexAutoScalingDescription) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use index_status <- decode.optional_field("IndexStatus", option.None, decode.optional(decode_index_status_enum()))
+  use provisioned_read_capacity_auto_scaling_settings <- decode.optional_field("ProvisionedReadCapacityAutoScalingSettings", option.None, decode.optional(decode_auto_scaling_settings_description_struct_params()))
+  use provisioned_write_capacity_auto_scaling_settings <- decode.optional_field("ProvisionedWriteCapacityAutoScalingSettings", option.None, decode.optional(decode_auto_scaling_settings_description_struct_params()))
+  decode.success(ReplicaGlobalSecondaryIndexAutoScalingDescription(
+    index_name: index_name,
+    index_status: index_status,
+    provisioned_read_capacity_auto_scaling_settings: provisioned_read_capacity_auto_scaling_settings,
+    provisioned_write_capacity_auto_scaling_settings: provisioned_write_capacity_auto_scaling_settings,
+  ))
+}
+
 pub type DescribeTimeToLiveInput {
   DescribeTimeToLiveInput(
     table_name: option.Option(String),
@@ -6162,6 +7686,13 @@ pub fn encode_describe_time_to_live_input_struct(input: DescribeTimeToLiveInput)
 }
 
 pub fn decode_describe_time_to_live_input_struct() -> decode.Decoder(DescribeTimeToLiveInput) {
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(DescribeTimeToLiveInput(
+    table_name: table_name,
+  ))
+}
+
+pub fn decode_describe_time_to_live_input_struct_params() -> decode.Decoder(DescribeTimeToLiveInput) {
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(DescribeTimeToLiveInput(
     table_name: table_name,
@@ -6185,6 +7716,13 @@ pub fn encode_describe_time_to_live_output_struct(input: DescribeTimeToLiveOutpu
 
 pub fn decode_describe_time_to_live_output_struct() -> decode.Decoder(DescribeTimeToLiveOutput) {
   use time_to_live_description <- decode.optional_field("TimeToLiveDescription", option.None, decode.optional(decode_time_to_live_description_struct()))
+  decode.success(DescribeTimeToLiveOutput(
+    time_to_live_description: time_to_live_description,
+  ))
+}
+
+pub fn decode_describe_time_to_live_output_struct_params() -> decode.Decoder(DescribeTimeToLiveOutput) {
+  use time_to_live_description <- decode.optional_field("TimeToLiveDescription", option.None, decode.optional(decode_time_to_live_description_struct_params()))
   decode.success(DescribeTimeToLiveOutput(
     time_to_live_description: time_to_live_description,
   ))
@@ -6226,6 +7764,17 @@ pub fn decode_kinesis_streaming_destination_input_struct() -> decode.Decoder(Kin
   ))
 }
 
+pub fn decode_kinesis_streaming_destination_input_struct_params() -> decode.Decoder(KinesisStreamingDestinationInput) {
+  use enable_kinesis_streaming_configuration <- decode.optional_field("EnableKinesisStreamingConfiguration", option.None, decode.optional(decode_enable_kinesis_streaming_configuration_struct_params()))
+  use stream_arn <- decode.optional_field("StreamArn", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(KinesisStreamingDestinationInput(
+    enable_kinesis_streaming_configuration: enable_kinesis_streaming_configuration,
+    stream_arn: stream_arn,
+    table_name: table_name,
+  ))
+}
+
 pub type EnableKinesisStreamingConfiguration {
   EnableKinesisStreamingConfiguration(
     approximate_creation_date_time_precision: option.Option(ApproximateCreationDateTimePrecision),
@@ -6242,6 +7791,13 @@ pub fn encode_enable_kinesis_streaming_configuration_struct(input: EnableKinesis
 }
 
 pub fn decode_enable_kinesis_streaming_configuration_struct() -> decode.Decoder(EnableKinesisStreamingConfiguration) {
+  use approximate_creation_date_time_precision <- decode.optional_field("ApproximateCreationDateTimePrecision", option.None, decode.optional(decode_approximate_creation_date_time_precision_enum()))
+  decode.success(EnableKinesisStreamingConfiguration(
+    approximate_creation_date_time_precision: approximate_creation_date_time_precision,
+  ))
+}
+
+pub fn decode_enable_kinesis_streaming_configuration_struct_params() -> decode.Decoder(EnableKinesisStreamingConfiguration) {
   use approximate_creation_date_time_precision <- decode.optional_field("ApproximateCreationDateTimePrecision", option.None, decode.optional(decode_approximate_creation_date_time_precision_enum()))
   decode.success(EnableKinesisStreamingConfiguration(
     approximate_creation_date_time_precision: approximate_creation_date_time_precision,
@@ -6281,6 +7837,19 @@ pub fn encode_kinesis_streaming_destination_output_struct(input: KinesisStreamin
 pub fn decode_kinesis_streaming_destination_output_struct() -> decode.Decoder(KinesisStreamingDestinationOutput) {
   use destination_status <- decode.optional_field("DestinationStatus", option.None, decode.optional(decode_destination_status_enum()))
   use enable_kinesis_streaming_configuration <- decode.optional_field("EnableKinesisStreamingConfiguration", option.None, decode.optional(decode_enable_kinesis_streaming_configuration_struct()))
+  use stream_arn <- decode.optional_field("StreamArn", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(KinesisStreamingDestinationOutput(
+    destination_status: destination_status,
+    enable_kinesis_streaming_configuration: enable_kinesis_streaming_configuration,
+    stream_arn: stream_arn,
+    table_name: table_name,
+  ))
+}
+
+pub fn decode_kinesis_streaming_destination_output_struct_params() -> decode.Decoder(KinesisStreamingDestinationOutput) {
+  use destination_status <- decode.optional_field("DestinationStatus", option.None, decode.optional(decode_destination_status_enum()))
+  use enable_kinesis_streaming_configuration <- decode.optional_field("EnableKinesisStreamingConfiguration", option.None, decode.optional(decode_enable_kinesis_streaming_configuration_struct_params()))
   use stream_arn <- decode.optional_field("StreamArn", option.None, decode.optional(decode.string))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   decode.success(KinesisStreamingDestinationOutput(
@@ -6355,6 +7924,25 @@ pub fn decode_execute_statement_input_struct() -> decode.Decoder(ExecuteStatemen
   ))
 }
 
+pub fn decode_execute_statement_input_struct_params() -> decode.Decoder(ExecuteStatementInput) {
+  use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
+  use limit <- decode.optional_field("Limit", option.None, decode.optional(decode.int))
+  use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
+  use parameters <- decode.optional_field("Parameters", option.None, decode.optional(decode.list(decode_attribute_value_union())))
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
+  use statement <- decode.optional_field("Statement", option.None, decode.optional(decode.string))
+  decode.success(ExecuteStatementInput(
+    consistent_read: consistent_read,
+    limit: limit,
+    next_token: next_token,
+    parameters: parameters,
+    return_consumed_capacity: return_consumed_capacity,
+    return_values_on_condition_check_failure: return_values_on_condition_check_failure,
+    statement: statement,
+  ))
+}
+
 pub type ExecuteStatementOutput {
   ExecuteStatementOutput(
     consumed_capacity: option.Option(ConsumedCapacity),
@@ -6398,6 +7986,19 @@ pub fn decode_execute_statement_output_struct() -> decode.Decoder(ExecuteStateme
   ))
 }
 
+pub fn decode_execute_statement_output_struct_params() -> decode.Decoder(ExecuteStatementOutput) {
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
+  use items <- decode.optional_field("Items", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union()))))
+  use last_evaluated_key <- decode.optional_field("LastEvaluatedKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
+  decode.success(ExecuteStatementOutput(
+    consumed_capacity: consumed_capacity,
+    items: items,
+    last_evaluated_key: last_evaluated_key,
+    next_token: next_token,
+  ))
+}
+
 pub type DuplicateItemException {
   DuplicateItemException(
     message: option.Option(String),
@@ -6414,6 +8015,13 @@ pub fn encode_duplicate_item_exception_struct(input: DuplicateItemException) -> 
 }
 
 pub fn decode_duplicate_item_exception_struct() -> decode.Decoder(DuplicateItemException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(DuplicateItemException(
+    message: message,
+  ))
+}
+
+pub fn decode_duplicate_item_exception_struct_params() -> decode.Decoder(DuplicateItemException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(DuplicateItemException(
     message: message,
@@ -6449,6 +8057,17 @@ pub fn decode_execute_transaction_input_struct() -> decode.Decoder(ExecuteTransa
   use client_request_token <- decode.optional_field("ClientRequestToken", option.None, decode.optional(decode.string))
   use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
   use transact_statements <- decode.optional_field("TransactStatements", option.None, decode.optional(decode.list(decode_parameterized_statement_struct())))
+  decode.success(ExecuteTransactionInput(
+    client_request_token: client_request_token,
+    return_consumed_capacity: return_consumed_capacity,
+    transact_statements: transact_statements,
+  ))
+}
+
+pub fn decode_execute_transaction_input_struct_params() -> decode.Decoder(ExecuteTransactionInput) {
+  use client_request_token <- decode.optional_field("ClientRequestToken", option.None, decode.optional(decode.string))
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  use transact_statements <- decode.optional_field("TransactStatements", option.None, decode.optional(decode.list(decode_parameterized_statement_struct_params())))
   decode.success(ExecuteTransactionInput(
     client_request_token: client_request_token,
     return_consumed_capacity: return_consumed_capacity,
@@ -6492,6 +8111,17 @@ pub fn decode_parameterized_statement_struct() -> decode.Decoder(ParameterizedSt
   ))
 }
 
+pub fn decode_parameterized_statement_struct_params() -> decode.Decoder(ParameterizedStatement) {
+  use parameters <- decode.optional_field("Parameters", option.None, decode.optional(decode.list(decode_attribute_value_union())))
+  use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
+  use statement <- decode.optional_field("Statement", option.None, decode.optional(decode.string))
+  decode.success(ParameterizedStatement(
+    parameters: parameters,
+    return_values_on_condition_check_failure: return_values_on_condition_check_failure,
+    statement: statement,
+  ))
+}
+
 pub type ExecuteTransactionOutput {
   ExecuteTransactionOutput(
     consumed_capacity: option.Option(List(ConsumedCapacity)),
@@ -6521,6 +8151,15 @@ pub fn decode_execute_transaction_output_struct() -> decode.Decoder(ExecuteTrans
   ))
 }
 
+pub fn decode_execute_transaction_output_struct_params() -> decode.Decoder(ExecuteTransactionOutput) {
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct_params())))
+  use responses <- decode.optional_field("Responses", option.None, decode.optional(decode.list(decode_item_response_struct_params())))
+  decode.success(ExecuteTransactionOutput(
+    consumed_capacity: consumed_capacity,
+    responses: responses,
+  ))
+}
+
 pub type ItemResponse {
   ItemResponse(
     item: option.Option(dict.Dict(String, AttributeValue)),
@@ -6537,6 +8176,13 @@ pub fn encode_item_response_struct(input: ItemResponse) -> json.Json {
 }
 
 pub fn decode_item_response_struct() -> decode.Decoder(ItemResponse) {
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  decode.success(ItemResponse(
+    item: item,
+  ))
+}
+
+pub fn decode_item_response_struct_params() -> decode.Decoder(ItemResponse) {
   use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
   decode.success(ItemResponse(
     item: item,
@@ -6565,6 +8211,13 @@ pub fn decode_idempotent_parameter_mismatch_exception_struct() -> decode.Decoder
   ))
 }
 
+pub fn decode_idempotent_parameter_mismatch_exception_struct_params() -> decode.Decoder(IdempotentParameterMismatchException) {
+  use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
+  decode.success(IdempotentParameterMismatchException(
+    message: message,
+  ))
+}
+
 pub type TransactionCanceledException {
   TransactionCanceledException(
     cancellation_reasons: option.Option(List(CancellationReason)),
@@ -6587,6 +8240,15 @@ pub fn encode_transaction_canceled_exception_struct(input: TransactionCanceledEx
 
 pub fn decode_transaction_canceled_exception_struct() -> decode.Decoder(TransactionCanceledException) {
   use cancellation_reasons <- decode.optional_field("CancellationReasons", option.None, decode.optional(decode.list(decode_cancellation_reason_struct())))
+  use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
+  decode.success(TransactionCanceledException(
+    cancellation_reasons: cancellation_reasons,
+    message: message,
+  ))
+}
+
+pub fn decode_transaction_canceled_exception_struct_params() -> decode.Decoder(TransactionCanceledException) {
+  use cancellation_reasons <- decode.optional_field("CancellationReasons", option.None, decode.optional(decode.list(decode_cancellation_reason_struct_params())))
   use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
   decode.success(TransactionCanceledException(
     cancellation_reasons: cancellation_reasons,
@@ -6630,6 +8292,17 @@ pub fn decode_cancellation_reason_struct() -> decode.Decoder(CancellationReason)
   ))
 }
 
+pub fn decode_cancellation_reason_struct_params() -> decode.Decoder(CancellationReason) {
+  use code <- decode.optional_field("Code", option.None, decode.optional(decode.string))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
+  decode.success(CancellationReason(
+    code: code,
+    item: item,
+    message: message,
+  ))
+}
+
 pub type TransactionInProgressException {
   TransactionInProgressException(
     message: option.Option(String),
@@ -6646,6 +8319,13 @@ pub fn encode_transaction_in_progress_exception_struct(input: TransactionInProgr
 }
 
 pub fn decode_transaction_in_progress_exception_struct() -> decode.Decoder(TransactionInProgressException) {
+  use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
+  decode.success(TransactionInProgressException(
+    message: message,
+  ))
+}
+
+pub fn decode_transaction_in_progress_exception_struct_params() -> decode.Decoder(TransactionInProgressException) {
   use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
   decode.success(TransactionInProgressException(
     message: message,
@@ -6720,9 +8400,36 @@ pub fn encode_export_table_to_point_in_time_input_struct(input: ExportTableToPoi
 pub fn decode_export_table_to_point_in_time_input_struct() -> decode.Decoder(ExportTableToPointInTimeInput) {
   use client_token <- decode.optional_field("ClientToken", option.None, decode.optional(decode.string))
   use export_format <- decode.optional_field("ExportFormat", option.None, decode.optional(decode_export_format_enum()))
-  use export_time <- decode.optional_field("ExportTime", option.None, decode.optional(decode.int))
+  use export_time <- decode.optional_field("ExportTime", option.None, decode.optional(json_timestamp.decoder()))
   use export_type <- decode.optional_field("ExportType", option.None, decode.optional(decode_export_type_enum()))
   use incremental_export_specification <- decode.optional_field("IncrementalExportSpecification", option.None, decode.optional(decode_incremental_export_specification_struct()))
+  use s3_bucket <- decode.optional_field("S3Bucket", option.None, decode.optional(decode.string))
+  use s3_bucket_owner <- decode.optional_field("S3BucketOwner", option.None, decode.optional(decode.string))
+  use s3_prefix <- decode.optional_field("S3Prefix", option.None, decode.optional(decode.string))
+  use s3_sse_algorithm <- decode.optional_field("S3SseAlgorithm", option.None, decode.optional(decode_s3_sse_algorithm_enum()))
+  use s3_sse_kms_key_id <- decode.optional_field("S3SseKmsKeyId", option.None, decode.optional(decode.string))
+  use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
+  decode.success(ExportTableToPointInTimeInput(
+    client_token: client_token,
+    export_format: export_format,
+    export_time: export_time,
+    export_type: export_type,
+    incremental_export_specification: incremental_export_specification,
+    s3_bucket: s3_bucket,
+    s3_bucket_owner: s3_bucket_owner,
+    s3_prefix: s3_prefix,
+    s3_sse_algorithm: s3_sse_algorithm,
+    s3_sse_kms_key_id: s3_sse_kms_key_id,
+    table_arn: table_arn,
+  ))
+}
+
+pub fn decode_export_table_to_point_in_time_input_struct_params() -> decode.Decoder(ExportTableToPointInTimeInput) {
+  use client_token <- decode.optional_field("ClientToken", option.None, decode.optional(decode.string))
+  use export_format <- decode.optional_field("ExportFormat", option.None, decode.optional(decode_export_format_enum()))
+  use export_time <- decode.optional_field("ExportTime", option.None, decode.optional(json_timestamp.decoder()))
+  use export_type <- decode.optional_field("ExportType", option.None, decode.optional(decode_export_type_enum()))
+  use incremental_export_specification <- decode.optional_field("IncrementalExportSpecification", option.None, decode.optional(decode_incremental_export_specification_struct_params()))
   use s3_bucket <- decode.optional_field("S3Bucket", option.None, decode.optional(decode.string))
   use s3_bucket_owner <- decode.optional_field("S3BucketOwner", option.None, decode.optional(decode.string))
   use s3_prefix <- decode.optional_field("S3Prefix", option.None, decode.optional(decode.string))
@@ -6766,6 +8473,13 @@ pub fn decode_export_table_to_point_in_time_output_struct() -> decode.Decoder(Ex
   ))
 }
 
+pub fn decode_export_table_to_point_in_time_output_struct_params() -> decode.Decoder(ExportTableToPointInTimeOutput) {
+  use export_description <- decode.optional_field("ExportDescription", option.None, decode.optional(decode_export_description_struct_params()))
+  decode.success(ExportTableToPointInTimeOutput(
+    export_description: export_description,
+  ))
+}
+
 pub type ExportConflictException {
   ExportConflictException(
     message: option.Option(String),
@@ -6782,6 +8496,13 @@ pub fn encode_export_conflict_exception_struct(input: ExportConflictException) -
 }
 
 pub fn decode_export_conflict_exception_struct() -> decode.Decoder(ExportConflictException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ExportConflictException(
+    message: message,
+  ))
+}
+
+pub fn decode_export_conflict_exception_struct_params() -> decode.Decoder(ExportConflictException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ExportConflictException(
     message: message,
@@ -6810,6 +8531,13 @@ pub fn decode_invalid_export_time_exception_struct() -> decode.Decoder(InvalidEx
   ))
 }
 
+pub fn decode_invalid_export_time_exception_struct_params() -> decode.Decoder(InvalidExportTimeException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(InvalidExportTimeException(
+    message: message,
+  ))
+}
+
 pub type PointInTimeRecoveryUnavailableException {
   PointInTimeRecoveryUnavailableException(
     message: option.Option(String),
@@ -6826,6 +8554,13 @@ pub fn encode_point_in_time_recovery_unavailable_exception_struct(input: PointIn
 }
 
 pub fn decode_point_in_time_recovery_unavailable_exception_struct() -> decode.Decoder(PointInTimeRecoveryUnavailableException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(PointInTimeRecoveryUnavailableException(
+    message: message,
+  ))
+}
+
+pub fn decode_point_in_time_recovery_unavailable_exception_struct_params() -> decode.Decoder(PointInTimeRecoveryUnavailableException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(PointInTimeRecoveryUnavailableException(
     message: message,
@@ -6896,6 +8631,25 @@ pub fn decode_get_item_input_struct() -> decode.Decoder(GetItemInput) {
   ))
 }
 
+pub fn decode_get_item_input_struct_params() -> decode.Decoder(GetItemInput) {
+  use attributes_to_get <- decode.optional_field("AttributesToGet", option.None, decode.optional(decode.list(decode.string)))
+  use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
+  use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use projection_expression <- decode.optional_field("ProjectionExpression", option.None, decode.optional(decode.string))
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(GetItemInput(
+    attributes_to_get: attributes_to_get,
+    consistent_read: consistent_read,
+    expression_attribute_names: expression_attribute_names,
+    key: key,
+    projection_expression: projection_expression,
+    return_consumed_capacity: return_consumed_capacity,
+    table_name: table_name,
+  ))
+}
+
 pub type GetItemOutput {
   GetItemOutput(
     consumed_capacity: option.Option(ConsumedCapacity),
@@ -6925,6 +8679,15 @@ pub fn decode_get_item_output_struct() -> decode.Decoder(GetItemOutput) {
   ))
 }
 
+pub fn decode_get_item_output_struct_params() -> decode.Decoder(GetItemOutput) {
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  decode.success(GetItemOutput(
+    consumed_capacity: consumed_capacity,
+    item: item,
+  ))
+}
+
 pub type GetResourcePolicyInput {
   GetResourcePolicyInput(
     resource_arn: option.Option(String),
@@ -6941,6 +8704,13 @@ pub fn encode_get_resource_policy_input_struct(input: GetResourcePolicyInput) ->
 }
 
 pub fn decode_get_resource_policy_input_struct() -> decode.Decoder(GetResourcePolicyInput) {
+  use resource_arn <- decode.optional_field("ResourceArn", option.None, decode.optional(decode.string))
+  decode.success(GetResourcePolicyInput(
+    resource_arn: resource_arn,
+  ))
+}
+
+pub fn decode_get_resource_policy_input_struct_params() -> decode.Decoder(GetResourcePolicyInput) {
   use resource_arn <- decode.optional_field("ResourceArn", option.None, decode.optional(decode.string))
   decode.success(GetResourcePolicyInput(
     resource_arn: resource_arn,
@@ -6968,6 +8738,15 @@ pub fn encode_get_resource_policy_output_struct(input: GetResourcePolicyOutput) 
 }
 
 pub fn decode_get_resource_policy_output_struct() -> decode.Decoder(GetResourcePolicyOutput) {
+  use policy <- decode.optional_field("Policy", option.None, decode.optional(decode.string))
+  use revision_id <- decode.optional_field("RevisionId", option.None, decode.optional(decode.string))
+  decode.success(GetResourcePolicyOutput(
+    policy: policy,
+    revision_id: revision_id,
+  ))
+}
+
+pub fn decode_get_resource_policy_output_struct_params() -> decode.Decoder(GetResourcePolicyOutput) {
   use policy <- decode.optional_field("Policy", option.None, decode.optional(decode.string))
   use revision_id <- decode.optional_field("RevisionId", option.None, decode.optional(decode.string))
   decode.success(GetResourcePolicyOutput(
@@ -7033,6 +8812,23 @@ pub fn decode_import_table_input_struct() -> decode.Decoder(ImportTableInput) {
   ))
 }
 
+pub fn decode_import_table_input_struct_params() -> decode.Decoder(ImportTableInput) {
+  use client_token <- decode.optional_field("ClientToken", option.None, decode.optional(decode.string))
+  use input_compression_type <- decode.optional_field("InputCompressionType", option.None, decode.optional(decode_input_compression_type_enum()))
+  use input_format <- decode.optional_field("InputFormat", option.None, decode.optional(decode_input_format_enum()))
+  use input_format_options <- decode.optional_field("InputFormatOptions", option.None, decode.optional(decode_input_format_options_struct_params()))
+  use s3_bucket_source <- decode.optional_field("S3BucketSource", option.None, decode.optional(decode_s3_bucket_source_struct_params()))
+  use table_creation_parameters <- decode.optional_field("TableCreationParameters", option.None, decode.optional(decode_table_creation_parameters_struct_params()))
+  decode.success(ImportTableInput(
+    client_token: client_token,
+    input_compression_type: input_compression_type,
+    input_format: input_format,
+    input_format_options: input_format_options,
+    s3_bucket_source: s3_bucket_source,
+    table_creation_parameters: table_creation_parameters,
+  ))
+}
+
 pub type ImportTableOutput {
   ImportTableOutput(
     import_table_description: option.Option(ImportTableDescription),
@@ -7055,6 +8851,13 @@ pub fn decode_import_table_output_struct() -> decode.Decoder(ImportTableOutput) 
   ))
 }
 
+pub fn decode_import_table_output_struct_params() -> decode.Decoder(ImportTableOutput) {
+  use import_table_description <- decode.optional_field("ImportTableDescription", option.None, decode.optional(decode_import_table_description_struct_params()))
+  decode.success(ImportTableOutput(
+    import_table_description: import_table_description,
+  ))
+}
+
 pub type ImportConflictException {
   ImportConflictException(
     message: option.Option(String),
@@ -7071,6 +8874,13 @@ pub fn encode_import_conflict_exception_struct(input: ImportConflictException) -
 }
 
 pub fn decode_import_conflict_exception_struct() -> decode.Decoder(ImportConflictException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ImportConflictException(
+    message: message,
+  ))
+}
+
+pub fn decode_import_conflict_exception_struct_params() -> decode.Decoder(ImportConflictException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ImportConflictException(
     message: message,
@@ -7122,8 +8932,25 @@ pub fn decode_list_backups_input_struct() -> decode.Decoder(ListBackupsInput) {
   use exclusive_start_backup_arn <- decode.optional_field("ExclusiveStartBackupArn", option.None, decode.optional(decode.string))
   use limit <- decode.optional_field("Limit", option.None, decode.optional(decode.int))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
-  use time_range_lower_bound <- decode.optional_field("TimeRangeLowerBound", option.None, decode.optional(decode.int))
-  use time_range_upper_bound <- decode.optional_field("TimeRangeUpperBound", option.None, decode.optional(decode.int))
+  use time_range_lower_bound <- decode.optional_field("TimeRangeLowerBound", option.None, decode.optional(json_timestamp.decoder()))
+  use time_range_upper_bound <- decode.optional_field("TimeRangeUpperBound", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(ListBackupsInput(
+    backup_type: backup_type,
+    exclusive_start_backup_arn: exclusive_start_backup_arn,
+    limit: limit,
+    table_name: table_name,
+    time_range_lower_bound: time_range_lower_bound,
+    time_range_upper_bound: time_range_upper_bound,
+  ))
+}
+
+pub fn decode_list_backups_input_struct_params() -> decode.Decoder(ListBackupsInput) {
+  use backup_type <- decode.optional_field("BackupType", option.None, decode.optional(decode_backup_type_filter_enum()))
+  use exclusive_start_backup_arn <- decode.optional_field("ExclusiveStartBackupArn", option.None, decode.optional(decode.string))
+  use limit <- decode.optional_field("Limit", option.None, decode.optional(decode.int))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use time_range_lower_bound <- decode.optional_field("TimeRangeLowerBound", option.None, decode.optional(json_timestamp.decoder()))
+  use time_range_upper_bound <- decode.optional_field("TimeRangeUpperBound", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(ListBackupsInput(
     backup_type: backup_type,
     exclusive_start_backup_arn: exclusive_start_backup_arn,
@@ -7184,6 +9011,15 @@ pub fn encode_list_backups_output_struct(input: ListBackupsOutput) -> json.Json 
 
 pub fn decode_list_backups_output_struct() -> decode.Decoder(ListBackupsOutput) {
   use backup_summaries <- decode.optional_field("BackupSummaries", option.None, decode.optional(decode.list(decode_backup_summary_struct())))
+  use last_evaluated_backup_arn <- decode.optional_field("LastEvaluatedBackupArn", option.None, decode.optional(decode.string))
+  decode.success(ListBackupsOutput(
+    backup_summaries: backup_summaries,
+    last_evaluated_backup_arn: last_evaluated_backup_arn,
+  ))
+}
+
+pub fn decode_list_backups_output_struct_params() -> decode.Decoder(ListBackupsOutput) {
+  use backup_summaries <- decode.optional_field("BackupSummaries", option.None, decode.optional(decode.list(decode_backup_summary_struct_params())))
   use last_evaluated_backup_arn <- decode.optional_field("LastEvaluatedBackupArn", option.None, decode.optional(decode.string))
   decode.success(ListBackupsOutput(
     backup_summaries: backup_summaries,
@@ -7253,8 +9089,33 @@ pub fn encode_backup_summary_struct(input: BackupSummary) -> json.Json {
 
 pub fn decode_backup_summary_struct() -> decode.Decoder(BackupSummary) {
   use backup_arn <- decode.optional_field("BackupArn", option.None, decode.optional(decode.string))
-  use backup_creation_date_time <- decode.optional_field("BackupCreationDateTime", option.None, decode.optional(decode.int))
-  use backup_expiry_date_time <- decode.optional_field("BackupExpiryDateTime", option.None, decode.optional(decode.int))
+  use backup_creation_date_time <- decode.optional_field("BackupCreationDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use backup_expiry_date_time <- decode.optional_field("BackupExpiryDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use backup_name <- decode.optional_field("BackupName", option.None, decode.optional(decode.string))
+  use backup_size_bytes <- decode.optional_field("BackupSizeBytes", option.None, decode.optional(decode.int))
+  use backup_status <- decode.optional_field("BackupStatus", option.None, decode.optional(decode_backup_status_enum()))
+  use backup_type <- decode.optional_field("BackupType", option.None, decode.optional(decode_backup_type_enum()))
+  use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
+  use table_id <- decode.optional_field("TableId", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(BackupSummary(
+    backup_arn: backup_arn,
+    backup_creation_date_time: backup_creation_date_time,
+    backup_expiry_date_time: backup_expiry_date_time,
+    backup_name: backup_name,
+    backup_size_bytes: backup_size_bytes,
+    backup_status: backup_status,
+    backup_type: backup_type,
+    table_arn: table_arn,
+    table_id: table_id,
+    table_name: table_name,
+  ))
+}
+
+pub fn decode_backup_summary_struct_params() -> decode.Decoder(BackupSummary) {
+  use backup_arn <- decode.optional_field("BackupArn", option.None, decode.optional(decode.string))
+  use backup_creation_date_time <- decode.optional_field("BackupCreationDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use backup_expiry_date_time <- decode.optional_field("BackupExpiryDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use backup_name <- decode.optional_field("BackupName", option.None, decode.optional(decode.string))
   use backup_size_bytes <- decode.optional_field("BackupSizeBytes", option.None, decode.optional(decode.int))
   use backup_status <- decode.optional_field("BackupStatus", option.None, decode.optional(decode_backup_status_enum()))
@@ -7312,6 +9173,17 @@ pub fn decode_list_contributor_insights_input_struct() -> decode.Decoder(ListCon
   ))
 }
 
+pub fn decode_list_contributor_insights_input_struct_params() -> decode.Decoder(ListContributorInsightsInput) {
+  use max_results <- decode.optional_field("MaxResults", option.None, decode.optional(decode.int))
+  use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(ListContributorInsightsInput(
+    max_results: max_results,
+    next_token: next_token,
+    table_name: table_name,
+  ))
+}
+
 pub type ListContributorInsightsOutput {
   ListContributorInsightsOutput(
     contributor_insights_summaries: option.Option(List(ContributorInsightsSummary)),
@@ -7334,6 +9206,15 @@ pub fn encode_list_contributor_insights_output_struct(input: ListContributorInsi
 
 pub fn decode_list_contributor_insights_output_struct() -> decode.Decoder(ListContributorInsightsOutput) {
   use contributor_insights_summaries <- decode.optional_field("ContributorInsightsSummaries", option.None, decode.optional(decode.list(decode_contributor_insights_summary_struct())))
+  use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
+  decode.success(ListContributorInsightsOutput(
+    contributor_insights_summaries: contributor_insights_summaries,
+    next_token: next_token,
+  ))
+}
+
+pub fn decode_list_contributor_insights_output_struct_params() -> decode.Decoder(ListContributorInsightsOutput) {
+  use contributor_insights_summaries <- decode.optional_field("ContributorInsightsSummaries", option.None, decode.optional(decode.list(decode_contributor_insights_summary_struct_params())))
   use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
   decode.success(ListContributorInsightsOutput(
     contributor_insights_summaries: contributor_insights_summaries,
@@ -7384,6 +9265,19 @@ pub fn decode_contributor_insights_summary_struct() -> decode.Decoder(Contributo
   ))
 }
 
+pub fn decode_contributor_insights_summary_struct_params() -> decode.Decoder(ContributorInsightsSummary) {
+  use contributor_insights_mode <- decode.optional_field("ContributorInsightsMode", option.None, decode.optional(decode_contributor_insights_mode_enum()))
+  use contributor_insights_status <- decode.optional_field("ContributorInsightsStatus", option.None, decode.optional(decode_contributor_insights_status_enum()))
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(ContributorInsightsSummary(
+    contributor_insights_mode: contributor_insights_mode,
+    contributor_insights_status: contributor_insights_status,
+    index_name: index_name,
+    table_name: table_name,
+  ))
+}
+
 pub type ListExportsInput {
   ListExportsInput(
     max_results: option.Option(Int),
@@ -7410,6 +9304,17 @@ pub fn encode_list_exports_input_struct(input: ListExportsInput) -> json.Json {
 }
 
 pub fn decode_list_exports_input_struct() -> decode.Decoder(ListExportsInput) {
+  use max_results <- decode.optional_field("MaxResults", option.None, decode.optional(decode.int))
+  use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
+  use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
+  decode.success(ListExportsInput(
+    max_results: max_results,
+    next_token: next_token,
+    table_arn: table_arn,
+  ))
+}
+
+pub fn decode_list_exports_input_struct_params() -> decode.Decoder(ListExportsInput) {
   use max_results <- decode.optional_field("MaxResults", option.None, decode.optional(decode.int))
   use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
@@ -7449,6 +9354,15 @@ pub fn decode_list_exports_output_struct() -> decode.Decoder(ListExportsOutput) 
   ))
 }
 
+pub fn decode_list_exports_output_struct_params() -> decode.Decoder(ListExportsOutput) {
+  use export_summaries <- decode.optional_field("ExportSummaries", option.None, decode.optional(decode.list(decode_export_summary_struct_params())))
+  use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
+  decode.success(ListExportsOutput(
+    export_summaries: export_summaries,
+    next_token: next_token,
+  ))
+}
+
 pub type ExportSummary {
   ExportSummary(
     export_arn: option.Option(String),
@@ -7475,6 +9389,17 @@ pub fn encode_export_summary_struct(input: ExportSummary) -> json.Json {
 }
 
 pub fn decode_export_summary_struct() -> decode.Decoder(ExportSummary) {
+  use export_arn <- decode.optional_field("ExportArn", option.None, decode.optional(decode.string))
+  use export_status <- decode.optional_field("ExportStatus", option.None, decode.optional(decode_export_status_enum()))
+  use export_type <- decode.optional_field("ExportType", option.None, decode.optional(decode_export_type_enum()))
+  decode.success(ExportSummary(
+    export_arn: export_arn,
+    export_status: export_status,
+    export_type: export_type,
+  ))
+}
+
+pub fn decode_export_summary_struct_params() -> decode.Decoder(ExportSummary) {
   use export_arn <- decode.optional_field("ExportArn", option.None, decode.optional(decode.string))
   use export_status <- decode.optional_field("ExportStatus", option.None, decode.optional(decode_export_status_enum()))
   use export_type <- decode.optional_field("ExportType", option.None, decode.optional(decode_export_type_enum()))
@@ -7521,6 +9446,17 @@ pub fn decode_list_global_tables_input_struct() -> decode.Decoder(ListGlobalTabl
   ))
 }
 
+pub fn decode_list_global_tables_input_struct_params() -> decode.Decoder(ListGlobalTablesInput) {
+  use exclusive_start_global_table_name <- decode.optional_field("ExclusiveStartGlobalTableName", option.None, decode.optional(decode.string))
+  use limit <- decode.optional_field("Limit", option.None, decode.optional(decode.int))
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  decode.success(ListGlobalTablesInput(
+    exclusive_start_global_table_name: exclusive_start_global_table_name,
+    limit: limit,
+    region_name: region_name,
+  ))
+}
+
 pub type ListGlobalTablesOutput {
   ListGlobalTablesOutput(
     global_tables: option.Option(List(GlobalTable)),
@@ -7543,6 +9479,15 @@ pub fn encode_list_global_tables_output_struct(input: ListGlobalTablesOutput) ->
 
 pub fn decode_list_global_tables_output_struct() -> decode.Decoder(ListGlobalTablesOutput) {
   use global_tables <- decode.optional_field("GlobalTables", option.None, decode.optional(decode.list(decode_global_table_struct())))
+  use last_evaluated_global_table_name <- decode.optional_field("LastEvaluatedGlobalTableName", option.None, decode.optional(decode.string))
+  decode.success(ListGlobalTablesOutput(
+    global_tables: global_tables,
+    last_evaluated_global_table_name: last_evaluated_global_table_name,
+  ))
+}
+
+pub fn decode_list_global_tables_output_struct_params() -> decode.Decoder(ListGlobalTablesOutput) {
+  use global_tables <- decode.optional_field("GlobalTables", option.None, decode.optional(decode.list(decode_global_table_struct_params())))
   use last_evaluated_global_table_name <- decode.optional_field("LastEvaluatedGlobalTableName", option.None, decode.optional(decode.string))
   decode.success(ListGlobalTablesOutput(
     global_tables: global_tables,
@@ -7573,6 +9518,15 @@ pub fn encode_global_table_struct(input: GlobalTable) -> json.Json {
 pub fn decode_global_table_struct() -> decode.Decoder(GlobalTable) {
   use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
   use replication_group <- decode.optional_field("ReplicationGroup", option.None, decode.optional(decode.list(decode_replica_struct())))
+  decode.success(GlobalTable(
+    global_table_name: global_table_name,
+    replication_group: replication_group,
+  ))
+}
+
+pub fn decode_global_table_struct_params() -> decode.Decoder(GlobalTable) {
+  use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
+  use replication_group <- decode.optional_field("ReplicationGroup", option.None, decode.optional(decode.list(decode_replica_struct_params())))
   decode.success(GlobalTable(
     global_table_name: global_table_name,
     replication_group: replication_group,
@@ -7615,6 +9569,17 @@ pub fn decode_list_imports_input_struct() -> decode.Decoder(ListImportsInput) {
   ))
 }
 
+pub fn decode_list_imports_input_struct_params() -> decode.Decoder(ListImportsInput) {
+  use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
+  use page_size <- decode.optional_field("PageSize", option.None, decode.optional(decode.int))
+  use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
+  decode.success(ListImportsInput(
+    next_token: next_token,
+    page_size: page_size,
+    table_arn: table_arn,
+  ))
+}
+
 pub type ListImportsOutput {
   ListImportsOutput(
     import_summary_list: option.Option(List(ImportSummary)),
@@ -7637,6 +9602,15 @@ pub fn encode_list_imports_output_struct(input: ListImportsOutput) -> json.Json 
 
 pub fn decode_list_imports_output_struct() -> decode.Decoder(ListImportsOutput) {
   use import_summary_list <- decode.optional_field("ImportSummaryList", option.None, decode.optional(decode.list(decode_import_summary_struct())))
+  use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
+  decode.success(ListImportsOutput(
+    import_summary_list: import_summary_list,
+    next_token: next_token,
+  ))
+}
+
+pub fn decode_list_imports_output_struct_params() -> decode.Decoder(ListImportsOutput) {
+  use import_summary_list <- decode.optional_field("ImportSummaryList", option.None, decode.optional(decode.list(decode_import_summary_struct_params())))
   use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
   decode.success(ListImportsOutput(
     import_summary_list: import_summary_list,
@@ -7696,12 +9670,33 @@ pub fn encode_import_summary_struct(input: ImportSummary) -> json.Json {
 
 pub fn decode_import_summary_struct() -> decode.Decoder(ImportSummary) {
   use cloud_watch_log_group_arn <- decode.optional_field("CloudWatchLogGroupArn", option.None, decode.optional(decode.string))
-  use end_time <- decode.optional_field("EndTime", option.None, decode.optional(decode.int))
+  use end_time <- decode.optional_field("EndTime", option.None, decode.optional(json_timestamp.decoder()))
   use import_arn <- decode.optional_field("ImportArn", option.None, decode.optional(decode.string))
   use import_status <- decode.optional_field("ImportStatus", option.None, decode.optional(decode_import_status_enum()))
   use input_format <- decode.optional_field("InputFormat", option.None, decode.optional(decode_input_format_enum()))
   use s3_bucket_source <- decode.optional_field("S3BucketSource", option.None, decode.optional(decode_s3_bucket_source_struct()))
-  use start_time <- decode.optional_field("StartTime", option.None, decode.optional(decode.int))
+  use start_time <- decode.optional_field("StartTime", option.None, decode.optional(json_timestamp.decoder()))
+  use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
+  decode.success(ImportSummary(
+    cloud_watch_log_group_arn: cloud_watch_log_group_arn,
+    end_time: end_time,
+    import_arn: import_arn,
+    import_status: import_status,
+    input_format: input_format,
+    s3_bucket_source: s3_bucket_source,
+    start_time: start_time,
+    table_arn: table_arn,
+  ))
+}
+
+pub fn decode_import_summary_struct_params() -> decode.Decoder(ImportSummary) {
+  use cloud_watch_log_group_arn <- decode.optional_field("CloudWatchLogGroupArn", option.None, decode.optional(decode.string))
+  use end_time <- decode.optional_field("EndTime", option.None, decode.optional(json_timestamp.decoder()))
+  use import_arn <- decode.optional_field("ImportArn", option.None, decode.optional(decode.string))
+  use import_status <- decode.optional_field("ImportStatus", option.None, decode.optional(decode_import_status_enum()))
+  use input_format <- decode.optional_field("InputFormat", option.None, decode.optional(decode_input_format_enum()))
+  use s3_bucket_source <- decode.optional_field("S3BucketSource", option.None, decode.optional(decode_s3_bucket_source_struct_params()))
+  use start_time <- decode.optional_field("StartTime", option.None, decode.optional(json_timestamp.decoder()))
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
   decode.success(ImportSummary(
     cloud_watch_log_group_arn: cloud_watch_log_group_arn,
@@ -7744,6 +9739,15 @@ pub fn decode_list_tables_input_struct() -> decode.Decoder(ListTablesInput) {
   ))
 }
 
+pub fn decode_list_tables_input_struct_params() -> decode.Decoder(ListTablesInput) {
+  use exclusive_start_table_name <- decode.optional_field("ExclusiveStartTableName", option.None, decode.optional(decode.string))
+  use limit <- decode.optional_field("Limit", option.None, decode.optional(decode.int))
+  decode.success(ListTablesInput(
+    exclusive_start_table_name: exclusive_start_table_name,
+    limit: limit,
+  ))
+}
+
 pub type ListTablesOutput {
   ListTablesOutput(
     last_evaluated_table_name: option.Option(String),
@@ -7765,6 +9769,15 @@ pub fn encode_list_tables_output_struct(input: ListTablesOutput) -> json.Json {
 }
 
 pub fn decode_list_tables_output_struct() -> decode.Decoder(ListTablesOutput) {
+  use last_evaluated_table_name <- decode.optional_field("LastEvaluatedTableName", option.None, decode.optional(decode.string))
+  use table_names <- decode.optional_field("TableNames", option.None, decode.optional(decode.list(decode.string)))
+  decode.success(ListTablesOutput(
+    last_evaluated_table_name: last_evaluated_table_name,
+    table_names: table_names,
+  ))
+}
+
+pub fn decode_list_tables_output_struct_params() -> decode.Decoder(ListTablesOutput) {
   use last_evaluated_table_name <- decode.optional_field("LastEvaluatedTableName", option.None, decode.optional(decode.string))
   use table_names <- decode.optional_field("TableNames", option.None, decode.optional(decode.list(decode.string)))
   decode.success(ListTablesOutput(
@@ -7802,6 +9815,15 @@ pub fn decode_list_tags_of_resource_input_struct() -> decode.Decoder(ListTagsOfR
   ))
 }
 
+pub fn decode_list_tags_of_resource_input_struct_params() -> decode.Decoder(ListTagsOfResourceInput) {
+  use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
+  use resource_arn <- decode.optional_field("ResourceArn", option.None, decode.optional(decode.string))
+  decode.success(ListTagsOfResourceInput(
+    next_token: next_token,
+    resource_arn: resource_arn,
+  ))
+}
+
 pub type ListTagsOfResourceOutput {
   ListTagsOfResourceOutput(
     next_token: option.Option(String),
@@ -7825,6 +9847,15 @@ pub fn encode_list_tags_of_resource_output_struct(input: ListTagsOfResourceOutpu
 pub fn decode_list_tags_of_resource_output_struct() -> decode.Decoder(ListTagsOfResourceOutput) {
   use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
   use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct())))
+  decode.success(ListTagsOfResourceOutput(
+    next_token: next_token,
+    tags: tags,
+  ))
+}
+
+pub fn decode_list_tags_of_resource_output_struct_params() -> decode.Decoder(ListTagsOfResourceOutput) {
+  use next_token <- decode.optional_field("NextToken", option.None, decode.optional(decode.string))
+  use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
   decode.success(ListTagsOfResourceOutput(
     next_token: next_token,
     tags: tags,
@@ -7923,6 +9954,33 @@ pub fn decode_put_item_input_struct() -> decode.Decoder(PutItemInput) {
   ))
 }
 
+pub fn decode_put_item_input_struct_params() -> decode.Decoder(PutItemInput) {
+  use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
+  use conditional_operator <- decode.optional_field("ConditionalOperator", option.None, decode.optional(decode_conditional_operator_enum()))
+  use expected <- decode.optional_field("Expected", option.None, decode.optional(decode.dict(decode.string, decode_expected_attribute_value_struct_params())))
+  use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  use return_item_collection_metrics <- decode.optional_field("ReturnItemCollectionMetrics", option.None, decode.optional(decode_return_item_collection_metrics_enum()))
+  use return_values <- decode.optional_field("ReturnValues", option.None, decode.optional(decode_return_value_enum()))
+  use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(PutItemInput(
+    condition_expression: condition_expression,
+    conditional_operator: conditional_operator,
+    expected: expected,
+    expression_attribute_names: expression_attribute_names,
+    expression_attribute_values: expression_attribute_values,
+    item: item,
+    return_consumed_capacity: return_consumed_capacity,
+    return_item_collection_metrics: return_item_collection_metrics,
+    return_values: return_values,
+    return_values_on_condition_check_failure: return_values_on_condition_check_failure,
+    table_name: table_name,
+  ))
+}
+
 pub type PutItemOutput {
   PutItemOutput(
     attributes: option.Option(dict.Dict(String, AttributeValue)),
@@ -7952,6 +10010,17 @@ pub fn decode_put_item_output_struct() -> decode.Decoder(PutItemOutput) {
   use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct()))
   use item_collection_metrics <- decode.optional_field("ItemCollectionMetrics", option.None, decode.optional(decode_item_collection_metrics_struct()))
+  decode.success(PutItemOutput(
+    attributes: attributes,
+    consumed_capacity: consumed_capacity,
+    item_collection_metrics: item_collection_metrics,
+  ))
+}
+
+pub fn decode_put_item_output_struct_params() -> decode.Decoder(PutItemOutput) {
+  use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
+  use item_collection_metrics <- decode.optional_field("ItemCollectionMetrics", option.None, decode.optional(decode_item_collection_metrics_struct_params()))
   decode.success(PutItemOutput(
     attributes: attributes,
     consumed_capacity: consumed_capacity,
@@ -8002,6 +10071,19 @@ pub fn decode_put_resource_policy_input_struct() -> decode.Decoder(PutResourcePo
   ))
 }
 
+pub fn decode_put_resource_policy_input_struct_params() -> decode.Decoder(PutResourcePolicyInput) {
+  use confirm_remove_self_resource_access <- decode.optional_field("ConfirmRemoveSelfResourceAccess", option.None, decode.optional(decode.bool))
+  use expected_revision_id <- decode.optional_field("ExpectedRevisionId", option.None, decode.optional(decode.string))
+  use policy <- decode.optional_field("Policy", option.None, decode.optional(decode.string))
+  use resource_arn <- decode.optional_field("ResourceArn", option.None, decode.optional(decode.string))
+  decode.success(PutResourcePolicyInput(
+    confirm_remove_self_resource_access: confirm_remove_self_resource_access,
+    expected_revision_id: expected_revision_id,
+    policy: policy,
+    resource_arn: resource_arn,
+  ))
+}
+
 pub type PutResourcePolicyOutput {
   PutResourcePolicyOutput(
     revision_id: option.Option(String),
@@ -8018,6 +10100,13 @@ pub fn encode_put_resource_policy_output_struct(input: PutResourcePolicyOutput) 
 }
 
 pub fn decode_put_resource_policy_output_struct() -> decode.Decoder(PutResourcePolicyOutput) {
+  use revision_id <- decode.optional_field("RevisionId", option.None, decode.optional(decode.string))
+  decode.success(PutResourcePolicyOutput(
+    revision_id: revision_id,
+  ))
+}
+
+pub fn decode_put_resource_policy_output_struct_params() -> decode.Decoder(PutResourcePolicyOutput) {
   use revision_id <- decode.optional_field("RevisionId", option.None, decode.optional(decode.string))
   decode.success(PutResourcePolicyOutput(
     revision_id: revision_id,
@@ -8158,6 +10247,45 @@ pub fn decode_query_input_struct() -> decode.Decoder(QueryInput) {
   ))
 }
 
+pub fn decode_query_input_struct_params() -> decode.Decoder(QueryInput) {
+  use attributes_to_get <- decode.optional_field("AttributesToGet", option.None, decode.optional(decode.list(decode.string)))
+  use conditional_operator <- decode.optional_field("ConditionalOperator", option.None, decode.optional(decode_conditional_operator_enum()))
+  use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
+  use exclusive_start_key <- decode.optional_field("ExclusiveStartKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use filter_expression <- decode.optional_field("FilterExpression", option.None, decode.optional(decode.string))
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use key_condition_expression <- decode.optional_field("KeyConditionExpression", option.None, decode.optional(decode.string))
+  use key_conditions <- decode.optional_field("KeyConditions", option.None, decode.optional(decode.dict(decode.string, decode_condition_struct_params())))
+  use limit <- decode.optional_field("Limit", option.None, decode.optional(decode.int))
+  use projection_expression <- decode.optional_field("ProjectionExpression", option.None, decode.optional(decode.string))
+  use query_filter <- decode.optional_field("QueryFilter", option.None, decode.optional(decode.dict(decode.string, decode_condition_struct_params())))
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  use scan_index_forward <- decode.optional_field("ScanIndexForward", option.None, decode.optional(decode.bool))
+  use select <- decode.optional_field("Select", option.None, decode.optional(decode_select_enum()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(QueryInput(
+    attributes_to_get: attributes_to_get,
+    conditional_operator: conditional_operator,
+    consistent_read: consistent_read,
+    exclusive_start_key: exclusive_start_key,
+    expression_attribute_names: expression_attribute_names,
+    expression_attribute_values: expression_attribute_values,
+    filter_expression: filter_expression,
+    index_name: index_name,
+    key_condition_expression: key_condition_expression,
+    key_conditions: key_conditions,
+    limit: limit,
+    projection_expression: projection_expression,
+    query_filter: query_filter,
+    return_consumed_capacity: return_consumed_capacity,
+    scan_index_forward: scan_index_forward,
+    select: select,
+    table_name: table_name,
+  ))
+}
+
 pub type Condition {
   Condition(
     attribute_value_list: option.Option(List(AttributeValue)),
@@ -8179,6 +10307,15 @@ pub fn encode_condition_struct(input: Condition) -> json.Json {
 }
 
 pub fn decode_condition_struct() -> decode.Decoder(Condition) {
+  use attribute_value_list <- decode.optional_field("AttributeValueList", option.None, decode.optional(decode.list(decode_attribute_value_union())))
+  use comparison_operator <- decode.optional_field("ComparisonOperator", option.None, decode.optional(decode_comparison_operator_enum()))
+  decode.success(Condition(
+    attribute_value_list: attribute_value_list,
+    comparison_operator: comparison_operator,
+  ))
+}
+
+pub fn decode_condition_struct_params() -> decode.Decoder(Condition) {
   use attribute_value_list <- decode.optional_field("AttributeValueList", option.None, decode.optional(decode.list(decode_attribute_value_union())))
   use comparison_operator <- decode.optional_field("ComparisonOperator", option.None, decode.optional(decode_comparison_operator_enum()))
   decode.success(Condition(
@@ -8265,6 +10402,21 @@ pub fn decode_query_output_struct() -> decode.Decoder(QueryOutput) {
   ))
 }
 
+pub fn decode_query_output_struct_params() -> decode.Decoder(QueryOutput) {
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
+  use count <- decode.optional_field("Count", option.None, decode.optional(decode.int))
+  use items <- decode.optional_field("Items", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union()))))
+  use last_evaluated_key <- decode.optional_field("LastEvaluatedKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use scanned_count <- decode.optional_field("ScannedCount", option.None, decode.optional(decode.int))
+  decode.success(QueryOutput(
+    consumed_capacity: consumed_capacity,
+    count: count,
+    items: items,
+    last_evaluated_key: last_evaluated_key,
+    scanned_count: scanned_count,
+  ))
+}
+
 pub type RestoreTableFromBackupInput {
   RestoreTableFromBackupInput(
     backup_arn: option.Option(String),
@@ -8336,6 +10488,27 @@ pub fn decode_restore_table_from_backup_input_struct() -> decode.Decoder(Restore
   ))
 }
 
+pub fn decode_restore_table_from_backup_input_struct_params() -> decode.Decoder(RestoreTableFromBackupInput) {
+  use backup_arn <- decode.optional_field("BackupArn", option.None, decode.optional(decode.string))
+  use billing_mode_override <- decode.optional_field("BillingModeOverride", option.None, decode.optional(decode_billing_mode_enum()))
+  use global_secondary_index_override <- decode.optional_field("GlobalSecondaryIndexOverride", option.None, decode.optional(decode.list(decode_global_secondary_index_struct_params())))
+  use local_secondary_index_override <- decode.optional_field("LocalSecondaryIndexOverride", option.None, decode.optional(decode.list(decode_local_secondary_index_struct_params())))
+  use on_demand_throughput_override <- decode.optional_field("OnDemandThroughputOverride", option.None, decode.optional(decode_on_demand_throughput_struct_params()))
+  use provisioned_throughput_override <- decode.optional_field("ProvisionedThroughputOverride", option.None, decode.optional(decode_provisioned_throughput_struct_params()))
+  use sse_specification_override <- decode.optional_field("SSESpecificationOverride", option.None, decode.optional(decode_sse_specification_struct_params()))
+  use target_table_name <- decode.optional_field("TargetTableName", option.None, decode.optional(decode.string))
+  decode.success(RestoreTableFromBackupInput(
+    backup_arn: backup_arn,
+    billing_mode_override: billing_mode_override,
+    global_secondary_index_override: global_secondary_index_override,
+    local_secondary_index_override: local_secondary_index_override,
+    on_demand_throughput_override: on_demand_throughput_override,
+    provisioned_throughput_override: provisioned_throughput_override,
+    sse_specification_override: sse_specification_override,
+    target_table_name: target_table_name,
+  ))
+}
+
 pub type RestoreTableFromBackupOutput {
   RestoreTableFromBackupOutput(
     table_description: option.Option(TableDescription),
@@ -8358,6 +10531,13 @@ pub fn decode_restore_table_from_backup_output_struct() -> decode.Decoder(Restor
   ))
 }
 
+pub fn decode_restore_table_from_backup_output_struct_params() -> decode.Decoder(RestoreTableFromBackupOutput) {
+  use table_description <- decode.optional_field("TableDescription", option.None, decode.optional(decode_table_description_struct_params()))
+  decode.success(RestoreTableFromBackupOutput(
+    table_description: table_description,
+  ))
+}
+
 pub type TableAlreadyExistsException {
   TableAlreadyExistsException(
     message: option.Option(String),
@@ -8374,6 +10554,13 @@ pub fn encode_table_already_exists_exception_struct(input: TableAlreadyExistsExc
 }
 
 pub fn decode_table_already_exists_exception_struct() -> decode.Decoder(TableAlreadyExistsException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(TableAlreadyExistsException(
+    message: message,
+  ))
+}
+
+pub fn decode_table_already_exists_exception_struct_params() -> decode.Decoder(TableAlreadyExistsException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(TableAlreadyExistsException(
     message: message,
@@ -8451,8 +10638,35 @@ pub fn decode_restore_table_to_point_in_time_input_struct() -> decode.Decoder(Re
   use local_secondary_index_override <- decode.optional_field("LocalSecondaryIndexOverride", option.None, decode.optional(decode.list(decode_local_secondary_index_struct())))
   use on_demand_throughput_override <- decode.optional_field("OnDemandThroughputOverride", option.None, decode.optional(decode_on_demand_throughput_struct()))
   use provisioned_throughput_override <- decode.optional_field("ProvisionedThroughputOverride", option.None, decode.optional(decode_provisioned_throughput_struct()))
-  use restore_date_time <- decode.optional_field("RestoreDateTime", option.None, decode.optional(decode.int))
+  use restore_date_time <- decode.optional_field("RestoreDateTime", option.None, decode.optional(json_timestamp.decoder()))
   use sse_specification_override <- decode.optional_field("SSESpecificationOverride", option.None, decode.optional(decode_sse_specification_struct()))
+  use source_table_arn <- decode.optional_field("SourceTableArn", option.None, decode.optional(decode.string))
+  use source_table_name <- decode.optional_field("SourceTableName", option.None, decode.optional(decode.string))
+  use target_table_name <- decode.optional_field("TargetTableName", option.None, decode.optional(decode.string))
+  use use_latest_restorable_time <- decode.optional_field("UseLatestRestorableTime", option.None, decode.optional(decode.bool))
+  decode.success(RestoreTableToPointInTimeInput(
+    billing_mode_override: billing_mode_override,
+    global_secondary_index_override: global_secondary_index_override,
+    local_secondary_index_override: local_secondary_index_override,
+    on_demand_throughput_override: on_demand_throughput_override,
+    provisioned_throughput_override: provisioned_throughput_override,
+    restore_date_time: restore_date_time,
+    sse_specification_override: sse_specification_override,
+    source_table_arn: source_table_arn,
+    source_table_name: source_table_name,
+    target_table_name: target_table_name,
+    use_latest_restorable_time: use_latest_restorable_time,
+  ))
+}
+
+pub fn decode_restore_table_to_point_in_time_input_struct_params() -> decode.Decoder(RestoreTableToPointInTimeInput) {
+  use billing_mode_override <- decode.optional_field("BillingModeOverride", option.None, decode.optional(decode_billing_mode_enum()))
+  use global_secondary_index_override <- decode.optional_field("GlobalSecondaryIndexOverride", option.None, decode.optional(decode.list(decode_global_secondary_index_struct_params())))
+  use local_secondary_index_override <- decode.optional_field("LocalSecondaryIndexOverride", option.None, decode.optional(decode.list(decode_local_secondary_index_struct_params())))
+  use on_demand_throughput_override <- decode.optional_field("OnDemandThroughputOverride", option.None, decode.optional(decode_on_demand_throughput_struct_params()))
+  use provisioned_throughput_override <- decode.optional_field("ProvisionedThroughputOverride", option.None, decode.optional(decode_provisioned_throughput_struct_params()))
+  use restore_date_time <- decode.optional_field("RestoreDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use sse_specification_override <- decode.optional_field("SSESpecificationOverride", option.None, decode.optional(decode_sse_specification_struct_params()))
   use source_table_arn <- decode.optional_field("SourceTableArn", option.None, decode.optional(decode.string))
   use source_table_name <- decode.optional_field("SourceTableName", option.None, decode.optional(decode.string))
   use target_table_name <- decode.optional_field("TargetTableName", option.None, decode.optional(decode.string))
@@ -8494,6 +10708,13 @@ pub fn decode_restore_table_to_point_in_time_output_struct() -> decode.Decoder(R
   ))
 }
 
+pub fn decode_restore_table_to_point_in_time_output_struct_params() -> decode.Decoder(RestoreTableToPointInTimeOutput) {
+  use table_description <- decode.optional_field("TableDescription", option.None, decode.optional(decode_table_description_struct_params()))
+  decode.success(RestoreTableToPointInTimeOutput(
+    table_description: table_description,
+  ))
+}
+
 pub type InvalidRestoreTimeException {
   InvalidRestoreTimeException(
     message: option.Option(String),
@@ -8510,6 +10731,13 @@ pub fn encode_invalid_restore_time_exception_struct(input: InvalidRestoreTimeExc
 }
 
 pub fn decode_invalid_restore_time_exception_struct() -> decode.Decoder(InvalidRestoreTimeException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(InvalidRestoreTimeException(
+    message: message,
+  ))
+}
+
+pub fn decode_invalid_restore_time_exception_struct_params() -> decode.Decoder(InvalidRestoreTimeException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(InvalidRestoreTimeException(
     message: message,
@@ -8643,6 +10871,43 @@ pub fn decode_scan_input_struct() -> decode.Decoder(ScanInput) {
   ))
 }
 
+pub fn decode_scan_input_struct_params() -> decode.Decoder(ScanInput) {
+  use attributes_to_get <- decode.optional_field("AttributesToGet", option.None, decode.optional(decode.list(decode.string)))
+  use conditional_operator <- decode.optional_field("ConditionalOperator", option.None, decode.optional(decode_conditional_operator_enum()))
+  use consistent_read <- decode.optional_field("ConsistentRead", option.None, decode.optional(decode.bool))
+  use exclusive_start_key <- decode.optional_field("ExclusiveStartKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use filter_expression <- decode.optional_field("FilterExpression", option.None, decode.optional(decode.string))
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use limit <- decode.optional_field("Limit", option.None, decode.optional(decode.int))
+  use projection_expression <- decode.optional_field("ProjectionExpression", option.None, decode.optional(decode.string))
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  use scan_filter <- decode.optional_field("ScanFilter", option.None, decode.optional(decode.dict(decode.string, decode_condition_struct_params())))
+  use segment <- decode.optional_field("Segment", option.None, decode.optional(decode.int))
+  use select <- decode.optional_field("Select", option.None, decode.optional(decode_select_enum()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use total_segments <- decode.optional_field("TotalSegments", option.None, decode.optional(decode.int))
+  decode.success(ScanInput(
+    attributes_to_get: attributes_to_get,
+    conditional_operator: conditional_operator,
+    consistent_read: consistent_read,
+    exclusive_start_key: exclusive_start_key,
+    expression_attribute_names: expression_attribute_names,
+    expression_attribute_values: expression_attribute_values,
+    filter_expression: filter_expression,
+    index_name: index_name,
+    limit: limit,
+    projection_expression: projection_expression,
+    return_consumed_capacity: return_consumed_capacity,
+    scan_filter: scan_filter,
+    segment: segment,
+    select: select,
+    table_name: table_name,
+    total_segments: total_segments,
+  ))
+}
+
 pub type ScanOutput {
   ScanOutput(
     consumed_capacity: option.Option(ConsumedCapacity),
@@ -8693,6 +10958,21 @@ pub fn decode_scan_output_struct() -> decode.Decoder(ScanOutput) {
   ))
 }
 
+pub fn decode_scan_output_struct_params() -> decode.Decoder(ScanOutput) {
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
+  use count <- decode.optional_field("Count", option.None, decode.optional(decode.int))
+  use items <- decode.optional_field("Items", option.None, decode.optional(decode.list(decode.dict(decode.string, decode_attribute_value_union()))))
+  use last_evaluated_key <- decode.optional_field("LastEvaluatedKey", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use scanned_count <- decode.optional_field("ScannedCount", option.None, decode.optional(decode.int))
+  decode.success(ScanOutput(
+    consumed_capacity: consumed_capacity,
+    count: count,
+    items: items,
+    last_evaluated_key: last_evaluated_key,
+    scanned_count: scanned_count,
+  ))
+}
+
 pub type TagResourceInput {
   TagResourceInput(
     resource_arn: option.Option(String),
@@ -8716,6 +10996,15 @@ pub fn encode_tag_resource_input_struct(input: TagResourceInput) -> json.Json {
 pub fn decode_tag_resource_input_struct() -> decode.Decoder(TagResourceInput) {
   use resource_arn <- decode.optional_field("ResourceArn", option.None, decode.optional(decode.string))
   use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct())))
+  decode.success(TagResourceInput(
+    resource_arn: resource_arn,
+    tags: tags,
+  ))
+}
+
+pub fn decode_tag_resource_input_struct_params() -> decode.Decoder(TagResourceInput) {
+  use resource_arn <- decode.optional_field("ResourceArn", option.None, decode.optional(decode.string))
+  use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
   decode.success(TagResourceInput(
     resource_arn: resource_arn,
     tags: tags,
@@ -8751,6 +11040,15 @@ pub fn decode_transact_get_items_input_struct() -> decode.Decoder(TransactGetIte
   ))
 }
 
+pub fn decode_transact_get_items_input_struct_params() -> decode.Decoder(TransactGetItemsInput) {
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  use transact_items <- decode.optional_field("TransactItems", option.None, decode.optional(decode.list(decode_transact_get_item_struct_params())))
+  decode.success(TransactGetItemsInput(
+    return_consumed_capacity: return_consumed_capacity,
+    transact_items: transact_items,
+  ))
+}
+
 pub type TransactGetItem {
   TransactGetItem(
     get: option.Option(Get),
@@ -8768,6 +11066,13 @@ pub fn encode_transact_get_item_struct(input: TransactGetItem) -> json.Json {
 
 pub fn decode_transact_get_item_struct() -> decode.Decoder(TransactGetItem) {
   use get <- decode.optional_field("Get", option.None, decode.optional(decode_get_struct()))
+  decode.success(TransactGetItem(
+    get: get,
+  ))
+}
+
+pub fn decode_transact_get_item_struct_params() -> decode.Decoder(TransactGetItem) {
+  use get <- decode.optional_field("Get", option.None, decode.optional(decode_get_struct_params()))
   decode.success(TransactGetItem(
     get: get,
   ))
@@ -8816,6 +11121,19 @@ pub fn decode_get_struct() -> decode.Decoder(Get) {
   ))
 }
 
+pub fn decode_get_struct_params() -> decode.Decoder(Get) {
+  use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use projection_expression <- decode.optional_field("ProjectionExpression", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(Get(
+    expression_attribute_names: expression_attribute_names,
+    key: key,
+    projection_expression: projection_expression,
+    table_name: table_name,
+  ))
+}
+
 pub type TransactGetItemsOutput {
   TransactGetItemsOutput(
     consumed_capacity: option.Option(List(ConsumedCapacity)),
@@ -8839,6 +11157,15 @@ pub fn encode_transact_get_items_output_struct(input: TransactGetItemsOutput) ->
 pub fn decode_transact_get_items_output_struct() -> decode.Decoder(TransactGetItemsOutput) {
   use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct())))
   use responses <- decode.optional_field("Responses", option.None, decode.optional(decode.list(decode_item_response_struct())))
+  decode.success(TransactGetItemsOutput(
+    consumed_capacity: consumed_capacity,
+    responses: responses,
+  ))
+}
+
+pub fn decode_transact_get_items_output_struct_params() -> decode.Decoder(TransactGetItemsOutput) {
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct_params())))
+  use responses <- decode.optional_field("Responses", option.None, decode.optional(decode.list(decode_item_response_struct_params())))
   decode.success(TransactGetItemsOutput(
     consumed_capacity: consumed_capacity,
     responses: responses,
@@ -8880,6 +11207,19 @@ pub fn decode_transact_write_items_input_struct() -> decode.Decoder(TransactWrit
   use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
   use return_item_collection_metrics <- decode.optional_field("ReturnItemCollectionMetrics", option.None, decode.optional(decode_return_item_collection_metrics_enum()))
   use transact_items <- decode.optional_field("TransactItems", option.None, decode.optional(decode.list(decode_transact_write_item_struct())))
+  decode.success(TransactWriteItemsInput(
+    client_request_token: client_request_token,
+    return_consumed_capacity: return_consumed_capacity,
+    return_item_collection_metrics: return_item_collection_metrics,
+    transact_items: transact_items,
+  ))
+}
+
+pub fn decode_transact_write_items_input_struct_params() -> decode.Decoder(TransactWriteItemsInput) {
+  use client_request_token <- decode.optional_field("ClientRequestToken", option.None, decode.optional(decode.string))
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  use return_item_collection_metrics <- decode.optional_field("ReturnItemCollectionMetrics", option.None, decode.optional(decode_return_item_collection_metrics_enum()))
+  use transact_items <- decode.optional_field("TransactItems", option.None, decode.optional(decode.list(decode_transact_write_item_struct_params())))
   decode.success(TransactWriteItemsInput(
     client_request_token: client_request_token,
     return_consumed_capacity: return_consumed_capacity,
@@ -8931,6 +11271,19 @@ pub fn decode_transact_write_item_struct() -> decode.Decoder(TransactWriteItem) 
   ))
 }
 
+pub fn decode_transact_write_item_struct_params() -> decode.Decoder(TransactWriteItem) {
+  use condition_check <- decode.optional_field("ConditionCheck", option.None, decode.optional(decode_condition_check_struct_params()))
+  use delete <- decode.optional_field("Delete", option.None, decode.optional(decode_delete_struct_params()))
+  use put <- decode.optional_field("Put", option.None, decode.optional(decode_put_struct_params()))
+  use update <- decode.optional_field("Update", option.None, decode.optional(decode_update_struct_params()))
+  decode.success(TransactWriteItem(
+    condition_check: condition_check,
+    delete: delete,
+    put: put,
+    update: update,
+  ))
+}
+
 pub type ConditionCheck {
   ConditionCheck(
     condition_expression: option.Option(String),
@@ -8972,6 +11325,23 @@ pub fn encode_condition_check_struct(input: ConditionCheck) -> json.Json {
 }
 
 pub fn decode_condition_check_struct() -> decode.Decoder(ConditionCheck) {
+  use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
+  use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(ConditionCheck(
+    condition_expression: condition_expression,
+    expression_attribute_names: expression_attribute_names,
+    expression_attribute_values: expression_attribute_values,
+    key: key,
+    return_values_on_condition_check_failure: return_values_on_condition_check_failure,
+    table_name: table_name,
+  ))
+}
+
+pub fn decode_condition_check_struct_params() -> decode.Decoder(ConditionCheck) {
   use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
@@ -9045,6 +11415,23 @@ pub fn decode_delete_struct() -> decode.Decoder(Delete) {
   ))
 }
 
+pub fn decode_delete_struct_params() -> decode.Decoder(Delete) {
+  use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
+  use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(Delete(
+    condition_expression: condition_expression,
+    expression_attribute_names: expression_attribute_names,
+    expression_attribute_values: expression_attribute_values,
+    key: key,
+    return_values_on_condition_check_failure: return_values_on_condition_check_failure,
+    table_name: table_name,
+  ))
+}
+
 pub type Put {
   Put(
     condition_expression: option.Option(String),
@@ -9086,6 +11473,23 @@ pub fn encode_put_struct(input: Put) -> json.Json {
 }
 
 pub fn decode_put_struct() -> decode.Decoder(Put) {
+  use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
+  use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use item <- decode.optional_field("Item", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(Put(
+    condition_expression: condition_expression,
+    expression_attribute_names: expression_attribute_names,
+    expression_attribute_values: expression_attribute_values,
+    item: item,
+    return_values_on_condition_check_failure: return_values_on_condition_check_failure,
+    table_name: table_name,
+  ))
+}
+
+pub fn decode_put_struct_params() -> decode.Decoder(Put) {
   use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
   use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
@@ -9166,6 +11570,25 @@ pub fn decode_update_struct() -> decode.Decoder(Update) {
   ))
 }
 
+pub fn decode_update_struct_params() -> decode.Decoder(Update) {
+  use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
+  use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use update_expression <- decode.optional_field("UpdateExpression", option.None, decode.optional(decode.string))
+  decode.success(Update(
+    condition_expression: condition_expression,
+    expression_attribute_names: expression_attribute_names,
+    expression_attribute_values: expression_attribute_values,
+    key: key,
+    return_values_on_condition_check_failure: return_values_on_condition_check_failure,
+    table_name: table_name,
+    update_expression: update_expression,
+  ))
+}
+
 pub type TransactWriteItemsOutput {
   TransactWriteItemsOutput(
     consumed_capacity: option.Option(List(ConsumedCapacity)),
@@ -9195,6 +11618,15 @@ pub fn decode_transact_write_items_output_struct() -> decode.Decoder(TransactWri
   ))
 }
 
+pub fn decode_transact_write_items_output_struct_params() -> decode.Decoder(TransactWriteItemsOutput) {
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode.list(decode_consumed_capacity_struct_params())))
+  use item_collection_metrics <- decode.optional_field("ItemCollectionMetrics", option.None, decode.optional(decode.dict(decode.string, decode.list(decode_item_collection_metrics_struct_params()))))
+  decode.success(TransactWriteItemsOutput(
+    consumed_capacity: consumed_capacity,
+    item_collection_metrics: item_collection_metrics,
+  ))
+}
+
 pub type UntagResourceInput {
   UntagResourceInput(
     resource_arn: option.Option(String),
@@ -9216,6 +11648,15 @@ pub fn encode_untag_resource_input_struct(input: UntagResourceInput) -> json.Jso
 }
 
 pub fn decode_untag_resource_input_struct() -> decode.Decoder(UntagResourceInput) {
+  use resource_arn <- decode.optional_field("ResourceArn", option.None, decode.optional(decode.string))
+  use tag_keys <- decode.optional_field("TagKeys", option.None, decode.optional(decode.list(decode.string)))
+  decode.success(UntagResourceInput(
+    resource_arn: resource_arn,
+    tag_keys: tag_keys,
+  ))
+}
+
+pub fn decode_untag_resource_input_struct_params() -> decode.Decoder(UntagResourceInput) {
   use resource_arn <- decode.optional_field("ResourceArn", option.None, decode.optional(decode.string))
   use tag_keys <- decode.optional_field("TagKeys", option.None, decode.optional(decode.list(decode.string)))
   decode.success(UntagResourceInput(
@@ -9253,6 +11694,15 @@ pub fn decode_update_continuous_backups_input_struct() -> decode.Decoder(UpdateC
   ))
 }
 
+pub fn decode_update_continuous_backups_input_struct_params() -> decode.Decoder(UpdateContinuousBackupsInput) {
+  use point_in_time_recovery_specification <- decode.optional_field("PointInTimeRecoverySpecification", option.None, decode.optional(decode_point_in_time_recovery_specification_struct_params()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(UpdateContinuousBackupsInput(
+    point_in_time_recovery_specification: point_in_time_recovery_specification,
+    table_name: table_name,
+  ))
+}
+
 pub type PointInTimeRecoverySpecification {
   PointInTimeRecoverySpecification(
     point_in_time_recovery_enabled: option.Option(Bool),
@@ -9282,6 +11732,15 @@ pub fn decode_point_in_time_recovery_specification_struct() -> decode.Decoder(Po
   ))
 }
 
+pub fn decode_point_in_time_recovery_specification_struct_params() -> decode.Decoder(PointInTimeRecoverySpecification) {
+  use point_in_time_recovery_enabled <- decode.optional_field("PointInTimeRecoveryEnabled", option.None, decode.optional(decode.bool))
+  use recovery_period_in_days <- decode.optional_field("RecoveryPeriodInDays", option.None, decode.optional(decode.int))
+  decode.success(PointInTimeRecoverySpecification(
+    point_in_time_recovery_enabled: point_in_time_recovery_enabled,
+    recovery_period_in_days: recovery_period_in_days,
+  ))
+}
+
 pub type UpdateContinuousBackupsOutput {
   UpdateContinuousBackupsOutput(
     continuous_backups_description: option.Option(ContinuousBackupsDescription),
@@ -9299,6 +11758,13 @@ pub fn encode_update_continuous_backups_output_struct(input: UpdateContinuousBac
 
 pub fn decode_update_continuous_backups_output_struct() -> decode.Decoder(UpdateContinuousBackupsOutput) {
   use continuous_backups_description <- decode.optional_field("ContinuousBackupsDescription", option.None, decode.optional(decode_continuous_backups_description_struct()))
+  decode.success(UpdateContinuousBackupsOutput(
+    continuous_backups_description: continuous_backups_description,
+  ))
+}
+
+pub fn decode_update_continuous_backups_output_struct_params() -> decode.Decoder(UpdateContinuousBackupsOutput) {
+  use continuous_backups_description <- decode.optional_field("ContinuousBackupsDescription", option.None, decode.optional(decode_continuous_backups_description_struct_params()))
   decode.success(UpdateContinuousBackupsOutput(
     continuous_backups_description: continuous_backups_description,
   ))
@@ -9335,6 +11801,19 @@ pub fn encode_update_contributor_insights_input_struct(input: UpdateContributorI
 }
 
 pub fn decode_update_contributor_insights_input_struct() -> decode.Decoder(UpdateContributorInsightsInput) {
+  use contributor_insights_action <- decode.optional_field("ContributorInsightsAction", option.None, decode.optional(decode_contributor_insights_action_enum()))
+  use contributor_insights_mode <- decode.optional_field("ContributorInsightsMode", option.None, decode.optional(decode_contributor_insights_mode_enum()))
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(UpdateContributorInsightsInput(
+    contributor_insights_action: contributor_insights_action,
+    contributor_insights_mode: contributor_insights_mode,
+    index_name: index_name,
+    table_name: table_name,
+  ))
+}
+
+pub fn decode_update_contributor_insights_input_struct_params() -> decode.Decoder(UpdateContributorInsightsInput) {
   use contributor_insights_action <- decode.optional_field("ContributorInsightsAction", option.None, decode.optional(decode_contributor_insights_action_enum()))
   use contributor_insights_mode <- decode.optional_field("ContributorInsightsMode", option.None, decode.optional(decode_contributor_insights_mode_enum()))
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
@@ -9412,6 +11891,19 @@ pub fn decode_update_contributor_insights_output_struct() -> decode.Decoder(Upda
   ))
 }
 
+pub fn decode_update_contributor_insights_output_struct_params() -> decode.Decoder(UpdateContributorInsightsOutput) {
+  use contributor_insights_mode <- decode.optional_field("ContributorInsightsMode", option.None, decode.optional(decode_contributor_insights_mode_enum()))
+  use contributor_insights_status <- decode.optional_field("ContributorInsightsStatus", option.None, decode.optional(decode_contributor_insights_status_enum()))
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(UpdateContributorInsightsOutput(
+    contributor_insights_mode: contributor_insights_mode,
+    contributor_insights_status: contributor_insights_status,
+    index_name: index_name,
+    table_name: table_name,
+  ))
+}
+
 pub type UpdateGlobalTableInput {
   UpdateGlobalTableInput(
     global_table_name: option.Option(String),
@@ -9435,6 +11927,15 @@ pub fn encode_update_global_table_input_struct(input: UpdateGlobalTableInput) ->
 pub fn decode_update_global_table_input_struct() -> decode.Decoder(UpdateGlobalTableInput) {
   use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
   use replica_updates <- decode.optional_field("ReplicaUpdates", option.None, decode.optional(decode.list(decode_replica_update_struct())))
+  decode.success(UpdateGlobalTableInput(
+    global_table_name: global_table_name,
+    replica_updates: replica_updates,
+  ))
+}
+
+pub fn decode_update_global_table_input_struct_params() -> decode.Decoder(UpdateGlobalTableInput) {
+  use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
+  use replica_updates <- decode.optional_field("ReplicaUpdates", option.None, decode.optional(decode.list(decode_replica_update_struct_params())))
   decode.success(UpdateGlobalTableInput(
     global_table_name: global_table_name,
     replica_updates: replica_updates,
@@ -9470,6 +11971,15 @@ pub fn decode_replica_update_struct() -> decode.Decoder(ReplicaUpdate) {
   ))
 }
 
+pub fn decode_replica_update_struct_params() -> decode.Decoder(ReplicaUpdate) {
+  use create <- decode.optional_field("Create", option.None, decode.optional(decode_create_replica_action_struct_params()))
+  use delete <- decode.optional_field("Delete", option.None, decode.optional(decode_delete_replica_action_struct_params()))
+  decode.success(ReplicaUpdate(
+    create: create,
+    delete: delete,
+  ))
+}
+
 pub type CreateReplicaAction {
   CreateReplicaAction(
     region_name: option.Option(String),
@@ -9486,6 +11996,13 @@ pub fn encode_create_replica_action_struct(input: CreateReplicaAction) -> json.J
 }
 
 pub fn decode_create_replica_action_struct() -> decode.Decoder(CreateReplicaAction) {
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  decode.success(CreateReplicaAction(
+    region_name: region_name,
+  ))
+}
+
+pub fn decode_create_replica_action_struct_params() -> decode.Decoder(CreateReplicaAction) {
   use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
   decode.success(CreateReplicaAction(
     region_name: region_name,
@@ -9514,6 +12031,13 @@ pub fn decode_delete_replica_action_struct() -> decode.Decoder(DeleteReplicaActi
   ))
 }
 
+pub fn decode_delete_replica_action_struct_params() -> decode.Decoder(DeleteReplicaAction) {
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  decode.success(DeleteReplicaAction(
+    region_name: region_name,
+  ))
+}
+
 pub type UpdateGlobalTableOutput {
   UpdateGlobalTableOutput(
     global_table_description: option.Option(GlobalTableDescription),
@@ -9531,6 +12055,13 @@ pub fn encode_update_global_table_output_struct(input: UpdateGlobalTableOutput) 
 
 pub fn decode_update_global_table_output_struct() -> decode.Decoder(UpdateGlobalTableOutput) {
   use global_table_description <- decode.optional_field("GlobalTableDescription", option.None, decode.optional(decode_global_table_description_struct()))
+  decode.success(UpdateGlobalTableOutput(
+    global_table_description: global_table_description,
+  ))
+}
+
+pub fn decode_update_global_table_output_struct_params() -> decode.Decoder(UpdateGlobalTableOutput) {
+  use global_table_description <- decode.optional_field("GlobalTableDescription", option.None, decode.optional(decode_global_table_description_struct_params()))
   decode.success(UpdateGlobalTableOutput(
     global_table_description: global_table_description,
   ))
@@ -9558,6 +12089,13 @@ pub fn decode_replica_already_exists_exception_struct() -> decode.Decoder(Replic
   ))
 }
 
+pub fn decode_replica_already_exists_exception_struct_params() -> decode.Decoder(ReplicaAlreadyExistsException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ReplicaAlreadyExistsException(
+    message: message,
+  ))
+}
+
 pub type ReplicaNotFoundException {
   ReplicaNotFoundException(
     message: option.Option(String),
@@ -9574,6 +12112,13 @@ pub fn encode_replica_not_found_exception_struct(input: ReplicaNotFoundException
 }
 
 pub fn decode_replica_not_found_exception_struct() -> decode.Decoder(ReplicaNotFoundException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ReplicaNotFoundException(
+    message: message,
+  ))
+}
+
+pub fn decode_replica_not_found_exception_struct_params() -> decode.Decoder(ReplicaNotFoundException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ReplicaNotFoundException(
     message: message,
@@ -9637,6 +12182,23 @@ pub fn decode_update_global_table_settings_input_struct() -> decode.Decoder(Upda
   ))
 }
 
+pub fn decode_update_global_table_settings_input_struct_params() -> decode.Decoder(UpdateGlobalTableSettingsInput) {
+  use global_table_billing_mode <- decode.optional_field("GlobalTableBillingMode", option.None, decode.optional(decode_billing_mode_enum()))
+  use global_table_global_secondary_index_settings_update <- decode.optional_field("GlobalTableGlobalSecondaryIndexSettingsUpdate", option.None, decode.optional(decode.list(decode_global_table_global_secondary_index_settings_update_struct_params())))
+  use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
+  use global_table_provisioned_write_capacity_auto_scaling_settings_update <- decode.optional_field("GlobalTableProvisionedWriteCapacityAutoScalingSettingsUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct_params()))
+  use global_table_provisioned_write_capacity_units <- decode.optional_field("GlobalTableProvisionedWriteCapacityUnits", option.None, decode.optional(decode.int))
+  use replica_settings_update <- decode.optional_field("ReplicaSettingsUpdate", option.None, decode.optional(decode.list(decode_replica_settings_update_struct_params())))
+  decode.success(UpdateGlobalTableSettingsInput(
+    global_table_billing_mode: global_table_billing_mode,
+    global_table_global_secondary_index_settings_update: global_table_global_secondary_index_settings_update,
+    global_table_name: global_table_name,
+    global_table_provisioned_write_capacity_auto_scaling_settings_update: global_table_provisioned_write_capacity_auto_scaling_settings_update,
+    global_table_provisioned_write_capacity_units: global_table_provisioned_write_capacity_units,
+    replica_settings_update: replica_settings_update,
+  ))
+}
+
 pub type GlobalTableGlobalSecondaryIndexSettingsUpdate {
   GlobalTableGlobalSecondaryIndexSettingsUpdate(
     index_name: option.Option(String),
@@ -9665,6 +12227,17 @@ pub fn encode_global_table_global_secondary_index_settings_update_struct(input: 
 pub fn decode_global_table_global_secondary_index_settings_update_struct() -> decode.Decoder(GlobalTableGlobalSecondaryIndexSettingsUpdate) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use provisioned_write_capacity_auto_scaling_settings_update <- decode.optional_field("ProvisionedWriteCapacityAutoScalingSettingsUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct()))
+  use provisioned_write_capacity_units <- decode.optional_field("ProvisionedWriteCapacityUnits", option.None, decode.optional(decode.int))
+  decode.success(GlobalTableGlobalSecondaryIndexSettingsUpdate(
+    index_name: index_name,
+    provisioned_write_capacity_auto_scaling_settings_update: provisioned_write_capacity_auto_scaling_settings_update,
+    provisioned_write_capacity_units: provisioned_write_capacity_units,
+  ))
+}
+
+pub fn decode_global_table_global_secondary_index_settings_update_struct_params() -> decode.Decoder(GlobalTableGlobalSecondaryIndexSettingsUpdate) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use provisioned_write_capacity_auto_scaling_settings_update <- decode.optional_field("ProvisionedWriteCapacityAutoScalingSettingsUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct_params()))
   use provisioned_write_capacity_units <- decode.optional_field("ProvisionedWriteCapacityUnits", option.None, decode.optional(decode.int))
   decode.success(GlobalTableGlobalSecondaryIndexSettingsUpdate(
     index_name: index_name,
@@ -9723,6 +12296,21 @@ pub fn decode_auto_scaling_settings_update_struct() -> decode.Decoder(AutoScalin
   ))
 }
 
+pub fn decode_auto_scaling_settings_update_struct_params() -> decode.Decoder(AutoScalingSettingsUpdate) {
+  use auto_scaling_disabled <- decode.optional_field("AutoScalingDisabled", option.None, decode.optional(decode.bool))
+  use auto_scaling_role_arn <- decode.optional_field("AutoScalingRoleArn", option.None, decode.optional(decode.string))
+  use maximum_units <- decode.optional_field("MaximumUnits", option.None, decode.optional(decode.int))
+  use minimum_units <- decode.optional_field("MinimumUnits", option.None, decode.optional(decode.int))
+  use scaling_policy_update <- decode.optional_field("ScalingPolicyUpdate", option.None, decode.optional(decode_auto_scaling_policy_update_struct_params()))
+  decode.success(AutoScalingSettingsUpdate(
+    auto_scaling_disabled: auto_scaling_disabled,
+    auto_scaling_role_arn: auto_scaling_role_arn,
+    maximum_units: maximum_units,
+    minimum_units: minimum_units,
+    scaling_policy_update: scaling_policy_update,
+  ))
+}
+
 pub type AutoScalingPolicyUpdate {
   AutoScalingPolicyUpdate(
     policy_name: option.Option(String),
@@ -9746,6 +12334,15 @@ pub fn encode_auto_scaling_policy_update_struct(input: AutoScalingPolicyUpdate) 
 pub fn decode_auto_scaling_policy_update_struct() -> decode.Decoder(AutoScalingPolicyUpdate) {
   use policy_name <- decode.optional_field("PolicyName", option.None, decode.optional(decode.string))
   use target_tracking_scaling_policy_configuration <- decode.optional_field("TargetTrackingScalingPolicyConfiguration", option.None, decode.optional(decode_auto_scaling_target_tracking_scaling_policy_configuration_update_struct()))
+  decode.success(AutoScalingPolicyUpdate(
+    policy_name: policy_name,
+    target_tracking_scaling_policy_configuration: target_tracking_scaling_policy_configuration,
+  ))
+}
+
+pub fn decode_auto_scaling_policy_update_struct_params() -> decode.Decoder(AutoScalingPolicyUpdate) {
+  use policy_name <- decode.optional_field("PolicyName", option.None, decode.optional(decode.string))
+  use target_tracking_scaling_policy_configuration <- decode.optional_field("TargetTrackingScalingPolicyConfiguration", option.None, decode.optional(decode_auto_scaling_target_tracking_scaling_policy_configuration_update_struct_params()))
   decode.success(AutoScalingPolicyUpdate(
     policy_name: policy_name,
     target_tracking_scaling_policy_configuration: target_tracking_scaling_policy_configuration,
@@ -9783,6 +12380,19 @@ pub fn encode_auto_scaling_target_tracking_scaling_policy_configuration_update_s
 }
 
 pub fn decode_auto_scaling_target_tracking_scaling_policy_configuration_update_struct() -> decode.Decoder(AutoScalingTargetTrackingScalingPolicyConfigurationUpdate) {
+  use disable_scale_in <- decode.optional_field("DisableScaleIn", option.None, decode.optional(decode.bool))
+  use scale_in_cooldown <- decode.optional_field("ScaleInCooldown", option.None, decode.optional(decode.int))
+  use scale_out_cooldown <- decode.optional_field("ScaleOutCooldown", option.None, decode.optional(decode.int))
+  use target_value <- decode.optional_field("TargetValue", option.None, decode.optional(json_float.decoder()))
+  decode.success(AutoScalingTargetTrackingScalingPolicyConfigurationUpdate(
+    disable_scale_in: disable_scale_in,
+    scale_in_cooldown: scale_in_cooldown,
+    scale_out_cooldown: scale_out_cooldown,
+    target_value: target_value,
+  ))
+}
+
+pub fn decode_auto_scaling_target_tracking_scaling_policy_configuration_update_struct_params() -> decode.Decoder(AutoScalingTargetTrackingScalingPolicyConfigurationUpdate) {
   use disable_scale_in <- decode.optional_field("DisableScaleIn", option.None, decode.optional(decode.bool))
   use scale_in_cooldown <- decode.optional_field("ScaleInCooldown", option.None, decode.optional(decode.int))
   use scale_out_cooldown <- decode.optional_field("ScaleOutCooldown", option.None, decode.optional(decode.int))
@@ -9845,6 +12455,21 @@ pub fn decode_replica_settings_update_struct() -> decode.Decoder(ReplicaSettings
   ))
 }
 
+pub fn decode_replica_settings_update_struct_params() -> decode.Decoder(ReplicaSettingsUpdate) {
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  use replica_global_secondary_index_settings_update <- decode.optional_field("ReplicaGlobalSecondaryIndexSettingsUpdate", option.None, decode.optional(decode.list(decode_replica_global_secondary_index_settings_update_struct_params())))
+  use replica_provisioned_read_capacity_auto_scaling_settings_update <- decode.optional_field("ReplicaProvisionedReadCapacityAutoScalingSettingsUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct_params()))
+  use replica_provisioned_read_capacity_units <- decode.optional_field("ReplicaProvisionedReadCapacityUnits", option.None, decode.optional(decode.int))
+  use replica_table_class <- decode.optional_field("ReplicaTableClass", option.None, decode.optional(decode_table_class_enum()))
+  decode.success(ReplicaSettingsUpdate(
+    region_name: region_name,
+    replica_global_secondary_index_settings_update: replica_global_secondary_index_settings_update,
+    replica_provisioned_read_capacity_auto_scaling_settings_update: replica_provisioned_read_capacity_auto_scaling_settings_update,
+    replica_provisioned_read_capacity_units: replica_provisioned_read_capacity_units,
+    replica_table_class: replica_table_class,
+  ))
+}
+
 pub type ReplicaGlobalSecondaryIndexSettingsUpdate {
   ReplicaGlobalSecondaryIndexSettingsUpdate(
     index_name: option.Option(String),
@@ -9873,6 +12498,17 @@ pub fn encode_replica_global_secondary_index_settings_update_struct(input: Repli
 pub fn decode_replica_global_secondary_index_settings_update_struct() -> decode.Decoder(ReplicaGlobalSecondaryIndexSettingsUpdate) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use provisioned_read_capacity_auto_scaling_settings_update <- decode.optional_field("ProvisionedReadCapacityAutoScalingSettingsUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct()))
+  use provisioned_read_capacity_units <- decode.optional_field("ProvisionedReadCapacityUnits", option.None, decode.optional(decode.int))
+  decode.success(ReplicaGlobalSecondaryIndexSettingsUpdate(
+    index_name: index_name,
+    provisioned_read_capacity_auto_scaling_settings_update: provisioned_read_capacity_auto_scaling_settings_update,
+    provisioned_read_capacity_units: provisioned_read_capacity_units,
+  ))
+}
+
+pub fn decode_replica_global_secondary_index_settings_update_struct_params() -> decode.Decoder(ReplicaGlobalSecondaryIndexSettingsUpdate) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use provisioned_read_capacity_auto_scaling_settings_update <- decode.optional_field("ProvisionedReadCapacityAutoScalingSettingsUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct_params()))
   use provisioned_read_capacity_units <- decode.optional_field("ProvisionedReadCapacityUnits", option.None, decode.optional(decode.int))
   decode.success(ReplicaGlobalSecondaryIndexSettingsUpdate(
     index_name: index_name,
@@ -9910,6 +12546,15 @@ pub fn decode_update_global_table_settings_output_struct() -> decode.Decoder(Upd
   ))
 }
 
+pub fn decode_update_global_table_settings_output_struct_params() -> decode.Decoder(UpdateGlobalTableSettingsOutput) {
+  use global_table_name <- decode.optional_field("GlobalTableName", option.None, decode.optional(decode.string))
+  use replica_settings <- decode.optional_field("ReplicaSettings", option.None, decode.optional(decode.list(decode_replica_settings_description_struct_params())))
+  decode.success(UpdateGlobalTableSettingsOutput(
+    global_table_name: global_table_name,
+    replica_settings: replica_settings,
+  ))
+}
+
 pub type IndexNotFoundException {
   IndexNotFoundException(
     message: option.Option(String),
@@ -9926,6 +12571,13 @@ pub fn encode_index_not_found_exception_struct(input: IndexNotFoundException) ->
 }
 
 pub fn decode_index_not_found_exception_struct() -> decode.Decoder(IndexNotFoundException) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(IndexNotFoundException(
+    message: message,
+  ))
+}
+
+pub fn decode_index_not_found_exception_struct_params() -> decode.Decoder(IndexNotFoundException) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(IndexNotFoundException(
     message: message,
@@ -10038,6 +12690,37 @@ pub fn decode_update_item_input_struct() -> decode.Decoder(UpdateItemInput) {
   ))
 }
 
+pub fn decode_update_item_input_struct_params() -> decode.Decoder(UpdateItemInput) {
+  use attribute_updates <- decode.optional_field("AttributeUpdates", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_update_struct_params())))
+  use condition_expression <- decode.optional_field("ConditionExpression", option.None, decode.optional(decode.string))
+  use conditional_operator <- decode.optional_field("ConditionalOperator", option.None, decode.optional(decode_conditional_operator_enum()))
+  use expected <- decode.optional_field("Expected", option.None, decode.optional(decode.dict(decode.string, decode_expected_attribute_value_struct_params())))
+  use expression_attribute_names <- decode.optional_field("ExpressionAttributeNames", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use expression_attribute_values <- decode.optional_field("ExpressionAttributeValues", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use return_consumed_capacity <- decode.optional_field("ReturnConsumedCapacity", option.None, decode.optional(decode_return_consumed_capacity_enum()))
+  use return_item_collection_metrics <- decode.optional_field("ReturnItemCollectionMetrics", option.None, decode.optional(decode_return_item_collection_metrics_enum()))
+  use return_values <- decode.optional_field("ReturnValues", option.None, decode.optional(decode_return_value_enum()))
+  use return_values_on_condition_check_failure <- decode.optional_field("ReturnValuesOnConditionCheckFailure", option.None, decode.optional(decode_return_values_on_condition_check_failure_enum()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use update_expression <- decode.optional_field("UpdateExpression", option.None, decode.optional(decode.string))
+  decode.success(UpdateItemInput(
+    attribute_updates: attribute_updates,
+    condition_expression: condition_expression,
+    conditional_operator: conditional_operator,
+    expected: expected,
+    expression_attribute_names: expression_attribute_names,
+    expression_attribute_values: expression_attribute_values,
+    key: key,
+    return_consumed_capacity: return_consumed_capacity,
+    return_item_collection_metrics: return_item_collection_metrics,
+    return_values: return_values,
+    return_values_on_condition_check_failure: return_values_on_condition_check_failure,
+    table_name: table_name,
+    update_expression: update_expression,
+  ))
+}
+
 pub type AttributeValueUpdate {
   AttributeValueUpdate(
     action: option.Option(AttributeAction),
@@ -10059,6 +12742,15 @@ pub fn encode_attribute_value_update_struct(input: AttributeValueUpdate) -> json
 }
 
 pub fn decode_attribute_value_update_struct() -> decode.Decoder(AttributeValueUpdate) {
+  use action <- decode.optional_field("Action", option.None, decode.optional(decode_attribute_action_enum()))
+  use value <- decode.optional_field("Value", option.None, decode.optional(decode_attribute_value_union()))
+  decode.success(AttributeValueUpdate(
+    action: action,
+    value: value,
+  ))
+}
+
+pub fn decode_attribute_value_update_struct_params() -> decode.Decoder(AttributeValueUpdate) {
   use action <- decode.optional_field("Action", option.None, decode.optional(decode_attribute_action_enum()))
   use value <- decode.optional_field("Value", option.None, decode.optional(decode_attribute_value_union()))
   decode.success(AttributeValueUpdate(
@@ -10128,6 +12820,17 @@ pub fn decode_update_item_output_struct() -> decode.Decoder(UpdateItemOutput) {
   ))
 }
 
+pub fn decode_update_item_output_struct_params() -> decode.Decoder(UpdateItemOutput) {
+  use attributes <- decode.optional_field("Attributes", option.None, decode.optional(decode.dict(decode.string, decode_attribute_value_union())))
+  use consumed_capacity <- decode.optional_field("ConsumedCapacity", option.None, decode.optional(decode_consumed_capacity_struct_params()))
+  use item_collection_metrics <- decode.optional_field("ItemCollectionMetrics", option.None, decode.optional(decode_item_collection_metrics_struct_params()))
+  decode.success(UpdateItemOutput(
+    attributes: attributes,
+    consumed_capacity: consumed_capacity,
+    item_collection_metrics: item_collection_metrics,
+  ))
+}
+
 pub type UpdateKinesisStreamingDestinationInput {
   UpdateKinesisStreamingDestinationInput(
     stream_arn: option.Option(String),
@@ -10164,6 +12867,17 @@ pub fn decode_update_kinesis_streaming_destination_input_struct() -> decode.Deco
   ))
 }
 
+pub fn decode_update_kinesis_streaming_destination_input_struct_params() -> decode.Decoder(UpdateKinesisStreamingDestinationInput) {
+  use stream_arn <- decode.optional_field("StreamArn", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use update_kinesis_streaming_configuration <- decode.optional_field("UpdateKinesisStreamingConfiguration", option.None, decode.optional(decode_update_kinesis_streaming_configuration_struct_params()))
+  decode.success(UpdateKinesisStreamingDestinationInput(
+    stream_arn: stream_arn,
+    table_name: table_name,
+    update_kinesis_streaming_configuration: update_kinesis_streaming_configuration,
+  ))
+}
+
 pub type UpdateKinesisStreamingConfiguration {
   UpdateKinesisStreamingConfiguration(
     approximate_creation_date_time_precision: option.Option(ApproximateCreationDateTimePrecision),
@@ -10180,6 +12894,13 @@ pub fn encode_update_kinesis_streaming_configuration_struct(input: UpdateKinesis
 }
 
 pub fn decode_update_kinesis_streaming_configuration_struct() -> decode.Decoder(UpdateKinesisStreamingConfiguration) {
+  use approximate_creation_date_time_precision <- decode.optional_field("ApproximateCreationDateTimePrecision", option.None, decode.optional(decode_approximate_creation_date_time_precision_enum()))
+  decode.success(UpdateKinesisStreamingConfiguration(
+    approximate_creation_date_time_precision: approximate_creation_date_time_precision,
+  ))
+}
+
+pub fn decode_update_kinesis_streaming_configuration_struct_params() -> decode.Decoder(UpdateKinesisStreamingConfiguration) {
   use approximate_creation_date_time_precision <- decode.optional_field("ApproximateCreationDateTimePrecision", option.None, decode.optional(decode_approximate_creation_date_time_precision_enum()))
   decode.success(UpdateKinesisStreamingConfiguration(
     approximate_creation_date_time_precision: approximate_creation_date_time_precision,
@@ -10221,6 +12942,19 @@ pub fn decode_update_kinesis_streaming_destination_output_struct() -> decode.Dec
   use stream_arn <- decode.optional_field("StreamArn", option.None, decode.optional(decode.string))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   use update_kinesis_streaming_configuration <- decode.optional_field("UpdateKinesisStreamingConfiguration", option.None, decode.optional(decode_update_kinesis_streaming_configuration_struct()))
+  decode.success(UpdateKinesisStreamingDestinationOutput(
+    destination_status: destination_status,
+    stream_arn: stream_arn,
+    table_name: table_name,
+    update_kinesis_streaming_configuration: update_kinesis_streaming_configuration,
+  ))
+}
+
+pub fn decode_update_kinesis_streaming_destination_output_struct_params() -> decode.Decoder(UpdateKinesisStreamingDestinationOutput) {
+  use destination_status <- decode.optional_field("DestinationStatus", option.None, decode.optional(decode_destination_status_enum()))
+  use stream_arn <- decode.optional_field("StreamArn", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use update_kinesis_streaming_configuration <- decode.optional_field("UpdateKinesisStreamingConfiguration", option.None, decode.optional(decode_update_kinesis_streaming_configuration_struct_params()))
   decode.success(UpdateKinesisStreamingDestinationOutput(
     destination_status: destination_status,
     stream_arn: stream_arn,
@@ -10349,6 +13083,41 @@ pub fn decode_update_table_input_struct() -> decode.Decoder(UpdateTableInput) {
   ))
 }
 
+pub fn decode_update_table_input_struct_params() -> decode.Decoder(UpdateTableInput) {
+  use attribute_definitions <- decode.optional_field("AttributeDefinitions", option.None, decode.optional(decode.list(decode_attribute_definition_struct_params())))
+  use billing_mode <- decode.optional_field("BillingMode", option.None, decode.optional(decode_billing_mode_enum()))
+  use deletion_protection_enabled <- decode.optional_field("DeletionProtectionEnabled", option.None, decode.optional(decode.bool))
+  use global_secondary_index_updates <- decode.optional_field("GlobalSecondaryIndexUpdates", option.None, decode.optional(decode.list(decode_global_secondary_index_update_struct_params())))
+  use global_table_settings_replication_mode <- decode.optional_field("GlobalTableSettingsReplicationMode", option.None, decode.optional(decode_global_table_settings_replication_mode_enum()))
+  use global_table_witness_updates <- decode.optional_field("GlobalTableWitnessUpdates", option.None, decode.optional(decode.list(decode_global_table_witness_group_update_struct_params())))
+  use multi_region_consistency <- decode.optional_field("MultiRegionConsistency", option.None, decode.optional(decode_multi_region_consistency_enum()))
+  use on_demand_throughput <- decode.optional_field("OnDemandThroughput", option.None, decode.optional(decode_on_demand_throughput_struct_params()))
+  use provisioned_throughput <- decode.optional_field("ProvisionedThroughput", option.None, decode.optional(decode_provisioned_throughput_struct_params()))
+  use replica_updates <- decode.optional_field("ReplicaUpdates", option.None, decode.optional(decode.list(decode_replication_group_update_struct_params())))
+  use sse_specification <- decode.optional_field("SSESpecification", option.None, decode.optional(decode_sse_specification_struct_params()))
+  use stream_specification <- decode.optional_field("StreamSpecification", option.None, decode.optional(decode_stream_specification_struct_params()))
+  use table_class <- decode.optional_field("TableClass", option.None, decode.optional(decode_table_class_enum()))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use warm_throughput <- decode.optional_field("WarmThroughput", option.None, decode.optional(decode_warm_throughput_struct_params()))
+  decode.success(UpdateTableInput(
+    attribute_definitions: attribute_definitions,
+    billing_mode: billing_mode,
+    deletion_protection_enabled: deletion_protection_enabled,
+    global_secondary_index_updates: global_secondary_index_updates,
+    global_table_settings_replication_mode: global_table_settings_replication_mode,
+    global_table_witness_updates: global_table_witness_updates,
+    multi_region_consistency: multi_region_consistency,
+    on_demand_throughput: on_demand_throughput,
+    provisioned_throughput: provisioned_throughput,
+    replica_updates: replica_updates,
+    sse_specification: sse_specification,
+    stream_specification: stream_specification,
+    table_class: table_class,
+    table_name: table_name,
+    warm_throughput: warm_throughput,
+  ))
+}
+
 pub type GlobalSecondaryIndexUpdate {
   GlobalSecondaryIndexUpdate(
     create: option.Option(CreateGlobalSecondaryIndexAction),
@@ -10378,6 +13147,17 @@ pub fn decode_global_secondary_index_update_struct() -> decode.Decoder(GlobalSec
   use create <- decode.optional_field("Create", option.None, decode.optional(decode_create_global_secondary_index_action_struct()))
   use delete <- decode.optional_field("Delete", option.None, decode.optional(decode_delete_global_secondary_index_action_struct()))
   use update <- decode.optional_field("Update", option.None, decode.optional(decode_update_global_secondary_index_action_struct()))
+  decode.success(GlobalSecondaryIndexUpdate(
+    create: create,
+    delete: delete,
+    update: update,
+  ))
+}
+
+pub fn decode_global_secondary_index_update_struct_params() -> decode.Decoder(GlobalSecondaryIndexUpdate) {
+  use create <- decode.optional_field("Create", option.None, decode.optional(decode_create_global_secondary_index_action_struct_params()))
+  use delete <- decode.optional_field("Delete", option.None, decode.optional(decode_delete_global_secondary_index_action_struct_params()))
+  use update <- decode.optional_field("Update", option.None, decode.optional(decode_update_global_secondary_index_action_struct_params()))
   decode.success(GlobalSecondaryIndexUpdate(
     create: create,
     delete: delete,
@@ -10442,6 +13222,23 @@ pub fn decode_create_global_secondary_index_action_struct() -> decode.Decoder(Cr
   ))
 }
 
+pub fn decode_create_global_secondary_index_action_struct_params() -> decode.Decoder(CreateGlobalSecondaryIndexAction) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use key_schema <- decode.optional_field("KeySchema", option.None, decode.optional(decode.list(decode_key_schema_element_struct_params())))
+  use on_demand_throughput <- decode.optional_field("OnDemandThroughput", option.None, decode.optional(decode_on_demand_throughput_struct_params()))
+  use projection <- decode.optional_field("Projection", option.None, decode.optional(decode_projection_struct_params()))
+  use provisioned_throughput <- decode.optional_field("ProvisionedThroughput", option.None, decode.optional(decode_provisioned_throughput_struct_params()))
+  use warm_throughput <- decode.optional_field("WarmThroughput", option.None, decode.optional(decode_warm_throughput_struct_params()))
+  decode.success(CreateGlobalSecondaryIndexAction(
+    index_name: index_name,
+    key_schema: key_schema,
+    on_demand_throughput: on_demand_throughput,
+    projection: projection,
+    provisioned_throughput: provisioned_throughput,
+    warm_throughput: warm_throughput,
+  ))
+}
+
 pub type DeleteGlobalSecondaryIndexAction {
   DeleteGlobalSecondaryIndexAction(
     index_name: option.Option(String),
@@ -10458,6 +13255,13 @@ pub fn encode_delete_global_secondary_index_action_struct(input: DeleteGlobalSec
 }
 
 pub fn decode_delete_global_secondary_index_action_struct() -> decode.Decoder(DeleteGlobalSecondaryIndexAction) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  decode.success(DeleteGlobalSecondaryIndexAction(
+    index_name: index_name,
+  ))
+}
+
+pub fn decode_delete_global_secondary_index_action_struct_params() -> decode.Decoder(DeleteGlobalSecondaryIndexAction) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   decode.success(DeleteGlobalSecondaryIndexAction(
     index_name: index_name,
@@ -10507,6 +13311,19 @@ pub fn decode_update_global_secondary_index_action_struct() -> decode.Decoder(Up
   ))
 }
 
+pub fn decode_update_global_secondary_index_action_struct_params() -> decode.Decoder(UpdateGlobalSecondaryIndexAction) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use on_demand_throughput <- decode.optional_field("OnDemandThroughput", option.None, decode.optional(decode_on_demand_throughput_struct_params()))
+  use provisioned_throughput <- decode.optional_field("ProvisionedThroughput", option.None, decode.optional(decode_provisioned_throughput_struct_params()))
+  use warm_throughput <- decode.optional_field("WarmThroughput", option.None, decode.optional(decode_warm_throughput_struct_params()))
+  decode.success(UpdateGlobalSecondaryIndexAction(
+    index_name: index_name,
+    on_demand_throughput: on_demand_throughput,
+    provisioned_throughput: provisioned_throughput,
+    warm_throughput: warm_throughput,
+  ))
+}
+
 pub type GlobalTableWitnessGroupUpdate {
   GlobalTableWitnessGroupUpdate(
     create: option.Option(CreateGlobalTableWitnessGroupMemberAction),
@@ -10536,6 +13353,15 @@ pub fn decode_global_table_witness_group_update_struct() -> decode.Decoder(Globa
   ))
 }
 
+pub fn decode_global_table_witness_group_update_struct_params() -> decode.Decoder(GlobalTableWitnessGroupUpdate) {
+  use create <- decode.optional_field("Create", option.None, decode.optional(decode_create_global_table_witness_group_member_action_struct_params()))
+  use delete <- decode.optional_field("Delete", option.None, decode.optional(decode_delete_global_table_witness_group_member_action_struct_params()))
+  decode.success(GlobalTableWitnessGroupUpdate(
+    create: create,
+    delete: delete,
+  ))
+}
+
 pub type CreateGlobalTableWitnessGroupMemberAction {
   CreateGlobalTableWitnessGroupMemberAction(
     region_name: option.Option(String),
@@ -10558,6 +13384,13 @@ pub fn decode_create_global_table_witness_group_member_action_struct() -> decode
   ))
 }
 
+pub fn decode_create_global_table_witness_group_member_action_struct_params() -> decode.Decoder(CreateGlobalTableWitnessGroupMemberAction) {
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  decode.success(CreateGlobalTableWitnessGroupMemberAction(
+    region_name: region_name,
+  ))
+}
+
 pub type DeleteGlobalTableWitnessGroupMemberAction {
   DeleteGlobalTableWitnessGroupMemberAction(
     region_name: option.Option(String),
@@ -10574,6 +13407,13 @@ pub fn encode_delete_global_table_witness_group_member_action_struct(input: Dele
 }
 
 pub fn decode_delete_global_table_witness_group_member_action_struct() -> decode.Decoder(DeleteGlobalTableWitnessGroupMemberAction) {
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  decode.success(DeleteGlobalTableWitnessGroupMemberAction(
+    region_name: region_name,
+  ))
+}
+
+pub fn decode_delete_global_table_witness_group_member_action_struct_params() -> decode.Decoder(DeleteGlobalTableWitnessGroupMemberAction) {
   use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
   decode.success(DeleteGlobalTableWitnessGroupMemberAction(
     region_name: region_name,
@@ -10609,6 +13449,17 @@ pub fn decode_replication_group_update_struct() -> decode.Decoder(ReplicationGro
   use create <- decode.optional_field("Create", option.None, decode.optional(decode_create_replication_group_member_action_struct()))
   use delete <- decode.optional_field("Delete", option.None, decode.optional(decode_delete_replication_group_member_action_struct()))
   use update <- decode.optional_field("Update", option.None, decode.optional(decode_update_replication_group_member_action_struct()))
+  decode.success(ReplicationGroupUpdate(
+    create: create,
+    delete: delete,
+    update: update,
+  ))
+}
+
+pub fn decode_replication_group_update_struct_params() -> decode.Decoder(ReplicationGroupUpdate) {
+  use create <- decode.optional_field("Create", option.None, decode.optional(decode_create_replication_group_member_action_struct_params()))
+  use delete <- decode.optional_field("Delete", option.None, decode.optional(decode_delete_replication_group_member_action_struct_params()))
+  use update <- decode.optional_field("Update", option.None, decode.optional(decode_update_replication_group_member_action_struct_params()))
   decode.success(ReplicationGroupUpdate(
     create: create,
     delete: delete,
@@ -10673,6 +13524,23 @@ pub fn decode_create_replication_group_member_action_struct() -> decode.Decoder(
   ))
 }
 
+pub fn decode_create_replication_group_member_action_struct_params() -> decode.Decoder(CreateReplicationGroupMemberAction) {
+  use global_secondary_indexes <- decode.optional_field("GlobalSecondaryIndexes", option.None, decode.optional(decode.list(decode_replica_global_secondary_index_struct_params())))
+  use kms_master_key_id <- decode.optional_field("KMSMasterKeyId", option.None, decode.optional(decode.string))
+  use on_demand_throughput_override <- decode.optional_field("OnDemandThroughputOverride", option.None, decode.optional(decode_on_demand_throughput_override_struct_params()))
+  use provisioned_throughput_override <- decode.optional_field("ProvisionedThroughputOverride", option.None, decode.optional(decode_provisioned_throughput_override_struct_params()))
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  use table_class_override <- decode.optional_field("TableClassOverride", option.None, decode.optional(decode_table_class_enum()))
+  decode.success(CreateReplicationGroupMemberAction(
+    global_secondary_indexes: global_secondary_indexes,
+    kms_master_key_id: kms_master_key_id,
+    on_demand_throughput_override: on_demand_throughput_override,
+    provisioned_throughput_override: provisioned_throughput_override,
+    region_name: region_name,
+    table_class_override: table_class_override,
+  ))
+}
+
 pub type ReplicaGlobalSecondaryIndex {
   ReplicaGlobalSecondaryIndex(
     index_name: option.Option(String),
@@ -10709,6 +13577,17 @@ pub fn decode_replica_global_secondary_index_struct() -> decode.Decoder(ReplicaG
   ))
 }
 
+pub fn decode_replica_global_secondary_index_struct_params() -> decode.Decoder(ReplicaGlobalSecondaryIndex) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use on_demand_throughput_override <- decode.optional_field("OnDemandThroughputOverride", option.None, decode.optional(decode_on_demand_throughput_override_struct_params()))
+  use provisioned_throughput_override <- decode.optional_field("ProvisionedThroughputOverride", option.None, decode.optional(decode_provisioned_throughput_override_struct_params()))
+  decode.success(ReplicaGlobalSecondaryIndex(
+    index_name: index_name,
+    on_demand_throughput_override: on_demand_throughput_override,
+    provisioned_throughput_override: provisioned_throughput_override,
+  ))
+}
+
 pub type DeleteReplicationGroupMemberAction {
   DeleteReplicationGroupMemberAction(
     region_name: option.Option(String),
@@ -10725,6 +13604,13 @@ pub fn encode_delete_replication_group_member_action_struct(input: DeleteReplica
 }
 
 pub fn decode_delete_replication_group_member_action_struct() -> decode.Decoder(DeleteReplicationGroupMemberAction) {
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  decode.success(DeleteReplicationGroupMemberAction(
+    region_name: region_name,
+  ))
+}
+
+pub fn decode_delete_replication_group_member_action_struct_params() -> decode.Decoder(DeleteReplicationGroupMemberAction) {
   use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
   decode.success(DeleteReplicationGroupMemberAction(
     region_name: region_name,
@@ -10788,6 +13674,23 @@ pub fn decode_update_replication_group_member_action_struct() -> decode.Decoder(
   ))
 }
 
+pub fn decode_update_replication_group_member_action_struct_params() -> decode.Decoder(UpdateReplicationGroupMemberAction) {
+  use global_secondary_indexes <- decode.optional_field("GlobalSecondaryIndexes", option.None, decode.optional(decode.list(decode_replica_global_secondary_index_struct_params())))
+  use kms_master_key_id <- decode.optional_field("KMSMasterKeyId", option.None, decode.optional(decode.string))
+  use on_demand_throughput_override <- decode.optional_field("OnDemandThroughputOverride", option.None, decode.optional(decode_on_demand_throughput_override_struct_params()))
+  use provisioned_throughput_override <- decode.optional_field("ProvisionedThroughputOverride", option.None, decode.optional(decode_provisioned_throughput_override_struct_params()))
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  use table_class_override <- decode.optional_field("TableClassOverride", option.None, decode.optional(decode_table_class_enum()))
+  decode.success(UpdateReplicationGroupMemberAction(
+    global_secondary_indexes: global_secondary_indexes,
+    kms_master_key_id: kms_master_key_id,
+    on_demand_throughput_override: on_demand_throughput_override,
+    provisioned_throughput_override: provisioned_throughput_override,
+    region_name: region_name,
+    table_class_override: table_class_override,
+  ))
+}
+
 pub type UpdateTableOutput {
   UpdateTableOutput(
     table_description: option.Option(TableDescription),
@@ -10805,6 +13708,13 @@ pub fn encode_update_table_output_struct(input: UpdateTableOutput) -> json.Json 
 
 pub fn decode_update_table_output_struct() -> decode.Decoder(UpdateTableOutput) {
   use table_description <- decode.optional_field("TableDescription", option.None, decode.optional(decode_table_description_struct()))
+  decode.success(UpdateTableOutput(
+    table_description: table_description,
+  ))
+}
+
+pub fn decode_update_table_output_struct_params() -> decode.Decoder(UpdateTableOutput) {
+  use table_description <- decode.optional_field("TableDescription", option.None, decode.optional(decode_table_description_struct_params()))
   decode.success(UpdateTableOutput(
     table_description: table_description,
   ))
@@ -10853,6 +13763,19 @@ pub fn decode_update_table_replica_auto_scaling_input_struct() -> decode.Decoder
   ))
 }
 
+pub fn decode_update_table_replica_auto_scaling_input_struct_params() -> decode.Decoder(UpdateTableReplicaAutoScalingInput) {
+  use global_secondary_index_updates <- decode.optional_field("GlobalSecondaryIndexUpdates", option.None, decode.optional(decode.list(decode_global_secondary_index_auto_scaling_update_struct_params())))
+  use provisioned_write_capacity_auto_scaling_update <- decode.optional_field("ProvisionedWriteCapacityAutoScalingUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct_params()))
+  use replica_updates <- decode.optional_field("ReplicaUpdates", option.None, decode.optional(decode.list(decode_replica_auto_scaling_update_struct_params())))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  decode.success(UpdateTableReplicaAutoScalingInput(
+    global_secondary_index_updates: global_secondary_index_updates,
+    provisioned_write_capacity_auto_scaling_update: provisioned_write_capacity_auto_scaling_update,
+    replica_updates: replica_updates,
+    table_name: table_name,
+  ))
+}
+
 pub type GlobalSecondaryIndexAutoScalingUpdate {
   GlobalSecondaryIndexAutoScalingUpdate(
     index_name: option.Option(String),
@@ -10876,6 +13799,15 @@ pub fn encode_global_secondary_index_auto_scaling_update_struct(input: GlobalSec
 pub fn decode_global_secondary_index_auto_scaling_update_struct() -> decode.Decoder(GlobalSecondaryIndexAutoScalingUpdate) {
   use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
   use provisioned_write_capacity_auto_scaling_update <- decode.optional_field("ProvisionedWriteCapacityAutoScalingUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct()))
+  decode.success(GlobalSecondaryIndexAutoScalingUpdate(
+    index_name: index_name,
+    provisioned_write_capacity_auto_scaling_update: provisioned_write_capacity_auto_scaling_update,
+  ))
+}
+
+pub fn decode_global_secondary_index_auto_scaling_update_struct_params() -> decode.Decoder(GlobalSecondaryIndexAutoScalingUpdate) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use provisioned_write_capacity_auto_scaling_update <- decode.optional_field("ProvisionedWriteCapacityAutoScalingUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct_params()))
   decode.success(GlobalSecondaryIndexAutoScalingUpdate(
     index_name: index_name,
     provisioned_write_capacity_auto_scaling_update: provisioned_write_capacity_auto_scaling_update,
@@ -10918,6 +13850,17 @@ pub fn decode_replica_auto_scaling_update_struct() -> decode.Decoder(ReplicaAuto
   ))
 }
 
+pub fn decode_replica_auto_scaling_update_struct_params() -> decode.Decoder(ReplicaAutoScalingUpdate) {
+  use region_name <- decode.optional_field("RegionName", option.None, decode.optional(decode.string))
+  use replica_global_secondary_index_updates <- decode.optional_field("ReplicaGlobalSecondaryIndexUpdates", option.None, decode.optional(decode.list(decode_replica_global_secondary_index_auto_scaling_update_struct_params())))
+  use replica_provisioned_read_capacity_auto_scaling_update <- decode.optional_field("ReplicaProvisionedReadCapacityAutoScalingUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct_params()))
+  decode.success(ReplicaAutoScalingUpdate(
+    region_name: region_name,
+    replica_global_secondary_index_updates: replica_global_secondary_index_updates,
+    replica_provisioned_read_capacity_auto_scaling_update: replica_provisioned_read_capacity_auto_scaling_update,
+  ))
+}
+
 pub type ReplicaGlobalSecondaryIndexAutoScalingUpdate {
   ReplicaGlobalSecondaryIndexAutoScalingUpdate(
     index_name: option.Option(String),
@@ -10947,6 +13890,15 @@ pub fn decode_replica_global_secondary_index_auto_scaling_update_struct() -> dec
   ))
 }
 
+pub fn decode_replica_global_secondary_index_auto_scaling_update_struct_params() -> decode.Decoder(ReplicaGlobalSecondaryIndexAutoScalingUpdate) {
+  use index_name <- decode.optional_field("IndexName", option.None, decode.optional(decode.string))
+  use provisioned_read_capacity_auto_scaling_update <- decode.optional_field("ProvisionedReadCapacityAutoScalingUpdate", option.None, decode.optional(decode_auto_scaling_settings_update_struct_params()))
+  decode.success(ReplicaGlobalSecondaryIndexAutoScalingUpdate(
+    index_name: index_name,
+    provisioned_read_capacity_auto_scaling_update: provisioned_read_capacity_auto_scaling_update,
+  ))
+}
+
 pub type UpdateTableReplicaAutoScalingOutput {
   UpdateTableReplicaAutoScalingOutput(
     table_auto_scaling_description: option.Option(TableAutoScalingDescription),
@@ -10964,6 +13916,13 @@ pub fn encode_update_table_replica_auto_scaling_output_struct(input: UpdateTable
 
 pub fn decode_update_table_replica_auto_scaling_output_struct() -> decode.Decoder(UpdateTableReplicaAutoScalingOutput) {
   use table_auto_scaling_description <- decode.optional_field("TableAutoScalingDescription", option.None, decode.optional(decode_table_auto_scaling_description_struct()))
+  decode.success(UpdateTableReplicaAutoScalingOutput(
+    table_auto_scaling_description: table_auto_scaling_description,
+  ))
+}
+
+pub fn decode_update_table_replica_auto_scaling_output_struct_params() -> decode.Decoder(UpdateTableReplicaAutoScalingOutput) {
+  use table_auto_scaling_description <- decode.optional_field("TableAutoScalingDescription", option.None, decode.optional(decode_table_auto_scaling_description_struct_params()))
   decode.success(UpdateTableReplicaAutoScalingOutput(
     table_auto_scaling_description: table_auto_scaling_description,
   ))
@@ -10992,6 +13951,15 @@ pub fn encode_update_time_to_live_input_struct(input: UpdateTimeToLiveInput) -> 
 pub fn decode_update_time_to_live_input_struct() -> decode.Decoder(UpdateTimeToLiveInput) {
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   use time_to_live_specification <- decode.optional_field("TimeToLiveSpecification", option.None, decode.optional(decode_time_to_live_specification_struct()))
+  decode.success(UpdateTimeToLiveInput(
+    table_name: table_name,
+    time_to_live_specification: time_to_live_specification,
+  ))
+}
+
+pub fn decode_update_time_to_live_input_struct_params() -> decode.Decoder(UpdateTimeToLiveInput) {
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use time_to_live_specification <- decode.optional_field("TimeToLiveSpecification", option.None, decode.optional(decode_time_to_live_specification_struct_params()))
   decode.success(UpdateTimeToLiveInput(
     table_name: table_name,
     time_to_live_specification: time_to_live_specification,
@@ -11027,6 +13995,15 @@ pub fn decode_time_to_live_specification_struct() -> decode.Decoder(TimeToLiveSp
   ))
 }
 
+pub fn decode_time_to_live_specification_struct_params() -> decode.Decoder(TimeToLiveSpecification) {
+  use attribute_name <- decode.optional_field("AttributeName", option.None, decode.optional(decode.string))
+  use enabled <- decode.optional_field("Enabled", option.None, decode.optional(decode.bool))
+  decode.success(TimeToLiveSpecification(
+    attribute_name: attribute_name,
+    enabled: enabled,
+  ))
+}
+
 pub type UpdateTimeToLiveOutput {
   UpdateTimeToLiveOutput(
     time_to_live_specification: option.Option(TimeToLiveSpecification),
@@ -11049,13 +14026,20 @@ pub fn decode_update_time_to_live_output_struct() -> decode.Decoder(UpdateTimeTo
   ))
 }
 
+pub fn decode_update_time_to_live_output_struct_params() -> decode.Decoder(UpdateTimeToLiveOutput) {
+  use time_to_live_specification <- decode.optional_field("TimeToLiveSpecification", option.None, decode.optional(decode_time_to_live_specification_struct_params()))
+  decode.success(UpdateTimeToLiveOutput(
+    time_to_live_specification: time_to_live_specification,
+  ))
+}
+
 
 pub fn encode_batch_execute_statement_input(input: BatchExecuteStatementInput) -> String {
   json.to_string(encode_batch_execute_statement_input_struct(input))
 }
 
 pub fn decode_batch_execute_statement_input(body: String) -> Result(BatchExecuteStatementInput, String) {
-  case json.parse(body, decode_batch_execute_statement_input_struct()) {
+  case json.parse(body, decode_batch_execute_statement_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11151,7 +14135,7 @@ pub fn encode_batch_get_item_input(input: BatchGetItemInput) -> String {
 }
 
 pub fn decode_batch_get_item_input(body: String) -> Result(BatchGetItemInput, String) {
-  case json.parse(body, decode_batch_get_item_input_struct()) {
+  case json.parse(body, decode_batch_get_item_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11277,7 +14261,7 @@ pub fn encode_batch_write_item_input(input: BatchWriteItemInput) -> String {
 }
 
 pub fn decode_batch_write_item_input(body: String) -> Result(BatchWriteItemInput, String) {
-  case json.parse(body, decode_batch_write_item_input_struct()) {
+  case json.parse(body, decode_batch_write_item_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11423,7 +14407,7 @@ pub fn encode_create_backup_input(input: CreateBackupInput) -> String {
 }
 
 pub fn decode_create_backup_input(body: String) -> Result(CreateBackupInput, String) {
-  case json.parse(body, decode_create_backup_input_struct()) {
+  case json.parse(body, decode_create_backup_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11559,7 +14543,7 @@ pub fn encode_create_global_table_input(input: CreateGlobalTableInput) -> String
 }
 
 pub fn decode_create_global_table_input(body: String) -> Result(CreateGlobalTableInput, String) {
-  case json.parse(body, decode_create_global_table_input_struct()) {
+  case json.parse(body, decode_create_global_table_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11675,7 +14659,7 @@ pub fn encode_create_table_input(input: CreateTableInput) -> String {
 }
 
 pub fn decode_create_table_input(body: String) -> Result(CreateTableInput, String) {
-  case json.parse(body, decode_create_table_input_struct()) {
+  case json.parse(body, decode_create_table_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11781,7 +14765,7 @@ pub fn encode_delete_backup_input(input: DeleteBackupInput) -> String {
 }
 
 pub fn decode_delete_backup_input(body: String) -> Result(DeleteBackupInput, String) {
-  case json.parse(body, decode_delete_backup_input_struct()) {
+  case json.parse(body, decode_delete_backup_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11897,7 +14881,7 @@ pub fn encode_delete_item_input(input: DeleteItemInput) -> String {
 }
 
 pub fn decode_delete_item_input(body: String) -> Result(DeleteItemInput, String) {
-  case json.parse(body, decode_delete_item_input_struct()) {
+  case json.parse(body, decode_delete_item_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12063,7 +15047,7 @@ pub fn encode_delete_resource_policy_input(input: DeleteResourcePolicyInput) -> 
 }
 
 pub fn decode_delete_resource_policy_input(body: String) -> Result(DeleteResourcePolicyInput, String) {
-  case json.parse(body, decode_delete_resource_policy_input_struct()) {
+  case json.parse(body, decode_delete_resource_policy_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12189,7 +15173,7 @@ pub fn encode_delete_table_input(input: DeleteTableInput) -> String {
 }
 
 pub fn decode_delete_table_input(body: String) -> Result(DeleteTableInput, String) {
-  case json.parse(body, decode_delete_table_input_struct()) {
+  case json.parse(body, decode_delete_table_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12305,7 +15289,7 @@ pub fn encode_describe_backup_input(input: DescribeBackupInput) -> String {
 }
 
 pub fn decode_describe_backup_input(body: String) -> Result(DescribeBackupInput, String) {
-  case json.parse(body, decode_describe_backup_input_struct()) {
+  case json.parse(body, decode_describe_backup_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12401,7 +15385,7 @@ pub fn encode_describe_continuous_backups_input(input: DescribeContinuousBackups
 }
 
 pub fn decode_describe_continuous_backups_input(body: String) -> Result(DescribeContinuousBackupsInput, String) {
-  case json.parse(body, decode_describe_continuous_backups_input_struct()) {
+  case json.parse(body, decode_describe_continuous_backups_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12497,7 +15481,7 @@ pub fn encode_describe_contributor_insights_input(input: DescribeContributorInsi
 }
 
 pub fn decode_describe_contributor_insights_input(body: String) -> Result(DescribeContributorInsightsInput, String) {
-  case json.parse(body, decode_describe_contributor_insights_input_struct()) {
+  case json.parse(body, decode_describe_contributor_insights_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12583,7 +15567,7 @@ pub fn encode_describe_endpoints_input(input: DescribeEndpointsRequest) -> Strin
 }
 
 pub fn decode_describe_endpoints_input(body: String) -> Result(DescribeEndpointsRequest, String) {
-  case json.parse(body, decode_describe_endpoints_request_struct()) {
+  case json.parse(body, decode_describe_endpoints_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12649,7 +15633,7 @@ pub fn encode_describe_export_input(input: DescribeExportInput) -> String {
 }
 
 pub fn decode_describe_export_input(body: String) -> Result(DescribeExportInput, String) {
-  case json.parse(body, decode_describe_export_input_struct()) {
+  case json.parse(body, decode_describe_export_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12745,7 +15729,7 @@ pub fn encode_describe_global_table_input(input: DescribeGlobalTableInput) -> St
 }
 
 pub fn decode_describe_global_table_input(body: String) -> Result(DescribeGlobalTableInput, String) {
-  case json.parse(body, decode_describe_global_table_input_struct()) {
+  case json.parse(body, decode_describe_global_table_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12841,7 +15825,7 @@ pub fn encode_describe_global_table_settings_input(input: DescribeGlobalTableSet
 }
 
 pub fn decode_describe_global_table_settings_input(body: String) -> Result(DescribeGlobalTableSettingsInput, String) {
-  case json.parse(body, decode_describe_global_table_settings_input_struct()) {
+  case json.parse(body, decode_describe_global_table_settings_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12937,7 +15921,7 @@ pub fn encode_describe_import_input(input: DescribeImportInput) -> String {
 }
 
 pub fn decode_describe_import_input(body: String) -> Result(DescribeImportInput, String) {
-  case json.parse(body, decode_describe_import_input_struct()) {
+  case json.parse(body, decode_describe_import_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -13013,7 +15997,7 @@ pub fn encode_describe_kinesis_streaming_destination_input(input: DescribeKinesi
 }
 
 pub fn decode_describe_kinesis_streaming_destination_input(body: String) -> Result(DescribeKinesisStreamingDestinationInput, String) {
-  case json.parse(body, decode_describe_kinesis_streaming_destination_input_struct()) {
+  case json.parse(body, decode_describe_kinesis_streaming_destination_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -13109,7 +16093,7 @@ pub fn encode_describe_limits_input(input: DescribeLimitsInput) -> String {
 }
 
 pub fn decode_describe_limits_input(body: String) -> Result(DescribeLimitsInput, String) {
-  case json.parse(body, decode_describe_limits_input_struct()) {
+  case json.parse(body, decode_describe_limits_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -13195,7 +16179,7 @@ pub fn encode_describe_table_input(input: DescribeTableInput) -> String {
 }
 
 pub fn decode_describe_table_input(body: String) -> Result(DescribeTableInput, String) {
-  case json.parse(body, decode_describe_table_input_struct()) {
+  case json.parse(body, decode_describe_table_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -13291,7 +16275,7 @@ pub fn encode_describe_table_replica_auto_scaling_input(input: DescribeTableRepl
 }
 
 pub fn decode_describe_table_replica_auto_scaling_input(body: String) -> Result(DescribeTableReplicaAutoScalingInput, String) {
-  case json.parse(body, decode_describe_table_replica_auto_scaling_input_struct()) {
+  case json.parse(body, decode_describe_table_replica_auto_scaling_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -13377,7 +16361,7 @@ pub fn encode_describe_time_to_live_input(input: DescribeTimeToLiveInput) -> Str
 }
 
 pub fn decode_describe_time_to_live_input(body: String) -> Result(DescribeTimeToLiveInput, String) {
-  case json.parse(body, decode_describe_time_to_live_input_struct()) {
+  case json.parse(body, decode_describe_time_to_live_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -13473,7 +16457,7 @@ pub fn encode_disable_kinesis_streaming_destination_input(input: KinesisStreamin
 }
 
 pub fn decode_disable_kinesis_streaming_destination_input(body: String) -> Result(KinesisStreamingDestinationInput, String) {
-  case json.parse(body, decode_kinesis_streaming_destination_input_struct()) {
+  case json.parse(body, decode_kinesis_streaming_destination_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -13589,7 +16573,7 @@ pub fn encode_enable_kinesis_streaming_destination_input(input: KinesisStreaming
 }
 
 pub fn decode_enable_kinesis_streaming_destination_input(body: String) -> Result(KinesisStreamingDestinationInput, String) {
-  case json.parse(body, decode_kinesis_streaming_destination_input_struct()) {
+  case json.parse(body, decode_kinesis_streaming_destination_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -13705,7 +16689,7 @@ pub fn encode_execute_statement_input(input: ExecuteStatementInput) -> String {
 }
 
 pub fn decode_execute_statement_input(body: String) -> Result(ExecuteStatementInput, String) {
-  case json.parse(body, decode_execute_statement_input_struct()) {
+  case json.parse(body, decode_execute_statement_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -13861,7 +16845,7 @@ pub fn encode_execute_transaction_input(input: ExecuteTransactionInput) -> Strin
 }
 
 pub fn decode_execute_transaction_input(body: String) -> Result(ExecuteTransactionInput, String) {
-  case json.parse(body, decode_execute_transaction_input_struct()) {
+  case json.parse(body, decode_execute_transaction_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -14007,7 +16991,7 @@ pub fn encode_export_table_to_point_in_time_input(input: ExportTableToPointInTim
 }
 
 pub fn decode_export_table_to_point_in_time_input(body: String) -> Result(ExportTableToPointInTimeInput, String) {
-  case json.parse(body, decode_export_table_to_point_in_time_input_struct()) {
+  case json.parse(body, decode_export_table_to_point_in_time_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -14133,7 +17117,7 @@ pub fn encode_get_item_input(input: GetItemInput) -> String {
 }
 
 pub fn decode_get_item_input(body: String) -> Result(GetItemInput, String) {
-  case json.parse(body, decode_get_item_input_struct()) {
+  case json.parse(body, decode_get_item_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -14259,7 +17243,7 @@ pub fn encode_get_resource_policy_input(input: GetResourcePolicyInput) -> String
 }
 
 pub fn decode_get_resource_policy_input(body: String) -> Result(GetResourcePolicyInput, String) {
-  case json.parse(body, decode_get_resource_policy_input_struct()) {
+  case json.parse(body, decode_get_resource_policy_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -14365,7 +17349,7 @@ pub fn encode_import_table_input(input: ImportTableInput) -> String {
 }
 
 pub fn decode_import_table_input(body: String) -> Result(ImportTableInput, String) {
-  case json.parse(body, decode_import_table_input_struct()) {
+  case json.parse(body, decode_import_table_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -14461,7 +17445,7 @@ pub fn encode_list_backups_input(input: ListBackupsInput) -> String {
 }
 
 pub fn decode_list_backups_input(body: String) -> Result(ListBackupsInput, String) {
-  case json.parse(body, decode_list_backups_input_struct()) {
+  case json.parse(body, decode_list_backups_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -14547,7 +17531,7 @@ pub fn encode_list_contributor_insights_input(input: ListContributorInsightsInpu
 }
 
 pub fn decode_list_contributor_insights_input(body: String) -> Result(ListContributorInsightsInput, String) {
-  case json.parse(body, decode_list_contributor_insights_input_struct()) {
+  case json.parse(body, decode_list_contributor_insights_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -14633,7 +17617,7 @@ pub fn encode_list_exports_input(input: ListExportsInput) -> String {
 }
 
 pub fn decode_list_exports_input(body: String) -> Result(ListExportsInput, String) {
-  case json.parse(body, decode_list_exports_input_struct()) {
+  case json.parse(body, decode_list_exports_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -14719,7 +17703,7 @@ pub fn encode_list_global_tables_input(input: ListGlobalTablesInput) -> String {
 }
 
 pub fn decode_list_global_tables_input(body: String) -> Result(ListGlobalTablesInput, String) {
-  case json.parse(body, decode_list_global_tables_input_struct()) {
+  case json.parse(body, decode_list_global_tables_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -14805,7 +17789,7 @@ pub fn encode_list_imports_input(input: ListImportsInput) -> String {
 }
 
 pub fn decode_list_imports_input(body: String) -> Result(ListImportsInput, String) {
-  case json.parse(body, decode_list_imports_input_struct()) {
+  case json.parse(body, decode_list_imports_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -14881,7 +17865,7 @@ pub fn encode_list_tables_input(input: ListTablesInput) -> String {
 }
 
 pub fn decode_list_tables_input(body: String) -> Result(ListTablesInput, String) {
-  case json.parse(body, decode_list_tables_input_struct()) {
+  case json.parse(body, decode_list_tables_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -14967,7 +17951,7 @@ pub fn encode_list_tags_of_resource_input(input: ListTagsOfResourceInput) -> Str
 }
 
 pub fn decode_list_tags_of_resource_input(body: String) -> Result(ListTagsOfResourceInput, String) {
-  case json.parse(body, decode_list_tags_of_resource_input_struct()) {
+  case json.parse(body, decode_list_tags_of_resource_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -15063,7 +18047,7 @@ pub fn encode_put_item_input(input: PutItemInput) -> String {
 }
 
 pub fn decode_put_item_input(body: String) -> Result(PutItemInput, String) {
-  case json.parse(body, decode_put_item_input_struct()) {
+  case json.parse(body, decode_put_item_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -15229,7 +18213,7 @@ pub fn encode_put_resource_policy_input(input: PutResourcePolicyInput) -> String
 }
 
 pub fn decode_put_resource_policy_input(body: String) -> Result(PutResourcePolicyInput, String) {
-  case json.parse(body, decode_put_resource_policy_input_struct()) {
+  case json.parse(body, decode_put_resource_policy_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -15355,7 +18339,7 @@ pub fn encode_query_input(input: QueryInput) -> String {
 }
 
 pub fn decode_query_input(body: String) -> Result(QueryInput, String) {
-  case json.parse(body, decode_query_input_struct()) {
+  case json.parse(body, decode_query_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -15481,7 +18465,7 @@ pub fn encode_restore_table_from_backup_input(input: RestoreTableFromBackupInput
 }
 
 pub fn decode_restore_table_from_backup_input(body: String) -> Result(RestoreTableFromBackupInput, String) {
-  case json.parse(body, decode_restore_table_from_backup_input_struct()) {
+  case json.parse(body, decode_restore_table_from_backup_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -15617,7 +18601,7 @@ pub fn encode_restore_table_to_point_in_time_input(input: RestoreTableToPointInT
 }
 
 pub fn decode_restore_table_to_point_in_time_input(body: String) -> Result(RestoreTableToPointInTimeInput, String) {
-  case json.parse(body, decode_restore_table_to_point_in_time_input_struct()) {
+  case json.parse(body, decode_restore_table_to_point_in_time_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -15763,7 +18747,7 @@ pub fn encode_scan_input(input: ScanInput) -> String {
 }
 
 pub fn decode_scan_input(body: String) -> Result(ScanInput, String) {
-  case json.parse(body, decode_scan_input_struct()) {
+  case json.parse(body, decode_scan_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -15901,7 +18885,7 @@ pub fn encode_tag_resource_input(input: TagResourceInput) -> String {
 }
 
 pub fn decode_tag_resource_input(body: String) -> Result(TagResourceInput, String) {
-  case json.parse(body, decode_tag_resource_input_struct()) {
+  case json.parse(body, decode_tag_resource_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -16017,7 +19001,7 @@ pub fn encode_transact_get_items_input(input: TransactGetItemsInput) -> String {
 }
 
 pub fn decode_transact_get_items_input(body: String) -> Result(TransactGetItemsInput, String) {
-  case json.parse(body, decode_transact_get_items_input_struct()) {
+  case json.parse(body, decode_transact_get_items_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -16153,7 +19137,7 @@ pub fn encode_transact_write_items_input(input: TransactWriteItemsInput) -> Stri
 }
 
 pub fn decode_transact_write_items_input(body: String) -> Result(TransactWriteItemsInput, String) {
-  case json.parse(body, decode_transact_write_items_input_struct()) {
+  case json.parse(body, decode_transact_write_items_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -16321,7 +19305,7 @@ pub fn encode_untag_resource_input(input: UntagResourceInput) -> String {
 }
 
 pub fn decode_untag_resource_input(body: String) -> Result(UntagResourceInput, String) {
-  case json.parse(body, decode_untag_resource_input_struct()) {
+  case json.parse(body, decode_untag_resource_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -16437,7 +19421,7 @@ pub fn encode_update_continuous_backups_input(input: UpdateContinuousBackupsInpu
 }
 
 pub fn decode_update_continuous_backups_input(body: String) -> Result(UpdateContinuousBackupsInput, String) {
-  case json.parse(body, decode_update_continuous_backups_input_struct()) {
+  case json.parse(body, decode_update_continuous_backups_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -16543,7 +19527,7 @@ pub fn encode_update_contributor_insights_input(input: UpdateContributorInsights
 }
 
 pub fn decode_update_contributor_insights_input(body: String) -> Result(UpdateContributorInsightsInput, String) {
-  case json.parse(body, decode_update_contributor_insights_input_struct()) {
+  case json.parse(body, decode_update_contributor_insights_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -16629,7 +19613,7 @@ pub fn encode_update_global_table_input(input: UpdateGlobalTableInput) -> String
 }
 
 pub fn decode_update_global_table_input(body: String) -> Result(UpdateGlobalTableInput, String) {
-  case json.parse(body, decode_update_global_table_input_struct()) {
+  case json.parse(body, decode_update_global_table_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -16755,7 +19739,7 @@ pub fn encode_update_global_table_settings_input(input: UpdateGlobalTableSetting
 }
 
 pub fn decode_update_global_table_settings_input(body: String) -> Result(UpdateGlobalTableSettingsInput, String) {
-  case json.parse(body, decode_update_global_table_settings_input_struct()) {
+  case json.parse(body, decode_update_global_table_settings_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -16891,7 +19875,7 @@ pub fn encode_update_item_input(input: UpdateItemInput) -> String {
 }
 
 pub fn decode_update_item_input(body: String) -> Result(UpdateItemInput, String) {
-  case json.parse(body, decode_update_item_input_struct()) {
+  case json.parse(body, decode_update_item_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -17057,7 +20041,7 @@ pub fn encode_update_kinesis_streaming_destination_input(input: UpdateKinesisStr
 }
 
 pub fn decode_update_kinesis_streaming_destination_input(body: String) -> Result(UpdateKinesisStreamingDestinationInput, String) {
-  case json.parse(body, decode_update_kinesis_streaming_destination_input_struct()) {
+  case json.parse(body, decode_update_kinesis_streaming_destination_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -17173,7 +20157,7 @@ pub fn encode_update_table_input(input: UpdateTableInput) -> String {
 }
 
 pub fn decode_update_table_input(body: String) -> Result(UpdateTableInput, String) {
-  case json.parse(body, decode_update_table_input_struct()) {
+  case json.parse(body, decode_update_table_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -17289,7 +20273,7 @@ pub fn encode_update_table_replica_auto_scaling_input(input: UpdateTableReplicaA
 }
 
 pub fn decode_update_table_replica_auto_scaling_input(body: String) -> Result(UpdateTableReplicaAutoScalingInput, String) {
-  case json.parse(body, decode_update_table_replica_auto_scaling_input_struct()) {
+  case json.parse(body, decode_update_table_replica_auto_scaling_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -17395,7 +20379,7 @@ pub fn encode_update_time_to_live_input(input: UpdateTimeToLiveInput) -> String 
 }
 
 pub fn decode_update_time_to_live_input(body: String) -> Result(UpdateTimeToLiveInput, String) {
-  case json.parse(body, decode_update_time_to_live_input_struct()) {
+  case json.parse(body, decode_update_time_to_live_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }

@@ -13,9 +13,9 @@
 //// milestone (M6.5) adds.
 
 import codegen/types.{
-  type HttpBinding, type MemberDef, type Resolved, Body, Header, Label, Payload,
-  PrefixHeaders, Query, QueryParams, REnum, RIntEnum, RList, RMap, RPrim,
-  RStruct, RTimestamp, RUnion, ResponseCode,
+  type MemberDef, type Resolved, Body, Header, Label, Payload, PrefixHeaders,
+  Query, QueryParams, RDocument, REnum, RIntEnum, RList, RMap, RPrim, RStruct,
+  RTimestamp, RUnion,
 }
 import gleam/dict.{type Dict}
 import gleam/list
@@ -474,6 +474,10 @@ fn emit_operation(
     <> ") -> String {\n  json.to_string("
     <> in_struct_encoder_name
     <> "(input))\n}\n\n"
+  // `decode_<op>_input` is the entry point used by the Smithy
+  // protocol-test dispatchers — Smithy's `params` is keyed by member
+  // name, not wire name (`@jsonName`). Use the member-keyed parallel
+  // decoder so dispatcher params round-trip into typed structs.
   let in_decoder =
     emit_parse_via_decoder(
       "decode_" <> snake <> "_input",
@@ -483,7 +487,7 @@ fn emit_operation(
         False ->
           "decode_"
           <> stringutils.pascal_to_snake(in_info.type_name)
-          <> "_struct"
+          <> "_struct_params"
       },
     )
   let out_decoder =
@@ -503,7 +507,7 @@ fn emit_operation(
   let body_encoder = emit_body_encoder(snake, in_info.type_name, body_members)
   let build =
     emit_build(in_info.type_name, in_info.synthesise, snake, http, in_members)
-  let parse = emit_parse(out_info.type_name, snake)
+  let parse = emit_parse(out_info, snake)
   "\n"
   <> synth_in
   <> synth_out
@@ -617,7 +621,7 @@ fn emit_union_def(name: String, members: List(MemberDef)) -> String {
         acc
         <> "  "
         <> name
-        <> pascalize_member(m.json_name)
+        <> pascalize_member(m.member_name)
         <> "("
         <> types.gleam_type(m.target)
         <> ")\n"
@@ -717,6 +721,56 @@ fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
   let snake = stringutils.pascal_to_snake(name)
   emit_struct_encoder(name, "encode_" <> snake <> "_struct", members)
   <> emit_struct_decoder(name, "decode_" <> snake <> "_struct", members)
+  <> emit_struct_decoder_params(
+    name,
+    "decode_" <> snake <> "_struct_params",
+    members,
+  )
+}
+
+/// Member-name-keyed decoder used by the protocol-test dispatchers
+/// (Smithy's `params` field is keyed by Smithy member name, not wire
+/// name). Identical to `decode_<snake>_struct` apart from the JSON key
+/// lookup. We always emit both; production code never calls the
+/// `_params` variant on the response side.
+fn emit_struct_decoder_params(
+  type_name: String,
+  fn_name: String,
+  members: List(MemberDef),
+) -> String {
+  case members {
+    [] ->
+      "pub fn "
+      <> fn_name
+      <> "() -> decode.Decoder("
+      <> type_name
+      <> ") {\n  decode.success("
+      <> type_name
+      <> ")\n}\n\n"
+    _ ->
+      "pub fn "
+      <> fn_name
+      <> "() -> decode.Decoder("
+      <> type_name
+      <> ") {\n"
+      <> list.fold(members, "", fn(acc, m) {
+        acc
+        <> "  use "
+        <> m.snake_name
+        <> " <- decode.optional_field(\""
+        <> m.member_name
+        <> "\", option.None, decode.optional("
+        <> types.json_decoder_params(m.target)
+        <> "))\n"
+      })
+      <> "  decode.success("
+      <> type_name
+      <> "(\n"
+      <> list.fold(members, "", fn(acc, m) {
+        acc <> "    " <> m.snake_name <> ": " <> m.snake_name <> ",\n"
+      })
+      <> "  ))\n}\n\n"
+  }
 }
 
 fn emit_struct_encoder(
@@ -803,7 +857,7 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       acc
       <> "    "
       <> name
-      <> pascalize_member(m.json_name)
+      <> pascalize_member(m.member_name)
       <> "(x) -> json.object([#(\""
       <> m.json_name
       <> "\", "
@@ -840,7 +894,7 @@ fn emit_union_branch(union_name: String, m: MemberDef) -> String {
   <> types.json_decoder(m.target)
   <> ", fn(x) { decode.success("
   <> union_name
-  <> pascalize_member(m.json_name)
+  <> pascalize_member(m.member_name)
   <> "(x)) })"
 }
 
@@ -1158,16 +1212,97 @@ fn emit_body_encoder(
   }
 }
 
-fn emit_parse(output_type: String, snake: String) -> String {
+/// Emit the per-op `parse_<op>_response`. For outputs whose Smithy
+/// members are body-bound (default), parse the body as JSON and run
+/// the struct decoder. If the output declares an `@httpPayload` member,
+/// the body IS that member's value:
+///   - `blob`   → raw bytes go straight into the field;
+///   - `string` → body UTF-8-decoded straight into the field;
+///   - `struct` → JSON-parse the body and wrap it in the output struct;
+///   - `document` → wrap the parsed JSON as a `json.Json`.
+fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
+  let output_type = out_info.type_name
+  let payload =
+    list.find(out_info.members, fn(m) {
+      case m.binding {
+        Payload -> True
+        _ -> False
+      }
+    })
+  case payload, out_info.synthesise {
+    _, True ->
+      "pub fn parse_"
+      <> snake
+      <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  _body: BitArray,\n) -> Result("
+      <> output_type
+      <> ", String) {\n  Ok("
+      <> output_type
+      <> ")\n}\n\n"
+    Ok(p), False -> emit_parse_with_payload(out_info, snake, p)
+    Error(_), False ->
+      "pub fn parse_"
+      <> snake
+      <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  body: BitArray,\n) -> Result("
+      <> output_type
+      <> ", String) {\n  case bit_array.to_string(body) {\n    Ok(text) -> case text {\n      \"\" -> decode_"
+      <> snake
+      <> "_output(\"{}\")\n      _ -> decode_"
+      <> snake
+      <> "_output(text)\n    }\n    Error(_) -> Error(\"non-utf8 body\")\n  }\n}\n\n"
+  }
+}
+
+/// Emit a parse function that routes the body bytes into a single
+/// `@httpPayload`-bound member of the output struct. Non-payload
+/// members are set to `option.None` for now — header-bound output
+/// members are tracked as a follow-up gap.
+fn emit_parse_with_payload(
+  out_info: IOTypeInfo,
+  snake: String,
+  payload: MemberDef,
+) -> String {
+  let output_type = out_info.type_name
+  let constructor_fields =
+    list.fold(out_info.members, "", fn(acc, m) {
+      let value = case m.snake_name == payload.snake_name {
+        True -> "payload"
+        False -> "option.None"
+      }
+      acc <> "    " <> m.snake_name <> ": " <> value <> ",\n"
+    })
+  let payload_decode = case payload.target {
+    types.RBlob ->
+      "let payload = option.Some(body)"
+    RPrim(primitive: types.PString) ->
+      "use payload <- result.try(case bit_array.to_string(body) {\n      Ok(s) -> Ok(option.Some(s))\n      Error(_) -> Error(\"non-utf8 payload\")\n    })"
+    RStruct(local_name: name, ..) -> {
+      let decoder = "decode_" <> stringutils.pascal_to_snake(name) <> "_struct"
+      "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case json.parse(text, "
+      <> decoder
+      <> "()) {\n        Ok(v) -> Ok(option.Some(v))\n        Error(_) -> Error(\"decode failed\")\n      }\n    })"
+    }
+    RDocument ->
+      "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case json.parse(text, decode.dynamic) {\n        Ok(d) -> Ok(option.Some(json_document.from_dynamic(d)))\n        Error(_) -> Error(\"decode failed\")\n      }\n    })"
+    REnum(local_name: name, ..) -> {
+      let decoder = "decode_" <> stringutils.pascal_to_snake(name) <> "_enum"
+      "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case json.parse(\"\\\"\" <> text <> \"\\\"\", "
+      <> decoder
+      <> "()) {\n        Ok(v) -> Ok(option.Some(v))\n        Error(_) -> Error(\"decode failed\")\n      }\n    })"
+    }
+    _ ->
+      "let payload = option.None"
+  }
   "pub fn parse_"
   <> snake
   <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  body: BitArray,\n) -> Result("
   <> output_type
-  <> ", String) {\n  case bit_array.to_string(body) {\n    Ok(text) -> case text {\n      \"\" -> decode_"
-  <> snake
-  <> "_output(\"{}\")\n      _ -> decode_"
-  <> snake
-  <> "_output(text)\n    }\n    Error(_) -> Error(\"non-utf8 body\")\n  }\n}\n\n"
+  <> ", String) {\n  {\n    "
+  <> payload_decode
+  <> "\n    Ok("
+  <> output_type
+  <> "(\n"
+  <> constructor_fields
+  <> "    ))\n  }\n}\n\n"
 }
 
 fn file_header(service_id: String) -> String {
@@ -1176,7 +1311,9 @@ fn file_header(service_id: String) -> String {
 
 import aws/credentials
 import aws/internal/client/awsjson as awsjson_client
+import aws/internal/codec/json_document
 import aws/internal/codec/json_float
+import aws/internal/codec/json_timestamp
 import aws/internal/codec/rest
 import aws/internal/http_send
 import gleam/bit_array
@@ -1186,6 +1323,7 @@ import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
+import gleam/result
 import gleam/string
 "
 }

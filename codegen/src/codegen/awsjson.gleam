@@ -535,6 +535,10 @@ fn emit_operation_body(
     <> in_struct_encoder_name
     <> "(input))\n}\n\n"
 
+  // Use the member-keyed parallel decoder for `decode_<op>_input` —
+  // protocol-test dispatchers pass `params` keyed by Smithy member
+  // names. Synth-Unit inputs have no members, so their `_struct`
+  // decoder works identically and gets re-used.
   let in_decoder =
     emit_parse_via_decoder(
       "decode_" <> snake <> "_input",
@@ -544,7 +548,7 @@ fn emit_operation_body(
         False ->
           "decode_"
           <> stringutils.pascal_to_snake(in_info.type_name)
-          <> "_struct"
+          <> "_struct_params"
       },
     )
 
@@ -669,7 +673,7 @@ fn emit_union_def(name: String, members: List(MemberDef)) -> String {
         acc
         <> "  "
         <> name
-        <> pascalize_member(m.json_name)
+        <> pascalize_member(m.member_name)
         <> "("
         <> types.gleam_type(m.target)
         <> ")\n"
@@ -769,6 +773,54 @@ fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
   let snake = stringutils.pascal_to_snake(name)
   emit_struct_encoder(name, "encode_" <> snake <> "_struct", members)
   <> emit_struct_decoder(name, "decode_" <> snake <> "_struct", members)
+  <> emit_struct_decoder_params(
+    name,
+    "decode_" <> snake <> "_struct_params",
+    members,
+  )
+}
+
+/// Parallel decoder keyed by Smithy member names rather than wire
+/// names. Used by the protocol-test dispatchers, whose `params` field
+/// is keyed by member identifiers and not by `@jsonName` overrides.
+fn emit_struct_decoder_params(
+  type_name: String,
+  fn_name: String,
+  members: List(MemberDef),
+) -> String {
+  case members {
+    [] ->
+      "pub fn "
+      <> fn_name
+      <> "() -> decode.Decoder("
+      <> type_name
+      <> ") {\n  decode.success("
+      <> type_name
+      <> ")\n}\n\n"
+    _ ->
+      "pub fn "
+      <> fn_name
+      <> "() -> decode.Decoder("
+      <> type_name
+      <> ") {\n"
+      <> list.fold(members, "", fn(acc, m) {
+        acc
+        <> "  use "
+        <> m.snake_name
+        <> " <- decode.optional_field(\""
+        <> m.member_name
+        <> "\", option.None, decode.optional("
+        <> types.json_decoder_params(m.target)
+        <> "))\n"
+      })
+      <> "  decode.success("
+      <> type_name
+      <> "(\n"
+      <> list.fold(members, "", fn(acc, m) {
+        acc <> "    " <> m.snake_name <> ": " <> m.snake_name <> ",\n"
+      })
+      <> "  ))\n}\n\n"
+  }
 }
 
 /// Emit an encoder that takes a typed value and returns `json.Json`
@@ -859,7 +911,7 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       acc
       <> "    "
       <> name
-      <> pascalize_member(m.json_name)
+      <> pascalize_member(m.member_name)
       <> "(x) -> json.object([#(\""
       <> m.json_name
       <> "\", "
@@ -897,7 +949,7 @@ fn emit_union_branch(union_name: String, m: MemberDef) -> String {
   <> types.json_decoder(m.target)
   <> ", fn(x) { decode.success("
   <> union_name
-  <> pascalize_member(m.json_name)
+  <> pascalize_member(m.member_name)
   <> "(x)) })"
 }
 
@@ -949,7 +1001,9 @@ fn file_header(service_id: String, protocol: Protocol) -> String {
 
 import aws/credentials
 import aws/internal/client/awsjson as awsjson_client
+import aws/internal/codec/json_document
 import aws/internal/codec/json_float
+import aws/internal/codec/json_timestamp
 import aws/internal/http_send
 import gleam/bit_array
 import gleam/dict

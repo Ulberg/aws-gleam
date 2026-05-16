@@ -3,7 +3,9 @@
 
 import aws/credentials
 import aws/internal/client/awsjson as awsjson_client
+import aws/internal/codec/json_document
 import aws/internal/codec/json_float
+import aws/internal/codec/json_timestamp
 import aws/internal/http_send
 import gleam/bit_array
 import gleam/dict
@@ -68,6 +70,13 @@ pub fn decode_content_type_parameters_input_struct() -> decode.Decoder(ContentTy
   ))
 }
 
+pub fn decode_content_type_parameters_input_struct_params() -> decode.Decoder(ContentTypeParametersInput) {
+  use value <- decode.optional_field("value", option.None, decode.optional(decode.int))
+  decode.success(ContentTypeParametersInput(
+    value: value,
+  ))
+}
+
 pub type ContentTypeParametersOutput {
   ContentTypeParametersOutput
 }
@@ -77,6 +86,10 @@ pub fn encode_content_type_parameters_output_struct(_v: ContentTypeParametersOut
 }
 
 pub fn decode_content_type_parameters_output_struct() -> decode.Decoder(ContentTypeParametersOutput) {
+  decode.success(ContentTypeParametersOutput)
+}
+
+pub fn decode_content_type_parameters_output_struct_params() -> decode.Decoder(ContentTypeParametersOutput) {
   decode.success(ContentTypeParametersOutput)
 }
 
@@ -96,7 +109,14 @@ pub fn encode_datetime_offsets_output_struct(input: DatetimeOffsetsOutput) -> js
 }
 
 pub fn decode_datetime_offsets_output_struct() -> decode.Decoder(DatetimeOffsetsOutput) {
-  use datetime <- decode.optional_field("datetime", option.None, decode.optional(decode.int))
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(DatetimeOffsetsOutput(
+    datetime: datetime,
+  ))
+}
+
+pub fn decode_datetime_offsets_output_struct_params() -> decode.Decoder(DatetimeOffsetsOutput) {
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(DatetimeOffsetsOutput(
     datetime: datetime,
   ))
@@ -124,6 +144,13 @@ pub fn decode_host_label_input_struct() -> decode.Decoder(HostLabelInput) {
   ))
 }
 
+pub fn decode_host_label_input_struct_params() -> decode.Decoder(HostLabelInput) {
+  use label <- decode.optional_field("label", option.None, decode.optional(decode.string))
+  decode.success(HostLabelInput(
+    label: label,
+  ))
+}
+
 pub type FractionalSecondsOutput {
   FractionalSecondsOutput(
     datetime: option.Option(Int),
@@ -140,7 +167,14 @@ pub fn encode_fractional_seconds_output_struct(input: FractionalSecondsOutput) -
 }
 
 pub fn decode_fractional_seconds_output_struct() -> decode.Decoder(FractionalSecondsOutput) {
-  use datetime <- decode.optional_field("datetime", option.None, decode.optional(decode.int))
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(FractionalSecondsOutput(
+    datetime: datetime,
+  ))
+}
+
+pub fn decode_fractional_seconds_output_struct_params() -> decode.Decoder(FractionalSecondsOutput) {
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(FractionalSecondsOutput(
     datetime: datetime,
   ))
@@ -162,6 +196,13 @@ pub fn encode_greeting_with_errors_output_struct(input: GreetingWithErrorsOutput
 }
 
 pub fn decode_greeting_with_errors_output_struct() -> decode.Decoder(GreetingWithErrorsOutput) {
+  use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
+  decode.success(GreetingWithErrorsOutput(
+    greeting: greeting,
+  ))
+}
+
+pub fn decode_greeting_with_errors_output_struct_params() -> decode.Decoder(GreetingWithErrorsOutput) {
   use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
   decode.success(GreetingWithErrorsOutput(
     greeting: greeting,
@@ -197,6 +238,15 @@ pub fn decode_complex_error_struct() -> decode.Decoder(ComplexError) {
   ))
 }
 
+pub fn decode_complex_error_struct_params() -> decode.Decoder(ComplexError) {
+  use nested <- decode.optional_field("Nested", option.None, decode.optional(decode_complex_nested_error_data_struct_params()))
+  use top_level <- decode.optional_field("TopLevel", option.None, decode.optional(decode.string))
+  decode.success(ComplexError(
+    nested: nested,
+    top_level: top_level,
+  ))
+}
+
 pub type ComplexNestedErrorData {
   ComplexNestedErrorData(
     foo: option.Option(String),
@@ -206,13 +256,20 @@ pub type ComplexNestedErrorData {
 pub fn encode_complex_nested_error_data_struct(input: ComplexNestedErrorData) -> json.Json {
   let pairs = []
   let pairs = case input.foo {
-    option.Some(v) -> [#("Foo", json.string(v)), ..pairs]
+    option.Some(v) -> [#("Fooooo", json.string(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_complex_nested_error_data_struct() -> decode.Decoder(ComplexNestedErrorData) {
+  use foo <- decode.optional_field("Fooooo", option.None, decode.optional(decode.string))
+  decode.success(ComplexNestedErrorData(
+    foo: foo,
+  ))
+}
+
+pub fn decode_complex_nested_error_data_struct_params() -> decode.Decoder(ComplexNestedErrorData) {
   use foo <- decode.optional_field("Foo", option.None, decode.optional(decode.string))
   decode.success(ComplexNestedErrorData(
     foo: foo,
@@ -228,6 +285,10 @@ pub fn encode_foo_error_struct(_v: FooError) -> json.Json {
 }
 
 pub fn decode_foo_error_struct() -> decode.Decoder(FooError) {
+  decode.success(FooError)
+}
+
+pub fn decode_foo_error_struct_params() -> decode.Decoder(FooError) {
   decode.success(FooError)
 }
 
@@ -247,6 +308,13 @@ pub fn encode_invalid_greeting_struct(input: InvalidGreeting) -> json.Json {
 }
 
 pub fn decode_invalid_greeting_struct() -> decode.Decoder(InvalidGreeting) {
+  use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
+  decode.success(InvalidGreeting(
+    message: message,
+  ))
+}
+
+pub fn decode_invalid_greeting_struct_params() -> decode.Decoder(InvalidGreeting) {
   use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
   decode.success(InvalidGreeting(
     message: message,
@@ -294,6 +362,23 @@ pub fn encode_json_enums_input_output_struct(input: JsonEnumsInputOutput) -> jso
 }
 
 pub fn decode_json_enums_input_output_struct() -> decode.Decoder(JsonEnumsInputOutput) {
+  use foo_enum1 <- decode.optional_field("fooEnum1", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum2 <- decode.optional_field("fooEnum2", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum3 <- decode.optional_field("fooEnum3", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum_list <- decode.optional_field("fooEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use foo_enum_map <- decode.optional_field("fooEnumMap", option.None, decode.optional(decode.dict(decode.string, decode_foo_enum_enum())))
+  use foo_enum_set <- decode.optional_field("fooEnumSet", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  decode.success(JsonEnumsInputOutput(
+    foo_enum1: foo_enum1,
+    foo_enum2: foo_enum2,
+    foo_enum3: foo_enum3,
+    foo_enum_list: foo_enum_list,
+    foo_enum_map: foo_enum_map,
+    foo_enum_set: foo_enum_set,
+  ))
+}
+
+pub fn decode_json_enums_input_output_struct_params() -> decode.Decoder(JsonEnumsInputOutput) {
   use foo_enum1 <- decode.optional_field("fooEnum1", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum2 <- decode.optional_field("fooEnum2", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum3 <- decode.optional_field("fooEnum3", option.None, decode.optional(decode_foo_enum_enum()))
@@ -398,6 +483,23 @@ pub fn decode_json_int_enums_input_output_struct() -> decode.Decoder(JsonIntEnum
   ))
 }
 
+pub fn decode_json_int_enums_input_output_struct_params() -> decode.Decoder(JsonIntEnumsInputOutput) {
+  use int_enum1 <- decode.optional_field("intEnum1", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use int_enum2 <- decode.optional_field("intEnum2", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use int_enum3 <- decode.optional_field("intEnum3", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use int_enum_list <- decode.optional_field("intEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use int_enum_map <- decode.optional_field("intEnumMap", option.None, decode.optional(decode.dict(decode.string, decode_integer_enum_int_enum())))
+  use int_enum_set <- decode.optional_field("intEnumSet", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  decode.success(JsonIntEnumsInputOutput(
+    int_enum1: int_enum1,
+    int_enum2: int_enum2,
+    int_enum3: int_enum3,
+    int_enum_list: int_enum_list,
+    int_enum_map: int_enum_map,
+    int_enum_set: int_enum_set,
+  ))
+}
+
 pub type IntegerEnum {
   IntegerEnumA
   IntegerEnumB
@@ -445,6 +547,13 @@ pub fn decode_union_input_output_struct() -> decode.Decoder(UnionInputOutput) {
   ))
 }
 
+pub fn decode_union_input_output_struct_params() -> decode.Decoder(UnionInputOutput) {
+  use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union()))
+  decode.success(UnionInputOutput(
+    contents: contents,
+  ))
+}
+
 pub type MyUnion {
   MyUnionBlobValue(BitArray)
   MyUnionBooleanValue(Bool)
@@ -482,7 +591,7 @@ pub fn decode_my_union_union() -> decode.Decoder(MyUnion) {
       decode.field("numberValue", decode.int, fn(x) { decode.success(MyUnionNumberValue(x)) }),
       decode.field("stringValue", decode.string, fn(x) { decode.success(MyUnionStringValue(x)) }),
       decode.field("structureValue", decode_greeting_struct_struct(), fn(x) { decode.success(MyUnionStructureValue(x)) }),
-      decode.field("timestampValue", decode.int, fn(x) { decode.success(MyUnionTimestampValue(x)) }),
+      decode.field("timestampValue", json_timestamp.decoder(), fn(x) { decode.success(MyUnionTimestampValue(x)) }),
     ],
   )
 }
@@ -503,6 +612,13 @@ pub fn encode_greeting_struct_struct(input: GreetingStruct) -> json.Json {
 }
 
 pub fn decode_greeting_struct_struct() -> decode.Decoder(GreetingStruct) {
+  use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
+  decode.success(GreetingStruct(
+    hi: hi,
+  ))
+}
+
+pub fn decode_greeting_struct_struct_params() -> decode.Decoder(GreetingStruct) {
   use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
   decode.success(GreetingStruct(
     hi: hi,
@@ -655,9 +771,9 @@ pub fn decode_kitchen_sink_struct() -> decode.Decoder(KitchenSink) {
   use double <- decode.optional_field("Double", option.None, decode.optional(json_float.decoder()))
   use empty_struct <- decode.optional_field("EmptyStruct", option.None, decode.optional(decode_empty_struct_struct()))
   use float <- decode.optional_field("Float", option.None, decode.optional(json_float.decoder()))
-  use httpdate_timestamp <- decode.optional_field("HttpdateTimestamp", option.None, decode.optional(decode.int))
+  use httpdate_timestamp <- decode.optional_field("HttpdateTimestamp", option.None, decode.optional(json_timestamp.decoder()))
   use integer <- decode.optional_field("Integer", option.None, decode.optional(decode.int))
-  use iso8601_timestamp <- decode.optional_field("Iso8601Timestamp", option.None, decode.optional(decode.int))
+  use iso8601_timestamp <- decode.optional_field("Iso8601Timestamp", option.None, decode.optional(json_timestamp.decoder()))
   use json_value <- decode.optional_field("JsonValue", option.None, decode.optional(decode.string))
   use list_of_lists <- decode.optional_field("ListOfLists", option.None, decode.optional(decode.list(decode.list(decode.string))))
   use list_of_maps_of_strings <- decode.optional_field("ListOfMapsOfStrings", option.None, decode.optional(decode.list(decode.dict(decode.string, decode.string))))
@@ -674,8 +790,65 @@ pub fn decode_kitchen_sink_struct() -> decode.Decoder(KitchenSink) {
   use simple_struct <- decode.optional_field("SimpleStruct", option.None, decode.optional(decode_simple_struct_struct()))
   use string <- decode.optional_field("String", option.None, decode.optional(decode.string))
   use struct_with_json_name <- decode.optional_field("StructWithJsonName", option.None, decode.optional(decode_struct_with_json_name_struct()))
-  use timestamp <- decode.optional_field("Timestamp", option.None, decode.optional(decode.int))
-  use unix_timestamp <- decode.optional_field("UnixTimestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("Timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  use unix_timestamp <- decode.optional_field("UnixTimestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(KitchenSink(
+    blob: blob,
+    boolean: boolean,
+    double: double,
+    empty_struct: empty_struct,
+    float: float,
+    httpdate_timestamp: httpdate_timestamp,
+    integer: integer,
+    iso8601_timestamp: iso8601_timestamp,
+    json_value: json_value,
+    list_of_lists: list_of_lists,
+    list_of_maps_of_strings: list_of_maps_of_strings,
+    list_of_strings: list_of_strings,
+    list_of_structs: list_of_structs,
+    long: long,
+    map_of_lists_of_strings: map_of_lists_of_strings,
+    map_of_maps: map_of_maps,
+    map_of_strings: map_of_strings,
+    map_of_structs: map_of_structs,
+    recursive_list: recursive_list,
+    recursive_map: recursive_map,
+    recursive_struct: recursive_struct,
+    simple_struct: simple_struct,
+    string: string,
+    struct_with_json_name: struct_with_json_name,
+    timestamp: timestamp,
+    unix_timestamp: unix_timestamp,
+  ))
+}
+
+pub fn decode_kitchen_sink_struct_params() -> decode.Decoder(KitchenSink) {
+  use blob <- decode.optional_field("Blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use boolean <- decode.optional_field("Boolean", option.None, decode.optional(decode.bool))
+  use double <- decode.optional_field("Double", option.None, decode.optional(json_float.decoder()))
+  use empty_struct <- decode.optional_field("EmptyStruct", option.None, decode.optional(decode_empty_struct_struct_params()))
+  use float <- decode.optional_field("Float", option.None, decode.optional(json_float.decoder()))
+  use httpdate_timestamp <- decode.optional_field("HttpdateTimestamp", option.None, decode.optional(json_timestamp.decoder()))
+  use integer <- decode.optional_field("Integer", option.None, decode.optional(decode.int))
+  use iso8601_timestamp <- decode.optional_field("Iso8601Timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  use json_value <- decode.optional_field("JsonValue", option.None, decode.optional(decode.string))
+  use list_of_lists <- decode.optional_field("ListOfLists", option.None, decode.optional(decode.list(decode.list(decode.string))))
+  use list_of_maps_of_strings <- decode.optional_field("ListOfMapsOfStrings", option.None, decode.optional(decode.list(decode.dict(decode.string, decode.string))))
+  use list_of_strings <- decode.optional_field("ListOfStrings", option.None, decode.optional(decode.list(decode.string)))
+  use list_of_structs <- decode.optional_field("ListOfStructs", option.None, decode.optional(decode.list(decode_simple_struct_struct_params())))
+  use long <- decode.optional_field("Long", option.None, decode.optional(decode.int))
+  use map_of_lists_of_strings <- decode.optional_field("MapOfListsOfStrings", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
+  use map_of_maps <- decode.optional_field("MapOfMaps", option.None, decode.optional(decode.dict(decode.string, decode.dict(decode.string, decode.string))))
+  use map_of_strings <- decode.optional_field("MapOfStrings", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use map_of_structs <- decode.optional_field("MapOfStructs", option.None, decode.optional(decode.dict(decode.string, decode_simple_struct_struct_params())))
+  use recursive_list <- decode.optional_field("RecursiveList", option.None, decode.optional(decode.list(decode_kitchen_sink_struct_params())))
+  use recursive_map <- decode.optional_field("RecursiveMap", option.None, decode.optional(decode.dict(decode.string, decode_kitchen_sink_struct_params())))
+  use recursive_struct <- decode.optional_field("RecursiveStruct", option.None, decode.optional(decode_kitchen_sink_struct_params()))
+  use simple_struct <- decode.optional_field("SimpleStruct", option.None, decode.optional(decode_simple_struct_struct_params()))
+  use string <- decode.optional_field("String", option.None, decode.optional(decode.string))
+  use struct_with_json_name <- decode.optional_field("StructWithJsonName", option.None, decode.optional(decode_struct_with_json_name_struct_params()))
+  use timestamp <- decode.optional_field("Timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  use unix_timestamp <- decode.optional_field("UnixTimestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(KitchenSink(
     blob: blob,
     boolean: boolean,
@@ -718,6 +891,10 @@ pub fn decode_empty_struct_struct() -> decode.Decoder(EmptyStruct) {
   decode.success(EmptyStruct)
 }
 
+pub fn decode_empty_struct_struct_params() -> decode.Decoder(EmptyStruct) {
+  decode.success(EmptyStruct)
+}
+
 pub type SimpleStruct {
   SimpleStruct(
     value: option.Option(String),
@@ -740,6 +917,13 @@ pub fn decode_simple_struct_struct() -> decode.Decoder(SimpleStruct) {
   ))
 }
 
+pub fn decode_simple_struct_struct_params() -> decode.Decoder(SimpleStruct) {
+  use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
+  decode.success(SimpleStruct(
+    value: value,
+  ))
+}
+
 pub type StructWithJsonName {
   StructWithJsonName(
     value: option.Option(String),
@@ -749,13 +933,20 @@ pub type StructWithJsonName {
 pub fn encode_struct_with_json_name_struct(input: StructWithJsonName) -> json.Json {
   let pairs = []
   let pairs = case input.value {
-    option.Some(v) -> [#("Value", json.string(v)), ..pairs]
+    option.Some(v) -> [#("RenamedMember", json.string(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_struct_with_json_name_struct() -> decode.Decoder(StructWithJsonName) {
+  use value <- decode.optional_field("RenamedMember", option.None, decode.optional(decode.string))
+  decode.success(StructWithJsonName(
+    value: value,
+  ))
+}
+
+pub fn decode_struct_with_json_name_struct_params() -> decode.Decoder(StructWithJsonName) {
   use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
   decode.success(StructWithJsonName(
     value: value,
@@ -826,6 +1017,25 @@ pub fn decode_error_with_members_struct() -> decode.Decoder(ErrorWithMembers) {
   ))
 }
 
+pub fn decode_error_with_members_struct_params() -> decode.Decoder(ErrorWithMembers) {
+  use code <- decode.optional_field("Code", option.None, decode.optional(decode.string))
+  use complex_data <- decode.optional_field("ComplexData", option.None, decode.optional(decode_kitchen_sink_struct_params()))
+  use integer_field <- decode.optional_field("IntegerField", option.None, decode.optional(decode.int))
+  use list_field <- decode.optional_field("ListField", option.None, decode.optional(decode.list(decode.string)))
+  use map_field <- decode.optional_field("MapField", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
+  use string_field <- decode.optional_field("StringField", option.None, decode.optional(decode.string))
+  decode.success(ErrorWithMembers(
+    code: code,
+    complex_data: complex_data,
+    integer_field: integer_field,
+    list_field: list_field,
+    map_field: map_field,
+    message: message,
+    string_field: string_field,
+  ))
+}
+
 pub type ErrorWithoutMembers {
   ErrorWithoutMembers
 }
@@ -835,6 +1045,10 @@ pub fn encode_error_without_members_struct(_v: ErrorWithoutMembers) -> json.Json
 }
 
 pub fn decode_error_without_members_struct() -> decode.Decoder(ErrorWithoutMembers) {
+  decode.success(ErrorWithoutMembers)
+}
+
+pub fn decode_error_without_members_struct_params() -> decode.Decoder(ErrorWithoutMembers) {
   decode.success(ErrorWithoutMembers)
 }
 
@@ -854,6 +1068,13 @@ pub fn encode_null_operation_input_output_struct(input: NullOperationInputOutput
 }
 
 pub fn decode_null_operation_input_output_struct() -> decode.Decoder(NullOperationInputOutput) {
+  use string <- decode.optional_field("string", option.None, decode.optional(decode.string))
+  decode.success(NullOperationInputOutput(
+    string: string,
+  ))
+}
+
+pub fn decode_null_operation_input_output_struct_params() -> decode.Decoder(NullOperationInputOutput) {
   use string <- decode.optional_field("string", option.None, decode.optional(decode.string))
   decode.success(NullOperationInputOutput(
     string: string,
@@ -882,6 +1103,13 @@ pub fn decode_operation_with_optional_input_output_input_struct() -> decode.Deco
   ))
 }
 
+pub fn decode_operation_with_optional_input_output_input_struct_params() -> decode.Decoder(OperationWithOptionalInputOutputInput) {
+  use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
+  decode.success(OperationWithOptionalInputOutputInput(
+    value: value,
+  ))
+}
+
 pub type OperationWithOptionalInputOutputOutput {
   OperationWithOptionalInputOutputOutput(
     value: option.Option(String),
@@ -904,6 +1132,13 @@ pub fn decode_operation_with_optional_input_output_output_struct() -> decode.Dec
   ))
 }
 
+pub fn decode_operation_with_optional_input_output_output_struct_params() -> decode.Decoder(OperationWithOptionalInputOutputOutput) {
+  use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
+  decode.success(OperationWithOptionalInputOutputOutput(
+    value: value,
+  ))
+}
+
 pub type PutAndGetInlineDocumentsInputOutput {
   PutAndGetInlineDocumentsInputOutput(
     inline_document: option.Option(json.Json),
@@ -920,7 +1155,14 @@ pub fn encode_put_and_get_inline_documents_input_output_struct(input: PutAndGetI
 }
 
 pub fn decode_put_and_get_inline_documents_input_output_struct() -> decode.Decoder(PutAndGetInlineDocumentsInputOutput) {
-  use inline_document <- decode.optional_field("inlineDocument", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use inline_document <- decode.optional_field("inlineDocument", option.None, decode.optional(json_document.decoder()))
+  decode.success(PutAndGetInlineDocumentsInputOutput(
+    inline_document: inline_document,
+  ))
+}
+
+pub fn decode_put_and_get_inline_documents_input_output_struct_params() -> decode.Decoder(PutAndGetInlineDocumentsInputOutput) {
+  use inline_document <- decode.optional_field("inlineDocument", option.None, decode.optional(json_document.decoder()))
   decode.success(PutAndGetInlineDocumentsInputOutput(
     inline_document: inline_document,
   ))
@@ -947,6 +1189,15 @@ pub fn encode_simple_scalar_properties_input_output_struct(input: SimpleScalarPr
 }
 
 pub fn decode_simple_scalar_properties_input_output_struct() -> decode.Decoder(SimpleScalarPropertiesInputOutput) {
+  use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
+  use float_value <- decode.optional_field("floatValue", option.None, decode.optional(json_float.decoder()))
+  decode.success(SimpleScalarPropertiesInputOutput(
+    double_value: double_value,
+    float_value: float_value,
+  ))
+}
+
+pub fn decode_simple_scalar_properties_input_output_struct_params() -> decode.Decoder(SimpleScalarPropertiesInputOutput) {
   use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
   use float_value <- decode.optional_field("floatValue", option.None, decode.optional(json_float.decoder()))
   decode.success(SimpleScalarPropertiesInputOutput(
@@ -984,13 +1235,22 @@ pub fn decode_sparse_nulls_operation_input_output_struct() -> decode.Decoder(Spa
   ))
 }
 
+pub fn decode_sparse_nulls_operation_input_output_struct_params() -> decode.Decoder(SparseNullsOperationInputOutput) {
+  use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.string)))
+  use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(SparseNullsOperationInputOutput(
+    sparse_string_list: sparse_string_list,
+    sparse_string_map: sparse_string_map,
+  ))
+}
+
 
 pub fn encode_content_type_parameters_input(input: ContentTypeParametersInput) -> String {
   json.to_string(encode_content_type_parameters_input_struct(input))
 }
 
 pub fn decode_content_type_parameters_input(body: String) -> Result(ContentTypeParametersInput, String) {
-  case json.parse(body, decode_content_type_parameters_input_struct()) {
+  case json.parse(body, decode_content_type_parameters_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -1326,7 +1586,7 @@ pub fn encode_endpoint_with_host_label_operation_input(input: HostLabelInput) ->
 }
 
 pub fn decode_endpoint_with_host_label_operation_input(body: String) -> Result(HostLabelInput, String) {
-  case json.parse(body, decode_host_label_input_struct()) {
+  case json.parse(body, decode_host_label_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -1668,7 +1928,7 @@ pub fn encode_json_enums_input(input: JsonEnumsInputOutput) -> String {
 }
 
 pub fn decode_json_enums_input(body: String) -> Result(JsonEnumsInputOutput, String) {
-  case json.parse(body, decode_json_enums_input_output_struct()) {
+  case json.parse(body, decode_json_enums_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -1734,7 +1994,7 @@ pub fn encode_json_int_enums_input(input: JsonIntEnumsInputOutput) -> String {
 }
 
 pub fn decode_json_int_enums_input(body: String) -> Result(JsonIntEnumsInputOutput, String) {
-  case json.parse(body, decode_json_int_enums_input_output_struct()) {
+  case json.parse(body, decode_json_int_enums_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -1800,7 +2060,7 @@ pub fn encode_json_unions_input(input: UnionInputOutput) -> String {
 }
 
 pub fn decode_json_unions_input(body: String) -> Result(UnionInputOutput, String) {
-  case json.parse(body, decode_union_input_output_struct()) {
+  case json.parse(body, decode_union_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -1866,7 +2126,7 @@ pub fn encode_kitchen_sink_operation_input(input: KitchenSink) -> String {
 }
 
 pub fn decode_kitchen_sink_operation_input(body: String) -> Result(KitchenSink, String) {
-  case json.parse(body, decode_kitchen_sink_struct()) {
+  case json.parse(body, decode_kitchen_sink_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -1952,7 +2212,7 @@ pub fn encode_null_operation_input(input: NullOperationInputOutput) -> String {
 }
 
 pub fn decode_null_operation_input(body: String) -> Result(NullOperationInputOutput, String) {
-  case json.parse(body, decode_null_operation_input_output_struct()) {
+  case json.parse(body, decode_null_operation_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -2018,7 +2278,7 @@ pub fn encode_operation_with_optional_input_output_input(input: OperationWithOpt
 }
 
 pub fn decode_operation_with_optional_input_output_input(body: String) -> Result(OperationWithOptionalInputOutputInput, String) {
-  case json.parse(body, decode_operation_with_optional_input_output_input_struct()) {
+  case json.parse(body, decode_operation_with_optional_input_output_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -2084,7 +2344,7 @@ pub fn encode_put_and_get_inline_documents_input(input: PutAndGetInlineDocuments
 }
 
 pub fn decode_put_and_get_inline_documents_input(body: String) -> Result(PutAndGetInlineDocumentsInputOutput, String) {
-  case json.parse(body, decode_put_and_get_inline_documents_input_output_struct()) {
+  case json.parse(body, decode_put_and_get_inline_documents_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -2150,7 +2410,7 @@ pub fn encode_simple_scalar_properties_input(input: SimpleScalarPropertiesInputO
 }
 
 pub fn decode_simple_scalar_properties_input(body: String) -> Result(SimpleScalarPropertiesInputOutput, String) {
-  case json.parse(body, decode_simple_scalar_properties_input_output_struct()) {
+  case json.parse(body, decode_simple_scalar_properties_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -2216,7 +2476,7 @@ pub fn encode_sparse_nulls_operation_input(input: SparseNullsOperationInputOutpu
 }
 
 pub fn decode_sparse_nulls_operation_input(body: String) -> Result(SparseNullsOperationInputOutput, String) {
-  case json.parse(body, decode_sparse_nulls_operation_input_output_struct()) {
+  case json.parse(body, decode_sparse_nulls_operation_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }

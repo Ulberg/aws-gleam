@@ -5,13 +5,36 @@
          aws_timestamp/0, random_float/0, encode_dynamic_to_json/1,
          float_nan/0, float_infinity/0, float_neg_infinity/0,
          float_is_nan/1, float_is_infinite/1, json_canonicalize/1,
-         xml_parse/1, float_short/1, format_iso8601/1]).
+         xml_parse/1, float_short/1, format_iso8601/1, parse_http_date/1]).
 
 %% Shortest round-tripping float string, e.g. `1.1` not `1.10000000…e+00`.
 %% Used by query / header / URI-label / XML formatters; matches AWS's
 %% canonical wire form for the SimpleScalarProperties protocol-test
 %% suite. Requires OTP 25+.
 float_short(F) when is_float(F) -> float_to_binary(F, [short]).
+
+%% RFC 7231 / RFC 1123 HTTP-date: "Sun, 06 Nov 1994 08:49:37 GMT".
+%% Used by Smithy `@timestampFormat("http-date")` on response headers
+%% / bodies. Returns epoch seconds or `{error, nil}` on malformed input.
+parse_http_date(Bin) when is_binary(Bin) ->
+    Months = #{<<"Jan">>=>1, <<"Feb">>=>2, <<"Mar">>=>3, <<"Apr">>=>4,
+               <<"May">>=>5, <<"Jun">>=>6, <<"Jul">>=>7, <<"Aug">>=>8,
+               <<"Sep">>=>9, <<"Oct">>=>10, <<"Nov">>=>11, <<"Dec">>=>12},
+    Re = "^[A-Za-z]+, ([0-9]{2}) ([A-Za-z]{3}) ([0-9]{4}) ([0-9]{2}):([0-9]{2}):([0-9]{2}) GMT$",
+    case re:run(Bin, Re, [{capture, all_but_first, binary}]) of
+        {match, [D, MoBin, Y, H, Mi, S]} ->
+            case maps:find(MoBin, Months) of
+                {ok, Mo} ->
+                    DateTime = {
+                        {binary_to_integer(Y), Mo, binary_to_integer(D)},
+                        {binary_to_integer(H), binary_to_integer(Mi), binary_to_integer(S)}
+                    },
+                    Epoch = 62167219200,
+                    {ok, calendar:datetime_to_gregorian_seconds(DateTime) - Epoch};
+                error -> {error, nil}
+            end;
+        _ -> {error, nil}
+    end.
 
 %% Inverse of `parse_iso8601`: epoch seconds (Int) → `"YYYY-MM-DDTHH:MM:SSZ"`
 %% UTC string. The default `@timestampFormat` for `date-time` in

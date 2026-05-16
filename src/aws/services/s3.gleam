@@ -3,7 +3,9 @@
 
 import aws/credentials
 import aws/internal/client/awsjson as awsjson_client
+import aws/internal/codec/json_document
 import aws/internal/codec/json_float
+import aws/internal/codec/json_timestamp
 import aws/internal/codec/rest
 import aws/internal/codec/xml
 import aws/internal/codec/xml_decode
@@ -85,7 +87,24 @@ pub fn encode_abort_multipart_upload_request_struct(input: AbortMultipartUploadR
 pub fn decode_abort_multipart_upload_request_struct() -> decode.Decoder(AbortMultipartUploadRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
-  use if_match_initiated_time <- decode.optional_field("IfMatchInitiatedTime", option.None, decode.optional(decode.int))
+  use if_match_initiated_time <- decode.optional_field("IfMatchInitiatedTime", option.None, decode.optional(json_timestamp.decoder()))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use upload_id <- decode.optional_field("UploadId", option.None, decode.optional(decode.string))
+  decode.success(AbortMultipartUploadRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    if_match_initiated_time: if_match_initiated_time,
+    key: key,
+    request_payer: request_payer,
+    upload_id: upload_id,
+  ))
+}
+
+pub fn decode_abort_multipart_upload_request_struct_params() -> decode.Decoder(AbortMultipartUploadRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use if_match_initiated_time <- decode.optional_field("IfMatchInitiatedTime", option.None, decode.optional(json_timestamp.decoder()))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
   use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
   use upload_id <- decode.optional_field("UploadId", option.None, decode.optional(decode.string))
@@ -166,6 +185,13 @@ pub fn decode_abort_multipart_upload_output_struct() -> decode.Decoder(AbortMult
   ))
 }
 
+pub fn decode_abort_multipart_upload_output_struct_params() -> decode.Decoder(AbortMultipartUploadOutput) {
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  decode.success(AbortMultipartUploadOutput(
+    request_charged: request_charged,
+  ))
+}
+
 pub fn encode_abort_multipart_upload_output_xml_inner(input: AbortMultipartUploadOutput) -> String {
   let inner = ""
   inner
@@ -210,6 +236,10 @@ pub fn encode_no_such_upload_struct(_v: NoSuchUpload) -> json.Json {
 }
 
 pub fn decode_no_such_upload_struct() -> decode.Decoder(NoSuchUpload) {
+  decode.success(NoSuchUpload)
+}
+
+pub fn decode_no_such_upload_struct_params() -> decode.Decoder(NoSuchUpload) {
   decode.success(NoSuchUpload)
 }
 
@@ -401,6 +431,57 @@ pub fn decode_complete_multipart_upload_request_struct() -> decode.Decoder(Compl
   ))
 }
 
+pub fn decode_complete_multipart_upload_request_struct_params() -> decode.Decoder(CompleteMultipartUploadRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
+  use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
+  use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
+  use checksum_md5 <- decode.optional_field("ChecksumMD5", option.None, decode.optional(decode.string))
+  use checksum_sha1 <- decode.optional_field("ChecksumSHA1", option.None, decode.optional(decode.string))
+  use checksum_sha256 <- decode.optional_field("ChecksumSHA256", option.None, decode.optional(decode.string))
+  use checksum_sha512 <- decode.optional_field("ChecksumSHA512", option.None, decode.optional(decode.string))
+  use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
+  use checksum_xxhash128 <- decode.optional_field("ChecksumXXHASH128", option.None, decode.optional(decode.string))
+  use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
+  use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use if_match <- decode.optional_field("IfMatch", option.None, decode.optional(decode.string))
+  use if_none_match <- decode.optional_field("IfNoneMatch", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use mpu_object_size <- decode.optional_field("MpuObjectSize", option.None, decode.optional(decode.int))
+  use multipart_upload <- decode.optional_field("MultipartUpload", option.None, decode.optional(decode_completed_multipart_upload_struct_params()))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key <- decode.optional_field("SSECustomerKey", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use upload_id <- decode.optional_field("UploadId", option.None, decode.optional(decode.string))
+  decode.success(CompleteMultipartUploadRequest(
+    bucket: bucket,
+    checksum_crc32: checksum_crc32,
+    checksum_crc32_c: checksum_crc32_c,
+    checksum_crc64_nvme: checksum_crc64_nvme,
+    checksum_md5: checksum_md5,
+    checksum_sha1: checksum_sha1,
+    checksum_sha256: checksum_sha256,
+    checksum_sha512: checksum_sha512,
+    checksum_type: checksum_type,
+    checksum_xxhash128: checksum_xxhash128,
+    checksum_xxhash3: checksum_xxhash3,
+    checksum_xxhash64: checksum_xxhash64,
+    expected_bucket_owner: expected_bucket_owner,
+    if_match: if_match,
+    if_none_match: if_none_match,
+    key: key,
+    mpu_object_size: mpu_object_size,
+    multipart_upload: multipart_upload,
+    request_payer: request_payer,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key: sse_customer_key,
+    sse_customer_key_md5: sse_customer_key_md5,
+    upload_id: upload_id,
+  ))
+}
+
 pub fn encode_complete_multipart_upload_request_xml_inner(input: CompleteMultipartUploadRequest) -> String {
   let inner = ""
   inner
@@ -505,6 +586,13 @@ pub fn decode_completed_multipart_upload_struct() -> decode.Decoder(CompletedMul
   ))
 }
 
+pub fn decode_completed_multipart_upload_struct_params() -> decode.Decoder(CompletedMultipartUpload) {
+  use parts <- decode.optional_field("Parts", option.None, decode.optional(decode.list(decode_completed_part_struct_params())))
+  decode.success(CompletedMultipartUpload(
+    parts: parts,
+  ))
+}
+
 pub fn encode_completed_multipart_upload_xml_inner(input: CompletedMultipartUpload) -> String {
   let inner = ""
   let inner = case input.parts {
@@ -596,6 +684,35 @@ pub fn encode_completed_part_struct(input: CompletedPart) -> json.Json {
 }
 
 pub fn decode_completed_part_struct() -> decode.Decoder(CompletedPart) {
+  use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
+  use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
+  use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
+  use checksum_md5 <- decode.optional_field("ChecksumMD5", option.None, decode.optional(decode.string))
+  use checksum_sha1 <- decode.optional_field("ChecksumSHA1", option.None, decode.optional(decode.string))
+  use checksum_sha256 <- decode.optional_field("ChecksumSHA256", option.None, decode.optional(decode.string))
+  use checksum_sha512 <- decode.optional_field("ChecksumSHA512", option.None, decode.optional(decode.string))
+  use checksum_xxhash128 <- decode.optional_field("ChecksumXXHASH128", option.None, decode.optional(decode.string))
+  use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
+  use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
+  use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
+  use part_number <- decode.optional_field("PartNumber", option.None, decode.optional(decode.int))
+  decode.success(CompletedPart(
+    checksum_crc32: checksum_crc32,
+    checksum_crc32_c: checksum_crc32_c,
+    checksum_crc64_nvme: checksum_crc64_nvme,
+    checksum_md5: checksum_md5,
+    checksum_sha1: checksum_sha1,
+    checksum_sha256: checksum_sha256,
+    checksum_sha512: checksum_sha512,
+    checksum_xxhash128: checksum_xxhash128,
+    checksum_xxhash3: checksum_xxhash3,
+    checksum_xxhash64: checksum_xxhash64,
+    e_tag: e_tag,
+    part_number: part_number,
+  ))
+}
+
+pub fn decode_completed_part_struct_params() -> decode.Decoder(CompletedPart) {
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -826,6 +943,53 @@ pub fn encode_complete_multipart_upload_output_struct(input: CompleteMultipartUp
 }
 
 pub fn decode_complete_multipart_upload_output_struct() -> decode.Decoder(CompleteMultipartUploadOutput) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
+  use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
+  use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
+  use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
+  use checksum_md5 <- decode.optional_field("ChecksumMD5", option.None, decode.optional(decode.string))
+  use checksum_sha1 <- decode.optional_field("ChecksumSHA1", option.None, decode.optional(decode.string))
+  use checksum_sha256 <- decode.optional_field("ChecksumSHA256", option.None, decode.optional(decode.string))
+  use checksum_sha512 <- decode.optional_field("ChecksumSHA512", option.None, decode.optional(decode.string))
+  use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
+  use checksum_xxhash128 <- decode.optional_field("ChecksumXXHASH128", option.None, decode.optional(decode.string))
+  use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
+  use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
+  use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
+  use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use location <- decode.optional_field("Location", option.None, decode.optional(decode.string))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use ssekms_key_id <- decode.optional_field("SSEKMSKeyId", option.None, decode.optional(decode.string))
+  use server_side_encryption <- decode.optional_field("ServerSideEncryption", option.None, decode.optional(decode_server_side_encryption_enum()))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(CompleteMultipartUploadOutput(
+    bucket: bucket,
+    bucket_key_enabled: bucket_key_enabled,
+    checksum_crc32: checksum_crc32,
+    checksum_crc32_c: checksum_crc32_c,
+    checksum_crc64_nvme: checksum_crc64_nvme,
+    checksum_md5: checksum_md5,
+    checksum_sha1: checksum_sha1,
+    checksum_sha256: checksum_sha256,
+    checksum_sha512: checksum_sha512,
+    checksum_type: checksum_type,
+    checksum_xxhash128: checksum_xxhash128,
+    checksum_xxhash3: checksum_xxhash3,
+    checksum_xxhash64: checksum_xxhash64,
+    e_tag: e_tag,
+    expiration: expiration,
+    key: key,
+    location: location,
+    request_charged: request_charged,
+    ssekms_key_id: ssekms_key_id,
+    server_side_encryption: server_side_encryption,
+    version_id: version_id,
+  ))
+}
+
+pub fn decode_complete_multipart_upload_output_struct_params() -> decode.Decoder(CompleteMultipartUploadOutput) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
@@ -1254,9 +1418,9 @@ pub fn decode_copy_object_request_struct() -> decode.Decoder(CopyObjectRequest) 
   use content_type <- decode.optional_field("ContentType", option.None, decode.optional(decode.string))
   use copy_source <- decode.optional_field("CopySource", option.None, decode.optional(decode.string))
   use copy_source_if_match <- decode.optional_field("CopySourceIfMatch", option.None, decode.optional(decode.string))
-  use copy_source_if_modified_since <- decode.optional_field("CopySourceIfModifiedSince", option.None, decode.optional(decode.int))
+  use copy_source_if_modified_since <- decode.optional_field("CopySourceIfModifiedSince", option.None, decode.optional(json_timestamp.decoder()))
   use copy_source_if_none_match <- decode.optional_field("CopySourceIfNoneMatch", option.None, decode.optional(decode.string))
-  use copy_source_if_unmodified_since <- decode.optional_field("CopySourceIfUnmodifiedSince", option.None, decode.optional(decode.int))
+  use copy_source_if_unmodified_since <- decode.optional_field("CopySourceIfUnmodifiedSince", option.None, decode.optional(json_timestamp.decoder()))
   use copy_source_sse_customer_algorithm <- decode.optional_field("CopySourceSSECustomerAlgorithm", option.None, decode.optional(decode.string))
   use copy_source_sse_customer_key <- decode.optional_field("CopySourceSSECustomerKey", option.None, decode.optional(decode.string))
   use copy_source_sse_customer_key_md5 <- decode.optional_field("CopySourceSSECustomerKeyMD5", option.None, decode.optional(decode.string))
@@ -1274,7 +1438,98 @@ pub fn decode_copy_object_request_struct() -> decode.Decoder(CopyObjectRequest) 
   use metadata_directive <- decode.optional_field("MetadataDirective", option.None, decode.optional(decode_metadata_directive_enum()))
   use object_lock_legal_hold_status <- decode.optional_field("ObjectLockLegalHoldStatus", option.None, decode.optional(decode_object_lock_legal_hold_status_enum()))
   use object_lock_mode <- decode.optional_field("ObjectLockMode", option.None, decode.optional(decode_object_lock_mode_enum()))
-  use object_lock_retain_until_date <- decode.optional_field("ObjectLockRetainUntilDate", option.None, decode.optional(decode.int))
+  use object_lock_retain_until_date <- decode.optional_field("ObjectLockRetainUntilDate", option.None, decode.optional(json_timestamp.decoder()))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key <- decode.optional_field("SSECustomerKey", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use ssekms_encryption_context <- decode.optional_field("SSEKMSEncryptionContext", option.None, decode.optional(decode.string))
+  use ssekms_key_id <- decode.optional_field("SSEKMSKeyId", option.None, decode.optional(decode.string))
+  use server_side_encryption <- decode.optional_field("ServerSideEncryption", option.None, decode.optional(decode_server_side_encryption_enum()))
+  use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_storage_class_enum()))
+  use tagging <- decode.optional_field("Tagging", option.None, decode.optional(decode.string))
+  use tagging_directive <- decode.optional_field("TaggingDirective", option.None, decode.optional(decode_tagging_directive_enum()))
+  use website_redirect_location <- decode.optional_field("WebsiteRedirectLocation", option.None, decode.optional(decode.string))
+  decode.success(CopyObjectRequest(
+    acl: acl,
+    bucket: bucket,
+    bucket_key_enabled: bucket_key_enabled,
+    cache_control: cache_control,
+    checksum_algorithm: checksum_algorithm,
+    content_disposition: content_disposition,
+    content_encoding: content_encoding,
+    content_language: content_language,
+    content_type: content_type,
+    copy_source: copy_source,
+    copy_source_if_match: copy_source_if_match,
+    copy_source_if_modified_since: copy_source_if_modified_since,
+    copy_source_if_none_match: copy_source_if_none_match,
+    copy_source_if_unmodified_since: copy_source_if_unmodified_since,
+    copy_source_sse_customer_algorithm: copy_source_sse_customer_algorithm,
+    copy_source_sse_customer_key: copy_source_sse_customer_key,
+    copy_source_sse_customer_key_md5: copy_source_sse_customer_key_md5,
+    expected_bucket_owner: expected_bucket_owner,
+    expected_source_bucket_owner: expected_source_bucket_owner,
+    expires: expires,
+    grant_full_control: grant_full_control,
+    grant_read: grant_read,
+    grant_read_acp: grant_read_acp,
+    grant_write_acp: grant_write_acp,
+    if_match: if_match,
+    if_none_match: if_none_match,
+    key: key,
+    metadata: metadata,
+    metadata_directive: metadata_directive,
+    object_lock_legal_hold_status: object_lock_legal_hold_status,
+    object_lock_mode: object_lock_mode,
+    object_lock_retain_until_date: object_lock_retain_until_date,
+    request_payer: request_payer,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key: sse_customer_key,
+    sse_customer_key_md5: sse_customer_key_md5,
+    ssekms_encryption_context: ssekms_encryption_context,
+    ssekms_key_id: ssekms_key_id,
+    server_side_encryption: server_side_encryption,
+    storage_class: storage_class,
+    tagging: tagging,
+    tagging_directive: tagging_directive,
+    website_redirect_location: website_redirect_location,
+  ))
+}
+
+pub fn decode_copy_object_request_struct_params() -> decode.Decoder(CopyObjectRequest) {
+  use acl <- decode.optional_field("ACL", option.None, decode.optional(decode_object_canned_acl_enum()))
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
+  use cache_control <- decode.optional_field("CacheControl", option.None, decode.optional(decode.string))
+  use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode_checksum_algorithm_enum()))
+  use content_disposition <- decode.optional_field("ContentDisposition", option.None, decode.optional(decode.string))
+  use content_encoding <- decode.optional_field("ContentEncoding", option.None, decode.optional(decode.string))
+  use content_language <- decode.optional_field("ContentLanguage", option.None, decode.optional(decode.string))
+  use content_type <- decode.optional_field("ContentType", option.None, decode.optional(decode.string))
+  use copy_source <- decode.optional_field("CopySource", option.None, decode.optional(decode.string))
+  use copy_source_if_match <- decode.optional_field("CopySourceIfMatch", option.None, decode.optional(decode.string))
+  use copy_source_if_modified_since <- decode.optional_field("CopySourceIfModifiedSince", option.None, decode.optional(json_timestamp.decoder()))
+  use copy_source_if_none_match <- decode.optional_field("CopySourceIfNoneMatch", option.None, decode.optional(decode.string))
+  use copy_source_if_unmodified_since <- decode.optional_field("CopySourceIfUnmodifiedSince", option.None, decode.optional(json_timestamp.decoder()))
+  use copy_source_sse_customer_algorithm <- decode.optional_field("CopySourceSSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use copy_source_sse_customer_key <- decode.optional_field("CopySourceSSECustomerKey", option.None, decode.optional(decode.string))
+  use copy_source_sse_customer_key_md5 <- decode.optional_field("CopySourceSSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use expected_source_bucket_owner <- decode.optional_field("ExpectedSourceBucketOwner", option.None, decode.optional(decode.string))
+  use expires <- decode.optional_field("Expires", option.None, decode.optional(decode.string))
+  use grant_full_control <- decode.optional_field("GrantFullControl", option.None, decode.optional(decode.string))
+  use grant_read <- decode.optional_field("GrantRead", option.None, decode.optional(decode.string))
+  use grant_read_acp <- decode.optional_field("GrantReadACP", option.None, decode.optional(decode.string))
+  use grant_write_acp <- decode.optional_field("GrantWriteACP", option.None, decode.optional(decode.string))
+  use if_match <- decode.optional_field("IfMatch", option.None, decode.optional(decode.string))
+  use if_none_match <- decode.optional_field("IfNoneMatch", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use metadata <- decode.optional_field("Metadata", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use metadata_directive <- decode.optional_field("MetadataDirective", option.None, decode.optional(decode_metadata_directive_enum()))
+  use object_lock_legal_hold_status <- decode.optional_field("ObjectLockLegalHoldStatus", option.None, decode.optional(decode_object_lock_legal_hold_status_enum()))
+  use object_lock_mode <- decode.optional_field("ObjectLockMode", option.None, decode.optional(decode_object_lock_mode_enum()))
+  use object_lock_retain_until_date <- decode.optional_field("ObjectLockRetainUntilDate", option.None, decode.optional(json_timestamp.decoder()))
   use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
   use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
   use sse_customer_key <- decode.optional_field("SSECustomerKey", option.None, decode.optional(decode.string))
@@ -1751,6 +2006,33 @@ pub fn decode_copy_object_output_struct() -> decode.Decoder(CopyObjectOutput) {
   ))
 }
 
+pub fn decode_copy_object_output_struct_params() -> decode.Decoder(CopyObjectOutput) {
+  use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
+  use copy_object_result <- decode.optional_field("CopyObjectResult", option.None, decode.optional(decode_copy_object_result_struct_params()))
+  use copy_source_version_id <- decode.optional_field("CopySourceVersionId", option.None, decode.optional(decode.string))
+  use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode.string))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use ssekms_encryption_context <- decode.optional_field("SSEKMSEncryptionContext", option.None, decode.optional(decode.string))
+  use ssekms_key_id <- decode.optional_field("SSEKMSKeyId", option.None, decode.optional(decode.string))
+  use server_side_encryption <- decode.optional_field("ServerSideEncryption", option.None, decode.optional(decode_server_side_encryption_enum()))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(CopyObjectOutput(
+    bucket_key_enabled: bucket_key_enabled,
+    copy_object_result: copy_object_result,
+    copy_source_version_id: copy_source_version_id,
+    expiration: expiration,
+    request_charged: request_charged,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key_md5: sse_customer_key_md5,
+    ssekms_encryption_context: ssekms_encryption_context,
+    ssekms_key_id: ssekms_key_id,
+    server_side_encryption: server_side_encryption,
+    version_id: version_id,
+  ))
+}
+
 pub fn encode_copy_object_output_xml_inner(input: CopyObjectOutput) -> String {
   let inner = ""
   inner
@@ -1875,7 +2157,38 @@ pub fn decode_copy_object_result_struct() -> decode.Decoder(CopyObjectResult) {
   use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
   use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
-  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(decode.int))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(CopyObjectResult(
+    checksum_crc32: checksum_crc32,
+    checksum_crc32_c: checksum_crc32_c,
+    checksum_crc64_nvme: checksum_crc64_nvme,
+    checksum_md5: checksum_md5,
+    checksum_sha1: checksum_sha1,
+    checksum_sha256: checksum_sha256,
+    checksum_sha512: checksum_sha512,
+    checksum_type: checksum_type,
+    checksum_xxhash128: checksum_xxhash128,
+    checksum_xxhash3: checksum_xxhash3,
+    checksum_xxhash64: checksum_xxhash64,
+    e_tag: e_tag,
+    last_modified: last_modified,
+  ))
+}
+
+pub fn decode_copy_object_result_struct_params() -> decode.Decoder(CopyObjectResult) {
+  use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
+  use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
+  use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
+  use checksum_md5 <- decode.optional_field("ChecksumMD5", option.None, decode.optional(decode.string))
+  use checksum_sha1 <- decode.optional_field("ChecksumSHA1", option.None, decode.optional(decode.string))
+  use checksum_sha256 <- decode.optional_field("ChecksumSHA256", option.None, decode.optional(decode.string))
+  use checksum_sha512 <- decode.optional_field("ChecksumSHA512", option.None, decode.optional(decode.string))
+  use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
+  use checksum_xxhash128 <- decode.optional_field("ChecksumXXHASH128", option.None, decode.optional(decode.string))
+  use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
+  use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
+  use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(CopyObjectResult(
     checksum_crc32: checksum_crc32,
     checksum_crc32_c: checksum_crc32_c,
@@ -1998,6 +2311,10 @@ pub fn decode_object_not_in_active_tier_error_struct() -> decode.Decoder(ObjectN
   decode.success(ObjectNotInActiveTierError)
 }
 
+pub fn decode_object_not_in_active_tier_error_struct_params() -> decode.Decoder(ObjectNotInActiveTierError) {
+  decode.success(ObjectNotInActiveTierError)
+}
+
 pub fn encode_object_not_in_active_tier_error_xml_inner(_input: ObjectNotInActiveTierError) -> String {
   ""
 }
@@ -2080,6 +2397,33 @@ pub fn decode_create_bucket_request_struct() -> decode.Decoder(CreateBucketReque
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_namespace <- decode.optional_field("BucketNamespace", option.None, decode.optional(decode_bucket_namespace_enum()))
   use create_bucket_configuration <- decode.optional_field("CreateBucketConfiguration", option.None, decode.optional(decode_create_bucket_configuration_struct()))
+  use grant_full_control <- decode.optional_field("GrantFullControl", option.None, decode.optional(decode.string))
+  use grant_read <- decode.optional_field("GrantRead", option.None, decode.optional(decode.string))
+  use grant_read_acp <- decode.optional_field("GrantReadACP", option.None, decode.optional(decode.string))
+  use grant_write <- decode.optional_field("GrantWrite", option.None, decode.optional(decode.string))
+  use grant_write_acp <- decode.optional_field("GrantWriteACP", option.None, decode.optional(decode.string))
+  use object_lock_enabled_for_bucket <- decode.optional_field("ObjectLockEnabledForBucket", option.None, decode.optional(decode.bool))
+  use object_ownership <- decode.optional_field("ObjectOwnership", option.None, decode.optional(decode_object_ownership_enum()))
+  decode.success(CreateBucketRequest(
+    acl: acl,
+    bucket: bucket,
+    bucket_namespace: bucket_namespace,
+    create_bucket_configuration: create_bucket_configuration,
+    grant_full_control: grant_full_control,
+    grant_read: grant_read,
+    grant_read_acp: grant_read_acp,
+    grant_write: grant_write,
+    grant_write_acp: grant_write_acp,
+    object_lock_enabled_for_bucket: object_lock_enabled_for_bucket,
+    object_ownership: object_ownership,
+  ))
+}
+
+pub fn decode_create_bucket_request_struct_params() -> decode.Decoder(CreateBucketRequest) {
+  use acl <- decode.optional_field("ACL", option.None, decode.optional(decode_bucket_canned_acl_enum()))
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use bucket_namespace <- decode.optional_field("BucketNamespace", option.None, decode.optional(decode_bucket_namespace_enum()))
+  use create_bucket_configuration <- decode.optional_field("CreateBucketConfiguration", option.None, decode.optional(decode_create_bucket_configuration_struct_params()))
   use grant_full_control <- decode.optional_field("GrantFullControl", option.None, decode.optional(decode.string))
   use grant_read <- decode.optional_field("GrantRead", option.None, decode.optional(decode.string))
   use grant_read_acp <- decode.optional_field("GrantReadACP", option.None, decode.optional(decode.string))
@@ -2231,6 +2575,19 @@ pub fn decode_create_bucket_configuration_struct() -> decode.Decoder(CreateBucke
   ))
 }
 
+pub fn decode_create_bucket_configuration_struct_params() -> decode.Decoder(CreateBucketConfiguration) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode_bucket_info_struct_params()))
+  use location <- decode.optional_field("Location", option.None, decode.optional(decode_location_info_struct_params()))
+  use location_constraint <- decode.optional_field("LocationConstraint", option.None, decode.optional(decode_bucket_location_constraint_enum()))
+  use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
+  decode.success(CreateBucketConfiguration(
+    bucket: bucket,
+    location: location,
+    location_constraint: location_constraint,
+    tags: tags,
+  ))
+}
+
 pub fn encode_create_bucket_configuration_xml_inner(input: CreateBucketConfiguration) -> String {
   let inner = ""
   let inner = case input.bucket {
@@ -2291,6 +2648,15 @@ pub fn encode_bucket_info_struct(input: BucketInfo) -> json.Json {
 }
 
 pub fn decode_bucket_info_struct() -> decode.Decoder(BucketInfo) {
+  use data_redundancy <- decode.optional_field("DataRedundancy", option.None, decode.optional(decode_data_redundancy_enum()))
+  use type_ <- decode.optional_field("Type", option.None, decode.optional(decode_bucket_type_enum()))
+  decode.success(BucketInfo(
+    data_redundancy: data_redundancy,
+    type_: type_,
+  ))
+}
+
+pub fn decode_bucket_info_struct_params() -> decode.Decoder(BucketInfo) {
   use data_redundancy <- decode.optional_field("DataRedundancy", option.None, decode.optional(decode_data_redundancy_enum()))
   use type_ <- decode.optional_field("Type", option.None, decode.optional(decode_bucket_type_enum()))
   decode.success(BucketInfo(
@@ -2389,6 +2755,15 @@ pub fn encode_location_info_struct(input: LocationInfo) -> json.Json {
 }
 
 pub fn decode_location_info_struct() -> decode.Decoder(LocationInfo) {
+  use name <- decode.optional_field("Name", option.None, decode.optional(decode.string))
+  use type_ <- decode.optional_field("Type", option.None, decode.optional(decode_location_type_enum()))
+  decode.success(LocationInfo(
+    name: name,
+    type_: type_,
+  ))
+}
+
+pub fn decode_location_info_struct_params() -> decode.Decoder(LocationInfo) {
   use name <- decode.optional_field("Name", option.None, decode.optional(decode.string))
   use type_ <- decode.optional_field("Type", option.None, decode.optional(decode_location_type_enum()))
   decode.success(LocationInfo(
@@ -2605,6 +2980,15 @@ pub fn decode_tag_struct() -> decode.Decoder(Tag) {
   ))
 }
 
+pub fn decode_tag_struct_params() -> decode.Decoder(Tag) {
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
+  decode.success(Tag(
+    key: key,
+    value: value,
+  ))
+}
+
 pub fn encode_tag_xml_inner(input: Tag) -> String {
   let inner = ""
   let inner = case input.key {
@@ -2685,6 +3069,15 @@ pub fn decode_create_bucket_output_struct() -> decode.Decoder(CreateBucketOutput
   ))
 }
 
+pub fn decode_create_bucket_output_struct_params() -> decode.Decoder(CreateBucketOutput) {
+  use bucket_arn <- decode.optional_field("BucketArn", option.None, decode.optional(decode.string))
+  use location <- decode.optional_field("Location", option.None, decode.optional(decode.string))
+  decode.success(CreateBucketOutput(
+    bucket_arn: bucket_arn,
+    location: location,
+  ))
+}
+
 pub fn encode_create_bucket_output_xml_inner(input: CreateBucketOutput) -> String {
   let inner = ""
   inner
@@ -2715,6 +3108,10 @@ pub fn decode_bucket_already_exists_struct() -> decode.Decoder(BucketAlreadyExis
   decode.success(BucketAlreadyExists)
 }
 
+pub fn decode_bucket_already_exists_struct_params() -> decode.Decoder(BucketAlreadyExists) {
+  decode.success(BucketAlreadyExists)
+}
+
 pub fn encode_bucket_already_exists_xml_inner(_input: BucketAlreadyExists) -> String {
   ""
 }
@@ -2736,6 +3133,10 @@ pub fn encode_bucket_already_owned_by_you_struct(_v: BucketAlreadyOwnedByYou) ->
 }
 
 pub fn decode_bucket_already_owned_by_you_struct() -> decode.Decoder(BucketAlreadyOwnedByYou) {
+  decode.success(BucketAlreadyOwnedByYou)
+}
+
+pub fn decode_bucket_already_owned_by_you_struct_params() -> decode.Decoder(BucketAlreadyOwnedByYou) {
   decode.success(BucketAlreadyOwnedByYou)
 }
 
@@ -2937,7 +3338,74 @@ pub fn decode_create_multipart_upload_request_struct() -> decode.Decoder(CreateM
   use metadata <- decode.optional_field("Metadata", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use object_lock_legal_hold_status <- decode.optional_field("ObjectLockLegalHoldStatus", option.None, decode.optional(decode_object_lock_legal_hold_status_enum()))
   use object_lock_mode <- decode.optional_field("ObjectLockMode", option.None, decode.optional(decode_object_lock_mode_enum()))
-  use object_lock_retain_until_date <- decode.optional_field("ObjectLockRetainUntilDate", option.None, decode.optional(decode.int))
+  use object_lock_retain_until_date <- decode.optional_field("ObjectLockRetainUntilDate", option.None, decode.optional(json_timestamp.decoder()))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key <- decode.optional_field("SSECustomerKey", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use ssekms_encryption_context <- decode.optional_field("SSEKMSEncryptionContext", option.None, decode.optional(decode.string))
+  use ssekms_key_id <- decode.optional_field("SSEKMSKeyId", option.None, decode.optional(decode.string))
+  use server_side_encryption <- decode.optional_field("ServerSideEncryption", option.None, decode.optional(decode_server_side_encryption_enum()))
+  use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_storage_class_enum()))
+  use tagging <- decode.optional_field("Tagging", option.None, decode.optional(decode.string))
+  use website_redirect_location <- decode.optional_field("WebsiteRedirectLocation", option.None, decode.optional(decode.string))
+  decode.success(CreateMultipartUploadRequest(
+    acl: acl,
+    bucket: bucket,
+    bucket_key_enabled: bucket_key_enabled,
+    cache_control: cache_control,
+    checksum_algorithm: checksum_algorithm,
+    checksum_type: checksum_type,
+    content_disposition: content_disposition,
+    content_encoding: content_encoding,
+    content_language: content_language,
+    content_type: content_type,
+    expected_bucket_owner: expected_bucket_owner,
+    expires: expires,
+    grant_full_control: grant_full_control,
+    grant_read: grant_read,
+    grant_read_acp: grant_read_acp,
+    grant_write_acp: grant_write_acp,
+    key: key,
+    metadata: metadata,
+    object_lock_legal_hold_status: object_lock_legal_hold_status,
+    object_lock_mode: object_lock_mode,
+    object_lock_retain_until_date: object_lock_retain_until_date,
+    request_payer: request_payer,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key: sse_customer_key,
+    sse_customer_key_md5: sse_customer_key_md5,
+    ssekms_encryption_context: ssekms_encryption_context,
+    ssekms_key_id: ssekms_key_id,
+    server_side_encryption: server_side_encryption,
+    storage_class: storage_class,
+    tagging: tagging,
+    website_redirect_location: website_redirect_location,
+  ))
+}
+
+pub fn decode_create_multipart_upload_request_struct_params() -> decode.Decoder(CreateMultipartUploadRequest) {
+  use acl <- decode.optional_field("ACL", option.None, decode.optional(decode_object_canned_acl_enum()))
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
+  use cache_control <- decode.optional_field("CacheControl", option.None, decode.optional(decode.string))
+  use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode_checksum_algorithm_enum()))
+  use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
+  use content_disposition <- decode.optional_field("ContentDisposition", option.None, decode.optional(decode.string))
+  use content_encoding <- decode.optional_field("ContentEncoding", option.None, decode.optional(decode.string))
+  use content_language <- decode.optional_field("ContentLanguage", option.None, decode.optional(decode.string))
+  use content_type <- decode.optional_field("ContentType", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use expires <- decode.optional_field("Expires", option.None, decode.optional(decode.string))
+  use grant_full_control <- decode.optional_field("GrantFullControl", option.None, decode.optional(decode.string))
+  use grant_read <- decode.optional_field("GrantRead", option.None, decode.optional(decode.string))
+  use grant_read_acp <- decode.optional_field("GrantReadACP", option.None, decode.optional(decode.string))
+  use grant_write_acp <- decode.optional_field("GrantWriteACP", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use metadata <- decode.optional_field("Metadata", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use object_lock_legal_hold_status <- decode.optional_field("ObjectLockLegalHoldStatus", option.None, decode.optional(decode_object_lock_legal_hold_status_enum()))
+  use object_lock_mode <- decode.optional_field("ObjectLockMode", option.None, decode.optional(decode_object_lock_mode_enum()))
+  use object_lock_retain_until_date <- decode.optional_field("ObjectLockRetainUntilDate", option.None, decode.optional(json_timestamp.decoder()))
   use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
   use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
   use sse_customer_key <- decode.optional_field("SSECustomerKey", option.None, decode.optional(decode.string))
@@ -3140,7 +3608,40 @@ pub fn encode_create_multipart_upload_output_struct(input: CreateMultipartUpload
 }
 
 pub fn decode_create_multipart_upload_output_struct() -> decode.Decoder(CreateMultipartUploadOutput) {
-  use abort_date <- decode.optional_field("AbortDate", option.None, decode.optional(decode.int))
+  use abort_date <- decode.optional_field("AbortDate", option.None, decode.optional(json_timestamp.decoder()))
+  use abort_rule_id <- decode.optional_field("AbortRuleId", option.None, decode.optional(decode.string))
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
+  use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode_checksum_algorithm_enum()))
+  use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use ssekms_encryption_context <- decode.optional_field("SSEKMSEncryptionContext", option.None, decode.optional(decode.string))
+  use ssekms_key_id <- decode.optional_field("SSEKMSKeyId", option.None, decode.optional(decode.string))
+  use server_side_encryption <- decode.optional_field("ServerSideEncryption", option.None, decode.optional(decode_server_side_encryption_enum()))
+  use upload_id <- decode.optional_field("UploadId", option.None, decode.optional(decode.string))
+  decode.success(CreateMultipartUploadOutput(
+    abort_date: abort_date,
+    abort_rule_id: abort_rule_id,
+    bucket: bucket,
+    bucket_key_enabled: bucket_key_enabled,
+    checksum_algorithm: checksum_algorithm,
+    checksum_type: checksum_type,
+    key: key,
+    request_charged: request_charged,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key_md5: sse_customer_key_md5,
+    ssekms_encryption_context: ssekms_encryption_context,
+    ssekms_key_id: ssekms_key_id,
+    server_side_encryption: server_side_encryption,
+    upload_id: upload_id,
+  ))
+}
+
+pub fn decode_create_multipart_upload_output_struct_params() -> decode.Decoder(CreateMultipartUploadOutput) {
+  use abort_date <- decode.optional_field("AbortDate", option.None, decode.optional(json_timestamp.decoder()))
   use abort_rule_id <- decode.optional_field("AbortRuleId", option.None, decode.optional(decode.string))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
@@ -3283,6 +3784,23 @@ pub fn decode_create_session_request_struct() -> decode.Decoder(CreateSessionReq
   ))
 }
 
+pub fn decode_create_session_request_struct_params() -> decode.Decoder(CreateSessionRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
+  use ssekms_encryption_context <- decode.optional_field("SSEKMSEncryptionContext", option.None, decode.optional(decode.string))
+  use ssekms_key_id <- decode.optional_field("SSEKMSKeyId", option.None, decode.optional(decode.string))
+  use server_side_encryption <- decode.optional_field("ServerSideEncryption", option.None, decode.optional(decode_server_side_encryption_enum()))
+  use session_mode <- decode.optional_field("SessionMode", option.None, decode.optional(decode_session_mode_enum()))
+  decode.success(CreateSessionRequest(
+    bucket: bucket,
+    bucket_key_enabled: bucket_key_enabled,
+    ssekms_encryption_context: ssekms_encryption_context,
+    ssekms_key_id: ssekms_key_id,
+    server_side_encryption: server_side_encryption,
+    session_mode: session_mode,
+  ))
+}
+
 pub fn encode_create_session_request_xml_inner(input: CreateSessionRequest) -> String {
   let inner = ""
   inner
@@ -3381,6 +3899,21 @@ pub fn decode_create_session_output_struct() -> decode.Decoder(CreateSessionOutp
   ))
 }
 
+pub fn decode_create_session_output_struct_params() -> decode.Decoder(CreateSessionOutput) {
+  use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
+  use credentials <- decode.optional_field("Credentials", option.None, decode.optional(decode_session_credentials_struct_params()))
+  use ssekms_encryption_context <- decode.optional_field("SSEKMSEncryptionContext", option.None, decode.optional(decode.string))
+  use ssekms_key_id <- decode.optional_field("SSEKMSKeyId", option.None, decode.optional(decode.string))
+  use server_side_encryption <- decode.optional_field("ServerSideEncryption", option.None, decode.optional(decode_server_side_encryption_enum()))
+  decode.success(CreateSessionOutput(
+    bucket_key_enabled: bucket_key_enabled,
+    credentials: credentials,
+    ssekms_encryption_context: ssekms_encryption_context,
+    ssekms_key_id: ssekms_key_id,
+    server_side_encryption: server_side_encryption,
+  ))
+}
+
 pub fn encode_create_session_output_xml_inner(input: CreateSessionOutput) -> String {
   let inner = ""
   let inner = case input.credentials {
@@ -3441,7 +3974,20 @@ pub fn encode_session_credentials_struct(input: SessionCredentials) -> json.Json
 
 pub fn decode_session_credentials_struct() -> decode.Decoder(SessionCredentials) {
   use access_key_id <- decode.optional_field("AccessKeyId", option.None, decode.optional(decode.string))
-  use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode.int))
+  use expiration <- decode.optional_field("Expiration", option.None, decode.optional(json_timestamp.decoder()))
+  use secret_access_key <- decode.optional_field("SecretAccessKey", option.None, decode.optional(decode.string))
+  use session_token <- decode.optional_field("SessionToken", option.None, decode.optional(decode.string))
+  decode.success(SessionCredentials(
+    access_key_id: access_key_id,
+    expiration: expiration,
+    secret_access_key: secret_access_key,
+    session_token: session_token,
+  ))
+}
+
+pub fn decode_session_credentials_struct_params() -> decode.Decoder(SessionCredentials) {
+  use access_key_id <- decode.optional_field("AccessKeyId", option.None, decode.optional(decode.string))
+  use expiration <- decode.optional_field("Expiration", option.None, decode.optional(json_timestamp.decoder()))
   use secret_access_key <- decode.optional_field("SecretAccessKey", option.None, decode.optional(decode.string))
   use session_token <- decode.optional_field("SessionToken", option.None, decode.optional(decode.string))
   decode.success(SessionCredentials(
@@ -3502,6 +4048,10 @@ pub fn decode_no_such_bucket_struct() -> decode.Decoder(NoSuchBucket) {
   decode.success(NoSuchBucket)
 }
 
+pub fn decode_no_such_bucket_struct_params() -> decode.Decoder(NoSuchBucket) {
+  decode.success(NoSuchBucket)
+}
+
 pub fn encode_no_such_bucket_xml_inner(_input: NoSuchBucket) -> String {
   ""
 }
@@ -3535,6 +4085,15 @@ pub fn encode_delete_bucket_request_struct(input: DeleteBucketRequest) -> json.J
 }
 
 pub fn decode_delete_bucket_request_struct() -> decode.Decoder(DeleteBucketRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
+pub fn decode_delete_bucket_request_struct_params() -> decode.Decoder(DeleteBucketRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketRequest(
@@ -3597,6 +4156,17 @@ pub fn decode_delete_bucket_analytics_configuration_request_struct() -> decode.D
   ))
 }
 
+pub fn decode_delete_bucket_analytics_configuration_request_struct_params() -> decode.Decoder(DeleteBucketAnalyticsConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketAnalyticsConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    id: id,
+  ))
+}
+
 pub fn encode_delete_bucket_analytics_configuration_request_xml_inner(input: DeleteBucketAnalyticsConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -3638,6 +4208,15 @@ pub fn encode_delete_bucket_cors_request_struct(input: DeleteBucketCorsRequest) 
 }
 
 pub fn decode_delete_bucket_cors_request_struct() -> decode.Decoder(DeleteBucketCorsRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketCorsRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
+pub fn decode_delete_bucket_cors_request_struct_params() -> decode.Decoder(DeleteBucketCorsRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketCorsRequest(
@@ -3693,6 +4272,15 @@ pub fn decode_delete_bucket_encryption_request_struct() -> decode.Decoder(Delete
   ))
 }
 
+pub fn decode_delete_bucket_encryption_request_struct_params() -> decode.Decoder(DeleteBucketEncryptionRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketEncryptionRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_delete_bucket_encryption_request_xml_inner(input: DeleteBucketEncryptionRequest) -> String {
   let inner = ""
   inner
@@ -3737,6 +4325,17 @@ pub fn encode_delete_bucket_intelligent_tiering_configuration_request_struct(inp
 }
 
 pub fn decode_delete_bucket_intelligent_tiering_configuration_request_struct() -> decode.Decoder(DeleteBucketIntelligentTieringConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketIntelligentTieringConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    id: id,
+  ))
+}
+
+pub fn decode_delete_bucket_intelligent_tiering_configuration_request_struct_params() -> decode.Decoder(DeleteBucketIntelligentTieringConfigurationRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
@@ -3803,6 +4402,17 @@ pub fn decode_delete_bucket_inventory_configuration_request_struct() -> decode.D
   ))
 }
 
+pub fn decode_delete_bucket_inventory_configuration_request_struct_params() -> decode.Decoder(DeleteBucketInventoryConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketInventoryConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    id: id,
+  ))
+}
+
 pub fn encode_delete_bucket_inventory_configuration_request_xml_inner(input: DeleteBucketInventoryConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -3844,6 +4454,15 @@ pub fn encode_delete_bucket_lifecycle_request_struct(input: DeleteBucketLifecycl
 }
 
 pub fn decode_delete_bucket_lifecycle_request_struct() -> decode.Decoder(DeleteBucketLifecycleRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketLifecycleRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
+pub fn decode_delete_bucket_lifecycle_request_struct_params() -> decode.Decoder(DeleteBucketLifecycleRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketLifecycleRequest(
@@ -3899,6 +4518,15 @@ pub fn decode_delete_bucket_metadata_configuration_request_struct() -> decode.De
   ))
 }
 
+pub fn decode_delete_bucket_metadata_configuration_request_struct_params() -> decode.Decoder(DeleteBucketMetadataConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketMetadataConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_delete_bucket_metadata_configuration_request_xml_inner(input: DeleteBucketMetadataConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -3938,6 +4566,15 @@ pub fn encode_delete_bucket_metadata_table_configuration_request_struct(input: D
 }
 
 pub fn decode_delete_bucket_metadata_table_configuration_request_struct() -> decode.Decoder(DeleteBucketMetadataTableConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketMetadataTableConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
+pub fn decode_delete_bucket_metadata_table_configuration_request_struct_params() -> decode.Decoder(DeleteBucketMetadataTableConfigurationRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketMetadataTableConfigurationRequest(
@@ -4000,6 +4637,17 @@ pub fn decode_delete_bucket_metrics_configuration_request_struct() -> decode.Dec
   ))
 }
 
+pub fn decode_delete_bucket_metrics_configuration_request_struct_params() -> decode.Decoder(DeleteBucketMetricsConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketMetricsConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    id: id,
+  ))
+}
+
 pub fn encode_delete_bucket_metrics_configuration_request_xml_inner(input: DeleteBucketMetricsConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -4041,6 +4689,15 @@ pub fn encode_delete_bucket_ownership_controls_request_struct(input: DeleteBucke
 }
 
 pub fn decode_delete_bucket_ownership_controls_request_struct() -> decode.Decoder(DeleteBucketOwnershipControlsRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketOwnershipControlsRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
+pub fn decode_delete_bucket_ownership_controls_request_struct_params() -> decode.Decoder(DeleteBucketOwnershipControlsRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketOwnershipControlsRequest(
@@ -4096,6 +4753,15 @@ pub fn decode_delete_bucket_policy_request_struct() -> decode.Decoder(DeleteBuck
   ))
 }
 
+pub fn decode_delete_bucket_policy_request_struct_params() -> decode.Decoder(DeleteBucketPolicyRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketPolicyRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_delete_bucket_policy_request_xml_inner(input: DeleteBucketPolicyRequest) -> String {
   let inner = ""
   inner
@@ -4135,6 +4801,15 @@ pub fn encode_delete_bucket_replication_request_struct(input: DeleteBucketReplic
 }
 
 pub fn decode_delete_bucket_replication_request_struct() -> decode.Decoder(DeleteBucketReplicationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketReplicationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
+pub fn decode_delete_bucket_replication_request_struct_params() -> decode.Decoder(DeleteBucketReplicationRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketReplicationRequest(
@@ -4190,6 +4865,15 @@ pub fn decode_delete_bucket_tagging_request_struct() -> decode.Decoder(DeleteBuc
   ))
 }
 
+pub fn decode_delete_bucket_tagging_request_struct_params() -> decode.Decoder(DeleteBucketTaggingRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketTaggingRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_delete_bucket_tagging_request_xml_inner(input: DeleteBucketTaggingRequest) -> String {
   let inner = ""
   inner
@@ -4229,6 +4913,15 @@ pub fn encode_delete_bucket_website_request_struct(input: DeleteBucketWebsiteReq
 }
 
 pub fn decode_delete_bucket_website_request_struct() -> decode.Decoder(DeleteBucketWebsiteRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(DeleteBucketWebsiteRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
+pub fn decode_delete_bucket_website_request_struct_params() -> decode.Decoder(DeleteBucketWebsiteRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeleteBucketWebsiteRequest(
@@ -4320,7 +5013,32 @@ pub fn decode_delete_object_request_struct() -> decode.Decoder(DeleteObjectReque
   use bypass_governance_retention <- decode.optional_field("BypassGovernanceRetention", option.None, decode.optional(decode.bool))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use if_match <- decode.optional_field("IfMatch", option.None, decode.optional(decode.string))
-  use if_match_last_modified_time <- decode.optional_field("IfMatchLastModifiedTime", option.None, decode.optional(decode.int))
+  use if_match_last_modified_time <- decode.optional_field("IfMatchLastModifiedTime", option.None, decode.optional(json_timestamp.decoder()))
+  use if_match_size <- decode.optional_field("IfMatchSize", option.None, decode.optional(decode.int))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use mfa <- decode.optional_field("MFA", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(DeleteObjectRequest(
+    bucket: bucket,
+    bypass_governance_retention: bypass_governance_retention,
+    expected_bucket_owner: expected_bucket_owner,
+    if_match: if_match,
+    if_match_last_modified_time: if_match_last_modified_time,
+    if_match_size: if_match_size,
+    key: key,
+    mfa: mfa,
+    request_payer: request_payer,
+    version_id: version_id,
+  ))
+}
+
+pub fn decode_delete_object_request_struct_params() -> decode.Decoder(DeleteObjectRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use bypass_governance_retention <- decode.optional_field("BypassGovernanceRetention", option.None, decode.optional(decode.bool))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use if_match <- decode.optional_field("IfMatch", option.None, decode.optional(decode.string))
+  use if_match_last_modified_time <- decode.optional_field("IfMatchLastModifiedTime", option.None, decode.optional(json_timestamp.decoder()))
   use if_match_size <- decode.optional_field("IfMatchSize", option.None, decode.optional(decode.int))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
   use mfa <- decode.optional_field("MFA", option.None, decode.optional(decode.string))
@@ -4410,6 +5128,17 @@ pub fn decode_delete_object_output_struct() -> decode.Decoder(DeleteObjectOutput
   ))
 }
 
+pub fn decode_delete_object_output_struct_params() -> decode.Decoder(DeleteObjectOutput) {
+  use delete_marker <- decode.optional_field("DeleteMarker", option.None, decode.optional(decode.bool))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(DeleteObjectOutput(
+    delete_marker: delete_marker,
+    request_charged: request_charged,
+    version_id: version_id,
+  ))
+}
+
 pub fn encode_delete_object_output_xml_inner(input: DeleteObjectOutput) -> String {
   let inner = ""
   inner
@@ -4473,6 +5202,19 @@ pub fn decode_delete_object_tagging_request_struct() -> decode.Decoder(DeleteObj
   ))
 }
 
+pub fn decode_delete_object_tagging_request_struct_params() -> decode.Decoder(DeleteObjectTaggingRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(DeleteObjectTaggingRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    key: key,
+    version_id: version_id,
+  ))
+}
+
 pub fn encode_delete_object_tagging_request_xml_inner(input: DeleteObjectTaggingRequest) -> String {
   let inner = ""
   inner
@@ -4517,6 +5259,13 @@ pub fn decode_delete_object_tagging_output_struct() -> decode.Decoder(DeleteObje
   ))
 }
 
+pub fn decode_delete_object_tagging_output_struct_params() -> decode.Decoder(DeleteObjectTaggingOutput) {
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(DeleteObjectTaggingOutput(
+    version_id: version_id,
+  ))
+}
+
 pub fn encode_delete_object_tagging_output_xml_inner(input: DeleteObjectTaggingOutput) -> String {
   let inner = ""
   inner
@@ -4554,6 +5303,15 @@ pub fn encode_delete_public_access_block_request_struct(input: DeletePublicAcces
 }
 
 pub fn decode_delete_public_access_block_request_struct() -> decode.Decoder(DeletePublicAccessBlockRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(DeletePublicAccessBlockRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
+pub fn decode_delete_public_access_block_request_struct_params() -> decode.Decoder(DeletePublicAccessBlockRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(DeletePublicAccessBlockRequest(
@@ -4609,6 +5367,15 @@ pub fn decode_get_bucket_abac_request_struct() -> decode.Decoder(GetBucketAbacRe
   ))
 }
 
+pub fn decode_get_bucket_abac_request_struct_params() -> decode.Decoder(GetBucketAbacRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketAbacRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_abac_request_xml_inner(input: GetBucketAbacRequest) -> String {
   let inner = ""
   inner
@@ -4649,6 +5416,13 @@ pub fn decode_get_bucket_abac_output_struct() -> decode.Decoder(GetBucketAbacOut
   ))
 }
 
+pub fn decode_get_bucket_abac_output_struct_params() -> decode.Decoder(GetBucketAbacOutput) {
+  use abac_status <- decode.optional_field("AbacStatus", option.None, decode.optional(decode_abac_status_struct_params()))
+  decode.success(GetBucketAbacOutput(
+    abac_status: abac_status,
+  ))
+}
+
 pub fn encode_get_bucket_abac_output_xml_inner(input: GetBucketAbacOutput) -> String {
   let inner = ""
   inner
@@ -4681,6 +5455,13 @@ pub fn encode_abac_status_struct(input: AbacStatus) -> json.Json {
 }
 
 pub fn decode_abac_status_struct() -> decode.Decoder(AbacStatus) {
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_bucket_abac_status_enum()))
+  decode.success(AbacStatus(
+    status: status,
+  ))
+}
+
+pub fn decode_abac_status_struct_params() -> decode.Decoder(AbacStatus) {
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_bucket_abac_status_enum()))
   decode.success(AbacStatus(
     status: status,
@@ -4766,6 +5547,17 @@ pub fn decode_get_bucket_accelerate_configuration_request_struct() -> decode.Dec
   ))
 }
 
+pub fn decode_get_bucket_accelerate_configuration_request_struct_params() -> decode.Decoder(GetBucketAccelerateConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  decode.success(GetBucketAccelerateConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    request_payer: request_payer,
+  ))
+}
+
 pub fn encode_get_bucket_accelerate_configuration_request_xml_inner(input: GetBucketAccelerateConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -4807,6 +5599,15 @@ pub fn encode_get_bucket_accelerate_configuration_output_struct(input: GetBucket
 }
 
 pub fn decode_get_bucket_accelerate_configuration_output_struct() -> decode.Decoder(GetBucketAccelerateConfigurationOutput) {
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_bucket_accelerate_status_enum()))
+  decode.success(GetBucketAccelerateConfigurationOutput(
+    request_charged: request_charged,
+    status: status,
+  ))
+}
+
+pub fn decode_get_bucket_accelerate_configuration_output_struct_params() -> decode.Decoder(GetBucketAccelerateConfigurationOutput) {
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_bucket_accelerate_status_enum()))
   decode.success(GetBucketAccelerateConfigurationOutput(
@@ -4889,6 +5690,15 @@ pub fn decode_get_bucket_acl_request_struct() -> decode.Decoder(GetBucketAclRequ
   ))
 }
 
+pub fn decode_get_bucket_acl_request_struct_params() -> decode.Decoder(GetBucketAclRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketAclRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_acl_request_xml_inner(input: GetBucketAclRequest) -> String {
   let inner = ""
   inner
@@ -4930,6 +5740,15 @@ pub fn encode_get_bucket_acl_output_struct(input: GetBucketAclOutput) -> json.Js
 pub fn decode_get_bucket_acl_output_struct() -> decode.Decoder(GetBucketAclOutput) {
   use grants <- decode.optional_field("Grants", option.None, decode.optional(decode.list(decode_grant_struct())))
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct()))
+  decode.success(GetBucketAclOutput(
+    grants: grants,
+    owner: owner,
+  ))
+}
+
+pub fn decode_get_bucket_acl_output_struct_params() -> decode.Decoder(GetBucketAclOutput) {
+  use grants <- decode.optional_field("Grants", option.None, decode.optional(decode.list(decode_grant_struct_params())))
+  use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct_params()))
   decode.success(GetBucketAclOutput(
     grants: grants,
     owner: owner,
@@ -4984,6 +5803,15 @@ pub fn encode_grant_struct(input: Grant) -> json.Json {
 
 pub fn decode_grant_struct() -> decode.Decoder(Grant) {
   use grantee <- decode.optional_field("Grantee", option.None, decode.optional(decode_grantee_struct()))
+  use permission <- decode.optional_field("Permission", option.None, decode.optional(decode_permission_enum()))
+  decode.success(Grant(
+    grantee: grantee,
+    permission: permission,
+  ))
+}
+
+pub fn decode_grant_struct_params() -> decode.Decoder(Grant) {
+  use grantee <- decode.optional_field("Grantee", option.None, decode.optional(decode_grantee_struct_params()))
   use permission <- decode.optional_field("Permission", option.None, decode.optional(decode_permission_enum()))
   decode.success(Grant(
     grantee: grantee,
@@ -5054,6 +5882,21 @@ pub fn encode_grantee_struct(input: Grantee) -> json.Json {
 }
 
 pub fn decode_grantee_struct() -> decode.Decoder(Grantee) {
+  use display_name <- decode.optional_field("DisplayName", option.None, decode.optional(decode.string))
+  use email_address <- decode.optional_field("EmailAddress", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
+  use type_ <- decode.optional_field("Type", option.None, decode.optional(decode_type__enum()))
+  use uri <- decode.optional_field("URI", option.None, decode.optional(decode.string))
+  decode.success(Grantee(
+    display_name: display_name,
+    email_address: email_address,
+    id: id,
+    type_: type_,
+    uri: uri,
+  ))
+}
+
+pub fn decode_grantee_struct_params() -> decode.Decoder(Grantee) {
   use display_name <- decode.optional_field("DisplayName", option.None, decode.optional(decode.string))
   use email_address <- decode.optional_field("EmailAddress", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
@@ -5198,6 +6041,15 @@ pub fn decode_owner_struct() -> decode.Decoder(Owner) {
   ))
 }
 
+pub fn decode_owner_struct_params() -> decode.Decoder(Owner) {
+  use display_name <- decode.optional_field("DisplayName", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
+  decode.success(Owner(
+    display_name: display_name,
+    id: id,
+  ))
+}
+
 pub fn encode_owner_xml_inner(input: Owner) -> String {
   let inner = ""
   let inner = case input.display_name {
@@ -5260,6 +6112,17 @@ pub fn decode_get_bucket_analytics_configuration_request_struct() -> decode.Deco
   ))
 }
 
+pub fn decode_get_bucket_analytics_configuration_request_struct_params() -> decode.Decoder(GetBucketAnalyticsConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  decode.success(GetBucketAnalyticsConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    id: id,
+  ))
+}
+
 pub fn encode_get_bucket_analytics_configuration_request_xml_inner(input: GetBucketAnalyticsConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -5297,6 +6160,13 @@ pub fn encode_get_bucket_analytics_configuration_output_struct(input: GetBucketA
 
 pub fn decode_get_bucket_analytics_configuration_output_struct() -> decode.Decoder(GetBucketAnalyticsConfigurationOutput) {
   use analytics_configuration <- decode.optional_field("AnalyticsConfiguration", option.None, decode.optional(decode_analytics_configuration_struct()))
+  decode.success(GetBucketAnalyticsConfigurationOutput(
+    analytics_configuration: analytics_configuration,
+  ))
+}
+
+pub fn decode_get_bucket_analytics_configuration_output_struct_params() -> decode.Decoder(GetBucketAnalyticsConfigurationOutput) {
+  use analytics_configuration <- decode.optional_field("AnalyticsConfiguration", option.None, decode.optional(decode_analytics_configuration_struct_params()))
   decode.success(GetBucketAnalyticsConfigurationOutput(
     analytics_configuration: analytics_configuration,
   ))
@@ -5347,6 +6217,17 @@ pub fn decode_analytics_configuration_struct() -> decode.Decoder(AnalyticsConfig
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_analytics_filter_union()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   use storage_class_analysis <- decode.optional_field("StorageClassAnalysis", option.None, decode.optional(decode_storage_class_analysis_struct()))
+  decode.success(AnalyticsConfiguration(
+    filter: filter,
+    id: id,
+    storage_class_analysis: storage_class_analysis,
+  ))
+}
+
+pub fn decode_analytics_configuration_struct_params() -> decode.Decoder(AnalyticsConfiguration) {
+  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_analytics_filter_union()))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  use storage_class_analysis <- decode.optional_field("StorageClassAnalysis", option.None, decode.optional(decode_storage_class_analysis_struct_params()))
   decode.success(AnalyticsConfiguration(
     filter: filter,
     id: id,
@@ -5440,6 +6321,15 @@ pub fn decode_analytics_and_operator_struct() -> decode.Decoder(AnalyticsAndOper
   ))
 }
 
+pub fn decode_analytics_and_operator_struct_params() -> decode.Decoder(AnalyticsAndOperator) {
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
+  decode.success(AnalyticsAndOperator(
+    prefix: prefix,
+    tags: tags,
+  ))
+}
+
 pub fn encode_analytics_and_operator_xml_inner(input: AnalyticsAndOperator) -> String {
   let inner = ""
   let inner = case input.prefix {
@@ -5488,6 +6378,13 @@ pub fn decode_storage_class_analysis_struct() -> decode.Decoder(StorageClassAnal
   ))
 }
 
+pub fn decode_storage_class_analysis_struct_params() -> decode.Decoder(StorageClassAnalysis) {
+  use data_export <- decode.optional_field("DataExport", option.None, decode.optional(decode_storage_class_analysis_data_export_struct_params()))
+  decode.success(StorageClassAnalysis(
+    data_export: data_export,
+  ))
+}
+
 pub fn encode_storage_class_analysis_xml_inner(input: StorageClassAnalysis) -> String {
   let inner = ""
   let inner = case input.data_export {
@@ -5530,6 +6427,15 @@ pub fn encode_storage_class_analysis_data_export_struct(input: StorageClassAnaly
 
 pub fn decode_storage_class_analysis_data_export_struct() -> decode.Decoder(StorageClassAnalysisDataExport) {
   use destination <- decode.optional_field("Destination", option.None, decode.optional(decode_analytics_export_destination_struct()))
+  use output_schema_version <- decode.optional_field("OutputSchemaVersion", option.None, decode.optional(decode_storage_class_analysis_schema_version_enum()))
+  decode.success(StorageClassAnalysisDataExport(
+    destination: destination,
+    output_schema_version: output_schema_version,
+  ))
+}
+
+pub fn decode_storage_class_analysis_data_export_struct_params() -> decode.Decoder(StorageClassAnalysisDataExport) {
+  use destination <- decode.optional_field("Destination", option.None, decode.optional(decode_analytics_export_destination_struct_params()))
   use output_schema_version <- decode.optional_field("OutputSchemaVersion", option.None, decode.optional(decode_storage_class_analysis_schema_version_enum()))
   decode.success(StorageClassAnalysisDataExport(
     destination: destination,
@@ -5586,6 +6492,13 @@ pub fn decode_analytics_export_destination_struct() -> decode.Decoder(AnalyticsE
   ))
 }
 
+pub fn decode_analytics_export_destination_struct_params() -> decode.Decoder(AnalyticsExportDestination) {
+  use s3_bucket_destination <- decode.optional_field("S3BucketDestination", option.None, decode.optional(decode_analytics_s3_bucket_destination_struct_params()))
+  decode.success(AnalyticsExportDestination(
+    s3_bucket_destination: s3_bucket_destination,
+  ))
+}
+
 pub fn encode_analytics_export_destination_xml_inner(input: AnalyticsExportDestination) -> String {
   let inner = ""
   let inner = case input.s3_bucket_destination {
@@ -5637,6 +6550,19 @@ pub fn encode_analytics_s3_bucket_destination_struct(input: AnalyticsS3BucketDes
 }
 
 pub fn decode_analytics_s3_bucket_destination_struct() -> decode.Decoder(AnalyticsS3BucketDestination) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use bucket_account_id <- decode.optional_field("BucketAccountId", option.None, decode.optional(decode.string))
+  use format <- decode.optional_field("Format", option.None, decode.optional(decode_analytics_s3_export_file_format_enum()))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  decode.success(AnalyticsS3BucketDestination(
+    bucket: bucket,
+    bucket_account_id: bucket_account_id,
+    format: format,
+    prefix: prefix,
+  ))
+}
+
+pub fn decode_analytics_s3_bucket_destination_struct_params() -> decode.Decoder(AnalyticsS3BucketDestination) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use bucket_account_id <- decode.optional_field("BucketAccountId", option.None, decode.optional(decode.string))
   use format <- decode.optional_field("Format", option.None, decode.optional(decode_analytics_s3_export_file_format_enum()))
@@ -5755,6 +6681,15 @@ pub fn decode_get_bucket_cors_request_struct() -> decode.Decoder(GetBucketCorsRe
   ))
 }
 
+pub fn decode_get_bucket_cors_request_struct_params() -> decode.Decoder(GetBucketCorsRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketCorsRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_cors_request_xml_inner(input: GetBucketCorsRequest) -> String {
   let inner = ""
   inner
@@ -5790,6 +6725,13 @@ pub fn encode_get_bucket_cors_output_struct(input: GetBucketCorsOutput) -> json.
 
 pub fn decode_get_bucket_cors_output_struct() -> decode.Decoder(GetBucketCorsOutput) {
   use cors_rules <- decode.optional_field("CORSRules", option.None, decode.optional(decode.list(decode_cors_rule_struct())))
+  decode.success(GetBucketCorsOutput(
+    cors_rules: cors_rules,
+  ))
+}
+
+pub fn decode_get_bucket_cors_output_struct_params() -> decode.Decoder(GetBucketCorsOutput) {
+  use cors_rules <- decode.optional_field("CORSRules", option.None, decode.optional(decode.list(decode_cors_rule_struct_params())))
   decode.success(GetBucketCorsOutput(
     cors_rules: cors_rules,
   ))
@@ -5856,6 +6798,23 @@ pub fn encode_cors_rule_struct(input: CORSRule) -> json.Json {
 }
 
 pub fn decode_cors_rule_struct() -> decode.Decoder(CORSRule) {
+  use allowed_headers <- decode.optional_field("AllowedHeaders", option.None, decode.optional(decode.list(decode.string)))
+  use allowed_methods <- decode.optional_field("AllowedMethods", option.None, decode.optional(decode.list(decode.string)))
+  use allowed_origins <- decode.optional_field("AllowedOrigins", option.None, decode.optional(decode.list(decode.string)))
+  use expose_headers <- decode.optional_field("ExposeHeaders", option.None, decode.optional(decode.list(decode.string)))
+  use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
+  use max_age_seconds <- decode.optional_field("MaxAgeSeconds", option.None, decode.optional(decode.int))
+  decode.success(CORSRule(
+    allowed_headers: allowed_headers,
+    allowed_methods: allowed_methods,
+    allowed_origins: allowed_origins,
+    expose_headers: expose_headers,
+    id: id,
+    max_age_seconds: max_age_seconds,
+  ))
+}
+
+pub fn decode_cors_rule_struct_params() -> decode.Decoder(CORSRule) {
   use allowed_headers <- decode.optional_field("AllowedHeaders", option.None, decode.optional(decode.list(decode.string)))
   use allowed_methods <- decode.optional_field("AllowedMethods", option.None, decode.optional(decode.list(decode.string)))
   use allowed_origins <- decode.optional_field("AllowedOrigins", option.None, decode.optional(decode.list(decode.string)))
@@ -5951,6 +6910,15 @@ pub fn decode_get_bucket_encryption_request_struct() -> decode.Decoder(GetBucket
   ))
 }
 
+pub fn decode_get_bucket_encryption_request_struct_params() -> decode.Decoder(GetBucketEncryptionRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketEncryptionRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_encryption_request_xml_inner(input: GetBucketEncryptionRequest) -> String {
   let inner = ""
   inner
@@ -5991,6 +6959,13 @@ pub fn decode_get_bucket_encryption_output_struct() -> decode.Decoder(GetBucketE
   ))
 }
 
+pub fn decode_get_bucket_encryption_output_struct_params() -> decode.Decoder(GetBucketEncryptionOutput) {
+  use server_side_encryption_configuration <- decode.optional_field("ServerSideEncryptionConfiguration", option.None, decode.optional(decode_server_side_encryption_configuration_struct_params()))
+  decode.success(GetBucketEncryptionOutput(
+    server_side_encryption_configuration: server_side_encryption_configuration,
+  ))
+}
+
 pub fn encode_get_bucket_encryption_output_xml_inner(input: GetBucketEncryptionOutput) -> String {
   let inner = ""
   inner
@@ -6024,6 +6999,13 @@ pub fn encode_server_side_encryption_configuration_struct(input: ServerSideEncry
 
 pub fn decode_server_side_encryption_configuration_struct() -> decode.Decoder(ServerSideEncryptionConfiguration) {
   use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_server_side_encryption_rule_struct())))
+  decode.success(ServerSideEncryptionConfiguration(
+    rules: rules,
+  ))
+}
+
+pub fn decode_server_side_encryption_configuration_struct_params() -> decode.Decoder(ServerSideEncryptionConfiguration) {
+  use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_server_side_encryption_rule_struct_params())))
   decode.success(ServerSideEncryptionConfiguration(
     rules: rules,
   ))
@@ -6077,6 +7059,17 @@ pub fn encode_server_side_encryption_rule_struct(input: ServerSideEncryptionRule
 pub fn decode_server_side_encryption_rule_struct() -> decode.Decoder(ServerSideEncryptionRule) {
   use apply_server_side_encryption_by_default <- decode.optional_field("ApplyServerSideEncryptionByDefault", option.None, decode.optional(decode_server_side_encryption_by_default_struct()))
   use blocked_encryption_types <- decode.optional_field("BlockedEncryptionTypes", option.None, decode.optional(decode_blocked_encryption_types_struct()))
+  use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
+  decode.success(ServerSideEncryptionRule(
+    apply_server_side_encryption_by_default: apply_server_side_encryption_by_default,
+    blocked_encryption_types: blocked_encryption_types,
+    bucket_key_enabled: bucket_key_enabled,
+  ))
+}
+
+pub fn decode_server_side_encryption_rule_struct_params() -> decode.Decoder(ServerSideEncryptionRule) {
+  use apply_server_side_encryption_by_default <- decode.optional_field("ApplyServerSideEncryptionByDefault", option.None, decode.optional(decode_server_side_encryption_by_default_struct_params()))
+  use blocked_encryption_types <- decode.optional_field("BlockedEncryptionTypes", option.None, decode.optional(decode_blocked_encryption_types_struct_params()))
   use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
   decode.success(ServerSideEncryptionRule(
     apply_server_side_encryption_by_default: apply_server_side_encryption_by_default,
@@ -6146,6 +7139,15 @@ pub fn decode_server_side_encryption_by_default_struct() -> decode.Decoder(Serve
   ))
 }
 
+pub fn decode_server_side_encryption_by_default_struct_params() -> decode.Decoder(ServerSideEncryptionByDefault) {
+  use kms_master_key_id <- decode.optional_field("KMSMasterKeyID", option.None, decode.optional(decode.string))
+  use sse_algorithm <- decode.optional_field("SSEAlgorithm", option.None, decode.optional(decode_server_side_encryption_enum()))
+  decode.success(ServerSideEncryptionByDefault(
+    kms_master_key_id: kms_master_key_id,
+    sse_algorithm: sse_algorithm,
+  ))
+}
+
 pub fn encode_server_side_encryption_by_default_xml_inner(input: ServerSideEncryptionByDefault) -> String {
   let inner = ""
   let inner = case input.kms_master_key_id {
@@ -6189,6 +7191,13 @@ pub fn encode_blocked_encryption_types_struct(input: BlockedEncryptionTypes) -> 
 }
 
 pub fn decode_blocked_encryption_types_struct() -> decode.Decoder(BlockedEncryptionTypes) {
+  use encryption_type <- decode.optional_field("EncryptionType", option.None, decode.optional(decode.list(decode_encryption_type_enum())))
+  decode.success(BlockedEncryptionTypes(
+    encryption_type: encryption_type,
+  ))
+}
+
+pub fn decode_blocked_encryption_types_struct_params() -> decode.Decoder(BlockedEncryptionTypes) {
   use encryption_type <- decode.optional_field("EncryptionType", option.None, decode.optional(decode.list(decode_encryption_type_enum())))
   decode.success(BlockedEncryptionTypes(
     encryption_type: encryption_type,
@@ -6273,6 +7282,17 @@ pub fn decode_get_bucket_intelligent_tiering_configuration_request_struct() -> d
   ))
 }
 
+pub fn decode_get_bucket_intelligent_tiering_configuration_request_struct_params() -> decode.Decoder(GetBucketIntelligentTieringConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  decode.success(GetBucketIntelligentTieringConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    id: id,
+  ))
+}
+
 pub fn encode_get_bucket_intelligent_tiering_configuration_request_xml_inner(input: GetBucketIntelligentTieringConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -6310,6 +7330,13 @@ pub fn encode_get_bucket_intelligent_tiering_configuration_output_struct(input: 
 
 pub fn decode_get_bucket_intelligent_tiering_configuration_output_struct() -> decode.Decoder(GetBucketIntelligentTieringConfigurationOutput) {
   use intelligent_tiering_configuration <- decode.optional_field("IntelligentTieringConfiguration", option.None, decode.optional(decode_intelligent_tiering_configuration_struct()))
+  decode.success(GetBucketIntelligentTieringConfigurationOutput(
+    intelligent_tiering_configuration: intelligent_tiering_configuration,
+  ))
+}
+
+pub fn decode_get_bucket_intelligent_tiering_configuration_output_struct_params() -> decode.Decoder(GetBucketIntelligentTieringConfigurationOutput) {
+  use intelligent_tiering_configuration <- decode.optional_field("IntelligentTieringConfiguration", option.None, decode.optional(decode_intelligent_tiering_configuration_struct_params()))
   decode.success(GetBucketIntelligentTieringConfigurationOutput(
     intelligent_tiering_configuration: intelligent_tiering_configuration,
   ))
@@ -6366,6 +7393,19 @@ pub fn decode_intelligent_tiering_configuration_struct() -> decode.Decoder(Intel
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_intelligent_tiering_status_enum()))
   use tierings <- decode.optional_field("Tierings", option.None, decode.optional(decode.list(decode_tiering_struct())))
+  decode.success(IntelligentTieringConfiguration(
+    filter: filter,
+    id: id,
+    status: status,
+    tierings: tierings,
+  ))
+}
+
+pub fn decode_intelligent_tiering_configuration_struct_params() -> decode.Decoder(IntelligentTieringConfiguration) {
+  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_intelligent_tiering_filter_struct_params()))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_intelligent_tiering_status_enum()))
+  use tierings <- decode.optional_field("Tierings", option.None, decode.optional(decode.list(decode_tiering_struct_params())))
   decode.success(IntelligentTieringConfiguration(
     filter: filter,
     id: id,
@@ -6449,6 +7489,17 @@ pub fn decode_intelligent_tiering_filter_struct() -> decode.Decoder(IntelligentT
   ))
 }
 
+pub fn decode_intelligent_tiering_filter_struct_params() -> decode.Decoder(IntelligentTieringFilter) {
+  use and <- decode.optional_field("And", option.None, decode.optional(decode_intelligent_tiering_and_operator_struct_params()))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use tag <- decode.optional_field("Tag", option.None, decode.optional(decode_tag_struct_params()))
+  decode.success(IntelligentTieringFilter(
+    and: and,
+    prefix: prefix,
+    tag: tag,
+  ))
+}
+
 pub fn encode_intelligent_tiering_filter_xml_inner(input: IntelligentTieringFilter) -> String {
   let inner = ""
   let inner = case input.and {
@@ -6504,6 +7555,15 @@ pub fn encode_intelligent_tiering_and_operator_struct(input: IntelligentTieringA
 pub fn decode_intelligent_tiering_and_operator_struct() -> decode.Decoder(IntelligentTieringAndOperator) {
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct())))
+  decode.success(IntelligentTieringAndOperator(
+    prefix: prefix,
+    tags: tags,
+  ))
+}
+
+pub fn decode_intelligent_tiering_and_operator_struct_params() -> decode.Decoder(IntelligentTieringAndOperator) {
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
   decode.success(IntelligentTieringAndOperator(
     prefix: prefix,
     tags: tags,
@@ -6579,6 +7639,15 @@ pub fn encode_tiering_struct(input: Tiering) -> json.Json {
 }
 
 pub fn decode_tiering_struct() -> decode.Decoder(Tiering) {
+  use access_tier <- decode.optional_field("AccessTier", option.None, decode.optional(decode_intelligent_tiering_access_tier_enum()))
+  use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
+  decode.success(Tiering(
+    access_tier: access_tier,
+    days: days,
+  ))
+}
+
+pub fn decode_tiering_struct_params() -> decode.Decoder(Tiering) {
   use access_tier <- decode.optional_field("AccessTier", option.None, decode.optional(decode_intelligent_tiering_access_tier_enum()))
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   decode.success(Tiering(
@@ -6672,6 +7741,17 @@ pub fn decode_get_bucket_inventory_configuration_request_struct() -> decode.Deco
   ))
 }
 
+pub fn decode_get_bucket_inventory_configuration_request_struct_params() -> decode.Decoder(GetBucketInventoryConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  decode.success(GetBucketInventoryConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    id: id,
+  ))
+}
+
 pub fn encode_get_bucket_inventory_configuration_request_xml_inner(input: GetBucketInventoryConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -6709,6 +7789,13 @@ pub fn encode_get_bucket_inventory_configuration_output_struct(input: GetBucketI
 
 pub fn decode_get_bucket_inventory_configuration_output_struct() -> decode.Decoder(GetBucketInventoryConfigurationOutput) {
   use inventory_configuration <- decode.optional_field("InventoryConfiguration", option.None, decode.optional(decode_inventory_configuration_struct()))
+  decode.success(GetBucketInventoryConfigurationOutput(
+    inventory_configuration: inventory_configuration,
+  ))
+}
+
+pub fn decode_get_bucket_inventory_configuration_output_struct_params() -> decode.Decoder(GetBucketInventoryConfigurationOutput) {
+  use inventory_configuration <- decode.optional_field("InventoryConfiguration", option.None, decode.optional(decode_inventory_configuration_struct_params()))
   decode.success(GetBucketInventoryConfigurationOutput(
     inventory_configuration: inventory_configuration,
   ))
@@ -6783,6 +7870,25 @@ pub fn decode_inventory_configuration_struct() -> decode.Decoder(InventoryConfig
   use is_enabled <- decode.optional_field("IsEnabled", option.None, decode.optional(decode.bool))
   use optional_fields <- decode.optional_field("OptionalFields", option.None, decode.optional(decode.list(decode_inventory_optional_field_enum())))
   use schedule <- decode.optional_field("Schedule", option.None, decode.optional(decode_inventory_schedule_struct()))
+  decode.success(InventoryConfiguration(
+    destination: destination,
+    filter: filter,
+    id: id,
+    included_object_versions: included_object_versions,
+    is_enabled: is_enabled,
+    optional_fields: optional_fields,
+    schedule: schedule,
+  ))
+}
+
+pub fn decode_inventory_configuration_struct_params() -> decode.Decoder(InventoryConfiguration) {
+  use destination <- decode.optional_field("Destination", option.None, decode.optional(decode_inventory_destination_struct_params()))
+  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_inventory_filter_struct_params()))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  use included_object_versions <- decode.optional_field("IncludedObjectVersions", option.None, decode.optional(decode_inventory_included_object_versions_enum()))
+  use is_enabled <- decode.optional_field("IsEnabled", option.None, decode.optional(decode.bool))
+  use optional_fields <- decode.optional_field("OptionalFields", option.None, decode.optional(decode.list(decode_inventory_optional_field_enum())))
+  use schedule <- decode.optional_field("Schedule", option.None, decode.optional(decode_inventory_schedule_struct_params()))
   decode.success(InventoryConfiguration(
     destination: destination,
     filter: filter,
@@ -6873,6 +7979,13 @@ pub fn decode_inventory_destination_struct() -> decode.Decoder(InventoryDestinat
   ))
 }
 
+pub fn decode_inventory_destination_struct_params() -> decode.Decoder(InventoryDestination) {
+  use s3_bucket_destination <- decode.optional_field("S3BucketDestination", option.None, decode.optional(decode_inventory_s3_bucket_destination_struct_params()))
+  decode.success(InventoryDestination(
+    s3_bucket_destination: s3_bucket_destination,
+  ))
+}
+
 pub fn encode_inventory_destination_xml_inner(input: InventoryDestination) -> String {
   let inner = ""
   let inner = case input.s3_bucket_destination {
@@ -6932,6 +8045,21 @@ pub fn decode_inventory_s3_bucket_destination_struct() -> decode.Decoder(Invento
   use account_id <- decode.optional_field("AccountId", option.None, decode.optional(decode.string))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use encryption <- decode.optional_field("Encryption", option.None, decode.optional(decode_inventory_encryption_struct()))
+  use format <- decode.optional_field("Format", option.None, decode.optional(decode_inventory_format_enum()))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  decode.success(InventoryS3BucketDestination(
+    account_id: account_id,
+    bucket: bucket,
+    encryption: encryption,
+    format: format,
+    prefix: prefix,
+  ))
+}
+
+pub fn decode_inventory_s3_bucket_destination_struct_params() -> decode.Decoder(InventoryS3BucketDestination) {
+  use account_id <- decode.optional_field("AccountId", option.None, decode.optional(decode.string))
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use encryption <- decode.optional_field("Encryption", option.None, decode.optional(decode_inventory_encryption_struct_params()))
   use format <- decode.optional_field("Format", option.None, decode.optional(decode_inventory_format_enum()))
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   decode.success(InventoryS3BucketDestination(
@@ -7017,6 +8145,15 @@ pub fn decode_inventory_encryption_struct() -> decode.Decoder(InventoryEncryptio
   ))
 }
 
+pub fn decode_inventory_encryption_struct_params() -> decode.Decoder(InventoryEncryption) {
+  use ssekms <- decode.optional_field("SSEKMS", option.None, decode.optional(decode_ssekms_struct_params()))
+  use sses3 <- decode.optional_field("SSES3", option.None, decode.optional(decode_sses3_struct_params()))
+  decode.success(InventoryEncryption(
+    ssekms: ssekms,
+    sses3: sses3,
+  ))
+}
+
 pub fn encode_inventory_encryption_xml_inner(input: InventoryEncryption) -> String {
   let inner = ""
   let inner = case input.ssekms {
@@ -7065,6 +8202,13 @@ pub fn decode_ssekms_struct() -> decode.Decoder(SSEKMS) {
   ))
 }
 
+pub fn decode_ssekms_struct_params() -> decode.Decoder(SSEKMS) {
+  use key_id <- decode.optional_field("KeyId", option.None, decode.optional(decode.string))
+  decode.success(SSEKMS(
+    key_id: key_id,
+  ))
+}
+
 pub fn encode_ssekms_xml_inner(input: SSEKMS) -> String {
   let inner = ""
   let inner = case input.key_id {
@@ -7094,6 +8238,10 @@ pub fn encode_sses3_struct(_v: SSES3) -> json.Json {
 }
 
 pub fn decode_sses3_struct() -> decode.Decoder(SSES3) {
+  decode.success(SSES3)
+}
+
+pub fn decode_sses3_struct_params() -> decode.Decoder(SSES3) {
   decode.success(SSES3)
 }
 
@@ -7150,6 +8298,13 @@ pub fn encode_inventory_filter_struct(input: InventoryFilter) -> json.Json {
 }
 
 pub fn decode_inventory_filter_struct() -> decode.Decoder(InventoryFilter) {
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  decode.success(InventoryFilter(
+    prefix: prefix,
+  ))
+}
+
+pub fn decode_inventory_filter_struct_params() -> decode.Decoder(InventoryFilter) {
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   decode.success(InventoryFilter(
     prefix: prefix,
@@ -7284,6 +8439,13 @@ pub fn decode_inventory_schedule_struct() -> decode.Decoder(InventorySchedule) {
   ))
 }
 
+pub fn decode_inventory_schedule_struct_params() -> decode.Decoder(InventorySchedule) {
+  use frequency <- decode.optional_field("Frequency", option.None, decode.optional(decode_inventory_frequency_enum()))
+  decode.success(InventorySchedule(
+    frequency: frequency,
+  ))
+}
+
 pub fn encode_inventory_schedule_xml_inner(input: InventorySchedule) -> String {
   let inner = ""
   let inner = case input.frequency {
@@ -7356,6 +8518,15 @@ pub fn decode_get_bucket_lifecycle_configuration_request_struct() -> decode.Deco
   ))
 }
 
+pub fn decode_get_bucket_lifecycle_configuration_request_struct_params() -> decode.Decoder(GetBucketLifecycleConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketLifecycleConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_lifecycle_configuration_request_xml_inner(input: GetBucketLifecycleConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -7396,6 +8567,15 @@ pub fn encode_get_bucket_lifecycle_configuration_output_struct(input: GetBucketL
 
 pub fn decode_get_bucket_lifecycle_configuration_output_struct() -> decode.Decoder(GetBucketLifecycleConfigurationOutput) {
   use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_lifecycle_rule_struct())))
+  use transition_default_minimum_object_size <- decode.optional_field("TransitionDefaultMinimumObjectSize", option.None, decode.optional(decode_transition_default_minimum_object_size_enum()))
+  decode.success(GetBucketLifecycleConfigurationOutput(
+    rules: rules,
+    transition_default_minimum_object_size: transition_default_minimum_object_size,
+  ))
+}
+
+pub fn decode_get_bucket_lifecycle_configuration_output_struct_params() -> decode.Decoder(GetBucketLifecycleConfigurationOutput) {
+  use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_lifecycle_rule_struct_params())))
   use transition_default_minimum_object_size <- decode.optional_field("TransitionDefaultMinimumObjectSize", option.None, decode.optional(decode_transition_default_minimum_object_size_enum()))
   decode.success(GetBucketLifecycleConfigurationOutput(
     rules: rules,
@@ -7503,6 +8683,29 @@ pub fn decode_lifecycle_rule_struct() -> decode.Decoder(LifecycleRule) {
   ))
 }
 
+pub fn decode_lifecycle_rule_struct_params() -> decode.Decoder(LifecycleRule) {
+  use abort_incomplete_multipart_upload <- decode.optional_field("AbortIncompleteMultipartUpload", option.None, decode.optional(decode_abort_incomplete_multipart_upload_struct_params()))
+  use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode_lifecycle_expiration_struct_params()))
+  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_lifecycle_rule_filter_struct_params()))
+  use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
+  use noncurrent_version_expiration <- decode.optional_field("NoncurrentVersionExpiration", option.None, decode.optional(decode_noncurrent_version_expiration_struct_params()))
+  use noncurrent_version_transitions <- decode.optional_field("NoncurrentVersionTransitions", option.None, decode.optional(decode.list(decode_noncurrent_version_transition_struct_params())))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_expiration_status_enum()))
+  use transitions <- decode.optional_field("Transitions", option.None, decode.optional(decode.list(decode_transition_struct_params())))
+  decode.success(LifecycleRule(
+    abort_incomplete_multipart_upload: abort_incomplete_multipart_upload,
+    expiration: expiration,
+    filter: filter,
+    id: id,
+    noncurrent_version_expiration: noncurrent_version_expiration,
+    noncurrent_version_transitions: noncurrent_version_transitions,
+    prefix: prefix,
+    status: status,
+    transitions: transitions,
+  ))
+}
+
 pub fn encode_lifecycle_rule_xml_inner(input: LifecycleRule) -> String {
   let inner = ""
   let inner = case input.abort_incomplete_multipart_upload {
@@ -7594,6 +8797,13 @@ pub fn decode_abort_incomplete_multipart_upload_struct() -> decode.Decoder(Abort
   ))
 }
 
+pub fn decode_abort_incomplete_multipart_upload_struct_params() -> decode.Decoder(AbortIncompleteMultipartUpload) {
+  use days_after_initiation <- decode.optional_field("DaysAfterInitiation", option.None, decode.optional(decode.int))
+  decode.success(AbortIncompleteMultipartUpload(
+    days_after_initiation: days_after_initiation,
+  ))
+}
+
 pub fn encode_abort_incomplete_multipart_upload_xml_inner(input: AbortIncompleteMultipartUpload) -> String {
   let inner = ""
   let inner = case input.days_after_initiation {
@@ -7640,7 +8850,18 @@ pub fn encode_lifecycle_expiration_struct(input: LifecycleExpiration) -> json.Js
 }
 
 pub fn decode_lifecycle_expiration_struct() -> decode.Decoder(LifecycleExpiration) {
-  use date <- decode.optional_field("Date", option.None, decode.optional(decode.int))
+  use date <- decode.optional_field("Date", option.None, decode.optional(json_timestamp.decoder()))
+  use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
+  use expired_object_delete_marker <- decode.optional_field("ExpiredObjectDeleteMarker", option.None, decode.optional(decode.bool))
+  decode.success(LifecycleExpiration(
+    date: date,
+    days: days,
+    expired_object_delete_marker: expired_object_delete_marker,
+  ))
+}
+
+pub fn decode_lifecycle_expiration_struct_params() -> decode.Decoder(LifecycleExpiration) {
+  use date <- decode.optional_field("Date", option.None, decode.optional(json_timestamp.decoder()))
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   use expired_object_delete_marker <- decode.optional_field("ExpiredObjectDeleteMarker", option.None, decode.optional(decode.bool))
   decode.success(LifecycleExpiration(
@@ -7723,6 +8944,21 @@ pub fn decode_lifecycle_rule_filter_struct() -> decode.Decoder(LifecycleRuleFilt
   use object_size_less_than <- decode.optional_field("ObjectSizeLessThan", option.None, decode.optional(decode.int))
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   use tag <- decode.optional_field("Tag", option.None, decode.optional(decode_tag_struct()))
+  decode.success(LifecycleRuleFilter(
+    and: and,
+    object_size_greater_than: object_size_greater_than,
+    object_size_less_than: object_size_less_than,
+    prefix: prefix,
+    tag: tag,
+  ))
+}
+
+pub fn decode_lifecycle_rule_filter_struct_params() -> decode.Decoder(LifecycleRuleFilter) {
+  use and <- decode.optional_field("And", option.None, decode.optional(decode_lifecycle_rule_and_operator_struct_params()))
+  use object_size_greater_than <- decode.optional_field("ObjectSizeGreaterThan", option.None, decode.optional(decode.int))
+  use object_size_less_than <- decode.optional_field("ObjectSizeLessThan", option.None, decode.optional(decode.int))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use tag <- decode.optional_field("Tag", option.None, decode.optional(decode_tag_struct_params()))
   decode.success(LifecycleRuleFilter(
     and: and,
     object_size_greater_than: object_size_greater_than,
@@ -7819,6 +9055,19 @@ pub fn decode_lifecycle_rule_and_operator_struct() -> decode.Decoder(LifecycleRu
   ))
 }
 
+pub fn decode_lifecycle_rule_and_operator_struct_params() -> decode.Decoder(LifecycleRuleAndOperator) {
+  use object_size_greater_than <- decode.optional_field("ObjectSizeGreaterThan", option.None, decode.optional(decode.int))
+  use object_size_less_than <- decode.optional_field("ObjectSizeLessThan", option.None, decode.optional(decode.int))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
+  decode.success(LifecycleRuleAndOperator(
+    object_size_greater_than: object_size_greater_than,
+    object_size_less_than: object_size_less_than,
+    prefix: prefix,
+    tags: tags,
+  ))
+}
+
 pub fn encode_lifecycle_rule_and_operator_xml_inner(input: LifecycleRuleAndOperator) -> String {
   let inner = ""
   let inner = case input.object_size_greater_than {
@@ -7886,6 +9135,15 @@ pub fn decode_noncurrent_version_expiration_struct() -> decode.Decoder(Noncurren
   ))
 }
 
+pub fn decode_noncurrent_version_expiration_struct_params() -> decode.Decoder(NoncurrentVersionExpiration) {
+  use newer_noncurrent_versions <- decode.optional_field("NewerNoncurrentVersions", option.None, decode.optional(decode.int))
+  use noncurrent_days <- decode.optional_field("NoncurrentDays", option.None, decode.optional(decode.int))
+  decode.success(NoncurrentVersionExpiration(
+    newer_noncurrent_versions: newer_noncurrent_versions,
+    noncurrent_days: noncurrent_days,
+  ))
+}
+
 pub fn encode_noncurrent_version_expiration_xml_inner(input: NoncurrentVersionExpiration) -> String {
   let inner = ""
   let inner = case input.newer_noncurrent_versions {
@@ -7938,6 +9196,17 @@ pub fn encode_noncurrent_version_transition_struct(input: NoncurrentVersionTrans
 }
 
 pub fn decode_noncurrent_version_transition_struct() -> decode.Decoder(NoncurrentVersionTransition) {
+  use newer_noncurrent_versions <- decode.optional_field("NewerNoncurrentVersions", option.None, decode.optional(decode.int))
+  use noncurrent_days <- decode.optional_field("NoncurrentDays", option.None, decode.optional(decode.int))
+  use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_transition_storage_class_enum()))
+  decode.success(NoncurrentVersionTransition(
+    newer_noncurrent_versions: newer_noncurrent_versions,
+    noncurrent_days: noncurrent_days,
+    storage_class: storage_class,
+  ))
+}
+
+pub fn decode_noncurrent_version_transition_struct_params() -> decode.Decoder(NoncurrentVersionTransition) {
   use newer_noncurrent_versions <- decode.optional_field("NewerNoncurrentVersions", option.None, decode.optional(decode.int))
   use noncurrent_days <- decode.optional_field("NoncurrentDays", option.None, decode.optional(decode.int))
   use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_transition_storage_class_enum()))
@@ -8063,7 +9332,18 @@ pub fn encode_transition_struct(input: Transition) -> json.Json {
 }
 
 pub fn decode_transition_struct() -> decode.Decoder(Transition) {
-  use date <- decode.optional_field("Date", option.None, decode.optional(decode.int))
+  use date <- decode.optional_field("Date", option.None, decode.optional(json_timestamp.decoder()))
+  use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
+  use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_transition_storage_class_enum()))
+  decode.success(Transition(
+    date: date,
+    days: days,
+    storage_class: storage_class,
+  ))
+}
+
+pub fn decode_transition_struct_params() -> decode.Decoder(Transition) {
+  use date <- decode.optional_field("Date", option.None, decode.optional(json_timestamp.decoder()))
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_transition_storage_class_enum()))
   decode.success(Transition(
@@ -8157,6 +9437,15 @@ pub fn decode_get_bucket_location_request_struct() -> decode.Decoder(GetBucketLo
   ))
 }
 
+pub fn decode_get_bucket_location_request_struct_params() -> decode.Decoder(GetBucketLocationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketLocationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_location_request_xml_inner(input: GetBucketLocationRequest) -> String {
   let inner = ""
   inner
@@ -8191,6 +9480,13 @@ pub fn encode_get_bucket_location_output_struct(input: GetBucketLocationOutput) 
 }
 
 pub fn decode_get_bucket_location_output_struct() -> decode.Decoder(GetBucketLocationOutput) {
+  use location_constraint <- decode.optional_field("LocationConstraint", option.None, decode.optional(decode_bucket_location_constraint_enum()))
+  decode.success(GetBucketLocationOutput(
+    location_constraint: location_constraint,
+  ))
+}
+
+pub fn decode_get_bucket_location_output_struct_params() -> decode.Decoder(GetBucketLocationOutput) {
   use location_constraint <- decode.optional_field("LocationConstraint", option.None, decode.optional(decode_bucket_location_constraint_enum()))
   decode.success(GetBucketLocationOutput(
     location_constraint: location_constraint,
@@ -8247,6 +9543,15 @@ pub fn decode_get_bucket_logging_request_struct() -> decode.Decoder(GetBucketLog
   ))
 }
 
+pub fn decode_get_bucket_logging_request_struct_params() -> decode.Decoder(GetBucketLoggingRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketLoggingRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_logging_request_xml_inner(input: GetBucketLoggingRequest) -> String {
   let inner = ""
   inner
@@ -8282,6 +9587,13 @@ pub fn encode_get_bucket_logging_output_struct(input: GetBucketLoggingOutput) ->
 
 pub fn decode_get_bucket_logging_output_struct() -> decode.Decoder(GetBucketLoggingOutput) {
   use logging_enabled <- decode.optional_field("LoggingEnabled", option.None, decode.optional(decode_logging_enabled_struct()))
+  decode.success(GetBucketLoggingOutput(
+    logging_enabled: logging_enabled,
+  ))
+}
+
+pub fn decode_get_bucket_logging_output_struct_params() -> decode.Decoder(GetBucketLoggingOutput) {
+  use logging_enabled <- decode.optional_field("LoggingEnabled", option.None, decode.optional(decode_logging_enabled_struct_params()))
   decode.success(GetBucketLoggingOutput(
     logging_enabled: logging_enabled,
   ))
@@ -8341,6 +9653,19 @@ pub fn decode_logging_enabled_struct() -> decode.Decoder(LoggingEnabled) {
   use target_bucket <- decode.optional_field("TargetBucket", option.None, decode.optional(decode.string))
   use target_grants <- decode.optional_field("TargetGrants", option.None, decode.optional(decode.list(decode_target_grant_struct())))
   use target_object_key_format <- decode.optional_field("TargetObjectKeyFormat", option.None, decode.optional(decode_target_object_key_format_struct()))
+  use target_prefix <- decode.optional_field("TargetPrefix", option.None, decode.optional(decode.string))
+  decode.success(LoggingEnabled(
+    target_bucket: target_bucket,
+    target_grants: target_grants,
+    target_object_key_format: target_object_key_format,
+    target_prefix: target_prefix,
+  ))
+}
+
+pub fn decode_logging_enabled_struct_params() -> decode.Decoder(LoggingEnabled) {
+  use target_bucket <- decode.optional_field("TargetBucket", option.None, decode.optional(decode.string))
+  use target_grants <- decode.optional_field("TargetGrants", option.None, decode.optional(decode.list(decode_target_grant_struct_params())))
+  use target_object_key_format <- decode.optional_field("TargetObjectKeyFormat", option.None, decode.optional(decode_target_object_key_format_struct_params()))
   use target_prefix <- decode.optional_field("TargetPrefix", option.None, decode.optional(decode.string))
   decode.success(LoggingEnabled(
     target_bucket: target_bucket,
@@ -8410,6 +9735,15 @@ pub fn encode_target_grant_struct(input: TargetGrant) -> json.Json {
 
 pub fn decode_target_grant_struct() -> decode.Decoder(TargetGrant) {
   use grantee <- decode.optional_field("Grantee", option.None, decode.optional(decode_grantee_struct()))
+  use permission <- decode.optional_field("Permission", option.None, decode.optional(decode_bucket_logs_permission_enum()))
+  decode.success(TargetGrant(
+    grantee: grantee,
+    permission: permission,
+  ))
+}
+
+pub fn decode_target_grant_struct_params() -> decode.Decoder(TargetGrant) {
+  use grantee <- decode.optional_field("Grantee", option.None, decode.optional(decode_grantee_struct_params()))
   use permission <- decode.optional_field("Permission", option.None, decode.optional(decode_bucket_logs_permission_enum()))
   decode.success(TargetGrant(
     grantee: grantee,
@@ -8498,6 +9832,15 @@ pub fn decode_target_object_key_format_struct() -> decode.Decoder(TargetObjectKe
   ))
 }
 
+pub fn decode_target_object_key_format_struct_params() -> decode.Decoder(TargetObjectKeyFormat) {
+  use partitioned_prefix <- decode.optional_field("PartitionedPrefix", option.None, decode.optional(decode_partitioned_prefix_struct_params()))
+  use simple_prefix <- decode.optional_field("SimplePrefix", option.None, decode.optional(decode_simple_prefix_struct_params()))
+  decode.success(TargetObjectKeyFormat(
+    partitioned_prefix: partitioned_prefix,
+    simple_prefix: simple_prefix,
+  ))
+}
+
 pub fn encode_target_object_key_format_xml_inner(input: TargetObjectKeyFormat) -> String {
   let inner = ""
   let inner = case input.partitioned_prefix {
@@ -8540,6 +9883,13 @@ pub fn encode_partitioned_prefix_struct(input: PartitionedPrefix) -> json.Json {
 }
 
 pub fn decode_partitioned_prefix_struct() -> decode.Decoder(PartitionedPrefix) {
+  use partition_date_source <- decode.optional_field("PartitionDateSource", option.None, decode.optional(decode_partition_date_source_enum()))
+  decode.success(PartitionedPrefix(
+    partition_date_source: partition_date_source,
+  ))
+}
+
+pub fn decode_partitioned_prefix_struct_params() -> decode.Decoder(PartitionedPrefix) {
   use partition_date_source <- decode.optional_field("PartitionDateSource", option.None, decode.optional(decode_partition_date_source_enum()))
   decode.success(PartitionedPrefix(
     partition_date_source: partition_date_source,
@@ -8601,6 +9951,10 @@ pub fn decode_simple_prefix_struct() -> decode.Decoder(SimplePrefix) {
   decode.success(SimplePrefix)
 }
 
+pub fn decode_simple_prefix_struct_params() -> decode.Decoder(SimplePrefix) {
+  decode.success(SimplePrefix)
+}
+
 pub fn encode_simple_prefix_xml_inner(_input: SimplePrefix) -> String {
   ""
 }
@@ -8634,6 +9988,15 @@ pub fn encode_get_bucket_metadata_configuration_request_struct(input: GetBucketM
 }
 
 pub fn decode_get_bucket_metadata_configuration_request_struct() -> decode.Decoder(GetBucketMetadataConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketMetadataConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
+pub fn decode_get_bucket_metadata_configuration_request_struct_params() -> decode.Decoder(GetBucketMetadataConfigurationRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketMetadataConfigurationRequest(
@@ -8682,6 +10045,13 @@ pub fn decode_get_bucket_metadata_configuration_output_struct() -> decode.Decode
   ))
 }
 
+pub fn decode_get_bucket_metadata_configuration_output_struct_params() -> decode.Decoder(GetBucketMetadataConfigurationOutput) {
+  use get_bucket_metadata_configuration_result <- decode.optional_field("GetBucketMetadataConfigurationResult", option.None, decode.optional(decode_get_bucket_metadata_configuration_result_struct_params()))
+  decode.success(GetBucketMetadataConfigurationOutput(
+    get_bucket_metadata_configuration_result: get_bucket_metadata_configuration_result,
+  ))
+}
+
 pub fn encode_get_bucket_metadata_configuration_output_xml_inner(input: GetBucketMetadataConfigurationOutput) -> String {
   let inner = ""
   inner
@@ -8715,6 +10085,13 @@ pub fn encode_get_bucket_metadata_configuration_result_struct(input: GetBucketMe
 
 pub fn decode_get_bucket_metadata_configuration_result_struct() -> decode.Decoder(GetBucketMetadataConfigurationResult) {
   use metadata_configuration_result <- decode.optional_field("MetadataConfigurationResult", option.None, decode.optional(decode_metadata_configuration_result_struct()))
+  decode.success(GetBucketMetadataConfigurationResult(
+    metadata_configuration_result: metadata_configuration_result,
+  ))
+}
+
+pub fn decode_get_bucket_metadata_configuration_result_struct_params() -> decode.Decoder(GetBucketMetadataConfigurationResult) {
+  use metadata_configuration_result <- decode.optional_field("MetadataConfigurationResult", option.None, decode.optional(decode_metadata_configuration_result_struct_params()))
   decode.success(GetBucketMetadataConfigurationResult(
     metadata_configuration_result: metadata_configuration_result,
   ))
@@ -8769,6 +10146,17 @@ pub fn decode_metadata_configuration_result_struct() -> decode.Decoder(MetadataC
   use destination_result <- decode.optional_field("DestinationResult", option.None, decode.optional(decode_destination_result_struct()))
   use inventory_table_configuration_result <- decode.optional_field("InventoryTableConfigurationResult", option.None, decode.optional(decode_inventory_table_configuration_result_struct()))
   use journal_table_configuration_result <- decode.optional_field("JournalTableConfigurationResult", option.None, decode.optional(decode_journal_table_configuration_result_struct()))
+  decode.success(MetadataConfigurationResult(
+    destination_result: destination_result,
+    inventory_table_configuration_result: inventory_table_configuration_result,
+    journal_table_configuration_result: journal_table_configuration_result,
+  ))
+}
+
+pub fn decode_metadata_configuration_result_struct_params() -> decode.Decoder(MetadataConfigurationResult) {
+  use destination_result <- decode.optional_field("DestinationResult", option.None, decode.optional(decode_destination_result_struct_params()))
+  use inventory_table_configuration_result <- decode.optional_field("InventoryTableConfigurationResult", option.None, decode.optional(decode_inventory_table_configuration_result_struct_params()))
+  use journal_table_configuration_result <- decode.optional_field("JournalTableConfigurationResult", option.None, decode.optional(decode_journal_table_configuration_result_struct_params()))
   decode.success(MetadataConfigurationResult(
     destination_result: destination_result,
     inventory_table_configuration_result: inventory_table_configuration_result,
@@ -8834,6 +10222,17 @@ pub fn encode_destination_result_struct(input: DestinationResult) -> json.Json {
 }
 
 pub fn decode_destination_result_struct() -> decode.Decoder(DestinationResult) {
+  use table_bucket_arn <- decode.optional_field("TableBucketArn", option.None, decode.optional(decode.string))
+  use table_bucket_type <- decode.optional_field("TableBucketType", option.None, decode.optional(decode_s3_tables_bucket_type_enum()))
+  use table_namespace <- decode.optional_field("TableNamespace", option.None, decode.optional(decode.string))
+  decode.success(DestinationResult(
+    table_bucket_arn: table_bucket_arn,
+    table_bucket_type: table_bucket_type,
+    table_namespace: table_namespace,
+  ))
+}
+
+pub fn decode_destination_result_struct_params() -> decode.Decoder(DestinationResult) {
   use table_bucket_arn <- decode.optional_field("TableBucketArn", option.None, decode.optional(decode.string))
   use table_bucket_type <- decode.optional_field("TableBucketType", option.None, decode.optional(decode_s3_tables_bucket_type_enum()))
   use table_namespace <- decode.optional_field("TableNamespace", option.None, decode.optional(decode.string))
@@ -8949,6 +10348,21 @@ pub fn decode_inventory_table_configuration_result_struct() -> decode.Decoder(In
   ))
 }
 
+pub fn decode_inventory_table_configuration_result_struct_params() -> decode.Decoder(InventoryTableConfigurationResult) {
+  use configuration_state <- decode.optional_field("ConfigurationState", option.None, decode.optional(decode_inventory_configuration_state_enum()))
+  use error <- decode.optional_field("Error", option.None, decode.optional(decode_error_details_struct_params()))
+  use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use table_status <- decode.optional_field("TableStatus", option.None, decode.optional(decode.string))
+  decode.success(InventoryTableConfigurationResult(
+    configuration_state: configuration_state,
+    error: error,
+    table_arn: table_arn,
+    table_name: table_name,
+    table_status: table_status,
+  ))
+}
+
 pub fn encode_inventory_table_configuration_result_xml_inner(input: InventoryTableConfigurationResult) -> String {
   let inner = ""
   let inner = case input.configuration_state {
@@ -9045,6 +10459,15 @@ pub fn decode_error_details_struct() -> decode.Decoder(ErrorDetails) {
   ))
 }
 
+pub fn decode_error_details_struct_params() -> decode.Decoder(ErrorDetails) {
+  use error_code <- decode.optional_field("ErrorCode", option.None, decode.optional(decode.string))
+  use error_message <- decode.optional_field("ErrorMessage", option.None, decode.optional(decode.string))
+  decode.success(ErrorDetails(
+    error_code: error_code,
+    error_message: error_message,
+  ))
+}
+
 pub fn encode_error_details_xml_inner(input: ErrorDetails) -> String {
   let inner = ""
   let inner = case input.error_code {
@@ -9109,6 +10532,21 @@ pub fn encode_journal_table_configuration_result_struct(input: JournalTableConfi
 pub fn decode_journal_table_configuration_result_struct() -> decode.Decoder(JournalTableConfigurationResult) {
   use error <- decode.optional_field("Error", option.None, decode.optional(decode_error_details_struct()))
   use record_expiration <- decode.optional_field("RecordExpiration", option.None, decode.optional(decode_record_expiration_struct()))
+  use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use table_status <- decode.optional_field("TableStatus", option.None, decode.optional(decode.string))
+  decode.success(JournalTableConfigurationResult(
+    error: error,
+    record_expiration: record_expiration,
+    table_arn: table_arn,
+    table_name: table_name,
+    table_status: table_status,
+  ))
+}
+
+pub fn decode_journal_table_configuration_result_struct_params() -> decode.Decoder(JournalTableConfigurationResult) {
+  use error <- decode.optional_field("Error", option.None, decode.optional(decode_error_details_struct_params()))
+  use record_expiration <- decode.optional_field("RecordExpiration", option.None, decode.optional(decode_record_expiration_struct_params()))
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
   use table_status <- decode.optional_field("TableStatus", option.None, decode.optional(decode.string))
@@ -9186,6 +10624,15 @@ pub fn encode_record_expiration_struct(input: RecordExpiration) -> json.Json {
 }
 
 pub fn decode_record_expiration_struct() -> decode.Decoder(RecordExpiration) {
+  use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
+  use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode_expiration_state_enum()))
+  decode.success(RecordExpiration(
+    days: days,
+    expiration: expiration,
+  ))
+}
+
+pub fn decode_record_expiration_struct_params() -> decode.Decoder(RecordExpiration) {
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode_expiration_state_enum()))
   decode.success(RecordExpiration(
@@ -9272,6 +10719,15 @@ pub fn decode_get_bucket_metadata_table_configuration_request_struct() -> decode
   ))
 }
 
+pub fn decode_get_bucket_metadata_table_configuration_request_struct_params() -> decode.Decoder(GetBucketMetadataTableConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketMetadataTableConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_metadata_table_configuration_request_xml_inner(input: GetBucketMetadataTableConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -9307,6 +10763,13 @@ pub fn encode_get_bucket_metadata_table_configuration_output_struct(input: GetBu
 
 pub fn decode_get_bucket_metadata_table_configuration_output_struct() -> decode.Decoder(GetBucketMetadataTableConfigurationOutput) {
   use get_bucket_metadata_table_configuration_result <- decode.optional_field("GetBucketMetadataTableConfigurationResult", option.None, decode.optional(decode_get_bucket_metadata_table_configuration_result_struct()))
+  decode.success(GetBucketMetadataTableConfigurationOutput(
+    get_bucket_metadata_table_configuration_result: get_bucket_metadata_table_configuration_result,
+  ))
+}
+
+pub fn decode_get_bucket_metadata_table_configuration_output_struct_params() -> decode.Decoder(GetBucketMetadataTableConfigurationOutput) {
+  use get_bucket_metadata_table_configuration_result <- decode.optional_field("GetBucketMetadataTableConfigurationResult", option.None, decode.optional(decode_get_bucket_metadata_table_configuration_result_struct_params()))
   decode.success(GetBucketMetadataTableConfigurationOutput(
     get_bucket_metadata_table_configuration_result: get_bucket_metadata_table_configuration_result,
   ))
@@ -9356,6 +10819,17 @@ pub fn encode_get_bucket_metadata_table_configuration_result_struct(input: GetBu
 pub fn decode_get_bucket_metadata_table_configuration_result_struct() -> decode.Decoder(GetBucketMetadataTableConfigurationResult) {
   use error <- decode.optional_field("Error", option.None, decode.optional(decode_error_details_struct()))
   use metadata_table_configuration_result <- decode.optional_field("MetadataTableConfigurationResult", option.None, decode.optional(decode_metadata_table_configuration_result_struct()))
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode.string))
+  decode.success(GetBucketMetadataTableConfigurationResult(
+    error: error,
+    metadata_table_configuration_result: metadata_table_configuration_result,
+    status: status,
+  ))
+}
+
+pub fn decode_get_bucket_metadata_table_configuration_result_struct_params() -> decode.Decoder(GetBucketMetadataTableConfigurationResult) {
+  use error <- decode.optional_field("Error", option.None, decode.optional(decode_error_details_struct_params()))
+  use metadata_table_configuration_result <- decode.optional_field("MetadataTableConfigurationResult", option.None, decode.optional(decode_metadata_table_configuration_result_struct_params()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode.string))
   decode.success(GetBucketMetadataTableConfigurationResult(
     error: error,
@@ -9418,6 +10892,13 @@ pub fn decode_metadata_table_configuration_result_struct() -> decode.Decoder(Met
   ))
 }
 
+pub fn decode_metadata_table_configuration_result_struct_params() -> decode.Decoder(MetadataTableConfigurationResult) {
+  use s3_tables_destination_result <- decode.optional_field("S3TablesDestinationResult", option.None, decode.optional(decode_s3_tables_destination_result_struct_params()))
+  decode.success(MetadataTableConfigurationResult(
+    s3_tables_destination_result: s3_tables_destination_result,
+  ))
+}
+
 pub fn encode_metadata_table_configuration_result_xml_inner(input: MetadataTableConfigurationResult) -> String {
   let inner = ""
   let inner = case input.s3_tables_destination_result {
@@ -9469,6 +10950,19 @@ pub fn encode_s3_tables_destination_result_struct(input: S3TablesDestinationResu
 }
 
 pub fn decode_s3_tables_destination_result_struct() -> decode.Decoder(S3TablesDestinationResult) {
+  use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
+  use table_bucket_arn <- decode.optional_field("TableBucketArn", option.None, decode.optional(decode.string))
+  use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
+  use table_namespace <- decode.optional_field("TableNamespace", option.None, decode.optional(decode.string))
+  decode.success(S3TablesDestinationResult(
+    table_arn: table_arn,
+    table_bucket_arn: table_bucket_arn,
+    table_name: table_name,
+    table_namespace: table_namespace,
+  ))
+}
+
+pub fn decode_s3_tables_destination_result_struct_params() -> decode.Decoder(S3TablesDestinationResult) {
   use table_arn <- decode.optional_field("TableArn", option.None, decode.optional(decode.string))
   use table_bucket_arn <- decode.optional_field("TableBucketArn", option.None, decode.optional(decode.string))
   use table_name <- decode.optional_field("TableName", option.None, decode.optional(decode.string))
@@ -9555,6 +11049,17 @@ pub fn decode_get_bucket_metrics_configuration_request_struct() -> decode.Decode
   ))
 }
 
+pub fn decode_get_bucket_metrics_configuration_request_struct_params() -> decode.Decoder(GetBucketMetricsConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  decode.success(GetBucketMetricsConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    id: id,
+  ))
+}
+
 pub fn encode_get_bucket_metrics_configuration_request_xml_inner(input: GetBucketMetricsConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -9597,6 +11102,13 @@ pub fn decode_get_bucket_metrics_configuration_output_struct() -> decode.Decoder
   ))
 }
 
+pub fn decode_get_bucket_metrics_configuration_output_struct_params() -> decode.Decoder(GetBucketMetricsConfigurationOutput) {
+  use metrics_configuration <- decode.optional_field("MetricsConfiguration", option.None, decode.optional(decode_metrics_configuration_struct_params()))
+  decode.success(GetBucketMetricsConfigurationOutput(
+    metrics_configuration: metrics_configuration,
+  ))
+}
+
 pub fn encode_get_bucket_metrics_configuration_output_xml_inner(input: GetBucketMetricsConfigurationOutput) -> String {
   let inner = ""
   inner
@@ -9634,6 +11146,15 @@ pub fn encode_metrics_configuration_struct(input: MetricsConfiguration) -> json.
 }
 
 pub fn decode_metrics_configuration_struct() -> decode.Decoder(MetricsConfiguration) {
+  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_metrics_filter_union()))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  decode.success(MetricsConfiguration(
+    filter: filter,
+    id: id,
+  ))
+}
+
+pub fn decode_metrics_configuration_struct_params() -> decode.Decoder(MetricsConfiguration) {
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_metrics_filter_union()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   decode.success(MetricsConfiguration(
@@ -9732,6 +11253,17 @@ pub fn decode_metrics_and_operator_struct() -> decode.Decoder(MetricsAndOperator
   ))
 }
 
+pub fn decode_metrics_and_operator_struct_params() -> decode.Decoder(MetricsAndOperator) {
+  use access_point_arn <- decode.optional_field("AccessPointArn", option.None, decode.optional(decode.string))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
+  decode.success(MetricsAndOperator(
+    access_point_arn: access_point_arn,
+    prefix: prefix,
+    tags: tags,
+  ))
+}
+
 pub fn encode_metrics_and_operator_xml_inner(input: MetricsAndOperator) -> String {
   let inner = ""
   let inner = case input.access_point_arn {
@@ -9785,6 +11317,15 @@ pub fn encode_get_bucket_notification_configuration_request_struct(input: GetBuc
 }
 
 pub fn decode_get_bucket_notification_configuration_request_struct() -> decode.Decoder(GetBucketNotificationConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketNotificationConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
+pub fn decode_get_bucket_notification_configuration_request_struct_params() -> decode.Decoder(GetBucketNotificationConfigurationRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   decode.success(GetBucketNotificationConfigurationRequest(
@@ -9854,6 +11395,19 @@ pub fn decode_notification_configuration_struct() -> decode.Decoder(Notification
   ))
 }
 
+pub fn decode_notification_configuration_struct_params() -> decode.Decoder(NotificationConfiguration) {
+  use event_bridge_configuration <- decode.optional_field("EventBridgeConfiguration", option.None, decode.optional(decode_event_bridge_configuration_struct_params()))
+  use lambda_function_configurations <- decode.optional_field("LambdaFunctionConfigurations", option.None, decode.optional(decode.list(decode_lambda_function_configuration_struct_params())))
+  use queue_configurations <- decode.optional_field("QueueConfigurations", option.None, decode.optional(decode.list(decode_queue_configuration_struct_params())))
+  use topic_configurations <- decode.optional_field("TopicConfigurations", option.None, decode.optional(decode.list(decode_topic_configuration_struct_params())))
+  decode.success(NotificationConfiguration(
+    event_bridge_configuration: event_bridge_configuration,
+    lambda_function_configurations: lambda_function_configurations,
+    queue_configurations: queue_configurations,
+    topic_configurations: topic_configurations,
+  ))
+}
+
 pub fn encode_notification_configuration_xml_inner(input: NotificationConfiguration) -> String {
   let inner = ""
   let inner = case input.event_bridge_configuration {
@@ -9904,6 +11458,10 @@ pub fn decode_event_bridge_configuration_struct() -> decode.Decoder(EventBridgeC
   decode.success(EventBridgeConfiguration)
 }
 
+pub fn decode_event_bridge_configuration_struct_params() -> decode.Decoder(EventBridgeConfiguration) {
+  decode.success(EventBridgeConfiguration)
+}
+
 pub fn encode_event_bridge_configuration_xml_inner(_input: EventBridgeConfiguration) -> String {
   ""
 }
@@ -9949,6 +11507,19 @@ pub fn encode_lambda_function_configuration_struct(input: LambdaFunctionConfigur
 pub fn decode_lambda_function_configuration_struct() -> decode.Decoder(LambdaFunctionConfiguration) {
   use events <- decode.optional_field("Events", option.None, decode.optional(decode.list(decode_event_enum())))
   use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_notification_configuration_filter_struct()))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  use lambda_function_arn <- decode.optional_field("LambdaFunctionArn", option.None, decode.optional(decode.string))
+  decode.success(LambdaFunctionConfiguration(
+    events: events,
+    filter: filter,
+    id: id,
+    lambda_function_arn: lambda_function_arn,
+  ))
+}
+
+pub fn decode_lambda_function_configuration_struct_params() -> decode.Decoder(LambdaFunctionConfiguration) {
+  use events <- decode.optional_field("Events", option.None, decode.optional(decode.list(decode_event_enum())))
+  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_notification_configuration_filter_struct_params()))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   use lambda_function_arn <- decode.optional_field("LambdaFunctionArn", option.None, decode.optional(decode.string))
   decode.success(LambdaFunctionConfiguration(
@@ -10116,6 +11687,13 @@ pub fn decode_notification_configuration_filter_struct() -> decode.Decoder(Notif
   ))
 }
 
+pub fn decode_notification_configuration_filter_struct_params() -> decode.Decoder(NotificationConfigurationFilter) {
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode_s3_key_filter_struct_params()))
+  decode.success(NotificationConfigurationFilter(
+    key: key,
+  ))
+}
+
 pub fn encode_notification_configuration_filter_xml_inner(input: NotificationConfigurationFilter) -> String {
   let inner = ""
   let inner = case input.key {
@@ -10153,6 +11731,13 @@ pub fn encode_s3_key_filter_struct(input: S3KeyFilter) -> json.Json {
 
 pub fn decode_s3_key_filter_struct() -> decode.Decoder(S3KeyFilter) {
   use filter_rules <- decode.optional_field("FilterRules", option.None, decode.optional(decode.list(decode_filter_rule_struct())))
+  decode.success(S3KeyFilter(
+    filter_rules: filter_rules,
+  ))
+}
+
+pub fn decode_s3_key_filter_struct_params() -> decode.Decoder(S3KeyFilter) {
+  use filter_rules <- decode.optional_field("FilterRules", option.None, decode.optional(decode.list(decode_filter_rule_struct_params())))
   decode.success(S3KeyFilter(
     filter_rules: filter_rules,
   ))
@@ -10199,6 +11784,15 @@ pub fn encode_filter_rule_struct(input: FilterRule) -> json.Json {
 }
 
 pub fn decode_filter_rule_struct() -> decode.Decoder(FilterRule) {
+  use name <- decode.optional_field("Name", option.None, decode.optional(decode_filter_rule_name_enum()))
+  use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
+  decode.success(FilterRule(
+    name: name,
+    value: value,
+  ))
+}
+
+pub fn decode_filter_rule_struct_params() -> decode.Decoder(FilterRule) {
   use name <- decode.optional_field("Name", option.None, decode.optional(decode_filter_rule_name_enum()))
   use value <- decode.optional_field("Value", option.None, decode.optional(decode.string))
   decode.success(FilterRule(
@@ -10299,6 +11893,19 @@ pub fn decode_queue_configuration_struct() -> decode.Decoder(QueueConfiguration)
   ))
 }
 
+pub fn decode_queue_configuration_struct_params() -> decode.Decoder(QueueConfiguration) {
+  use events <- decode.optional_field("Events", option.None, decode.optional(decode.list(decode_event_enum())))
+  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_notification_configuration_filter_struct_params()))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  use queue_arn <- decode.optional_field("QueueArn", option.None, decode.optional(decode.string))
+  decode.success(QueueConfiguration(
+    events: events,
+    filter: filter,
+    id: id,
+    queue_arn: queue_arn,
+  ))
+}
+
 pub fn encode_queue_configuration_xml_inner(input: QueueConfiguration) -> String {
   let inner = ""
   let inner = case input.events {
@@ -10380,6 +11987,19 @@ pub fn decode_topic_configuration_struct() -> decode.Decoder(TopicConfiguration)
   ))
 }
 
+pub fn decode_topic_configuration_struct_params() -> decode.Decoder(TopicConfiguration) {
+  use events <- decode.optional_field("Events", option.None, decode.optional(decode.list(decode_event_enum())))
+  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_notification_configuration_filter_struct_params()))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  use topic_arn <- decode.optional_field("TopicArn", option.None, decode.optional(decode.string))
+  decode.success(TopicConfiguration(
+    events: events,
+    filter: filter,
+    id: id,
+    topic_arn: topic_arn,
+  ))
+}
+
 pub fn encode_topic_configuration_xml_inner(input: TopicConfiguration) -> String {
   let inner = ""
   let inner = case input.events {
@@ -10447,6 +12067,15 @@ pub fn decode_get_bucket_ownership_controls_request_struct() -> decode.Decoder(G
   ))
 }
 
+pub fn decode_get_bucket_ownership_controls_request_struct_params() -> decode.Decoder(GetBucketOwnershipControlsRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketOwnershipControlsRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_ownership_controls_request_xml_inner(input: GetBucketOwnershipControlsRequest) -> String {
   let inner = ""
   inner
@@ -10482,6 +12111,13 @@ pub fn encode_get_bucket_ownership_controls_output_struct(input: GetBucketOwners
 
 pub fn decode_get_bucket_ownership_controls_output_struct() -> decode.Decoder(GetBucketOwnershipControlsOutput) {
   use ownership_controls <- decode.optional_field("OwnershipControls", option.None, decode.optional(decode_ownership_controls_struct()))
+  decode.success(GetBucketOwnershipControlsOutput(
+    ownership_controls: ownership_controls,
+  ))
+}
+
+pub fn decode_get_bucket_ownership_controls_output_struct_params() -> decode.Decoder(GetBucketOwnershipControlsOutput) {
+  use ownership_controls <- decode.optional_field("OwnershipControls", option.None, decode.optional(decode_ownership_controls_struct_params()))
   decode.success(GetBucketOwnershipControlsOutput(
     ownership_controls: ownership_controls,
   ))
@@ -10525,6 +12161,13 @@ pub fn decode_ownership_controls_struct() -> decode.Decoder(OwnershipControls) {
   ))
 }
 
+pub fn decode_ownership_controls_struct_params() -> decode.Decoder(OwnershipControls) {
+  use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_ownership_controls_rule_struct_params())))
+  decode.success(OwnershipControls(
+    rules: rules,
+  ))
+}
+
 pub fn encode_ownership_controls_xml_inner(input: OwnershipControls) -> String {
   let inner = ""
   let inner = case input.rules {
@@ -10561,6 +12204,13 @@ pub fn encode_ownership_controls_rule_struct(input: OwnershipControlsRule) -> js
 }
 
 pub fn decode_ownership_controls_rule_struct() -> decode.Decoder(OwnershipControlsRule) {
+  use object_ownership <- decode.optional_field("ObjectOwnership", option.None, decode.optional(decode_object_ownership_enum()))
+  decode.success(OwnershipControlsRule(
+    object_ownership: object_ownership,
+  ))
+}
+
+pub fn decode_ownership_controls_rule_struct_params() -> decode.Decoder(OwnershipControlsRule) {
   use object_ownership <- decode.optional_field("ObjectOwnership", option.None, decode.optional(decode_object_ownership_enum()))
   decode.success(OwnershipControlsRule(
     object_ownership: object_ownership,
@@ -10617,6 +12267,15 @@ pub fn decode_get_bucket_policy_request_struct() -> decode.Decoder(GetBucketPoli
   ))
 }
 
+pub fn decode_get_bucket_policy_request_struct_params() -> decode.Decoder(GetBucketPolicyRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketPolicyRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_policy_request_xml_inner(input: GetBucketPolicyRequest) -> String {
   let inner = ""
   inner
@@ -10651,6 +12310,13 @@ pub fn encode_get_bucket_policy_output_struct(input: GetBucketPolicyOutput) -> j
 }
 
 pub fn decode_get_bucket_policy_output_struct() -> decode.Decoder(GetBucketPolicyOutput) {
+  use policy <- decode.optional_field("Policy", option.None, decode.optional(decode.string))
+  decode.success(GetBucketPolicyOutput(
+    policy: policy,
+  ))
+}
+
+pub fn decode_get_bucket_policy_output_struct_params() -> decode.Decoder(GetBucketPolicyOutput) {
   use policy <- decode.optional_field("Policy", option.None, decode.optional(decode.string))
   decode.success(GetBucketPolicyOutput(
     policy: policy,
@@ -10702,6 +12368,15 @@ pub fn decode_get_bucket_policy_status_request_struct() -> decode.Decoder(GetBuc
   ))
 }
 
+pub fn decode_get_bucket_policy_status_request_struct_params() -> decode.Decoder(GetBucketPolicyStatusRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketPolicyStatusRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_policy_status_request_xml_inner(input: GetBucketPolicyStatusRequest) -> String {
   let inner = ""
   inner
@@ -10742,6 +12417,13 @@ pub fn decode_get_bucket_policy_status_output_struct() -> decode.Decoder(GetBuck
   ))
 }
 
+pub fn decode_get_bucket_policy_status_output_struct_params() -> decode.Decoder(GetBucketPolicyStatusOutput) {
+  use policy_status <- decode.optional_field("PolicyStatus", option.None, decode.optional(decode_policy_status_struct_params()))
+  decode.success(GetBucketPolicyStatusOutput(
+    policy_status: policy_status,
+  ))
+}
+
 pub fn encode_get_bucket_policy_status_output_xml_inner(input: GetBucketPolicyStatusOutput) -> String {
   let inner = ""
   inner
@@ -10774,6 +12456,13 @@ pub fn encode_policy_status_struct(input: PolicyStatus) -> json.Json {
 }
 
 pub fn decode_policy_status_struct() -> decode.Decoder(PolicyStatus) {
+  use is_public <- decode.optional_field("IsPublic", option.None, decode.optional(decode.bool))
+  decode.success(PolicyStatus(
+    is_public: is_public,
+  ))
+}
+
+pub fn decode_policy_status_struct_params() -> decode.Decoder(PolicyStatus) {
   use is_public <- decode.optional_field("IsPublic", option.None, decode.optional(decode.bool))
   decode.success(PolicyStatus(
     is_public: is_public,
@@ -10829,6 +12518,15 @@ pub fn decode_get_bucket_replication_request_struct() -> decode.Decoder(GetBucke
   ))
 }
 
+pub fn decode_get_bucket_replication_request_struct_params() -> decode.Decoder(GetBucketReplicationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketReplicationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_replication_request_xml_inner(input: GetBucketReplicationRequest) -> String {
   let inner = ""
   inner
@@ -10864,6 +12562,13 @@ pub fn encode_get_bucket_replication_output_struct(input: GetBucketReplicationOu
 
 pub fn decode_get_bucket_replication_output_struct() -> decode.Decoder(GetBucketReplicationOutput) {
   use replication_configuration <- decode.optional_field("ReplicationConfiguration", option.None, decode.optional(decode_replication_configuration_struct()))
+  decode.success(GetBucketReplicationOutput(
+    replication_configuration: replication_configuration,
+  ))
+}
+
+pub fn decode_get_bucket_replication_output_struct_params() -> decode.Decoder(GetBucketReplicationOutput) {
+  use replication_configuration <- decode.optional_field("ReplicationConfiguration", option.None, decode.optional(decode_replication_configuration_struct_params()))
   decode.success(GetBucketReplicationOutput(
     replication_configuration: replication_configuration,
   ))
@@ -10908,6 +12613,15 @@ pub fn encode_replication_configuration_struct(input: ReplicationConfiguration) 
 pub fn decode_replication_configuration_struct() -> decode.Decoder(ReplicationConfiguration) {
   use role <- decode.optional_field("Role", option.None, decode.optional(decode.string))
   use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_replication_rule_struct())))
+  decode.success(ReplicationConfiguration(
+    role: role,
+    rules: rules,
+  ))
+}
+
+pub fn decode_replication_configuration_struct_params() -> decode.Decoder(ReplicationConfiguration) {
+  use role <- decode.optional_field("Role", option.None, decode.optional(decode.string))
+  use rules <- decode.optional_field("Rules", option.None, decode.optional(decode.list(decode_replication_rule_struct_params())))
   decode.success(ReplicationConfiguration(
     role: role,
     rules: rules,
@@ -11018,6 +12732,29 @@ pub fn decode_replication_rule_struct() -> decode.Decoder(ReplicationRule) {
   ))
 }
 
+pub fn decode_replication_rule_struct_params() -> decode.Decoder(ReplicationRule) {
+  use delete_marker_replication <- decode.optional_field("DeleteMarkerReplication", option.None, decode.optional(decode_delete_marker_replication_struct_params()))
+  use destination <- decode.optional_field("Destination", option.None, decode.optional(decode_destination_struct_params()))
+  use existing_object_replication <- decode.optional_field("ExistingObjectReplication", option.None, decode.optional(decode_existing_object_replication_struct_params()))
+  use filter <- decode.optional_field("Filter", option.None, decode.optional(decode_replication_rule_filter_struct_params()))
+  use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use priority <- decode.optional_field("Priority", option.None, decode.optional(decode.int))
+  use source_selection_criteria <- decode.optional_field("SourceSelectionCriteria", option.None, decode.optional(decode_source_selection_criteria_struct_params()))
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_replication_rule_status_enum()))
+  decode.success(ReplicationRule(
+    delete_marker_replication: delete_marker_replication,
+    destination: destination,
+    existing_object_replication: existing_object_replication,
+    filter: filter,
+    id: id,
+    prefix: prefix,
+    priority: priority,
+    source_selection_criteria: source_selection_criteria,
+    status: status,
+  ))
+}
+
 pub fn encode_replication_rule_xml_inner(input: ReplicationRule) -> String {
   let inner = ""
   let inner = case input.delete_marker_replication {
@@ -11103,6 +12840,13 @@ pub fn encode_delete_marker_replication_struct(input: DeleteMarkerReplication) -
 }
 
 pub fn decode_delete_marker_replication_struct() -> decode.Decoder(DeleteMarkerReplication) {
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_delete_marker_replication_status_enum()))
+  decode.success(DeleteMarkerReplication(
+    status: status,
+  ))
+}
+
+pub fn decode_delete_marker_replication_struct_params() -> decode.Decoder(DeleteMarkerReplication) {
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_delete_marker_replication_status_enum()))
   decode.success(DeleteMarkerReplication(
     status: status,
@@ -11216,6 +12960,25 @@ pub fn decode_destination_struct() -> decode.Decoder(Destination) {
   ))
 }
 
+pub fn decode_destination_struct_params() -> decode.Decoder(Destination) {
+  use access_control_translation <- decode.optional_field("AccessControlTranslation", option.None, decode.optional(decode_access_control_translation_struct_params()))
+  use account <- decode.optional_field("Account", option.None, decode.optional(decode.string))
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use encryption_configuration <- decode.optional_field("EncryptionConfiguration", option.None, decode.optional(decode_encryption_configuration_struct_params()))
+  use metrics <- decode.optional_field("Metrics", option.None, decode.optional(decode_metrics_struct_params()))
+  use replication_time <- decode.optional_field("ReplicationTime", option.None, decode.optional(decode_replication_time_struct_params()))
+  use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_storage_class_enum()))
+  decode.success(Destination(
+    access_control_translation: access_control_translation,
+    account: account,
+    bucket: bucket,
+    encryption_configuration: encryption_configuration,
+    metrics: metrics,
+    replication_time: replication_time,
+    storage_class: storage_class,
+  ))
+}
+
 pub fn encode_destination_xml_inner(input: Destination) -> String {
   let inner = ""
   let inner = case input.access_control_translation {
@@ -11295,6 +13058,13 @@ pub fn decode_access_control_translation_struct() -> decode.Decoder(AccessContro
   ))
 }
 
+pub fn decode_access_control_translation_struct_params() -> decode.Decoder(AccessControlTranslation) {
+  use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_override_enum()))
+  decode.success(AccessControlTranslation(
+    owner: owner,
+  ))
+}
+
 pub fn encode_access_control_translation_xml_inner(input: AccessControlTranslation) -> String {
   let inner = ""
   let inner = case input.owner {
@@ -11357,6 +13127,13 @@ pub fn decode_encryption_configuration_struct() -> decode.Decoder(EncryptionConf
   ))
 }
 
+pub fn decode_encryption_configuration_struct_params() -> decode.Decoder(EncryptionConfiguration) {
+  use replica_kms_key_id <- decode.optional_field("ReplicaKmsKeyID", option.None, decode.optional(decode.string))
+  decode.success(EncryptionConfiguration(
+    replica_kms_key_id: replica_kms_key_id,
+  ))
+}
+
 pub fn encode_encryption_configuration_xml_inner(input: EncryptionConfiguration) -> String {
   let inner = ""
   let inner = case input.replica_kms_key_id {
@@ -11399,6 +13176,15 @@ pub fn encode_metrics_struct(input: Metrics) -> json.Json {
 
 pub fn decode_metrics_struct() -> decode.Decoder(Metrics) {
   use event_threshold <- decode.optional_field("EventThreshold", option.None, decode.optional(decode_replication_time_value_struct()))
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_metrics_status_enum()))
+  decode.success(Metrics(
+    event_threshold: event_threshold,
+    status: status,
+  ))
+}
+
+pub fn decode_metrics_struct_params() -> decode.Decoder(Metrics) {
+  use event_threshold <- decode.optional_field("EventThreshold", option.None, decode.optional(decode_replication_time_value_struct_params()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_metrics_status_enum()))
   decode.success(Metrics(
     event_threshold: event_threshold,
@@ -11449,6 +13235,13 @@ pub fn encode_replication_time_value_struct(input: ReplicationTimeValue) -> json
 }
 
 pub fn decode_replication_time_value_struct() -> decode.Decoder(ReplicationTimeValue) {
+  use minutes <- decode.optional_field("Minutes", option.None, decode.optional(decode.int))
+  decode.success(ReplicationTimeValue(
+    minutes: minutes,
+  ))
+}
+
+pub fn decode_replication_time_value_struct_params() -> decode.Decoder(ReplicationTimeValue) {
   use minutes <- decode.optional_field("Minutes", option.None, decode.optional(decode.int))
   decode.success(ReplicationTimeValue(
     minutes: minutes,
@@ -11526,6 +13319,15 @@ pub fn decode_replication_time_struct() -> decode.Decoder(ReplicationTime) {
   ))
 }
 
+pub fn decode_replication_time_struct_params() -> decode.Decoder(ReplicationTime) {
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_replication_time_status_enum()))
+  use time <- decode.optional_field("Time", option.None, decode.optional(decode_replication_time_value_struct_params()))
+  decode.success(ReplicationTime(
+    status: status,
+    time: time,
+  ))
+}
+
 pub fn encode_replication_time_xml_inner(input: ReplicationTime) -> String {
   let inner = ""
   let inner = case input.status {
@@ -11591,6 +13393,13 @@ pub fn encode_existing_object_replication_struct(input: ExistingObjectReplicatio
 }
 
 pub fn decode_existing_object_replication_struct() -> decode.Decoder(ExistingObjectReplication) {
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_existing_object_replication_status_enum()))
+  decode.success(ExistingObjectReplication(
+    status: status,
+  ))
+}
+
+pub fn decode_existing_object_replication_struct_params() -> decode.Decoder(ExistingObjectReplication) {
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_existing_object_replication_status_enum()))
   decode.success(ExistingObjectReplication(
     status: status,
@@ -11676,6 +13485,17 @@ pub fn decode_replication_rule_filter_struct() -> decode.Decoder(ReplicationRule
   ))
 }
 
+pub fn decode_replication_rule_filter_struct_params() -> decode.Decoder(ReplicationRuleFilter) {
+  use and <- decode.optional_field("And", option.None, decode.optional(decode_replication_rule_and_operator_struct_params()))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use tag <- decode.optional_field("Tag", option.None, decode.optional(decode_tag_struct_params()))
+  decode.success(ReplicationRuleFilter(
+    and: and,
+    prefix: prefix,
+    tag: tag,
+  ))
+}
+
 pub fn encode_replication_rule_filter_xml_inner(input: ReplicationRuleFilter) -> String {
   let inner = ""
   let inner = case input.and {
@@ -11737,6 +13557,15 @@ pub fn decode_replication_rule_and_operator_struct() -> decode.Decoder(Replicati
   ))
 }
 
+pub fn decode_replication_rule_and_operator_struct_params() -> decode.Decoder(ReplicationRuleAndOperator) {
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use tags <- decode.optional_field("Tags", option.None, decode.optional(decode.list(decode_tag_struct_params())))
+  decode.success(ReplicationRuleAndOperator(
+    prefix: prefix,
+    tags: tags,
+  ))
+}
+
 pub fn encode_replication_rule_and_operator_xml_inner(input: ReplicationRuleAndOperator) -> String {
   let inner = ""
   let inner = case input.prefix {
@@ -11792,6 +13621,15 @@ pub fn decode_source_selection_criteria_struct() -> decode.Decoder(SourceSelecti
   ))
 }
 
+pub fn decode_source_selection_criteria_struct_params() -> decode.Decoder(SourceSelectionCriteria) {
+  use replica_modifications <- decode.optional_field("ReplicaModifications", option.None, decode.optional(decode_replica_modifications_struct_params()))
+  use sse_kms_encrypted_objects <- decode.optional_field("SseKmsEncryptedObjects", option.None, decode.optional(decode_sse_kms_encrypted_objects_struct_params()))
+  decode.success(SourceSelectionCriteria(
+    replica_modifications: replica_modifications,
+    sse_kms_encrypted_objects: sse_kms_encrypted_objects,
+  ))
+}
+
 pub fn encode_source_selection_criteria_xml_inner(input: SourceSelectionCriteria) -> String {
   let inner = ""
   let inner = case input.replica_modifications {
@@ -11834,6 +13672,13 @@ pub fn encode_replica_modifications_struct(input: ReplicaModifications) -> json.
 }
 
 pub fn decode_replica_modifications_struct() -> decode.Decoder(ReplicaModifications) {
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_replica_modifications_status_enum()))
+  decode.success(ReplicaModifications(
+    status: status,
+  ))
+}
+
+pub fn decode_replica_modifications_struct_params() -> decode.Decoder(ReplicaModifications) {
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_replica_modifications_status_enum()))
   decode.success(ReplicaModifications(
     status: status,
@@ -11899,6 +13744,13 @@ pub fn encode_sse_kms_encrypted_objects_struct(input: SseKmsEncryptedObjects) ->
 }
 
 pub fn decode_sse_kms_encrypted_objects_struct() -> decode.Decoder(SseKmsEncryptedObjects) {
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_sse_kms_encrypted_objects_status_enum()))
+  decode.success(SseKmsEncryptedObjects(
+    status: status,
+  ))
+}
+
+pub fn decode_sse_kms_encrypted_objects_struct_params() -> decode.Decoder(SseKmsEncryptedObjects) {
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_sse_kms_encrypted_objects_status_enum()))
   decode.success(SseKmsEncryptedObjects(
     status: status,
@@ -11999,6 +13851,15 @@ pub fn decode_get_bucket_request_payment_request_struct() -> decode.Decoder(GetB
   ))
 }
 
+pub fn decode_get_bucket_request_payment_request_struct_params() -> decode.Decoder(GetBucketRequestPaymentRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketRequestPaymentRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_request_payment_request_xml_inner(input: GetBucketRequestPaymentRequest) -> String {
   let inner = ""
   inner
@@ -12033,6 +13894,13 @@ pub fn encode_get_bucket_request_payment_output_struct(input: GetBucketRequestPa
 }
 
 pub fn decode_get_bucket_request_payment_output_struct() -> decode.Decoder(GetBucketRequestPaymentOutput) {
+  use payer <- decode.optional_field("Payer", option.None, decode.optional(decode_payer_enum()))
+  decode.success(GetBucketRequestPaymentOutput(
+    payer: payer,
+  ))
+}
+
+pub fn decode_get_bucket_request_payment_output_struct_params() -> decode.Decoder(GetBucketRequestPaymentOutput) {
   use payer <- decode.optional_field("Payer", option.None, decode.optional(decode_payer_enum()))
   decode.success(GetBucketRequestPaymentOutput(
     payer: payer,
@@ -12111,6 +13979,15 @@ pub fn decode_get_bucket_tagging_request_struct() -> decode.Decoder(GetBucketTag
   ))
 }
 
+pub fn decode_get_bucket_tagging_request_struct_params() -> decode.Decoder(GetBucketTaggingRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketTaggingRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_tagging_request_xml_inner(input: GetBucketTaggingRequest) -> String {
   let inner = ""
   inner
@@ -12146,6 +14023,13 @@ pub fn encode_get_bucket_tagging_output_struct(input: GetBucketTaggingOutput) ->
 
 pub fn decode_get_bucket_tagging_output_struct() -> decode.Decoder(GetBucketTaggingOutput) {
   use tag_set <- decode.optional_field("TagSet", option.None, decode.optional(decode.list(decode_tag_struct())))
+  decode.success(GetBucketTaggingOutput(
+    tag_set: tag_set,
+  ))
+}
+
+pub fn decode_get_bucket_tagging_output_struct_params() -> decode.Decoder(GetBucketTaggingOutput) {
+  use tag_set <- decode.optional_field("TagSet", option.None, decode.optional(decode.list(decode_tag_struct_params())))
   decode.success(GetBucketTaggingOutput(
     tag_set: tag_set,
   ))
@@ -12200,6 +14084,15 @@ pub fn decode_get_bucket_versioning_request_struct() -> decode.Decoder(GetBucket
   ))
 }
 
+pub fn decode_get_bucket_versioning_request_struct_params() -> decode.Decoder(GetBucketVersioningRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketVersioningRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_versioning_request_xml_inner(input: GetBucketVersioningRequest) -> String {
   let inner = ""
   inner
@@ -12239,6 +14132,15 @@ pub fn encode_get_bucket_versioning_output_struct(input: GetBucketVersioningOutp
 }
 
 pub fn decode_get_bucket_versioning_output_struct() -> decode.Decoder(GetBucketVersioningOutput) {
+  use mfa_delete <- decode.optional_field("MFADelete", option.None, decode.optional(decode_mfa_delete_status_enum()))
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_bucket_versioning_status_enum()))
+  decode.success(GetBucketVersioningOutput(
+    mfa_delete: mfa_delete,
+    status: status,
+  ))
+}
+
+pub fn decode_get_bucket_versioning_output_struct_params() -> decode.Decoder(GetBucketVersioningOutput) {
   use mfa_delete <- decode.optional_field("MFADelete", option.None, decode.optional(decode_mfa_delete_status_enum()))
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_bucket_versioning_status_enum()))
   decode.success(GetBucketVersioningOutput(
@@ -12348,6 +14250,15 @@ pub fn decode_get_bucket_website_request_struct() -> decode.Decoder(GetBucketWeb
   ))
 }
 
+pub fn decode_get_bucket_website_request_struct_params() -> decode.Decoder(GetBucketWebsiteRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetBucketWebsiteRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_bucket_website_request_xml_inner(input: GetBucketWebsiteRequest) -> String {
   let inner = ""
   inner
@@ -12401,6 +14312,19 @@ pub fn decode_get_bucket_website_output_struct() -> decode.Decoder(GetBucketWebs
   use index_document <- decode.optional_field("IndexDocument", option.None, decode.optional(decode_index_document_struct()))
   use redirect_all_requests_to <- decode.optional_field("RedirectAllRequestsTo", option.None, decode.optional(decode_redirect_all_requests_to_struct()))
   use routing_rules <- decode.optional_field("RoutingRules", option.None, decode.optional(decode.list(decode_routing_rule_struct())))
+  decode.success(GetBucketWebsiteOutput(
+    error_document: error_document,
+    index_document: index_document,
+    redirect_all_requests_to: redirect_all_requests_to,
+    routing_rules: routing_rules,
+  ))
+}
+
+pub fn decode_get_bucket_website_output_struct_params() -> decode.Decoder(GetBucketWebsiteOutput) {
+  use error_document <- decode.optional_field("ErrorDocument", option.None, decode.optional(decode_error_document_struct_params()))
+  use index_document <- decode.optional_field("IndexDocument", option.None, decode.optional(decode_index_document_struct_params()))
+  use redirect_all_requests_to <- decode.optional_field("RedirectAllRequestsTo", option.None, decode.optional(decode_redirect_all_requests_to_struct_params()))
+  use routing_rules <- decode.optional_field("RoutingRules", option.None, decode.optional(decode.list(decode_routing_rule_struct_params())))
   decode.success(GetBucketWebsiteOutput(
     error_document: error_document,
     index_document: index_document,
@@ -12469,6 +14393,13 @@ pub fn decode_error_document_struct() -> decode.Decoder(ErrorDocument) {
   ))
 }
 
+pub fn decode_error_document_struct_params() -> decode.Decoder(ErrorDocument) {
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  decode.success(ErrorDocument(
+    key: key,
+  ))
+}
+
 pub fn encode_error_document_xml_inner(input: ErrorDocument) -> String {
   let inner = ""
   let inner = case input.key {
@@ -12505,6 +14436,13 @@ pub fn encode_index_document_struct(input: IndexDocument) -> json.Json {
 }
 
 pub fn decode_index_document_struct() -> decode.Decoder(IndexDocument) {
+  use suffix <- decode.optional_field("Suffix", option.None, decode.optional(decode.string))
+  decode.success(IndexDocument(
+    suffix: suffix,
+  ))
+}
+
+pub fn decode_index_document_struct_params() -> decode.Decoder(IndexDocument) {
   use suffix <- decode.optional_field("Suffix", option.None, decode.optional(decode.string))
   decode.success(IndexDocument(
     suffix: suffix,
@@ -12552,6 +14490,15 @@ pub fn encode_redirect_all_requests_to_struct(input: RedirectAllRequestsTo) -> j
 }
 
 pub fn decode_redirect_all_requests_to_struct() -> decode.Decoder(RedirectAllRequestsTo) {
+  use host_name <- decode.optional_field("HostName", option.None, decode.optional(decode.string))
+  use protocol <- decode.optional_field("Protocol", option.None, decode.optional(decode_protocol_enum()))
+  decode.success(RedirectAllRequestsTo(
+    host_name: host_name,
+    protocol: protocol,
+  ))
+}
+
+pub fn decode_redirect_all_requests_to_struct_params() -> decode.Decoder(RedirectAllRequestsTo) {
   use host_name <- decode.optional_field("HostName", option.None, decode.optional(decode.string))
   use protocol <- decode.optional_field("Protocol", option.None, decode.optional(decode_protocol_enum()))
   decode.success(RedirectAllRequestsTo(
@@ -12638,6 +14585,15 @@ pub fn decode_routing_rule_struct() -> decode.Decoder(RoutingRule) {
   ))
 }
 
+pub fn decode_routing_rule_struct_params() -> decode.Decoder(RoutingRule) {
+  use condition <- decode.optional_field("Condition", option.None, decode.optional(decode_condition_struct_params()))
+  use redirect <- decode.optional_field("Redirect", option.None, decode.optional(decode_redirect_struct_params()))
+  decode.success(RoutingRule(
+    condition: condition,
+    redirect: redirect,
+  ))
+}
+
 pub fn encode_routing_rule_xml_inner(input: RoutingRule) -> String {
   let inner = ""
   let inner = case input.condition {
@@ -12685,6 +14641,15 @@ pub fn encode_condition_struct(input: Condition) -> json.Json {
 }
 
 pub fn decode_condition_struct() -> decode.Decoder(Condition) {
+  use http_error_code_returned_equals <- decode.optional_field("HttpErrorCodeReturnedEquals", option.None, decode.optional(decode.string))
+  use key_prefix_equals <- decode.optional_field("KeyPrefixEquals", option.None, decode.optional(decode.string))
+  decode.success(Condition(
+    http_error_code_returned_equals: http_error_code_returned_equals,
+    key_prefix_equals: key_prefix_equals,
+  ))
+}
+
+pub fn decode_condition_struct_params() -> decode.Decoder(Condition) {
   use http_error_code_returned_equals <- decode.optional_field("HttpErrorCodeReturnedEquals", option.None, decode.optional(decode.string))
   use key_prefix_equals <- decode.optional_field("KeyPrefixEquals", option.None, decode.optional(decode.string))
   decode.success(Condition(
@@ -12755,6 +14720,21 @@ pub fn encode_redirect_struct(input: Redirect) -> json.Json {
 }
 
 pub fn decode_redirect_struct() -> decode.Decoder(Redirect) {
+  use host_name <- decode.optional_field("HostName", option.None, decode.optional(decode.string))
+  use http_redirect_code <- decode.optional_field("HttpRedirectCode", option.None, decode.optional(decode.string))
+  use protocol <- decode.optional_field("Protocol", option.None, decode.optional(decode_protocol_enum()))
+  use replace_key_prefix_with <- decode.optional_field("ReplaceKeyPrefixWith", option.None, decode.optional(decode.string))
+  use replace_key_with <- decode.optional_field("ReplaceKeyWith", option.None, decode.optional(decode.string))
+  decode.success(Redirect(
+    host_name: host_name,
+    http_redirect_code: http_redirect_code,
+    protocol: protocol,
+    replace_key_prefix_with: replace_key_prefix_with,
+    replace_key_with: replace_key_with,
+  ))
+}
+
+pub fn decode_redirect_struct_params() -> decode.Decoder(Redirect) {
   use host_name <- decode.optional_field("HostName", option.None, decode.optional(decode.string))
   use http_redirect_code <- decode.optional_field("HttpRedirectCode", option.None, decode.optional(decode.string))
   use protocol <- decode.optional_field("Protocol", option.None, decode.optional(decode_protocol_enum()))
@@ -12864,6 +14844,21 @@ pub fn decode_get_object_acl_request_struct() -> decode.Decoder(GetObjectAclRequ
   ))
 }
 
+pub fn decode_get_object_acl_request_struct_params() -> decode.Decoder(GetObjectAclRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(GetObjectAclRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    key: key,
+    request_payer: request_payer,
+    version_id: version_id,
+  ))
+}
+
 pub fn encode_get_object_acl_request_xml_inner(input: GetObjectAclRequest) -> String {
   let inner = ""
   inner
@@ -12924,6 +14919,17 @@ pub fn decode_get_object_acl_output_struct() -> decode.Decoder(GetObjectAclOutpu
   ))
 }
 
+pub fn decode_get_object_acl_output_struct_params() -> decode.Decoder(GetObjectAclOutput) {
+  use grants <- decode.optional_field("Grants", option.None, decode.optional(decode.list(decode_grant_struct_params())))
+  use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct_params()))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  decode.success(GetObjectAclOutput(
+    grants: grants,
+    owner: owner,
+    request_charged: request_charged,
+  ))
+}
+
 pub fn encode_get_object_acl_output_xml_inner(input: GetObjectAclOutput) -> String {
   let inner = ""
   let inner = case input.grants {
@@ -12961,6 +14967,10 @@ pub fn encode_no_such_key_struct(_v: NoSuchKey) -> json.Json {
 }
 
 pub fn decode_no_such_key_struct() -> decode.Decoder(NoSuchKey) {
+  decode.success(NoSuchKey)
+}
+
+pub fn decode_no_such_key_struct_params() -> decode.Decoder(NoSuchKey) {
   decode.success(NoSuchKey)
 }
 
@@ -13042,6 +15052,33 @@ pub fn encode_get_object_attributes_request_struct(input: GetObjectAttributesReq
 }
 
 pub fn decode_get_object_attributes_request_struct() -> decode.Decoder(GetObjectAttributesRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use max_parts <- decode.optional_field("MaxParts", option.None, decode.optional(decode.int))
+  use object_attributes <- decode.optional_field("ObjectAttributes", option.None, decode.optional(decode.list(decode_object_attributes_enum())))
+  use part_number_marker <- decode.optional_field("PartNumberMarker", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key <- decode.optional_field("SSECustomerKey", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(GetObjectAttributesRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    key: key,
+    max_parts: max_parts,
+    object_attributes: object_attributes,
+    part_number_marker: part_number_marker,
+    request_payer: request_payer,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key: sse_customer_key,
+    sse_customer_key_md5: sse_customer_key_md5,
+    version_id: version_id,
+  ))
+}
+
+pub fn decode_get_object_attributes_request_struct_params() -> decode.Decoder(GetObjectAttributesRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
@@ -13194,8 +15231,31 @@ pub fn decode_get_object_attributes_output_struct() -> decode.Decoder(GetObjectA
   use checksum <- decode.optional_field("Checksum", option.None, decode.optional(decode_checksum_struct()))
   use delete_marker <- decode.optional_field("DeleteMarker", option.None, decode.optional(decode.bool))
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
-  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(decode.int))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
   use object_parts <- decode.optional_field("ObjectParts", option.None, decode.optional(decode_get_object_attributes_parts_struct()))
+  use object_size <- decode.optional_field("ObjectSize", option.None, decode.optional(decode.int))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_storage_class_enum()))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(GetObjectAttributesOutput(
+    checksum: checksum,
+    delete_marker: delete_marker,
+    e_tag: e_tag,
+    last_modified: last_modified,
+    object_parts: object_parts,
+    object_size: object_size,
+    request_charged: request_charged,
+    storage_class: storage_class,
+    version_id: version_id,
+  ))
+}
+
+pub fn decode_get_object_attributes_output_struct_params() -> decode.Decoder(GetObjectAttributesOutput) {
+  use checksum <- decode.optional_field("Checksum", option.None, decode.optional(decode_checksum_struct_params()))
+  use delete_marker <- decode.optional_field("DeleteMarker", option.None, decode.optional(decode.bool))
+  use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
+  use object_parts <- decode.optional_field("ObjectParts", option.None, decode.optional(decode_get_object_attributes_parts_struct_params()))
   use object_size <- decode.optional_field("ObjectSize", option.None, decode.optional(decode.int))
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_storage_class_enum()))
@@ -13332,6 +15392,33 @@ pub fn encode_checksum_struct(input: Checksum) -> json.Json {
 }
 
 pub fn decode_checksum_struct() -> decode.Decoder(Checksum) {
+  use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
+  use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
+  use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
+  use checksum_md5 <- decode.optional_field("ChecksumMD5", option.None, decode.optional(decode.string))
+  use checksum_sha1 <- decode.optional_field("ChecksumSHA1", option.None, decode.optional(decode.string))
+  use checksum_sha256 <- decode.optional_field("ChecksumSHA256", option.None, decode.optional(decode.string))
+  use checksum_sha512 <- decode.optional_field("ChecksumSHA512", option.None, decode.optional(decode.string))
+  use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
+  use checksum_xxhash128 <- decode.optional_field("ChecksumXXHASH128", option.None, decode.optional(decode.string))
+  use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
+  use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
+  decode.success(Checksum(
+    checksum_crc32: checksum_crc32,
+    checksum_crc32_c: checksum_crc32_c,
+    checksum_crc64_nvme: checksum_crc64_nvme,
+    checksum_md5: checksum_md5,
+    checksum_sha1: checksum_sha1,
+    checksum_sha256: checksum_sha256,
+    checksum_sha512: checksum_sha512,
+    checksum_type: checksum_type,
+    checksum_xxhash128: checksum_xxhash128,
+    checksum_xxhash3: checksum_xxhash3,
+    checksum_xxhash64: checksum_xxhash64,
+  ))
+}
+
+pub fn decode_checksum_struct_params() -> decode.Decoder(Checksum) {
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -13496,6 +15583,23 @@ pub fn decode_get_object_attributes_parts_struct() -> decode.Decoder(GetObjectAt
   ))
 }
 
+pub fn decode_get_object_attributes_parts_struct_params() -> decode.Decoder(GetObjectAttributesParts) {
+  use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
+  use max_parts <- decode.optional_field("MaxParts", option.None, decode.optional(decode.int))
+  use next_part_number_marker <- decode.optional_field("NextPartNumberMarker", option.None, decode.optional(decode.string))
+  use part_number_marker <- decode.optional_field("PartNumberMarker", option.None, decode.optional(decode.string))
+  use parts <- decode.optional_field("Parts", option.None, decode.optional(decode.list(decode_object_part_struct_params())))
+  use total_parts_count <- decode.optional_field("TotalPartsCount", option.None, decode.optional(decode.int))
+  decode.success(GetObjectAttributesParts(
+    is_truncated: is_truncated,
+    max_parts: max_parts,
+    next_part_number_marker: next_part_number_marker,
+    part_number_marker: part_number_marker,
+    parts: parts,
+    total_parts_count: total_parts_count,
+  ))
+}
+
 pub fn encode_get_object_attributes_parts_xml_inner(input: GetObjectAttributesParts) -> String {
   let inner = ""
   let inner = case input.is_truncated {
@@ -13617,6 +15721,35 @@ pub fn encode_object_part_struct(input: ObjectPart) -> json.Json {
 }
 
 pub fn decode_object_part_struct() -> decode.Decoder(ObjectPart) {
+  use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
+  use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
+  use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
+  use checksum_md5 <- decode.optional_field("ChecksumMD5", option.None, decode.optional(decode.string))
+  use checksum_sha1 <- decode.optional_field("ChecksumSHA1", option.None, decode.optional(decode.string))
+  use checksum_sha256 <- decode.optional_field("ChecksumSHA256", option.None, decode.optional(decode.string))
+  use checksum_sha512 <- decode.optional_field("ChecksumSHA512", option.None, decode.optional(decode.string))
+  use checksum_xxhash128 <- decode.optional_field("ChecksumXXHASH128", option.None, decode.optional(decode.string))
+  use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
+  use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
+  use part_number <- decode.optional_field("PartNumber", option.None, decode.optional(decode.int))
+  use size <- decode.optional_field("Size", option.None, decode.optional(decode.int))
+  decode.success(ObjectPart(
+    checksum_crc32: checksum_crc32,
+    checksum_crc32_c: checksum_crc32_c,
+    checksum_crc64_nvme: checksum_crc64_nvme,
+    checksum_md5: checksum_md5,
+    checksum_sha1: checksum_sha1,
+    checksum_sha256: checksum_sha256,
+    checksum_sha512: checksum_sha512,
+    checksum_xxhash128: checksum_xxhash128,
+    checksum_xxhash3: checksum_xxhash3,
+    checksum_xxhash64: checksum_xxhash64,
+    part_number: part_number,
+    size: size,
+  ))
+}
+
+pub fn decode_object_part_struct_params() -> decode.Decoder(ObjectPart) {
   use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
   use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
   use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
@@ -13781,6 +15914,21 @@ pub fn decode_get_object_legal_hold_request_struct() -> decode.Decoder(GetObject
   ))
 }
 
+pub fn decode_get_object_legal_hold_request_struct_params() -> decode.Decoder(GetObjectLegalHoldRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(GetObjectLegalHoldRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    key: key,
+    request_payer: request_payer,
+    version_id: version_id,
+  ))
+}
+
 pub fn encode_get_object_legal_hold_request_xml_inner(input: GetObjectLegalHoldRequest) -> String {
   let inner = ""
   inner
@@ -13827,6 +15975,13 @@ pub fn decode_get_object_legal_hold_output_struct() -> decode.Decoder(GetObjectL
   ))
 }
 
+pub fn decode_get_object_legal_hold_output_struct_params() -> decode.Decoder(GetObjectLegalHoldOutput) {
+  use legal_hold <- decode.optional_field("LegalHold", option.None, decode.optional(decode_object_lock_legal_hold_struct_params()))
+  decode.success(GetObjectLegalHoldOutput(
+    legal_hold: legal_hold,
+  ))
+}
+
 pub fn encode_get_object_legal_hold_output_xml_inner(input: GetObjectLegalHoldOutput) -> String {
   let inner = ""
   inner
@@ -13859,6 +16014,13 @@ pub fn encode_object_lock_legal_hold_struct(input: ObjectLockLegalHold) -> json.
 }
 
 pub fn decode_object_lock_legal_hold_struct() -> decode.Decoder(ObjectLockLegalHold) {
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode_object_lock_legal_hold_status_enum()))
+  decode.success(ObjectLockLegalHold(
+    status: status,
+  ))
+}
+
+pub fn decode_object_lock_legal_hold_struct_params() -> decode.Decoder(ObjectLockLegalHold) {
   use status <- decode.optional_field("Status", option.None, decode.optional(decode_object_lock_legal_hold_status_enum()))
   decode.success(ObjectLockLegalHold(
     status: status,
@@ -13915,6 +16077,15 @@ pub fn decode_get_object_lock_configuration_request_struct() -> decode.Decoder(G
   ))
 }
 
+pub fn decode_get_object_lock_configuration_request_struct_params() -> decode.Decoder(GetObjectLockConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetObjectLockConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_object_lock_configuration_request_xml_inner(input: GetObjectLockConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -13950,6 +16121,13 @@ pub fn encode_get_object_lock_configuration_output_struct(input: GetObjectLockCo
 
 pub fn decode_get_object_lock_configuration_output_struct() -> decode.Decoder(GetObjectLockConfigurationOutput) {
   use object_lock_configuration <- decode.optional_field("ObjectLockConfiguration", option.None, decode.optional(decode_object_lock_configuration_struct()))
+  decode.success(GetObjectLockConfigurationOutput(
+    object_lock_configuration: object_lock_configuration,
+  ))
+}
+
+pub fn decode_get_object_lock_configuration_output_struct_params() -> decode.Decoder(GetObjectLockConfigurationOutput) {
+  use object_lock_configuration <- decode.optional_field("ObjectLockConfiguration", option.None, decode.optional(decode_object_lock_configuration_struct_params()))
   decode.success(GetObjectLockConfigurationOutput(
     object_lock_configuration: object_lock_configuration,
   ))
@@ -13994,6 +16172,15 @@ pub fn encode_object_lock_configuration_struct(input: ObjectLockConfiguration) -
 pub fn decode_object_lock_configuration_struct() -> decode.Decoder(ObjectLockConfiguration) {
   use object_lock_enabled <- decode.optional_field("ObjectLockEnabled", option.None, decode.optional(decode_object_lock_enabled_enum()))
   use rule <- decode.optional_field("Rule", option.None, decode.optional(decode_object_lock_rule_struct()))
+  decode.success(ObjectLockConfiguration(
+    object_lock_enabled: object_lock_enabled,
+    rule: rule,
+  ))
+}
+
+pub fn decode_object_lock_configuration_struct_params() -> decode.Decoder(ObjectLockConfiguration) {
+  use object_lock_enabled <- decode.optional_field("ObjectLockEnabled", option.None, decode.optional(decode_object_lock_enabled_enum()))
+  use rule <- decode.optional_field("Rule", option.None, decode.optional(decode_object_lock_rule_struct_params()))
   decode.success(ObjectLockConfiguration(
     object_lock_enabled: object_lock_enabled,
     rule: rule,
@@ -14068,6 +16255,13 @@ pub fn decode_object_lock_rule_struct() -> decode.Decoder(ObjectLockRule) {
   ))
 }
 
+pub fn decode_object_lock_rule_struct_params() -> decode.Decoder(ObjectLockRule) {
+  use default_retention <- decode.optional_field("DefaultRetention", option.None, decode.optional(decode_default_retention_struct_params()))
+  decode.success(ObjectLockRule(
+    default_retention: default_retention,
+  ))
+}
+
 pub fn encode_object_lock_rule_xml_inner(input: ObjectLockRule) -> String {
   let inner = ""
   let inner = case input.default_retention {
@@ -14114,6 +16308,17 @@ pub fn encode_default_retention_struct(input: DefaultRetention) -> json.Json {
 }
 
 pub fn decode_default_retention_struct() -> decode.Decoder(DefaultRetention) {
+  use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
+  use mode <- decode.optional_field("Mode", option.None, decode.optional(decode_object_lock_retention_mode_enum()))
+  use years <- decode.optional_field("Years", option.None, decode.optional(decode.int))
+  decode.success(DefaultRetention(
+    days: days,
+    mode: mode,
+    years: years,
+  ))
+}
+
+pub fn decode_default_retention_struct_params() -> decode.Decoder(DefaultRetention) {
   use days <- decode.optional_field("Days", option.None, decode.optional(decode.int))
   use mode <- decode.optional_field("Mode", option.None, decode.optional(decode_object_lock_retention_mode_enum()))
   use years <- decode.optional_field("Years", option.None, decode.optional(decode.int))
@@ -14229,6 +16434,21 @@ pub fn decode_get_object_retention_request_struct() -> decode.Decoder(GetObjectR
   ))
 }
 
+pub fn decode_get_object_retention_request_struct_params() -> decode.Decoder(GetObjectRetentionRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(GetObjectRetentionRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    key: key,
+    request_payer: request_payer,
+    version_id: version_id,
+  ))
+}
+
 pub fn encode_get_object_retention_request_xml_inner(input: GetObjectRetentionRequest) -> String {
   let inner = ""
   inner
@@ -14275,6 +16495,13 @@ pub fn decode_get_object_retention_output_struct() -> decode.Decoder(GetObjectRe
   ))
 }
 
+pub fn decode_get_object_retention_output_struct_params() -> decode.Decoder(GetObjectRetentionOutput) {
+  use retention <- decode.optional_field("Retention", option.None, decode.optional(decode_object_lock_retention_struct_params()))
+  decode.success(GetObjectRetentionOutput(
+    retention: retention,
+  ))
+}
+
 pub fn encode_get_object_retention_output_xml_inner(input: GetObjectRetentionOutput) -> String {
   let inner = ""
   inner
@@ -14313,7 +16540,16 @@ pub fn encode_object_lock_retention_struct(input: ObjectLockRetention) -> json.J
 
 pub fn decode_object_lock_retention_struct() -> decode.Decoder(ObjectLockRetention) {
   use mode <- decode.optional_field("Mode", option.None, decode.optional(decode_object_lock_retention_mode_enum()))
-  use retain_until_date <- decode.optional_field("RetainUntilDate", option.None, decode.optional(decode.int))
+  use retain_until_date <- decode.optional_field("RetainUntilDate", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(ObjectLockRetention(
+    mode: mode,
+    retain_until_date: retain_until_date,
+  ))
+}
+
+pub fn decode_object_lock_retention_struct_params() -> decode.Decoder(ObjectLockRetention) {
+  use mode <- decode.optional_field("Mode", option.None, decode.optional(decode_object_lock_retention_mode_enum()))
+  use retain_until_date <- decode.optional_field("RetainUntilDate", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(ObjectLockRetention(
     mode: mode,
     retain_until_date: retain_until_date,
@@ -14397,6 +16633,21 @@ pub fn decode_get_object_tagging_request_struct() -> decode.Decoder(GetObjectTag
   ))
 }
 
+pub fn decode_get_object_tagging_request_struct_params() -> decode.Decoder(GetObjectTaggingRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(GetObjectTaggingRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    key: key,
+    request_payer: request_payer,
+    version_id: version_id,
+  ))
+}
+
 pub fn encode_get_object_tagging_request_xml_inner(input: GetObjectTaggingRequest) -> String {
   let inner = ""
   inner
@@ -14443,6 +16694,15 @@ pub fn encode_get_object_tagging_output_struct(input: GetObjectTaggingOutput) ->
 
 pub fn decode_get_object_tagging_output_struct() -> decode.Decoder(GetObjectTaggingOutput) {
   use tag_set <- decode.optional_field("TagSet", option.None, decode.optional(decode.list(decode_tag_struct())))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(GetObjectTaggingOutput(
+    tag_set: tag_set,
+    version_id: version_id,
+  ))
+}
+
+pub fn decode_get_object_tagging_output_struct_params() -> decode.Decoder(GetObjectTaggingOutput) {
+  use tag_set <- decode.optional_field("TagSet", option.None, decode.optional(decode.list(decode_tag_struct_params())))
   use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
   decode.success(GetObjectTaggingOutput(
     tag_set: tag_set,
@@ -14515,6 +16775,19 @@ pub fn decode_get_object_torrent_request_struct() -> decode.Decoder(GetObjectTor
   ))
 }
 
+pub fn decode_get_object_torrent_request_struct_params() -> decode.Decoder(GetObjectTorrentRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  decode.success(GetObjectTorrentRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    key: key,
+    request_payer: request_payer,
+  ))
+}
+
 pub fn encode_get_object_torrent_request_xml_inner(input: GetObjectTorrentRequest) -> String {
   let inner = ""
   inner
@@ -14558,6 +16831,15 @@ pub fn encode_get_object_torrent_output_struct(input: GetObjectTorrentOutput) ->
 }
 
 pub fn decode_get_object_torrent_output_struct() -> decode.Decoder(GetObjectTorrentOutput) {
+  use body <- decode.optional_field("Body", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  decode.success(GetObjectTorrentOutput(
+    body: body,
+    request_charged: request_charged,
+  ))
+}
+
+pub fn decode_get_object_torrent_output_struct_params() -> decode.Decoder(GetObjectTorrentOutput) {
   use body <- decode.optional_field("Body", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   decode.success(GetObjectTorrentOutput(
@@ -14613,6 +16895,15 @@ pub fn decode_get_public_access_block_request_struct() -> decode.Decoder(GetPubl
   ))
 }
 
+pub fn decode_get_public_access_block_request_struct_params() -> decode.Decoder(GetPublicAccessBlockRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(GetPublicAccessBlockRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_get_public_access_block_request_xml_inner(input: GetPublicAccessBlockRequest) -> String {
   let inner = ""
   inner
@@ -14648,6 +16939,13 @@ pub fn encode_get_public_access_block_output_struct(input: GetPublicAccessBlockO
 
 pub fn decode_get_public_access_block_output_struct() -> decode.Decoder(GetPublicAccessBlockOutput) {
   use public_access_block_configuration <- decode.optional_field("PublicAccessBlockConfiguration", option.None, decode.optional(decode_public_access_block_configuration_struct()))
+  decode.success(GetPublicAccessBlockOutput(
+    public_access_block_configuration: public_access_block_configuration,
+  ))
+}
+
+pub fn decode_get_public_access_block_output_struct_params() -> decode.Decoder(GetPublicAccessBlockOutput) {
+  use public_access_block_configuration <- decode.optional_field("PublicAccessBlockConfiguration", option.None, decode.optional(decode_public_access_block_configuration_struct_params()))
   decode.success(GetPublicAccessBlockOutput(
     public_access_block_configuration: public_access_block_configuration,
   ))
@@ -14700,6 +16998,19 @@ pub fn encode_public_access_block_configuration_struct(input: PublicAccessBlockC
 }
 
 pub fn decode_public_access_block_configuration_struct() -> decode.Decoder(PublicAccessBlockConfiguration) {
+  use block_public_acls <- decode.optional_field("BlockPublicAcls", option.None, decode.optional(decode.bool))
+  use block_public_policy <- decode.optional_field("BlockPublicPolicy", option.None, decode.optional(decode.bool))
+  use ignore_public_acls <- decode.optional_field("IgnorePublicAcls", option.None, decode.optional(decode.bool))
+  use restrict_public_buckets <- decode.optional_field("RestrictPublicBuckets", option.None, decode.optional(decode.bool))
+  decode.success(PublicAccessBlockConfiguration(
+    block_public_acls: block_public_acls,
+    block_public_policy: block_public_policy,
+    ignore_public_acls: ignore_public_acls,
+    restrict_public_buckets: restrict_public_buckets,
+  ))
+}
+
+pub fn decode_public_access_block_configuration_struct_params() -> decode.Decoder(PublicAccessBlockConfiguration) {
   use block_public_acls <- decode.optional_field("BlockPublicAcls", option.None, decode.optional(decode.bool))
   use block_public_policy <- decode.optional_field("BlockPublicPolicy", option.None, decode.optional(decode.bool))
   use ignore_public_acls <- decode.optional_field("IgnorePublicAcls", option.None, decode.optional(decode.bool))
@@ -14779,6 +17090,15 @@ pub fn decode_head_bucket_request_struct() -> decode.Decoder(HeadBucketRequest) 
   ))
 }
 
+pub fn decode_head_bucket_request_struct_params() -> decode.Decoder(HeadBucketRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(HeadBucketRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_head_bucket_request_xml_inner(input: HeadBucketRequest) -> String {
   let inner = ""
   inner
@@ -14847,6 +17167,21 @@ pub fn decode_head_bucket_output_struct() -> decode.Decoder(HeadBucketOutput) {
   ))
 }
 
+pub fn decode_head_bucket_output_struct_params() -> decode.Decoder(HeadBucketOutput) {
+  use access_point_alias <- decode.optional_field("AccessPointAlias", option.None, decode.optional(decode.bool))
+  use bucket_arn <- decode.optional_field("BucketArn", option.None, decode.optional(decode.string))
+  use bucket_location_name <- decode.optional_field("BucketLocationName", option.None, decode.optional(decode.string))
+  use bucket_location_type <- decode.optional_field("BucketLocationType", option.None, decode.optional(decode_location_type_enum()))
+  use bucket_region <- decode.optional_field("BucketRegion", option.None, decode.optional(decode.string))
+  decode.success(HeadBucketOutput(
+    access_point_alias: access_point_alias,
+    bucket_arn: bucket_arn,
+    bucket_location_name: bucket_location_name,
+    bucket_location_type: bucket_location_type,
+    bucket_region: bucket_region,
+  ))
+}
+
 pub fn encode_head_bucket_output_xml_inner(input: HeadBucketOutput) -> String {
   let inner = ""
   inner
@@ -14880,6 +17215,10 @@ pub fn encode_not_found_struct(_v: NotFound) -> json.Json {
 }
 
 pub fn decode_not_found_struct() -> decode.Decoder(NotFound) {
+  decode.success(NotFound)
+}
+
+pub fn decode_not_found_struct_params() -> decode.Decoder(NotFound) {
   decode.success(NotFound)
 }
 
@@ -15015,9 +17354,9 @@ pub fn decode_head_object_request_struct() -> decode.Decoder(HeadObjectRequest) 
   use checksum_mode <- decode.optional_field("ChecksumMode", option.None, decode.optional(decode_checksum_mode_enum()))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use if_match <- decode.optional_field("IfMatch", option.None, decode.optional(decode.string))
-  use if_modified_since <- decode.optional_field("IfModifiedSince", option.None, decode.optional(decode.int))
+  use if_modified_since <- decode.optional_field("IfModifiedSince", option.None, decode.optional(json_timestamp.decoder()))
   use if_none_match <- decode.optional_field("IfNoneMatch", option.None, decode.optional(decode.string))
-  use if_unmodified_since <- decode.optional_field("IfUnmodifiedSince", option.None, decode.optional(decode.int))
+  use if_unmodified_since <- decode.optional_field("IfUnmodifiedSince", option.None, decode.optional(json_timestamp.decoder()))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
   use part_number <- decode.optional_field("PartNumber", option.None, decode.optional(decode.int))
   use range <- decode.optional_field("Range", option.None, decode.optional(decode.string))
@@ -15027,7 +17366,54 @@ pub fn decode_head_object_request_struct() -> decode.Decoder(HeadObjectRequest) 
   use response_content_encoding <- decode.optional_field("ResponseContentEncoding", option.None, decode.optional(decode.string))
   use response_content_language <- decode.optional_field("ResponseContentLanguage", option.None, decode.optional(decode.string))
   use response_content_type <- decode.optional_field("ResponseContentType", option.None, decode.optional(decode.string))
-  use response_expires <- decode.optional_field("ResponseExpires", option.None, decode.optional(decode.int))
+  use response_expires <- decode.optional_field("ResponseExpires", option.None, decode.optional(json_timestamp.decoder()))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key <- decode.optional_field("SSECustomerKey", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(HeadObjectRequest(
+    bucket: bucket,
+    checksum_mode: checksum_mode,
+    expected_bucket_owner: expected_bucket_owner,
+    if_match: if_match,
+    if_modified_since: if_modified_since,
+    if_none_match: if_none_match,
+    if_unmodified_since: if_unmodified_since,
+    key: key,
+    part_number: part_number,
+    range: range,
+    request_payer: request_payer,
+    response_cache_control: response_cache_control,
+    response_content_disposition: response_content_disposition,
+    response_content_encoding: response_content_encoding,
+    response_content_language: response_content_language,
+    response_content_type: response_content_type,
+    response_expires: response_expires,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key: sse_customer_key,
+    sse_customer_key_md5: sse_customer_key_md5,
+    version_id: version_id,
+  ))
+}
+
+pub fn decode_head_object_request_struct_params() -> decode.Decoder(HeadObjectRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use checksum_mode <- decode.optional_field("ChecksumMode", option.None, decode.optional(decode_checksum_mode_enum()))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use if_match <- decode.optional_field("IfMatch", option.None, decode.optional(decode.string))
+  use if_modified_since <- decode.optional_field("IfModifiedSince", option.None, decode.optional(json_timestamp.decoder()))
+  use if_none_match <- decode.optional_field("IfNoneMatch", option.None, decode.optional(decode.string))
+  use if_unmodified_since <- decode.optional_field("IfUnmodifiedSince", option.None, decode.optional(json_timestamp.decoder()))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use part_number <- decode.optional_field("PartNumber", option.None, decode.optional(decode.int))
+  use range <- decode.optional_field("Range", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use response_cache_control <- decode.optional_field("ResponseCacheControl", option.None, decode.optional(decode.string))
+  use response_content_disposition <- decode.optional_field("ResponseContentDisposition", option.None, decode.optional(decode.string))
+  use response_content_encoding <- decode.optional_field("ResponseContentEncoding", option.None, decode.optional(decode.string))
+  use response_content_language <- decode.optional_field("ResponseContentLanguage", option.None, decode.optional(decode.string))
+  use response_content_type <- decode.optional_field("ResponseContentType", option.None, decode.optional(decode.string))
+  use response_expires <- decode.optional_field("ResponseExpires", option.None, decode.optional(json_timestamp.decoder()))
   use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
   use sse_customer_key <- decode.optional_field("SSECustomerKey", option.None, decode.optional(decode.string))
   use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
@@ -15383,12 +17769,103 @@ pub fn decode_head_object_output_struct() -> decode.Decoder(HeadObjectOutput) {
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
   use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode.string))
   use expires <- decode.optional_field("Expires", option.None, decode.optional(decode.string))
-  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(decode.int))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
   use metadata <- decode.optional_field("Metadata", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use missing_meta <- decode.optional_field("MissingMeta", option.None, decode.optional(decode.int))
   use object_lock_legal_hold_status <- decode.optional_field("ObjectLockLegalHoldStatus", option.None, decode.optional(decode_object_lock_legal_hold_status_enum()))
   use object_lock_mode <- decode.optional_field("ObjectLockMode", option.None, decode.optional(decode_object_lock_mode_enum()))
-  use object_lock_retain_until_date <- decode.optional_field("ObjectLockRetainUntilDate", option.None, decode.optional(decode.int))
+  use object_lock_retain_until_date <- decode.optional_field("ObjectLockRetainUntilDate", option.None, decode.optional(json_timestamp.decoder()))
+  use parts_count <- decode.optional_field("PartsCount", option.None, decode.optional(decode.int))
+  use replication_status <- decode.optional_field("ReplicationStatus", option.None, decode.optional(decode_replication_status_enum()))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use restore <- decode.optional_field("Restore", option.None, decode.optional(decode.string))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use ssekms_key_id <- decode.optional_field("SSEKMSKeyId", option.None, decode.optional(decode.string))
+  use server_side_encryption <- decode.optional_field("ServerSideEncryption", option.None, decode.optional(decode_server_side_encryption_enum()))
+  use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_storage_class_enum()))
+  use tag_count <- decode.optional_field("TagCount", option.None, decode.optional(decode.int))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  use website_redirect_location <- decode.optional_field("WebsiteRedirectLocation", option.None, decode.optional(decode.string))
+  decode.success(HeadObjectOutput(
+    accept_ranges: accept_ranges,
+    archive_status: archive_status,
+    bucket_key_enabled: bucket_key_enabled,
+    cache_control: cache_control,
+    checksum_crc32: checksum_crc32,
+    checksum_crc32_c: checksum_crc32_c,
+    checksum_crc64_nvme: checksum_crc64_nvme,
+    checksum_md5: checksum_md5,
+    checksum_sha1: checksum_sha1,
+    checksum_sha256: checksum_sha256,
+    checksum_sha512: checksum_sha512,
+    checksum_type: checksum_type,
+    checksum_xxhash128: checksum_xxhash128,
+    checksum_xxhash3: checksum_xxhash3,
+    checksum_xxhash64: checksum_xxhash64,
+    content_disposition: content_disposition,
+    content_encoding: content_encoding,
+    content_language: content_language,
+    content_length: content_length,
+    content_range: content_range,
+    content_type: content_type,
+    delete_marker: delete_marker,
+    e_tag: e_tag,
+    expiration: expiration,
+    expires: expires,
+    last_modified: last_modified,
+    metadata: metadata,
+    missing_meta: missing_meta,
+    object_lock_legal_hold_status: object_lock_legal_hold_status,
+    object_lock_mode: object_lock_mode,
+    object_lock_retain_until_date: object_lock_retain_until_date,
+    parts_count: parts_count,
+    replication_status: replication_status,
+    request_charged: request_charged,
+    restore: restore,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key_md5: sse_customer_key_md5,
+    ssekms_key_id: ssekms_key_id,
+    server_side_encryption: server_side_encryption,
+    storage_class: storage_class,
+    tag_count: tag_count,
+    version_id: version_id,
+    website_redirect_location: website_redirect_location,
+  ))
+}
+
+pub fn decode_head_object_output_struct_params() -> decode.Decoder(HeadObjectOutput) {
+  use accept_ranges <- decode.optional_field("AcceptRanges", option.None, decode.optional(decode.string))
+  use archive_status <- decode.optional_field("ArchiveStatus", option.None, decode.optional(decode_archive_status_enum()))
+  use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
+  use cache_control <- decode.optional_field("CacheControl", option.None, decode.optional(decode.string))
+  use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
+  use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
+  use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
+  use checksum_md5 <- decode.optional_field("ChecksumMD5", option.None, decode.optional(decode.string))
+  use checksum_sha1 <- decode.optional_field("ChecksumSHA1", option.None, decode.optional(decode.string))
+  use checksum_sha256 <- decode.optional_field("ChecksumSHA256", option.None, decode.optional(decode.string))
+  use checksum_sha512 <- decode.optional_field("ChecksumSHA512", option.None, decode.optional(decode.string))
+  use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
+  use checksum_xxhash128 <- decode.optional_field("ChecksumXXHASH128", option.None, decode.optional(decode.string))
+  use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
+  use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
+  use content_disposition <- decode.optional_field("ContentDisposition", option.None, decode.optional(decode.string))
+  use content_encoding <- decode.optional_field("ContentEncoding", option.None, decode.optional(decode.string))
+  use content_language <- decode.optional_field("ContentLanguage", option.None, decode.optional(decode.string))
+  use content_length <- decode.optional_field("ContentLength", option.None, decode.optional(decode.int))
+  use content_range <- decode.optional_field("ContentRange", option.None, decode.optional(decode.string))
+  use content_type <- decode.optional_field("ContentType", option.None, decode.optional(decode.string))
+  use delete_marker <- decode.optional_field("DeleteMarker", option.None, decode.optional(decode.bool))
+  use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
+  use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode.string))
+  use expires <- decode.optional_field("Expires", option.None, decode.optional(decode.string))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
+  use metadata <- decode.optional_field("Metadata", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use missing_meta <- decode.optional_field("MissingMeta", option.None, decode.optional(decode.int))
+  use object_lock_legal_hold_status <- decode.optional_field("ObjectLockLegalHoldStatus", option.None, decode.optional(decode_object_lock_legal_hold_status_enum()))
+  use object_lock_mode <- decode.optional_field("ObjectLockMode", option.None, decode.optional(decode_object_lock_mode_enum()))
+  use object_lock_retain_until_date <- decode.optional_field("ObjectLockRetainUntilDate", option.None, decode.optional(json_timestamp.decoder()))
   use parts_count <- decode.optional_field("PartsCount", option.None, decode.optional(decode.int))
   use replication_status <- decode.optional_field("ReplicationStatus", option.None, decode.optional(decode_replication_status_enum()))
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
@@ -15637,6 +18114,17 @@ pub fn decode_list_bucket_analytics_configurations_request_struct() -> decode.De
   ))
 }
 
+pub fn decode_list_bucket_analytics_configurations_request_struct_params() -> decode.Decoder(ListBucketAnalyticsConfigurationsRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(ListBucketAnalyticsConfigurationsRequest(
+    bucket: bucket,
+    continuation_token: continuation_token,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_list_bucket_analytics_configurations_request_xml_inner(input: ListBucketAnalyticsConfigurationsRequest) -> String {
   let inner = ""
   inner
@@ -15689,6 +18177,19 @@ pub fn encode_list_bucket_analytics_configurations_output_struct(input: ListBuck
 
 pub fn decode_list_bucket_analytics_configurations_output_struct() -> decode.Decoder(ListBucketAnalyticsConfigurationsOutput) {
   use analytics_configuration_list <- decode.optional_field("AnalyticsConfigurationList", option.None, decode.optional(decode.list(decode_analytics_configuration_struct())))
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
+  use next_continuation_token <- decode.optional_field("NextContinuationToken", option.None, decode.optional(decode.string))
+  decode.success(ListBucketAnalyticsConfigurationsOutput(
+    analytics_configuration_list: analytics_configuration_list,
+    continuation_token: continuation_token,
+    is_truncated: is_truncated,
+    next_continuation_token: next_continuation_token,
+  ))
+}
+
+pub fn decode_list_bucket_analytics_configurations_output_struct_params() -> decode.Decoder(ListBucketAnalyticsConfigurationsOutput) {
+  use analytics_configuration_list <- decode.optional_field("AnalyticsConfigurationList", option.None, decode.optional(decode.list(decode_analytics_configuration_struct_params())))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
   use next_continuation_token <- decode.optional_field("NextContinuationToken", option.None, decode.optional(decode.string))
@@ -15774,6 +18275,17 @@ pub fn decode_list_bucket_intelligent_tiering_configurations_request_struct() ->
   ))
 }
 
+pub fn decode_list_bucket_intelligent_tiering_configurations_request_struct_params() -> decode.Decoder(ListBucketIntelligentTieringConfigurationsRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(ListBucketIntelligentTieringConfigurationsRequest(
+    bucket: bucket,
+    continuation_token: continuation_token,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_list_bucket_intelligent_tiering_configurations_request_xml_inner(input: ListBucketIntelligentTieringConfigurationsRequest) -> String {
   let inner = ""
   inner
@@ -15827,6 +18339,19 @@ pub fn encode_list_bucket_intelligent_tiering_configurations_output_struct(input
 pub fn decode_list_bucket_intelligent_tiering_configurations_output_struct() -> decode.Decoder(ListBucketIntelligentTieringConfigurationsOutput) {
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use intelligent_tiering_configuration_list <- decode.optional_field("IntelligentTieringConfigurationList", option.None, decode.optional(decode.list(decode_intelligent_tiering_configuration_struct())))
+  use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
+  use next_continuation_token <- decode.optional_field("NextContinuationToken", option.None, decode.optional(decode.string))
+  decode.success(ListBucketIntelligentTieringConfigurationsOutput(
+    continuation_token: continuation_token,
+    intelligent_tiering_configuration_list: intelligent_tiering_configuration_list,
+    is_truncated: is_truncated,
+    next_continuation_token: next_continuation_token,
+  ))
+}
+
+pub fn decode_list_bucket_intelligent_tiering_configurations_output_struct_params() -> decode.Decoder(ListBucketIntelligentTieringConfigurationsOutput) {
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use intelligent_tiering_configuration_list <- decode.optional_field("IntelligentTieringConfigurationList", option.None, decode.optional(decode.list(decode_intelligent_tiering_configuration_struct_params())))
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
   use next_continuation_token <- decode.optional_field("NextContinuationToken", option.None, decode.optional(decode.string))
   decode.success(ListBucketIntelligentTieringConfigurationsOutput(
@@ -15911,6 +18436,17 @@ pub fn decode_list_bucket_inventory_configurations_request_struct() -> decode.De
   ))
 }
 
+pub fn decode_list_bucket_inventory_configurations_request_struct_params() -> decode.Decoder(ListBucketInventoryConfigurationsRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(ListBucketInventoryConfigurationsRequest(
+    bucket: bucket,
+    continuation_token: continuation_token,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_list_bucket_inventory_configurations_request_xml_inner(input: ListBucketInventoryConfigurationsRequest) -> String {
   let inner = ""
   inner
@@ -15964,6 +18500,19 @@ pub fn encode_list_bucket_inventory_configurations_output_struct(input: ListBuck
 pub fn decode_list_bucket_inventory_configurations_output_struct() -> decode.Decoder(ListBucketInventoryConfigurationsOutput) {
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use inventory_configuration_list <- decode.optional_field("InventoryConfigurationList", option.None, decode.optional(decode.list(decode_inventory_configuration_struct())))
+  use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
+  use next_continuation_token <- decode.optional_field("NextContinuationToken", option.None, decode.optional(decode.string))
+  decode.success(ListBucketInventoryConfigurationsOutput(
+    continuation_token: continuation_token,
+    inventory_configuration_list: inventory_configuration_list,
+    is_truncated: is_truncated,
+    next_continuation_token: next_continuation_token,
+  ))
+}
+
+pub fn decode_list_bucket_inventory_configurations_output_struct_params() -> decode.Decoder(ListBucketInventoryConfigurationsOutput) {
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use inventory_configuration_list <- decode.optional_field("InventoryConfigurationList", option.None, decode.optional(decode.list(decode_inventory_configuration_struct_params())))
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
   use next_continuation_token <- decode.optional_field("NextContinuationToken", option.None, decode.optional(decode.string))
   decode.success(ListBucketInventoryConfigurationsOutput(
@@ -16048,6 +18597,17 @@ pub fn decode_list_bucket_metrics_configurations_request_struct() -> decode.Deco
   ))
 }
 
+pub fn decode_list_bucket_metrics_configurations_request_struct_params() -> decode.Decoder(ListBucketMetricsConfigurationsRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  decode.success(ListBucketMetricsConfigurationsRequest(
+    bucket: bucket,
+    continuation_token: continuation_token,
+    expected_bucket_owner: expected_bucket_owner,
+  ))
+}
+
 pub fn encode_list_bucket_metrics_configurations_request_xml_inner(input: ListBucketMetricsConfigurationsRequest) -> String {
   let inner = ""
   inner
@@ -16102,6 +18662,19 @@ pub fn decode_list_bucket_metrics_configurations_output_struct() -> decode.Decod
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
   use metrics_configuration_list <- decode.optional_field("MetricsConfigurationList", option.None, decode.optional(decode.list(decode_metrics_configuration_struct())))
+  use next_continuation_token <- decode.optional_field("NextContinuationToken", option.None, decode.optional(decode.string))
+  decode.success(ListBucketMetricsConfigurationsOutput(
+    continuation_token: continuation_token,
+    is_truncated: is_truncated,
+    metrics_configuration_list: metrics_configuration_list,
+    next_continuation_token: next_continuation_token,
+  ))
+}
+
+pub fn decode_list_bucket_metrics_configurations_output_struct_params() -> decode.Decoder(ListBucketMetricsConfigurationsOutput) {
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
+  use metrics_configuration_list <- decode.optional_field("MetricsConfigurationList", option.None, decode.optional(decode.list(decode_metrics_configuration_struct_params())))
   use next_continuation_token <- decode.optional_field("NextContinuationToken", option.None, decode.optional(decode.string))
   decode.success(ListBucketMetricsConfigurationsOutput(
     continuation_token: continuation_token,
@@ -16192,6 +18765,19 @@ pub fn decode_list_buckets_request_struct() -> decode.Decoder(ListBucketsRequest
   ))
 }
 
+pub fn decode_list_buckets_request_struct_params() -> decode.Decoder(ListBucketsRequest) {
+  use bucket_region <- decode.optional_field("BucketRegion", option.None, decode.optional(decode.string))
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use max_buckets <- decode.optional_field("MaxBuckets", option.None, decode.optional(decode.int))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  decode.success(ListBucketsRequest(
+    bucket_region: bucket_region,
+    continuation_token: continuation_token,
+    max_buckets: max_buckets,
+    prefix: prefix,
+  ))
+}
+
 pub fn encode_list_buckets_request_xml_inner(input: ListBucketsRequest) -> String {
   let inner = ""
   inner
@@ -16248,6 +18834,19 @@ pub fn decode_list_buckets_output_struct() -> decode.Decoder(ListBucketsOutput) 
   use buckets <- decode.optional_field("Buckets", option.None, decode.optional(decode.list(decode_bucket_struct())))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct()))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  decode.success(ListBucketsOutput(
+    buckets: buckets,
+    continuation_token: continuation_token,
+    owner: owner,
+    prefix: prefix,
+  ))
+}
+
+pub fn decode_list_buckets_output_struct_params() -> decode.Decoder(ListBucketsOutput) {
+  use buckets <- decode.optional_field("Buckets", option.None, decode.optional(decode.list(decode_bucket_struct_params())))
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct_params()))
   use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
   decode.success(ListBucketsOutput(
     buckets: buckets,
@@ -16328,7 +18927,20 @@ pub fn encode_bucket_struct(input: Bucket) -> json.Json {
 pub fn decode_bucket_struct() -> decode.Decoder(Bucket) {
   use bucket_arn <- decode.optional_field("BucketArn", option.None, decode.optional(decode.string))
   use bucket_region <- decode.optional_field("BucketRegion", option.None, decode.optional(decode.string))
-  use creation_date <- decode.optional_field("CreationDate", option.None, decode.optional(decode.int))
+  use creation_date <- decode.optional_field("CreationDate", option.None, decode.optional(json_timestamp.decoder()))
+  use name <- decode.optional_field("Name", option.None, decode.optional(decode.string))
+  decode.success(Bucket(
+    bucket_arn: bucket_arn,
+    bucket_region: bucket_region,
+    creation_date: creation_date,
+    name: name,
+  ))
+}
+
+pub fn decode_bucket_struct_params() -> decode.Decoder(Bucket) {
+  use bucket_arn <- decode.optional_field("BucketArn", option.None, decode.optional(decode.string))
+  use bucket_region <- decode.optional_field("BucketRegion", option.None, decode.optional(decode.string))
+  use creation_date <- decode.optional_field("CreationDate", option.None, decode.optional(json_timestamp.decoder()))
   use name <- decode.optional_field("Name", option.None, decode.optional(decode.string))
   decode.success(Bucket(
     bucket_arn: bucket_arn,
@@ -16405,6 +19017,15 @@ pub fn decode_list_directory_buckets_request_struct() -> decode.Decoder(ListDire
   ))
 }
 
+pub fn decode_list_directory_buckets_request_struct_params() -> decode.Decoder(ListDirectoryBucketsRequest) {
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use max_directory_buckets <- decode.optional_field("MaxDirectoryBuckets", option.None, decode.optional(decode.int))
+  decode.success(ListDirectoryBucketsRequest(
+    continuation_token: continuation_token,
+    max_directory_buckets: max_directory_buckets,
+  ))
+}
+
 pub fn encode_list_directory_buckets_request_xml_inner(input: ListDirectoryBucketsRequest) -> String {
   let inner = ""
   inner
@@ -16445,6 +19066,15 @@ pub fn encode_list_directory_buckets_output_struct(input: ListDirectoryBucketsOu
 
 pub fn decode_list_directory_buckets_output_struct() -> decode.Decoder(ListDirectoryBucketsOutput) {
   use buckets <- decode.optional_field("Buckets", option.None, decode.optional(decode.list(decode_bucket_struct())))
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  decode.success(ListDirectoryBucketsOutput(
+    buckets: buckets,
+    continuation_token: continuation_token,
+  ))
+}
+
+pub fn decode_list_directory_buckets_output_struct_params() -> decode.Decoder(ListDirectoryBucketsOutput) {
+  use buckets <- decode.optional_field("Buckets", option.None, decode.optional(decode.list(decode_bucket_struct_params())))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   decode.success(ListDirectoryBucketsOutput(
     buckets: buckets,
@@ -16534,6 +19164,29 @@ pub fn encode_list_multipart_uploads_request_struct(input: ListMultipartUploadsR
 }
 
 pub fn decode_list_multipart_uploads_request_struct() -> decode.Decoder(ListMultipartUploadsRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
+  use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use key_marker <- decode.optional_field("KeyMarker", option.None, decode.optional(decode.string))
+  use max_uploads <- decode.optional_field("MaxUploads", option.None, decode.optional(decode.int))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use upload_id_marker <- decode.optional_field("UploadIdMarker", option.None, decode.optional(decode.string))
+  decode.success(ListMultipartUploadsRequest(
+    bucket: bucket,
+    delimiter: delimiter,
+    encoding_type: encoding_type,
+    expected_bucket_owner: expected_bucket_owner,
+    key_marker: key_marker,
+    max_uploads: max_uploads,
+    prefix: prefix,
+    request_payer: request_payer,
+    upload_id_marker: upload_id_marker,
+  ))
+}
+
+pub fn decode_list_multipart_uploads_request_struct_params() -> decode.Decoder(ListMultipartUploadsRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
   use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
@@ -16713,6 +19366,37 @@ pub fn decode_list_multipart_uploads_output_struct() -> decode.Decoder(ListMulti
   ))
 }
 
+pub fn decode_list_multipart_uploads_output_struct_params() -> decode.Decoder(ListMultipartUploadsOutput) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct_params())))
+  use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
+  use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
+  use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
+  use key_marker <- decode.optional_field("KeyMarker", option.None, decode.optional(decode.string))
+  use max_uploads <- decode.optional_field("MaxUploads", option.None, decode.optional(decode.int))
+  use next_key_marker <- decode.optional_field("NextKeyMarker", option.None, decode.optional(decode.string))
+  use next_upload_id_marker <- decode.optional_field("NextUploadIdMarker", option.None, decode.optional(decode.string))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use upload_id_marker <- decode.optional_field("UploadIdMarker", option.None, decode.optional(decode.string))
+  use uploads <- decode.optional_field("Uploads", option.None, decode.optional(decode.list(decode_multipart_upload_struct_params())))
+  decode.success(ListMultipartUploadsOutput(
+    bucket: bucket,
+    common_prefixes: common_prefixes,
+    delimiter: delimiter,
+    encoding_type: encoding_type,
+    is_truncated: is_truncated,
+    key_marker: key_marker,
+    max_uploads: max_uploads,
+    next_key_marker: next_key_marker,
+    next_upload_id_marker: next_upload_id_marker,
+    prefix: prefix,
+    request_charged: request_charged,
+    upload_id_marker: upload_id_marker,
+    uploads: uploads,
+  ))
+}
+
 pub fn encode_list_multipart_uploads_output_xml_inner(input: ListMultipartUploadsOutput) -> String {
   let inner = ""
   let inner = case input.bucket {
@@ -16824,6 +19508,13 @@ pub fn decode_common_prefix_struct() -> decode.Decoder(CommonPrefix) {
   ))
 }
 
+pub fn decode_common_prefix_struct_params() -> decode.Decoder(CommonPrefix) {
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  decode.success(CommonPrefix(
+    prefix: prefix,
+  ))
+}
+
 pub fn encode_common_prefix_xml_inner(input: CommonPrefix) -> String {
   let inner = ""
   let inner = case input.prefix {
@@ -16897,10 +19588,31 @@ pub fn encode_multipart_upload_struct(input: MultipartUpload) -> json.Json {
 pub fn decode_multipart_upload_struct() -> decode.Decoder(MultipartUpload) {
   use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode_checksum_algorithm_enum()))
   use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
-  use initiated <- decode.optional_field("Initiated", option.None, decode.optional(decode.int))
+  use initiated <- decode.optional_field("Initiated", option.None, decode.optional(json_timestamp.decoder()))
   use initiator <- decode.optional_field("Initiator", option.None, decode.optional(decode_initiator_struct()))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct()))
+  use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_storage_class_enum()))
+  use upload_id <- decode.optional_field("UploadId", option.None, decode.optional(decode.string))
+  decode.success(MultipartUpload(
+    checksum_algorithm: checksum_algorithm,
+    checksum_type: checksum_type,
+    initiated: initiated,
+    initiator: initiator,
+    key: key,
+    owner: owner,
+    storage_class: storage_class,
+    upload_id: upload_id,
+  ))
+}
+
+pub fn decode_multipart_upload_struct_params() -> decode.Decoder(MultipartUpload) {
+  use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode_checksum_algorithm_enum()))
+  use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
+  use initiated <- decode.optional_field("Initiated", option.None, decode.optional(json_timestamp.decoder()))
+  use initiator <- decode.optional_field("Initiator", option.None, decode.optional(decode_initiator_struct_params()))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct_params()))
   use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_storage_class_enum()))
   use upload_id <- decode.optional_field("UploadId", option.None, decode.optional(decode.string))
   decode.success(MultipartUpload(
@@ -17009,6 +19721,15 @@ pub fn decode_initiator_struct() -> decode.Decoder(Initiator) {
   ))
 }
 
+pub fn decode_initiator_struct_params() -> decode.Decoder(Initiator) {
+  use display_name <- decode.optional_field("DisplayName", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("ID", option.None, decode.optional(decode.string))
+  decode.success(Initiator(
+    display_name: display_name,
+    id: id,
+  ))
+}
+
 pub fn encode_initiator_xml_inner(input: Initiator) -> String {
   let inner = ""
   let inner = case input.display_name {
@@ -17091,6 +19812,29 @@ pub fn encode_list_objects_request_struct(input: ListObjectsRequest) -> json.Jso
 }
 
 pub fn decode_list_objects_request_struct() -> decode.Decoder(ListObjectsRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
+  use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use marker <- decode.optional_field("Marker", option.None, decode.optional(decode.string))
+  use max_keys <- decode.optional_field("MaxKeys", option.None, decode.optional(decode.int))
+  use optional_object_attributes <- decode.optional_field("OptionalObjectAttributes", option.None, decode.optional(decode.list(decode_optional_object_attributes_enum())))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  decode.success(ListObjectsRequest(
+    bucket: bucket,
+    delimiter: delimiter,
+    encoding_type: encoding_type,
+    expected_bucket_owner: expected_bucket_owner,
+    marker: marker,
+    max_keys: max_keys,
+    optional_object_attributes: optional_object_attributes,
+    prefix: prefix,
+    request_payer: request_payer,
+  ))
+}
+
+pub fn decode_list_objects_request_struct_params() -> decode.Decoder(ListObjectsRequest) {
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
   use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
@@ -17256,6 +20000,33 @@ pub fn decode_list_objects_output_struct() -> decode.Decoder(ListObjectsOutput) 
   ))
 }
 
+pub fn decode_list_objects_output_struct_params() -> decode.Decoder(ListObjectsOutput) {
+  use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct_params())))
+  use contents <- decode.optional_field("Contents", option.None, decode.optional(decode.list(decode_object_struct_params())))
+  use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
+  use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
+  use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
+  use marker <- decode.optional_field("Marker", option.None, decode.optional(decode.string))
+  use max_keys <- decode.optional_field("MaxKeys", option.None, decode.optional(decode.int))
+  use name <- decode.optional_field("Name", option.None, decode.optional(decode.string))
+  use next_marker <- decode.optional_field("NextMarker", option.None, decode.optional(decode.string))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  decode.success(ListObjectsOutput(
+    common_prefixes: common_prefixes,
+    contents: contents,
+    delimiter: delimiter,
+    encoding_type: encoding_type,
+    is_truncated: is_truncated,
+    marker: marker,
+    max_keys: max_keys,
+    name: name,
+    next_marker: next_marker,
+    prefix: prefix,
+    request_charged: request_charged,
+  ))
+}
+
 pub fn encode_list_objects_output_xml_inner(input: ListObjectsOutput) -> String {
   let inner = ""
   let inner = case input.common_prefixes {
@@ -17393,9 +20164,32 @@ pub fn decode_object_struct() -> decode.Decoder(Object) {
   use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
-  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(decode.int))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct()))
   use restore_status <- decode.optional_field("RestoreStatus", option.None, decode.optional(decode_restore_status_struct()))
+  use size <- decode.optional_field("Size", option.None, decode.optional(decode.int))
+  use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_object_storage_class_enum()))
+  decode.success(Object(
+    checksum_algorithm: checksum_algorithm,
+    checksum_type: checksum_type,
+    e_tag: e_tag,
+    key: key,
+    last_modified: last_modified,
+    owner: owner,
+    restore_status: restore_status,
+    size: size,
+    storage_class: storage_class,
+  ))
+}
+
+pub fn decode_object_struct_params() -> decode.Decoder(Object) {
+  use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode.list(decode_checksum_algorithm_enum())))
+  use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
+  use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
+  use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct_params()))
+  use restore_status <- decode.optional_field("RestoreStatus", option.None, decode.optional(decode_restore_status_struct_params()))
   use size <- decode.optional_field("Size", option.None, decode.optional(decode.int))
   use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_object_storage_class_enum()))
   decode.success(Object(
@@ -17503,7 +20297,16 @@ pub fn encode_restore_status_struct(input: RestoreStatus) -> json.Json {
 
 pub fn decode_restore_status_struct() -> decode.Decoder(RestoreStatus) {
   use is_restore_in_progress <- decode.optional_field("IsRestoreInProgress", option.None, decode.optional(decode.bool))
-  use restore_expiry_date <- decode.optional_field("RestoreExpiryDate", option.None, decode.optional(decode.int))
+  use restore_expiry_date <- decode.optional_field("RestoreExpiryDate", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(RestoreStatus(
+    is_restore_in_progress: is_restore_in_progress,
+    restore_expiry_date: restore_expiry_date,
+  ))
+}
+
+pub fn decode_restore_status_struct_params() -> decode.Decoder(RestoreStatus) {
+  use is_restore_in_progress <- decode.optional_field("IsRestoreInProgress", option.None, decode.optional(decode.bool))
+  use restore_expiry_date <- decode.optional_field("RestoreExpiryDate", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(RestoreStatus(
     is_restore_in_progress: is_restore_in_progress,
     restore_expiry_date: restore_expiry_date,
@@ -17683,6 +20486,33 @@ pub fn decode_list_objects_v2_request_struct() -> decode.Decoder(ListObjectsV2Re
   ))
 }
 
+pub fn decode_list_objects_v2_request_struct_params() -> decode.Decoder(ListObjectsV2Request) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
+  use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use fetch_owner <- decode.optional_field("FetchOwner", option.None, decode.optional(decode.bool))
+  use max_keys <- decode.optional_field("MaxKeys", option.None, decode.optional(decode.int))
+  use optional_object_attributes <- decode.optional_field("OptionalObjectAttributes", option.None, decode.optional(decode.list(decode_optional_object_attributes_enum())))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use start_after <- decode.optional_field("StartAfter", option.None, decode.optional(decode.string))
+  decode.success(ListObjectsV2Request(
+    bucket: bucket,
+    continuation_token: continuation_token,
+    delimiter: delimiter,
+    encoding_type: encoding_type,
+    expected_bucket_owner: expected_bucket_owner,
+    fetch_owner: fetch_owner,
+    max_keys: max_keys,
+    optional_object_attributes: optional_object_attributes,
+    prefix: prefix,
+    request_payer: request_payer,
+    start_after: start_after,
+  ))
+}
+
 pub fn encode_list_objects_v2_request_xml_inner(input: ListObjectsV2Request) -> String {
   let inner = ""
   inner
@@ -17797,6 +20627,37 @@ pub fn encode_list_objects_v2_output_struct(input: ListObjectsV2Output) -> json.
 pub fn decode_list_objects_v2_output_struct() -> decode.Decoder(ListObjectsV2Output) {
   use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct())))
   use contents <- decode.optional_field("Contents", option.None, decode.optional(decode.list(decode_object_struct())))
+  use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
+  use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
+  use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
+  use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
+  use key_count <- decode.optional_field("KeyCount", option.None, decode.optional(decode.int))
+  use max_keys <- decode.optional_field("MaxKeys", option.None, decode.optional(decode.int))
+  use name <- decode.optional_field("Name", option.None, decode.optional(decode.string))
+  use next_continuation_token <- decode.optional_field("NextContinuationToken", option.None, decode.optional(decode.string))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use start_after <- decode.optional_field("StartAfter", option.None, decode.optional(decode.string))
+  decode.success(ListObjectsV2Output(
+    common_prefixes: common_prefixes,
+    contents: contents,
+    continuation_token: continuation_token,
+    delimiter: delimiter,
+    encoding_type: encoding_type,
+    is_truncated: is_truncated,
+    key_count: key_count,
+    max_keys: max_keys,
+    name: name,
+    next_continuation_token: next_continuation_token,
+    prefix: prefix,
+    request_charged: request_charged,
+    start_after: start_after,
+  ))
+}
+
+pub fn decode_list_objects_v2_output_struct_params() -> decode.Decoder(ListObjectsV2Output) {
+  use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct_params())))
+  use contents <- decode.optional_field("Contents", option.None, decode.optional(decode.list(decode_object_struct_params())))
   use continuation_token <- decode.optional_field("ContinuationToken", option.None, decode.optional(decode.string))
   use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
   use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
@@ -17999,6 +20860,31 @@ pub fn decode_list_object_versions_request_struct() -> decode.Decoder(ListObject
   ))
 }
 
+pub fn decode_list_object_versions_request_struct_params() -> decode.Decoder(ListObjectVersionsRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
+  use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use key_marker <- decode.optional_field("KeyMarker", option.None, decode.optional(decode.string))
+  use max_keys <- decode.optional_field("MaxKeys", option.None, decode.optional(decode.int))
+  use optional_object_attributes <- decode.optional_field("OptionalObjectAttributes", option.None, decode.optional(decode.list(decode_optional_object_attributes_enum())))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use version_id_marker <- decode.optional_field("VersionIdMarker", option.None, decode.optional(decode.string))
+  decode.success(ListObjectVersionsRequest(
+    bucket: bucket,
+    delimiter: delimiter,
+    encoding_type: encoding_type,
+    expected_bucket_owner: expected_bucket_owner,
+    key_marker: key_marker,
+    max_keys: max_keys,
+    optional_object_attributes: optional_object_attributes,
+    prefix: prefix,
+    request_payer: request_payer,
+    version_id_marker: version_id_marker,
+  ))
+}
+
 pub fn encode_list_object_versions_request_xml_inner(input: ListObjectVersionsRequest) -> String {
   let inner = ""
   inner
@@ -18128,6 +21014,39 @@ pub fn decode_list_object_versions_output_struct() -> decode.Decoder(ListObjectV
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   use version_id_marker <- decode.optional_field("VersionIdMarker", option.None, decode.optional(decode.string))
   use versions <- decode.optional_field("Versions", option.None, decode.optional(decode.list(decode_object_version_struct())))
+  decode.success(ListObjectVersionsOutput(
+    common_prefixes: common_prefixes,
+    delete_markers: delete_markers,
+    delimiter: delimiter,
+    encoding_type: encoding_type,
+    is_truncated: is_truncated,
+    key_marker: key_marker,
+    max_keys: max_keys,
+    name: name,
+    next_key_marker: next_key_marker,
+    next_version_id_marker: next_version_id_marker,
+    prefix: prefix,
+    request_charged: request_charged,
+    version_id_marker: version_id_marker,
+    versions: versions,
+  ))
+}
+
+pub fn decode_list_object_versions_output_struct_params() -> decode.Decoder(ListObjectVersionsOutput) {
+  use common_prefixes <- decode.optional_field("CommonPrefixes", option.None, decode.optional(decode.list(decode_common_prefix_struct_params())))
+  use delete_markers <- decode.optional_field("DeleteMarkers", option.None, decode.optional(decode.list(decode_delete_marker_entry_struct_params())))
+  use delimiter <- decode.optional_field("Delimiter", option.None, decode.optional(decode.string))
+  use encoding_type <- decode.optional_field("EncodingType", option.None, decode.optional(decode_encoding_type_enum()))
+  use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
+  use key_marker <- decode.optional_field("KeyMarker", option.None, decode.optional(decode.string))
+  use max_keys <- decode.optional_field("MaxKeys", option.None, decode.optional(decode.int))
+  use name <- decode.optional_field("Name", option.None, decode.optional(decode.string))
+  use next_key_marker <- decode.optional_field("NextKeyMarker", option.None, decode.optional(decode.string))
+  use next_version_id_marker <- decode.optional_field("NextVersionIdMarker", option.None, decode.optional(decode.string))
+  use prefix <- decode.optional_field("Prefix", option.None, decode.optional(decode.string))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use version_id_marker <- decode.optional_field("VersionIdMarker", option.None, decode.optional(decode.string))
+  use versions <- decode.optional_field("Versions", option.None, decode.optional(decode.list(decode_object_version_struct_params())))
   decode.success(ListObjectVersionsOutput(
     common_prefixes: common_prefixes,
     delete_markers: delete_markers,
@@ -18279,8 +21198,23 @@ pub fn encode_delete_marker_entry_struct(input: DeleteMarkerEntry) -> json.Json 
 pub fn decode_delete_marker_entry_struct() -> decode.Decoder(DeleteMarkerEntry) {
   use is_latest <- decode.optional_field("IsLatest", option.None, decode.optional(decode.bool))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
-  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(decode.int))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct()))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(DeleteMarkerEntry(
+    is_latest: is_latest,
+    key: key,
+    last_modified: last_modified,
+    owner: owner,
+    version_id: version_id,
+  ))
+}
+
+pub fn decode_delete_marker_entry_struct_params() -> decode.Decoder(DeleteMarkerEntry) {
+  use is_latest <- decode.optional_field("IsLatest", option.None, decode.optional(decode.bool))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
+  use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct_params()))
   use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
   decode.success(DeleteMarkerEntry(
     is_latest: is_latest,
@@ -18406,9 +21340,36 @@ pub fn decode_object_version_struct() -> decode.Decoder(ObjectVersion) {
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
   use is_latest <- decode.optional_field("IsLatest", option.None, decode.optional(decode.bool))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
-  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(decode.int))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct()))
   use restore_status <- decode.optional_field("RestoreStatus", option.None, decode.optional(decode_restore_status_struct()))
+  use size <- decode.optional_field("Size", option.None, decode.optional(decode.int))
+  use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_object_version_storage_class_enum()))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(ObjectVersion(
+    checksum_algorithm: checksum_algorithm,
+    checksum_type: checksum_type,
+    e_tag: e_tag,
+    is_latest: is_latest,
+    key: key,
+    last_modified: last_modified,
+    owner: owner,
+    restore_status: restore_status,
+    size: size,
+    storage_class: storage_class,
+    version_id: version_id,
+  ))
+}
+
+pub fn decode_object_version_struct_params() -> decode.Decoder(ObjectVersion) {
+  use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode.list(decode_checksum_algorithm_enum())))
+  use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
+  use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
+  use is_latest <- decode.optional_field("IsLatest", option.None, decode.optional(decode.bool))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
+  use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct_params()))
+  use restore_status <- decode.optional_field("RestoreStatus", option.None, decode.optional(decode_restore_status_struct_params()))
   use size <- decode.optional_field("Size", option.None, decode.optional(decode.int))
   use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_object_version_storage_class_enum()))
   use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
@@ -18613,6 +21574,31 @@ pub fn decode_list_parts_request_struct() -> decode.Decoder(ListPartsRequest) {
   ))
 }
 
+pub fn decode_list_parts_request_struct_params() -> decode.Decoder(ListPartsRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use max_parts <- decode.optional_field("MaxParts", option.None, decode.optional(decode.int))
+  use part_number_marker <- decode.optional_field("PartNumberMarker", option.None, decode.optional(decode.string))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key <- decode.optional_field("SSECustomerKey", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use upload_id <- decode.optional_field("UploadId", option.None, decode.optional(decode.string))
+  decode.success(ListPartsRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    key: key,
+    max_parts: max_parts,
+    part_number_marker: part_number_marker,
+    request_payer: request_payer,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key: sse_customer_key,
+    sse_customer_key_md5: sse_customer_key_md5,
+    upload_id: upload_id,
+  ))
+}
+
 pub fn encode_list_parts_request_xml_inner(input: ListPartsRequest) -> String {
   let inner = ""
   inner
@@ -18738,7 +21724,7 @@ pub fn encode_list_parts_output_struct(input: ListPartsOutput) -> json.Json {
 }
 
 pub fn decode_list_parts_output_struct() -> decode.Decoder(ListPartsOutput) {
-  use abort_date <- decode.optional_field("AbortDate", option.None, decode.optional(decode.int))
+  use abort_date <- decode.optional_field("AbortDate", option.None, decode.optional(json_timestamp.decoder()))
   use abort_rule_id <- decode.optional_field("AbortRuleId", option.None, decode.optional(decode.string))
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode_checksum_algorithm_enum()))
@@ -18751,6 +21737,43 @@ pub fn decode_list_parts_output_struct() -> decode.Decoder(ListPartsOutput) {
   use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct()))
   use part_number_marker <- decode.optional_field("PartNumberMarker", option.None, decode.optional(decode.string))
   use parts <- decode.optional_field("Parts", option.None, decode.optional(decode.list(decode_part_struct())))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_storage_class_enum()))
+  use upload_id <- decode.optional_field("UploadId", option.None, decode.optional(decode.string))
+  decode.success(ListPartsOutput(
+    abort_date: abort_date,
+    abort_rule_id: abort_rule_id,
+    bucket: bucket,
+    checksum_algorithm: checksum_algorithm,
+    checksum_type: checksum_type,
+    initiator: initiator,
+    is_truncated: is_truncated,
+    key: key,
+    max_parts: max_parts,
+    next_part_number_marker: next_part_number_marker,
+    owner: owner,
+    part_number_marker: part_number_marker,
+    parts: parts,
+    request_charged: request_charged,
+    storage_class: storage_class,
+    upload_id: upload_id,
+  ))
+}
+
+pub fn decode_list_parts_output_struct_params() -> decode.Decoder(ListPartsOutput) {
+  use abort_date <- decode.optional_field("AbortDate", option.None, decode.optional(json_timestamp.decoder()))
+  use abort_rule_id <- decode.optional_field("AbortRuleId", option.None, decode.optional(decode.string))
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use checksum_algorithm <- decode.optional_field("ChecksumAlgorithm", option.None, decode.optional(decode_checksum_algorithm_enum()))
+  use checksum_type <- decode.optional_field("ChecksumType", option.None, decode.optional(decode_checksum_type_enum()))
+  use initiator <- decode.optional_field("Initiator", option.None, decode.optional(decode_initiator_struct_params()))
+  use is_truncated <- decode.optional_field("IsTruncated", option.None, decode.optional(decode.bool))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use max_parts <- decode.optional_field("MaxParts", option.None, decode.optional(decode.int))
+  use next_part_number_marker <- decode.optional_field("NextPartNumberMarker", option.None, decode.optional(decode.string))
+  use owner <- decode.optional_field("Owner", option.None, decode.optional(decode_owner_struct_params()))
+  use part_number_marker <- decode.optional_field("PartNumberMarker", option.None, decode.optional(decode.string))
+  use parts <- decode.optional_field("Parts", option.None, decode.optional(decode.list(decode_part_struct_params())))
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
   use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_storage_class_enum()))
   use upload_id <- decode.optional_field("UploadId", option.None, decode.optional(decode.string))
@@ -18967,7 +21990,40 @@ pub fn decode_part_struct() -> decode.Decoder(Part) {
   use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
   use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
-  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(decode.int))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
+  use part_number <- decode.optional_field("PartNumber", option.None, decode.optional(decode.int))
+  use size <- decode.optional_field("Size", option.None, decode.optional(decode.int))
+  decode.success(Part(
+    checksum_crc32: checksum_crc32,
+    checksum_crc32_c: checksum_crc32_c,
+    checksum_crc64_nvme: checksum_crc64_nvme,
+    checksum_md5: checksum_md5,
+    checksum_sha1: checksum_sha1,
+    checksum_sha256: checksum_sha256,
+    checksum_sha512: checksum_sha512,
+    checksum_xxhash128: checksum_xxhash128,
+    checksum_xxhash3: checksum_xxhash3,
+    checksum_xxhash64: checksum_xxhash64,
+    e_tag: e_tag,
+    last_modified: last_modified,
+    part_number: part_number,
+    size: size,
+  ))
+}
+
+pub fn decode_part_struct_params() -> decode.Decoder(Part) {
+  use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
+  use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
+  use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
+  use checksum_md5 <- decode.optional_field("ChecksumMD5", option.None, decode.optional(decode.string))
+  use checksum_sha1 <- decode.optional_field("ChecksumSHA1", option.None, decode.optional(decode.string))
+  use checksum_sha256 <- decode.optional_field("ChecksumSHA256", option.None, decode.optional(decode.string))
+  use checksum_sha512 <- decode.optional_field("ChecksumSHA512", option.None, decode.optional(decode.string))
+  use checksum_xxhash128 <- decode.optional_field("ChecksumXXHASH128", option.None, decode.optional(decode.string))
+  use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
+  use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
+  use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
   use part_number <- decode.optional_field("PartNumber", option.None, decode.optional(decode.int))
   use size <- decode.optional_field("Size", option.None, decode.optional(decode.int))
   decode.success(Part(
@@ -19129,6 +22185,19 @@ pub fn decode_put_bucket_analytics_configuration_request_struct() -> decode.Deco
   ))
 }
 
+pub fn decode_put_bucket_analytics_configuration_request_struct_params() -> decode.Decoder(PutBucketAnalyticsConfigurationRequest) {
+  use analytics_configuration <- decode.optional_field("AnalyticsConfiguration", option.None, decode.optional(decode_analytics_configuration_struct_params()))
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  decode.success(PutBucketAnalyticsConfigurationRequest(
+    analytics_configuration: analytics_configuration,
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    id: id,
+  ))
+}
+
 pub fn encode_put_bucket_analytics_configuration_request_xml_inner(input: PutBucketAnalyticsConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -19186,6 +22255,19 @@ pub fn decode_put_bucket_intelligent_tiering_configuration_request_struct() -> d
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
   use intelligent_tiering_configuration <- decode.optional_field("IntelligentTieringConfiguration", option.None, decode.optional(decode_intelligent_tiering_configuration_struct()))
+  decode.success(PutBucketIntelligentTieringConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    id: id,
+    intelligent_tiering_configuration: intelligent_tiering_configuration,
+  ))
+}
+
+pub fn decode_put_bucket_intelligent_tiering_configuration_request_struct_params() -> decode.Decoder(PutBucketIntelligentTieringConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  use intelligent_tiering_configuration <- decode.optional_field("IntelligentTieringConfiguration", option.None, decode.optional(decode_intelligent_tiering_configuration_struct_params()))
   decode.success(PutBucketIntelligentTieringConfigurationRequest(
     bucket: bucket,
     expected_bucket_owner: expected_bucket_owner,
@@ -19259,6 +22341,19 @@ pub fn decode_put_bucket_inventory_configuration_request_struct() -> decode.Deco
   ))
 }
 
+pub fn decode_put_bucket_inventory_configuration_request_struct_params() -> decode.Decoder(PutBucketInventoryConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  use inventory_configuration <- decode.optional_field("InventoryConfiguration", option.None, decode.optional(decode_inventory_configuration_struct_params()))
+  decode.success(PutBucketInventoryConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    id: id,
+    inventory_configuration: inventory_configuration,
+  ))
+}
+
 pub fn encode_put_bucket_inventory_configuration_request_xml_inner(input: PutBucketInventoryConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -19324,6 +22419,19 @@ pub fn decode_put_bucket_metrics_configuration_request_struct() -> decode.Decode
   ))
 }
 
+pub fn decode_put_bucket_metrics_configuration_request_struct_params() -> decode.Decoder(PutBucketMetricsConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use id <- decode.optional_field("Id", option.None, decode.optional(decode.string))
+  use metrics_configuration <- decode.optional_field("MetricsConfiguration", option.None, decode.optional(decode_metrics_configuration_struct_params()))
+  decode.success(PutBucketMetricsConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    id: id,
+    metrics_configuration: metrics_configuration,
+  ))
+}
+
 pub fn encode_put_bucket_metrics_configuration_request_xml_inner(input: PutBucketMetricsConfigurationRequest) -> String {
   let inner = ""
   inner
@@ -19380,6 +22488,19 @@ pub fn decode_put_bucket_notification_configuration_request_struct() -> decode.D
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
   use notification_configuration <- decode.optional_field("NotificationConfiguration", option.None, decode.optional(decode_notification_configuration_struct()))
+  use skip_destination_validation <- decode.optional_field("SkipDestinationValidation", option.None, decode.optional(decode.bool))
+  decode.success(PutBucketNotificationConfigurationRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    notification_configuration: notification_configuration,
+    skip_destination_validation: skip_destination_validation,
+  ))
+}
+
+pub fn decode_put_bucket_notification_configuration_request_struct_params() -> decode.Decoder(PutBucketNotificationConfigurationRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use notification_configuration <- decode.optional_field("NotificationConfiguration", option.None, decode.optional(decode_notification_configuration_struct_params()))
   use skip_destination_validation <- decode.optional_field("SkipDestinationValidation", option.None, decode.optional(decode.bool))
   decode.success(PutBucketNotificationConfigurationRequest(
     bucket: bucket,
@@ -19485,15 +22606,44 @@ pub fn decode_rename_object_request_struct() -> decode.Decoder(RenameObjectReque
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use client_token <- decode.optional_field("ClientToken", option.None, decode.optional(decode.string))
   use destination_if_match <- decode.optional_field("DestinationIfMatch", option.None, decode.optional(decode.string))
-  use destination_if_modified_since <- decode.optional_field("DestinationIfModifiedSince", option.None, decode.optional(decode.int))
+  use destination_if_modified_since <- decode.optional_field("DestinationIfModifiedSince", option.None, decode.optional(json_timestamp.decoder()))
   use destination_if_none_match <- decode.optional_field("DestinationIfNoneMatch", option.None, decode.optional(decode.string))
-  use destination_if_unmodified_since <- decode.optional_field("DestinationIfUnmodifiedSince", option.None, decode.optional(decode.int))
+  use destination_if_unmodified_since <- decode.optional_field("DestinationIfUnmodifiedSince", option.None, decode.optional(json_timestamp.decoder()))
   use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
   use rename_source <- decode.optional_field("RenameSource", option.None, decode.optional(decode.string))
   use source_if_match <- decode.optional_field("SourceIfMatch", option.None, decode.optional(decode.string))
-  use source_if_modified_since <- decode.optional_field("SourceIfModifiedSince", option.None, decode.optional(decode.int))
+  use source_if_modified_since <- decode.optional_field("SourceIfModifiedSince", option.None, decode.optional(json_timestamp.decoder()))
   use source_if_none_match <- decode.optional_field("SourceIfNoneMatch", option.None, decode.optional(decode.string))
-  use source_if_unmodified_since <- decode.optional_field("SourceIfUnmodifiedSince", option.None, decode.optional(decode.int))
+  use source_if_unmodified_since <- decode.optional_field("SourceIfUnmodifiedSince", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(RenameObjectRequest(
+    bucket: bucket,
+    client_token: client_token,
+    destination_if_match: destination_if_match,
+    destination_if_modified_since: destination_if_modified_since,
+    destination_if_none_match: destination_if_none_match,
+    destination_if_unmodified_since: destination_if_unmodified_since,
+    key: key,
+    rename_source: rename_source,
+    source_if_match: source_if_match,
+    source_if_modified_since: source_if_modified_since,
+    source_if_none_match: source_if_none_match,
+    source_if_unmodified_since: source_if_unmodified_since,
+  ))
+}
+
+pub fn decode_rename_object_request_struct_params() -> decode.Decoder(RenameObjectRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use client_token <- decode.optional_field("ClientToken", option.None, decode.optional(decode.string))
+  use destination_if_match <- decode.optional_field("DestinationIfMatch", option.None, decode.optional(decode.string))
+  use destination_if_modified_since <- decode.optional_field("DestinationIfModifiedSince", option.None, decode.optional(json_timestamp.decoder()))
+  use destination_if_none_match <- decode.optional_field("DestinationIfNoneMatch", option.None, decode.optional(decode.string))
+  use destination_if_unmodified_since <- decode.optional_field("DestinationIfUnmodifiedSince", option.None, decode.optional(json_timestamp.decoder()))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use rename_source <- decode.optional_field("RenameSource", option.None, decode.optional(decode.string))
+  use source_if_match <- decode.optional_field("SourceIfMatch", option.None, decode.optional(decode.string))
+  use source_if_modified_since <- decode.optional_field("SourceIfModifiedSince", option.None, decode.optional(json_timestamp.decoder()))
+  use source_if_none_match <- decode.optional_field("SourceIfNoneMatch", option.None, decode.optional(decode.string))
+  use source_if_unmodified_since <- decode.optional_field("SourceIfUnmodifiedSince", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(RenameObjectRequest(
     bucket: bucket,
     client_token: client_token,
@@ -19560,6 +22710,10 @@ pub fn decode_rename_object_output_struct() -> decode.Decoder(RenameObjectOutput
   decode.success(RenameObjectOutput)
 }
 
+pub fn decode_rename_object_output_struct_params() -> decode.Decoder(RenameObjectOutput) {
+  decode.success(RenameObjectOutput)
+}
+
 pub fn encode_rename_object_output_xml_inner(_input: RenameObjectOutput) -> String {
   ""
 }
@@ -19581,6 +22735,10 @@ pub fn encode_idempotency_parameter_mismatch_struct(_v: IdempotencyParameterMism
 }
 
 pub fn decode_idempotency_parameter_mismatch_struct() -> decode.Decoder(IdempotencyParameterMismatch) {
+  decode.success(IdempotencyParameterMismatch)
+}
+
+pub fn decode_idempotency_parameter_mismatch_struct_params() -> decode.Decoder(IdempotencyParameterMismatch) {
   decode.success(IdempotencyParameterMismatch)
 }
 
@@ -19679,6 +22837,35 @@ pub fn decode_select_object_content_request_struct() -> decode.Decoder(SelectObj
   use sse_customer_key <- decode.optional_field("SSECustomerKey", option.None, decode.optional(decode.string))
   use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
   use scan_range <- decode.optional_field("ScanRange", option.None, decode.optional(decode_scan_range_struct()))
+  decode.success(SelectObjectContentRequest(
+    bucket: bucket,
+    expected_bucket_owner: expected_bucket_owner,
+    expression: expression,
+    expression_type: expression_type,
+    input_serialization: input_serialization,
+    key: key,
+    output_serialization: output_serialization,
+    request_progress: request_progress,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key: sse_customer_key,
+    sse_customer_key_md5: sse_customer_key_md5,
+    scan_range: scan_range,
+  ))
+}
+
+pub fn decode_select_object_content_request_struct_params() -> decode.Decoder(SelectObjectContentRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use expression <- decode.optional_field("Expression", option.None, decode.optional(decode.string))
+  use expression_type <- decode.optional_field("ExpressionType", option.None, decode.optional(decode_expression_type_enum()))
+  use input_serialization <- decode.optional_field("InputSerialization", option.None, decode.optional(decode_input_serialization_struct_params()))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use output_serialization <- decode.optional_field("OutputSerialization", option.None, decode.optional(decode_output_serialization_struct_params()))
+  use request_progress <- decode.optional_field("RequestProgress", option.None, decode.optional(decode_request_progress_struct_params()))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key <- decode.optional_field("SSECustomerKey", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use scan_range <- decode.optional_field("ScanRange", option.None, decode.optional(decode_scan_range_struct_params()))
   decode.success(SelectObjectContentRequest(
     bucket: bucket,
     expected_bucket_owner: expected_bucket_owner,
@@ -19820,6 +23007,19 @@ pub fn decode_input_serialization_struct() -> decode.Decoder(InputSerialization)
   ))
 }
 
+pub fn decode_input_serialization_struct_params() -> decode.Decoder(InputSerialization) {
+  use csv <- decode.optional_field("CSV", option.None, decode.optional(decode_csv_input_struct_params()))
+  use compression_type <- decode.optional_field("CompressionType", option.None, decode.optional(decode_compression_type_enum()))
+  use json <- decode.optional_field("JSON", option.None, decode.optional(decode_json_input_struct_params()))
+  use parquet <- decode.optional_field("Parquet", option.None, decode.optional(decode_parquet_input_struct_params()))
+  decode.success(InputSerialization(
+    csv: csv,
+    compression_type: compression_type,
+    json: json,
+    parquet: parquet,
+  ))
+}
+
 pub fn encode_input_serialization_xml_inner(input: InputSerialization) -> String {
   let inner = ""
   let inner = case input.csv {
@@ -19905,6 +23105,25 @@ pub fn encode_csv_input_struct(input: CSVInput) -> json.Json {
 }
 
 pub fn decode_csv_input_struct() -> decode.Decoder(CSVInput) {
+  use allow_quoted_record_delimiter <- decode.optional_field("AllowQuotedRecordDelimiter", option.None, decode.optional(decode.bool))
+  use comments <- decode.optional_field("Comments", option.None, decode.optional(decode.string))
+  use field_delimiter <- decode.optional_field("FieldDelimiter", option.None, decode.optional(decode.string))
+  use file_header_info <- decode.optional_field("FileHeaderInfo", option.None, decode.optional(decode_file_header_info_enum()))
+  use quote_character <- decode.optional_field("QuoteCharacter", option.None, decode.optional(decode.string))
+  use quote_escape_character <- decode.optional_field("QuoteEscapeCharacter", option.None, decode.optional(decode.string))
+  use record_delimiter <- decode.optional_field("RecordDelimiter", option.None, decode.optional(decode.string))
+  decode.success(CSVInput(
+    allow_quoted_record_delimiter: allow_quoted_record_delimiter,
+    comments: comments,
+    field_delimiter: field_delimiter,
+    file_header_info: file_header_info,
+    quote_character: quote_character,
+    quote_escape_character: quote_escape_character,
+    record_delimiter: record_delimiter,
+  ))
+}
+
+pub fn decode_csv_input_struct_params() -> decode.Decoder(CSVInput) {
   use allow_quoted_record_delimiter <- decode.optional_field("AllowQuotedRecordDelimiter", option.None, decode.optional(decode.bool))
   use comments <- decode.optional_field("Comments", option.None, decode.optional(decode.string))
   use field_delimiter <- decode.optional_field("FieldDelimiter", option.None, decode.optional(decode.string))
@@ -20052,6 +23271,13 @@ pub fn decode_json_input_struct() -> decode.Decoder(JSONInput) {
   ))
 }
 
+pub fn decode_json_input_struct_params() -> decode.Decoder(JSONInput) {
+  use type_ <- decode.optional_field("Type", option.None, decode.optional(decode_json_type_enum()))
+  decode.success(JSONInput(
+    type_: type_,
+  ))
+}
+
 pub fn encode_json_input_xml_inner(input: JSONInput) -> String {
   let inner = ""
   let inner = case input.type_ {
@@ -20107,6 +23333,10 @@ pub fn decode_parquet_input_struct() -> decode.Decoder(ParquetInput) {
   decode.success(ParquetInput)
 }
 
+pub fn decode_parquet_input_struct_params() -> decode.Decoder(ParquetInput) {
+  decode.success(ParquetInput)
+}
+
 pub fn encode_parquet_input_xml_inner(_input: ParquetInput) -> String {
   ""
 }
@@ -20142,6 +23372,15 @@ pub fn encode_output_serialization_struct(input: OutputSerialization) -> json.Js
 pub fn decode_output_serialization_struct() -> decode.Decoder(OutputSerialization) {
   use csv <- decode.optional_field("CSV", option.None, decode.optional(decode_csv_output_struct()))
   use json <- decode.optional_field("JSON", option.None, decode.optional(decode_json_output_struct()))
+  decode.success(OutputSerialization(
+    csv: csv,
+    json: json,
+  ))
+}
+
+pub fn decode_output_serialization_struct_params() -> decode.Decoder(OutputSerialization) {
+  use csv <- decode.optional_field("CSV", option.None, decode.optional(decode_csv_output_struct_params()))
+  use json <- decode.optional_field("JSON", option.None, decode.optional(decode_json_output_struct_params()))
   decode.success(OutputSerialization(
     csv: csv,
     json: json,
@@ -20210,6 +23449,21 @@ pub fn encode_csv_output_struct(input: CSVOutput) -> json.Json {
 }
 
 pub fn decode_csv_output_struct() -> decode.Decoder(CSVOutput) {
+  use field_delimiter <- decode.optional_field("FieldDelimiter", option.None, decode.optional(decode.string))
+  use quote_character <- decode.optional_field("QuoteCharacter", option.None, decode.optional(decode.string))
+  use quote_escape_character <- decode.optional_field("QuoteEscapeCharacter", option.None, decode.optional(decode.string))
+  use quote_fields <- decode.optional_field("QuoteFields", option.None, decode.optional(decode_quote_fields_enum()))
+  use record_delimiter <- decode.optional_field("RecordDelimiter", option.None, decode.optional(decode.string))
+  decode.success(CSVOutput(
+    field_delimiter: field_delimiter,
+    quote_character: quote_character,
+    quote_escape_character: quote_escape_character,
+    quote_fields: quote_fields,
+    record_delimiter: record_delimiter,
+  ))
+}
+
+pub fn decode_csv_output_struct_params() -> decode.Decoder(CSVOutput) {
   use field_delimiter <- decode.optional_field("FieldDelimiter", option.None, decode.optional(decode.string))
   use quote_character <- decode.optional_field("QuoteCharacter", option.None, decode.optional(decode.string))
   use quote_escape_character <- decode.optional_field("QuoteEscapeCharacter", option.None, decode.optional(decode.string))
@@ -20313,6 +23567,13 @@ pub fn decode_json_output_struct() -> decode.Decoder(JSONOutput) {
   ))
 }
 
+pub fn decode_json_output_struct_params() -> decode.Decoder(JSONOutput) {
+  use record_delimiter <- decode.optional_field("RecordDelimiter", option.None, decode.optional(decode.string))
+  decode.success(JSONOutput(
+    record_delimiter: record_delimiter,
+  ))
+}
+
 pub fn encode_json_output_xml_inner(input: JSONOutput) -> String {
   let inner = ""
   let inner = case input.record_delimiter {
@@ -20349,6 +23610,13 @@ pub fn encode_request_progress_struct(input: RequestProgress) -> json.Json {
 }
 
 pub fn decode_request_progress_struct() -> decode.Decoder(RequestProgress) {
+  use enabled <- decode.optional_field("Enabled", option.None, decode.optional(decode.bool))
+  decode.success(RequestProgress(
+    enabled: enabled,
+  ))
+}
+
+pub fn decode_request_progress_struct_params() -> decode.Decoder(RequestProgress) {
   use enabled <- decode.optional_field("Enabled", option.None, decode.optional(decode.bool))
   decode.success(RequestProgress(
     enabled: enabled,
@@ -20404,6 +23672,15 @@ pub fn decode_scan_range_struct() -> decode.Decoder(ScanRange) {
   ))
 }
 
+pub fn decode_scan_range_struct_params() -> decode.Decoder(ScanRange) {
+  use end <- decode.optional_field("End", option.None, decode.optional(decode.int))
+  use start <- decode.optional_field("Start", option.None, decode.optional(decode.int))
+  decode.success(ScanRange(
+    end: end,
+    start: start,
+  ))
+}
+
 pub fn encode_scan_range_xml_inner(input: ScanRange) -> String {
   let inner = ""
   let inner = case input.end {
@@ -20446,6 +23723,13 @@ pub fn encode_select_object_content_output_struct(input: SelectObjectContentOutp
 }
 
 pub fn decode_select_object_content_output_struct() -> decode.Decoder(SelectObjectContentOutput) {
+  use payload <- decode.optional_field("Payload", option.None, decode.optional(decode_select_object_content_event_stream_union()))
+  decode.success(SelectObjectContentOutput(
+    payload: payload,
+  ))
+}
+
+pub fn decode_select_object_content_output_struct_params() -> decode.Decoder(SelectObjectContentOutput) {
   use payload <- decode.optional_field("Payload", option.None, decode.optional(decode_select_object_content_event_stream_union()))
   decode.success(SelectObjectContentOutput(
     payload: payload,
@@ -20510,6 +23794,10 @@ pub fn decode_continuation_event_struct() -> decode.Decoder(ContinuationEvent) {
   decode.success(ContinuationEvent)
 }
 
+pub fn decode_continuation_event_struct_params() -> decode.Decoder(ContinuationEvent) {
+  decode.success(ContinuationEvent)
+}
+
 pub fn encode_continuation_event_xml_inner(_input: ContinuationEvent) -> String {
   ""
 }
@@ -20531,6 +23819,10 @@ pub fn encode_end_event_struct(_v: EndEvent) -> json.Json {
 }
 
 pub fn decode_end_event_struct() -> decode.Decoder(EndEvent) {
+  decode.success(EndEvent)
+}
+
+pub fn decode_end_event_struct_params() -> decode.Decoder(EndEvent) {
   decode.success(EndEvent)
 }
 
@@ -20563,6 +23855,13 @@ pub fn encode_progress_event_struct(input: ProgressEvent) -> json.Json {
 
 pub fn decode_progress_event_struct() -> decode.Decoder(ProgressEvent) {
   use details <- decode.optional_field("Details", option.None, decode.optional(decode_progress_struct()))
+  decode.success(ProgressEvent(
+    details: details,
+  ))
+}
+
+pub fn decode_progress_event_struct_params() -> decode.Decoder(ProgressEvent) {
+  use details <- decode.optional_field("Details", option.None, decode.optional(decode_progress_struct_params()))
   decode.success(ProgressEvent(
     details: details,
   ))
@@ -20614,6 +23913,17 @@ pub fn encode_progress_struct(input: Progress) -> json.Json {
 }
 
 pub fn decode_progress_struct() -> decode.Decoder(Progress) {
+  use bytes_processed <- decode.optional_field("BytesProcessed", option.None, decode.optional(decode.int))
+  use bytes_returned <- decode.optional_field("BytesReturned", option.None, decode.optional(decode.int))
+  use bytes_scanned <- decode.optional_field("BytesScanned", option.None, decode.optional(decode.int))
+  decode.success(Progress(
+    bytes_processed: bytes_processed,
+    bytes_returned: bytes_returned,
+    bytes_scanned: bytes_scanned,
+  ))
+}
+
+pub fn decode_progress_struct_params() -> decode.Decoder(Progress) {
   use bytes_processed <- decode.optional_field("BytesProcessed", option.None, decode.optional(decode.int))
   use bytes_returned <- decode.optional_field("BytesReturned", option.None, decode.optional(decode.int))
   use bytes_scanned <- decode.optional_field("BytesScanned", option.None, decode.optional(decode.int))
@@ -20678,6 +23988,13 @@ pub fn decode_records_event_struct() -> decode.Decoder(RecordsEvent) {
   ))
 }
 
+pub fn decode_records_event_struct_params() -> decode.Decoder(RecordsEvent) {
+  use payload <- decode.optional_field("Payload", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(RecordsEvent(
+    payload: payload,
+  ))
+}
+
 pub fn encode_records_event_xml_inner(input: RecordsEvent) -> String {
   let inner = ""
   let inner = case input.payload {
@@ -20715,6 +24032,13 @@ pub fn encode_stats_event_struct(input: StatsEvent) -> json.Json {
 
 pub fn decode_stats_event_struct() -> decode.Decoder(StatsEvent) {
   use details <- decode.optional_field("Details", option.None, decode.optional(decode_stats_struct()))
+  decode.success(StatsEvent(
+    details: details,
+  ))
+}
+
+pub fn decode_stats_event_struct_params() -> decode.Decoder(StatsEvent) {
+  use details <- decode.optional_field("Details", option.None, decode.optional(decode_stats_struct_params()))
   decode.success(StatsEvent(
     details: details,
   ))
@@ -20766,6 +24090,17 @@ pub fn encode_stats_struct(input: Stats) -> json.Json {
 }
 
 pub fn decode_stats_struct() -> decode.Decoder(Stats) {
+  use bytes_processed <- decode.optional_field("BytesProcessed", option.None, decode.optional(decode.int))
+  use bytes_returned <- decode.optional_field("BytesReturned", option.None, decode.optional(decode.int))
+  use bytes_scanned <- decode.optional_field("BytesScanned", option.None, decode.optional(decode.int))
+  decode.success(Stats(
+    bytes_processed: bytes_processed,
+    bytes_returned: bytes_returned,
+    bytes_scanned: bytes_scanned,
+  ))
+}
+
+pub fn decode_stats_struct_params() -> decode.Decoder(Stats) {
   use bytes_processed <- decode.optional_field("BytesProcessed", option.None, decode.optional(decode.int))
   use bytes_returned <- decode.optional_field("BytesReturned", option.None, decode.optional(decode.int))
   use bytes_scanned <- decode.optional_field("BytesScanned", option.None, decode.optional(decode.int))
@@ -20917,9 +24252,52 @@ pub fn decode_upload_part_copy_request_struct() -> decode.Decoder(UploadPartCopy
   use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
   use copy_source <- decode.optional_field("CopySource", option.None, decode.optional(decode.string))
   use copy_source_if_match <- decode.optional_field("CopySourceIfMatch", option.None, decode.optional(decode.string))
-  use copy_source_if_modified_since <- decode.optional_field("CopySourceIfModifiedSince", option.None, decode.optional(decode.int))
+  use copy_source_if_modified_since <- decode.optional_field("CopySourceIfModifiedSince", option.None, decode.optional(json_timestamp.decoder()))
   use copy_source_if_none_match <- decode.optional_field("CopySourceIfNoneMatch", option.None, decode.optional(decode.string))
-  use copy_source_if_unmodified_since <- decode.optional_field("CopySourceIfUnmodifiedSince", option.None, decode.optional(decode.int))
+  use copy_source_if_unmodified_since <- decode.optional_field("CopySourceIfUnmodifiedSince", option.None, decode.optional(json_timestamp.decoder()))
+  use copy_source_range <- decode.optional_field("CopySourceRange", option.None, decode.optional(decode.string))
+  use copy_source_sse_customer_algorithm <- decode.optional_field("CopySourceSSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use copy_source_sse_customer_key <- decode.optional_field("CopySourceSSECustomerKey", option.None, decode.optional(decode.string))
+  use copy_source_sse_customer_key_md5 <- decode.optional_field("CopySourceSSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use expected_bucket_owner <- decode.optional_field("ExpectedBucketOwner", option.None, decode.optional(decode.string))
+  use expected_source_bucket_owner <- decode.optional_field("ExpectedSourceBucketOwner", option.None, decode.optional(decode.string))
+  use key <- decode.optional_field("Key", option.None, decode.optional(decode.string))
+  use part_number <- decode.optional_field("PartNumber", option.None, decode.optional(decode.int))
+  use request_payer <- decode.optional_field("RequestPayer", option.None, decode.optional(decode_request_payer_enum()))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key <- decode.optional_field("SSECustomerKey", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use upload_id <- decode.optional_field("UploadId", option.None, decode.optional(decode.string))
+  decode.success(UploadPartCopyRequest(
+    bucket: bucket,
+    copy_source: copy_source,
+    copy_source_if_match: copy_source_if_match,
+    copy_source_if_modified_since: copy_source_if_modified_since,
+    copy_source_if_none_match: copy_source_if_none_match,
+    copy_source_if_unmodified_since: copy_source_if_unmodified_since,
+    copy_source_range: copy_source_range,
+    copy_source_sse_customer_algorithm: copy_source_sse_customer_algorithm,
+    copy_source_sse_customer_key: copy_source_sse_customer_key,
+    copy_source_sse_customer_key_md5: copy_source_sse_customer_key_md5,
+    expected_bucket_owner: expected_bucket_owner,
+    expected_source_bucket_owner: expected_source_bucket_owner,
+    key: key,
+    part_number: part_number,
+    request_payer: request_payer,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key: sse_customer_key,
+    sse_customer_key_md5: sse_customer_key_md5,
+    upload_id: upload_id,
+  ))
+}
+
+pub fn decode_upload_part_copy_request_struct_params() -> decode.Decoder(UploadPartCopyRequest) {
+  use bucket <- decode.optional_field("Bucket", option.None, decode.optional(decode.string))
+  use copy_source <- decode.optional_field("CopySource", option.None, decode.optional(decode.string))
+  use copy_source_if_match <- decode.optional_field("CopySourceIfMatch", option.None, decode.optional(decode.string))
+  use copy_source_if_modified_since <- decode.optional_field("CopySourceIfModifiedSince", option.None, decode.optional(json_timestamp.decoder()))
+  use copy_source_if_none_match <- decode.optional_field("CopySourceIfNoneMatch", option.None, decode.optional(decode.string))
+  use copy_source_if_unmodified_since <- decode.optional_field("CopySourceIfUnmodifiedSince", option.None, decode.optional(json_timestamp.decoder()))
   use copy_source_range <- decode.optional_field("CopySourceRange", option.None, decode.optional(decode.string))
   use copy_source_sse_customer_algorithm <- decode.optional_field("CopySourceSSECustomerAlgorithm", option.None, decode.optional(decode.string))
   use copy_source_sse_customer_key <- decode.optional_field("CopySourceSSECustomerKey", option.None, decode.optional(decode.string))
@@ -21079,6 +24457,27 @@ pub fn decode_upload_part_copy_output_struct() -> decode.Decoder(UploadPartCopyO
   ))
 }
 
+pub fn decode_upload_part_copy_output_struct_params() -> decode.Decoder(UploadPartCopyOutput) {
+  use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
+  use copy_part_result <- decode.optional_field("CopyPartResult", option.None, decode.optional(decode_copy_part_result_struct_params()))
+  use copy_source_version_id <- decode.optional_field("CopySourceVersionId", option.None, decode.optional(decode.string))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use ssekms_key_id <- decode.optional_field("SSEKMSKeyId", option.None, decode.optional(decode.string))
+  use server_side_encryption <- decode.optional_field("ServerSideEncryption", option.None, decode.optional(decode_server_side_encryption_enum()))
+  decode.success(UploadPartCopyOutput(
+    bucket_key_enabled: bucket_key_enabled,
+    copy_part_result: copy_part_result,
+    copy_source_version_id: copy_source_version_id,
+    request_charged: request_charged,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key_md5: sse_customer_key_md5,
+    ssekms_key_id: ssekms_key_id,
+    server_side_encryption: server_side_encryption,
+  ))
+}
+
 pub fn encode_upload_part_copy_output_xml_inner(input: UploadPartCopyOutput) -> String {
   let inner = ""
   inner
@@ -21191,7 +24590,36 @@ pub fn decode_copy_part_result_struct() -> decode.Decoder(CopyPartResult) {
   use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
   use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
   use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
-  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(decode.int))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(CopyPartResult(
+    checksum_crc32: checksum_crc32,
+    checksum_crc32_c: checksum_crc32_c,
+    checksum_crc64_nvme: checksum_crc64_nvme,
+    checksum_md5: checksum_md5,
+    checksum_sha1: checksum_sha1,
+    checksum_sha256: checksum_sha256,
+    checksum_sha512: checksum_sha512,
+    checksum_xxhash128: checksum_xxhash128,
+    checksum_xxhash3: checksum_xxhash3,
+    checksum_xxhash64: checksum_xxhash64,
+    e_tag: e_tag,
+    last_modified: last_modified,
+  ))
+}
+
+pub fn decode_copy_part_result_struct_params() -> decode.Decoder(CopyPartResult) {
+  use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
+  use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
+  use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
+  use checksum_md5 <- decode.optional_field("ChecksumMD5", option.None, decode.optional(decode.string))
+  use checksum_sha1 <- decode.optional_field("ChecksumSHA1", option.None, decode.optional(decode.string))
+  use checksum_sha256 <- decode.optional_field("ChecksumSHA256", option.None, decode.optional(decode.string))
+  use checksum_sha512 <- decode.optional_field("ChecksumSHA512", option.None, decode.optional(decode.string))
+  use checksum_xxhash128 <- decode.optional_field("ChecksumXXHASH128", option.None, decode.optional(decode.string))
+  use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
+  use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
+  use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(CopyPartResult(
     checksum_crc32: checksum_crc32,
     checksum_crc32_c: checksum_crc32_c,
@@ -21561,12 +24989,109 @@ pub fn decode_write_get_object_response_request_struct() -> decode.Decoder(Write
   use error_message <- decode.optional_field("ErrorMessage", option.None, decode.optional(decode.string))
   use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode.string))
   use expires <- decode.optional_field("Expires", option.None, decode.optional(decode.string))
-  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(decode.int))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
   use metadata <- decode.optional_field("Metadata", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use missing_meta <- decode.optional_field("MissingMeta", option.None, decode.optional(decode.int))
   use object_lock_legal_hold_status <- decode.optional_field("ObjectLockLegalHoldStatus", option.None, decode.optional(decode_object_lock_legal_hold_status_enum()))
   use object_lock_mode <- decode.optional_field("ObjectLockMode", option.None, decode.optional(decode_object_lock_mode_enum()))
-  use object_lock_retain_until_date <- decode.optional_field("ObjectLockRetainUntilDate", option.None, decode.optional(decode.int))
+  use object_lock_retain_until_date <- decode.optional_field("ObjectLockRetainUntilDate", option.None, decode.optional(json_timestamp.decoder()))
+  use parts_count <- decode.optional_field("PartsCount", option.None, decode.optional(decode.int))
+  use replication_status <- decode.optional_field("ReplicationStatus", option.None, decode.optional(decode_replication_status_enum()))
+  use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
+  use request_route <- decode.optional_field("RequestRoute", option.None, decode.optional(decode.string))
+  use request_token <- decode.optional_field("RequestToken", option.None, decode.optional(decode.string))
+  use restore <- decode.optional_field("Restore", option.None, decode.optional(decode.string))
+  use sse_customer_algorithm <- decode.optional_field("SSECustomerAlgorithm", option.None, decode.optional(decode.string))
+  use sse_customer_key_md5 <- decode.optional_field("SSECustomerKeyMD5", option.None, decode.optional(decode.string))
+  use ssekms_key_id <- decode.optional_field("SSEKMSKeyId", option.None, decode.optional(decode.string))
+  use server_side_encryption <- decode.optional_field("ServerSideEncryption", option.None, decode.optional(decode_server_side_encryption_enum()))
+  use status_code <- decode.optional_field("StatusCode", option.None, decode.optional(decode.int))
+  use storage_class <- decode.optional_field("StorageClass", option.None, decode.optional(decode_storage_class_enum()))
+  use tag_count <- decode.optional_field("TagCount", option.None, decode.optional(decode.int))
+  use version_id <- decode.optional_field("VersionId", option.None, decode.optional(decode.string))
+  decode.success(WriteGetObjectResponseRequest(
+    accept_ranges: accept_ranges,
+    body: body,
+    bucket_key_enabled: bucket_key_enabled,
+    cache_control: cache_control,
+    checksum_crc32: checksum_crc32,
+    checksum_crc32_c: checksum_crc32_c,
+    checksum_crc64_nvme: checksum_crc64_nvme,
+    checksum_md5: checksum_md5,
+    checksum_sha1: checksum_sha1,
+    checksum_sha256: checksum_sha256,
+    checksum_sha512: checksum_sha512,
+    checksum_xxhash128: checksum_xxhash128,
+    checksum_xxhash3: checksum_xxhash3,
+    checksum_xxhash64: checksum_xxhash64,
+    content_disposition: content_disposition,
+    content_encoding: content_encoding,
+    content_language: content_language,
+    content_length: content_length,
+    content_range: content_range,
+    content_type: content_type,
+    delete_marker: delete_marker,
+    e_tag: e_tag,
+    error_code: error_code,
+    error_message: error_message,
+    expiration: expiration,
+    expires: expires,
+    last_modified: last_modified,
+    metadata: metadata,
+    missing_meta: missing_meta,
+    object_lock_legal_hold_status: object_lock_legal_hold_status,
+    object_lock_mode: object_lock_mode,
+    object_lock_retain_until_date: object_lock_retain_until_date,
+    parts_count: parts_count,
+    replication_status: replication_status,
+    request_charged: request_charged,
+    request_route: request_route,
+    request_token: request_token,
+    restore: restore,
+    sse_customer_algorithm: sse_customer_algorithm,
+    sse_customer_key_md5: sse_customer_key_md5,
+    ssekms_key_id: ssekms_key_id,
+    server_side_encryption: server_side_encryption,
+    status_code: status_code,
+    storage_class: storage_class,
+    tag_count: tag_count,
+    version_id: version_id,
+  ))
+}
+
+pub fn decode_write_get_object_response_request_struct_params() -> decode.Decoder(WriteGetObjectResponseRequest) {
+  use accept_ranges <- decode.optional_field("AcceptRanges", option.None, decode.optional(decode.string))
+  use body <- decode.optional_field("Body", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use bucket_key_enabled <- decode.optional_field("BucketKeyEnabled", option.None, decode.optional(decode.bool))
+  use cache_control <- decode.optional_field("CacheControl", option.None, decode.optional(decode.string))
+  use checksum_crc32 <- decode.optional_field("ChecksumCRC32", option.None, decode.optional(decode.string))
+  use checksum_crc32_c <- decode.optional_field("ChecksumCRC32C", option.None, decode.optional(decode.string))
+  use checksum_crc64_nvme <- decode.optional_field("ChecksumCRC64NVME", option.None, decode.optional(decode.string))
+  use checksum_md5 <- decode.optional_field("ChecksumMD5", option.None, decode.optional(decode.string))
+  use checksum_sha1 <- decode.optional_field("ChecksumSHA1", option.None, decode.optional(decode.string))
+  use checksum_sha256 <- decode.optional_field("ChecksumSHA256", option.None, decode.optional(decode.string))
+  use checksum_sha512 <- decode.optional_field("ChecksumSHA512", option.None, decode.optional(decode.string))
+  use checksum_xxhash128 <- decode.optional_field("ChecksumXXHASH128", option.None, decode.optional(decode.string))
+  use checksum_xxhash3 <- decode.optional_field("ChecksumXXHASH3", option.None, decode.optional(decode.string))
+  use checksum_xxhash64 <- decode.optional_field("ChecksumXXHASH64", option.None, decode.optional(decode.string))
+  use content_disposition <- decode.optional_field("ContentDisposition", option.None, decode.optional(decode.string))
+  use content_encoding <- decode.optional_field("ContentEncoding", option.None, decode.optional(decode.string))
+  use content_language <- decode.optional_field("ContentLanguage", option.None, decode.optional(decode.string))
+  use content_length <- decode.optional_field("ContentLength", option.None, decode.optional(decode.int))
+  use content_range <- decode.optional_field("ContentRange", option.None, decode.optional(decode.string))
+  use content_type <- decode.optional_field("ContentType", option.None, decode.optional(decode.string))
+  use delete_marker <- decode.optional_field("DeleteMarker", option.None, decode.optional(decode.bool))
+  use e_tag <- decode.optional_field("ETag", option.None, decode.optional(decode.string))
+  use error_code <- decode.optional_field("ErrorCode", option.None, decode.optional(decode.string))
+  use error_message <- decode.optional_field("ErrorMessage", option.None, decode.optional(decode.string))
+  use expiration <- decode.optional_field("Expiration", option.None, decode.optional(decode.string))
+  use expires <- decode.optional_field("Expires", option.None, decode.optional(decode.string))
+  use last_modified <- decode.optional_field("LastModified", option.None, decode.optional(json_timestamp.decoder()))
+  use metadata <- decode.optional_field("Metadata", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use missing_meta <- decode.optional_field("MissingMeta", option.None, decode.optional(decode.int))
+  use object_lock_legal_hold_status <- decode.optional_field("ObjectLockLegalHoldStatus", option.None, decode.optional(decode_object_lock_legal_hold_status_enum()))
+  use object_lock_mode <- decode.optional_field("ObjectLockMode", option.None, decode.optional(decode_object_lock_mode_enum()))
+  use object_lock_retain_until_date <- decode.optional_field("ObjectLockRetainUntilDate", option.None, decode.optional(json_timestamp.decoder()))
   use parts_count <- decode.optional_field("PartsCount", option.None, decode.optional(decode.int))
   use replication_status <- decode.optional_field("ReplicationStatus", option.None, decode.optional(decode_replication_status_enum()))
   use request_charged <- decode.optional_field("RequestCharged", option.None, decode.optional(decode_request_charged_enum()))
@@ -21743,7 +25268,7 @@ pub fn encode_abort_multipart_upload_input(input: AbortMultipartUploadRequest) -
 }
 
 pub fn decode_abort_multipart_upload_input(body: String) -> Result(AbortMultipartUploadRequest, String) {
-  case json.parse(body, decode_abort_multipart_upload_request_struct()) {
+  case json.parse(body, decode_abort_multipart_upload_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -21796,7 +25321,10 @@ pub fn build_abort_multipart_upload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -21824,7 +25352,7 @@ pub fn encode_complete_multipart_upload_input(input: CompleteMultipartUploadRequ
 }
 
 pub fn decode_complete_multipart_upload_input(body: String) -> Result(CompleteMultipartUploadRequest, String) {
-  case json.parse(body, decode_complete_multipart_upload_request_struct()) {
+  case json.parse(body, decode_complete_multipart_upload_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -21944,7 +25472,10 @@ pub fn build_complete_multipart_upload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -21972,7 +25503,7 @@ pub fn encode_copy_object_input(input: CopyObjectRequest) -> String {
 }
 
 pub fn decode_copy_object_input(body: String) -> Result(CopyObjectRequest, String) {
-  case json.parse(body, decode_copy_object_request_struct()) {
+  case json.parse(body, decode_copy_object_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -22173,7 +25704,10 @@ pub fn build_copy_object_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -22183,15 +25717,34 @@ pub fn parse_copy_object_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(CopyObjectOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_copy_object_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_copy_object_output_xml(root)
+        Ok(root) -> case decode_copy_object_result_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(CopyObjectOutput(
+    bucket_key_enabled: option.None,
+    copy_object_result: payload,
+    copy_source_version_id: option.None,
+    expiration: option.None,
+    request_charged: option.None,
+    sse_customer_algorithm: option.None,
+    sse_customer_key_md5: option.None,
+    ssekms_encryption_context: option.None,
+    ssekms_key_id: option.None,
+    server_side_encryption: option.None,
+    version_id: option.None,
+    ))
   }
 }
 
@@ -22201,7 +25754,7 @@ pub fn encode_create_bucket_input(input: CreateBucketRequest) -> String {
 }
 
 pub fn decode_create_bucket_input(body: String) -> Result(CreateBucketRequest, String) {
-  case json.parse(body, decode_create_bucket_request_struct()) {
+  case json.parse(body, decode_create_bucket_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -22273,7 +25826,10 @@ pub fn build_create_bucket_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -22301,7 +25857,7 @@ pub fn encode_create_multipart_upload_input(input: CreateMultipartUploadRequest)
 }
 
 pub fn decode_create_multipart_upload_input(body: String) -> Result(CreateMultipartUploadRequest, String) {
-  case json.parse(body, decode_create_multipart_upload_request_struct()) {
+  case json.parse(body, decode_create_multipart_upload_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -22454,7 +26010,10 @@ pub fn build_create_multipart_upload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -22482,7 +26041,7 @@ pub fn encode_create_session_input(input: CreateSessionRequest) -> String {
 }
 
 pub fn decode_create_session_input(body: String) -> Result(CreateSessionRequest, String) {
-  case json.parse(body, decode_create_session_request_struct()) {
+  case json.parse(body, decode_create_session_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -22535,7 +26094,10 @@ pub fn build_create_session_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -22575,7 +26137,7 @@ pub fn encode_delete_bucket_input(input: DeleteBucketRequest) -> String {
 }
 
 pub fn decode_delete_bucket_input(body: String) -> Result(DeleteBucketRequest, String) {
-  case json.parse(body, decode_delete_bucket_request_struct()) {
+  case json.parse(body, decode_delete_bucket_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -22612,7 +26174,10 @@ pub fn build_delete_bucket_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -22643,7 +26208,7 @@ pub fn encode_delete_bucket_analytics_configuration_input(input: DeleteBucketAna
 }
 
 pub fn decode_delete_bucket_analytics_configuration_input(body: String) -> Result(DeleteBucketAnalyticsConfigurationRequest, String) {
-  case json.parse(body, decode_delete_bucket_analytics_configuration_request_struct()) {
+  case json.parse(body, decode_delete_bucket_analytics_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -22684,7 +26249,10 @@ pub fn build_delete_bucket_analytics_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -22715,7 +26283,7 @@ pub fn encode_delete_bucket_cors_input(input: DeleteBucketCorsRequest) -> String
 }
 
 pub fn decode_delete_bucket_cors_input(body: String) -> Result(DeleteBucketCorsRequest, String) {
-  case json.parse(body, decode_delete_bucket_cors_request_struct()) {
+  case json.parse(body, decode_delete_bucket_cors_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -22752,7 +26320,10 @@ pub fn build_delete_bucket_cors_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -22783,7 +26354,7 @@ pub fn encode_delete_bucket_encryption_input(input: DeleteBucketEncryptionReques
 }
 
 pub fn decode_delete_bucket_encryption_input(body: String) -> Result(DeleteBucketEncryptionRequest, String) {
-  case json.parse(body, decode_delete_bucket_encryption_request_struct()) {
+  case json.parse(body, decode_delete_bucket_encryption_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -22820,7 +26391,10 @@ pub fn build_delete_bucket_encryption_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -22851,7 +26425,7 @@ pub fn encode_delete_bucket_intelligent_tiering_configuration_input(input: Delet
 }
 
 pub fn decode_delete_bucket_intelligent_tiering_configuration_input(body: String) -> Result(DeleteBucketIntelligentTieringConfigurationRequest, String) {
-  case json.parse(body, decode_delete_bucket_intelligent_tiering_configuration_request_struct()) {
+  case json.parse(body, decode_delete_bucket_intelligent_tiering_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -22892,7 +26466,10 @@ pub fn build_delete_bucket_intelligent_tiering_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -22923,7 +26500,7 @@ pub fn encode_delete_bucket_inventory_configuration_input(input: DeleteBucketInv
 }
 
 pub fn decode_delete_bucket_inventory_configuration_input(body: String) -> Result(DeleteBucketInventoryConfigurationRequest, String) {
-  case json.parse(body, decode_delete_bucket_inventory_configuration_request_struct()) {
+  case json.parse(body, decode_delete_bucket_inventory_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -22964,7 +26541,10 @@ pub fn build_delete_bucket_inventory_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -22995,7 +26575,7 @@ pub fn encode_delete_bucket_lifecycle_input(input: DeleteBucketLifecycleRequest)
 }
 
 pub fn decode_delete_bucket_lifecycle_input(body: String) -> Result(DeleteBucketLifecycleRequest, String) {
-  case json.parse(body, decode_delete_bucket_lifecycle_request_struct()) {
+  case json.parse(body, decode_delete_bucket_lifecycle_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23032,7 +26612,10 @@ pub fn build_delete_bucket_lifecycle_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -23063,7 +26646,7 @@ pub fn encode_delete_bucket_metadata_configuration_input(input: DeleteBucketMeta
 }
 
 pub fn decode_delete_bucket_metadata_configuration_input(body: String) -> Result(DeleteBucketMetadataConfigurationRequest, String) {
-  case json.parse(body, decode_delete_bucket_metadata_configuration_request_struct()) {
+  case json.parse(body, decode_delete_bucket_metadata_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23100,7 +26683,10 @@ pub fn build_delete_bucket_metadata_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -23131,7 +26717,7 @@ pub fn encode_delete_bucket_metadata_table_configuration_input(input: DeleteBuck
 }
 
 pub fn decode_delete_bucket_metadata_table_configuration_input(body: String) -> Result(DeleteBucketMetadataTableConfigurationRequest, String) {
-  case json.parse(body, decode_delete_bucket_metadata_table_configuration_request_struct()) {
+  case json.parse(body, decode_delete_bucket_metadata_table_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23168,7 +26754,10 @@ pub fn build_delete_bucket_metadata_table_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -23199,7 +26788,7 @@ pub fn encode_delete_bucket_metrics_configuration_input(input: DeleteBucketMetri
 }
 
 pub fn decode_delete_bucket_metrics_configuration_input(body: String) -> Result(DeleteBucketMetricsConfigurationRequest, String) {
-  case json.parse(body, decode_delete_bucket_metrics_configuration_request_struct()) {
+  case json.parse(body, decode_delete_bucket_metrics_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23240,7 +26829,10 @@ pub fn build_delete_bucket_metrics_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -23271,7 +26863,7 @@ pub fn encode_delete_bucket_ownership_controls_input(input: DeleteBucketOwnershi
 }
 
 pub fn decode_delete_bucket_ownership_controls_input(body: String) -> Result(DeleteBucketOwnershipControlsRequest, String) {
-  case json.parse(body, decode_delete_bucket_ownership_controls_request_struct()) {
+  case json.parse(body, decode_delete_bucket_ownership_controls_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23308,7 +26900,10 @@ pub fn build_delete_bucket_ownership_controls_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -23339,7 +26934,7 @@ pub fn encode_delete_bucket_policy_input(input: DeleteBucketPolicyRequest) -> St
 }
 
 pub fn decode_delete_bucket_policy_input(body: String) -> Result(DeleteBucketPolicyRequest, String) {
-  case json.parse(body, decode_delete_bucket_policy_request_struct()) {
+  case json.parse(body, decode_delete_bucket_policy_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23376,7 +26971,10 @@ pub fn build_delete_bucket_policy_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -23407,7 +27005,7 @@ pub fn encode_delete_bucket_replication_input(input: DeleteBucketReplicationRequ
 }
 
 pub fn decode_delete_bucket_replication_input(body: String) -> Result(DeleteBucketReplicationRequest, String) {
-  case json.parse(body, decode_delete_bucket_replication_request_struct()) {
+  case json.parse(body, decode_delete_bucket_replication_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23444,7 +27042,10 @@ pub fn build_delete_bucket_replication_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -23475,7 +27076,7 @@ pub fn encode_delete_bucket_tagging_input(input: DeleteBucketTaggingRequest) -> 
 }
 
 pub fn decode_delete_bucket_tagging_input(body: String) -> Result(DeleteBucketTaggingRequest, String) {
-  case json.parse(body, decode_delete_bucket_tagging_request_struct()) {
+  case json.parse(body, decode_delete_bucket_tagging_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23512,7 +27113,10 @@ pub fn build_delete_bucket_tagging_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -23543,7 +27147,7 @@ pub fn encode_delete_bucket_website_input(input: DeleteBucketWebsiteRequest) -> 
 }
 
 pub fn decode_delete_bucket_website_input(body: String) -> Result(DeleteBucketWebsiteRequest, String) {
-  case json.parse(body, decode_delete_bucket_website_request_struct()) {
+  case json.parse(body, decode_delete_bucket_website_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23580,7 +27184,10 @@ pub fn build_delete_bucket_website_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -23599,7 +27206,7 @@ pub fn encode_delete_object_input(input: DeleteObjectRequest) -> String {
 }
 
 pub fn decode_delete_object_input(body: String) -> Result(DeleteObjectRequest, String) {
-  case json.parse(body, decode_delete_object_request_struct()) {
+  case json.parse(body, decode_delete_object_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23668,7 +27275,10 @@ pub fn build_delete_object_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -23696,7 +27306,7 @@ pub fn encode_delete_object_tagging_input(input: DeleteObjectTaggingRequest) -> 
 }
 
 pub fn decode_delete_object_tagging_input(body: String) -> Result(DeleteObjectTaggingRequest, String) {
-  case json.parse(body, decode_delete_object_tagging_request_struct()) {
+  case json.parse(body, decode_delete_object_tagging_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23741,7 +27351,10 @@ pub fn build_delete_object_tagging_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -23781,7 +27394,7 @@ pub fn encode_delete_public_access_block_input(input: DeletePublicAccessBlockReq
 }
 
 pub fn decode_delete_public_access_block_input(body: String) -> Result(DeletePublicAccessBlockRequest, String) {
-  case json.parse(body, decode_delete_public_access_block_request_struct()) {
+  case json.parse(body, decode_delete_public_access_block_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23818,7 +27431,10 @@ pub fn build_delete_public_access_block_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("DELETE", path, headers, body)
 }
@@ -23837,7 +27453,7 @@ pub fn encode_get_bucket_abac_input(input: GetBucketAbacRequest) -> String {
 }
 
 pub fn decode_get_bucket_abac_input(body: String) -> Result(GetBucketAbacRequest, String) {
-  case json.parse(body, decode_get_bucket_abac_request_struct()) {
+  case json.parse(body, decode_get_bucket_abac_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23874,7 +27490,10 @@ pub fn build_get_bucket_abac_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -23884,15 +27503,24 @@ pub fn parse_get_bucket_abac_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetBucketAbacOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_bucket_abac_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_bucket_abac_output_xml(root)
+        Ok(root) -> case decode_abac_status_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetBucketAbacOutput(
+    abac_status: payload,
+    ))
   }
 }
 
@@ -23902,7 +27530,7 @@ pub fn encode_get_bucket_accelerate_configuration_input(input: GetBucketAccelera
 }
 
 pub fn decode_get_bucket_accelerate_configuration_input(body: String) -> Result(GetBucketAccelerateConfigurationRequest, String) {
-  case json.parse(body, decode_get_bucket_accelerate_configuration_request_struct()) {
+  case json.parse(body, decode_get_bucket_accelerate_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -23943,7 +27571,10 @@ pub fn build_get_bucket_accelerate_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -23971,7 +27602,7 @@ pub fn encode_get_bucket_acl_input(input: GetBucketAclRequest) -> String {
 }
 
 pub fn decode_get_bucket_acl_input(body: String) -> Result(GetBucketAclRequest, String) {
-  case json.parse(body, decode_get_bucket_acl_request_struct()) {
+  case json.parse(body, decode_get_bucket_acl_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24008,7 +27639,10 @@ pub fn build_get_bucket_acl_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24036,7 +27670,7 @@ pub fn encode_get_bucket_analytics_configuration_input(input: GetBucketAnalytics
 }
 
 pub fn decode_get_bucket_analytics_configuration_input(body: String) -> Result(GetBucketAnalyticsConfigurationRequest, String) {
-  case json.parse(body, decode_get_bucket_analytics_configuration_request_struct()) {
+  case json.parse(body, decode_get_bucket_analytics_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24077,7 +27711,10 @@ pub fn build_get_bucket_analytics_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24087,15 +27724,24 @@ pub fn parse_get_bucket_analytics_configuration_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetBucketAnalyticsConfigurationOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_bucket_analytics_configuration_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_bucket_analytics_configuration_output_xml(root)
+        Ok(root) -> case decode_analytics_configuration_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetBucketAnalyticsConfigurationOutput(
+    analytics_configuration: payload,
+    ))
   }
 }
 
@@ -24105,7 +27751,7 @@ pub fn encode_get_bucket_cors_input(input: GetBucketCorsRequest) -> String {
 }
 
 pub fn decode_get_bucket_cors_input(body: String) -> Result(GetBucketCorsRequest, String) {
-  case json.parse(body, decode_get_bucket_cors_request_struct()) {
+  case json.parse(body, decode_get_bucket_cors_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24142,7 +27788,10 @@ pub fn build_get_bucket_cors_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24170,7 +27819,7 @@ pub fn encode_get_bucket_encryption_input(input: GetBucketEncryptionRequest) -> 
 }
 
 pub fn decode_get_bucket_encryption_input(body: String) -> Result(GetBucketEncryptionRequest, String) {
-  case json.parse(body, decode_get_bucket_encryption_request_struct()) {
+  case json.parse(body, decode_get_bucket_encryption_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24207,7 +27856,10 @@ pub fn build_get_bucket_encryption_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24217,15 +27869,24 @@ pub fn parse_get_bucket_encryption_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetBucketEncryptionOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_bucket_encryption_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_bucket_encryption_output_xml(root)
+        Ok(root) -> case decode_server_side_encryption_configuration_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetBucketEncryptionOutput(
+    server_side_encryption_configuration: payload,
+    ))
   }
 }
 
@@ -24235,7 +27896,7 @@ pub fn encode_get_bucket_intelligent_tiering_configuration_input(input: GetBucke
 }
 
 pub fn decode_get_bucket_intelligent_tiering_configuration_input(body: String) -> Result(GetBucketIntelligentTieringConfigurationRequest, String) {
-  case json.parse(body, decode_get_bucket_intelligent_tiering_configuration_request_struct()) {
+  case json.parse(body, decode_get_bucket_intelligent_tiering_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24276,7 +27937,10 @@ pub fn build_get_bucket_intelligent_tiering_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24286,15 +27950,24 @@ pub fn parse_get_bucket_intelligent_tiering_configuration_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetBucketIntelligentTieringConfigurationOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_bucket_intelligent_tiering_configuration_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_bucket_intelligent_tiering_configuration_output_xml(root)
+        Ok(root) -> case decode_intelligent_tiering_configuration_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetBucketIntelligentTieringConfigurationOutput(
+    intelligent_tiering_configuration: payload,
+    ))
   }
 }
 
@@ -24304,7 +27977,7 @@ pub fn encode_get_bucket_inventory_configuration_input(input: GetBucketInventory
 }
 
 pub fn decode_get_bucket_inventory_configuration_input(body: String) -> Result(GetBucketInventoryConfigurationRequest, String) {
-  case json.parse(body, decode_get_bucket_inventory_configuration_request_struct()) {
+  case json.parse(body, decode_get_bucket_inventory_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24345,7 +28018,10 @@ pub fn build_get_bucket_inventory_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24355,15 +28031,24 @@ pub fn parse_get_bucket_inventory_configuration_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetBucketInventoryConfigurationOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_bucket_inventory_configuration_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_bucket_inventory_configuration_output_xml(root)
+        Ok(root) -> case decode_inventory_configuration_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetBucketInventoryConfigurationOutput(
+    inventory_configuration: payload,
+    ))
   }
 }
 
@@ -24373,7 +28058,7 @@ pub fn encode_get_bucket_lifecycle_configuration_input(input: GetBucketLifecycle
 }
 
 pub fn decode_get_bucket_lifecycle_configuration_input(body: String) -> Result(GetBucketLifecycleConfigurationRequest, String) {
-  case json.parse(body, decode_get_bucket_lifecycle_configuration_request_struct()) {
+  case json.parse(body, decode_get_bucket_lifecycle_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24410,7 +28095,10 @@ pub fn build_get_bucket_lifecycle_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24438,7 +28126,7 @@ pub fn encode_get_bucket_location_input(input: GetBucketLocationRequest) -> Stri
 }
 
 pub fn decode_get_bucket_location_input(body: String) -> Result(GetBucketLocationRequest, String) {
-  case json.parse(body, decode_get_bucket_location_request_struct()) {
+  case json.parse(body, decode_get_bucket_location_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24475,7 +28163,10 @@ pub fn build_get_bucket_location_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24503,7 +28194,7 @@ pub fn encode_get_bucket_logging_input(input: GetBucketLoggingRequest) -> String
 }
 
 pub fn decode_get_bucket_logging_input(body: String) -> Result(GetBucketLoggingRequest, String) {
-  case json.parse(body, decode_get_bucket_logging_request_struct()) {
+  case json.parse(body, decode_get_bucket_logging_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24540,7 +28231,10 @@ pub fn build_get_bucket_logging_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24568,7 +28262,7 @@ pub fn encode_get_bucket_metadata_configuration_input(input: GetBucketMetadataCo
 }
 
 pub fn decode_get_bucket_metadata_configuration_input(body: String) -> Result(GetBucketMetadataConfigurationRequest, String) {
-  case json.parse(body, decode_get_bucket_metadata_configuration_request_struct()) {
+  case json.parse(body, decode_get_bucket_metadata_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24605,7 +28299,10 @@ pub fn build_get_bucket_metadata_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24615,15 +28312,24 @@ pub fn parse_get_bucket_metadata_configuration_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetBucketMetadataConfigurationOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_bucket_metadata_configuration_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_bucket_metadata_configuration_output_xml(root)
+        Ok(root) -> case decode_get_bucket_metadata_configuration_result_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetBucketMetadataConfigurationOutput(
+    get_bucket_metadata_configuration_result: payload,
+    ))
   }
 }
 
@@ -24633,7 +28339,7 @@ pub fn encode_get_bucket_metadata_table_configuration_input(input: GetBucketMeta
 }
 
 pub fn decode_get_bucket_metadata_table_configuration_input(body: String) -> Result(GetBucketMetadataTableConfigurationRequest, String) {
-  case json.parse(body, decode_get_bucket_metadata_table_configuration_request_struct()) {
+  case json.parse(body, decode_get_bucket_metadata_table_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24670,7 +28376,10 @@ pub fn build_get_bucket_metadata_table_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24680,15 +28389,24 @@ pub fn parse_get_bucket_metadata_table_configuration_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetBucketMetadataTableConfigurationOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_bucket_metadata_table_configuration_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_bucket_metadata_table_configuration_output_xml(root)
+        Ok(root) -> case decode_get_bucket_metadata_table_configuration_result_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetBucketMetadataTableConfigurationOutput(
+    get_bucket_metadata_table_configuration_result: payload,
+    ))
   }
 }
 
@@ -24698,7 +28416,7 @@ pub fn encode_get_bucket_metrics_configuration_input(input: GetBucketMetricsConf
 }
 
 pub fn decode_get_bucket_metrics_configuration_input(body: String) -> Result(GetBucketMetricsConfigurationRequest, String) {
-  case json.parse(body, decode_get_bucket_metrics_configuration_request_struct()) {
+  case json.parse(body, decode_get_bucket_metrics_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24739,7 +28457,10 @@ pub fn build_get_bucket_metrics_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24749,15 +28470,24 @@ pub fn parse_get_bucket_metrics_configuration_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetBucketMetricsConfigurationOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_bucket_metrics_configuration_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_bucket_metrics_configuration_output_xml(root)
+        Ok(root) -> case decode_metrics_configuration_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetBucketMetricsConfigurationOutput(
+    metrics_configuration: payload,
+    ))
   }
 }
 
@@ -24767,7 +28497,7 @@ pub fn encode_get_bucket_notification_configuration_input(input: GetBucketNotifi
 }
 
 pub fn decode_get_bucket_notification_configuration_input(body: String) -> Result(GetBucketNotificationConfigurationRequest, String) {
-  case json.parse(body, decode_get_bucket_notification_configuration_request_struct()) {
+  case json.parse(body, decode_get_bucket_notification_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24804,7 +28534,10 @@ pub fn build_get_bucket_notification_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24832,7 +28565,7 @@ pub fn encode_get_bucket_ownership_controls_input(input: GetBucketOwnershipContr
 }
 
 pub fn decode_get_bucket_ownership_controls_input(body: String) -> Result(GetBucketOwnershipControlsRequest, String) {
-  case json.parse(body, decode_get_bucket_ownership_controls_request_struct()) {
+  case json.parse(body, decode_get_bucket_ownership_controls_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24869,7 +28602,10 @@ pub fn build_get_bucket_ownership_controls_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24879,15 +28615,24 @@ pub fn parse_get_bucket_ownership_controls_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetBucketOwnershipControlsOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_bucket_ownership_controls_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_bucket_ownership_controls_output_xml(root)
+        Ok(root) -> case decode_ownership_controls_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetBucketOwnershipControlsOutput(
+    ownership_controls: payload,
+    ))
   }
 }
 
@@ -24897,7 +28642,7 @@ pub fn encode_get_bucket_policy_input(input: GetBucketPolicyRequest) -> String {
 }
 
 pub fn decode_get_bucket_policy_input(body: String) -> Result(GetBucketPolicyRequest, String) {
-  case json.parse(body, decode_get_bucket_policy_request_struct()) {
+  case json.parse(body, decode_get_bucket_policy_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24934,7 +28679,10 @@ pub fn build_get_bucket_policy_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -24944,15 +28692,14 @@ pub fn parse_get_bucket_policy_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetBucketPolicyOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_bucket_policy_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
-      _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_bucket_policy_output_xml(root)
-        Error(r) -> Error(r)
-      }
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    use payload <- result.try(case bit_array.to_string(body) {
+      Ok(s) -> Ok(option.Some(s))
+      Error(_) -> Error("non-utf8 payload")
+    })
+    Ok(GetBucketPolicyOutput(
+    policy: payload,
+    ))
   }
 }
 
@@ -24962,7 +28709,7 @@ pub fn encode_get_bucket_policy_status_input(input: GetBucketPolicyStatusRequest
 }
 
 pub fn decode_get_bucket_policy_status_input(body: String) -> Result(GetBucketPolicyStatusRequest, String) {
-  case json.parse(body, decode_get_bucket_policy_status_request_struct()) {
+  case json.parse(body, decode_get_bucket_policy_status_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -24999,7 +28746,10 @@ pub fn build_get_bucket_policy_status_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25009,15 +28759,24 @@ pub fn parse_get_bucket_policy_status_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetBucketPolicyStatusOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_bucket_policy_status_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_bucket_policy_status_output_xml(root)
+        Ok(root) -> case decode_policy_status_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetBucketPolicyStatusOutput(
+    policy_status: payload,
+    ))
   }
 }
 
@@ -25027,7 +28786,7 @@ pub fn encode_get_bucket_replication_input(input: GetBucketReplicationRequest) -
 }
 
 pub fn decode_get_bucket_replication_input(body: String) -> Result(GetBucketReplicationRequest, String) {
-  case json.parse(body, decode_get_bucket_replication_request_struct()) {
+  case json.parse(body, decode_get_bucket_replication_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25064,7 +28823,10 @@ pub fn build_get_bucket_replication_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25074,15 +28836,24 @@ pub fn parse_get_bucket_replication_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetBucketReplicationOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_bucket_replication_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_bucket_replication_output_xml(root)
+        Ok(root) -> case decode_replication_configuration_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetBucketReplicationOutput(
+    replication_configuration: payload,
+    ))
   }
 }
 
@@ -25092,7 +28863,7 @@ pub fn encode_get_bucket_request_payment_input(input: GetBucketRequestPaymentReq
 }
 
 pub fn decode_get_bucket_request_payment_input(body: String) -> Result(GetBucketRequestPaymentRequest, String) {
-  case json.parse(body, decode_get_bucket_request_payment_request_struct()) {
+  case json.parse(body, decode_get_bucket_request_payment_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25129,7 +28900,10 @@ pub fn build_get_bucket_request_payment_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25157,7 +28931,7 @@ pub fn encode_get_bucket_tagging_input(input: GetBucketTaggingRequest) -> String
 }
 
 pub fn decode_get_bucket_tagging_input(body: String) -> Result(GetBucketTaggingRequest, String) {
-  case json.parse(body, decode_get_bucket_tagging_request_struct()) {
+  case json.parse(body, decode_get_bucket_tagging_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25194,7 +28968,10 @@ pub fn build_get_bucket_tagging_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25222,7 +28999,7 @@ pub fn encode_get_bucket_versioning_input(input: GetBucketVersioningRequest) -> 
 }
 
 pub fn decode_get_bucket_versioning_input(body: String) -> Result(GetBucketVersioningRequest, String) {
-  case json.parse(body, decode_get_bucket_versioning_request_struct()) {
+  case json.parse(body, decode_get_bucket_versioning_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25259,7 +29036,10 @@ pub fn build_get_bucket_versioning_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25287,7 +29067,7 @@ pub fn encode_get_bucket_website_input(input: GetBucketWebsiteRequest) -> String
 }
 
 pub fn decode_get_bucket_website_input(body: String) -> Result(GetBucketWebsiteRequest, String) {
-  case json.parse(body, decode_get_bucket_website_request_struct()) {
+  case json.parse(body, decode_get_bucket_website_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25324,7 +29104,10 @@ pub fn build_get_bucket_website_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25352,7 +29135,7 @@ pub fn encode_get_object_acl_input(input: GetObjectAclRequest) -> String {
 }
 
 pub fn decode_get_object_acl_input(body: String) -> Result(GetObjectAclRequest, String) {
-  case json.parse(body, decode_get_object_acl_request_struct()) {
+  case json.parse(body, decode_get_object_acl_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25401,7 +29184,10 @@ pub fn build_get_object_acl_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25429,7 +29215,7 @@ pub fn encode_get_object_attributes_input(input: GetObjectAttributesRequest) -> 
 }
 
 pub fn decode_get_object_attributes_input(body: String) -> Result(GetObjectAttributesRequest, String) {
-  case json.parse(body, decode_get_object_attributes_request_struct()) {
+  case json.parse(body, decode_get_object_attributes_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25502,7 +29288,10 @@ pub fn build_get_object_attributes_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25530,7 +29319,7 @@ pub fn encode_get_object_legal_hold_input(input: GetObjectLegalHoldRequest) -> S
 }
 
 pub fn decode_get_object_legal_hold_input(body: String) -> Result(GetObjectLegalHoldRequest, String) {
-  case json.parse(body, decode_get_object_legal_hold_request_struct()) {
+  case json.parse(body, decode_get_object_legal_hold_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25579,7 +29368,10 @@ pub fn build_get_object_legal_hold_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25589,15 +29381,24 @@ pub fn parse_get_object_legal_hold_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetObjectLegalHoldOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_object_legal_hold_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_object_legal_hold_output_xml(root)
+        Ok(root) -> case decode_object_lock_legal_hold_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetObjectLegalHoldOutput(
+    legal_hold: payload,
+    ))
   }
 }
 
@@ -25607,7 +29408,7 @@ pub fn encode_get_object_lock_configuration_input(input: GetObjectLockConfigurat
 }
 
 pub fn decode_get_object_lock_configuration_input(body: String) -> Result(GetObjectLockConfigurationRequest, String) {
-  case json.parse(body, decode_get_object_lock_configuration_request_struct()) {
+  case json.parse(body, decode_get_object_lock_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25644,7 +29445,10 @@ pub fn build_get_object_lock_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25654,15 +29458,24 @@ pub fn parse_get_object_lock_configuration_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetObjectLockConfigurationOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_object_lock_configuration_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_object_lock_configuration_output_xml(root)
+        Ok(root) -> case decode_object_lock_configuration_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetObjectLockConfigurationOutput(
+    object_lock_configuration: payload,
+    ))
   }
 }
 
@@ -25672,7 +29485,7 @@ pub fn encode_get_object_retention_input(input: GetObjectRetentionRequest) -> St
 }
 
 pub fn decode_get_object_retention_input(body: String) -> Result(GetObjectRetentionRequest, String) {
-  case json.parse(body, decode_get_object_retention_request_struct()) {
+  case json.parse(body, decode_get_object_retention_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25721,7 +29534,10 @@ pub fn build_get_object_retention_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25731,15 +29547,24 @@ pub fn parse_get_object_retention_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetObjectRetentionOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_object_retention_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_object_retention_output_xml(root)
+        Ok(root) -> case decode_object_lock_retention_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetObjectRetentionOutput(
+    retention: payload,
+    ))
   }
 }
 
@@ -25749,7 +29574,7 @@ pub fn encode_get_object_tagging_input(input: GetObjectTaggingRequest) -> String
 }
 
 pub fn decode_get_object_tagging_input(body: String) -> Result(GetObjectTaggingRequest, String) {
-  case json.parse(body, decode_get_object_tagging_request_struct()) {
+  case json.parse(body, decode_get_object_tagging_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25798,7 +29623,10 @@ pub fn build_get_object_tagging_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25826,7 +29654,7 @@ pub fn encode_get_object_torrent_input(input: GetObjectTorrentRequest) -> String
 }
 
 pub fn decode_get_object_torrent_input(body: String) -> Result(GetObjectTorrentRequest, String) {
-  case json.parse(body, decode_get_object_torrent_request_struct()) {
+  case json.parse(body, decode_get_object_torrent_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25871,7 +29699,10 @@ pub fn build_get_object_torrent_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25881,15 +29712,12 @@ pub fn parse_get_object_torrent_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetObjectTorrentOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_object_torrent_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
-      _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_object_torrent_output_xml(root)
-        Error(r) -> Error(r)
-      }
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.Some(body)
+    Ok(GetObjectTorrentOutput(
+    body: payload,
+    request_charged: option.None,
+    ))
   }
 }
 
@@ -25899,7 +29727,7 @@ pub fn encode_get_public_access_block_input(input: GetPublicAccessBlockRequest) 
 }
 
 pub fn decode_get_public_access_block_input(body: String) -> Result(GetPublicAccessBlockRequest, String) {
-  case json.parse(body, decode_get_public_access_block_request_struct()) {
+  case json.parse(body, decode_get_public_access_block_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -25936,7 +29764,10 @@ pub fn build_get_public_access_block_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -25946,15 +29777,24 @@ pub fn parse_get_public_access_block_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(GetPublicAccessBlockOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_get_public_access_block_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_get_public_access_block_output_xml(root)
+        Ok(root) -> case decode_public_access_block_configuration_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(GetPublicAccessBlockOutput(
+    public_access_block_configuration: payload,
+    ))
   }
 }
 
@@ -25964,7 +29804,7 @@ pub fn encode_head_bucket_input(input: HeadBucketRequest) -> String {
 }
 
 pub fn decode_head_bucket_input(body: String) -> Result(HeadBucketRequest, String) {
-  case json.parse(body, decode_head_bucket_request_struct()) {
+  case json.parse(body, decode_head_bucket_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -26001,7 +29841,10 @@ pub fn build_head_bucket_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("HEAD", path, headers, body)
 }
@@ -26029,7 +29872,7 @@ pub fn encode_head_object_input(input: HeadObjectRequest) -> String {
 }
 
 pub fn decode_head_object_input(body: String) -> Result(HeadObjectRequest, String) {
-  case json.parse(body, decode_head_object_request_struct()) {
+  case json.parse(body, decode_head_object_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -26142,7 +29985,10 @@ pub fn build_head_object_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("HEAD", path, headers, body)
 }
@@ -26170,7 +30016,7 @@ pub fn encode_list_bucket_analytics_configurations_input(input: ListBucketAnalyt
 }
 
 pub fn decode_list_bucket_analytics_configurations_input(body: String) -> Result(ListBucketAnalyticsConfigurationsRequest, String) {
-  case json.parse(body, decode_list_bucket_analytics_configurations_request_struct()) {
+  case json.parse(body, decode_list_bucket_analytics_configurations_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -26211,7 +30057,10 @@ pub fn build_list_bucket_analytics_configurations_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -26239,7 +30088,7 @@ pub fn encode_list_bucket_intelligent_tiering_configurations_input(input: ListBu
 }
 
 pub fn decode_list_bucket_intelligent_tiering_configurations_input(body: String) -> Result(ListBucketIntelligentTieringConfigurationsRequest, String) {
-  case json.parse(body, decode_list_bucket_intelligent_tiering_configurations_request_struct()) {
+  case json.parse(body, decode_list_bucket_intelligent_tiering_configurations_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -26280,7 +30129,10 @@ pub fn build_list_bucket_intelligent_tiering_configurations_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -26308,7 +30160,7 @@ pub fn encode_list_bucket_inventory_configurations_input(input: ListBucketInvent
 }
 
 pub fn decode_list_bucket_inventory_configurations_input(body: String) -> Result(ListBucketInventoryConfigurationsRequest, String) {
-  case json.parse(body, decode_list_bucket_inventory_configurations_request_struct()) {
+  case json.parse(body, decode_list_bucket_inventory_configurations_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -26349,7 +30201,10 @@ pub fn build_list_bucket_inventory_configurations_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -26377,7 +30232,7 @@ pub fn encode_list_bucket_metrics_configurations_input(input: ListBucketMetricsC
 }
 
 pub fn decode_list_bucket_metrics_configurations_input(body: String) -> Result(ListBucketMetricsConfigurationsRequest, String) {
-  case json.parse(body, decode_list_bucket_metrics_configurations_request_struct()) {
+  case json.parse(body, decode_list_bucket_metrics_configurations_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -26418,7 +30273,10 @@ pub fn build_list_bucket_metrics_configurations_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -26446,7 +30304,7 @@ pub fn encode_list_buckets_input(input: ListBucketsRequest) -> String {
 }
 
 pub fn decode_list_buckets_input(body: String) -> Result(ListBucketsRequest, String) {
-  case json.parse(body, decode_list_buckets_request_struct()) {
+  case json.parse(body, decode_list_buckets_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -26491,7 +30349,10 @@ pub fn build_list_buckets_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -26519,7 +30380,7 @@ pub fn encode_list_directory_buckets_input(input: ListDirectoryBucketsRequest) -
 }
 
 pub fn decode_list_directory_buckets_input(body: String) -> Result(ListDirectoryBucketsRequest, String) {
-  case json.parse(body, decode_list_directory_buckets_request_struct()) {
+  case json.parse(body, decode_list_directory_buckets_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -26556,7 +30417,10 @@ pub fn build_list_directory_buckets_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -26584,7 +30448,7 @@ pub fn encode_list_multipart_uploads_input(input: ListMultipartUploadsRequest) -
 }
 
 pub fn decode_list_multipart_uploads_input(body: String) -> Result(ListMultipartUploadsRequest, String) {
-  case json.parse(body, decode_list_multipart_uploads_request_struct()) {
+  case json.parse(body, decode_list_multipart_uploads_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -26649,7 +30513,10 @@ pub fn build_list_multipart_uploads_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -26677,7 +30544,7 @@ pub fn encode_list_objects_input(input: ListObjectsRequest) -> String {
 }
 
 pub fn decode_list_objects_input(body: String) -> Result(ListObjectsRequest, String) {
-  case json.parse(body, decode_list_objects_request_struct()) {
+  case json.parse(body, decode_list_objects_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -26742,7 +30609,10 @@ pub fn build_list_objects_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -26770,7 +30640,7 @@ pub fn encode_list_objects_v2_input(input: ListObjectsV2Request) -> String {
 }
 
 pub fn decode_list_objects_v2_input(body: String) -> Result(ListObjectsV2Request, String) {
-  case json.parse(body, decode_list_objects_v2_request_struct()) {
+  case json.parse(body, decode_list_objects_v2_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -26843,7 +30713,10 @@ pub fn build_list_objects_v2_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -26871,7 +30744,7 @@ pub fn encode_list_object_versions_input(input: ListObjectVersionsRequest) -> St
 }
 
 pub fn decode_list_object_versions_input(body: String) -> Result(ListObjectVersionsRequest, String) {
-  case json.parse(body, decode_list_object_versions_request_struct()) {
+  case json.parse(body, decode_list_object_versions_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -26940,7 +30813,10 @@ pub fn build_list_object_versions_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -26968,7 +30844,7 @@ pub fn encode_list_parts_input(input: ListPartsRequest) -> String {
 }
 
 pub fn decode_list_parts_input(body: String) -> Result(ListPartsRequest, String) {
-  case json.parse(body, decode_list_parts_request_struct()) {
+  case json.parse(body, decode_list_parts_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -27037,7 +30913,10 @@ pub fn build_list_parts_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -27077,7 +30956,7 @@ pub fn encode_put_bucket_analytics_configuration_input(input: PutBucketAnalytics
 }
 
 pub fn decode_put_bucket_analytics_configuration_input(body: String) -> Result(PutBucketAnalyticsConfigurationRequest, String) {
-  case json.parse(body, decode_put_bucket_analytics_configuration_request_struct()) {
+  case json.parse(body, decode_put_bucket_analytics_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -27121,7 +31000,10 @@ pub fn build_put_bucket_analytics_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -27152,7 +31034,7 @@ pub fn encode_put_bucket_intelligent_tiering_configuration_input(input: PutBucke
 }
 
 pub fn decode_put_bucket_intelligent_tiering_configuration_input(body: String) -> Result(PutBucketIntelligentTieringConfigurationRequest, String) {
-  case json.parse(body, decode_put_bucket_intelligent_tiering_configuration_request_struct()) {
+  case json.parse(body, decode_put_bucket_intelligent_tiering_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -27196,7 +31078,10 @@ pub fn build_put_bucket_intelligent_tiering_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -27227,7 +31112,7 @@ pub fn encode_put_bucket_inventory_configuration_input(input: PutBucketInventory
 }
 
 pub fn decode_put_bucket_inventory_configuration_input(body: String) -> Result(PutBucketInventoryConfigurationRequest, String) {
-  case json.parse(body, decode_put_bucket_inventory_configuration_request_struct()) {
+  case json.parse(body, decode_put_bucket_inventory_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -27271,7 +31156,10 @@ pub fn build_put_bucket_inventory_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -27302,7 +31190,7 @@ pub fn encode_put_bucket_metrics_configuration_input(input: PutBucketMetricsConf
 }
 
 pub fn decode_put_bucket_metrics_configuration_input(body: String) -> Result(PutBucketMetricsConfigurationRequest, String) {
-  case json.parse(body, decode_put_bucket_metrics_configuration_request_struct()) {
+  case json.parse(body, decode_put_bucket_metrics_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -27346,7 +31234,10 @@ pub fn build_put_bucket_metrics_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -27377,7 +31268,7 @@ pub fn encode_put_bucket_notification_configuration_input(input: PutBucketNotifi
 }
 
 pub fn decode_put_bucket_notification_configuration_input(body: String) -> Result(PutBucketNotificationConfigurationRequest, String) {
-  case json.parse(body, decode_put_bucket_notification_configuration_request_struct()) {
+  case json.parse(body, decode_put_bucket_notification_configuration_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -27421,7 +31312,10 @@ pub fn build_put_bucket_notification_configuration_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -27440,7 +31334,7 @@ pub fn encode_rename_object_input(input: RenameObjectRequest) -> String {
 }
 
 pub fn decode_rename_object_input(body: String) -> Result(RenameObjectRequest, String) {
-  case json.parse(body, decode_rename_object_request_struct()) {
+  case json.parse(body, decode_rename_object_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -27517,7 +31411,10 @@ pub fn build_rename_object_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -27545,7 +31442,7 @@ pub fn encode_select_object_content_input(input: SelectObjectContentRequest) -> 
 }
 
 pub fn decode_select_object_content_input(body: String) -> Result(SelectObjectContentRequest, String) {
-  case json.parse(body, decode_select_object_content_request_struct()) {
+  case json.parse(body, decode_select_object_content_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -27599,7 +31496,10 @@ pub fn build_select_object_content_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -27609,15 +31509,11 @@ pub fn parse_select_object_content_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(SelectObjectContentOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_select_object_content_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
-      _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_select_object_content_output_xml(root)
-        Error(r) -> Error(r)
-      }
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.None
+    Ok(SelectObjectContentOutput(
+    payload: payload,
+    ))
   }
 }
 
@@ -27627,7 +31523,7 @@ pub fn encode_upload_part_copy_input(input: UploadPartCopyRequest) -> String {
 }
 
 pub fn decode_upload_part_copy_input(body: String) -> Result(UploadPartCopyRequest, String) {
-  case json.parse(body, decode_upload_part_copy_request_struct()) {
+  case json.parse(body, decode_upload_part_copy_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -27732,7 +31628,10 @@ pub fn build_upload_part_copy_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -27742,15 +31641,31 @@ pub fn parse_upload_part_copy_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(UploadPartCopyOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_upload_part_copy_output_xml(xml_decode.Element(name: "empty", attrs: [], children: []))
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
       _ -> case xml_decode.parse(text) {
-        Ok(root) -> decode_upload_part_copy_output_xml(root)
+        Ok(root) -> case decode_copy_part_result_xml(root) {
+          Ok(v) -> Ok(option.Some(v))
+          Error(r) -> Error(r)
+        }
         Error(r) -> Error(r)
       }
-    }
-    Error(_) -> Error("non-utf8 body")
+    })
+    Ok(UploadPartCopyOutput(
+    bucket_key_enabled: option.None,
+    copy_part_result: payload,
+    copy_source_version_id: option.None,
+    request_charged: option.None,
+    sse_customer_algorithm: option.None,
+    sse_customer_key_md5: option.None,
+    ssekms_key_id: option.None,
+    server_side_encryption: option.None,
+    ))
   }
 }
 
@@ -27772,7 +31687,7 @@ pub fn encode_write_get_object_response_input(input: WriteGetObjectResponseReque
 }
 
 pub fn decode_write_get_object_response_input(body: String) -> Result(WriteGetObjectResponseRequest, String) {
-  case json.parse(body, decode_write_get_object_response_request_struct()) {
+  case json.parse(body, decode_write_get_object_response_request_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -27984,7 +31899,10 @@ pub fn build_write_get_object_response_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
-  let headers = dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }

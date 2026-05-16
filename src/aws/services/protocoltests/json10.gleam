@@ -3,7 +3,9 @@
 
 import aws/credentials
 import aws/internal/client/awsjson as awsjson_client
+import aws/internal/codec/json_document
 import aws/internal/codec/json_float
+import aws/internal/codec/json_timestamp
 import aws/internal/http_send
 import gleam/bit_array
 import gleam/dict
@@ -68,6 +70,13 @@ pub fn decode_content_type_parameters_input_struct() -> decode.Decoder(ContentTy
   ))
 }
 
+pub fn decode_content_type_parameters_input_struct_params() -> decode.Decoder(ContentTypeParametersInput) {
+  use value <- decode.optional_field("value", option.None, decode.optional(decode.int))
+  decode.success(ContentTypeParametersInput(
+    value: value,
+  ))
+}
+
 pub type ContentTypeParametersOutput {
   ContentTypeParametersOutput
 }
@@ -77,6 +86,10 @@ pub fn encode_content_type_parameters_output_struct(_v: ContentTypeParametersOut
 }
 
 pub fn decode_content_type_parameters_output_struct() -> decode.Decoder(ContentTypeParametersOutput) {
+  decode.success(ContentTypeParametersOutput)
+}
+
+pub fn decode_content_type_parameters_output_struct_params() -> decode.Decoder(ContentTypeParametersOutput) {
   decode.success(ContentTypeParametersOutput)
 }
 
@@ -92,6 +105,10 @@ pub fn decode_empty_input_and_empty_output_input_struct() -> decode.Decoder(Empt
   decode.success(EmptyInputAndEmptyOutputInput)
 }
 
+pub fn decode_empty_input_and_empty_output_input_struct_params() -> decode.Decoder(EmptyInputAndEmptyOutputInput) {
+  decode.success(EmptyInputAndEmptyOutputInput)
+}
+
 pub type EmptyInputAndEmptyOutputOutput {
   EmptyInputAndEmptyOutputOutput
 }
@@ -101,6 +118,10 @@ pub fn encode_empty_input_and_empty_output_output_struct(_v: EmptyInputAndEmptyO
 }
 
 pub fn decode_empty_input_and_empty_output_output_struct() -> decode.Decoder(EmptyInputAndEmptyOutputOutput) {
+  decode.success(EmptyInputAndEmptyOutputOutput)
+}
+
+pub fn decode_empty_input_and_empty_output_output_struct_params() -> decode.Decoder(EmptyInputAndEmptyOutputOutput) {
   decode.success(EmptyInputAndEmptyOutputOutput)
 }
 
@@ -120,6 +141,13 @@ pub fn encode_endpoint_with_host_label_operation_input_struct(input: EndpointWit
 }
 
 pub fn decode_endpoint_with_host_label_operation_input_struct() -> decode.Decoder(EndpointWithHostLabelOperationInput) {
+  use label <- decode.optional_field("label", option.None, decode.optional(decode.string))
+  decode.success(EndpointWithHostLabelOperationInput(
+    label: label,
+  ))
+}
+
+pub fn decode_endpoint_with_host_label_operation_input_struct_params() -> decode.Decoder(EndpointWithHostLabelOperationInput) {
   use label <- decode.optional_field("label", option.None, decode.optional(decode.string))
   decode.success(EndpointWithHostLabelOperationInput(
     label: label,
@@ -148,6 +176,13 @@ pub fn decode_greeting_with_errors_input_struct() -> decode.Decoder(GreetingWith
   ))
 }
 
+pub fn decode_greeting_with_errors_input_struct_params() -> decode.Decoder(GreetingWithErrorsInput) {
+  use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
+  decode.success(GreetingWithErrorsInput(
+    greeting: greeting,
+  ))
+}
+
 pub type GreetingWithErrorsOutput {
   GreetingWithErrorsOutput(
     greeting: option.Option(String),
@@ -164,6 +199,13 @@ pub fn encode_greeting_with_errors_output_struct(input: GreetingWithErrorsOutput
 }
 
 pub fn decode_greeting_with_errors_output_struct() -> decode.Decoder(GreetingWithErrorsOutput) {
+  use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
+  decode.success(GreetingWithErrorsOutput(
+    greeting: greeting,
+  ))
+}
+
+pub fn decode_greeting_with_errors_output_struct_params() -> decode.Decoder(GreetingWithErrorsOutput) {
   use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
   decode.success(GreetingWithErrorsOutput(
     greeting: greeting,
@@ -199,6 +241,15 @@ pub fn decode_complex_error_struct() -> decode.Decoder(ComplexError) {
   ))
 }
 
+pub fn decode_complex_error_struct_params() -> decode.Decoder(ComplexError) {
+  use nested <- decode.optional_field("Nested", option.None, decode.optional(decode_complex_nested_error_data_struct_params()))
+  use top_level <- decode.optional_field("TopLevel", option.None, decode.optional(decode.string))
+  decode.success(ComplexError(
+    nested: nested,
+    top_level: top_level,
+  ))
+}
+
 pub type ComplexNestedErrorData {
   ComplexNestedErrorData(
     foo: option.Option(String),
@@ -208,13 +259,20 @@ pub type ComplexNestedErrorData {
 pub fn encode_complex_nested_error_data_struct(input: ComplexNestedErrorData) -> json.Json {
   let pairs = []
   let pairs = case input.foo {
-    option.Some(v) -> [#("Foo", json.string(v)), ..pairs]
+    option.Some(v) -> [#("Fooooo", json.string(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_complex_nested_error_data_struct() -> decode.Decoder(ComplexNestedErrorData) {
+  use foo <- decode.optional_field("Fooooo", option.None, decode.optional(decode.string))
+  decode.success(ComplexNestedErrorData(
+    foo: foo,
+  ))
+}
+
+pub fn decode_complex_nested_error_data_struct_params() -> decode.Decoder(ComplexNestedErrorData) {
   use foo <- decode.optional_field("Foo", option.None, decode.optional(decode.string))
   decode.success(ComplexNestedErrorData(
     foo: foo,
@@ -230,6 +288,10 @@ pub fn encode_foo_error_struct(_v: FooError) -> json.Json {
 }
 
 pub fn decode_foo_error_struct() -> decode.Decoder(FooError) {
+  decode.success(FooError)
+}
+
+pub fn decode_foo_error_struct_params() -> decode.Decoder(FooError) {
   decode.success(FooError)
 }
 
@@ -255,6 +317,13 @@ pub fn decode_invalid_greeting_struct() -> decode.Decoder(InvalidGreeting) {
   ))
 }
 
+pub fn decode_invalid_greeting_struct_params() -> decode.Decoder(InvalidGreeting) {
+  use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
+  decode.success(InvalidGreeting(
+    message: message,
+  ))
+}
+
 pub type JsonUnionsInput {
   JsonUnionsInput(
     contents: option.Option(MyUnion),
@@ -271,6 +340,13 @@ pub fn encode_json_unions_input_struct(input: JsonUnionsInput) -> json.Json {
 }
 
 pub fn decode_json_unions_input_struct() -> decode.Decoder(JsonUnionsInput) {
+  use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union()))
+  decode.success(JsonUnionsInput(
+    contents: contents,
+  ))
+}
+
+pub fn decode_json_unions_input_struct_params() -> decode.Decoder(JsonUnionsInput) {
   use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union()))
   decode.success(JsonUnionsInput(
     contents: contents,
@@ -317,7 +393,7 @@ pub fn decode_my_union_union() -> decode.Decoder(MyUnion) {
       decode.field("numberValue", decode.int, fn(x) { decode.success(MyUnionNumberValue(x)) }),
       decode.field("stringValue", decode.string, fn(x) { decode.success(MyUnionStringValue(x)) }),
       decode.field("structureValue", decode_greeting_struct_struct(), fn(x) { decode.success(MyUnionStructureValue(x)) }),
-      decode.field("timestampValue", decode.int, fn(x) { decode.success(MyUnionTimestampValue(x)) }),
+      decode.field("timestampValue", json_timestamp.decoder(), fn(x) { decode.success(MyUnionTimestampValue(x)) }),
     ],
   )
 }
@@ -400,6 +476,13 @@ pub fn decode_greeting_struct_struct() -> decode.Decoder(GreetingStruct) {
   ))
 }
 
+pub fn decode_greeting_struct_struct_params() -> decode.Decoder(GreetingStruct) {
+  use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
+  decode.success(GreetingStruct(
+    hi: hi,
+  ))
+}
+
 pub type JsonUnionsOutput {
   JsonUnionsOutput(
     contents: option.Option(MyUnion),
@@ -422,6 +505,13 @@ pub fn decode_json_unions_output_struct() -> decode.Decoder(JsonUnionsOutput) {
   ))
 }
 
+pub fn decode_json_unions_output_struct_params() -> decode.Decoder(JsonUnionsOutput) {
+  use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union()))
+  decode.success(JsonUnionsOutput(
+    contents: contents,
+  ))
+}
+
 pub type NoInputAndOutputOutput {
   NoInputAndOutputOutput
 }
@@ -431,6 +521,10 @@ pub fn encode_no_input_and_output_output_struct(_v: NoInputAndOutputOutput) -> j
 }
 
 pub fn decode_no_input_and_output_output_struct() -> decode.Decoder(NoInputAndOutputOutput) {
+  decode.success(NoInputAndOutputOutput)
+}
+
+pub fn decode_no_input_and_output_output_struct_params() -> decode.Decoder(NoInputAndOutputOutput) {
   decode.success(NoInputAndOutputOutput)
 }
 
@@ -477,6 +571,19 @@ pub fn decode_operation_with_defaults_input_struct() -> decode.Decoder(Operation
   ))
 }
 
+pub fn decode_operation_with_defaults_input_struct_params() -> decode.Decoder(OperationWithDefaultsInput) {
+  use client_optional_defaults <- decode.optional_field("clientOptionalDefaults", option.None, decode.optional(decode_client_optional_defaults_struct_params()))
+  use defaults <- decode.optional_field("defaults", option.None, decode.optional(decode_defaults_struct_params()))
+  use other_top_level_default <- decode.optional_field("otherTopLevelDefault", option.None, decode.optional(decode.int))
+  use top_level_default <- decode.optional_field("topLevelDefault", option.None, decode.optional(decode.string))
+  decode.success(OperationWithDefaultsInput(
+    client_optional_defaults: client_optional_defaults,
+    defaults: defaults,
+    other_top_level_default: other_top_level_default,
+    top_level_default: top_level_default,
+  ))
+}
+
 pub type ClientOptionalDefaults {
   ClientOptionalDefaults(
     member: option.Option(Int),
@@ -493,6 +600,13 @@ pub fn encode_client_optional_defaults_struct(input: ClientOptionalDefaults) -> 
 }
 
 pub fn decode_client_optional_defaults_struct() -> decode.Decoder(ClientOptionalDefaults) {
+  use member <- decode.optional_field("member", option.None, decode.optional(decode.int))
+  decode.success(ClientOptionalDefaults(
+    member: member,
+  ))
+}
+
+pub fn decode_client_optional_defaults_struct_params() -> decode.Decoder(ClientOptionalDefaults) {
   use member <- decode.optional_field("member", option.None, decode.optional(decode.int))
   decode.success(ClientOptionalDefaults(
     member: member,
@@ -653,10 +767,10 @@ pub fn decode_defaults_struct() -> decode.Decoder(Defaults) {
   use default_blob <- decode.optional_field("defaultBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use default_boolean <- decode.optional_field("defaultBoolean", option.None, decode.optional(decode.bool))
   use default_byte <- decode.optional_field("defaultByte", option.None, decode.optional(decode.int))
-  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
-  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
-  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
-  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(json_document.decoder()))
+  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(json_document.decoder()))
+  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(json_document.decoder()))
+  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(json_document.decoder()))
   use default_double <- decode.optional_field("defaultDouble", option.None, decode.optional(json_float.decoder()))
   use default_enum <- decode.optional_field("defaultEnum", option.None, decode.optional(decode_test_enum_enum()))
   use default_float <- decode.optional_field("defaultFloat", option.None, decode.optional(json_float.decoder()))
@@ -665,10 +779,71 @@ pub fn decode_defaults_struct() -> decode.Decoder(Defaults) {
   use default_list <- decode.optional_field("defaultList", option.None, decode.optional(decode.list(decode.string)))
   use default_long <- decode.optional_field("defaultLong", option.None, decode.optional(decode.int))
   use default_map <- decode.optional_field("defaultMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(json_document.decoder()))
   use default_short <- decode.optional_field("defaultShort", option.None, decode.optional(decode.int))
   use default_string <- decode.optional_field("defaultString", option.None, decode.optional(decode.string))
-  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(decode.int))
+  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(json_timestamp.decoder()))
+  use empty_blob <- decode.optional_field("emptyBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
+  use false_boolean <- decode.optional_field("falseBoolean", option.None, decode.optional(decode.bool))
+  use zero_byte <- decode.optional_field("zeroByte", option.None, decode.optional(decode.int))
+  use zero_double <- decode.optional_field("zeroDouble", option.None, decode.optional(json_float.decoder()))
+  use zero_float <- decode.optional_field("zeroFloat", option.None, decode.optional(json_float.decoder()))
+  use zero_integer <- decode.optional_field("zeroInteger", option.None, decode.optional(decode.int))
+  use zero_long <- decode.optional_field("zeroLong", option.None, decode.optional(decode.int))
+  use zero_short <- decode.optional_field("zeroShort", option.None, decode.optional(decode.int))
+  decode.success(Defaults(
+    default_blob: default_blob,
+    default_boolean: default_boolean,
+    default_byte: default_byte,
+    default_document_boolean: default_document_boolean,
+    default_document_list: default_document_list,
+    default_document_map: default_document_map,
+    default_document_string: default_document_string,
+    default_double: default_double,
+    default_enum: default_enum,
+    default_float: default_float,
+    default_int_enum: default_int_enum,
+    default_integer: default_integer,
+    default_list: default_list,
+    default_long: default_long,
+    default_map: default_map,
+    default_null_document: default_null_document,
+    default_short: default_short,
+    default_string: default_string,
+    default_timestamp: default_timestamp,
+    empty_blob: empty_blob,
+    empty_string: empty_string,
+    false_boolean: false_boolean,
+    zero_byte: zero_byte,
+    zero_double: zero_double,
+    zero_float: zero_float,
+    zero_integer: zero_integer,
+    zero_long: zero_long,
+    zero_short: zero_short,
+  ))
+}
+
+pub fn decode_defaults_struct_params() -> decode.Decoder(Defaults) {
+  use default_blob <- decode.optional_field("defaultBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use default_boolean <- decode.optional_field("defaultBoolean", option.None, decode.optional(decode.bool))
+  use default_byte <- decode.optional_field("defaultByte", option.None, decode.optional(decode.int))
+  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(json_document.decoder()))
+  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(json_document.decoder()))
+  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(json_document.decoder()))
+  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(json_document.decoder()))
+  use default_double <- decode.optional_field("defaultDouble", option.None, decode.optional(json_float.decoder()))
+  use default_enum <- decode.optional_field("defaultEnum", option.None, decode.optional(decode_test_enum_enum()))
+  use default_float <- decode.optional_field("defaultFloat", option.None, decode.optional(json_float.decoder()))
+  use default_int_enum <- decode.optional_field("defaultIntEnum", option.None, decode.optional(decode_test_int_enum_int_enum()))
+  use default_integer <- decode.optional_field("defaultInteger", option.None, decode.optional(decode.int))
+  use default_list <- decode.optional_field("defaultList", option.None, decode.optional(decode.list(decode.string)))
+  use default_long <- decode.optional_field("defaultLong", option.None, decode.optional(decode.int))
+  use default_map <- decode.optional_field("defaultMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(json_document.decoder()))
+  use default_short <- decode.optional_field("defaultShort", option.None, decode.optional(decode.int))
+  use default_string <- decode.optional_field("defaultString", option.None, decode.optional(decode.string))
+  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(json_timestamp.decoder()))
   use empty_blob <- decode.optional_field("emptyBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
   use false_boolean <- decode.optional_field("falseBoolean", option.None, decode.optional(decode.bool))
@@ -911,10 +1086,10 @@ pub fn decode_operation_with_defaults_output_struct() -> decode.Decoder(Operatio
   use default_blob <- decode.optional_field("defaultBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use default_boolean <- decode.optional_field("defaultBoolean", option.None, decode.optional(decode.bool))
   use default_byte <- decode.optional_field("defaultByte", option.None, decode.optional(decode.int))
-  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
-  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
-  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
-  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(json_document.decoder()))
+  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(json_document.decoder()))
+  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(json_document.decoder()))
+  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(json_document.decoder()))
   use default_double <- decode.optional_field("defaultDouble", option.None, decode.optional(json_float.decoder()))
   use default_enum <- decode.optional_field("defaultEnum", option.None, decode.optional(decode_test_enum_enum()))
   use default_float <- decode.optional_field("defaultFloat", option.None, decode.optional(json_float.decoder()))
@@ -923,10 +1098,71 @@ pub fn decode_operation_with_defaults_output_struct() -> decode.Decoder(Operatio
   use default_list <- decode.optional_field("defaultList", option.None, decode.optional(decode.list(decode.string)))
   use default_long <- decode.optional_field("defaultLong", option.None, decode.optional(decode.int))
   use default_map <- decode.optional_field("defaultMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(json_document.decoder()))
   use default_short <- decode.optional_field("defaultShort", option.None, decode.optional(decode.int))
   use default_string <- decode.optional_field("defaultString", option.None, decode.optional(decode.string))
-  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(decode.int))
+  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(json_timestamp.decoder()))
+  use empty_blob <- decode.optional_field("emptyBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
+  use false_boolean <- decode.optional_field("falseBoolean", option.None, decode.optional(decode.bool))
+  use zero_byte <- decode.optional_field("zeroByte", option.None, decode.optional(decode.int))
+  use zero_double <- decode.optional_field("zeroDouble", option.None, decode.optional(json_float.decoder()))
+  use zero_float <- decode.optional_field("zeroFloat", option.None, decode.optional(json_float.decoder()))
+  use zero_integer <- decode.optional_field("zeroInteger", option.None, decode.optional(decode.int))
+  use zero_long <- decode.optional_field("zeroLong", option.None, decode.optional(decode.int))
+  use zero_short <- decode.optional_field("zeroShort", option.None, decode.optional(decode.int))
+  decode.success(OperationWithDefaultsOutput(
+    default_blob: default_blob,
+    default_boolean: default_boolean,
+    default_byte: default_byte,
+    default_document_boolean: default_document_boolean,
+    default_document_list: default_document_list,
+    default_document_map: default_document_map,
+    default_document_string: default_document_string,
+    default_double: default_double,
+    default_enum: default_enum,
+    default_float: default_float,
+    default_int_enum: default_int_enum,
+    default_integer: default_integer,
+    default_list: default_list,
+    default_long: default_long,
+    default_map: default_map,
+    default_null_document: default_null_document,
+    default_short: default_short,
+    default_string: default_string,
+    default_timestamp: default_timestamp,
+    empty_blob: empty_blob,
+    empty_string: empty_string,
+    false_boolean: false_boolean,
+    zero_byte: zero_byte,
+    zero_double: zero_double,
+    zero_float: zero_float,
+    zero_integer: zero_integer,
+    zero_long: zero_long,
+    zero_short: zero_short,
+  ))
+}
+
+pub fn decode_operation_with_defaults_output_struct_params() -> decode.Decoder(OperationWithDefaultsOutput) {
+  use default_blob <- decode.optional_field("defaultBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use default_boolean <- decode.optional_field("defaultBoolean", option.None, decode.optional(decode.bool))
+  use default_byte <- decode.optional_field("defaultByte", option.None, decode.optional(decode.int))
+  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(json_document.decoder()))
+  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(json_document.decoder()))
+  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(json_document.decoder()))
+  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(json_document.decoder()))
+  use default_double <- decode.optional_field("defaultDouble", option.None, decode.optional(json_float.decoder()))
+  use default_enum <- decode.optional_field("defaultEnum", option.None, decode.optional(decode_test_enum_enum()))
+  use default_float <- decode.optional_field("defaultFloat", option.None, decode.optional(json_float.decoder()))
+  use default_int_enum <- decode.optional_field("defaultIntEnum", option.None, decode.optional(decode_test_int_enum_int_enum()))
+  use default_integer <- decode.optional_field("defaultInteger", option.None, decode.optional(decode.int))
+  use default_list <- decode.optional_field("defaultList", option.None, decode.optional(decode.list(decode.string)))
+  use default_long <- decode.optional_field("defaultLong", option.None, decode.optional(decode.int))
+  use default_map <- decode.optional_field("defaultMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(json_document.decoder()))
+  use default_short <- decode.optional_field("defaultShort", option.None, decode.optional(decode.int))
+  use default_string <- decode.optional_field("defaultString", option.None, decode.optional(decode.string))
+  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(json_timestamp.decoder()))
   use empty_blob <- decode.optional_field("emptyBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
   use false_boolean <- decode.optional_field("falseBoolean", option.None, decode.optional(decode.bool))
@@ -990,6 +1226,13 @@ pub fn decode_operation_with_nested_structure_input_struct() -> decode.Decoder(O
   ))
 }
 
+pub fn decode_operation_with_nested_structure_input_struct_params() -> decode.Decoder(OperationWithNestedStructureInput) {
+  use top_level <- decode.optional_field("topLevel", option.None, decode.optional(decode_top_level_struct_params()))
+  decode.success(OperationWithNestedStructureInput(
+    top_level: top_level,
+  ))
+}
+
 pub type TopLevel {
   TopLevel(
     dialog: option.Option(Dialog),
@@ -1019,6 +1262,17 @@ pub fn decode_top_level_struct() -> decode.Decoder(TopLevel) {
   use dialog <- decode.optional_field("dialog", option.None, decode.optional(decode_dialog_struct()))
   use dialog_list <- decode.optional_field("dialogList", option.None, decode.optional(decode.list(decode_dialog_struct())))
   use dialog_map <- decode.optional_field("dialogMap", option.None, decode.optional(decode.dict(decode.string, decode_dialog_struct())))
+  decode.success(TopLevel(
+    dialog: dialog,
+    dialog_list: dialog_list,
+    dialog_map: dialog_map,
+  ))
+}
+
+pub fn decode_top_level_struct_params() -> decode.Decoder(TopLevel) {
+  use dialog <- decode.optional_field("dialog", option.None, decode.optional(decode_dialog_struct_params()))
+  use dialog_list <- decode.optional_field("dialogList", option.None, decode.optional(decode.list(decode_dialog_struct_params())))
+  use dialog_map <- decode.optional_field("dialogMap", option.None, decode.optional(decode.dict(decode.string, decode_dialog_struct_params())))
   decode.success(TopLevel(
     dialog: dialog,
     dialog_list: dialog_list,
@@ -1062,6 +1316,17 @@ pub fn decode_dialog_struct() -> decode.Decoder(Dialog) {
   ))
 }
 
+pub fn decode_dialog_struct_params() -> decode.Decoder(Dialog) {
+  use farewell <- decode.optional_field("farewell", option.None, decode.optional(decode_farewell_struct_params()))
+  use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
+  use language <- decode.optional_field("language", option.None, decode.optional(decode.string))
+  decode.success(Dialog(
+    farewell: farewell,
+    greeting: greeting,
+    language: language,
+  ))
+}
+
 pub type Farewell {
   Farewell(
     phrase: option.Option(String),
@@ -1078,6 +1343,13 @@ pub fn encode_farewell_struct(input: Farewell) -> json.Json {
 }
 
 pub fn decode_farewell_struct() -> decode.Decoder(Farewell) {
+  use phrase <- decode.optional_field("phrase", option.None, decode.optional(decode.string))
+  decode.success(Farewell(
+    phrase: phrase,
+  ))
+}
+
+pub fn decode_farewell_struct_params() -> decode.Decoder(Farewell) {
   use phrase <- decode.optional_field("phrase", option.None, decode.optional(decode.string))
   decode.success(Farewell(
     phrase: phrase,
@@ -1113,6 +1385,17 @@ pub fn decode_operation_with_nested_structure_output_struct() -> decode.Decoder(
   use dialog <- decode.optional_field("dialog", option.None, decode.optional(decode_dialog_struct()))
   use dialog_list <- decode.optional_field("dialogList", option.None, decode.optional(decode.list(decode_dialog_struct())))
   use dialog_map <- decode.optional_field("dialogMap", option.None, decode.optional(decode.dict(decode.string, decode_dialog_struct())))
+  decode.success(OperationWithNestedStructureOutput(
+    dialog: dialog,
+    dialog_list: dialog_list,
+    dialog_map: dialog_map,
+  ))
+}
+
+pub fn decode_operation_with_nested_structure_output_struct_params() -> decode.Decoder(OperationWithNestedStructureOutput) {
+  use dialog <- decode.optional_field("dialog", option.None, decode.optional(decode_dialog_struct_params()))
+  use dialog_list <- decode.optional_field("dialogList", option.None, decode.optional(decode.list(decode_dialog_struct_params())))
+  use dialog_map <- decode.optional_field("dialogMap", option.None, decode.optional(decode.dict(decode.string, decode_dialog_struct_params())))
   decode.success(OperationWithNestedStructureOutput(
     dialog: dialog,
     dialog_list: dialog_list,
@@ -1202,7 +1485,36 @@ pub fn decode_operation_with_required_members_output_struct() -> decode.Decoder(
   use required_map <- decode.optional_field("requiredMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use required_short <- decode.optional_field("requiredShort", option.None, decode.optional(decode.int))
   use required_string <- decode.optional_field("requiredString", option.None, decode.optional(decode.string))
-  use required_timestamp <- decode.optional_field("requiredTimestamp", option.None, decode.optional(decode.int))
+  use required_timestamp <- decode.optional_field("requiredTimestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(OperationWithRequiredMembersOutput(
+    required_blob: required_blob,
+    required_boolean: required_boolean,
+    required_byte: required_byte,
+    required_double: required_double,
+    required_float: required_float,
+    required_integer: required_integer,
+    required_list: required_list,
+    required_long: required_long,
+    required_map: required_map,
+    required_short: required_short,
+    required_string: required_string,
+    required_timestamp: required_timestamp,
+  ))
+}
+
+pub fn decode_operation_with_required_members_output_struct_params() -> decode.Decoder(OperationWithRequiredMembersOutput) {
+  use required_blob <- decode.optional_field("requiredBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use required_boolean <- decode.optional_field("requiredBoolean", option.None, decode.optional(decode.bool))
+  use required_byte <- decode.optional_field("requiredByte", option.None, decode.optional(decode.int))
+  use required_double <- decode.optional_field("requiredDouble", option.None, decode.optional(json_float.decoder()))
+  use required_float <- decode.optional_field("requiredFloat", option.None, decode.optional(json_float.decoder()))
+  use required_integer <- decode.optional_field("requiredInteger", option.None, decode.optional(decode.int))
+  use required_list <- decode.optional_field("requiredList", option.None, decode.optional(decode.list(decode.string)))
+  use required_long <- decode.optional_field("requiredLong", option.None, decode.optional(decode.int))
+  use required_map <- decode.optional_field("requiredMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use required_short <- decode.optional_field("requiredShort", option.None, decode.optional(decode.int))
+  use required_string <- decode.optional_field("requiredString", option.None, decode.optional(decode.string))
+  use required_timestamp <- decode.optional_field("requiredTimestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(OperationWithRequiredMembersOutput(
     required_blob: required_blob,
     required_boolean: required_boolean,
@@ -1313,7 +1625,40 @@ pub fn decode_operation_with_required_members_with_defaults_output_struct() -> d
   use required_map <- decode.optional_field("requiredMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use required_short <- decode.optional_field("requiredShort", option.None, decode.optional(decode.int))
   use required_string <- decode.optional_field("requiredString", option.None, decode.optional(decode.string))
-  use required_timestamp <- decode.optional_field("requiredTimestamp", option.None, decode.optional(decode.int))
+  use required_timestamp <- decode.optional_field("requiredTimestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(OperationWithRequiredMembersWithDefaultsOutput(
+    required_blob: required_blob,
+    required_boolean: required_boolean,
+    required_byte: required_byte,
+    required_double: required_double,
+    required_enum: required_enum,
+    required_float: required_float,
+    required_int_enum: required_int_enum,
+    required_integer: required_integer,
+    required_list: required_list,
+    required_long: required_long,
+    required_map: required_map,
+    required_short: required_short,
+    required_string: required_string,
+    required_timestamp: required_timestamp,
+  ))
+}
+
+pub fn decode_operation_with_required_members_with_defaults_output_struct_params() -> decode.Decoder(OperationWithRequiredMembersWithDefaultsOutput) {
+  use required_blob <- decode.optional_field("requiredBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use required_boolean <- decode.optional_field("requiredBoolean", option.None, decode.optional(decode.bool))
+  use required_byte <- decode.optional_field("requiredByte", option.None, decode.optional(decode.int))
+  use required_double <- decode.optional_field("requiredDouble", option.None, decode.optional(json_float.decoder()))
+  use required_enum <- decode.optional_field("requiredEnum", option.None, decode.optional(decode_required_enum_enum()))
+  use required_float <- decode.optional_field("requiredFloat", option.None, decode.optional(json_float.decoder()))
+  use required_int_enum <- decode.optional_field("requiredIntEnum", option.None, decode.optional(decode_required_int_enum_int_enum()))
+  use required_integer <- decode.optional_field("requiredInteger", option.None, decode.optional(decode.int))
+  use required_list <- decode.optional_field("requiredList", option.None, decode.optional(decode.list(decode.string)))
+  use required_long <- decode.optional_field("requiredLong", option.None, decode.optional(decode.int))
+  use required_map <- decode.optional_field("requiredMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use required_short <- decode.optional_field("requiredShort", option.None, decode.optional(decode.int))
+  use required_string <- decode.optional_field("requiredString", option.None, decode.optional(decode.string))
+  use required_timestamp <- decode.optional_field("requiredTimestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(OperationWithRequiredMembersWithDefaultsOutput(
     required_blob: required_blob,
     required_boolean: required_boolean,
@@ -1408,6 +1753,15 @@ pub fn decode_simple_scalar_properties_input_struct() -> decode.Decoder(SimpleSc
   ))
 }
 
+pub fn decode_simple_scalar_properties_input_struct_params() -> decode.Decoder(SimpleScalarPropertiesInput) {
+  use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
+  use float_value <- decode.optional_field("floatValue", option.None, decode.optional(json_float.decoder()))
+  decode.success(SimpleScalarPropertiesInput(
+    double_value: double_value,
+    float_value: float_value,
+  ))
+}
+
 pub type SimpleScalarPropertiesOutput {
   SimpleScalarPropertiesOutput(
     double_value: option.Option(json_float.SmithyFloat),
@@ -1437,13 +1791,22 @@ pub fn decode_simple_scalar_properties_output_struct() -> decode.Decoder(SimpleS
   ))
 }
 
+pub fn decode_simple_scalar_properties_output_struct_params() -> decode.Decoder(SimpleScalarPropertiesOutput) {
+  use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
+  use float_value <- decode.optional_field("floatValue", option.None, decode.optional(json_float.decoder()))
+  decode.success(SimpleScalarPropertiesOutput(
+    double_value: double_value,
+    float_value: float_value,
+  ))
+}
+
 
 pub fn encode_content_type_parameters_input(input: ContentTypeParametersInput) -> String {
   json.to_string(encode_content_type_parameters_input_struct(input))
 }
 
 pub fn decode_content_type_parameters_input(body: String) -> Result(ContentTypeParametersInput, String) {
-  case json.parse(body, decode_content_type_parameters_input_struct()) {
+  case json.parse(body, decode_content_type_parameters_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -1509,7 +1872,7 @@ pub fn encode_empty_input_and_empty_output_input(input: EmptyInputAndEmptyOutput
 }
 
 pub fn decode_empty_input_and_empty_output_input(body: String) -> Result(EmptyInputAndEmptyOutputInput, String) {
-  case json.parse(body, decode_empty_input_and_empty_output_input_struct()) {
+  case json.parse(body, decode_empty_input_and_empty_output_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -1677,7 +2040,7 @@ pub fn encode_endpoint_with_host_label_operation_input(input: EndpointWithHostLa
 }
 
 pub fn decode_endpoint_with_host_label_operation_input(body: String) -> Result(EndpointWithHostLabelOperationInput, String) {
-  case json.parse(body, decode_endpoint_with_host_label_operation_input_struct()) {
+  case json.parse(body, decode_endpoint_with_host_label_operation_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -1743,7 +2106,7 @@ pub fn encode_greeting_with_errors_input(input: GreetingWithErrorsInput) -> Stri
 }
 
 pub fn decode_greeting_with_errors_input(body: String) -> Result(GreetingWithErrorsInput, String) {
-  case json.parse(body, decode_greeting_with_errors_input_struct()) {
+  case json.parse(body, decode_greeting_with_errors_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -1929,7 +2292,7 @@ pub fn encode_json_unions_input(input: JsonUnionsInput) -> String {
 }
 
 pub fn decode_json_unions_input(body: String) -> Result(JsonUnionsInput, String) {
-  case json.parse(body, decode_json_unions_input_struct()) {
+  case json.parse(body, decode_json_unions_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -2163,7 +2526,7 @@ pub fn encode_operation_with_defaults_input(input: OperationWithDefaultsInput) -
 }
 
 pub fn decode_operation_with_defaults_input(body: String) -> Result(OperationWithDefaultsInput, String) {
-  case json.parse(body, decode_operation_with_defaults_input_struct()) {
+  case json.parse(body, decode_operation_with_defaults_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -2229,7 +2592,7 @@ pub fn encode_operation_with_nested_structure_input(input: OperationWithNestedSt
 }
 
 pub fn decode_operation_with_nested_structure_input(body: String) -> Result(OperationWithNestedStructureInput, String) {
-  case json.parse(body, decode_operation_with_nested_structure_input_struct()) {
+  case json.parse(body, decode_operation_with_nested_structure_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -2541,7 +2904,7 @@ pub fn encode_simple_scalar_properties_input(input: SimpleScalarPropertiesInput)
 }
 
 pub fn decode_simple_scalar_properties_input(body: String) -> Result(SimpleScalarPropertiesInput, String) {
-  case json.parse(body, decode_simple_scalar_properties_input_struct()) {
+  case json.parse(body, decode_simple_scalar_properties_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }

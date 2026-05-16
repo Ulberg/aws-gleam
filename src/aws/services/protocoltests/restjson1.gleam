@@ -3,7 +3,9 @@
 
 import aws/credentials
 import aws/internal/client/awsjson as awsjson_client
+import aws/internal/codec/json_document
 import aws/internal/codec/json_float
+import aws/internal/codec/json_timestamp
 import aws/internal/codec/rest
 import aws/internal/http_send
 import gleam/bit_array
@@ -13,6 +15,7 @@ import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
+import gleam/result
 import gleam/string
 
 pub opaque type Client {
@@ -174,8 +177,55 @@ pub fn decode_all_query_string_types_input_struct() -> decode.Decoder(AllQuerySt
   use query_string <- decode.optional_field("queryString", option.None, decode.optional(decode.string))
   use query_string_list <- decode.optional_field("queryStringList", option.None, decode.optional(decode.list(decode.string)))
   use query_string_set <- decode.optional_field("queryStringSet", option.None, decode.optional(decode.list(decode.string)))
-  use query_timestamp <- decode.optional_field("queryTimestamp", option.None, decode.optional(decode.int))
-  use query_timestamp_list <- decode.optional_field("queryTimestampList", option.None, decode.optional(decode.list(decode.int)))
+  use query_timestamp <- decode.optional_field("queryTimestamp", option.None, decode.optional(json_timestamp.decoder()))
+  use query_timestamp_list <- decode.optional_field("queryTimestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
+  decode.success(AllQueryStringTypesInput(
+    query_boolean: query_boolean,
+    query_boolean_list: query_boolean_list,
+    query_byte: query_byte,
+    query_double: query_double,
+    query_double_list: query_double_list,
+    query_enum: query_enum,
+    query_enum_list: query_enum_list,
+    query_float: query_float,
+    query_integer: query_integer,
+    query_integer_enum: query_integer_enum,
+    query_integer_enum_list: query_integer_enum_list,
+    query_integer_list: query_integer_list,
+    query_integer_set: query_integer_set,
+    query_long: query_long,
+    query_params_map_of_string_list: query_params_map_of_string_list,
+    query_short: query_short,
+    query_string: query_string,
+    query_string_list: query_string_list,
+    query_string_set: query_string_set,
+    query_timestamp: query_timestamp,
+    query_timestamp_list: query_timestamp_list,
+  ))
+}
+
+pub fn decode_all_query_string_types_input_struct_params() -> decode.Decoder(AllQueryStringTypesInput) {
+  use query_boolean <- decode.optional_field("queryBoolean", option.None, decode.optional(decode.bool))
+  use query_boolean_list <- decode.optional_field("queryBooleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use query_byte <- decode.optional_field("queryByte", option.None, decode.optional(decode.int))
+  use query_double <- decode.optional_field("queryDouble", option.None, decode.optional(json_float.decoder()))
+  use query_double_list <- decode.optional_field("queryDoubleList", option.None, decode.optional(decode.list(json_float.decoder())))
+  use query_enum <- decode.optional_field("queryEnum", option.None, decode.optional(decode_foo_enum_enum()))
+  use query_enum_list <- decode.optional_field("queryEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use query_float <- decode.optional_field("queryFloat", option.None, decode.optional(json_float.decoder()))
+  use query_integer <- decode.optional_field("queryInteger", option.None, decode.optional(decode.int))
+  use query_integer_enum <- decode.optional_field("queryIntegerEnum", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use query_integer_enum_list <- decode.optional_field("queryIntegerEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use query_integer_list <- decode.optional_field("queryIntegerList", option.None, decode.optional(decode.list(decode.int)))
+  use query_integer_set <- decode.optional_field("queryIntegerSet", option.None, decode.optional(decode.list(decode.int)))
+  use query_long <- decode.optional_field("queryLong", option.None, decode.optional(decode.int))
+  use query_params_map_of_string_list <- decode.optional_field("queryParamsMapOfStringList", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
+  use query_short <- decode.optional_field("queryShort", option.None, decode.optional(decode.int))
+  use query_string <- decode.optional_field("queryString", option.None, decode.optional(decode.string))
+  use query_string_list <- decode.optional_field("queryStringList", option.None, decode.optional(decode.list(decode.string)))
+  use query_string_set <- decode.optional_field("queryStringSet", option.None, decode.optional(decode.list(decode.string)))
+  use query_timestamp <- decode.optional_field("queryTimestamp", option.None, decode.optional(json_timestamp.decoder()))
+  use query_timestamp_list <- decode.optional_field("queryTimestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
   decode.success(AllQueryStringTypesInput(
     query_boolean: query_boolean,
     query_boolean_list: query_boolean_list,
@@ -286,6 +336,15 @@ pub fn decode_constant_and_variable_query_string_input_struct() -> decode.Decode
   ))
 }
 
+pub fn decode_constant_and_variable_query_string_input_struct_params() -> decode.Decoder(ConstantAndVariableQueryStringInput) {
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
+  use maybe_set <- decode.optional_field("maybeSet", option.None, decode.optional(decode.string))
+  decode.success(ConstantAndVariableQueryStringInput(
+    baz: baz,
+    maybe_set: maybe_set,
+  ))
+}
+
 pub type ConstantQueryStringInput {
   ConstantQueryStringInput(
     hello: option.Option(String),
@@ -302,6 +361,13 @@ pub fn encode_constant_query_string_input_struct(input: ConstantQueryStringInput
 }
 
 pub fn decode_constant_query_string_input_struct() -> decode.Decoder(ConstantQueryStringInput) {
+  use hello <- decode.optional_field("hello", option.None, decode.optional(decode.string))
+  decode.success(ConstantQueryStringInput(
+    hello: hello,
+  ))
+}
+
+pub fn decode_constant_query_string_input_struct_params() -> decode.Decoder(ConstantQueryStringInput) {
   use hello <- decode.optional_field("hello", option.None, decode.optional(decode.string))
   decode.success(ConstantQueryStringInput(
     hello: hello,
@@ -330,6 +396,13 @@ pub fn decode_content_type_parameters_input_struct() -> decode.Decoder(ContentTy
   ))
 }
 
+pub fn decode_content_type_parameters_input_struct_params() -> decode.Decoder(ContentTypeParametersInput) {
+  use value <- decode.optional_field("value", option.None, decode.optional(decode.int))
+  decode.success(ContentTypeParametersInput(
+    value: value,
+  ))
+}
+
 pub type ContentTypeParametersOutput {
   ContentTypeParametersOutput
 }
@@ -339,6 +412,10 @@ pub fn encode_content_type_parameters_output_struct(_v: ContentTypeParametersOut
 }
 
 pub fn decode_content_type_parameters_output_struct() -> decode.Decoder(ContentTypeParametersOutput) {
+  decode.success(ContentTypeParametersOutput)
+}
+
+pub fn decode_content_type_parameters_output_struct_params() -> decode.Decoder(ContentTypeParametersOutput) {
   decode.success(ContentTypeParametersOutput)
 }
 
@@ -358,7 +435,14 @@ pub fn encode_datetime_offsets_output_struct(input: DatetimeOffsetsOutput) -> js
 }
 
 pub fn decode_datetime_offsets_output_struct() -> decode.Decoder(DatetimeOffsetsOutput) {
-  use datetime <- decode.optional_field("datetime", option.None, decode.optional(decode.int))
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(DatetimeOffsetsOutput(
+    datetime: datetime,
+  ))
+}
+
+pub fn decode_datetime_offsets_output_struct_params() -> decode.Decoder(DatetimeOffsetsOutput) {
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(DatetimeOffsetsOutput(
     datetime: datetime,
   ))
@@ -385,7 +469,16 @@ pub fn encode_document_type_input_output_struct(input: DocumentTypeInputOutput) 
 }
 
 pub fn decode_document_type_input_output_struct() -> decode.Decoder(DocumentTypeInputOutput) {
-  use document_value <- decode.optional_field("documentValue", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use document_value <- decode.optional_field("documentValue", option.None, decode.optional(json_document.decoder()))
+  use string_value <- decode.optional_field("stringValue", option.None, decode.optional(decode.string))
+  decode.success(DocumentTypeInputOutput(
+    document_value: document_value,
+    string_value: string_value,
+  ))
+}
+
+pub fn decode_document_type_input_output_struct_params() -> decode.Decoder(DocumentTypeInputOutput) {
+  use document_value <- decode.optional_field("documentValue", option.None, decode.optional(json_document.decoder()))
   use string_value <- decode.optional_field("stringValue", option.None, decode.optional(decode.string))
   decode.success(DocumentTypeInputOutput(
     document_value: document_value,
@@ -409,7 +502,14 @@ pub fn encode_document_type_as_map_value_input_output_struct(input: DocumentType
 }
 
 pub fn decode_document_type_as_map_value_input_output_struct() -> decode.Decoder(DocumentTypeAsMapValueInputOutput) {
-  use doc_valued_map <- decode.optional_field("docValuedMap", option.None, decode.optional(decode.dict(decode.string, decode.dynamic |> decode.map(fn(_) { json.null() }))))
+  use doc_valued_map <- decode.optional_field("docValuedMap", option.None, decode.optional(decode.dict(decode.string, json_document.decoder())))
+  decode.success(DocumentTypeAsMapValueInputOutput(
+    doc_valued_map: doc_valued_map,
+  ))
+}
+
+pub fn decode_document_type_as_map_value_input_output_struct_params() -> decode.Decoder(DocumentTypeAsMapValueInputOutput) {
+  use doc_valued_map <- decode.optional_field("docValuedMap", option.None, decode.optional(decode.dict(decode.string, json_document.decoder())))
   decode.success(DocumentTypeAsMapValueInputOutput(
     doc_valued_map: doc_valued_map,
   ))
@@ -431,7 +531,14 @@ pub fn encode_document_type_as_payload_input_output_struct(input: DocumentTypeAs
 }
 
 pub fn decode_document_type_as_payload_input_output_struct() -> decode.Decoder(DocumentTypeAsPayloadInputOutput) {
-  use document_value <- decode.optional_field("documentValue", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use document_value <- decode.optional_field("documentValue", option.None, decode.optional(json_document.decoder()))
+  decode.success(DocumentTypeAsPayloadInputOutput(
+    document_value: document_value,
+  ))
+}
+
+pub fn decode_document_type_as_payload_input_output_struct_params() -> decode.Decoder(DocumentTypeAsPayloadInputOutput) {
+  use document_value <- decode.optional_field("documentValue", option.None, decode.optional(json_document.decoder()))
   decode.success(DocumentTypeAsPayloadInputOutput(
     document_value: document_value,
   ))
@@ -453,6 +560,13 @@ pub fn encode_duplex_stream_input_struct(input: DuplexStreamInput) -> json.Json 
 }
 
 pub fn decode_duplex_stream_input_struct() -> decode.Decoder(DuplexStreamInput) {
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(DuplexStreamInput(
+    stream: stream,
+  ))
+}
+
+pub fn decode_duplex_stream_input_struct_params() -> decode.Decoder(DuplexStreamInput) {
   use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
   decode.success(DuplexStreamInput(
     stream: stream,
@@ -520,6 +634,13 @@ pub fn decode_blob_payload_event_struct() -> decode.Decoder(BlobPayloadEvent) {
   ))
 }
 
+pub fn decode_blob_payload_event_struct_params() -> decode.Decoder(BlobPayloadEvent) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(BlobPayloadEvent(
+    payload: payload,
+  ))
+}
+
 pub type ErrorEvent {
   ErrorEvent(
     message: option.Option(String),
@@ -536,6 +657,13 @@ pub fn encode_error_event_struct(input: ErrorEvent) -> json.Json {
 }
 
 pub fn decode_error_event_struct() -> decode.Decoder(ErrorEvent) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ErrorEvent(
+    message: message,
+  ))
+}
+
+pub fn decode_error_event_struct_params() -> decode.Decoder(ErrorEvent) {
   use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
   decode.success(ErrorEvent(
     message: message,
@@ -600,7 +728,28 @@ pub fn decode_headers_event_struct() -> decode.Decoder(HeadersEvent) {
   use long_header <- decode.optional_field("longHeader", option.None, decode.optional(decode.int))
   use short_header <- decode.optional_field("shortHeader", option.None, decode.optional(decode.int))
   use string_header <- decode.optional_field("stringHeader", option.None, decode.optional(decode.string))
-  use timestamp_header <- decode.optional_field("timestampHeader", option.None, decode.optional(decode.int))
+  use timestamp_header <- decode.optional_field("timestampHeader", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(HeadersEvent(
+    blob_header: blob_header,
+    boolean_header: boolean_header,
+    byte_header: byte_header,
+    int_header: int_header,
+    long_header: long_header,
+    short_header: short_header,
+    string_header: string_header,
+    timestamp_header: timestamp_header,
+  ))
+}
+
+pub fn decode_headers_event_struct_params() -> decode.Decoder(HeadersEvent) {
+  use blob_header <- decode.optional_field("blobHeader", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use boolean_header <- decode.optional_field("booleanHeader", option.None, decode.optional(decode.bool))
+  use byte_header <- decode.optional_field("byteHeader", option.None, decode.optional(decode.int))
+  use int_header <- decode.optional_field("intHeader", option.None, decode.optional(decode.int))
+  use long_header <- decode.optional_field("longHeader", option.None, decode.optional(decode.int))
+  use short_header <- decode.optional_field("shortHeader", option.None, decode.optional(decode.int))
+  use string_header <- decode.optional_field("stringHeader", option.None, decode.optional(decode.string))
+  use timestamp_header <- decode.optional_field("timestampHeader", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(HeadersEvent(
     blob_header: blob_header,
     boolean_header: boolean_header,
@@ -642,6 +791,15 @@ pub fn decode_headers_and_explicit_payload_event_struct() -> decode.Decoder(Head
   ))
 }
 
+pub fn decode_headers_and_explicit_payload_event_struct_params() -> decode.Decoder(HeadersAndExplicitPayloadEvent) {
+  use header <- decode.optional_field("header", option.None, decode.optional(decode.string))
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_payload_structure_struct_params()))
+  decode.success(HeadersAndExplicitPayloadEvent(
+    header: header,
+    payload: payload,
+  ))
+}
+
 pub type PayloadStructure {
   PayloadStructure(
     structure_member: option.Option(String),
@@ -658,6 +816,13 @@ pub fn encode_payload_structure_struct(input: PayloadStructure) -> json.Json {
 }
 
 pub fn decode_payload_structure_struct() -> decode.Decoder(PayloadStructure) {
+  use structure_member <- decode.optional_field("structureMember", option.None, decode.optional(decode.string))
+  decode.success(PayloadStructure(
+    structure_member: structure_member,
+  ))
+}
+
+pub fn decode_payload_structure_struct_params() -> decode.Decoder(PayloadStructure) {
   use structure_member <- decode.optional_field("structureMember", option.None, decode.optional(decode.string))
   decode.success(PayloadStructure(
     structure_member: structure_member,
@@ -693,6 +858,15 @@ pub fn decode_headers_and_implicit_payload_event_struct() -> decode.Decoder(Head
   ))
 }
 
+pub fn decode_headers_and_implicit_payload_event_struct_params() -> decode.Decoder(HeadersAndImplicitPayloadEvent) {
+  use header <- decode.optional_field("header", option.None, decode.optional(decode.string))
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
+  decode.success(HeadersAndImplicitPayloadEvent(
+    header: header,
+    payload: payload,
+  ))
+}
+
 pub type StringPayloadEvent {
   StringPayloadEvent(
     payload: option.Option(String),
@@ -709,6 +883,13 @@ pub fn encode_string_payload_event_struct(input: StringPayloadEvent) -> json.Jso
 }
 
 pub fn decode_string_payload_event_struct() -> decode.Decoder(StringPayloadEvent) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
+  decode.success(StringPayloadEvent(
+    payload: payload,
+  ))
+}
+
+pub fn decode_string_payload_event_struct_params() -> decode.Decoder(StringPayloadEvent) {
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
   decode.success(StringPayloadEvent(
     payload: payload,
@@ -737,6 +918,13 @@ pub fn decode_structure_payload_event_struct() -> decode.Decoder(StructurePayloa
   ))
 }
 
+pub fn decode_structure_payload_event_struct_params() -> decode.Decoder(StructurePayloadEvent) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_payload_structure_struct_params()))
+  decode.success(StructurePayloadEvent(
+    payload: payload,
+  ))
+}
+
 pub type UnionPayloadEvent {
   UnionPayloadEvent(
     payload: option.Option(PayloadUnion),
@@ -753,6 +941,13 @@ pub fn encode_union_payload_event_struct(input: UnionPayloadEvent) -> json.Json 
 }
 
 pub fn decode_union_payload_event_struct() -> decode.Decoder(UnionPayloadEvent) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_payload_union_union()))
+  decode.success(UnionPayloadEvent(
+    payload: payload,
+  ))
+}
+
+pub fn decode_union_payload_event_struct_params() -> decode.Decoder(UnionPayloadEvent) {
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_payload_union_union()))
   decode.success(UnionPayloadEvent(
     payload: payload,
@@ -799,6 +994,13 @@ pub fn decode_duplex_stream_output_struct() -> decode.Decoder(DuplexStreamOutput
   ))
 }
 
+pub fn decode_duplex_stream_output_struct_params() -> decode.Decoder(DuplexStreamOutput) {
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(DuplexStreamOutput(
+    stream: stream,
+  ))
+}
+
 pub type DuplexStreamWithDistinctStreamsInput {
   DuplexStreamWithDistinctStreamsInput(
     stream: option.Option(EventStream),
@@ -821,6 +1023,13 @@ pub fn decode_duplex_stream_with_distinct_streams_input_struct() -> decode.Decod
   ))
 }
 
+pub fn decode_duplex_stream_with_distinct_streams_input_struct_params() -> decode.Decoder(DuplexStreamWithDistinctStreamsInput) {
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(DuplexStreamWithDistinctStreamsInput(
+    stream: stream,
+  ))
+}
+
 pub type DuplexStreamWithDistinctStreamsOutput {
   DuplexStreamWithDistinctStreamsOutput(
     stream: option.Option(SingletonEventStream),
@@ -837,6 +1046,13 @@ pub fn encode_duplex_stream_with_distinct_streams_output_struct(input: DuplexStr
 }
 
 pub fn decode_duplex_stream_with_distinct_streams_output_struct() -> decode.Decoder(DuplexStreamWithDistinctStreamsOutput) {
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_singleton_event_stream_union()))
+  decode.success(DuplexStreamWithDistinctStreamsOutput(
+    stream: stream,
+  ))
+}
+
+pub fn decode_duplex_stream_with_distinct_streams_output_struct_params() -> decode.Decoder(DuplexStreamWithDistinctStreamsOutput) {
   use stream <- decode.optional_field("stream", option.None, decode.optional(decode_singleton_event_stream_union()))
   decode.success(DuplexStreamWithDistinctStreamsOutput(
     stream: stream,
@@ -883,6 +1099,13 @@ pub fn decode_singleton_event_struct() -> decode.Decoder(SingletonEvent) {
   ))
 }
 
+pub fn decode_singleton_event_struct_params() -> decode.Decoder(SingletonEvent) {
+  use value <- decode.optional_field("value", option.None, decode.optional(decode.string))
+  decode.success(SingletonEvent(
+    value: value,
+  ))
+}
+
 pub type DuplexStreamWithInitialMessagesInput {
   DuplexStreamWithInitialMessagesInput(
     initial_request_member: option.Option(String),
@@ -904,6 +1127,15 @@ pub fn encode_duplex_stream_with_initial_messages_input_struct(input: DuplexStre
 }
 
 pub fn decode_duplex_stream_with_initial_messages_input_struct() -> decode.Decoder(DuplexStreamWithInitialMessagesInput) {
+  use initial_request_member <- decode.optional_field("initialRequestMember", option.None, decode.optional(decode.string))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(DuplexStreamWithInitialMessagesInput(
+    initial_request_member: initial_request_member,
+    stream: stream,
+  ))
+}
+
+pub fn decode_duplex_stream_with_initial_messages_input_struct_params() -> decode.Decoder(DuplexStreamWithInitialMessagesInput) {
   use initial_request_member <- decode.optional_field("initialRequestMember", option.None, decode.optional(decode.string))
   use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
   decode.success(DuplexStreamWithInitialMessagesInput(
@@ -941,6 +1173,15 @@ pub fn decode_duplex_stream_with_initial_messages_output_struct() -> decode.Deco
   ))
 }
 
+pub fn decode_duplex_stream_with_initial_messages_output_struct_params() -> decode.Decoder(DuplexStreamWithInitialMessagesOutput) {
+  use initial_response_member <- decode.optional_field("initialResponseMember", option.None, decode.optional(decode.string))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(DuplexStreamWithInitialMessagesOutput(
+    initial_response_member: initial_response_member,
+    stream: stream,
+  ))
+}
+
 pub type ServiceUnavailableError {
   ServiceUnavailableError(
     message: option.Option(String),
@@ -963,6 +1204,13 @@ pub fn decode_service_unavailable_error_struct() -> decode.Decoder(ServiceUnavai
   ))
 }
 
+pub fn decode_service_unavailable_error_struct_params() -> decode.Decoder(ServiceUnavailableError) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ServiceUnavailableError(
+    message: message,
+  ))
+}
+
 pub type EmptyInputAndEmptyOutputInput {
   EmptyInputAndEmptyOutputInput
 }
@@ -975,6 +1223,10 @@ pub fn decode_empty_input_and_empty_output_input_struct() -> decode.Decoder(Empt
   decode.success(EmptyInputAndEmptyOutputInput)
 }
 
+pub fn decode_empty_input_and_empty_output_input_struct_params() -> decode.Decoder(EmptyInputAndEmptyOutputInput) {
+  decode.success(EmptyInputAndEmptyOutputInput)
+}
+
 pub type EmptyInputAndEmptyOutputOutput {
   EmptyInputAndEmptyOutputOutput
 }
@@ -984,6 +1236,10 @@ pub fn encode_empty_input_and_empty_output_output_struct(_v: EmptyInputAndEmptyO
 }
 
 pub fn decode_empty_input_and_empty_output_output_struct() -> decode.Decoder(EmptyInputAndEmptyOutputOutput) {
+  decode.success(EmptyInputAndEmptyOutputOutput)
+}
+
+pub fn decode_empty_input_and_empty_output_output_struct_params() -> decode.Decoder(EmptyInputAndEmptyOutputOutput) {
   decode.success(EmptyInputAndEmptyOutputOutput)
 }
 
@@ -1009,6 +1265,13 @@ pub fn decode_host_label_input_struct() -> decode.Decoder(HostLabelInput) {
   ))
 }
 
+pub fn decode_host_label_input_struct_params() -> decode.Decoder(HostLabelInput) {
+  use label <- decode.optional_field("label", option.None, decode.optional(decode.string))
+  decode.success(HostLabelInput(
+    label: label,
+  ))
+}
+
 pub type FractionalSecondsOutput {
   FractionalSecondsOutput(
     datetime: option.Option(Int),
@@ -1025,7 +1288,14 @@ pub fn encode_fractional_seconds_output_struct(input: FractionalSecondsOutput) -
 }
 
 pub fn decode_fractional_seconds_output_struct() -> decode.Decoder(FractionalSecondsOutput) {
-  use datetime <- decode.optional_field("datetime", option.None, decode.optional(decode.int))
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(FractionalSecondsOutput(
+    datetime: datetime,
+  ))
+}
+
+pub fn decode_fractional_seconds_output_struct_params() -> decode.Decoder(FractionalSecondsOutput) {
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(FractionalSecondsOutput(
     datetime: datetime,
   ))
@@ -1047,6 +1317,13 @@ pub fn encode_greeting_with_errors_output_struct(input: GreetingWithErrorsOutput
 }
 
 pub fn decode_greeting_with_errors_output_struct() -> decode.Decoder(GreetingWithErrorsOutput) {
+  use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
+  decode.success(GreetingWithErrorsOutput(
+    greeting: greeting,
+  ))
+}
+
+pub fn decode_greeting_with_errors_output_struct_params() -> decode.Decoder(GreetingWithErrorsOutput) {
   use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
   decode.success(GreetingWithErrorsOutput(
     greeting: greeting,
@@ -1089,6 +1366,17 @@ pub fn decode_complex_error_struct() -> decode.Decoder(ComplexError) {
   ))
 }
 
+pub fn decode_complex_error_struct_params() -> decode.Decoder(ComplexError) {
+  use header <- decode.optional_field("Header", option.None, decode.optional(decode.string))
+  use nested <- decode.optional_field("Nested", option.None, decode.optional(decode_complex_nested_error_data_struct_params()))
+  use top_level <- decode.optional_field("TopLevel", option.None, decode.optional(decode.string))
+  decode.success(ComplexError(
+    header: header,
+    nested: nested,
+    top_level: top_level,
+  ))
+}
+
 pub type ComplexNestedErrorData {
   ComplexNestedErrorData(
     foo: option.Option(String),
@@ -1098,13 +1386,20 @@ pub type ComplexNestedErrorData {
 pub fn encode_complex_nested_error_data_struct(input: ComplexNestedErrorData) -> json.Json {
   let pairs = []
   let pairs = case input.foo {
-    option.Some(v) -> [#("Foo", json.string(v)), ..pairs]
+    option.Some(v) -> [#("Fooooo", json.string(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_complex_nested_error_data_struct() -> decode.Decoder(ComplexNestedErrorData) {
+  use foo <- decode.optional_field("Fooooo", option.None, decode.optional(decode.string))
+  decode.success(ComplexNestedErrorData(
+    foo: foo,
+  ))
+}
+
+pub fn decode_complex_nested_error_data_struct_params() -> decode.Decoder(ComplexNestedErrorData) {
   use foo <- decode.optional_field("Foo", option.None, decode.optional(decode.string))
   decode.success(ComplexNestedErrorData(
     foo: foo,
@@ -1120,6 +1415,10 @@ pub fn encode_foo_error_struct(_v: FooError) -> json.Json {
 }
 
 pub fn decode_foo_error_struct() -> decode.Decoder(FooError) {
+  decode.success(FooError)
+}
+
+pub fn decode_foo_error_struct_params() -> decode.Decoder(FooError) {
   decode.success(FooError)
 }
 
@@ -1139,6 +1438,13 @@ pub fn encode_invalid_greeting_struct(input: InvalidGreeting) -> json.Json {
 }
 
 pub fn decode_invalid_greeting_struct() -> decode.Decoder(InvalidGreeting) {
+  use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
+  decode.success(InvalidGreeting(
+    message: message,
+  ))
+}
+
+pub fn decode_invalid_greeting_struct_params() -> decode.Decoder(InvalidGreeting) {
   use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
   decode.success(InvalidGreeting(
     message: message,
@@ -1166,6 +1472,15 @@ pub fn encode_http_empty_prefix_headers_input_struct(input: HttpEmptyPrefixHeade
 }
 
 pub fn decode_http_empty_prefix_headers_input_struct() -> decode.Decoder(HttpEmptyPrefixHeadersInput) {
+  use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use specific_header <- decode.optional_field("specificHeader", option.None, decode.optional(decode.string))
+  decode.success(HttpEmptyPrefixHeadersInput(
+    prefix_headers: prefix_headers,
+    specific_header: specific_header,
+  ))
+}
+
+pub fn decode_http_empty_prefix_headers_input_struct_params() -> decode.Decoder(HttpEmptyPrefixHeadersInput) {
   use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   use specific_header <- decode.optional_field("specificHeader", option.None, decode.optional(decode.string))
   decode.success(HttpEmptyPrefixHeadersInput(
@@ -1203,6 +1518,15 @@ pub fn decode_http_empty_prefix_headers_output_struct() -> decode.Decoder(HttpEm
   ))
 }
 
+pub fn decode_http_empty_prefix_headers_output_struct_params() -> decode.Decoder(HttpEmptyPrefixHeadersOutput) {
+  use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use specific_header <- decode.optional_field("specificHeader", option.None, decode.optional(decode.string))
+  decode.success(HttpEmptyPrefixHeadersOutput(
+    prefix_headers: prefix_headers,
+    specific_header: specific_header,
+  ))
+}
+
 pub type EnumPayloadInput {
   EnumPayloadInput(
     payload: option.Option(StringEnum),
@@ -1219,6 +1543,13 @@ pub fn encode_enum_payload_input_struct(input: EnumPayloadInput) -> json.Json {
 }
 
 pub fn decode_enum_payload_input_struct() -> decode.Decoder(EnumPayloadInput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_string_enum_enum()))
+  decode.success(EnumPayloadInput(
+    payload: payload,
+  ))
+}
+
+pub fn decode_enum_payload_input_struct_params() -> decode.Decoder(EnumPayloadInput) {
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode_string_enum_enum()))
   decode.success(EnumPayloadInput(
     payload: payload,
@@ -1273,6 +1604,15 @@ pub fn decode_http_payload_traits_input_output_struct() -> decode.Decoder(HttpPa
   ))
 }
 
+pub fn decode_http_payload_traits_input_output_struct_params() -> decode.Decoder(HttpPayloadTraitsInputOutput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(HttpPayloadTraitsInputOutput(
+    blob: blob,
+    foo: foo,
+  ))
+}
+
 pub type HttpPayloadTraitsWithMediaTypeInputOutput {
   HttpPayloadTraitsWithMediaTypeInputOutput(
     blob: option.Option(BitArray),
@@ -1302,6 +1642,15 @@ pub fn decode_http_payload_traits_with_media_type_input_output_struct() -> decod
   ))
 }
 
+pub fn decode_http_payload_traits_with_media_type_input_output_struct_params() -> decode.Decoder(HttpPayloadTraitsWithMediaTypeInputOutput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(HttpPayloadTraitsWithMediaTypeInputOutput(
+    blob: blob,
+    foo: foo,
+  ))
+}
+
 pub type HttpPayloadWithStructureInputOutput {
   HttpPayloadWithStructureInputOutput(
     nested: option.Option(NestedPayload),
@@ -1319,6 +1668,13 @@ pub fn encode_http_payload_with_structure_input_output_struct(input: HttpPayload
 
 pub fn decode_http_payload_with_structure_input_output_struct() -> decode.Decoder(HttpPayloadWithStructureInputOutput) {
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_nested_payload_struct()))
+  decode.success(HttpPayloadWithStructureInputOutput(
+    nested: nested,
+  ))
+}
+
+pub fn decode_http_payload_with_structure_input_output_struct_params() -> decode.Decoder(HttpPayloadWithStructureInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_nested_payload_struct_params()))
   decode.success(HttpPayloadWithStructureInputOutput(
     nested: nested,
   ))
@@ -1353,6 +1709,15 @@ pub fn decode_nested_payload_struct() -> decode.Decoder(NestedPayload) {
   ))
 }
 
+pub fn decode_nested_payload_struct_params() -> decode.Decoder(NestedPayload) {
+  use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
+  use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
+  decode.success(NestedPayload(
+    greeting: greeting,
+    name: name,
+  ))
+}
+
 pub type HttpPayloadWithUnionInputOutput {
   HttpPayloadWithUnionInputOutput(
     nested: option.Option(UnionPayload),
@@ -1369,6 +1734,13 @@ pub fn encode_http_payload_with_union_input_output_struct(input: HttpPayloadWith
 }
 
 pub fn decode_http_payload_with_union_input_output_struct() -> decode.Decoder(HttpPayloadWithUnionInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_union_payload_union()))
+  decode.success(HttpPayloadWithUnionInputOutput(
+    nested: nested,
+  ))
+}
+
+pub fn decode_http_payload_with_union_input_output_struct_params() -> decode.Decoder(HttpPayloadWithUnionInputOutput) {
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_union_payload_union()))
   decode.success(HttpPayloadWithUnionInputOutput(
     nested: nested,
@@ -1422,6 +1794,15 @@ pub fn decode_http_prefix_headers_input_struct() -> decode.Decoder(HttpPrefixHea
   ))
 }
 
+pub fn decode_http_prefix_headers_input_struct_params() -> decode.Decoder(HttpPrefixHeadersInput) {
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use foo_map <- decode.optional_field("fooMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(HttpPrefixHeadersInput(
+    foo: foo,
+    foo_map: foo_map,
+  ))
+}
+
 pub type HttpPrefixHeadersOutput {
   HttpPrefixHeadersOutput(
     foo: option.Option(String),
@@ -1451,6 +1832,15 @@ pub fn decode_http_prefix_headers_output_struct() -> decode.Decoder(HttpPrefixHe
   ))
 }
 
+pub fn decode_http_prefix_headers_output_struct_params() -> decode.Decoder(HttpPrefixHeadersOutput) {
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use foo_map <- decode.optional_field("fooMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(HttpPrefixHeadersOutput(
+    foo: foo,
+    foo_map: foo_map,
+  ))
+}
+
 pub type HttpPrefixHeadersInResponseInput {
   HttpPrefixHeadersInResponseInput
 }
@@ -1460,6 +1850,10 @@ pub fn encode_http_prefix_headers_in_response_input_struct(_v: HttpPrefixHeaders
 }
 
 pub fn decode_http_prefix_headers_in_response_input_struct() -> decode.Decoder(HttpPrefixHeadersInResponseInput) {
+  decode.success(HttpPrefixHeadersInResponseInput)
+}
+
+pub fn decode_http_prefix_headers_in_response_input_struct_params() -> decode.Decoder(HttpPrefixHeadersInResponseInput) {
   decode.success(HttpPrefixHeadersInResponseInput)
 }
 
@@ -1485,6 +1879,13 @@ pub fn decode_http_prefix_headers_in_response_output_struct() -> decode.Decoder(
   ))
 }
 
+pub fn decode_http_prefix_headers_in_response_output_struct_params() -> decode.Decoder(HttpPrefixHeadersInResponseOutput) {
+  use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(HttpPrefixHeadersInResponseOutput(
+    prefix_headers: prefix_headers,
+  ))
+}
+
 pub type HttpQueryParamsOnlyInput {
   HttpQueryParamsOnlyInput(
     query_map: option.Option(dict.Dict(String, String)),
@@ -1501,6 +1902,13 @@ pub fn encode_http_query_params_only_input_struct(input: HttpQueryParamsOnlyInpu
 }
 
 pub fn decode_http_query_params_only_input_struct() -> decode.Decoder(HttpQueryParamsOnlyInput) {
+  use query_map <- decode.optional_field("queryMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(HttpQueryParamsOnlyInput(
+    query_map: query_map,
+  ))
+}
+
+pub fn decode_http_query_params_only_input_struct_params() -> decode.Decoder(HttpQueryParamsOnlyInput) {
   use query_map <- decode.optional_field("queryMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(HttpQueryParamsOnlyInput(
     query_map: query_map,
@@ -1536,6 +1944,15 @@ pub fn decode_http_request_with_float_labels_input_struct() -> decode.Decoder(Ht
   ))
 }
 
+pub fn decode_http_request_with_float_labels_input_struct_params() -> decode.Decoder(HttpRequestWithFloatLabelsInput) {
+  use double <- decode.optional_field("double", option.None, decode.optional(json_float.decoder()))
+  use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
+  decode.success(HttpRequestWithFloatLabelsInput(
+    double: double,
+    float: float,
+  ))
+}
+
 pub type HttpRequestWithGreedyLabelInPathInput {
   HttpRequestWithGreedyLabelInPathInput(
     baz: option.Option(String),
@@ -1557,6 +1974,15 @@ pub fn encode_http_request_with_greedy_label_in_path_input_struct(input: HttpReq
 }
 
 pub fn decode_http_request_with_greedy_label_in_path_input_struct() -> decode.Decoder(HttpRequestWithGreedyLabelInPathInput) {
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(HttpRequestWithGreedyLabelInPathInput(
+    baz: baz,
+    foo: foo,
+  ))
+}
+
+pub fn decode_http_request_with_greedy_label_in_path_input_struct_params() -> decode.Decoder(HttpRequestWithGreedyLabelInPathInput) {
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(HttpRequestWithGreedyLabelInPathInput(
@@ -1623,7 +2049,28 @@ pub fn decode_http_request_with_labels_input_struct() -> decode.Decoder(HttpRequ
   use long <- decode.optional_field("long", option.None, decode.optional(decode.int))
   use short <- decode.optional_field("short", option.None, decode.optional(decode.int))
   use string <- decode.optional_field("string", option.None, decode.optional(decode.string))
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(HttpRequestWithLabelsInput(
+    boolean: boolean,
+    double: double,
+    float: float,
+    integer: integer,
+    long: long,
+    short: short,
+    string: string,
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_http_request_with_labels_input_struct_params() -> decode.Decoder(HttpRequestWithLabelsInput) {
+  use boolean <- decode.optional_field("boolean", option.None, decode.optional(decode.bool))
+  use double <- decode.optional_field("double", option.None, decode.optional(json_float.decoder()))
+  use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
+  use integer <- decode.optional_field("integer", option.None, decode.optional(decode.int))
+  use long <- decode.optional_field("long", option.None, decode.optional(decode.int))
+  use short <- decode.optional_field("short", option.None, decode.optional(decode.int))
+  use string <- decode.optional_field("string", option.None, decode.optional(decode.string))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(HttpRequestWithLabelsInput(
     boolean: boolean,
     double: double,
@@ -1682,13 +2129,32 @@ pub fn encode_http_request_with_labels_and_timestamp_format_input_struct(input: 
 }
 
 pub fn decode_http_request_with_labels_and_timestamp_format_input_struct() -> decode.Decoder(HttpRequestWithLabelsAndTimestampFormatInput) {
-  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(decode.int))
-  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(decode.int))
-  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(decode.int))
-  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(decode.int))
-  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(decode.int))
-  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(decode.int))
-  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(decode.int))
+  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(json_timestamp.decoder()))
+  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(HttpRequestWithLabelsAndTimestampFormatInput(
+    default_format: default_format,
+    member_date_time: member_date_time,
+    member_epoch_seconds: member_epoch_seconds,
+    member_http_date: member_http_date,
+    target_date_time: target_date_time,
+    target_epoch_seconds: target_epoch_seconds,
+    target_http_date: target_http_date,
+  ))
+}
+
+pub fn decode_http_request_with_labels_and_timestamp_format_input_struct_params() -> decode.Decoder(HttpRequestWithLabelsAndTimestampFormatInput) {
+  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(json_timestamp.decoder()))
+  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(HttpRequestWithLabelsAndTimestampFormatInput(
     default_format: default_format,
     member_date_time: member_date_time,
@@ -1722,6 +2188,13 @@ pub fn decode_http_request_with_regex_literal_input_struct() -> decode.Decoder(H
   ))
 }
 
+pub fn decode_http_request_with_regex_literal_input_struct_params() -> decode.Decoder(HttpRequestWithRegexLiteralInput) {
+  use str <- decode.optional_field("str", option.None, decode.optional(decode.string))
+  decode.success(HttpRequestWithRegexLiteralInput(
+    str: str,
+  ))
+}
+
 pub type HttpResponseCodeOutput {
   HttpResponseCodeOutput(
     status: option.Option(Int),
@@ -1738,6 +2211,13 @@ pub fn encode_http_response_code_output_struct(input: HttpResponseCodeOutput) ->
 }
 
 pub fn decode_http_response_code_output_struct() -> decode.Decoder(HttpResponseCodeOutput) {
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode.int))
+  decode.success(HttpResponseCodeOutput(
+    status: status,
+  ))
+}
+
+pub fn decode_http_response_code_output_struct_params() -> decode.Decoder(HttpResponseCodeOutput) {
   use status <- decode.optional_field("Status", option.None, decode.optional(decode.int))
   decode.success(HttpResponseCodeOutput(
     status: status,
@@ -1766,6 +2246,13 @@ pub fn decode_string_payload_input_struct() -> decode.Decoder(StringPayloadInput
   ))
 }
 
+pub fn decode_string_payload_input_struct_params() -> decode.Decoder(StringPayloadInput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
+  decode.success(StringPayloadInput(
+    payload: payload,
+  ))
+}
+
 pub type IgnoreQueryParamsInResponseOutput {
   IgnoreQueryParamsInResponseOutput(
     baz: option.Option(String),
@@ -1782,6 +2269,13 @@ pub fn encode_ignore_query_params_in_response_output_struct(input: IgnoreQueryPa
 }
 
 pub fn decode_ignore_query_params_in_response_output_struct() -> decode.Decoder(IgnoreQueryParamsInResponseOutput) {
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
+  decode.success(IgnoreQueryParamsInResponseOutput(
+    baz: baz,
+  ))
+}
+
+pub fn decode_ignore_query_params_in_response_output_struct_params() -> decode.Decoder(IgnoreQueryParamsInResponseOutput) {
   use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
   decode.success(IgnoreQueryParamsInResponseOutput(
     baz: baz,
@@ -1905,7 +2399,48 @@ pub fn decode_input_and_output_with_headers_io_struct() -> decode.Decoder(InputA
   use header_string <- decode.optional_field("headerString", option.None, decode.optional(decode.string))
   use header_string_list <- decode.optional_field("headerStringList", option.None, decode.optional(decode.list(decode.string)))
   use header_string_set <- decode.optional_field("headerStringSet", option.None, decode.optional(decode.list(decode.string)))
-  use header_timestamp_list <- decode.optional_field("headerTimestampList", option.None, decode.optional(decode.list(decode.int)))
+  use header_timestamp_list <- decode.optional_field("headerTimestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
+  use header_true_bool <- decode.optional_field("headerTrueBool", option.None, decode.optional(decode.bool))
+  decode.success(InputAndOutputWithHeadersIO(
+    header_boolean_list: header_boolean_list,
+    header_byte: header_byte,
+    header_double: header_double,
+    header_enum: header_enum,
+    header_enum_list: header_enum_list,
+    header_false_bool: header_false_bool,
+    header_float: header_float,
+    header_integer: header_integer,
+    header_integer_enum: header_integer_enum,
+    header_integer_enum_list: header_integer_enum_list,
+    header_integer_list: header_integer_list,
+    header_long: header_long,
+    header_short: header_short,
+    header_string: header_string,
+    header_string_list: header_string_list,
+    header_string_set: header_string_set,
+    header_timestamp_list: header_timestamp_list,
+    header_true_bool: header_true_bool,
+  ))
+}
+
+pub fn decode_input_and_output_with_headers_io_struct_params() -> decode.Decoder(InputAndOutputWithHeadersIO) {
+  use header_boolean_list <- decode.optional_field("headerBooleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use header_byte <- decode.optional_field("headerByte", option.None, decode.optional(decode.int))
+  use header_double <- decode.optional_field("headerDouble", option.None, decode.optional(json_float.decoder()))
+  use header_enum <- decode.optional_field("headerEnum", option.None, decode.optional(decode_foo_enum_enum()))
+  use header_enum_list <- decode.optional_field("headerEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use header_false_bool <- decode.optional_field("headerFalseBool", option.None, decode.optional(decode.bool))
+  use header_float <- decode.optional_field("headerFloat", option.None, decode.optional(json_float.decoder()))
+  use header_integer <- decode.optional_field("headerInteger", option.None, decode.optional(decode.int))
+  use header_integer_enum <- decode.optional_field("headerIntegerEnum", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use header_integer_enum_list <- decode.optional_field("headerIntegerEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use header_integer_list <- decode.optional_field("headerIntegerList", option.None, decode.optional(decode.list(decode.int)))
+  use header_long <- decode.optional_field("headerLong", option.None, decode.optional(decode.int))
+  use header_short <- decode.optional_field("headerShort", option.None, decode.optional(decode.int))
+  use header_string <- decode.optional_field("headerString", option.None, decode.optional(decode.string))
+  use header_string_list <- decode.optional_field("headerStringList", option.None, decode.optional(decode.list(decode.string)))
+  use header_string_set <- decode.optional_field("headerStringSet", option.None, decode.optional(decode.list(decode.string)))
+  use header_timestamp_list <- decode.optional_field("headerTimestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
   use header_true_bool <- decode.optional_field("headerTrueBool", option.None, decode.optional(decode.bool))
   decode.success(InputAndOutputWithHeadersIO(
     header_boolean_list: header_boolean_list,
@@ -1951,6 +2486,13 @@ pub fn decode_input_stream_input_struct() -> decode.Decoder(InputStreamInput) {
   ))
 }
 
+pub fn decode_input_stream_input_struct_params() -> decode.Decoder(InputStreamInput) {
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(InputStreamInput(
+    stream: stream,
+  ))
+}
+
 pub type InputStreamWithInitialRequestInput {
   InputStreamWithInitialRequestInput(
     initial_request_member: option.Option(String),
@@ -1980,6 +2522,15 @@ pub fn decode_input_stream_with_initial_request_input_struct() -> decode.Decoder
   ))
 }
 
+pub fn decode_input_stream_with_initial_request_input_struct_params() -> decode.Decoder(InputStreamWithInitialRequestInput) {
+  use initial_request_member <- decode.optional_field("initialRequestMember", option.None, decode.optional(decode.string))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(InputStreamWithInitialRequestInput(
+    initial_request_member: initial_request_member,
+    stream: stream,
+  ))
+}
+
 pub type JsonBlobsInputOutput {
   JsonBlobsInputOutput(
     data: option.Option(BitArray),
@@ -1996,6 +2547,13 @@ pub fn encode_json_blobs_input_output_struct(input: JsonBlobsInputOutput) -> jso
 }
 
 pub fn decode_json_blobs_input_output_struct() -> decode.Decoder(JsonBlobsInputOutput) {
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(JsonBlobsInputOutput(
+    data: data,
+  ))
+}
+
+pub fn decode_json_blobs_input_output_struct_params() -> decode.Decoder(JsonBlobsInputOutput) {
   use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(JsonBlobsInputOutput(
     data: data,
@@ -2043,6 +2601,23 @@ pub fn encode_json_enums_input_output_struct(input: JsonEnumsInputOutput) -> jso
 }
 
 pub fn decode_json_enums_input_output_struct() -> decode.Decoder(JsonEnumsInputOutput) {
+  use foo_enum1 <- decode.optional_field("fooEnum1", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum2 <- decode.optional_field("fooEnum2", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum3 <- decode.optional_field("fooEnum3", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum_list <- decode.optional_field("fooEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use foo_enum_map <- decode.optional_field("fooEnumMap", option.None, decode.optional(decode.dict(decode.string, decode_foo_enum_enum())))
+  use foo_enum_set <- decode.optional_field("fooEnumSet", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  decode.success(JsonEnumsInputOutput(
+    foo_enum1: foo_enum1,
+    foo_enum2: foo_enum2,
+    foo_enum3: foo_enum3,
+    foo_enum_list: foo_enum_list,
+    foo_enum_map: foo_enum_map,
+    foo_enum_set: foo_enum_set,
+  ))
+}
+
+pub fn decode_json_enums_input_output_struct_params() -> decode.Decoder(JsonEnumsInputOutput) {
   use foo_enum1 <- decode.optional_field("fooEnum1", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum2 <- decode.optional_field("fooEnum2", option.None, decode.optional(decode_foo_enum_enum()))
   use foo_enum3 <- decode.optional_field("fooEnum3", option.None, decode.optional(decode_foo_enum_enum()))
@@ -2116,6 +2691,23 @@ pub fn decode_json_int_enums_input_output_struct() -> decode.Decoder(JsonIntEnum
   ))
 }
 
+pub fn decode_json_int_enums_input_output_struct_params() -> decode.Decoder(JsonIntEnumsInputOutput) {
+  use integer_enum1 <- decode.optional_field("integerEnum1", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use integer_enum2 <- decode.optional_field("integerEnum2", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use integer_enum3 <- decode.optional_field("integerEnum3", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use integer_enum_list <- decode.optional_field("integerEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use integer_enum_map <- decode.optional_field("integerEnumMap", option.None, decode.optional(decode.dict(decode.string, decode_integer_enum_int_enum())))
+  use integer_enum_set <- decode.optional_field("integerEnumSet", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  decode.success(JsonIntEnumsInputOutput(
+    integer_enum1: integer_enum1,
+    integer_enum2: integer_enum2,
+    integer_enum3: integer_enum3,
+    integer_enum_list: integer_enum_list,
+    integer_enum_map: integer_enum_map,
+    integer_enum_set: integer_enum_set,
+  ))
+}
+
 pub type JsonListsInputOutput {
   JsonListsInputOutput(
     boolean_list: option.Option(List(Bool)),
@@ -2161,7 +2753,7 @@ pub fn encode_json_lists_input_output_struct(input: JsonListsInputOutput) -> jso
     option.None -> pairs
   }
   let pairs = case input.structure_list {
-    option.Some(v) -> [#("structureList", fn(xs) { json.array(xs, encode_structure_list_member_struct) }(v)), ..pairs]
+    option.Some(v) -> [#("myStructureList", fn(xs) { json.array(xs, encode_structure_list_member_struct) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.timestamp_list {
@@ -2179,8 +2771,31 @@ pub fn decode_json_lists_input_output_struct() -> decode.Decoder(JsonListsInputO
   use nested_string_list <- decode.optional_field("nestedStringList", option.None, decode.optional(decode.list(decode.list(decode.string))))
   use string_list <- decode.optional_field("stringList", option.None, decode.optional(decode.list(decode.string)))
   use string_set <- decode.optional_field("stringSet", option.None, decode.optional(decode.list(decode.string)))
-  use structure_list <- decode.optional_field("structureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct())))
-  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(decode.int)))
+  use structure_list <- decode.optional_field("myStructureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct())))
+  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
+  decode.success(JsonListsInputOutput(
+    boolean_list: boolean_list,
+    enum_list: enum_list,
+    int_enum_list: int_enum_list,
+    integer_list: integer_list,
+    nested_string_list: nested_string_list,
+    string_list: string_list,
+    string_set: string_set,
+    structure_list: structure_list,
+    timestamp_list: timestamp_list,
+  ))
+}
+
+pub fn decode_json_lists_input_output_struct_params() -> decode.Decoder(JsonListsInputOutput) {
+  use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use int_enum_list <- decode.optional_field("intEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use integer_list <- decode.optional_field("integerList", option.None, decode.optional(decode.list(decode.int)))
+  use nested_string_list <- decode.optional_field("nestedStringList", option.None, decode.optional(decode.list(decode.list(decode.string))))
+  use string_list <- decode.optional_field("stringList", option.None, decode.optional(decode.list(decode.string)))
+  use string_set <- decode.optional_field("stringSet", option.None, decode.optional(decode.list(decode.string)))
+  use structure_list <- decode.optional_field("structureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct_params())))
+  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
   decode.success(JsonListsInputOutput(
     boolean_list: boolean_list,
     enum_list: enum_list,
@@ -2204,17 +2819,26 @@ pub type StructureListMember {
 pub fn encode_structure_list_member_struct(input: StructureListMember) -> json.Json {
   let pairs = []
   let pairs = case input.a {
-    option.Some(v) -> [#("a", json.string(v)), ..pairs]
+    option.Some(v) -> [#("value", json.string(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.b {
-    option.Some(v) -> [#("b", json.string(v)), ..pairs]
+    option.Some(v) -> [#("other", json.string(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_structure_list_member_struct() -> decode.Decoder(StructureListMember) {
+  use a <- decode.optional_field("value", option.None, decode.optional(decode.string))
+  use b <- decode.optional_field("other", option.None, decode.optional(decode.string))
+  decode.success(StructureListMember(
+    a: a,
+    b: b,
+  ))
+}
+
+pub fn decode_structure_list_member_struct_params() -> decode.Decoder(StructureListMember) {
   use a <- decode.optional_field("a", option.None, decode.optional(decode.string))
   use b <- decode.optional_field("b", option.None, decode.optional(decode.string))
   decode.success(StructureListMember(
@@ -2273,6 +2897,21 @@ pub fn decode_json_maps_input_output_struct() -> decode.Decoder(JsonMapsInputOut
   ))
 }
 
+pub fn decode_json_maps_input_output_struct_params() -> decode.Decoder(JsonMapsInputOutput) {
+  use dense_boolean_map <- decode.optional_field("denseBooleanMap", option.None, decode.optional(decode.dict(decode.string, decode.bool)))
+  use dense_number_map <- decode.optional_field("denseNumberMap", option.None, decode.optional(decode.dict(decode.string, decode.int)))
+  use dense_set_map <- decode.optional_field("denseSetMap", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
+  use dense_string_map <- decode.optional_field("denseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use dense_struct_map <- decode.optional_field("denseStructMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
+  decode.success(JsonMapsInputOutput(
+    dense_boolean_map: dense_boolean_map,
+    dense_number_map: dense_number_map,
+    dense_set_map: dense_set_map,
+    dense_string_map: dense_string_map,
+    dense_struct_map: dense_struct_map,
+  ))
+}
+
 pub type GreetingStruct {
   GreetingStruct(
     hi: option.Option(String),
@@ -2289,6 +2928,13 @@ pub fn encode_greeting_struct_struct(input: GreetingStruct) -> json.Json {
 }
 
 pub fn decode_greeting_struct_struct() -> decode.Decoder(GreetingStruct) {
+  use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
+  decode.success(GreetingStruct(
+    hi: hi,
+  ))
+}
+
+pub fn decode_greeting_struct_struct_params() -> decode.Decoder(GreetingStruct) {
   use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
   decode.success(GreetingStruct(
     hi: hi,
@@ -2341,13 +2987,32 @@ pub fn encode_json_timestamps_input_output_struct(input: JsonTimestampsInputOutp
 }
 
 pub fn decode_json_timestamps_input_output_struct() -> decode.Decoder(JsonTimestampsInputOutput) {
-  use date_time <- decode.optional_field("dateTime", option.None, decode.optional(decode.int))
-  use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(decode.int))
-  use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(decode.int))
-  use epoch_seconds_on_target <- decode.optional_field("epochSecondsOnTarget", option.None, decode.optional(decode.int))
-  use http_date <- decode.optional_field("httpDate", option.None, decode.optional(decode.int))
-  use http_date_on_target <- decode.optional_field("httpDateOnTarget", option.None, decode.optional(decode.int))
-  use normal <- decode.optional_field("normal", option.None, decode.optional(decode.int))
+  use date_time <- decode.optional_field("dateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use epoch_seconds_on_target <- decode.optional_field("epochSecondsOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use http_date <- decode.optional_field("httpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use http_date_on_target <- decode.optional_field("httpDateOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use normal <- decode.optional_field("normal", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(JsonTimestampsInputOutput(
+    date_time: date_time,
+    date_time_on_target: date_time_on_target,
+    epoch_seconds: epoch_seconds,
+    epoch_seconds_on_target: epoch_seconds_on_target,
+    http_date: http_date,
+    http_date_on_target: http_date_on_target,
+    normal: normal,
+  ))
+}
+
+pub fn decode_json_timestamps_input_output_struct_params() -> decode.Decoder(JsonTimestampsInputOutput) {
+  use date_time <- decode.optional_field("dateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use epoch_seconds_on_target <- decode.optional_field("epochSecondsOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use http_date <- decode.optional_field("httpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use http_date_on_target <- decode.optional_field("httpDateOnTarget", option.None, decode.optional(json_timestamp.decoder()))
+  use normal <- decode.optional_field("normal", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(JsonTimestampsInputOutput(
     date_time: date_time,
     date_time_on_target: date_time_on_target,
@@ -2375,6 +3040,13 @@ pub fn encode_union_input_output_struct(input: UnionInputOutput) -> json.Json {
 }
 
 pub fn decode_union_input_output_struct() -> decode.Decoder(UnionInputOutput) {
+  use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union()))
+  decode.success(UnionInputOutput(
+    contents: contents,
+  ))
+}
+
+pub fn decode_union_input_output_struct_params() -> decode.Decoder(UnionInputOutput) {
   use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union()))
   decode.success(UnionInputOutput(
     contents: contents,
@@ -2421,7 +3093,7 @@ pub fn decode_my_union_union() -> decode.Decoder(MyUnion) {
       decode.field("renamedStructureValue", decode_greeting_struct_struct(), fn(x) { decode.success(MyUnionRenamedStructureValue(x)) }),
       decode.field("stringValue", decode.string, fn(x) { decode.success(MyUnionStringValue(x)) }),
       decode.field("structureValue", decode_greeting_struct_struct(), fn(x) { decode.success(MyUnionStructureValue(x)) }),
-      decode.field("timestampValue", decode.int, fn(x) { decode.success(MyUnionTimestampValue(x)) }),
+      decode.field("timestampValue", json_timestamp.decoder(), fn(x) { decode.success(MyUnionTimestampValue(x)) }),
     ],
   )
 }
@@ -2442,6 +3114,13 @@ pub fn encode_malformed_accept_with_generic_string_output_struct(input: Malforme
 }
 
 pub fn decode_malformed_accept_with_generic_string_output_struct() -> decode.Decoder(MalformedAcceptWithGenericStringOutput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
+  decode.success(MalformedAcceptWithGenericStringOutput(
+    payload: payload,
+  ))
+}
+
+pub fn decode_malformed_accept_with_generic_string_output_struct_params() -> decode.Decoder(MalformedAcceptWithGenericStringOutput) {
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
   decode.success(MalformedAcceptWithGenericStringOutput(
     payload: payload,
@@ -2470,6 +3149,13 @@ pub fn decode_malformed_accept_with_payload_output_struct() -> decode.Decoder(Ma
   ))
 }
 
+pub fn decode_malformed_accept_with_payload_output_struct_params() -> decode.Decoder(MalformedAcceptWithPayloadOutput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(MalformedAcceptWithPayloadOutput(
+    payload: payload,
+  ))
+}
+
 pub type MalformedBlobInput {
   MalformedBlobInput(
     blob: option.Option(BitArray),
@@ -2486,6 +3172,13 @@ pub fn encode_malformed_blob_input_struct(input: MalformedBlobInput) -> json.Jso
 }
 
 pub fn decode_malformed_blob_input_struct() -> decode.Decoder(MalformedBlobInput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(MalformedBlobInput(
+    blob: blob,
+  ))
+}
+
+pub fn decode_malformed_blob_input_struct_params() -> decode.Decoder(MalformedBlobInput) {
   use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(MalformedBlobInput(
     blob: blob,
@@ -2523,6 +3216,19 @@ pub fn encode_malformed_boolean_input_struct(input: MalformedBooleanInput) -> js
 }
 
 pub fn decode_malformed_boolean_input_struct() -> decode.Decoder(MalformedBooleanInput) {
+  use boolean_in_body <- decode.optional_field("booleanInBody", option.None, decode.optional(decode.bool))
+  use boolean_in_header <- decode.optional_field("booleanInHeader", option.None, decode.optional(decode.bool))
+  use boolean_in_path <- decode.optional_field("booleanInPath", option.None, decode.optional(decode.bool))
+  use boolean_in_query <- decode.optional_field("booleanInQuery", option.None, decode.optional(decode.bool))
+  decode.success(MalformedBooleanInput(
+    boolean_in_body: boolean_in_body,
+    boolean_in_header: boolean_in_header,
+    boolean_in_path: boolean_in_path,
+    boolean_in_query: boolean_in_query,
+  ))
+}
+
+pub fn decode_malformed_boolean_input_struct_params() -> decode.Decoder(MalformedBooleanInput) {
   use boolean_in_body <- decode.optional_field("booleanInBody", option.None, decode.optional(decode.bool))
   use boolean_in_header <- decode.optional_field("booleanInHeader", option.None, decode.optional(decode.bool))
   use boolean_in_path <- decode.optional_field("booleanInPath", option.None, decode.optional(decode.bool))
@@ -2578,6 +3284,19 @@ pub fn decode_malformed_byte_input_struct() -> decode.Decoder(MalformedByteInput
   ))
 }
 
+pub fn decode_malformed_byte_input_struct_params() -> decode.Decoder(MalformedByteInput) {
+  use byte_in_body <- decode.optional_field("byteInBody", option.None, decode.optional(decode.int))
+  use byte_in_header <- decode.optional_field("byteInHeader", option.None, decode.optional(decode.int))
+  use byte_in_path <- decode.optional_field("byteInPath", option.None, decode.optional(decode.int))
+  use byte_in_query <- decode.optional_field("byteInQuery", option.None, decode.optional(decode.int))
+  decode.success(MalformedByteInput(
+    byte_in_body: byte_in_body,
+    byte_in_header: byte_in_header,
+    byte_in_path: byte_in_path,
+    byte_in_query: byte_in_query,
+  ))
+}
+
 pub type MalformedContentTypeWithGenericStringInput {
   MalformedContentTypeWithGenericStringInput(
     payload: option.Option(String),
@@ -2594,6 +3313,13 @@ pub fn encode_malformed_content_type_with_generic_string_input_struct(input: Mal
 }
 
 pub fn decode_malformed_content_type_with_generic_string_input_struct() -> decode.Decoder(MalformedContentTypeWithGenericStringInput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
+  decode.success(MalformedContentTypeWithGenericStringInput(
+    payload: payload,
+  ))
+}
+
+pub fn decode_malformed_content_type_with_generic_string_input_struct_params() -> decode.Decoder(MalformedContentTypeWithGenericStringInput) {
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
   decode.success(MalformedContentTypeWithGenericStringInput(
     payload: payload,
@@ -2622,6 +3348,13 @@ pub fn decode_malformed_content_type_without_body_empty_input_input_struct() -> 
   ))
 }
 
+pub fn decode_malformed_content_type_without_body_empty_input_input_struct_params() -> decode.Decoder(MalformedContentTypeWithoutBodyEmptyInputInput) {
+  use header <- decode.optional_field("header", option.None, decode.optional(decode.string))
+  decode.success(MalformedContentTypeWithoutBodyEmptyInputInput(
+    header: header,
+  ))
+}
+
 pub type MalformedContentTypeWithPayloadInput {
   MalformedContentTypeWithPayloadInput(
     payload: option.Option(BitArray),
@@ -2638,6 +3371,13 @@ pub fn encode_malformed_content_type_with_payload_input_struct(input: MalformedC
 }
 
 pub fn decode_malformed_content_type_with_payload_input_struct() -> decode.Decoder(MalformedContentTypeWithPayloadInput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(MalformedContentTypeWithPayloadInput(
+    payload: payload,
+  ))
+}
+
+pub fn decode_malformed_content_type_with_payload_input_struct_params() -> decode.Decoder(MalformedContentTypeWithPayloadInput) {
   use payload <- decode.optional_field("payload", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(MalformedContentTypeWithPayloadInput(
     payload: payload,
@@ -2675,6 +3415,19 @@ pub fn encode_malformed_double_input_struct(input: MalformedDoubleInput) -> json
 }
 
 pub fn decode_malformed_double_input_struct() -> decode.Decoder(MalformedDoubleInput) {
+  use double_in_body <- decode.optional_field("doubleInBody", option.None, decode.optional(json_float.decoder()))
+  use double_in_header <- decode.optional_field("doubleInHeader", option.None, decode.optional(json_float.decoder()))
+  use double_in_path <- decode.optional_field("doubleInPath", option.None, decode.optional(json_float.decoder()))
+  use double_in_query <- decode.optional_field("doubleInQuery", option.None, decode.optional(json_float.decoder()))
+  decode.success(MalformedDoubleInput(
+    double_in_body: double_in_body,
+    double_in_header: double_in_header,
+    double_in_path: double_in_path,
+    double_in_query: double_in_query,
+  ))
+}
+
+pub fn decode_malformed_double_input_struct_params() -> decode.Decoder(MalformedDoubleInput) {
   use double_in_body <- decode.optional_field("doubleInBody", option.None, decode.optional(json_float.decoder()))
   use double_in_header <- decode.optional_field("doubleInHeader", option.None, decode.optional(json_float.decoder()))
   use double_in_path <- decode.optional_field("doubleInPath", option.None, decode.optional(json_float.decoder()))
@@ -2730,6 +3483,19 @@ pub fn decode_malformed_float_input_struct() -> decode.Decoder(MalformedFloatInp
   ))
 }
 
+pub fn decode_malformed_float_input_struct_params() -> decode.Decoder(MalformedFloatInput) {
+  use float_in_body <- decode.optional_field("floatInBody", option.None, decode.optional(json_float.decoder()))
+  use float_in_header <- decode.optional_field("floatInHeader", option.None, decode.optional(json_float.decoder()))
+  use float_in_path <- decode.optional_field("floatInPath", option.None, decode.optional(json_float.decoder()))
+  use float_in_query <- decode.optional_field("floatInQuery", option.None, decode.optional(json_float.decoder()))
+  decode.success(MalformedFloatInput(
+    float_in_body: float_in_body,
+    float_in_header: float_in_header,
+    float_in_path: float_in_path,
+    float_in_query: float_in_query,
+  ))
+}
+
 pub type MalformedIntegerInput {
   MalformedIntegerInput(
     integer_in_body: option.Option(Int),
@@ -2773,6 +3539,19 @@ pub fn decode_malformed_integer_input_struct() -> decode.Decoder(MalformedIntege
   ))
 }
 
+pub fn decode_malformed_integer_input_struct_params() -> decode.Decoder(MalformedIntegerInput) {
+  use integer_in_body <- decode.optional_field("integerInBody", option.None, decode.optional(decode.int))
+  use integer_in_header <- decode.optional_field("integerInHeader", option.None, decode.optional(decode.int))
+  use integer_in_path <- decode.optional_field("integerInPath", option.None, decode.optional(decode.int))
+  use integer_in_query <- decode.optional_field("integerInQuery", option.None, decode.optional(decode.int))
+  decode.success(MalformedIntegerInput(
+    integer_in_body: integer_in_body,
+    integer_in_header: integer_in_header,
+    integer_in_path: integer_in_path,
+    integer_in_query: integer_in_query,
+  ))
+}
+
 pub type MalformedListInput {
   MalformedListInput(
     body_list: option.Option(List(String)),
@@ -2789,6 +3568,13 @@ pub fn encode_malformed_list_input_struct(input: MalformedListInput) -> json.Jso
 }
 
 pub fn decode_malformed_list_input_struct() -> decode.Decoder(MalformedListInput) {
+  use body_list <- decode.optional_field("bodyList", option.None, decode.optional(decode.list(decode.string)))
+  decode.success(MalformedListInput(
+    body_list: body_list,
+  ))
+}
+
+pub fn decode_malformed_list_input_struct_params() -> decode.Decoder(MalformedListInput) {
   use body_list <- decode.optional_field("bodyList", option.None, decode.optional(decode.list(decode.string)))
   decode.success(MalformedListInput(
     body_list: body_list,
@@ -2838,6 +3624,19 @@ pub fn decode_malformed_long_input_struct() -> decode.Decoder(MalformedLongInput
   ))
 }
 
+pub fn decode_malformed_long_input_struct_params() -> decode.Decoder(MalformedLongInput) {
+  use long_in_body <- decode.optional_field("longInBody", option.None, decode.optional(decode.int))
+  use long_in_header <- decode.optional_field("longInHeader", option.None, decode.optional(decode.int))
+  use long_in_path <- decode.optional_field("longInPath", option.None, decode.optional(decode.int))
+  use long_in_query <- decode.optional_field("longInQuery", option.None, decode.optional(decode.int))
+  decode.success(MalformedLongInput(
+    long_in_body: long_in_body,
+    long_in_header: long_in_header,
+    long_in_path: long_in_path,
+    long_in_query: long_in_query,
+  ))
+}
+
 pub type MalformedMapInput {
   MalformedMapInput(
     body_map: option.Option(dict.Dict(String, String)),
@@ -2854,6 +3653,13 @@ pub fn encode_malformed_map_input_struct(input: MalformedMapInput) -> json.Json 
 }
 
 pub fn decode_malformed_map_input_struct() -> decode.Decoder(MalformedMapInput) {
+  use body_map <- decode.optional_field("bodyMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(MalformedMapInput(
+    body_map: body_map,
+  ))
+}
+
+pub fn decode_malformed_map_input_struct_params() -> decode.Decoder(MalformedMapInput) {
   use body_map <- decode.optional_field("bodyMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(MalformedMapInput(
     body_map: body_map,
@@ -2881,6 +3687,15 @@ pub fn encode_malformed_request_body_input_struct(input: MalformedRequestBodyInp
 }
 
 pub fn decode_malformed_request_body_input_struct() -> decode.Decoder(MalformedRequestBodyInput) {
+  use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
+  use int <- decode.optional_field("int", option.None, decode.optional(decode.int))
+  decode.success(MalformedRequestBodyInput(
+    float: float,
+    int: int,
+  ))
+}
+
+pub fn decode_malformed_request_body_input_struct_params() -> decode.Decoder(MalformedRequestBodyInput) {
   use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
   use int <- decode.optional_field("int", option.None, decode.optional(decode.int))
   decode.success(MalformedRequestBodyInput(
@@ -2932,6 +3747,19 @@ pub fn decode_malformed_short_input_struct() -> decode.Decoder(MalformedShortInp
   ))
 }
 
+pub fn decode_malformed_short_input_struct_params() -> decode.Decoder(MalformedShortInput) {
+  use short_in_body <- decode.optional_field("shortInBody", option.None, decode.optional(decode.int))
+  use short_in_header <- decode.optional_field("shortInHeader", option.None, decode.optional(decode.int))
+  use short_in_path <- decode.optional_field("shortInPath", option.None, decode.optional(decode.int))
+  use short_in_query <- decode.optional_field("shortInQuery", option.None, decode.optional(decode.int))
+  decode.success(MalformedShortInput(
+    short_in_body: short_in_body,
+    short_in_header: short_in_header,
+    short_in_path: short_in_path,
+    short_in_query: short_in_query,
+  ))
+}
+
 pub type MalformedStringInput {
   MalformedStringInput(
     blob: option.Option(String),
@@ -2954,6 +3782,13 @@ pub fn decode_malformed_string_input_struct() -> decode.Decoder(MalformedStringI
   ))
 }
 
+pub fn decode_malformed_string_input_struct_params() -> decode.Decoder(MalformedStringInput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.string))
+  decode.success(MalformedStringInput(
+    blob: blob,
+  ))
+}
+
 pub type MalformedTimestampBodyDateTimeInput {
   MalformedTimestampBodyDateTimeInput(
     timestamp: option.Option(Int),
@@ -2970,7 +3805,14 @@ pub fn encode_malformed_timestamp_body_date_time_input_struct(input: MalformedTi
 }
 
 pub fn decode_malformed_timestamp_body_date_time_input_struct() -> decode.Decoder(MalformedTimestampBodyDateTimeInput) {
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(MalformedTimestampBodyDateTimeInput(
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_malformed_timestamp_body_date_time_input_struct_params() -> decode.Decoder(MalformedTimestampBodyDateTimeInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(MalformedTimestampBodyDateTimeInput(
     timestamp: timestamp,
   ))
@@ -2992,7 +3834,14 @@ pub fn encode_malformed_timestamp_body_default_input_struct(input: MalformedTime
 }
 
 pub fn decode_malformed_timestamp_body_default_input_struct() -> decode.Decoder(MalformedTimestampBodyDefaultInput) {
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(MalformedTimestampBodyDefaultInput(
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_malformed_timestamp_body_default_input_struct_params() -> decode.Decoder(MalformedTimestampBodyDefaultInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(MalformedTimestampBodyDefaultInput(
     timestamp: timestamp,
   ))
@@ -3014,7 +3863,14 @@ pub fn encode_malformed_timestamp_body_http_date_input_struct(input: MalformedTi
 }
 
 pub fn decode_malformed_timestamp_body_http_date_input_struct() -> decode.Decoder(MalformedTimestampBodyHttpDateInput) {
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(MalformedTimestampBodyHttpDateInput(
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_malformed_timestamp_body_http_date_input_struct_params() -> decode.Decoder(MalformedTimestampBodyHttpDateInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(MalformedTimestampBodyHttpDateInput(
     timestamp: timestamp,
   ))
@@ -3036,7 +3892,14 @@ pub fn encode_malformed_timestamp_header_date_time_input_struct(input: Malformed
 }
 
 pub fn decode_malformed_timestamp_header_date_time_input_struct() -> decode.Decoder(MalformedTimestampHeaderDateTimeInput) {
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(MalformedTimestampHeaderDateTimeInput(
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_malformed_timestamp_header_date_time_input_struct_params() -> decode.Decoder(MalformedTimestampHeaderDateTimeInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(MalformedTimestampHeaderDateTimeInput(
     timestamp: timestamp,
   ))
@@ -3058,7 +3921,14 @@ pub fn encode_malformed_timestamp_header_default_input_struct(input: MalformedTi
 }
 
 pub fn decode_malformed_timestamp_header_default_input_struct() -> decode.Decoder(MalformedTimestampHeaderDefaultInput) {
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(MalformedTimestampHeaderDefaultInput(
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_malformed_timestamp_header_default_input_struct_params() -> decode.Decoder(MalformedTimestampHeaderDefaultInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(MalformedTimestampHeaderDefaultInput(
     timestamp: timestamp,
   ))
@@ -3080,7 +3950,14 @@ pub fn encode_malformed_timestamp_header_epoch_input_struct(input: MalformedTime
 }
 
 pub fn decode_malformed_timestamp_header_epoch_input_struct() -> decode.Decoder(MalformedTimestampHeaderEpochInput) {
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(MalformedTimestampHeaderEpochInput(
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_malformed_timestamp_header_epoch_input_struct_params() -> decode.Decoder(MalformedTimestampHeaderEpochInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(MalformedTimestampHeaderEpochInput(
     timestamp: timestamp,
   ))
@@ -3102,7 +3979,14 @@ pub fn encode_malformed_timestamp_path_default_input_struct(input: MalformedTime
 }
 
 pub fn decode_malformed_timestamp_path_default_input_struct() -> decode.Decoder(MalformedTimestampPathDefaultInput) {
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(MalformedTimestampPathDefaultInput(
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_malformed_timestamp_path_default_input_struct_params() -> decode.Decoder(MalformedTimestampPathDefaultInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(MalformedTimestampPathDefaultInput(
     timestamp: timestamp,
   ))
@@ -3124,7 +4008,14 @@ pub fn encode_malformed_timestamp_path_epoch_input_struct(input: MalformedTimest
 }
 
 pub fn decode_malformed_timestamp_path_epoch_input_struct() -> decode.Decoder(MalformedTimestampPathEpochInput) {
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(MalformedTimestampPathEpochInput(
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_malformed_timestamp_path_epoch_input_struct_params() -> decode.Decoder(MalformedTimestampPathEpochInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(MalformedTimestampPathEpochInput(
     timestamp: timestamp,
   ))
@@ -3146,7 +4037,14 @@ pub fn encode_malformed_timestamp_path_http_date_input_struct(input: MalformedTi
 }
 
 pub fn decode_malformed_timestamp_path_http_date_input_struct() -> decode.Decoder(MalformedTimestampPathHttpDateInput) {
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(MalformedTimestampPathHttpDateInput(
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_malformed_timestamp_path_http_date_input_struct_params() -> decode.Decoder(MalformedTimestampPathHttpDateInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(MalformedTimestampPathHttpDateInput(
     timestamp: timestamp,
   ))
@@ -3168,7 +4066,14 @@ pub fn encode_malformed_timestamp_query_default_input_struct(input: MalformedTim
 }
 
 pub fn decode_malformed_timestamp_query_default_input_struct() -> decode.Decoder(MalformedTimestampQueryDefaultInput) {
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(MalformedTimestampQueryDefaultInput(
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_malformed_timestamp_query_default_input_struct_params() -> decode.Decoder(MalformedTimestampQueryDefaultInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(MalformedTimestampQueryDefaultInput(
     timestamp: timestamp,
   ))
@@ -3190,7 +4095,14 @@ pub fn encode_malformed_timestamp_query_epoch_input_struct(input: MalformedTimes
 }
 
 pub fn decode_malformed_timestamp_query_epoch_input_struct() -> decode.Decoder(MalformedTimestampQueryEpochInput) {
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(MalformedTimestampQueryEpochInput(
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_malformed_timestamp_query_epoch_input_struct_params() -> decode.Decoder(MalformedTimestampQueryEpochInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(MalformedTimestampQueryEpochInput(
     timestamp: timestamp,
   ))
@@ -3212,7 +4124,14 @@ pub fn encode_malformed_timestamp_query_http_date_input_struct(input: MalformedT
 }
 
 pub fn decode_malformed_timestamp_query_http_date_input_struct() -> decode.Decoder(MalformedTimestampQueryHttpDateInput) {
-  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(MalformedTimestampQueryHttpDateInput(
+    timestamp: timestamp,
+  ))
+}
+
+pub fn decode_malformed_timestamp_query_http_date_input_struct_params() -> decode.Decoder(MalformedTimestampQueryHttpDateInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(MalformedTimestampQueryHttpDateInput(
     timestamp: timestamp,
   ))
@@ -3234,6 +4153,13 @@ pub fn encode_malformed_union_input_struct(input: MalformedUnionInput) -> json.J
 }
 
 pub fn decode_malformed_union_input_struct() -> decode.Decoder(MalformedUnionInput) {
+  use union <- decode.optional_field("union", option.None, decode.optional(decode_simple_union_union()))
+  decode.success(MalformedUnionInput(
+    union: union,
+  ))
+}
+
+pub fn decode_malformed_union_input_struct_params() -> decode.Decoder(MalformedUnionInput) {
   use union <- decode.optional_field("union", option.None, decode.optional(decode_simple_union_union()))
   decode.success(MalformedUnionInput(
     union: union,
@@ -3283,6 +4209,13 @@ pub fn decode_media_type_header_input_struct() -> decode.Decoder(MediaTypeHeader
   ))
 }
 
+pub fn decode_media_type_header_input_struct_params() -> decode.Decoder(MediaTypeHeaderInput) {
+  use json <- decode.optional_field("json", option.None, decode.optional(decode.string))
+  decode.success(MediaTypeHeaderInput(
+    json: json,
+  ))
+}
+
 pub type MediaTypeHeaderOutput {
   MediaTypeHeaderOutput(
     json: option.Option(String),
@@ -3305,6 +4238,13 @@ pub fn decode_media_type_header_output_struct() -> decode.Decoder(MediaTypeHeade
   ))
 }
 
+pub fn decode_media_type_header_output_struct_params() -> decode.Decoder(MediaTypeHeaderOutput) {
+  use json <- decode.optional_field("json", option.None, decode.optional(decode.string))
+  decode.success(MediaTypeHeaderOutput(
+    json: json,
+  ))
+}
+
 pub type NoInputAndOutputOutput {
   NoInputAndOutputOutput
 }
@@ -3314,6 +4254,10 @@ pub fn encode_no_input_and_output_output_struct(_v: NoInputAndOutputOutput) -> j
 }
 
 pub fn decode_no_input_and_output_output_struct() -> decode.Decoder(NoInputAndOutputOutput) {
+  decode.success(NoInputAndOutputOutput)
+}
+
+pub fn decode_no_input_and_output_output_struct_params() -> decode.Decoder(NoInputAndOutputOutput) {
   decode.success(NoInputAndOutputOutput)
 }
 
@@ -3353,6 +4297,17 @@ pub fn decode_null_and_empty_headers_io_struct() -> decode.Decoder(NullAndEmptyH
   ))
 }
 
+pub fn decode_null_and_empty_headers_io_struct_params() -> decode.Decoder(NullAndEmptyHeadersIO) {
+  use a <- decode.optional_field("a", option.None, decode.optional(decode.string))
+  use b <- decode.optional_field("b", option.None, decode.optional(decode.string))
+  use c <- decode.optional_field("c", option.None, decode.optional(decode.list(decode.string)))
+  decode.success(NullAndEmptyHeadersIO(
+    a: a,
+    b: b,
+    c: c,
+  ))
+}
+
 pub type OmitsNullSerializesEmptyStringInput {
   OmitsNullSerializesEmptyStringInput(
     empty_string: option.Option(String),
@@ -3374,6 +4329,15 @@ pub fn encode_omits_null_serializes_empty_string_input_struct(input: OmitsNullSe
 }
 
 pub fn decode_omits_null_serializes_empty_string_input_struct() -> decode.Decoder(OmitsNullSerializesEmptyStringInput) {
+  use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
+  use null_value <- decode.optional_field("nullValue", option.None, decode.optional(decode.string))
+  decode.success(OmitsNullSerializesEmptyStringInput(
+    empty_string: empty_string,
+    null_value: null_value,
+  ))
+}
+
+pub fn decode_omits_null_serializes_empty_string_input_struct_params() -> decode.Decoder(OmitsNullSerializesEmptyStringInput) {
   use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
   use null_value <- decode.optional_field("nullValue", option.None, decode.optional(decode.string))
   decode.success(OmitsNullSerializesEmptyStringInput(
@@ -3434,7 +4398,26 @@ pub fn decode_omits_serializing_empty_lists_input_struct() -> decode.Decoder(Omi
   use query_integer_enum_list <- decode.optional_field("queryIntegerEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
   use query_integer_list <- decode.optional_field("queryIntegerList", option.None, decode.optional(decode.list(decode.int)))
   use query_string_list <- decode.optional_field("queryStringList", option.None, decode.optional(decode.list(decode.string)))
-  use query_timestamp_list <- decode.optional_field("queryTimestampList", option.None, decode.optional(decode.list(decode.int)))
+  use query_timestamp_list <- decode.optional_field("queryTimestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
+  decode.success(OmitsSerializingEmptyListsInput(
+    query_boolean_list: query_boolean_list,
+    query_double_list: query_double_list,
+    query_enum_list: query_enum_list,
+    query_integer_enum_list: query_integer_enum_list,
+    query_integer_list: query_integer_list,
+    query_string_list: query_string_list,
+    query_timestamp_list: query_timestamp_list,
+  ))
+}
+
+pub fn decode_omits_serializing_empty_lists_input_struct_params() -> decode.Decoder(OmitsSerializingEmptyListsInput) {
+  use query_boolean_list <- decode.optional_field("queryBooleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use query_double_list <- decode.optional_field("queryDoubleList", option.None, decode.optional(decode.list(json_float.decoder())))
+  use query_enum_list <- decode.optional_field("queryEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use query_integer_enum_list <- decode.optional_field("queryIntegerEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use query_integer_list <- decode.optional_field("queryIntegerList", option.None, decode.optional(decode.list(decode.int)))
+  use query_string_list <- decode.optional_field("queryStringList", option.None, decode.optional(decode.list(decode.string)))
+  use query_timestamp_list <- decode.optional_field("queryTimestampList", option.None, decode.optional(decode.list(json_timestamp.decoder())))
   decode.success(OmitsSerializingEmptyListsInput(
     query_boolean_list: query_boolean_list,
     query_double_list: query_double_list,
@@ -3489,6 +4472,19 @@ pub fn decode_operation_with_defaults_input_struct() -> decode.Decoder(Operation
   ))
 }
 
+pub fn decode_operation_with_defaults_input_struct_params() -> decode.Decoder(OperationWithDefaultsInput) {
+  use client_optional_defaults <- decode.optional_field("clientOptionalDefaults", option.None, decode.optional(decode_client_optional_defaults_struct_params()))
+  use defaults <- decode.optional_field("defaults", option.None, decode.optional(decode_defaults_struct_params()))
+  use other_top_level_default <- decode.optional_field("otherTopLevelDefault", option.None, decode.optional(decode.int))
+  use top_level_default <- decode.optional_field("topLevelDefault", option.None, decode.optional(decode.string))
+  decode.success(OperationWithDefaultsInput(
+    client_optional_defaults: client_optional_defaults,
+    defaults: defaults,
+    other_top_level_default: other_top_level_default,
+    top_level_default: top_level_default,
+  ))
+}
+
 pub type ClientOptionalDefaults {
   ClientOptionalDefaults(
     member: option.Option(Int),
@@ -3505,6 +4501,13 @@ pub fn encode_client_optional_defaults_struct(input: ClientOptionalDefaults) -> 
 }
 
 pub fn decode_client_optional_defaults_struct() -> decode.Decoder(ClientOptionalDefaults) {
+  use member <- decode.optional_field("member", option.None, decode.optional(decode.int))
+  decode.success(ClientOptionalDefaults(
+    member: member,
+  ))
+}
+
+pub fn decode_client_optional_defaults_struct_params() -> decode.Decoder(ClientOptionalDefaults) {
   use member <- decode.optional_field("member", option.None, decode.optional(decode.int))
   decode.success(ClientOptionalDefaults(
     member: member,
@@ -3665,10 +4668,10 @@ pub fn decode_defaults_struct() -> decode.Decoder(Defaults) {
   use default_blob <- decode.optional_field("defaultBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use default_boolean <- decode.optional_field("defaultBoolean", option.None, decode.optional(decode.bool))
   use default_byte <- decode.optional_field("defaultByte", option.None, decode.optional(decode.int))
-  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
-  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
-  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
-  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(json_document.decoder()))
+  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(json_document.decoder()))
+  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(json_document.decoder()))
+  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(json_document.decoder()))
   use default_double <- decode.optional_field("defaultDouble", option.None, decode.optional(json_float.decoder()))
   use default_enum <- decode.optional_field("defaultEnum", option.None, decode.optional(decode_test_enum_enum()))
   use default_float <- decode.optional_field("defaultFloat", option.None, decode.optional(json_float.decoder()))
@@ -3677,10 +4680,71 @@ pub fn decode_defaults_struct() -> decode.Decoder(Defaults) {
   use default_list <- decode.optional_field("defaultList", option.None, decode.optional(decode.list(decode.string)))
   use default_long <- decode.optional_field("defaultLong", option.None, decode.optional(decode.int))
   use default_map <- decode.optional_field("defaultMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(json_document.decoder()))
   use default_short <- decode.optional_field("defaultShort", option.None, decode.optional(decode.int))
   use default_string <- decode.optional_field("defaultString", option.None, decode.optional(decode.string))
-  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(decode.int))
+  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(json_timestamp.decoder()))
+  use empty_blob <- decode.optional_field("emptyBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
+  use false_boolean <- decode.optional_field("falseBoolean", option.None, decode.optional(decode.bool))
+  use zero_byte <- decode.optional_field("zeroByte", option.None, decode.optional(decode.int))
+  use zero_double <- decode.optional_field("zeroDouble", option.None, decode.optional(json_float.decoder()))
+  use zero_float <- decode.optional_field("zeroFloat", option.None, decode.optional(json_float.decoder()))
+  use zero_integer <- decode.optional_field("zeroInteger", option.None, decode.optional(decode.int))
+  use zero_long <- decode.optional_field("zeroLong", option.None, decode.optional(decode.int))
+  use zero_short <- decode.optional_field("zeroShort", option.None, decode.optional(decode.int))
+  decode.success(Defaults(
+    default_blob: default_blob,
+    default_boolean: default_boolean,
+    default_byte: default_byte,
+    default_document_boolean: default_document_boolean,
+    default_document_list: default_document_list,
+    default_document_map: default_document_map,
+    default_document_string: default_document_string,
+    default_double: default_double,
+    default_enum: default_enum,
+    default_float: default_float,
+    default_int_enum: default_int_enum,
+    default_integer: default_integer,
+    default_list: default_list,
+    default_long: default_long,
+    default_map: default_map,
+    default_null_document: default_null_document,
+    default_short: default_short,
+    default_string: default_string,
+    default_timestamp: default_timestamp,
+    empty_blob: empty_blob,
+    empty_string: empty_string,
+    false_boolean: false_boolean,
+    zero_byte: zero_byte,
+    zero_double: zero_double,
+    zero_float: zero_float,
+    zero_integer: zero_integer,
+    zero_long: zero_long,
+    zero_short: zero_short,
+  ))
+}
+
+pub fn decode_defaults_struct_params() -> decode.Decoder(Defaults) {
+  use default_blob <- decode.optional_field("defaultBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use default_boolean <- decode.optional_field("defaultBoolean", option.None, decode.optional(decode.bool))
+  use default_byte <- decode.optional_field("defaultByte", option.None, decode.optional(decode.int))
+  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(json_document.decoder()))
+  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(json_document.decoder()))
+  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(json_document.decoder()))
+  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(json_document.decoder()))
+  use default_double <- decode.optional_field("defaultDouble", option.None, decode.optional(json_float.decoder()))
+  use default_enum <- decode.optional_field("defaultEnum", option.None, decode.optional(decode_test_enum_enum()))
+  use default_float <- decode.optional_field("defaultFloat", option.None, decode.optional(json_float.decoder()))
+  use default_int_enum <- decode.optional_field("defaultIntEnum", option.None, decode.optional(decode_test_int_enum_int_enum()))
+  use default_integer <- decode.optional_field("defaultInteger", option.None, decode.optional(decode.int))
+  use default_list <- decode.optional_field("defaultList", option.None, decode.optional(decode.list(decode.string)))
+  use default_long <- decode.optional_field("defaultLong", option.None, decode.optional(decode.int))
+  use default_map <- decode.optional_field("defaultMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(json_document.decoder()))
+  use default_short <- decode.optional_field("defaultShort", option.None, decode.optional(decode.int))
+  use default_string <- decode.optional_field("defaultString", option.None, decode.optional(decode.string))
+  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(json_timestamp.decoder()))
   use empty_blob <- decode.optional_field("emptyBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
   use false_boolean <- decode.optional_field("falseBoolean", option.None, decode.optional(decode.bool))
@@ -3923,10 +4987,10 @@ pub fn decode_operation_with_defaults_output_struct() -> decode.Decoder(Operatio
   use default_blob <- decode.optional_field("defaultBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use default_boolean <- decode.optional_field("defaultBoolean", option.None, decode.optional(decode.bool))
   use default_byte <- decode.optional_field("defaultByte", option.None, decode.optional(decode.int))
-  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
-  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
-  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
-  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(json_document.decoder()))
+  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(json_document.decoder()))
+  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(json_document.decoder()))
+  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(json_document.decoder()))
   use default_double <- decode.optional_field("defaultDouble", option.None, decode.optional(json_float.decoder()))
   use default_enum <- decode.optional_field("defaultEnum", option.None, decode.optional(decode_test_enum_enum()))
   use default_float <- decode.optional_field("defaultFloat", option.None, decode.optional(json_float.decoder()))
@@ -3935,10 +4999,71 @@ pub fn decode_operation_with_defaults_output_struct() -> decode.Decoder(Operatio
   use default_list <- decode.optional_field("defaultList", option.None, decode.optional(decode.list(decode.string)))
   use default_long <- decode.optional_field("defaultLong", option.None, decode.optional(decode.int))
   use default_map <- decode.optional_field("defaultMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(json_document.decoder()))
   use default_short <- decode.optional_field("defaultShort", option.None, decode.optional(decode.int))
   use default_string <- decode.optional_field("defaultString", option.None, decode.optional(decode.string))
-  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(decode.int))
+  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(json_timestamp.decoder()))
+  use empty_blob <- decode.optional_field("emptyBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
+  use false_boolean <- decode.optional_field("falseBoolean", option.None, decode.optional(decode.bool))
+  use zero_byte <- decode.optional_field("zeroByte", option.None, decode.optional(decode.int))
+  use zero_double <- decode.optional_field("zeroDouble", option.None, decode.optional(json_float.decoder()))
+  use zero_float <- decode.optional_field("zeroFloat", option.None, decode.optional(json_float.decoder()))
+  use zero_integer <- decode.optional_field("zeroInteger", option.None, decode.optional(decode.int))
+  use zero_long <- decode.optional_field("zeroLong", option.None, decode.optional(decode.int))
+  use zero_short <- decode.optional_field("zeroShort", option.None, decode.optional(decode.int))
+  decode.success(OperationWithDefaultsOutput(
+    default_blob: default_blob,
+    default_boolean: default_boolean,
+    default_byte: default_byte,
+    default_document_boolean: default_document_boolean,
+    default_document_list: default_document_list,
+    default_document_map: default_document_map,
+    default_document_string: default_document_string,
+    default_double: default_double,
+    default_enum: default_enum,
+    default_float: default_float,
+    default_int_enum: default_int_enum,
+    default_integer: default_integer,
+    default_list: default_list,
+    default_long: default_long,
+    default_map: default_map,
+    default_null_document: default_null_document,
+    default_short: default_short,
+    default_string: default_string,
+    default_timestamp: default_timestamp,
+    empty_blob: empty_blob,
+    empty_string: empty_string,
+    false_boolean: false_boolean,
+    zero_byte: zero_byte,
+    zero_double: zero_double,
+    zero_float: zero_float,
+    zero_integer: zero_integer,
+    zero_long: zero_long,
+    zero_short: zero_short,
+  ))
+}
+
+pub fn decode_operation_with_defaults_output_struct_params() -> decode.Decoder(OperationWithDefaultsOutput) {
+  use default_blob <- decode.optional_field("defaultBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use default_boolean <- decode.optional_field("defaultBoolean", option.None, decode.optional(decode.bool))
+  use default_byte <- decode.optional_field("defaultByte", option.None, decode.optional(decode.int))
+  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(json_document.decoder()))
+  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(json_document.decoder()))
+  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(json_document.decoder()))
+  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(json_document.decoder()))
+  use default_double <- decode.optional_field("defaultDouble", option.None, decode.optional(json_float.decoder()))
+  use default_enum <- decode.optional_field("defaultEnum", option.None, decode.optional(decode_test_enum_enum()))
+  use default_float <- decode.optional_field("defaultFloat", option.None, decode.optional(json_float.decoder()))
+  use default_int_enum <- decode.optional_field("defaultIntEnum", option.None, decode.optional(decode_test_int_enum_int_enum()))
+  use default_integer <- decode.optional_field("defaultInteger", option.None, decode.optional(decode.int))
+  use default_list <- decode.optional_field("defaultList", option.None, decode.optional(decode.list(decode.string)))
+  use default_long <- decode.optional_field("defaultLong", option.None, decode.optional(decode.int))
+  use default_map <- decode.optional_field("defaultMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(json_document.decoder()))
+  use default_short <- decode.optional_field("defaultShort", option.None, decode.optional(decode.int))
+  use default_string <- decode.optional_field("defaultString", option.None, decode.optional(decode.string))
+  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(json_timestamp.decoder()))
   use empty_blob <- decode.optional_field("emptyBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
   use false_boolean <- decode.optional_field("falseBoolean", option.None, decode.optional(decode.bool))
@@ -4002,6 +5127,13 @@ pub fn decode_operation_with_nested_structure_input_struct() -> decode.Decoder(O
   ))
 }
 
+pub fn decode_operation_with_nested_structure_input_struct_params() -> decode.Decoder(OperationWithNestedStructureInput) {
+  use top_level <- decode.optional_field("topLevel", option.None, decode.optional(decode_top_level_struct_params()))
+  decode.success(OperationWithNestedStructureInput(
+    top_level: top_level,
+  ))
+}
+
 pub type TopLevel {
   TopLevel(
     dialog: option.Option(Dialog),
@@ -4031,6 +5163,17 @@ pub fn decode_top_level_struct() -> decode.Decoder(TopLevel) {
   use dialog <- decode.optional_field("dialog", option.None, decode.optional(decode_dialog_struct()))
   use dialog_list <- decode.optional_field("dialogList", option.None, decode.optional(decode.list(decode_dialog_struct())))
   use dialog_map <- decode.optional_field("dialogMap", option.None, decode.optional(decode.dict(decode.string, decode_dialog_struct())))
+  decode.success(TopLevel(
+    dialog: dialog,
+    dialog_list: dialog_list,
+    dialog_map: dialog_map,
+  ))
+}
+
+pub fn decode_top_level_struct_params() -> decode.Decoder(TopLevel) {
+  use dialog <- decode.optional_field("dialog", option.None, decode.optional(decode_dialog_struct_params()))
+  use dialog_list <- decode.optional_field("dialogList", option.None, decode.optional(decode.list(decode_dialog_struct_params())))
+  use dialog_map <- decode.optional_field("dialogMap", option.None, decode.optional(decode.dict(decode.string, decode_dialog_struct_params())))
   decode.success(TopLevel(
     dialog: dialog,
     dialog_list: dialog_list,
@@ -4074,6 +5217,17 @@ pub fn decode_dialog_struct() -> decode.Decoder(Dialog) {
   ))
 }
 
+pub fn decode_dialog_struct_params() -> decode.Decoder(Dialog) {
+  use farewell <- decode.optional_field("farewell", option.None, decode.optional(decode_farewell_struct_params()))
+  use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
+  use language <- decode.optional_field("language", option.None, decode.optional(decode.string))
+  decode.success(Dialog(
+    farewell: farewell,
+    greeting: greeting,
+    language: language,
+  ))
+}
+
 pub type Farewell {
   Farewell(
     phrase: option.Option(String),
@@ -4090,6 +5244,13 @@ pub fn encode_farewell_struct(input: Farewell) -> json.Json {
 }
 
 pub fn decode_farewell_struct() -> decode.Decoder(Farewell) {
+  use phrase <- decode.optional_field("phrase", option.None, decode.optional(decode.string))
+  decode.success(Farewell(
+    phrase: phrase,
+  ))
+}
+
+pub fn decode_farewell_struct_params() -> decode.Decoder(Farewell) {
   use phrase <- decode.optional_field("phrase", option.None, decode.optional(decode.string))
   decode.success(Farewell(
     phrase: phrase,
@@ -4132,6 +5293,17 @@ pub fn decode_operation_with_nested_structure_output_struct() -> decode.Decoder(
   ))
 }
 
+pub fn decode_operation_with_nested_structure_output_struct_params() -> decode.Decoder(OperationWithNestedStructureOutput) {
+  use dialog <- decode.optional_field("dialog", option.None, decode.optional(decode_dialog_struct_params()))
+  use dialog_list <- decode.optional_field("dialogList", option.None, decode.optional(decode.list(decode_dialog_struct_params())))
+  use dialog_map <- decode.optional_field("dialogMap", option.None, decode.optional(decode.dict(decode.string, decode_dialog_struct_params())))
+  decode.success(OperationWithNestedStructureOutput(
+    dialog: dialog,
+    dialog_list: dialog_list,
+    dialog_map: dialog_map,
+  ))
+}
+
 pub type OutputStreamOutput {
   OutputStreamOutput(
     stream: option.Option(EventStream),
@@ -4148,6 +5320,13 @@ pub fn encode_output_stream_output_struct(input: OutputStreamOutput) -> json.Jso
 }
 
 pub fn decode_output_stream_output_struct() -> decode.Decoder(OutputStreamOutput) {
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(OutputStreamOutput(
+    stream: stream,
+  ))
+}
+
+pub fn decode_output_stream_output_struct_params() -> decode.Decoder(OutputStreamOutput) {
   use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
   decode.success(OutputStreamOutput(
     stream: stream,
@@ -4183,6 +5362,15 @@ pub fn decode_output_stream_with_initial_response_output_struct() -> decode.Deco
   ))
 }
 
+pub fn decode_output_stream_with_initial_response_output_struct_params() -> decode.Decoder(OutputStreamWithInitialResponseOutput) {
+  use initial_response_member <- decode.optional_field("initialResponseMember", option.None, decode.optional(decode.string))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(OutputStreamWithInitialResponseOutput(
+    initial_response_member: initial_response_member,
+    stream: stream,
+  ))
+}
+
 pub type PostPlayerActionInput {
   PostPlayerActionInput(
     action: option.Option(PlayerAction),
@@ -4199,6 +5387,13 @@ pub fn encode_post_player_action_input_struct(input: PostPlayerActionInput) -> j
 }
 
 pub fn decode_post_player_action_input_struct() -> decode.Decoder(PostPlayerActionInput) {
+  use action <- decode.optional_field("action", option.None, decode.optional(decode_player_action_union()))
+  decode.success(PostPlayerActionInput(
+    action: action,
+  ))
+}
+
+pub fn decode_post_player_action_input_struct_params() -> decode.Decoder(PostPlayerActionInput) {
   use action <- decode.optional_field("action", option.None, decode.optional(decode_player_action_union()))
   decode.success(PostPlayerActionInput(
     action: action,
@@ -4245,6 +5440,13 @@ pub fn decode_post_player_action_output_struct() -> decode.Decoder(PostPlayerAct
   ))
 }
 
+pub fn decode_post_player_action_output_struct_params() -> decode.Decoder(PostPlayerActionOutput) {
+  use action <- decode.optional_field("action", option.None, decode.optional(decode_player_action_union()))
+  decode.success(PostPlayerActionOutput(
+    action: action,
+  ))
+}
+
 pub type PostUnionWithJsonNameInput {
   PostUnionWithJsonNameInput(
     value: option.Option(UnionWithJsonName),
@@ -4267,6 +5469,13 @@ pub fn decode_post_union_with_json_name_input_struct() -> decode.Decoder(PostUni
   ))
 }
 
+pub fn decode_post_union_with_json_name_input_struct_params() -> decode.Decoder(PostUnionWithJsonNameInput) {
+  use value <- decode.optional_field("value", option.None, decode.optional(decode_union_with_json_name_union()))
+  decode.success(PostUnionWithJsonNameInput(
+    value: value,
+  ))
+}
+
 pub type UnionWithJsonName {
   UnionWithJsonNameBar(String)
   UnionWithJsonNameBaz(String)
@@ -4276,8 +5485,8 @@ pub type UnionWithJsonName {
 pub fn encode_union_with_json_name_union(v: UnionWithJsonName) -> json.Json {
   case v {
     UnionWithJsonNameBar(x) -> json.object([#("bar", json.string(x))])
-    UnionWithJsonNameBaz(x) -> json.object([#("baz", json.string(x))])
-    UnionWithJsonNameFoo(x) -> json.object([#("foo", json.string(x))])
+    UnionWithJsonNameBaz(x) -> json.object([#("_baz", json.string(x))])
+    UnionWithJsonNameFoo(x) -> json.object([#("FOO", json.string(x))])
   }
 }
 
@@ -4285,8 +5494,8 @@ pub fn decode_union_with_json_name_union() -> decode.Decoder(UnionWithJsonName) 
   decode.one_of(
     decode.field("bar", decode.string, fn(x) { decode.success(UnionWithJsonNameBar(x)) }),
     [
-      decode.field("baz", decode.string, fn(x) { decode.success(UnionWithJsonNameBaz(x)) }),
-      decode.field("foo", decode.string, fn(x) { decode.success(UnionWithJsonNameFoo(x)) }),
+      decode.field("_baz", decode.string, fn(x) { decode.success(UnionWithJsonNameBaz(x)) }),
+      decode.field("FOO", decode.string, fn(x) { decode.success(UnionWithJsonNameFoo(x)) }),
     ],
   )
 }
@@ -4307,6 +5516,13 @@ pub fn encode_post_union_with_json_name_output_struct(input: PostUnionWithJsonNa
 }
 
 pub fn decode_post_union_with_json_name_output_struct() -> decode.Decoder(PostUnionWithJsonNameOutput) {
+  use value <- decode.optional_field("value", option.None, decode.optional(decode_union_with_json_name_union()))
+  decode.success(PostUnionWithJsonNameOutput(
+    value: value,
+  ))
+}
+
+pub fn decode_post_union_with_json_name_output_struct_params() -> decode.Decoder(PostUnionWithJsonNameOutput) {
   use value <- decode.optional_field("value", option.None, decode.optional(decode_union_with_json_name_union()))
   decode.success(PostUnionWithJsonNameOutput(
     value: value,
@@ -4342,6 +5558,15 @@ pub fn decode_put_with_content_encoding_input_struct() -> decode.Decoder(PutWith
   ))
 }
 
+pub fn decode_put_with_content_encoding_input_struct_params() -> decode.Decoder(PutWithContentEncodingInput) {
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.string))
+  use encoding <- decode.optional_field("encoding", option.None, decode.optional(decode.string))
+  decode.success(PutWithContentEncodingInput(
+    data: data,
+    encoding: encoding,
+  ))
+}
+
 pub type QueryIdempotencyTokenAutoFillInput {
   QueryIdempotencyTokenAutoFillInput(
     token: option.Option(String),
@@ -4358,6 +5583,13 @@ pub fn encode_query_idempotency_token_auto_fill_input_struct(input: QueryIdempot
 }
 
 pub fn decode_query_idempotency_token_auto_fill_input_struct() -> decode.Decoder(QueryIdempotencyTokenAutoFillInput) {
+  use token <- decode.optional_field("token", option.None, decode.optional(decode.string))
+  decode.success(QueryIdempotencyTokenAutoFillInput(
+    token: token,
+  ))
+}
+
+pub fn decode_query_idempotency_token_auto_fill_input_struct_params() -> decode.Decoder(QueryIdempotencyTokenAutoFillInput) {
   use token <- decode.optional_field("token", option.None, decode.optional(decode.string))
   decode.success(QueryIdempotencyTokenAutoFillInput(
     token: token,
@@ -4385,6 +5617,15 @@ pub fn encode_query_params_as_string_list_map_input_struct(input: QueryParamsAsS
 }
 
 pub fn decode_query_params_as_string_list_map_input_struct() -> decode.Decoder(QueryParamsAsStringListMapInput) {
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
+  use qux <- decode.optional_field("qux", option.None, decode.optional(decode.string))
+  decode.success(QueryParamsAsStringListMapInput(
+    foo: foo,
+    qux: qux,
+  ))
+}
+
+pub fn decode_query_params_as_string_list_map_input_struct_params() -> decode.Decoder(QueryParamsAsStringListMapInput) {
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
   use qux <- decode.optional_field("qux", option.None, decode.optional(decode.string))
   decode.success(QueryParamsAsStringListMapInput(
@@ -4422,6 +5663,15 @@ pub fn decode_query_precedence_input_struct() -> decode.Decoder(QueryPrecedenceI
   ))
 }
 
+pub fn decode_query_precedence_input_struct_params() -> decode.Decoder(QueryPrecedenceInput) {
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(QueryPrecedenceInput(
+    baz: baz,
+    foo: foo,
+  ))
+}
+
 pub type RecursiveShapesInputOutput {
   RecursiveShapesInputOutput(
     nested: option.Option(RecursiveShapesInputOutputNested1),
@@ -4439,6 +5689,13 @@ pub fn encode_recursive_shapes_input_output_struct(input: RecursiveShapesInputOu
 
 pub fn decode_recursive_shapes_input_output_struct() -> decode.Decoder(RecursiveShapesInputOutput) {
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct()))
+  decode.success(RecursiveShapesInputOutput(
+    nested: nested,
+  ))
+}
+
+pub fn decode_recursive_shapes_input_output_struct_params() -> decode.Decoder(RecursiveShapesInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct_params()))
   decode.success(RecursiveShapesInputOutput(
     nested: nested,
   ))
@@ -4467,6 +5724,15 @@ pub fn encode_recursive_shapes_input_output_nested1_struct(input: RecursiveShape
 pub fn decode_recursive_shapes_input_output_nested1_struct() -> decode.Decoder(RecursiveShapesInputOutputNested1) {
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested2_struct()))
+  decode.success(RecursiveShapesInputOutputNested1(
+    foo: foo,
+    nested: nested,
+  ))
+}
+
+pub fn decode_recursive_shapes_input_output_nested1_struct_params() -> decode.Decoder(RecursiveShapesInputOutputNested1) {
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested2_struct_params()))
   decode.success(RecursiveShapesInputOutputNested1(
     foo: foo,
     nested: nested,
@@ -4502,6 +5768,15 @@ pub fn decode_recursive_shapes_input_output_nested2_struct() -> decode.Decoder(R
   ))
 }
 
+pub fn decode_recursive_shapes_input_output_nested2_struct_params() -> decode.Decoder(RecursiveShapesInputOutputNested2) {
+  use bar <- decode.optional_field("bar", option.None, decode.optional(decode.string))
+  use recursive_member <- decode.optional_field("recursiveMember", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct_params()))
+  decode.success(RecursiveShapesInputOutputNested2(
+    bar: bar,
+    recursive_member: recursive_member,
+  ))
+}
+
 pub type ResponseCodeHttpFallbackInputOutput {
   ResponseCodeHttpFallbackInputOutput
 }
@@ -4511,6 +5786,10 @@ pub fn encode_response_code_http_fallback_input_output_struct(_v: ResponseCodeHt
 }
 
 pub fn decode_response_code_http_fallback_input_output_struct() -> decode.Decoder(ResponseCodeHttpFallbackInputOutput) {
+  decode.success(ResponseCodeHttpFallbackInputOutput)
+}
+
+pub fn decode_response_code_http_fallback_input_output_struct_params() -> decode.Decoder(ResponseCodeHttpFallbackInputOutput) {
   decode.success(ResponseCodeHttpFallbackInputOutput)
 }
 
@@ -4530,6 +5809,13 @@ pub fn encode_response_code_required_output_struct(input: ResponseCodeRequiredOu
 }
 
 pub fn decode_response_code_required_output_struct() -> decode.Decoder(ResponseCodeRequiredOutput) {
+  use response_code <- decode.optional_field("responseCode", option.None, decode.optional(decode.int))
+  decode.success(ResponseCodeRequiredOutput(
+    response_code: response_code,
+  ))
+}
+
+pub fn decode_response_code_required_output_struct_params() -> decode.Decoder(ResponseCodeRequiredOutput) {
   use response_code <- decode.optional_field("responseCode", option.None, decode.optional(decode.int))
   decode.success(ResponseCodeRequiredOutput(
     response_code: response_code,
@@ -4558,7 +5844,7 @@ pub fn encode_simple_scalar_properties_input_output_struct(input: SimpleScalarPr
     option.None -> pairs
   }
   let pairs = case input.double_value {
-    option.Some(v) -> [#("doubleValue", json_float.encode(v)), ..pairs]
+    option.Some(v) -> [#("DoubleDribble", json_float.encode(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.false_boolean_value {
@@ -4597,6 +5883,31 @@ pub fn encode_simple_scalar_properties_input_output_struct(input: SimpleScalarPr
 }
 
 pub fn decode_simple_scalar_properties_input_output_struct() -> decode.Decoder(SimpleScalarPropertiesInputOutput) {
+  use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
+  use double_value <- decode.optional_field("DoubleDribble", option.None, decode.optional(json_float.decoder()))
+  use false_boolean_value <- decode.optional_field("falseBooleanValue", option.None, decode.optional(decode.bool))
+  use float_value <- decode.optional_field("floatValue", option.None, decode.optional(json_float.decoder()))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use integer_value <- decode.optional_field("integerValue", option.None, decode.optional(decode.int))
+  use long_value <- decode.optional_field("longValue", option.None, decode.optional(decode.int))
+  use short_value <- decode.optional_field("shortValue", option.None, decode.optional(decode.int))
+  use string_value <- decode.optional_field("stringValue", option.None, decode.optional(decode.string))
+  use true_boolean_value <- decode.optional_field("trueBooleanValue", option.None, decode.optional(decode.bool))
+  decode.success(SimpleScalarPropertiesInputOutput(
+    byte_value: byte_value,
+    double_value: double_value,
+    false_boolean_value: false_boolean_value,
+    float_value: float_value,
+    foo: foo,
+    integer_value: integer_value,
+    long_value: long_value,
+    short_value: short_value,
+    string_value: string_value,
+    true_boolean_value: true_boolean_value,
+  ))
+}
+
+pub fn decode_simple_scalar_properties_input_output_struct_params() -> decode.Decoder(SimpleScalarPropertiesInputOutput) {
   use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
   use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
   use false_boolean_value <- decode.optional_field("falseBooleanValue", option.None, decode.optional(decode.bool))
@@ -4642,6 +5953,15 @@ pub fn encode_sparse_json_lists_input_output_struct(input: SparseJsonListsInputO
 }
 
 pub fn decode_sparse_json_lists_input_output_struct() -> decode.Decoder(SparseJsonListsInputOutput) {
+  use sparse_short_list <- decode.optional_field("sparseShortList", option.None, decode.optional(decode.list(decode.int)))
+  use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.string)))
+  decode.success(SparseJsonListsInputOutput(
+    sparse_short_list: sparse_short_list,
+    sparse_string_list: sparse_string_list,
+  ))
+}
+
+pub fn decode_sparse_json_lists_input_output_struct_params() -> decode.Decoder(SparseJsonListsInputOutput) {
   use sparse_short_list <- decode.optional_field("sparseShortList", option.None, decode.optional(decode.list(decode.int)))
   use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.string)))
   decode.success(SparseJsonListsInputOutput(
@@ -4700,6 +6020,21 @@ pub fn decode_sparse_json_maps_input_output_struct() -> decode.Decoder(SparseJso
   ))
 }
 
+pub fn decode_sparse_json_maps_input_output_struct_params() -> decode.Decoder(SparseJsonMapsInputOutput) {
+  use sparse_boolean_map <- decode.optional_field("sparseBooleanMap", option.None, decode.optional(decode.dict(decode.string, decode.bool)))
+  use sparse_number_map <- decode.optional_field("sparseNumberMap", option.None, decode.optional(decode.dict(decode.string, decode.int)))
+  use sparse_set_map <- decode.optional_field("sparseSetMap", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
+  use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use sparse_struct_map <- decode.optional_field("sparseStructMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
+  decode.success(SparseJsonMapsInputOutput(
+    sparse_boolean_map: sparse_boolean_map,
+    sparse_number_map: sparse_number_map,
+    sparse_set_map: sparse_set_map,
+    sparse_string_map: sparse_string_map,
+    sparse_struct_map: sparse_struct_map,
+  ))
+}
+
 pub type StreamingTraitsInputOutput {
   StreamingTraitsInputOutput(
     blob: option.Option(BitArray),
@@ -4721,6 +6056,15 @@ pub fn encode_streaming_traits_input_output_struct(input: StreamingTraitsInputOu
 }
 
 pub fn decode_streaming_traits_input_output_struct() -> decode.Decoder(StreamingTraitsInputOutput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(StreamingTraitsInputOutput(
+    blob: blob,
+    foo: foo,
+  ))
+}
+
+pub fn decode_streaming_traits_input_output_struct_params() -> decode.Decoder(StreamingTraitsInputOutput) {
   use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(StreamingTraitsInputOutput(
@@ -4758,6 +6102,15 @@ pub fn decode_streaming_traits_require_length_input_struct() -> decode.Decoder(S
   ))
 }
 
+pub fn decode_streaming_traits_require_length_input_struct_params() -> decode.Decoder(StreamingTraitsRequireLengthInput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(StreamingTraitsRequireLengthInput(
+    blob: blob,
+    foo: foo,
+  ))
+}
+
 pub type StreamingTraitsWithMediaTypeInputOutput {
   StreamingTraitsWithMediaTypeInputOutput(
     blob: option.Option(BitArray),
@@ -4779,6 +6132,15 @@ pub fn encode_streaming_traits_with_media_type_input_output_struct(input: Stream
 }
 
 pub fn decode_streaming_traits_with_media_type_input_output_struct() -> decode.Decoder(StreamingTraitsWithMediaTypeInputOutput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(StreamingTraitsWithMediaTypeInputOutput(
+    blob: blob,
+    foo: foo,
+  ))
+}
+
+pub fn decode_streaming_traits_with_media_type_input_output_struct_params() -> decode.Decoder(StreamingTraitsWithMediaTypeInputOutput) {
   use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
   decode.success(StreamingTraitsWithMediaTypeInputOutput(
@@ -4816,6 +6178,15 @@ pub fn decode_test_body_structure_input_output_struct() -> decode.Decoder(TestBo
   ))
 }
 
+pub fn decode_test_body_structure_input_output_struct_params() -> decode.Decoder(TestBodyStructureInputOutput) {
+  use test_config <- decode.optional_field("testConfig", option.None, decode.optional(decode_test_config_struct_params()))
+  use test_id <- decode.optional_field("testId", option.None, decode.optional(decode.string))
+  decode.success(TestBodyStructureInputOutput(
+    test_config: test_config,
+    test_id: test_id,
+  ))
+}
+
 pub type TestConfig {
   TestConfig(
     timeout: option.Option(Int),
@@ -4832,6 +6203,13 @@ pub fn encode_test_config_struct(input: TestConfig) -> json.Json {
 }
 
 pub fn decode_test_config_struct() -> decode.Decoder(TestConfig) {
+  use timeout <- decode.optional_field("timeout", option.None, decode.optional(decode.int))
+  decode.success(TestConfig(
+    timeout: timeout,
+  ))
+}
+
+pub fn decode_test_config_struct_params() -> decode.Decoder(TestConfig) {
   use timeout <- decode.optional_field("timeout", option.None, decode.optional(decode.int))
   decode.success(TestConfig(
     timeout: timeout,
@@ -4860,6 +6238,13 @@ pub fn decode_test_no_payload_input_output_struct() -> decode.Decoder(TestNoPayl
   ))
 }
 
+pub fn decode_test_no_payload_input_output_struct_params() -> decode.Decoder(TestNoPayloadInputOutput) {
+  use test_id <- decode.optional_field("testId", option.None, decode.optional(decode.string))
+  decode.success(TestNoPayloadInputOutput(
+    test_id: test_id,
+  ))
+}
+
 pub type TestPayloadBlobInputOutput {
   TestPayloadBlobInputOutput(
     content_type: option.Option(String),
@@ -4881,6 +6266,15 @@ pub fn encode_test_payload_blob_input_output_struct(input: TestPayloadBlobInputO
 }
 
 pub fn decode_test_payload_blob_input_output_struct() -> decode.Decoder(TestPayloadBlobInputOutput) {
+  use content_type <- decode.optional_field("contentType", option.None, decode.optional(decode.string))
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(TestPayloadBlobInputOutput(
+    content_type: content_type,
+    data: data,
+  ))
+}
+
+pub fn decode_test_payload_blob_input_output_struct_params() -> decode.Decoder(TestPayloadBlobInputOutput) {
   use content_type <- decode.optional_field("contentType", option.None, decode.optional(decode.string))
   use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(TestPayloadBlobInputOutput(
@@ -4918,6 +6312,15 @@ pub fn decode_test_payload_structure_input_output_struct() -> decode.Decoder(Tes
   ))
 }
 
+pub fn decode_test_payload_structure_input_output_struct_params() -> decode.Decoder(TestPayloadStructureInputOutput) {
+  use payload_config <- decode.optional_field("payloadConfig", option.None, decode.optional(decode_payload_config_struct_params()))
+  use test_id <- decode.optional_field("testId", option.None, decode.optional(decode.string))
+  decode.success(TestPayloadStructureInputOutput(
+    payload_config: payload_config,
+    test_id: test_id,
+  ))
+}
+
 pub type PayloadConfig {
   PayloadConfig(
     data: option.Option(Int),
@@ -4934,6 +6337,13 @@ pub fn encode_payload_config_struct(input: PayloadConfig) -> json.Json {
 }
 
 pub fn decode_payload_config_struct() -> decode.Decoder(PayloadConfig) {
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.int))
+  decode.success(PayloadConfig(
+    data: data,
+  ))
+}
+
+pub fn decode_payload_config_struct_params() -> decode.Decoder(PayloadConfig) {
   use data <- decode.optional_field("data", option.None, decode.optional(decode.int))
   decode.success(PayloadConfig(
     data: data,
@@ -4986,13 +6396,32 @@ pub fn encode_timestamp_format_headers_io_struct(input: TimestampFormatHeadersIO
 }
 
 pub fn decode_timestamp_format_headers_io_struct() -> decode.Decoder(TimestampFormatHeadersIO) {
-  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(decode.int))
-  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(decode.int))
-  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(decode.int))
-  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(decode.int))
-  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(decode.int))
-  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(decode.int))
-  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(decode.int))
+  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(json_timestamp.decoder()))
+  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(json_timestamp.decoder()))
+  decode.success(TimestampFormatHeadersIO(
+    default_format: default_format,
+    member_date_time: member_date_time,
+    member_epoch_seconds: member_epoch_seconds,
+    member_http_date: member_http_date,
+    target_date_time: target_date_time,
+    target_epoch_seconds: target_epoch_seconds,
+    target_http_date: target_http_date,
+  ))
+}
+
+pub fn decode_timestamp_format_headers_io_struct_params() -> decode.Decoder(TimestampFormatHeadersIO) {
+  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(json_timestamp.decoder()))
+  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(json_timestamp.decoder()))
+  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(json_timestamp.decoder()))
+  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(json_timestamp.decoder()))
+  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(json_timestamp.decoder()))
   decode.success(TimestampFormatHeadersIO(
     default_format: default_format,
     member_date_time: member_date_time,
@@ -5022,7 +6451,7 @@ pub fn encode_all_query_string_types_input(input: AllQueryStringTypesInput) -> S
 }
 
 pub fn decode_all_query_string_types_input(body: String) -> Result(AllQueryStringTypesInput, String) {
-  case json.parse(body, decode_all_query_string_types_input_struct()) {
+  case json.parse(body, decode_all_query_string_types_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -5173,15 +6602,9 @@ pub fn build_all_query_string_types_request(
 pub fn parse_all_query_string_types_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(AllQueryStringTypesOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_all_query_string_types_output("{}")
-      _ -> decode_all_query_string_types_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(AllQueryStringTypesOutput)
 }
 
 
@@ -5202,7 +6625,7 @@ pub fn encode_constant_and_variable_query_string_input(input: ConstantAndVariabl
 }
 
 pub fn decode_constant_and_variable_query_string_input(body: String) -> Result(ConstantAndVariableQueryStringInput, String) {
-  case json.parse(body, decode_constant_and_variable_query_string_input_struct()) {
+  case json.parse(body, decode_constant_and_variable_query_string_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -5250,15 +6673,9 @@ pub fn build_constant_and_variable_query_string_request(
 pub fn parse_constant_and_variable_query_string_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(ConstantAndVariableQueryStringOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_constant_and_variable_query_string_output("{}")
-      _ -> decode_constant_and_variable_query_string_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(ConstantAndVariableQueryStringOutput)
 }
 
 
@@ -5279,7 +6696,7 @@ pub fn encode_constant_query_string_input(input: ConstantQueryStringInput) -> St
 }
 
 pub fn decode_constant_query_string_input(body: String) -> Result(ConstantQueryStringInput, String) {
-  case json.parse(body, decode_constant_query_string_input_struct()) {
+  case json.parse(body, decode_constant_query_string_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -5323,15 +6740,9 @@ pub fn build_constant_query_string_request(
 pub fn parse_constant_query_string_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(ConstantQueryStringOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_constant_query_string_output("{}")
-      _ -> decode_constant_query_string_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(ConstantQueryStringOutput)
 }
 
 
@@ -5340,7 +6751,7 @@ pub fn encode_content_type_parameters_input(input: ContentTypeParametersInput) -
 }
 
 pub fn decode_content_type_parameters_input(body: String) -> Result(ContentTypeParametersInput, String) {
-  case json.parse(body, decode_content_type_parameters_input_struct()) {
+  case json.parse(body, decode_content_type_parameters_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -5472,7 +6883,7 @@ pub fn encode_document_type_input(input: DocumentTypeInputOutput) -> String {
 }
 
 pub fn decode_document_type_input(body: String) -> Result(DocumentTypeInputOutput, String) {
-  case json.parse(body, decode_document_type_input_output_struct()) {
+  case json.parse(body, decode_document_type_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -5539,7 +6950,7 @@ pub fn encode_document_type_as_map_value_input(input: DocumentTypeAsMapValueInpu
 }
 
 pub fn decode_document_type_as_map_value_input(body: String) -> Result(DocumentTypeAsMapValueInputOutput, String) {
-  case json.parse(body, decode_document_type_as_map_value_input_output_struct()) {
+  case json.parse(body, decode_document_type_as_map_value_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -5602,7 +7013,7 @@ pub fn encode_document_type_as_payload_input(input: DocumentTypeAsPayloadInputOu
 }
 
 pub fn decode_document_type_as_payload_input(body: String) -> Result(DocumentTypeAsPayloadInputOutput, String) {
-  case json.parse(body, decode_document_type_as_payload_input_output_struct()) {
+  case json.parse(body, decode_document_type_as_payload_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -5647,12 +7058,21 @@ pub fn parse_document_type_as_payload_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(DocumentTypeAsPayloadInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_document_type_as_payload_output("{}")
-      _ -> decode_document_type_as_payload_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
+      _ -> case json.parse(text, decode.dynamic) {
+        Ok(d) -> Ok(option.Some(json_document.from_dynamic(d)))
+        Error(_) -> Error("decode failed")
+      }
+    })
+    Ok(DocumentTypeAsPayloadInputOutput(
+    document_value: payload,
+    ))
   }
 }
 
@@ -5662,7 +7082,7 @@ pub fn encode_duplex_stream_input(input: DuplexStreamInput) -> String {
 }
 
 pub fn decode_duplex_stream_input(body: String) -> Result(DuplexStreamInput, String) {
-  case json.parse(body, decode_duplex_stream_input_struct()) {
+  case json.parse(body, decode_duplex_stream_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -5707,12 +7127,11 @@ pub fn parse_duplex_stream_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(DuplexStreamOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_duplex_stream_output("{}")
-      _ -> decode_duplex_stream_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.None
+    Ok(DuplexStreamOutput(
+    stream: payload,
+    ))
   }
 }
 
@@ -5722,7 +7141,7 @@ pub fn encode_duplex_stream_with_distinct_streams_input(input: DuplexStreamWithD
 }
 
 pub fn decode_duplex_stream_with_distinct_streams_input(body: String) -> Result(DuplexStreamWithDistinctStreamsInput, String) {
-  case json.parse(body, decode_duplex_stream_with_distinct_streams_input_struct()) {
+  case json.parse(body, decode_duplex_stream_with_distinct_streams_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -5767,12 +7186,11 @@ pub fn parse_duplex_stream_with_distinct_streams_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(DuplexStreamWithDistinctStreamsOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_duplex_stream_with_distinct_streams_output("{}")
-      _ -> decode_duplex_stream_with_distinct_streams_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.None
+    Ok(DuplexStreamWithDistinctStreamsOutput(
+    stream: payload,
+    ))
   }
 }
 
@@ -5782,7 +7200,7 @@ pub fn encode_duplex_stream_with_initial_messages_input(input: DuplexStreamWithI
 }
 
 pub fn decode_duplex_stream_with_initial_messages_input(body: String) -> Result(DuplexStreamWithInitialMessagesInput, String) {
-  case json.parse(body, decode_duplex_stream_with_initial_messages_input_struct()) {
+  case json.parse(body, decode_duplex_stream_with_initial_messages_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -5831,12 +7249,12 @@ pub fn parse_duplex_stream_with_initial_messages_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(DuplexStreamWithInitialMessagesOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_duplex_stream_with_initial_messages_output("{}")
-      _ -> decode_duplex_stream_with_initial_messages_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.None
+    Ok(DuplexStreamWithInitialMessagesOutput(
+    initial_response_member: option.None,
+    stream: payload,
+    ))
   }
 }
 
@@ -5846,7 +7264,7 @@ pub fn encode_empty_input_and_empty_output_input(input: EmptyInputAndEmptyOutput
 }
 
 pub fn decode_empty_input_and_empty_output_input(body: String) -> Result(EmptyInputAndEmptyOutputInput, String) {
-  case json.parse(body, decode_empty_input_and_empty_output_input_struct()) {
+  case json.parse(body, decode_empty_input_and_empty_output_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -5967,15 +7385,9 @@ pub fn build_endpoint_operation_request(
 pub fn parse_endpoint_operation_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(EndpointOperationOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_endpoint_operation_output("{}")
-      _ -> decode_endpoint_operation_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(EndpointOperationOutput)
 }
 
 
@@ -5996,7 +7408,7 @@ pub fn encode_endpoint_with_host_label_operation_input(input: HostLabelInput) ->
 }
 
 pub fn decode_endpoint_with_host_label_operation_input(body: String) -> Result(HostLabelInput, String) {
-  case json.parse(body, decode_host_label_input_struct()) {
+  case json.parse(body, decode_host_label_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6042,15 +7454,9 @@ pub fn build_endpoint_with_host_label_operation_request(
 pub fn parse_endpoint_with_host_label_operation_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(EndpointWithHostLabelOperationOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_endpoint_with_host_label_operation_output("{}")
-      _ -> decode_endpoint_with_host_label_operation_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(EndpointWithHostLabelOperationOutput)
 }
 
 
@@ -6261,15 +7667,9 @@ pub fn build_host_with_path_operation_request(
 pub fn parse_host_with_path_operation_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(HostWithPathOperationOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_host_with_path_operation_output("{}")
-      _ -> decode_host_with_path_operation_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(HostWithPathOperationOutput)
 }
 
 
@@ -6278,7 +7678,7 @@ pub fn encode_http_empty_prefix_headers_input(input: HttpEmptyPrefixHeadersInput
 }
 
 pub fn decode_http_empty_prefix_headers_input(body: String) -> Result(HttpEmptyPrefixHeadersInput, String) {
-  case json.parse(body, decode_http_empty_prefix_headers_input_struct()) {
+  case json.parse(body, decode_http_empty_prefix_headers_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6343,7 +7743,7 @@ pub fn encode_http_enum_payload_input(input: EnumPayloadInput) -> String {
 }
 
 pub fn decode_http_enum_payload_input(body: String) -> Result(EnumPayloadInput, String) {
-  case json.parse(body, decode_enum_payload_input_struct()) {
+  case json.parse(body, decode_enum_payload_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6388,12 +7788,21 @@ pub fn parse_http_enum_payload_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(EnumPayloadInput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_enum_payload_output("{}")
-      _ -> decode_http_enum_payload_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
+      _ -> case json.parse("\"" <> text <> "\"", decode_string_enum_enum()) {
+        Ok(v) -> Ok(option.Some(v))
+        Error(_) -> Error("decode failed")
+      }
+    })
+    Ok(EnumPayloadInput(
+    payload: payload,
+    ))
   }
 }
 
@@ -6403,7 +7812,7 @@ pub fn encode_http_payload_traits_input(input: HttpPayloadTraitsInputOutput) -> 
 }
 
 pub fn decode_http_payload_traits_input(body: String) -> Result(HttpPayloadTraitsInputOutput, String) {
-  case json.parse(body, decode_http_payload_traits_input_output_struct()) {
+  case json.parse(body, decode_http_payload_traits_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6452,12 +7861,12 @@ pub fn parse_http_payload_traits_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(HttpPayloadTraitsInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_payload_traits_output("{}")
-      _ -> decode_http_payload_traits_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.Some(body)
+    Ok(HttpPayloadTraitsInputOutput(
+    blob: payload,
+    foo: option.None,
+    ))
   }
 }
 
@@ -6467,7 +7876,7 @@ pub fn encode_http_payload_traits_with_media_type_input(input: HttpPayloadTraits
 }
 
 pub fn decode_http_payload_traits_with_media_type_input(body: String) -> Result(HttpPayloadTraitsWithMediaTypeInputOutput, String) {
-  case json.parse(body, decode_http_payload_traits_with_media_type_input_output_struct()) {
+  case json.parse(body, decode_http_payload_traits_with_media_type_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6516,12 +7925,12 @@ pub fn parse_http_payload_traits_with_media_type_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(HttpPayloadTraitsWithMediaTypeInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_payload_traits_with_media_type_output("{}")
-      _ -> decode_http_payload_traits_with_media_type_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.Some(body)
+    Ok(HttpPayloadTraitsWithMediaTypeInputOutput(
+    blob: payload,
+    foo: option.None,
+    ))
   }
 }
 
@@ -6531,7 +7940,7 @@ pub fn encode_http_payload_with_structure_input(input: HttpPayloadWithStructureI
 }
 
 pub fn decode_http_payload_with_structure_input(body: String) -> Result(HttpPayloadWithStructureInputOutput, String) {
-  case json.parse(body, decode_http_payload_with_structure_input_output_struct()) {
+  case json.parse(body, decode_http_payload_with_structure_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6576,12 +7985,21 @@ pub fn parse_http_payload_with_structure_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(HttpPayloadWithStructureInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_payload_with_structure_output("{}")
-      _ -> decode_http_payload_with_structure_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
+      _ -> case json.parse(text, decode_nested_payload_struct()) {
+        Ok(v) -> Ok(option.Some(v))
+        Error(_) -> Error("decode failed")
+      }
+    })
+    Ok(HttpPayloadWithStructureInputOutput(
+    nested: payload,
+    ))
   }
 }
 
@@ -6591,7 +8009,7 @@ pub fn encode_http_payload_with_union_input(input: HttpPayloadWithUnionInputOutp
 }
 
 pub fn decode_http_payload_with_union_input(body: String) -> Result(HttpPayloadWithUnionInputOutput, String) {
-  case json.parse(body, decode_http_payload_with_union_input_output_struct()) {
+  case json.parse(body, decode_http_payload_with_union_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6636,12 +8054,11 @@ pub fn parse_http_payload_with_union_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(HttpPayloadWithUnionInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_payload_with_union_output("{}")
-      _ -> decode_http_payload_with_union_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.None
+    Ok(HttpPayloadWithUnionInputOutput(
+    nested: payload,
+    ))
   }
 }
 
@@ -6651,7 +8068,7 @@ pub fn encode_http_prefix_headers_input(input: HttpPrefixHeadersInput) -> String
 }
 
 pub fn decode_http_prefix_headers_input(body: String) -> Result(HttpPrefixHeadersInput, String) {
-  case json.parse(body, decode_http_prefix_headers_input_struct()) {
+  case json.parse(body, decode_http_prefix_headers_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6716,7 +8133,7 @@ pub fn encode_http_prefix_headers_in_response_input(input: HttpPrefixHeadersInRe
 }
 
 pub fn decode_http_prefix_headers_in_response_input(body: String) -> Result(HttpPrefixHeadersInResponseInput, String) {
-  case json.parse(body, decode_http_prefix_headers_in_response_input_struct()) {
+  case json.parse(body, decode_http_prefix_headers_in_response_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6785,7 +8202,7 @@ pub fn encode_http_query_params_only_operation_input(input: HttpQueryParamsOnlyI
 }
 
 pub fn decode_http_query_params_only_operation_input(body: String) -> Result(HttpQueryParamsOnlyInput, String) {
-  case json.parse(body, decode_http_query_params_only_input_struct()) {
+  case json.parse(body, decode_http_query_params_only_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6829,15 +8246,9 @@ pub fn build_http_query_params_only_operation_request(
 pub fn parse_http_query_params_only_operation_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(HttpQueryParamsOnlyOperationOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_query_params_only_operation_output("{}")
-      _ -> decode_http_query_params_only_operation_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(HttpQueryParamsOnlyOperationOutput)
 }
 
 
@@ -6858,7 +8269,7 @@ pub fn encode_http_request_with_float_labels_input(input: HttpRequestWithFloatLa
 }
 
 pub fn decode_http_request_with_float_labels_input(body: String) -> Result(HttpRequestWithFloatLabelsInput, String) {
-  case json.parse(body, decode_http_request_with_float_labels_input_struct()) {
+  case json.parse(body, decode_http_request_with_float_labels_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6906,15 +8317,9 @@ pub fn build_http_request_with_float_labels_request(
 pub fn parse_http_request_with_float_labels_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(HttpRequestWithFloatLabelsOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_request_with_float_labels_output("{}")
-      _ -> decode_http_request_with_float_labels_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(HttpRequestWithFloatLabelsOutput)
 }
 
 
@@ -6935,7 +8340,7 @@ pub fn encode_http_request_with_greedy_label_in_path_input(input: HttpRequestWit
 }
 
 pub fn decode_http_request_with_greedy_label_in_path_input(body: String) -> Result(HttpRequestWithGreedyLabelInPathInput, String) {
-  case json.parse(body, decode_http_request_with_greedy_label_in_path_input_struct()) {
+  case json.parse(body, decode_http_request_with_greedy_label_in_path_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -6983,15 +8388,9 @@ pub fn build_http_request_with_greedy_label_in_path_request(
 pub fn parse_http_request_with_greedy_label_in_path_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(HttpRequestWithGreedyLabelInPathOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_request_with_greedy_label_in_path_output("{}")
-      _ -> decode_http_request_with_greedy_label_in_path_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(HttpRequestWithGreedyLabelInPathOutput)
 }
 
 
@@ -7012,7 +8411,7 @@ pub fn encode_http_request_with_labels_input(input: HttpRequestWithLabelsInput) 
 }
 
 pub fn decode_http_request_with_labels_input(body: String) -> Result(HttpRequestWithLabelsInput, String) {
-  case json.parse(body, decode_http_request_with_labels_input_struct()) {
+  case json.parse(body, decode_http_request_with_labels_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7084,15 +8483,9 @@ pub fn build_http_request_with_labels_request(
 pub fn parse_http_request_with_labels_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(HttpRequestWithLabelsOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_request_with_labels_output("{}")
-      _ -> decode_http_request_with_labels_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(HttpRequestWithLabelsOutput)
 }
 
 
@@ -7113,7 +8506,7 @@ pub fn encode_http_request_with_labels_and_timestamp_format_input(input: HttpReq
 }
 
 pub fn decode_http_request_with_labels_and_timestamp_format_input(body: String) -> Result(HttpRequestWithLabelsAndTimestampFormatInput, String) {
-  case json.parse(body, decode_http_request_with_labels_and_timestamp_format_input_struct()) {
+  case json.parse(body, decode_http_request_with_labels_and_timestamp_format_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7181,15 +8574,9 @@ pub fn build_http_request_with_labels_and_timestamp_format_request(
 pub fn parse_http_request_with_labels_and_timestamp_format_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(HttpRequestWithLabelsAndTimestampFormatOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_request_with_labels_and_timestamp_format_output("{}")
-      _ -> decode_http_request_with_labels_and_timestamp_format_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(HttpRequestWithLabelsAndTimestampFormatOutput)
 }
 
 
@@ -7210,7 +8597,7 @@ pub fn encode_http_request_with_regex_literal_input(input: HttpRequestWithRegexL
 }
 
 pub fn decode_http_request_with_regex_literal_input(body: String) -> Result(HttpRequestWithRegexLiteralInput, String) {
-  case json.parse(body, decode_http_request_with_regex_literal_input_struct()) {
+  case json.parse(body, decode_http_request_with_regex_literal_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7254,15 +8641,9 @@ pub fn build_http_request_with_regex_literal_request(
 pub fn parse_http_request_with_regex_literal_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(HttpRequestWithRegexLiteralOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_request_with_regex_literal_output("{}")
-      _ -> decode_http_request_with_regex_literal_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(HttpRequestWithRegexLiteralOutput)
 }
 
 
@@ -7340,7 +8721,7 @@ pub fn encode_http_string_payload_input(input: StringPayloadInput) -> String {
 }
 
 pub fn decode_http_string_payload_input(body: String) -> Result(StringPayloadInput, String) {
-  case json.parse(body, decode_string_payload_input_struct()) {
+  case json.parse(body, decode_string_payload_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7385,12 +8766,14 @@ pub fn parse_http_string_payload_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(StringPayloadInput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_http_string_payload_output("{}")
-      _ -> decode_http_string_payload_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    use payload <- result.try(case bit_array.to_string(body) {
+      Ok(s) -> Ok(option.Some(s))
+      Error(_) -> Error("non-utf8 payload")
+    })
+    Ok(StringPayloadInput(
+    payload: payload,
+    ))
   }
 }
 
@@ -7469,7 +8852,7 @@ pub fn encode_input_and_output_with_headers_input(input: InputAndOutputWithHeade
 }
 
 pub fn decode_input_and_output_with_headers_input(body: String) -> Result(InputAndOutputWithHeadersIO, String) {
-  case json.parse(body, decode_input_and_output_with_headers_io_struct()) {
+  case json.parse(body, decode_input_and_output_with_headers_io_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7610,7 +8993,7 @@ pub fn encode_input_stream_input(input: InputStreamInput) -> String {
 }
 
 pub fn decode_input_stream_input(body: String) -> Result(InputStreamInput, String) {
-  case json.parse(body, decode_input_stream_input_struct()) {
+  case json.parse(body, decode_input_stream_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7653,15 +9036,9 @@ pub fn build_input_stream_request(
 pub fn parse_input_stream_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(InputStreamOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_input_stream_output("{}")
-      _ -> decode_input_stream_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(InputStreamOutput)
 }
 
 
@@ -7682,7 +9059,7 @@ pub fn encode_input_stream_with_initial_request_input(input: InputStreamWithInit
 }
 
 pub fn decode_input_stream_with_initial_request_input(body: String) -> Result(InputStreamWithInitialRequestInput, String) {
-  case json.parse(body, decode_input_stream_with_initial_request_input_struct()) {
+  case json.parse(body, decode_input_stream_with_initial_request_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7729,15 +9106,9 @@ pub fn build_input_stream_with_initial_request_request(
 pub fn parse_input_stream_with_initial_request_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(InputStreamWithInitialRequestOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_input_stream_with_initial_request_output("{}")
-      _ -> decode_input_stream_with_initial_request_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(InputStreamWithInitialRequestOutput)
 }
 
 
@@ -7746,7 +9117,7 @@ pub fn encode_json_blobs_input(input: JsonBlobsInputOutput) -> String {
 }
 
 pub fn decode_json_blobs_input(body: String) -> Result(JsonBlobsInputOutput, String) {
-  case json.parse(body, decode_json_blobs_input_output_struct()) {
+  case json.parse(body, decode_json_blobs_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7809,7 +9180,7 @@ pub fn encode_json_enums_input(input: JsonEnumsInputOutput) -> String {
 }
 
 pub fn decode_json_enums_input(body: String) -> Result(JsonEnumsInputOutput, String) {
-  case json.parse(body, decode_json_enums_input_output_struct()) {
+  case json.parse(body, decode_json_enums_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7892,7 +9263,7 @@ pub fn encode_json_int_enums_input(input: JsonIntEnumsInputOutput) -> String {
 }
 
 pub fn decode_json_int_enums_input(body: String) -> Result(JsonIntEnumsInputOutput, String) {
-  case json.parse(body, decode_json_int_enums_input_output_struct()) {
+  case json.parse(body, decode_json_int_enums_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -7975,7 +9346,7 @@ pub fn encode_json_lists_input(input: JsonListsInputOutput) -> String {
 }
 
 pub fn decode_json_lists_input(body: String) -> Result(JsonListsInputOutput, String) {
-  case json.parse(body, decode_json_lists_input_output_struct()) {
+  case json.parse(body, decode_json_lists_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8019,7 +9390,7 @@ pub fn encode_json_lists_body(input: JsonListsInputOutput) -> json.Json {
     option.None -> pairs
   }
   let pairs = case input.structure_list {
-    option.Some(v) -> [#("structureList", fn(xs) { json.array(xs, encode_structure_list_member_struct) }(v)), ..pairs]
+    option.Some(v) -> [#("myStructureList", fn(xs) { json.array(xs, encode_structure_list_member_struct) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.timestamp_list {
@@ -8070,7 +9441,7 @@ pub fn encode_json_maps_input(input: JsonMapsInputOutput) -> String {
 }
 
 pub fn decode_json_maps_input(body: String) -> Result(JsonMapsInputOutput, String) {
-  case json.parse(body, decode_json_maps_input_output_struct()) {
+  case json.parse(body, decode_json_maps_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8149,7 +9520,7 @@ pub fn encode_json_timestamps_input(input: JsonTimestampsInputOutput) -> String 
 }
 
 pub fn decode_json_timestamps_input(body: String) -> Result(JsonTimestampsInputOutput, String) {
-  case json.parse(body, decode_json_timestamps_input_output_struct()) {
+  case json.parse(body, decode_json_timestamps_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8236,7 +9607,7 @@ pub fn encode_json_unions_input(input: UnionInputOutput) -> String {
 }
 
 pub fn decode_json_unions_input(body: String) -> Result(UnionInputOutput, String) {
-  case json.parse(body, decode_union_input_output_struct()) {
+  case json.parse(body, decode_union_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8422,12 +9793,14 @@ pub fn parse_malformed_accept_with_generic_string_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(MalformedAcceptWithGenericStringOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_accept_with_generic_string_output("{}")
-      _ -> decode_malformed_accept_with_generic_string_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    use payload <- result.try(case bit_array.to_string(body) {
+      Ok(s) -> Ok(option.Some(s))
+      Error(_) -> Error("non-utf8 payload")
+    })
+    Ok(MalformedAcceptWithGenericStringOutput(
+    payload: payload,
+    ))
   }
 }
 
@@ -8491,12 +9864,11 @@ pub fn parse_malformed_accept_with_payload_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(MalformedAcceptWithPayloadOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_accept_with_payload_output("{}")
-      _ -> decode_malformed_accept_with_payload_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.Some(body)
+    Ok(MalformedAcceptWithPayloadOutput(
+    payload: payload,
+    ))
   }
 }
 
@@ -8518,7 +9890,7 @@ pub fn encode_malformed_blob_input(input: MalformedBlobInput) -> String {
 }
 
 pub fn decode_malformed_blob_input(body: String) -> Result(MalformedBlobInput, String) {
-  case json.parse(body, decode_malformed_blob_input_struct()) {
+  case json.parse(body, decode_malformed_blob_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8564,15 +9936,9 @@ pub fn build_malformed_blob_request(
 pub fn parse_malformed_blob_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedBlobOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_blob_output("{}")
-      _ -> decode_malformed_blob_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedBlobOutput)
 }
 
 
@@ -8593,7 +9959,7 @@ pub fn encode_malformed_boolean_input(input: MalformedBooleanInput) -> String {
 }
 
 pub fn decode_malformed_boolean_input(body: String) -> Result(MalformedBooleanInput, String) {
-  case json.parse(body, decode_malformed_boolean_input_struct()) {
+  case json.parse(body, decode_malformed_boolean_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8651,15 +10017,9 @@ pub fn build_malformed_boolean_request(
 pub fn parse_malformed_boolean_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedBooleanOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_boolean_output("{}")
-      _ -> decode_malformed_boolean_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedBooleanOutput)
 }
 
 
@@ -8680,7 +10040,7 @@ pub fn encode_malformed_byte_input(input: MalformedByteInput) -> String {
 }
 
 pub fn decode_malformed_byte_input(body: String) -> Result(MalformedByteInput, String) {
-  case json.parse(body, decode_malformed_byte_input_struct()) {
+  case json.parse(body, decode_malformed_byte_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8738,15 +10098,9 @@ pub fn build_malformed_byte_request(
 pub fn parse_malformed_byte_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedByteOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_byte_output("{}")
-      _ -> decode_malformed_byte_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedByteOutput)
 }
 
 
@@ -8767,7 +10121,7 @@ pub fn encode_malformed_content_type_with_body_input(input: GreetingStruct) -> S
 }
 
 pub fn decode_malformed_content_type_with_body_input(body: String) -> Result(GreetingStruct, String) {
-  case json.parse(body, decode_greeting_struct_struct()) {
+  case json.parse(body, decode_greeting_struct_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8813,15 +10167,9 @@ pub fn build_malformed_content_type_with_body_request(
 pub fn parse_malformed_content_type_with_body_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedContentTypeWithBodyOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_content_type_with_body_output("{}")
-      _ -> decode_malformed_content_type_with_body_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedContentTypeWithBodyOutput)
 }
 
 
@@ -8842,7 +10190,7 @@ pub fn encode_malformed_content_type_with_generic_string_input(input: MalformedC
 }
 
 pub fn decode_malformed_content_type_with_generic_string_input(body: String) -> Result(MalformedContentTypeWithGenericStringInput, String) {
-  case json.parse(body, decode_malformed_content_type_with_generic_string_input_struct()) {
+  case json.parse(body, decode_malformed_content_type_with_generic_string_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -8885,15 +10233,9 @@ pub fn build_malformed_content_type_with_generic_string_request(
 pub fn parse_malformed_content_type_with_generic_string_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedContentTypeWithGenericStringOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_content_type_with_generic_string_output("{}")
-      _ -> decode_malformed_content_type_with_generic_string_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedContentTypeWithGenericStringOutput)
 }
 
 
@@ -8966,15 +10308,9 @@ pub fn build_malformed_content_type_without_body_request(
 pub fn parse_malformed_content_type_without_body_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedContentTypeWithoutBodyOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_content_type_without_body_output("{}")
-      _ -> decode_malformed_content_type_without_body_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedContentTypeWithoutBodyOutput)
 }
 
 
@@ -8995,7 +10331,7 @@ pub fn encode_malformed_content_type_without_body_empty_input_input(input: Malfo
 }
 
 pub fn decode_malformed_content_type_without_body_empty_input_input(body: String) -> Result(MalformedContentTypeWithoutBodyEmptyInputInput, String) {
-  case json.parse(body, decode_malformed_content_type_without_body_empty_input_input_struct()) {
+  case json.parse(body, decode_malformed_content_type_without_body_empty_input_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9039,15 +10375,9 @@ pub fn build_malformed_content_type_without_body_empty_input_request(
 pub fn parse_malformed_content_type_without_body_empty_input_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedContentTypeWithoutBodyEmptyInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_content_type_without_body_empty_input_output("{}")
-      _ -> decode_malformed_content_type_without_body_empty_input_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedContentTypeWithoutBodyEmptyInputOutput)
 }
 
 
@@ -9068,7 +10398,7 @@ pub fn encode_malformed_content_type_with_payload_input(input: MalformedContentT
 }
 
 pub fn decode_malformed_content_type_with_payload_input(body: String) -> Result(MalformedContentTypeWithPayloadInput, String) {
-  case json.parse(body, decode_malformed_content_type_with_payload_input_struct()) {
+  case json.parse(body, decode_malformed_content_type_with_payload_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9111,15 +10441,9 @@ pub fn build_malformed_content_type_with_payload_request(
 pub fn parse_malformed_content_type_with_payload_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedContentTypeWithPayloadOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_content_type_with_payload_output("{}")
-      _ -> decode_malformed_content_type_with_payload_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedContentTypeWithPayloadOutput)
 }
 
 
@@ -9140,7 +10464,7 @@ pub fn encode_malformed_double_input(input: MalformedDoubleInput) -> String {
 }
 
 pub fn decode_malformed_double_input(body: String) -> Result(MalformedDoubleInput, String) {
-  case json.parse(body, decode_malformed_double_input_struct()) {
+  case json.parse(body, decode_malformed_double_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9198,15 +10522,9 @@ pub fn build_malformed_double_request(
 pub fn parse_malformed_double_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedDoubleOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_double_output("{}")
-      _ -> decode_malformed_double_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedDoubleOutput)
 }
 
 
@@ -9227,7 +10545,7 @@ pub fn encode_malformed_float_input(input: MalformedFloatInput) -> String {
 }
 
 pub fn decode_malformed_float_input(body: String) -> Result(MalformedFloatInput, String) {
-  case json.parse(body, decode_malformed_float_input_struct()) {
+  case json.parse(body, decode_malformed_float_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9285,15 +10603,9 @@ pub fn build_malformed_float_request(
 pub fn parse_malformed_float_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedFloatOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_float_output("{}")
-      _ -> decode_malformed_float_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedFloatOutput)
 }
 
 
@@ -9314,7 +10626,7 @@ pub fn encode_malformed_integer_input(input: MalformedIntegerInput) -> String {
 }
 
 pub fn decode_malformed_integer_input(body: String) -> Result(MalformedIntegerInput, String) {
-  case json.parse(body, decode_malformed_integer_input_struct()) {
+  case json.parse(body, decode_malformed_integer_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9372,15 +10684,9 @@ pub fn build_malformed_integer_request(
 pub fn parse_malformed_integer_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedIntegerOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_integer_output("{}")
-      _ -> decode_malformed_integer_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedIntegerOutput)
 }
 
 
@@ -9401,7 +10707,7 @@ pub fn encode_malformed_list_input(input: MalformedListInput) -> String {
 }
 
 pub fn decode_malformed_list_input(body: String) -> Result(MalformedListInput, String) {
-  case json.parse(body, decode_malformed_list_input_struct()) {
+  case json.parse(body, decode_malformed_list_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9447,15 +10753,9 @@ pub fn build_malformed_list_request(
 pub fn parse_malformed_list_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedListOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_list_output("{}")
-      _ -> decode_malformed_list_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedListOutput)
 }
 
 
@@ -9476,7 +10776,7 @@ pub fn encode_malformed_long_input(input: MalformedLongInput) -> String {
 }
 
 pub fn decode_malformed_long_input(body: String) -> Result(MalformedLongInput, String) {
-  case json.parse(body, decode_malformed_long_input_struct()) {
+  case json.parse(body, decode_malformed_long_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9534,15 +10834,9 @@ pub fn build_malformed_long_request(
 pub fn parse_malformed_long_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedLongOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_long_output("{}")
-      _ -> decode_malformed_long_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedLongOutput)
 }
 
 
@@ -9563,7 +10857,7 @@ pub fn encode_malformed_map_input(input: MalformedMapInput) -> String {
 }
 
 pub fn decode_malformed_map_input(body: String) -> Result(MalformedMapInput, String) {
-  case json.parse(body, decode_malformed_map_input_struct()) {
+  case json.parse(body, decode_malformed_map_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9609,15 +10903,9 @@ pub fn build_malformed_map_request(
 pub fn parse_malformed_map_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedMapOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_map_output("{}")
-      _ -> decode_malformed_map_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedMapOutput)
 }
 
 
@@ -9638,7 +10926,7 @@ pub fn encode_malformed_request_body_input(input: MalformedRequestBodyInput) -> 
 }
 
 pub fn decode_malformed_request_body_input(body: String) -> Result(MalformedRequestBodyInput, String) {
-  case json.parse(body, decode_malformed_request_body_input_struct()) {
+  case json.parse(body, decode_malformed_request_body_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9688,15 +10976,9 @@ pub fn build_malformed_request_body_request(
 pub fn parse_malformed_request_body_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedRequestBodyOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_request_body_output("{}")
-      _ -> decode_malformed_request_body_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedRequestBodyOutput)
 }
 
 
@@ -9717,7 +10999,7 @@ pub fn encode_malformed_short_input(input: MalformedShortInput) -> String {
 }
 
 pub fn decode_malformed_short_input(body: String) -> Result(MalformedShortInput, String) {
-  case json.parse(body, decode_malformed_short_input_struct()) {
+  case json.parse(body, decode_malformed_short_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9775,15 +11057,9 @@ pub fn build_malformed_short_request(
 pub fn parse_malformed_short_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedShortOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_short_output("{}")
-      _ -> decode_malformed_short_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedShortOutput)
 }
 
 
@@ -9804,7 +11080,7 @@ pub fn encode_malformed_string_input(input: MalformedStringInput) -> String {
 }
 
 pub fn decode_malformed_string_input(body: String) -> Result(MalformedStringInput, String) {
-  case json.parse(body, decode_malformed_string_input_struct()) {
+  case json.parse(body, decode_malformed_string_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9848,15 +11124,9 @@ pub fn build_malformed_string_request(
 pub fn parse_malformed_string_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedStringOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_string_output("{}")
-      _ -> decode_malformed_string_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedStringOutput)
 }
 
 
@@ -9877,7 +11147,7 @@ pub fn encode_malformed_timestamp_body_date_time_input(input: MalformedTimestamp
 }
 
 pub fn decode_malformed_timestamp_body_date_time_input(body: String) -> Result(MalformedTimestampBodyDateTimeInput, String) {
-  case json.parse(body, decode_malformed_timestamp_body_date_time_input_struct()) {
+  case json.parse(body, decode_malformed_timestamp_body_date_time_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9923,15 +11193,9 @@ pub fn build_malformed_timestamp_body_date_time_request(
 pub fn parse_malformed_timestamp_body_date_time_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedTimestampBodyDateTimeOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_timestamp_body_date_time_output("{}")
-      _ -> decode_malformed_timestamp_body_date_time_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedTimestampBodyDateTimeOutput)
 }
 
 
@@ -9952,7 +11216,7 @@ pub fn encode_malformed_timestamp_body_default_input(input: MalformedTimestampBo
 }
 
 pub fn decode_malformed_timestamp_body_default_input(body: String) -> Result(MalformedTimestampBodyDefaultInput, String) {
-  case json.parse(body, decode_malformed_timestamp_body_default_input_struct()) {
+  case json.parse(body, decode_malformed_timestamp_body_default_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9998,15 +11262,9 @@ pub fn build_malformed_timestamp_body_default_request(
 pub fn parse_malformed_timestamp_body_default_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedTimestampBodyDefaultOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_timestamp_body_default_output("{}")
-      _ -> decode_malformed_timestamp_body_default_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedTimestampBodyDefaultOutput)
 }
 
 
@@ -10027,7 +11285,7 @@ pub fn encode_malformed_timestamp_body_http_date_input(input: MalformedTimestamp
 }
 
 pub fn decode_malformed_timestamp_body_http_date_input(body: String) -> Result(MalformedTimestampBodyHttpDateInput, String) {
-  case json.parse(body, decode_malformed_timestamp_body_http_date_input_struct()) {
+  case json.parse(body, decode_malformed_timestamp_body_http_date_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10073,15 +11331,9 @@ pub fn build_malformed_timestamp_body_http_date_request(
 pub fn parse_malformed_timestamp_body_http_date_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedTimestampBodyHttpDateOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_timestamp_body_http_date_output("{}")
-      _ -> decode_malformed_timestamp_body_http_date_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedTimestampBodyHttpDateOutput)
 }
 
 
@@ -10102,7 +11354,7 @@ pub fn encode_malformed_timestamp_header_date_time_input(input: MalformedTimesta
 }
 
 pub fn decode_malformed_timestamp_header_date_time_input(body: String) -> Result(MalformedTimestampHeaderDateTimeInput, String) {
-  case json.parse(body, decode_malformed_timestamp_header_date_time_input_struct()) {
+  case json.parse(body, decode_malformed_timestamp_header_date_time_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10146,15 +11398,9 @@ pub fn build_malformed_timestamp_header_date_time_request(
 pub fn parse_malformed_timestamp_header_date_time_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedTimestampHeaderDateTimeOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_timestamp_header_date_time_output("{}")
-      _ -> decode_malformed_timestamp_header_date_time_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedTimestampHeaderDateTimeOutput)
 }
 
 
@@ -10175,7 +11421,7 @@ pub fn encode_malformed_timestamp_header_default_input(input: MalformedTimestamp
 }
 
 pub fn decode_malformed_timestamp_header_default_input(body: String) -> Result(MalformedTimestampHeaderDefaultInput, String) {
-  case json.parse(body, decode_malformed_timestamp_header_default_input_struct()) {
+  case json.parse(body, decode_malformed_timestamp_header_default_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10219,15 +11465,9 @@ pub fn build_malformed_timestamp_header_default_request(
 pub fn parse_malformed_timestamp_header_default_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedTimestampHeaderDefaultOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_timestamp_header_default_output("{}")
-      _ -> decode_malformed_timestamp_header_default_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedTimestampHeaderDefaultOutput)
 }
 
 
@@ -10248,7 +11488,7 @@ pub fn encode_malformed_timestamp_header_epoch_input(input: MalformedTimestampHe
 }
 
 pub fn decode_malformed_timestamp_header_epoch_input(body: String) -> Result(MalformedTimestampHeaderEpochInput, String) {
-  case json.parse(body, decode_malformed_timestamp_header_epoch_input_struct()) {
+  case json.parse(body, decode_malformed_timestamp_header_epoch_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10292,15 +11532,9 @@ pub fn build_malformed_timestamp_header_epoch_request(
 pub fn parse_malformed_timestamp_header_epoch_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedTimestampHeaderEpochOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_timestamp_header_epoch_output("{}")
-      _ -> decode_malformed_timestamp_header_epoch_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedTimestampHeaderEpochOutput)
 }
 
 
@@ -10321,7 +11555,7 @@ pub fn encode_malformed_timestamp_path_default_input(input: MalformedTimestampPa
 }
 
 pub fn decode_malformed_timestamp_path_default_input(body: String) -> Result(MalformedTimestampPathDefaultInput, String) {
-  case json.parse(body, decode_malformed_timestamp_path_default_input_struct()) {
+  case json.parse(body, decode_malformed_timestamp_path_default_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10365,15 +11599,9 @@ pub fn build_malformed_timestamp_path_default_request(
 pub fn parse_malformed_timestamp_path_default_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedTimestampPathDefaultOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_timestamp_path_default_output("{}")
-      _ -> decode_malformed_timestamp_path_default_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedTimestampPathDefaultOutput)
 }
 
 
@@ -10394,7 +11622,7 @@ pub fn encode_malformed_timestamp_path_epoch_input(input: MalformedTimestampPath
 }
 
 pub fn decode_malformed_timestamp_path_epoch_input(body: String) -> Result(MalformedTimestampPathEpochInput, String) {
-  case json.parse(body, decode_malformed_timestamp_path_epoch_input_struct()) {
+  case json.parse(body, decode_malformed_timestamp_path_epoch_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10438,15 +11666,9 @@ pub fn build_malformed_timestamp_path_epoch_request(
 pub fn parse_malformed_timestamp_path_epoch_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedTimestampPathEpochOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_timestamp_path_epoch_output("{}")
-      _ -> decode_malformed_timestamp_path_epoch_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedTimestampPathEpochOutput)
 }
 
 
@@ -10467,7 +11689,7 @@ pub fn encode_malformed_timestamp_path_http_date_input(input: MalformedTimestamp
 }
 
 pub fn decode_malformed_timestamp_path_http_date_input(body: String) -> Result(MalformedTimestampPathHttpDateInput, String) {
-  case json.parse(body, decode_malformed_timestamp_path_http_date_input_struct()) {
+  case json.parse(body, decode_malformed_timestamp_path_http_date_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10511,15 +11733,9 @@ pub fn build_malformed_timestamp_path_http_date_request(
 pub fn parse_malformed_timestamp_path_http_date_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedTimestampPathHttpDateOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_timestamp_path_http_date_output("{}")
-      _ -> decode_malformed_timestamp_path_http_date_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedTimestampPathHttpDateOutput)
 }
 
 
@@ -10540,7 +11756,7 @@ pub fn encode_malformed_timestamp_query_default_input(input: MalformedTimestampQ
 }
 
 pub fn decode_malformed_timestamp_query_default_input(body: String) -> Result(MalformedTimestampQueryDefaultInput, String) {
-  case json.parse(body, decode_malformed_timestamp_query_default_input_struct()) {
+  case json.parse(body, decode_malformed_timestamp_query_default_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10584,15 +11800,9 @@ pub fn build_malformed_timestamp_query_default_request(
 pub fn parse_malformed_timestamp_query_default_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedTimestampQueryDefaultOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_timestamp_query_default_output("{}")
-      _ -> decode_malformed_timestamp_query_default_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedTimestampQueryDefaultOutput)
 }
 
 
@@ -10613,7 +11823,7 @@ pub fn encode_malformed_timestamp_query_epoch_input(input: MalformedTimestampQue
 }
 
 pub fn decode_malformed_timestamp_query_epoch_input(body: String) -> Result(MalformedTimestampQueryEpochInput, String) {
-  case json.parse(body, decode_malformed_timestamp_query_epoch_input_struct()) {
+  case json.parse(body, decode_malformed_timestamp_query_epoch_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10657,15 +11867,9 @@ pub fn build_malformed_timestamp_query_epoch_request(
 pub fn parse_malformed_timestamp_query_epoch_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedTimestampQueryEpochOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_timestamp_query_epoch_output("{}")
-      _ -> decode_malformed_timestamp_query_epoch_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedTimestampQueryEpochOutput)
 }
 
 
@@ -10686,7 +11890,7 @@ pub fn encode_malformed_timestamp_query_http_date_input(input: MalformedTimestam
 }
 
 pub fn decode_malformed_timestamp_query_http_date_input(body: String) -> Result(MalformedTimestampQueryHttpDateInput, String) {
-  case json.parse(body, decode_malformed_timestamp_query_http_date_input_struct()) {
+  case json.parse(body, decode_malformed_timestamp_query_http_date_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10730,15 +11934,9 @@ pub fn build_malformed_timestamp_query_http_date_request(
 pub fn parse_malformed_timestamp_query_http_date_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedTimestampQueryHttpDateOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_timestamp_query_http_date_output("{}")
-      _ -> decode_malformed_timestamp_query_http_date_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedTimestampQueryHttpDateOutput)
 }
 
 
@@ -10759,7 +11957,7 @@ pub fn encode_malformed_union_input(input: MalformedUnionInput) -> String {
 }
 
 pub fn decode_malformed_union_input(body: String) -> Result(MalformedUnionInput, String) {
-  case json.parse(body, decode_malformed_union_input_struct()) {
+  case json.parse(body, decode_malformed_union_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10805,15 +12003,9 @@ pub fn build_malformed_union_request(
 pub fn parse_malformed_union_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(MalformedUnionOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_malformed_union_output("{}")
-      _ -> decode_malformed_union_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(MalformedUnionOutput)
 }
 
 
@@ -10822,7 +12014,7 @@ pub fn encode_media_type_header_input(input: MediaTypeHeaderInput) -> String {
 }
 
 pub fn decode_media_type_header_input(body: String) -> Result(MediaTypeHeaderInput, String) {
-  case json.parse(body, decode_media_type_header_input_struct()) {
+  case json.parse(body, decode_media_type_header_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10947,15 +12139,9 @@ pub fn build_no_input_and_no_output_request(
 pub fn parse_no_input_and_no_output_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(NoInputAndNoOutputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_no_input_and_no_output_output("{}")
-      _ -> decode_no_input_and_no_output_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(NoInputAndNoOutputOutput)
 }
 
 
@@ -11033,7 +12219,7 @@ pub fn encode_null_and_empty_headers_client_input(input: NullAndEmptyHeadersIO) 
 }
 
 pub fn decode_null_and_empty_headers_client_input(body: String) -> Result(NullAndEmptyHeadersIO, String) {
-  case json.parse(body, decode_null_and_empty_headers_io_struct()) {
+  case json.parse(body, decode_null_and_empty_headers_io_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11102,7 +12288,7 @@ pub fn encode_null_and_empty_headers_server_input(input: NullAndEmptyHeadersIO) 
 }
 
 pub fn decode_null_and_empty_headers_server_input(body: String) -> Result(NullAndEmptyHeadersIO, String) {
-  case json.parse(body, decode_null_and_empty_headers_io_struct()) {
+  case json.parse(body, decode_null_and_empty_headers_io_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11183,7 +12369,7 @@ pub fn encode_omits_null_serializes_empty_string_input(input: OmitsNullSerialize
 }
 
 pub fn decode_omits_null_serializes_empty_string_input(body: String) -> Result(OmitsNullSerializesEmptyStringInput, String) {
-  case json.parse(body, decode_omits_null_serializes_empty_string_input_struct()) {
+  case json.parse(body, decode_omits_null_serializes_empty_string_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11231,15 +12417,9 @@ pub fn build_omits_null_serializes_empty_string_request(
 pub fn parse_omits_null_serializes_empty_string_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(OmitsNullSerializesEmptyStringOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_omits_null_serializes_empty_string_output("{}")
-      _ -> decode_omits_null_serializes_empty_string_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(OmitsNullSerializesEmptyStringOutput)
 }
 
 
@@ -11260,7 +12440,7 @@ pub fn encode_omits_serializing_empty_lists_input(input: OmitsSerializingEmptyLi
 }
 
 pub fn decode_omits_serializing_empty_lists_input(body: String) -> Result(OmitsSerializingEmptyListsInput, String) {
-  case json.parse(body, decode_omits_serializing_empty_lists_input_struct()) {
+  case json.parse(body, decode_omits_serializing_empty_lists_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11349,15 +12529,9 @@ pub fn build_omits_serializing_empty_lists_request(
 pub fn parse_omits_serializing_empty_lists_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(OmitsSerializingEmptyListsOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_omits_serializing_empty_lists_output("{}")
-      _ -> decode_omits_serializing_empty_lists_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(OmitsSerializingEmptyListsOutput)
 }
 
 
@@ -11366,7 +12540,7 @@ pub fn encode_operation_with_defaults_input(input: OperationWithDefaultsInput) -
 }
 
 pub fn decode_operation_with_defaults_input(body: String) -> Result(OperationWithDefaultsInput, String) {
-  case json.parse(body, decode_operation_with_defaults_input_struct()) {
+  case json.parse(body, decode_operation_with_defaults_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11441,7 +12615,7 @@ pub fn encode_operation_with_nested_structure_input(input: OperationWithNestedSt
 }
 
 pub fn decode_operation_with_nested_structure_input(body: String) -> Result(OperationWithNestedStructureInput, String) {
-  case json.parse(body, decode_operation_with_nested_structure_input_struct()) {
+  case json.parse(body, decode_operation_with_nested_structure_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11558,12 +12732,11 @@ pub fn parse_output_stream_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(OutputStreamOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_output_stream_output("{}")
-      _ -> decode_output_stream_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.None
+    Ok(OutputStreamOutput(
+    stream: payload,
+    ))
   }
 }
 
@@ -11627,12 +12800,12 @@ pub fn parse_output_stream_with_initial_response_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(OutputStreamWithInitialResponseOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_output_stream_with_initial_response_output("{}")
-      _ -> decode_output_stream_with_initial_response_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.None
+    Ok(OutputStreamWithInitialResponseOutput(
+    initial_response_member: option.None,
+    stream: payload,
+    ))
   }
 }
 
@@ -11642,7 +12815,7 @@ pub fn encode_post_player_action_input(input: PostPlayerActionInput) -> String {
 }
 
 pub fn decode_post_player_action_input(body: String) -> Result(PostPlayerActionInput, String) {
-  case json.parse(body, decode_post_player_action_input_struct()) {
+  case json.parse(body, decode_post_player_action_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11705,7 +12878,7 @@ pub fn encode_post_union_with_json_name_input(input: PostUnionWithJsonNameInput)
 }
 
 pub fn decode_post_union_with_json_name_input(body: String) -> Result(PostUnionWithJsonNameInput, String) {
-  case json.parse(body, decode_post_union_with_json_name_input_struct()) {
+  case json.parse(body, decode_post_union_with_json_name_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11780,7 +12953,7 @@ pub fn encode_put_with_content_encoding_input(input: PutWithContentEncodingInput
 }
 
 pub fn decode_put_with_content_encoding_input(body: String) -> Result(PutWithContentEncodingInput, String) {
-  case json.parse(body, decode_put_with_content_encoding_input_struct()) {
+  case json.parse(body, decode_put_with_content_encoding_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11830,15 +13003,9 @@ pub fn build_put_with_content_encoding_request(
 pub fn parse_put_with_content_encoding_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(PutWithContentEncodingOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_put_with_content_encoding_output("{}")
-      _ -> decode_put_with_content_encoding_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(PutWithContentEncodingOutput)
 }
 
 
@@ -11859,7 +13026,7 @@ pub fn encode_query_idempotency_token_auto_fill_input(input: QueryIdempotencyTok
 }
 
 pub fn decode_query_idempotency_token_auto_fill_input(body: String) -> Result(QueryIdempotencyTokenAutoFillInput, String) {
-  case json.parse(body, decode_query_idempotency_token_auto_fill_input_struct()) {
+  case json.parse(body, decode_query_idempotency_token_auto_fill_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11903,15 +13070,9 @@ pub fn build_query_idempotency_token_auto_fill_request(
 pub fn parse_query_idempotency_token_auto_fill_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(QueryIdempotencyTokenAutoFillOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_query_idempotency_token_auto_fill_output("{}")
-      _ -> decode_query_idempotency_token_auto_fill_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(QueryIdempotencyTokenAutoFillOutput)
 }
 
 
@@ -11932,7 +13093,7 @@ pub fn encode_query_params_as_string_list_map_input(input: QueryParamsAsStringLi
 }
 
 pub fn decode_query_params_as_string_list_map_input(body: String) -> Result(QueryParamsAsStringListMapInput, String) {
-  case json.parse(body, decode_query_params_as_string_list_map_input_struct()) {
+  case json.parse(body, decode_query_params_as_string_list_map_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -11980,15 +13141,9 @@ pub fn build_query_params_as_string_list_map_request(
 pub fn parse_query_params_as_string_list_map_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(QueryParamsAsStringListMapOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_query_params_as_string_list_map_output("{}")
-      _ -> decode_query_params_as_string_list_map_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(QueryParamsAsStringListMapOutput)
 }
 
 
@@ -12009,7 +13164,7 @@ pub fn encode_query_precedence_input(input: QueryPrecedenceInput) -> String {
 }
 
 pub fn decode_query_precedence_input(body: String) -> Result(QueryPrecedenceInput, String) {
-  case json.parse(body, decode_query_precedence_input_struct()) {
+  case json.parse(body, decode_query_precedence_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12057,15 +13212,9 @@ pub fn build_query_precedence_request(
 pub fn parse_query_precedence_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(QueryPrecedenceOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_query_precedence_output("{}")
-      _ -> decode_query_precedence_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(QueryPrecedenceOutput)
 }
 
 
@@ -12074,7 +13223,7 @@ pub fn encode_recursive_shapes_input(input: RecursiveShapesInputOutput) -> Strin
 }
 
 pub fn decode_recursive_shapes_input(body: String) -> Result(RecursiveShapesInputOutput, String) {
-  case json.parse(body, decode_recursive_shapes_input_output_struct()) {
+  case json.parse(body, decode_recursive_shapes_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12137,7 +13286,7 @@ pub fn encode_response_code_http_fallback_input(input: ResponseCodeHttpFallbackI
 }
 
 pub fn decode_response_code_http_fallback_input(body: String) -> Result(ResponseCodeHttpFallbackInputOutput, String) {
-  case json.parse(body, decode_response_code_http_fallback_input_output_struct()) {
+  case json.parse(body, decode_response_code_http_fallback_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12263,7 +13412,7 @@ pub fn encode_simple_scalar_properties_input(input: SimpleScalarPropertiesInputO
 }
 
 pub fn decode_simple_scalar_properties_input(body: String) -> Result(SimpleScalarPropertiesInputOutput, String) {
-  case json.parse(body, decode_simple_scalar_properties_input_output_struct()) {
+  case json.parse(body, decode_simple_scalar_properties_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12283,7 +13432,7 @@ pub fn encode_simple_scalar_properties_body(input: SimpleScalarPropertiesInputOu
     option.None -> pairs
   }
   let pairs = case input.double_value {
-    option.Some(v) -> [#("doubleValue", json_float.encode(v)), ..pairs]
+    option.Some(v) -> [#("DoubleDribble", json_float.encode(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.false_boolean_value {
@@ -12362,7 +13511,7 @@ pub fn encode_sparse_json_lists_input(input: SparseJsonListsInputOutput) -> Stri
 }
 
 pub fn decode_sparse_json_lists_input(body: String) -> Result(SparseJsonListsInputOutput, String) {
-  case json.parse(body, decode_sparse_json_lists_input_output_struct()) {
+  case json.parse(body, decode_sparse_json_lists_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12429,7 +13578,7 @@ pub fn encode_sparse_json_maps_input(input: SparseJsonMapsInputOutput) -> String
 }
 
 pub fn decode_sparse_json_maps_input(body: String) -> Result(SparseJsonMapsInputOutput, String) {
-  case json.parse(body, decode_sparse_json_maps_input_output_struct()) {
+  case json.parse(body, decode_sparse_json_maps_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12508,7 +13657,7 @@ pub fn encode_streaming_traits_input(input: StreamingTraitsInputOutput) -> Strin
 }
 
 pub fn decode_streaming_traits_input(body: String) -> Result(StreamingTraitsInputOutput, String) {
-  case json.parse(body, decode_streaming_traits_input_output_struct()) {
+  case json.parse(body, decode_streaming_traits_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12557,12 +13706,12 @@ pub fn parse_streaming_traits_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(StreamingTraitsInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_streaming_traits_output("{}")
-      _ -> decode_streaming_traits_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.Some(body)
+    Ok(StreamingTraitsInputOutput(
+    blob: payload,
+    foo: option.None,
+    ))
   }
 }
 
@@ -12584,7 +13733,7 @@ pub fn encode_streaming_traits_require_length_input(input: StreamingTraitsRequir
 }
 
 pub fn decode_streaming_traits_require_length_input(body: String) -> Result(StreamingTraitsRequireLengthInput, String) {
-  case json.parse(body, decode_streaming_traits_require_length_input_struct()) {
+  case json.parse(body, decode_streaming_traits_require_length_input_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12631,15 +13780,9 @@ pub fn build_streaming_traits_require_length_request(
 pub fn parse_streaming_traits_require_length_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(StreamingTraitsRequireLengthOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_streaming_traits_require_length_output("{}")
-      _ -> decode_streaming_traits_require_length_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(StreamingTraitsRequireLengthOutput)
 }
 
 
@@ -12648,7 +13791,7 @@ pub fn encode_streaming_traits_with_media_type_input(input: StreamingTraitsWithM
 }
 
 pub fn decode_streaming_traits_with_media_type_input(body: String) -> Result(StreamingTraitsWithMediaTypeInputOutput, String) {
-  case json.parse(body, decode_streaming_traits_with_media_type_input_output_struct()) {
+  case json.parse(body, decode_streaming_traits_with_media_type_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12697,12 +13840,12 @@ pub fn parse_streaming_traits_with_media_type_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(StreamingTraitsWithMediaTypeInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_streaming_traits_with_media_type_output("{}")
-      _ -> decode_streaming_traits_with_media_type_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.Some(body)
+    Ok(StreamingTraitsWithMediaTypeInputOutput(
+    blob: payload,
+    foo: option.None,
+    ))
   }
 }
 
@@ -12712,7 +13855,7 @@ pub fn encode_test_body_structure_input(input: TestBodyStructureInputOutput) -> 
 }
 
 pub fn decode_test_body_structure_input(body: String) -> Result(TestBodyStructureInputOutput, String) {
-  case json.parse(body, decode_test_body_structure_input_output_struct()) {
+  case json.parse(body, decode_test_body_structure_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12848,7 +13991,7 @@ pub fn encode_test_get_no_payload_input(input: TestNoPayloadInputOutput) -> Stri
 }
 
 pub fn decode_test_get_no_payload_input(body: String) -> Result(TestNoPayloadInputOutput, String) {
-  case json.parse(body, decode_test_no_payload_input_output_struct()) {
+  case json.parse(body, decode_test_no_payload_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12909,7 +14052,7 @@ pub fn encode_test_payload_blob_input(input: TestPayloadBlobInputOutput) -> Stri
 }
 
 pub fn decode_test_payload_blob_input(body: String) -> Result(TestPayloadBlobInputOutput, String) {
-  case json.parse(body, decode_test_payload_blob_input_output_struct()) {
+  case json.parse(body, decode_test_payload_blob_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -12958,12 +14101,12 @@ pub fn parse_test_payload_blob_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(TestPayloadBlobInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_test_payload_blob_output("{}")
-      _ -> decode_test_payload_blob_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    let payload = option.Some(body)
+    Ok(TestPayloadBlobInputOutput(
+    content_type: option.None,
+    data: payload,
+    ))
   }
 }
 
@@ -12973,7 +14116,7 @@ pub fn encode_test_payload_structure_input(input: TestPayloadStructureInputOutpu
 }
 
 pub fn decode_test_payload_structure_input(body: String) -> Result(TestPayloadStructureInputOutput, String) {
-  case json.parse(body, decode_test_payload_structure_input_output_struct()) {
+  case json.parse(body, decode_test_payload_structure_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -13022,12 +14165,22 @@ pub fn parse_test_payload_structure_response(
   _headers: dict.Dict(String, String),
   body: BitArray,
 ) -> Result(TestPayloadStructureInputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_test_payload_structure_output("{}")
-      _ -> decode_test_payload_structure_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
+  {
+    use text <- result.try(case bit_array.to_string(body) {
+      Ok(t) -> Ok(t)
+      Error(_) -> Error("non-utf8 payload")
+    })
+    use payload <- result.try(case text {
+      "" -> Ok(option.None)
+      _ -> case json.parse(text, decode_payload_config_struct()) {
+        Ok(v) -> Ok(option.Some(v))
+        Error(_) -> Error("decode failed")
+      }
+    })
+    Ok(TestPayloadStructureInputOutput(
+    payload_config: payload,
+    test_id: option.None,
+    ))
   }
 }
 
@@ -13106,7 +14259,7 @@ pub fn encode_test_post_no_payload_input(input: TestNoPayloadInputOutput) -> Str
 }
 
 pub fn decode_test_post_no_payload_input(body: String) -> Result(TestNoPayloadInputOutput, String) {
-  case json.parse(body, decode_test_no_payload_input_output_struct()) {
+  case json.parse(body, decode_test_no_payload_input_output_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -13167,7 +14320,7 @@ pub fn encode_timestamp_format_headers_input(input: TimestampFormatHeadersIO) ->
 }
 
 pub fn decode_timestamp_format_headers_input(body: String) -> Result(TimestampFormatHeadersIO, String) {
-  case json.parse(body, decode_timestamp_format_headers_io_struct()) {
+  case json.parse(body, decode_timestamp_format_headers_io_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -13316,15 +14469,9 @@ pub fn build_unit_input_and_output_request(
 pub fn parse_unit_input_and_output_response(
   _code: Int,
   _headers: dict.Dict(String, String),
-  body: BitArray,
+  _body: BitArray,
 ) -> Result(UnitInputAndOutputOutput, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> case text {
-      "" -> decode_unit_input_and_output_output("{}")
-      _ -> decode_unit_input_and_output_output(text)
-    }
-    Error(_) -> Error("non-utf8 body")
-  }
+  Ok(UnitInputAndOutputOutput)
 }
 
 pub type AllQueryStringTypesError {
