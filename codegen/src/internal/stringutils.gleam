@@ -16,6 +16,38 @@ pub fn pascal_to_snake(input: String) -> String {
   |> insert_underscores
   |> string.concat
   |> string.lowercase
+  |> escape_reserved
+}
+
+/// Gleam reserved keywords. Member names that collide get an
+/// underscore suffix so they remain valid identifiers in record
+/// fields and function arguments.
+fn escape_reserved(s: String) -> String {
+  case s {
+    "type"
+    | "import"
+    | "pub"
+    | "fn"
+    | "case"
+    | "let"
+    | "use"
+    | "if"
+    | "as"
+    | "const"
+    | "external"
+    | "todo"
+    | "panic"
+    | "opaque"
+    | "auto"
+    | "delegate"
+    | "derive"
+    | "echo"
+    | "else"
+    | "implement"
+    | "macro"
+    | "test" -> s <> "_"
+    _ -> s
+  }
 }
 
 fn insert_underscores(graphemes: List(String)) -> List(String) {

@@ -20,6 +20,7 @@ import codegen/types.{
 import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import gleam/set.{type Set}
 import gleam/string
 import internal/stringutils
@@ -42,7 +43,9 @@ pub fn emit_service(
 ) -> Result(EmitResult, String) {
   case model.lookup(model, service_id) {
     Error(_) -> Error("service not found: " <> service_id)
-    Ok(shape.Service(operations: refs, ..)) -> {
+    Ok(shape.Service(operations: refs, traits: svc_traits, ..)) -> {
+      let service_local = strip_namespace(service_id)
+      let metadata = service_metadata(svc_traits, service_local)
       let resolved_ops =
         list.filter_map(refs, fn(ref) {
           let ShapeId(target) = ref.target
@@ -80,16 +83,36 @@ pub fn emit_service(
       let named_shapes = collect_named_shapes(model, resolved_ops)
       let preamble = emit_named_shapes(model, named_shapes)
 
+      let op_specs =
+        list.map(resolved_ops, fn(t) {
+          let #(op_id, _, in_r, out_r) = t
+          let local = strip_namespace(op_id)
+          let snake = stringutils.pascal_to_snake(local)
+          let in_info = resolve_io_type(model, local <> "Input", in_r)
+          let out_info = resolve_io_type(model, local <> "Output", out_r)
+          OpSpec(
+            op_id: op_id,
+            local: local,
+            snake: snake,
+            in_info: in_info,
+            out_info: out_info,
+          )
+        })
+
       let op_blocks =
         list.map(resolved_ops, fn(t) {
           let #(op_id, http, in_r, out_r) = t
           emit_operation(model, op_id, http, in_r, out_r)
         })
+      let client_block = emit_client(metadata)
+      let invoke_blocks = list.map(op_specs, emit_invoke)
       let body =
         file_header(service_id)
         <> "\n"
+        <> client_block
         <> preamble
         <> list.fold(op_blocks, "", fn(acc, code) { acc <> code })
+        <> list.fold(invoke_blocks, "", fn(acc, code) { acc <> code })
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
@@ -98,6 +121,103 @@ pub fn emit_service(
     }
     Ok(_) -> Error("not a service: " <> service_id)
   }
+}
+
+type Metadata {
+  Metadata(
+    service_local: String,
+    endpoint_prefix: String,
+    signing_name: String,
+  )
+}
+
+type OpSpec {
+  OpSpec(
+    op_id: String,
+    local: String,
+    snake: String,
+    in_info: IOTypeInfo,
+    out_info: IOTypeInfo,
+  )
+}
+
+fn service_metadata(traits: shape.Traits, service_local: String) -> Metadata {
+  let endpoint_prefix =
+    string_field_under(traits, "aws.api#service", "endpointPrefix")
+    |> result.unwrap(string.lowercase(service_local))
+  let signing_name =
+    string_field_under(traits, "aws.auth#sigv4", "name")
+    |> result.unwrap(endpoint_prefix)
+  Metadata(
+    service_local: service_local,
+    endpoint_prefix: endpoint_prefix,
+    signing_name: signing_name,
+  )
+}
+
+fn string_field_under(
+  traits: shape.Traits,
+  trait_id: String,
+  field: String,
+) -> Result(String, Nil) {
+  case dict.get(traits, ShapeId(trait_id)) {
+    Ok(Some(trait.Dict(d))) ->
+      case dict.get(d, ShapeId(field)) {
+        Ok(trait.String(s)) -> Ok(s)
+        _ -> Error(Nil)
+      }
+    _ -> Error(Nil)
+  }
+}
+
+fn emit_client(metadata: Metadata) -> String {
+  "pub opaque type Client {
+  Client(config: awsjson_client.ClientConfig)
+}
+
+pub fn new(
+  provider provider: credentials.Provider,
+  region region: String,
+) -> Client {
+  Client(config: awsjson_client.default_config(
+    provider,
+    region,
+    \""
+  <> metadata.endpoint_prefix
+  <> "\",
+    \""
+  <> metadata.signing_name
+  <> "\",
+  ))
+}
+
+pub fn with_endpoint_url(client: Client, url: String) -> Client {
+  Client(config: awsjson_client.with_endpoint_url(client.config, url))
+}
+
+pub fn with_http_send(client: Client, send: http_send.Send) -> Client {
+  Client(config: awsjson_client.with_http_send(client.config, send))
+}
+
+"
+}
+
+fn emit_invoke(spec: OpSpec) -> String {
+  "pub fn "
+  <> spec.snake
+  <> "(client: Client, input: "
+  <> spec.in_info.type_name
+  <> ") -> Result("
+  <> spec.out_info.type_name
+  <> ", awsjson_client.ClientError) {
+  awsjson_client.invoke(client.config, build_"
+  <> spec.snake
+  <> "_request(input), parse_"
+  <> spec.snake
+  <> "_response)
+}
+
+"
 }
 
 type HttpTrait {
@@ -913,14 +1033,19 @@ fn file_header(service_id: String) -> String {
   <> " (restJson1).
 //// DO NOT EDIT. Re-generate via the codegen subproject.
 
+import aws/credentials
+import aws/internal/client/awsjson as awsjson_client
 import aws/internal/codec/json_float
 import aws/internal/codec/rest
+import aws/internal/http_send
 import gleam/bit_array
 import gleam/dict
 import gleam/dynamic/decode
+import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
+import gleam/string
 "
 }
 

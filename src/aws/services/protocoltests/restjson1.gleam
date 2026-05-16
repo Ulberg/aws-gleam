@@ -1,14 +1,43 @@
 //// Generated from aws.protocoltests.restjson#RestJson (restJson1).
 //// DO NOT EDIT. Re-generate via the codegen subproject.
 
+import aws/credentials
+import aws/internal/client/awsjson as awsjson_client
 import aws/internal/codec/json_float
 import aws/internal/codec/rest
+import aws/internal/http_send
 import gleam/bit_array
 import gleam/dict
 import gleam/dynamic/decode
+import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
+import gleam/string
+
+pub opaque type Client {
+  Client(config: awsjson_client.ClientConfig)
+}
+
+pub fn new(
+  provider provider: credentials.Provider,
+  region region: String,
+) -> Client {
+  Client(config: awsjson_client.default_config(
+    provider,
+    region,
+    "restjson",
+    "restjson",
+  ))
+}
+
+pub fn with_endpoint_url(client: Client, url: String) -> Client {
+  Client(config: awsjson_client.with_endpoint_url(client.config, url))
+}
+
+pub fn with_http_send(client: Client, send: http_send.Send) -> Client {
+  Client(config: awsjson_client.with_http_send(client.config, send))
+}
 
 pub type AllQueryStringTypesInput {
   AllQueryStringTypesInput(
@@ -16814,4 +16843,1248 @@ pub fn parse_unit_input_and_output_response(
       }
     Error(_) -> Error("non-utf8 body")
   }
+}
+
+pub fn all_query_string_types(
+  client: Client,
+  input: AllQueryStringTypesInput,
+) -> Result(AllQueryStringTypesOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_all_query_string_types_request(input),
+    parse_all_query_string_types_response,
+  )
+}
+
+pub fn constant_and_variable_query_string(
+  client: Client,
+  input: ConstantAndVariableQueryStringInput,
+) -> Result(ConstantAndVariableQueryStringOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_constant_and_variable_query_string_request(input),
+    parse_constant_and_variable_query_string_response,
+  )
+}
+
+pub fn constant_query_string(
+  client: Client,
+  input: ConstantQueryStringInput,
+) -> Result(ConstantQueryStringOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_constant_query_string_request(input),
+    parse_constant_query_string_response,
+  )
+}
+
+pub fn content_type_parameters(
+  client: Client,
+  input: ContentTypeParametersInput,
+) -> Result(ContentTypeParametersOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_content_type_parameters_request(input),
+    parse_content_type_parameters_response,
+  )
+}
+
+pub fn datetime_offsets(
+  client: Client,
+  input: DatetimeOffsetsInput,
+) -> Result(DatetimeOffsetsOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_datetime_offsets_request(input),
+    parse_datetime_offsets_response,
+  )
+}
+
+pub fn document_type(
+  client: Client,
+  input: DocumentTypeInputOutput,
+) -> Result(DocumentTypeInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_document_type_request(input),
+    parse_document_type_response,
+  )
+}
+
+pub fn document_type_as_map_value(
+  client: Client,
+  input: DocumentTypeAsMapValueInputOutput,
+) -> Result(DocumentTypeAsMapValueInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_document_type_as_map_value_request(input),
+    parse_document_type_as_map_value_response,
+  )
+}
+
+pub fn document_type_as_payload(
+  client: Client,
+  input: DocumentTypeAsPayloadInputOutput,
+) -> Result(DocumentTypeAsPayloadInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_document_type_as_payload_request(input),
+    parse_document_type_as_payload_response,
+  )
+}
+
+pub fn duplex_stream(
+  client: Client,
+  input: DuplexStreamInput,
+) -> Result(DuplexStreamOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_duplex_stream_request(input),
+    parse_duplex_stream_response,
+  )
+}
+
+pub fn duplex_stream_with_distinct_streams(
+  client: Client,
+  input: DuplexStreamWithDistinctStreamsInput,
+) -> Result(DuplexStreamWithDistinctStreamsOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_duplex_stream_with_distinct_streams_request(input),
+    parse_duplex_stream_with_distinct_streams_response,
+  )
+}
+
+pub fn duplex_stream_with_initial_messages(
+  client: Client,
+  input: DuplexStreamWithInitialMessagesInput,
+) -> Result(DuplexStreamWithInitialMessagesOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_duplex_stream_with_initial_messages_request(input),
+    parse_duplex_stream_with_initial_messages_response,
+  )
+}
+
+pub fn empty_input_and_empty_output(
+  client: Client,
+  input: EmptyInputAndEmptyOutputInput,
+) -> Result(EmptyInputAndEmptyOutputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_empty_input_and_empty_output_request(input),
+    parse_empty_input_and_empty_output_response,
+  )
+}
+
+pub fn endpoint_operation(
+  client: Client,
+  input: EndpointOperationInput,
+) -> Result(EndpointOperationOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_endpoint_operation_request(input),
+    parse_endpoint_operation_response,
+  )
+}
+
+pub fn endpoint_with_host_label_operation(
+  client: Client,
+  input: HostLabelInput,
+) -> Result(EndpointWithHostLabelOperationOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_endpoint_with_host_label_operation_request(input),
+    parse_endpoint_with_host_label_operation_response,
+  )
+}
+
+pub fn fractional_seconds(
+  client: Client,
+  input: FractionalSecondsInput,
+) -> Result(FractionalSecondsOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_fractional_seconds_request(input),
+    parse_fractional_seconds_response,
+  )
+}
+
+pub fn greeting_with_errors(
+  client: Client,
+  input: GreetingWithErrorsInput,
+) -> Result(GreetingWithErrorsOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_greeting_with_errors_request(input),
+    parse_greeting_with_errors_response,
+  )
+}
+
+pub fn host_with_path_operation(
+  client: Client,
+  input: HostWithPathOperationInput,
+) -> Result(HostWithPathOperationOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_host_with_path_operation_request(input),
+    parse_host_with_path_operation_response,
+  )
+}
+
+pub fn http_empty_prefix_headers(
+  client: Client,
+  input: HttpEmptyPrefixHeadersInput,
+) -> Result(HttpEmptyPrefixHeadersOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_empty_prefix_headers_request(input),
+    parse_http_empty_prefix_headers_response,
+  )
+}
+
+pub fn http_enum_payload(
+  client: Client,
+  input: EnumPayloadInput,
+) -> Result(EnumPayloadInput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_enum_payload_request(input),
+    parse_http_enum_payload_response,
+  )
+}
+
+pub fn http_payload_traits(
+  client: Client,
+  input: HttpPayloadTraitsInputOutput,
+) -> Result(HttpPayloadTraitsInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_payload_traits_request(input),
+    parse_http_payload_traits_response,
+  )
+}
+
+pub fn http_payload_traits_with_media_type(
+  client: Client,
+  input: HttpPayloadTraitsWithMediaTypeInputOutput,
+) -> Result(
+  HttpPayloadTraitsWithMediaTypeInputOutput,
+  awsjson_client.ClientError,
+) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_payload_traits_with_media_type_request(input),
+    parse_http_payload_traits_with_media_type_response,
+  )
+}
+
+pub fn http_payload_with_structure(
+  client: Client,
+  input: HttpPayloadWithStructureInputOutput,
+) -> Result(HttpPayloadWithStructureInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_payload_with_structure_request(input),
+    parse_http_payload_with_structure_response,
+  )
+}
+
+pub fn http_payload_with_union(
+  client: Client,
+  input: HttpPayloadWithUnionInputOutput,
+) -> Result(HttpPayloadWithUnionInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_payload_with_union_request(input),
+    parse_http_payload_with_union_response,
+  )
+}
+
+pub fn http_prefix_headers(
+  client: Client,
+  input: HttpPrefixHeadersInput,
+) -> Result(HttpPrefixHeadersOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_prefix_headers_request(input),
+    parse_http_prefix_headers_response,
+  )
+}
+
+pub fn http_prefix_headers_in_response(
+  client: Client,
+  input: HttpPrefixHeadersInResponseInput,
+) -> Result(HttpPrefixHeadersInResponseOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_prefix_headers_in_response_request(input),
+    parse_http_prefix_headers_in_response_response,
+  )
+}
+
+pub fn http_query_params_only_operation(
+  client: Client,
+  input: HttpQueryParamsOnlyInput,
+) -> Result(HttpQueryParamsOnlyOperationOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_query_params_only_operation_request(input),
+    parse_http_query_params_only_operation_response,
+  )
+}
+
+pub fn http_request_with_float_labels(
+  client: Client,
+  input: HttpRequestWithFloatLabelsInput,
+) -> Result(HttpRequestWithFloatLabelsOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_request_with_float_labels_request(input),
+    parse_http_request_with_float_labels_response,
+  )
+}
+
+pub fn http_request_with_greedy_label_in_path(
+  client: Client,
+  input: HttpRequestWithGreedyLabelInPathInput,
+) -> Result(HttpRequestWithGreedyLabelInPathOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_request_with_greedy_label_in_path_request(input),
+    parse_http_request_with_greedy_label_in_path_response,
+  )
+}
+
+pub fn http_request_with_labels(
+  client: Client,
+  input: HttpRequestWithLabelsInput,
+) -> Result(HttpRequestWithLabelsOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_request_with_labels_request(input),
+    parse_http_request_with_labels_response,
+  )
+}
+
+pub fn http_request_with_labels_and_timestamp_format(
+  client: Client,
+  input: HttpRequestWithLabelsAndTimestampFormatInput,
+) -> Result(
+  HttpRequestWithLabelsAndTimestampFormatOutput,
+  awsjson_client.ClientError,
+) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_request_with_labels_and_timestamp_format_request(input),
+    parse_http_request_with_labels_and_timestamp_format_response,
+  )
+}
+
+pub fn http_request_with_regex_literal(
+  client: Client,
+  input: HttpRequestWithRegexLiteralInput,
+) -> Result(HttpRequestWithRegexLiteralOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_request_with_regex_literal_request(input),
+    parse_http_request_with_regex_literal_response,
+  )
+}
+
+pub fn http_response_code(
+  client: Client,
+  input: HttpResponseCodeInput,
+) -> Result(HttpResponseCodeOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_response_code_request(input),
+    parse_http_response_code_response,
+  )
+}
+
+pub fn http_string_payload(
+  client: Client,
+  input: StringPayloadInput,
+) -> Result(StringPayloadInput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_http_string_payload_request(input),
+    parse_http_string_payload_response,
+  )
+}
+
+pub fn ignore_query_params_in_response(
+  client: Client,
+  input: IgnoreQueryParamsInResponseInput,
+) -> Result(IgnoreQueryParamsInResponseOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_ignore_query_params_in_response_request(input),
+    parse_ignore_query_params_in_response_response,
+  )
+}
+
+pub fn input_and_output_with_headers(
+  client: Client,
+  input: InputAndOutputWithHeadersIO,
+) -> Result(InputAndOutputWithHeadersIO, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_input_and_output_with_headers_request(input),
+    parse_input_and_output_with_headers_response,
+  )
+}
+
+pub fn input_stream(
+  client: Client,
+  input: InputStreamInput,
+) -> Result(InputStreamOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_input_stream_request(input),
+    parse_input_stream_response,
+  )
+}
+
+pub fn input_stream_with_initial_request(
+  client: Client,
+  input: InputStreamWithInitialRequestInput,
+) -> Result(InputStreamWithInitialRequestOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_input_stream_with_initial_request_request(input),
+    parse_input_stream_with_initial_request_response,
+  )
+}
+
+pub fn json_blobs(
+  client: Client,
+  input: JsonBlobsInputOutput,
+) -> Result(JsonBlobsInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_json_blobs_request(input),
+    parse_json_blobs_response,
+  )
+}
+
+pub fn json_enums(
+  client: Client,
+  input: JsonEnumsInputOutput,
+) -> Result(JsonEnumsInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_json_enums_request(input),
+    parse_json_enums_response,
+  )
+}
+
+pub fn json_int_enums(
+  client: Client,
+  input: JsonIntEnumsInputOutput,
+) -> Result(JsonIntEnumsInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_json_int_enums_request(input),
+    parse_json_int_enums_response,
+  )
+}
+
+pub fn json_lists(
+  client: Client,
+  input: JsonListsInputOutput,
+) -> Result(JsonListsInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_json_lists_request(input),
+    parse_json_lists_response,
+  )
+}
+
+pub fn json_maps(
+  client: Client,
+  input: JsonMapsInputOutput,
+) -> Result(JsonMapsInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_json_maps_request(input),
+    parse_json_maps_response,
+  )
+}
+
+pub fn json_timestamps(
+  client: Client,
+  input: JsonTimestampsInputOutput,
+) -> Result(JsonTimestampsInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_json_timestamps_request(input),
+    parse_json_timestamps_response,
+  )
+}
+
+pub fn json_unions(
+  client: Client,
+  input: UnionInputOutput,
+) -> Result(UnionInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_json_unions_request(input),
+    parse_json_unions_response,
+  )
+}
+
+pub fn malformed_accept_with_body(
+  client: Client,
+  input: MalformedAcceptWithBodyInput,
+) -> Result(GreetingStruct, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_accept_with_body_request(input),
+    parse_malformed_accept_with_body_response,
+  )
+}
+
+pub fn malformed_accept_with_generic_string(
+  client: Client,
+  input: MalformedAcceptWithGenericStringInput,
+) -> Result(MalformedAcceptWithGenericStringOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_accept_with_generic_string_request(input),
+    parse_malformed_accept_with_generic_string_response,
+  )
+}
+
+pub fn malformed_accept_with_payload(
+  client: Client,
+  input: MalformedAcceptWithPayloadInput,
+) -> Result(MalformedAcceptWithPayloadOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_accept_with_payload_request(input),
+    parse_malformed_accept_with_payload_response,
+  )
+}
+
+pub fn malformed_blob(
+  client: Client,
+  input: MalformedBlobInput,
+) -> Result(MalformedBlobOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_blob_request(input),
+    parse_malformed_blob_response,
+  )
+}
+
+pub fn malformed_boolean(
+  client: Client,
+  input: MalformedBooleanInput,
+) -> Result(MalformedBooleanOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_boolean_request(input),
+    parse_malformed_boolean_response,
+  )
+}
+
+pub fn malformed_byte(
+  client: Client,
+  input: MalformedByteInput,
+) -> Result(MalformedByteOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_byte_request(input),
+    parse_malformed_byte_response,
+  )
+}
+
+pub fn malformed_content_type_with_body(
+  client: Client,
+  input: GreetingStruct,
+) -> Result(MalformedContentTypeWithBodyOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_content_type_with_body_request(input),
+    parse_malformed_content_type_with_body_response,
+  )
+}
+
+pub fn malformed_content_type_with_generic_string(
+  client: Client,
+  input: MalformedContentTypeWithGenericStringInput,
+) -> Result(
+  MalformedContentTypeWithGenericStringOutput,
+  awsjson_client.ClientError,
+) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_content_type_with_generic_string_request(input),
+    parse_malformed_content_type_with_generic_string_response,
+  )
+}
+
+pub fn malformed_content_type_without_body(
+  client: Client,
+  input: MalformedContentTypeWithoutBodyInput,
+) -> Result(MalformedContentTypeWithoutBodyOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_content_type_without_body_request(input),
+    parse_malformed_content_type_without_body_response,
+  )
+}
+
+pub fn malformed_content_type_without_body_empty_input(
+  client: Client,
+  input: MalformedContentTypeWithoutBodyEmptyInputInput,
+) -> Result(
+  MalformedContentTypeWithoutBodyEmptyInputOutput,
+  awsjson_client.ClientError,
+) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_content_type_without_body_empty_input_request(input),
+    parse_malformed_content_type_without_body_empty_input_response,
+  )
+}
+
+pub fn malformed_content_type_with_payload(
+  client: Client,
+  input: MalformedContentTypeWithPayloadInput,
+) -> Result(MalformedContentTypeWithPayloadOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_content_type_with_payload_request(input),
+    parse_malformed_content_type_with_payload_response,
+  )
+}
+
+pub fn malformed_double(
+  client: Client,
+  input: MalformedDoubleInput,
+) -> Result(MalformedDoubleOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_double_request(input),
+    parse_malformed_double_response,
+  )
+}
+
+pub fn malformed_float(
+  client: Client,
+  input: MalformedFloatInput,
+) -> Result(MalformedFloatOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_float_request(input),
+    parse_malformed_float_response,
+  )
+}
+
+pub fn malformed_integer(
+  client: Client,
+  input: MalformedIntegerInput,
+) -> Result(MalformedIntegerOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_integer_request(input),
+    parse_malformed_integer_response,
+  )
+}
+
+pub fn malformed_list(
+  client: Client,
+  input: MalformedListInput,
+) -> Result(MalformedListOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_list_request(input),
+    parse_malformed_list_response,
+  )
+}
+
+pub fn malformed_long(
+  client: Client,
+  input: MalformedLongInput,
+) -> Result(MalformedLongOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_long_request(input),
+    parse_malformed_long_response,
+  )
+}
+
+pub fn malformed_map(
+  client: Client,
+  input: MalformedMapInput,
+) -> Result(MalformedMapOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_map_request(input),
+    parse_malformed_map_response,
+  )
+}
+
+pub fn malformed_request_body(
+  client: Client,
+  input: MalformedRequestBodyInput,
+) -> Result(MalformedRequestBodyOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_request_body_request(input),
+    parse_malformed_request_body_response,
+  )
+}
+
+pub fn malformed_short(
+  client: Client,
+  input: MalformedShortInput,
+) -> Result(MalformedShortOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_short_request(input),
+    parse_malformed_short_response,
+  )
+}
+
+pub fn malformed_string(
+  client: Client,
+  input: MalformedStringInput,
+) -> Result(MalformedStringOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_string_request(input),
+    parse_malformed_string_response,
+  )
+}
+
+pub fn malformed_timestamp_body_date_time(
+  client: Client,
+  input: MalformedTimestampBodyDateTimeInput,
+) -> Result(MalformedTimestampBodyDateTimeOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_timestamp_body_date_time_request(input),
+    parse_malformed_timestamp_body_date_time_response,
+  )
+}
+
+pub fn malformed_timestamp_body_default(
+  client: Client,
+  input: MalformedTimestampBodyDefaultInput,
+) -> Result(MalformedTimestampBodyDefaultOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_timestamp_body_default_request(input),
+    parse_malformed_timestamp_body_default_response,
+  )
+}
+
+pub fn malformed_timestamp_body_http_date(
+  client: Client,
+  input: MalformedTimestampBodyHttpDateInput,
+) -> Result(MalformedTimestampBodyHttpDateOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_timestamp_body_http_date_request(input),
+    parse_malformed_timestamp_body_http_date_response,
+  )
+}
+
+pub fn malformed_timestamp_header_date_time(
+  client: Client,
+  input: MalformedTimestampHeaderDateTimeInput,
+) -> Result(MalformedTimestampHeaderDateTimeOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_timestamp_header_date_time_request(input),
+    parse_malformed_timestamp_header_date_time_response,
+  )
+}
+
+pub fn malformed_timestamp_header_default(
+  client: Client,
+  input: MalformedTimestampHeaderDefaultInput,
+) -> Result(MalformedTimestampHeaderDefaultOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_timestamp_header_default_request(input),
+    parse_malformed_timestamp_header_default_response,
+  )
+}
+
+pub fn malformed_timestamp_header_epoch(
+  client: Client,
+  input: MalformedTimestampHeaderEpochInput,
+) -> Result(MalformedTimestampHeaderEpochOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_timestamp_header_epoch_request(input),
+    parse_malformed_timestamp_header_epoch_response,
+  )
+}
+
+pub fn malformed_timestamp_path_default(
+  client: Client,
+  input: MalformedTimestampPathDefaultInput,
+) -> Result(MalformedTimestampPathDefaultOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_timestamp_path_default_request(input),
+    parse_malformed_timestamp_path_default_response,
+  )
+}
+
+pub fn malformed_timestamp_path_epoch(
+  client: Client,
+  input: MalformedTimestampPathEpochInput,
+) -> Result(MalformedTimestampPathEpochOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_timestamp_path_epoch_request(input),
+    parse_malformed_timestamp_path_epoch_response,
+  )
+}
+
+pub fn malformed_timestamp_path_http_date(
+  client: Client,
+  input: MalformedTimestampPathHttpDateInput,
+) -> Result(MalformedTimestampPathHttpDateOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_timestamp_path_http_date_request(input),
+    parse_malformed_timestamp_path_http_date_response,
+  )
+}
+
+pub fn malformed_timestamp_query_default(
+  client: Client,
+  input: MalformedTimestampQueryDefaultInput,
+) -> Result(MalformedTimestampQueryDefaultOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_timestamp_query_default_request(input),
+    parse_malformed_timestamp_query_default_response,
+  )
+}
+
+pub fn malformed_timestamp_query_epoch(
+  client: Client,
+  input: MalformedTimestampQueryEpochInput,
+) -> Result(MalformedTimestampQueryEpochOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_timestamp_query_epoch_request(input),
+    parse_malformed_timestamp_query_epoch_response,
+  )
+}
+
+pub fn malformed_timestamp_query_http_date(
+  client: Client,
+  input: MalformedTimestampQueryHttpDateInput,
+) -> Result(MalformedTimestampQueryHttpDateOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_timestamp_query_http_date_request(input),
+    parse_malformed_timestamp_query_http_date_response,
+  )
+}
+
+pub fn malformed_union(
+  client: Client,
+  input: MalformedUnionInput,
+) -> Result(MalformedUnionOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_malformed_union_request(input),
+    parse_malformed_union_response,
+  )
+}
+
+pub fn media_type_header(
+  client: Client,
+  input: MediaTypeHeaderInput,
+) -> Result(MediaTypeHeaderOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_media_type_header_request(input),
+    parse_media_type_header_response,
+  )
+}
+
+pub fn no_input_and_no_output(
+  client: Client,
+  input: NoInputAndNoOutputInput,
+) -> Result(NoInputAndNoOutputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_no_input_and_no_output_request(input),
+    parse_no_input_and_no_output_response,
+  )
+}
+
+pub fn no_input_and_output(
+  client: Client,
+  input: NoInputAndOutputInput,
+) -> Result(NoInputAndOutputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_no_input_and_output_request(input),
+    parse_no_input_and_output_response,
+  )
+}
+
+pub fn null_and_empty_headers_client(
+  client: Client,
+  input: NullAndEmptyHeadersIO,
+) -> Result(NullAndEmptyHeadersIO, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_null_and_empty_headers_client_request(input),
+    parse_null_and_empty_headers_client_response,
+  )
+}
+
+pub fn null_and_empty_headers_server(
+  client: Client,
+  input: NullAndEmptyHeadersIO,
+) -> Result(NullAndEmptyHeadersIO, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_null_and_empty_headers_server_request(input),
+    parse_null_and_empty_headers_server_response,
+  )
+}
+
+pub fn omits_null_serializes_empty_string(
+  client: Client,
+  input: OmitsNullSerializesEmptyStringInput,
+) -> Result(OmitsNullSerializesEmptyStringOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_omits_null_serializes_empty_string_request(input),
+    parse_omits_null_serializes_empty_string_response,
+  )
+}
+
+pub fn omits_serializing_empty_lists(
+  client: Client,
+  input: OmitsSerializingEmptyListsInput,
+) -> Result(OmitsSerializingEmptyListsOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_omits_serializing_empty_lists_request(input),
+    parse_omits_serializing_empty_lists_response,
+  )
+}
+
+pub fn operation_with_defaults(
+  client: Client,
+  input: OperationWithDefaultsInput,
+) -> Result(OperationWithDefaultsOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_operation_with_defaults_request(input),
+    parse_operation_with_defaults_response,
+  )
+}
+
+pub fn operation_with_nested_structure(
+  client: Client,
+  input: OperationWithNestedStructureInput,
+) -> Result(OperationWithNestedStructureOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_operation_with_nested_structure_request(input),
+    parse_operation_with_nested_structure_response,
+  )
+}
+
+pub fn output_stream(
+  client: Client,
+  input: OutputStreamInput,
+) -> Result(OutputStreamOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_output_stream_request(input),
+    parse_output_stream_response,
+  )
+}
+
+pub fn output_stream_with_initial_response(
+  client: Client,
+  input: OutputStreamWithInitialResponseInput,
+) -> Result(OutputStreamWithInitialResponseOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_output_stream_with_initial_response_request(input),
+    parse_output_stream_with_initial_response_response,
+  )
+}
+
+pub fn post_player_action(
+  client: Client,
+  input: PostPlayerActionInput,
+) -> Result(PostPlayerActionOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_post_player_action_request(input),
+    parse_post_player_action_response,
+  )
+}
+
+pub fn post_union_with_json_name(
+  client: Client,
+  input: PostUnionWithJsonNameInput,
+) -> Result(PostUnionWithJsonNameOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_post_union_with_json_name_request(input),
+    parse_post_union_with_json_name_response,
+  )
+}
+
+pub fn put_with_content_encoding(
+  client: Client,
+  input: PutWithContentEncodingInput,
+) -> Result(PutWithContentEncodingOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_put_with_content_encoding_request(input),
+    parse_put_with_content_encoding_response,
+  )
+}
+
+pub fn query_idempotency_token_auto_fill(
+  client: Client,
+  input: QueryIdempotencyTokenAutoFillInput,
+) -> Result(QueryIdempotencyTokenAutoFillOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_query_idempotency_token_auto_fill_request(input),
+    parse_query_idempotency_token_auto_fill_response,
+  )
+}
+
+pub fn query_params_as_string_list_map(
+  client: Client,
+  input: QueryParamsAsStringListMapInput,
+) -> Result(QueryParamsAsStringListMapOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_query_params_as_string_list_map_request(input),
+    parse_query_params_as_string_list_map_response,
+  )
+}
+
+pub fn query_precedence(
+  client: Client,
+  input: QueryPrecedenceInput,
+) -> Result(QueryPrecedenceOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_query_precedence_request(input),
+    parse_query_precedence_response,
+  )
+}
+
+pub fn recursive_shapes(
+  client: Client,
+  input: RecursiveShapesInputOutput,
+) -> Result(RecursiveShapesInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_recursive_shapes_request(input),
+    parse_recursive_shapes_response,
+  )
+}
+
+pub fn response_code_http_fallback(
+  client: Client,
+  input: ResponseCodeHttpFallbackInputOutput,
+) -> Result(ResponseCodeHttpFallbackInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_response_code_http_fallback_request(input),
+    parse_response_code_http_fallback_response,
+  )
+}
+
+pub fn response_code_required(
+  client: Client,
+  input: ResponseCodeRequiredInput,
+) -> Result(ResponseCodeRequiredOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_response_code_required_request(input),
+    parse_response_code_required_response,
+  )
+}
+
+pub fn simple_scalar_properties(
+  client: Client,
+  input: SimpleScalarPropertiesInputOutput,
+) -> Result(SimpleScalarPropertiesInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_simple_scalar_properties_request(input),
+    parse_simple_scalar_properties_response,
+  )
+}
+
+pub fn sparse_json_lists(
+  client: Client,
+  input: SparseJsonListsInputOutput,
+) -> Result(SparseJsonListsInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_sparse_json_lists_request(input),
+    parse_sparse_json_lists_response,
+  )
+}
+
+pub fn sparse_json_maps(
+  client: Client,
+  input: SparseJsonMapsInputOutput,
+) -> Result(SparseJsonMapsInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_sparse_json_maps_request(input),
+    parse_sparse_json_maps_response,
+  )
+}
+
+pub fn streaming_traits(
+  client: Client,
+  input: StreamingTraitsInputOutput,
+) -> Result(StreamingTraitsInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_streaming_traits_request(input),
+    parse_streaming_traits_response,
+  )
+}
+
+pub fn streaming_traits_require_length(
+  client: Client,
+  input: StreamingTraitsRequireLengthInput,
+) -> Result(StreamingTraitsRequireLengthOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_streaming_traits_require_length_request(input),
+    parse_streaming_traits_require_length_response,
+  )
+}
+
+pub fn streaming_traits_with_media_type(
+  client: Client,
+  input: StreamingTraitsWithMediaTypeInputOutput,
+) -> Result(StreamingTraitsWithMediaTypeInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_streaming_traits_with_media_type_request(input),
+    parse_streaming_traits_with_media_type_response,
+  )
+}
+
+pub fn test_body_structure(
+  client: Client,
+  input: TestBodyStructureInputOutput,
+) -> Result(TestBodyStructureInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_test_body_structure_request(input),
+    parse_test_body_structure_response,
+  )
+}
+
+pub fn test_get_no_input_no_payload(
+  client: Client,
+  input: TestGetNoInputNoPayloadInput,
+) -> Result(TestNoPayloadInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_test_get_no_input_no_payload_request(input),
+    parse_test_get_no_input_no_payload_response,
+  )
+}
+
+pub fn test_get_no_payload(
+  client: Client,
+  input: TestNoPayloadInputOutput,
+) -> Result(TestNoPayloadInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_test_get_no_payload_request(input),
+    parse_test_get_no_payload_response,
+  )
+}
+
+pub fn test_payload_blob(
+  client: Client,
+  input: TestPayloadBlobInputOutput,
+) -> Result(TestPayloadBlobInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_test_payload_blob_request(input),
+    parse_test_payload_blob_response,
+  )
+}
+
+pub fn test_payload_structure(
+  client: Client,
+  input: TestPayloadStructureInputOutput,
+) -> Result(TestPayloadStructureInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_test_payload_structure_request(input),
+    parse_test_payload_structure_response,
+  )
+}
+
+pub fn test_post_no_input_no_payload(
+  client: Client,
+  input: TestPostNoInputNoPayloadInput,
+) -> Result(TestNoPayloadInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_test_post_no_input_no_payload_request(input),
+    parse_test_post_no_input_no_payload_response,
+  )
+}
+
+pub fn test_post_no_payload(
+  client: Client,
+  input: TestNoPayloadInputOutput,
+) -> Result(TestNoPayloadInputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_test_post_no_payload_request(input),
+    parse_test_post_no_payload_response,
+  )
+}
+
+pub fn timestamp_format_headers(
+  client: Client,
+  input: TimestampFormatHeadersIO,
+) -> Result(TimestampFormatHeadersIO, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_timestamp_format_headers_request(input),
+    parse_timestamp_format_headers_response,
+  )
+}
+
+pub fn unit_input_and_output(
+  client: Client,
+  input: UnitInputAndOutputInput,
+) -> Result(UnitInputAndOutputOutput, awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_unit_input_and_output_request(input),
+    parse_unit_input_and_output_response,
+  )
 }
