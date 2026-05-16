@@ -100,6 +100,13 @@ pub type Code {
   /// 4-slash form for the module preamble.
   ModuleDocComment(lines: List(String))
 
+  /// `label: value` — a labelled argument. Only meaningful inside
+  /// `Call.args`; the renderer prepends `<label>: ` before the
+  /// value expression. Used for labelled record construction
+  /// (`Dispatcher(operation_id: "...", build_request: fn(...) ...)`)
+  /// and any labelled function call. Pass 7 of plan.md.
+  Labelled(label: String, value: Code)
+
   /// A literal blank line. Used between functions / types to keep
   /// the output readable.
   Blank
@@ -259,6 +266,13 @@ fn do_render(c: Code, indent: Int) -> String {
       |> list.map(fn(l) { pad(indent) <> "//// " <> l })
       |> string.join("\n")
 
+    // `Labelled` only renders inside `Call.args` (handled in
+    // `render_call`). If it appears at top-level the renderer
+    // falls through to its value, which is reasonable for nested
+    // contexts but ideally never reached.
+    Labelled(label: l, value: v) ->
+      pad(indent) <> l <> ": " <> do_render_expr(v, indent)
+
     Blank -> ""
   }
 }
@@ -292,7 +306,12 @@ fn render_call(head: Code, args: List(Code), indent: Int) -> String {
   let head_str = do_render_expr(head, indent)
   let args_str =
     args
-    |> list.map(fn(a) { do_render_expr(a, indent) })
+    |> list.map(fn(a) {
+      case a {
+        Labelled(label: l, value: v) -> l <> ": " <> do_render_expr(v, indent)
+        _ -> do_render_expr(a, indent)
+      }
+    })
     |> string.join(", ")
   head_str <> "(" <> args_str <> ")"
 }

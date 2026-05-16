@@ -193,6 +193,43 @@ is the worst of both worlds: the AST nodes silently lose context
 inside `code.Raw`, and the surrounding `<>` chains keep us one
 typo away from invalid Gleam.
 
+### What I tried (the start of the work)
+
+Took dispatcher.gleam — smallest emitter, 16 concats — as the
+worked example. Discovered that the per-op `Dispatcher(...)`
+construction uses **labelled arguments** (`operation_id:`,
+`build_request:`, `parse_response:`), which `code.Call` doesn't
+model. There are three options:
+
+  1. Add a `LabelledArg(label: String, value: Code)` variant
+     wrappable by `Call` so `Call(Ident("Dispatcher"), [
+     LabelledArg("operation_id", StrLit(s.op_id)), ... ])`
+     renders as `Dispatcher(operation_id: "...", ...)`.
+  2. Add a dedicated `RecordConstruct(name, fields)` node that
+     mirrors `TypeDef` but on the term side.
+  3. Keep `Raw` for the record construction.
+
+(1) is the cleanest — `LabelledArg` doubles for any labelled
+call, not just record construction. The renderer just checks for
+the leading label.
+
+### Inventory at the time of writing (re-grep before starting!)
+
+```
+codegen/src/codegen/awsjson.gleam      230
+codegen/src/codegen/restjson.gleam     371
+codegen/src/codegen/restxml.gleam      427
+codegen/src/codegen/types.gleam         40
+codegen/src/codegen/awsquery.gleam      17
+codegen/src/codegen/dispatcher.gleam    16
+codegen/src/codegen/struct_codec.gleam   5
+codegen/src/codegen/named_shapes.gleam   5
+codegen/src/codegen/client.gleam         1
+```
+
+restxml has the most surface, restjson second, awsjson third —
+mirror images of the per-op build/parse/codec emitter complexity.
+
 Goal: every emitter writes a `code.Code` tree end-to-end. `code.
 Raw` survives as the escape hatch but is reserved for fragments
 the AST genuinely doesn't model (e.g. user-supplied default
