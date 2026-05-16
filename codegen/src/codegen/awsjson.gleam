@@ -20,12 +20,15 @@ import codegen/types.{
 }
 import gleam/dict
 import gleam/list
+import gleam/option
+import gleam/result
 import gleam/set.{type Set}
 import gleam/string
 import internal/stringutils
 import smithy/model.{type Model}
 import smithy/shape
 import smithy/shape_id.{ShapeId}
+import smithy/trait
 
 pub type Protocol {
   AwsJson10
@@ -54,8 +57,9 @@ pub fn emit_service(
 ) -> Result(EmitResult, String) {
   case model.lookup(model, service_id) {
     Error(_) -> Error("service not found: " <> service_id)
-    Ok(shape.Service(operations: refs, ..)) -> {
+    Ok(shape.Service(operations: refs, traits: svc_traits, ..)) -> {
       let service_target = strip_namespace(service_id)
+      let metadata = service_metadata(svc_traits, service_target)
       // Walk each operation's input / output; keep only ops whose
       // shapes resolve cleanly (no Unsupported anywhere).
       let resolved_ops =
@@ -80,20 +84,37 @@ pub fn emit_service(
           }
         })
 
-      // Collect the transitive set of named shapes referenced.
       let named_shapes = collect_named_shapes(model, resolved_ops)
       let preamble = emit_named_shapes(model, named_shapes)
 
-      let op_blocks =
+      let op_specs =
         list.map(resolved_ops, fn(t) {
           let #(op_id, in_r, out_r) = t
-          emit_operation(model, op_id, service_target, protocol, in_r, out_r)
+          let local = strip_namespace(op_id)
+          let snake = stringutils.pascal_to_snake(local)
+          let in_info = resolve_io_type(model, local <> "Input", in_r)
+          let out_info = resolve_io_type(model, local <> "Output", out_r)
+          OpSpec(
+            op_id: op_id,
+            local: local,
+            snake: snake,
+            in_info: in_info,
+            out_info: out_info,
+          )
         })
+      let op_blocks =
+        list.map(op_specs, fn(spec) {
+          emit_operation_with(spec, service_target, protocol)
+        })
+      let client_block = emit_client(metadata)
+      let invoke_blocks = list.map(op_specs, emit_invoke)
       let body =
         file_header(service_id, protocol)
         <> "\n"
+        <> client_block
         <> preamble
         <> list.fold(op_blocks, "", fn(acc, code) { acc <> code })
+        <> list.fold(invoke_blocks, "", fn(acc, code) { acc <> code })
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
@@ -102,6 +123,126 @@ pub fn emit_service(
     }
     Ok(_) -> Error("not a service: " <> service_id)
   }
+}
+
+type Metadata {
+  Metadata(
+    service_local: String,
+    endpoint_prefix: String,
+    signing_name: String,
+  )
+}
+
+type OpSpec {
+  OpSpec(
+    op_id: String,
+    local: String,
+    snake: String,
+    in_info: IOTypeInfo,
+    out_info: IOTypeInfo,
+  )
+}
+
+/// Extract per-service metadata from the service shape's traits.
+/// `aws.api#service.endpointPrefix` and `aws.auth#sigv4.name` are
+/// what the runtime needs to build endpoint URLs and sign requests.
+fn service_metadata(traits: shape.Traits, service_local: String) -> Metadata {
+  let endpoint_prefix =
+    string_field_under(traits, "aws.api#service", "endpointPrefix")
+    |> result.unwrap(string.lowercase(service_local))
+  let signing_name =
+    string_field_under(traits, "aws.auth#sigv4", "name")
+    |> result.unwrap(endpoint_prefix)
+  Metadata(
+    service_local: service_local,
+    endpoint_prefix: endpoint_prefix,
+    signing_name: signing_name,
+  )
+}
+
+fn string_field_under(
+  traits: shape.Traits,
+  trait_id: String,
+  field: String,
+) -> Result(String, Nil) {
+  case dict.get(traits, ShapeId(trait_id)) {
+    Ok(option.Some(trait.Dict(d))) ->
+      case dict.get(d, ShapeId(field)) {
+        Ok(trait.String(s)) -> Ok(s)
+        _ -> Error(Nil)
+      }
+    _ -> Error(Nil)
+  }
+}
+
+fn emit_client(metadata: Metadata) -> String {
+  "pub opaque type Client {
+  Client(config: awsjson_client.ClientConfig)
+}
+
+/// Build a Client given a credentials provider and an AWS region. The
+/// generated module hard-codes the service's endpoint prefix and SigV4
+/// signing name; everything else is configurable via the `with_*`
+/// helpers below.
+pub fn new(
+  provider provider: credentials.Provider,
+  region region: String,
+) -> Client {
+  Client(config: awsjson_client.default_config(
+    provider,
+    region,
+    \""
+  <> metadata.endpoint_prefix
+  <> "\",
+    \""
+  <> metadata.signing_name
+  <> "\",
+  ))
+}
+
+/// Override the endpoint URL (LocalStack, FIPS endpoints, custom DNS).
+pub fn with_endpoint_url(client: Client, url: String) -> Client {
+  Client(config: awsjson_client.with_endpoint_url(client.config, url))
+}
+
+/// Swap the HTTP transport — useful for canned-response test doubles.
+pub fn with_http_send(
+  client: Client,
+  send: http_send.Send,
+) -> Client {
+  Client(config: awsjson_client.with_http_send(client.config, send))
+}
+
+"
+}
+
+fn emit_invoke(spec: OpSpec) -> String {
+  "/// Invoke "
+  <> spec.local
+  <> ". Signs the request with SigV4 and dispatches via the configured
+/// HTTP transport.
+pub fn "
+  <> spec.snake
+  <> "(
+  client: Client,
+  input: "
+  <> spec.in_info.type_name
+  <> ",
+) -> Result("
+  <> spec.out_info.type_name
+  <> ", awsjson_client.ClientError) {
+  awsjson_client.invoke(
+    client.config,
+    build_"
+  <> spec.snake
+  <> "_request(input),
+    parse_"
+  <> spec.snake
+  <> "_response,
+  )
+}
+
+"
 }
 
 fn resolve_or_unit(model: Model, id: String) -> Resolved {
@@ -209,22 +350,32 @@ fn emit_named_shapes(model: Model, shapes: List(Resolved)) -> String {
 
 // ---------- per-operation emission ----------
 
-fn emit_operation(
-  model: Model,
-  op_id: String,
+fn emit_operation_with(
+  spec: OpSpec,
   service_target: String,
   protocol: Protocol,
-  in_r: Resolved,
-  out_r: Resolved,
 ) -> String {
-  let local_name = strip_namespace(op_id)
-  let pascal = local_name
-  let snake = stringutils.pascal_to_snake(local_name)
+  let snake = spec.snake
+  let local_name = spec.local
   let target_value = service_target <> "." <> local_name
   let ct = content_type(protocol)
+  let in_info = spec.in_info
+  let out_info = spec.out_info
+  let _ = model_unused()
+  emit_operation_body(snake, target_value, ct, in_info, out_info)
+}
 
-  let in_info = resolve_io_type(model, pascal <> "Input", in_r)
-  let out_info = resolve_io_type(model, pascal <> "Output", out_r)
+fn model_unused() -> Nil {
+  Nil
+}
+
+fn emit_operation_body(
+  snake: String,
+  target_value: String,
+  ct: String,
+  in_info: IOTypeInfo,
+  out_info: IOTypeInfo,
+) -> String {
 
   // For Unit input/output we synthesise a singleton type + codec at the
   // op level. For named-struct sides we reuse the preamble's codec.
@@ -665,7 +816,10 @@ fn file_header(service_id: String, protocol: Protocol) -> String {
   <> ").
 //// DO NOT EDIT. Re-generate via the codegen subproject.
 
+import aws/credentials
+import aws/internal/client/awsjson as awsjson_client
 import aws/internal/codec/json_float
+import aws/internal/http_send
 import gleam/bit_array
 import gleam/dict
 import gleam/dynamic/decode
