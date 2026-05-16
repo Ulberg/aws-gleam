@@ -831,7 +831,7 @@ fn emit_struct_codec(
     "encode_" <> snake <> "_xml_inner",
     members,
   )
-  <> emit_struct_xml_encoder(name, "encode_" <> snake <> "_xml", snake)
+  <> emit_struct_xml_encoder(name, "encode_" <> snake <> "_xml", snake, members)
   <> emit_struct_xml_decoder(name, "decode_" <> snake <> "_xml", members)
 }
 
@@ -1016,14 +1016,75 @@ fn emit_struct_xml_encoder(
   type_name: String,
   fn_name: String,
   snake: String,
+  members: List(MemberDef),
 ) -> String {
-  "pub fn "
-  <> fn_name
-  <> "(input: "
-  <> type_name
-  <> ", root: String) -> String {\n  xml.element(root, encode_"
+  // `@xmlAttribute` members land on the outer wrapper's open tag
+  // (`<Root attr="value">`), not in the inner content. They're
+  // collected by `_xml_attrs`; the inner encoder skips them.
+  let attr_members =
+    list.filter(members, fn(m) {
+      case m.binding, m.xml_attribute {
+        Body, True -> True
+        _, _ -> False
+      }
+    })
+  case attr_members {
+    [] ->
+      "pub fn "
+      <> fn_name
+      <> "(input: "
+      <> type_name
+      <> ", root: String) -> String {\n  xml.element(root, encode_"
+      <> snake
+      <> "_xml_inner(input))\n}\n\n"
+    _ ->
+      "pub fn "
+      <> fn_name
+      <> "(input: "
+      <> type_name
+      <> ", root: String) -> String {\n  xml.element_with_attrs(root, encode_"
+      <> snake
+      <> "_xml_attrs(input), encode_"
+      <> snake
+      <> "_xml_inner(input))\n}\n\n"
+      <> emit_struct_xml_attrs(snake, type_name, attr_members)
+  }
+}
+
+fn emit_struct_xml_attrs(
+  snake: String,
+  type_name: String,
+  attr_members: List(MemberDef),
+) -> String {
+  "fn encode_"
   <> snake
-  <> "_xml_inner(input))\n}\n\n"
+  <> "_xml_attrs(input: "
+  <> type_name
+  <> ") -> List(#(String, String)) {\n  let attrs = []\n"
+  <> list.fold(attr_members, "", fn(acc, m) {
+    acc
+    <> "  let attrs = case input."
+    <> m.snake_name
+    <> " {\n    option.Some(v) -> [#(\""
+    <> m.json_name
+    <> "\", "
+    <> attr_value_expr(m.target)
+    <> "), ..attrs]\n    option.None -> attrs\n  }\n"
+  })
+  <> "  attrs\n}\n\n"
+}
+
+fn attr_value_expr(target: Resolved) -> String {
+  case target {
+    RPrim(primitive: types.PString) -> "v"
+    RPrim(primitive: types.PInt) -> "xml.int_text(v)"
+    RPrim(primitive: types.PBool) -> "xml.bool_text(v)"
+    RPrim(primitive: types.PFloat) ->
+      "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
+    RTimestamp -> "json_timestamp.format_iso8601(v)"
+    REnum(..) -> "rest.enum_wire_value(" <> types.json_encoder(target) <> "(v))"
+    _ -> "\"\""
+  }
 }
 
 /// Emit `encode_<snake>_xml_inner(input) -> String` — produces just
@@ -1039,12 +1100,13 @@ fn emit_struct_xml_inner_encoder(
   // every member is URI / query / header bound. `input` is then
   // unused; the previous emitter still wrote `input:` and got
   // an "unused argument" warning per op. Filter to the Body
-  // subset before deciding whether to bind the param.
+  // subset (minus `@xmlAttribute` members, which land on the
+  // wrapper's open tag) before deciding whether to bind the param.
   let body_members =
     list.filter(members, fn(m) {
-      case m.binding {
-        Body -> True
-        _ -> False
+      case m.binding, m.xml_attribute {
+        Body, False -> True
+        _, _ -> False
       }
     })
   case body_members {
@@ -1199,6 +1261,22 @@ fn xml_map_value_expr(target: Resolved) -> String {
       "xml.int_text(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))"
     RStruct(local_name: name, ..) ->
       "encode_" <> stringutils.pascal_to_snake(name) <> "_xml_inner(v)"
+    RMap(
+      value: vv,
+      xml_key_name: kn,
+      xml_value_name: vn,
+      ..,
+    ) ->
+      // Nested map value: produce just the inner entries; the
+      // surrounding `<value>` wrapper sits on the outer map's
+      // entry. Recursive — supports Map<String, Map<String, ...>>.
+      "xml.map_entries(\""
+      <> kn
+      <> "\", \""
+      <> vn
+      <> "\", dict.map_values(v, fn(_, v) { "
+      <> xml_map_value_expr(vv)
+      <> " }))"
     _ -> "\"\""
   }
 }

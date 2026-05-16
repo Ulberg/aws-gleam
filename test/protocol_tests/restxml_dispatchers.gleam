@@ -3,86 +3,80 @@
 //// regenerating the service module.
 
 import aws/services/protocoltests/restxml as svc
-import protocol_tests/dispatch.{
-  type Dispatcher, type ParsedResponseInput, type Registry, BuiltRequest,
-  Dispatcher, ParsedOutput,
-}
+import protocol_tests/dispatch.{type Dispatcher, type ParsedResponseInput, type Registry, BuiltRequest, Dispatcher, ParsedOutput}
 
 pub fn register_all(registry: Registry) -> Registry {
   registry
-  |> dispatch.register(all_query_string_types_dispatcher())
-  |> dispatch.register(body_with_xml_name_dispatcher())
-  |> dispatch.register(constant_and_variable_query_string_dispatcher())
-  |> dispatch.register(constant_query_string_dispatcher())
-  |> dispatch.register(content_type_parameters_dispatcher())
-  |> dispatch.register(datetime_offsets_dispatcher())
-  |> dispatch.register(empty_input_and_empty_output_dispatcher())
-  |> dispatch.register(endpoint_operation_dispatcher())
-  |> dispatch.register(endpoint_with_host_label_header_operation_dispatcher())
-  |> dispatch.register(endpoint_with_host_label_operation_dispatcher())
-  |> dispatch.register(flattened_xml_map_dispatcher())
-  |> dispatch.register(flattened_xml_map_with_xml_name_dispatcher())
-  |> dispatch.register(flattened_xml_map_with_xml_namespace_dispatcher())
-  |> dispatch.register(fractional_seconds_dispatcher())
-  |> dispatch.register(greeting_with_errors_dispatcher())
-  |> dispatch.register(http_empty_prefix_headers_dispatcher())
-  |> dispatch.register(http_enum_payload_dispatcher())
-  |> dispatch.register(http_payload_traits_dispatcher())
-  |> dispatch.register(http_payload_traits_with_media_type_dispatcher())
-  |> dispatch.register(http_payload_with_member_xml_name_dispatcher())
-  |> dispatch.register(http_payload_with_structure_dispatcher())
-  |> dispatch.register(http_payload_with_union_dispatcher())
-  |> dispatch.register(http_payload_with_xml_name_dispatcher())
-  |> dispatch.register(http_payload_with_xml_namespace_dispatcher())
-  |> dispatch.register(http_payload_with_xml_namespace_and_prefix_dispatcher())
-  |> dispatch.register(http_prefix_headers_dispatcher())
-  |> dispatch.register(http_request_with_float_labels_dispatcher())
-  |> dispatch.register(http_request_with_greedy_label_in_path_dispatcher())
-  |> dispatch.register(http_request_with_labels_dispatcher())
-  |> dispatch.register(
-    http_request_with_labels_and_timestamp_format_dispatcher(),
-  )
-  |> dispatch.register(http_response_code_dispatcher())
-  |> dispatch.register(http_string_payload_dispatcher())
-  |> dispatch.register(ignore_query_params_in_response_dispatcher())
-  |> dispatch.register(input_and_output_with_headers_dispatcher())
-  |> dispatch.register(nested_xml_maps_dispatcher())
-  |> dispatch.register(nested_xml_map_with_xml_name_dispatcher())
-  |> dispatch.register(no_input_and_no_output_dispatcher())
-  |> dispatch.register(no_input_and_output_dispatcher())
-  |> dispatch.register(null_and_empty_headers_client_dispatcher())
-  |> dispatch.register(null_and_empty_headers_server_dispatcher())
-  |> dispatch.register(omits_null_serializes_empty_string_dispatcher())
-  |> dispatch.register(put_with_content_encoding_dispatcher())
-  |> dispatch.register(query_idempotency_token_auto_fill_dispatcher())
-  |> dispatch.register(query_params_as_string_list_map_dispatcher())
-  |> dispatch.register(query_precedence_dispatcher())
-  |> dispatch.register(recursive_shapes_dispatcher())
-  |> dispatch.register(simple_scalar_properties_dispatcher())
-  |> dispatch.register(timestamp_format_headers_dispatcher())
-  |> dispatch.register(xml_attributes_dispatcher())
-  |> dispatch.register(xml_attributes_in_middle_dispatcher())
-  |> dispatch.register(xml_attributes_on_payload_dispatcher())
-  |> dispatch.register(xml_blobs_dispatcher())
-  |> dispatch.register(xml_empty_blobs_dispatcher())
-  |> dispatch.register(xml_empty_lists_dispatcher())
-  |> dispatch.register(xml_empty_maps_dispatcher())
-  |> dispatch.register(xml_empty_strings_dispatcher())
-  |> dispatch.register(xml_enums_dispatcher())
-  |> dispatch.register(xml_int_enums_dispatcher())
-  |> dispatch.register(xml_lists_dispatcher())
-  |> dispatch.register(xml_maps_dispatcher())
-  |> dispatch.register(xml_maps_xml_name_dispatcher())
-  |> dispatch.register(xml_map_with_xml_namespace_dispatcher())
-  |> dispatch.register(xml_namespaces_dispatcher())
-  |> dispatch.register(xml_timestamps_dispatcher())
-  |> dispatch.register(xml_unions_dispatcher())
+    |> dispatch.register(all_query_string_types_dispatcher())
+    |> dispatch.register(body_with_xml_name_dispatcher())
+    |> dispatch.register(constant_and_variable_query_string_dispatcher())
+    |> dispatch.register(constant_query_string_dispatcher())
+    |> dispatch.register(content_type_parameters_dispatcher())
+    |> dispatch.register(datetime_offsets_dispatcher())
+    |> dispatch.register(empty_input_and_empty_output_dispatcher())
+    |> dispatch.register(endpoint_operation_dispatcher())
+    |> dispatch.register(endpoint_with_host_label_header_operation_dispatcher())
+    |> dispatch.register(endpoint_with_host_label_operation_dispatcher())
+    |> dispatch.register(flattened_xml_map_dispatcher())
+    |> dispatch.register(flattened_xml_map_with_xml_name_dispatcher())
+    |> dispatch.register(flattened_xml_map_with_xml_namespace_dispatcher())
+    |> dispatch.register(fractional_seconds_dispatcher())
+    |> dispatch.register(greeting_with_errors_dispatcher())
+    |> dispatch.register(http_empty_prefix_headers_dispatcher())
+    |> dispatch.register(http_enum_payload_dispatcher())
+    |> dispatch.register(http_payload_traits_dispatcher())
+    |> dispatch.register(http_payload_traits_with_media_type_dispatcher())
+    |> dispatch.register(http_payload_with_member_xml_name_dispatcher())
+    |> dispatch.register(http_payload_with_structure_dispatcher())
+    |> dispatch.register(http_payload_with_union_dispatcher())
+    |> dispatch.register(http_payload_with_xml_name_dispatcher())
+    |> dispatch.register(http_payload_with_xml_namespace_dispatcher())
+    |> dispatch.register(http_payload_with_xml_namespace_and_prefix_dispatcher())
+    |> dispatch.register(http_prefix_headers_dispatcher())
+    |> dispatch.register(http_request_with_float_labels_dispatcher())
+    |> dispatch.register(http_request_with_greedy_label_in_path_dispatcher())
+    |> dispatch.register(http_request_with_labels_dispatcher())
+    |> dispatch.register(http_request_with_labels_and_timestamp_format_dispatcher())
+    |> dispatch.register(http_response_code_dispatcher())
+    |> dispatch.register(http_string_payload_dispatcher())
+    |> dispatch.register(ignore_query_params_in_response_dispatcher())
+    |> dispatch.register(input_and_output_with_headers_dispatcher())
+    |> dispatch.register(nested_xml_maps_dispatcher())
+    |> dispatch.register(nested_xml_map_with_xml_name_dispatcher())
+    |> dispatch.register(no_input_and_no_output_dispatcher())
+    |> dispatch.register(no_input_and_output_dispatcher())
+    |> dispatch.register(null_and_empty_headers_client_dispatcher())
+    |> dispatch.register(null_and_empty_headers_server_dispatcher())
+    |> dispatch.register(omits_null_serializes_empty_string_dispatcher())
+    |> dispatch.register(put_with_content_encoding_dispatcher())
+    |> dispatch.register(query_idempotency_token_auto_fill_dispatcher())
+    |> dispatch.register(query_params_as_string_list_map_dispatcher())
+    |> dispatch.register(query_precedence_dispatcher())
+    |> dispatch.register(recursive_shapes_dispatcher())
+    |> dispatch.register(simple_scalar_properties_dispatcher())
+    |> dispatch.register(timestamp_format_headers_dispatcher())
+    |> dispatch.register(xml_attributes_dispatcher())
+    |> dispatch.register(xml_attributes_in_middle_dispatcher())
+    |> dispatch.register(xml_attributes_on_payload_dispatcher())
+    |> dispatch.register(xml_blobs_dispatcher())
+    |> dispatch.register(xml_empty_blobs_dispatcher())
+    |> dispatch.register(xml_empty_lists_dispatcher())
+    |> dispatch.register(xml_empty_maps_dispatcher())
+    |> dispatch.register(xml_empty_strings_dispatcher())
+    |> dispatch.register(xml_enums_dispatcher())
+    |> dispatch.register(xml_int_enums_dispatcher())
+    |> dispatch.register(xml_lists_dispatcher())
+    |> dispatch.register(xml_maps_dispatcher())
+    |> dispatch.register(xml_maps_xml_name_dispatcher())
+    |> dispatch.register(xml_map_with_xml_namespace_dispatcher())
+    |> dispatch.register(xml_namespaces_dispatcher())
+    |> dispatch.register(xml_timestamps_dispatcher())
+    |> dispatch.register(xml_unions_dispatcher())
 }
 
+
 fn all_query_string_types_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#AllQueryStringTypes",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#AllQueryStringTypes", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -95,15 +89,11 @@ fn all_query_string_types_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_all_query_string_types_response),
-  )
+    }, parse_response: response_parser(svc.parse_all_query_string_types_response))
 }
 
 fn body_with_xml_name_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#BodyWithXmlName",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#BodyWithXmlName", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -116,15 +106,11 @@ fn body_with_xml_name_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_body_with_xml_name_response),
-  )
+    }, parse_response: response_parser(svc.parse_body_with_xml_name_response))
 }
 
 fn constant_and_variable_query_string_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#ConstantAndVariableQueryString",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#ConstantAndVariableQueryString", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -137,17 +123,11 @@ fn constant_and_variable_query_string_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_constant_and_variable_query_string_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_constant_and_variable_query_string_response))
 }
 
 fn constant_query_string_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#ConstantQueryString",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#ConstantQueryString", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -160,15 +140,11 @@ fn constant_query_string_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_constant_query_string_response),
-  )
+    }, parse_response: response_parser(svc.parse_constant_query_string_response))
 }
 
 fn content_type_parameters_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#ContentTypeParameters",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#ContentTypeParameters", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -181,15 +157,11 @@ fn content_type_parameters_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_content_type_parameters_response),
-  )
+    }, parse_response: response_parser(svc.parse_content_type_parameters_response))
 }
 
 fn datetime_offsets_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#DatetimeOffsets",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#DatetimeOffsets", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -202,15 +174,11 @@ fn datetime_offsets_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_datetime_offsets_response),
-  )
+    }, parse_response: response_parser(svc.parse_datetime_offsets_response))
 }
 
 fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#EmptyInputAndEmptyOutput",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#EmptyInputAndEmptyOutput", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -223,17 +191,11 @@ fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_empty_input_and_empty_output_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_empty_input_and_empty_output_response))
 }
 
 fn endpoint_operation_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#EndpointOperation",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#EndpointOperation", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -246,15 +208,11 @@ fn endpoint_operation_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_endpoint_operation_response),
-  )
+    }, parse_response: response_parser(svc.parse_endpoint_operation_response))
 }
 
 fn endpoint_with_host_label_header_operation_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#EndpointWithHostLabelHeaderOperation",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#EndpointWithHostLabelHeaderOperation", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -267,17 +225,11 @@ fn endpoint_with_host_label_header_operation_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_endpoint_with_host_label_header_operation_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_endpoint_with_host_label_header_operation_response))
 }
 
 fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#EndpointWithHostLabelOperation",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#EndpointWithHostLabelOperation", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -290,17 +242,11 @@ fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_endpoint_with_host_label_operation_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_endpoint_with_host_label_operation_response))
 }
 
 fn flattened_xml_map_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#FlattenedXmlMap",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#FlattenedXmlMap", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -313,15 +259,11 @@ fn flattened_xml_map_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_flattened_xml_map_response),
-  )
+    }, parse_response: response_parser(svc.parse_flattened_xml_map_response))
 }
 
 fn flattened_xml_map_with_xml_name_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#FlattenedXmlMapWithXmlName",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#FlattenedXmlMapWithXmlName", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -334,17 +276,11 @@ fn flattened_xml_map_with_xml_name_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_flattened_xml_map_with_xml_name_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_flattened_xml_map_with_xml_name_response))
 }
 
 fn flattened_xml_map_with_xml_namespace_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#FlattenedXmlMapWithXmlNamespace",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#FlattenedXmlMapWithXmlNamespace", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -357,17 +293,11 @@ fn flattened_xml_map_with_xml_namespace_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_flattened_xml_map_with_xml_namespace_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_flattened_xml_map_with_xml_namespace_response))
 }
 
 fn fractional_seconds_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#FractionalSeconds",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#FractionalSeconds", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -380,15 +310,11 @@ fn fractional_seconds_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_fractional_seconds_response),
-  )
+    }, parse_response: response_parser(svc.parse_fractional_seconds_response))
 }
 
 fn greeting_with_errors_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#GreetingWithErrors",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#GreetingWithErrors", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -401,15 +327,11 @@ fn greeting_with_errors_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_greeting_with_errors_response),
-  )
+    }, parse_response: response_parser(svc.parse_greeting_with_errors_response))
 }
 
 fn http_empty_prefix_headers_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpEmptyPrefixHeaders",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpEmptyPrefixHeaders", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -422,17 +344,11 @@ fn http_empty_prefix_headers_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_http_empty_prefix_headers_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_http_empty_prefix_headers_response))
 }
 
 fn http_enum_payload_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpEnumPayload",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpEnumPayload", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -445,15 +361,11 @@ fn http_enum_payload_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_http_enum_payload_response),
-  )
+    }, parse_response: response_parser(svc.parse_http_enum_payload_response))
 }
 
 fn http_payload_traits_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpPayloadTraits",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpPayloadTraits", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -466,15 +378,11 @@ fn http_payload_traits_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_http_payload_traits_response),
-  )
+    }, parse_response: response_parser(svc.parse_http_payload_traits_response))
 }
 
 fn http_payload_traits_with_media_type_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpPayloadTraitsWithMediaType",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpPayloadTraitsWithMediaType", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -487,17 +395,11 @@ fn http_payload_traits_with_media_type_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_http_payload_traits_with_media_type_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_http_payload_traits_with_media_type_response))
 }
 
 fn http_payload_with_member_xml_name_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpPayloadWithMemberXmlName",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpPayloadWithMemberXmlName", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -510,17 +412,11 @@ fn http_payload_with_member_xml_name_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_http_payload_with_member_xml_name_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_http_payload_with_member_xml_name_response))
 }
 
 fn http_payload_with_structure_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpPayloadWithStructure",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpPayloadWithStructure", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -533,17 +429,11 @@ fn http_payload_with_structure_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_http_payload_with_structure_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_http_payload_with_structure_response))
 }
 
 fn http_payload_with_union_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpPayloadWithUnion",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpPayloadWithUnion", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -556,15 +446,11 @@ fn http_payload_with_union_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_http_payload_with_union_response),
-  )
+    }, parse_response: response_parser(svc.parse_http_payload_with_union_response))
 }
 
 fn http_payload_with_xml_name_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpPayloadWithXmlName",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpPayloadWithXmlName", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -577,17 +463,11 @@ fn http_payload_with_xml_name_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_http_payload_with_xml_name_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_http_payload_with_xml_name_response))
 }
 
 fn http_payload_with_xml_namespace_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpPayloadWithXmlNamespace",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpPayloadWithXmlNamespace", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -600,17 +480,11 @@ fn http_payload_with_xml_namespace_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_http_payload_with_xml_namespace_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_http_payload_with_xml_namespace_response))
 }
 
 fn http_payload_with_xml_namespace_and_prefix_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpPayloadWithXmlNamespaceAndPrefix",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpPayloadWithXmlNamespaceAndPrefix", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -623,17 +497,11 @@ fn http_payload_with_xml_namespace_and_prefix_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_http_payload_with_xml_namespace_and_prefix_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_http_payload_with_xml_namespace_and_prefix_response))
 }
 
 fn http_prefix_headers_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpPrefixHeaders",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpPrefixHeaders", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -646,15 +514,11 @@ fn http_prefix_headers_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_http_prefix_headers_response),
-  )
+    }, parse_response: response_parser(svc.parse_http_prefix_headers_response))
 }
 
 fn http_request_with_float_labels_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpRequestWithFloatLabels",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpRequestWithFloatLabels", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -667,17 +531,11 @@ fn http_request_with_float_labels_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_http_request_with_float_labels_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_http_request_with_float_labels_response))
 }
 
 fn http_request_with_greedy_label_in_path_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpRequestWithGreedyLabelInPath",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpRequestWithGreedyLabelInPath", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -690,17 +548,11 @@ fn http_request_with_greedy_label_in_path_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_http_request_with_greedy_label_in_path_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_http_request_with_greedy_label_in_path_response))
 }
 
 fn http_request_with_labels_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpRequestWithLabels",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpRequestWithLabels", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -713,15 +565,11 @@ fn http_request_with_labels_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_http_request_with_labels_response),
-  )
+    }, parse_response: response_parser(svc.parse_http_request_with_labels_response))
 }
 
 fn http_request_with_labels_and_timestamp_format_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpRequestWithLabelsAndTimestampFormat",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpRequestWithLabelsAndTimestampFormat", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -729,24 +577,16 @@ fn http_request_with_labels_and_timestamp_format_dispatcher() -> Dispatcher {
       case svc.decode_http_request_with_labels_and_timestamp_format_input(raw) {
         Ok(input) -> {
           let #(method, uri, headers, body) =
-            svc.build_http_request_with_labels_and_timestamp_format_request(
-              input,
-            )
+            svc.build_http_request_with_labels_and_timestamp_format_request(input)
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_http_request_with_labels_and_timestamp_format_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_http_request_with_labels_and_timestamp_format_response))
 }
 
 fn http_response_code_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpResponseCode",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpResponseCode", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -759,15 +599,11 @@ fn http_response_code_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_http_response_code_response),
-  )
+    }, parse_response: response_parser(svc.parse_http_response_code_response))
 }
 
 fn http_string_payload_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#HttpStringPayload",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#HttpStringPayload", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -780,15 +616,11 @@ fn http_string_payload_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_http_string_payload_response),
-  )
+    }, parse_response: response_parser(svc.parse_http_string_payload_response))
 }
 
 fn ignore_query_params_in_response_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#IgnoreQueryParamsInResponse",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#IgnoreQueryParamsInResponse", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -801,17 +633,11 @@ fn ignore_query_params_in_response_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_ignore_query_params_in_response_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_ignore_query_params_in_response_response))
 }
 
 fn input_and_output_with_headers_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#InputAndOutputWithHeaders",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#InputAndOutputWithHeaders", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -824,17 +650,11 @@ fn input_and_output_with_headers_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_input_and_output_with_headers_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_input_and_output_with_headers_response))
 }
 
 fn nested_xml_maps_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#NestedXmlMaps",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#NestedXmlMaps", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -847,15 +667,11 @@ fn nested_xml_maps_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_nested_xml_maps_response),
-  )
+    }, parse_response: response_parser(svc.parse_nested_xml_maps_response))
 }
 
 fn nested_xml_map_with_xml_name_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#NestedXmlMapWithXmlName",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#NestedXmlMapWithXmlName", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -868,17 +684,11 @@ fn nested_xml_map_with_xml_name_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_nested_xml_map_with_xml_name_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_nested_xml_map_with_xml_name_response))
 }
 
 fn no_input_and_no_output_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#NoInputAndNoOutput",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#NoInputAndNoOutput", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -891,15 +701,11 @@ fn no_input_and_no_output_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_no_input_and_no_output_response),
-  )
+    }, parse_response: response_parser(svc.parse_no_input_and_no_output_response))
 }
 
 fn no_input_and_output_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#NoInputAndOutput",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#NoInputAndOutput", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -912,15 +718,11 @@ fn no_input_and_output_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_no_input_and_output_response),
-  )
+    }, parse_response: response_parser(svc.parse_no_input_and_output_response))
 }
 
 fn null_and_empty_headers_client_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#NullAndEmptyHeadersClient",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#NullAndEmptyHeadersClient", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -933,17 +735,11 @@ fn null_and_empty_headers_client_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_null_and_empty_headers_client_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_null_and_empty_headers_client_response))
 }
 
 fn null_and_empty_headers_server_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#NullAndEmptyHeadersServer",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#NullAndEmptyHeadersServer", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -956,17 +752,11 @@ fn null_and_empty_headers_server_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_null_and_empty_headers_server_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_null_and_empty_headers_server_response))
 }
 
 fn omits_null_serializes_empty_string_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#OmitsNullSerializesEmptyString",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#OmitsNullSerializesEmptyString", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -979,17 +769,11 @@ fn omits_null_serializes_empty_string_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_omits_null_serializes_empty_string_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_omits_null_serializes_empty_string_response))
 }
 
 fn put_with_content_encoding_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#PutWithContentEncoding",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#PutWithContentEncoding", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1002,17 +786,11 @@ fn put_with_content_encoding_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_put_with_content_encoding_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_put_with_content_encoding_response))
 }
 
 fn query_idempotency_token_auto_fill_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#QueryIdempotencyTokenAutoFill",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#QueryIdempotencyTokenAutoFill", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1025,17 +803,11 @@ fn query_idempotency_token_auto_fill_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_query_idempotency_token_auto_fill_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_query_idempotency_token_auto_fill_response))
 }
 
 fn query_params_as_string_list_map_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#QueryParamsAsStringListMap",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#QueryParamsAsStringListMap", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1048,17 +820,11 @@ fn query_params_as_string_list_map_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_query_params_as_string_list_map_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_query_params_as_string_list_map_response))
 }
 
 fn query_precedence_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#QueryPrecedence",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#QueryPrecedence", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1071,15 +837,11 @@ fn query_precedence_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_query_precedence_response),
-  )
+    }, parse_response: response_parser(svc.parse_query_precedence_response))
 }
 
 fn recursive_shapes_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#RecursiveShapes",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#RecursiveShapes", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1092,15 +854,11 @@ fn recursive_shapes_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_recursive_shapes_response),
-  )
+    }, parse_response: response_parser(svc.parse_recursive_shapes_response))
 }
 
 fn simple_scalar_properties_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#SimpleScalarProperties",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#SimpleScalarProperties", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1113,15 +871,11 @@ fn simple_scalar_properties_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_simple_scalar_properties_response),
-  )
+    }, parse_response: response_parser(svc.parse_simple_scalar_properties_response))
 }
 
 fn timestamp_format_headers_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#TimestampFormatHeaders",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#TimestampFormatHeaders", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1134,15 +888,11 @@ fn timestamp_format_headers_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_timestamp_format_headers_response),
-  )
+    }, parse_response: response_parser(svc.parse_timestamp_format_headers_response))
 }
 
 fn xml_attributes_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlAttributes",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlAttributes", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1155,15 +905,11 @@ fn xml_attributes_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_attributes_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_attributes_response))
 }
 
 fn xml_attributes_in_middle_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlAttributesInMiddle",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlAttributesInMiddle", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1176,15 +922,11 @@ fn xml_attributes_in_middle_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_attributes_in_middle_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_attributes_in_middle_response))
 }
 
 fn xml_attributes_on_payload_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlAttributesOnPayload",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlAttributesOnPayload", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1197,37 +939,28 @@ fn xml_attributes_on_payload_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_xml_attributes_on_payload_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_xml_attributes_on_payload_response))
 }
 
 fn xml_blobs_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlBlobs",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlBlobs", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
       }
       case svc.decode_xml_blobs_input(raw) {
         Ok(input) -> {
-          let #(method, uri, headers, body) = svc.build_xml_blobs_request(input)
+          let #(method, uri, headers, body) =
+            svc.build_xml_blobs_request(input)
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_blobs_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_blobs_response))
 }
 
 fn xml_empty_blobs_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlEmptyBlobs",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlEmptyBlobs", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1240,15 +973,11 @@ fn xml_empty_blobs_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_empty_blobs_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_empty_blobs_response))
 }
 
 fn xml_empty_lists_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlEmptyLists",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlEmptyLists", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1261,15 +990,11 @@ fn xml_empty_lists_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_empty_lists_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_empty_lists_response))
 }
 
 fn xml_empty_maps_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlEmptyMaps",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlEmptyMaps", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1282,15 +1007,11 @@ fn xml_empty_maps_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_empty_maps_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_empty_maps_response))
 }
 
 fn xml_empty_strings_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlEmptyStrings",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlEmptyStrings", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1303,35 +1024,28 @@ fn xml_empty_strings_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_empty_strings_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_empty_strings_response))
 }
 
 fn xml_enums_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlEnums",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlEnums", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
       }
       case svc.decode_xml_enums_input(raw) {
         Ok(input) -> {
-          let #(method, uri, headers, body) = svc.build_xml_enums_request(input)
+          let #(method, uri, headers, body) =
+            svc.build_xml_enums_request(input)
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_enums_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_enums_response))
 }
 
 fn xml_int_enums_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlIntEnums",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlIntEnums", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1344,55 +1058,45 @@ fn xml_int_enums_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_int_enums_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_int_enums_response))
 }
 
 fn xml_lists_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlLists",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlLists", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
       }
       case svc.decode_xml_lists_input(raw) {
         Ok(input) -> {
-          let #(method, uri, headers, body) = svc.build_xml_lists_request(input)
+          let #(method, uri, headers, body) =
+            svc.build_xml_lists_request(input)
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_lists_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_lists_response))
 }
 
 fn xml_maps_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlMaps",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlMaps", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
       }
       case svc.decode_xml_maps_input(raw) {
         Ok(input) -> {
-          let #(method, uri, headers, body) = svc.build_xml_maps_request(input)
+          let #(method, uri, headers, body) =
+            svc.build_xml_maps_request(input)
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_maps_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_maps_response))
 }
 
 fn xml_maps_xml_name_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlMapsXmlName",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlMapsXmlName", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1405,15 +1109,11 @@ fn xml_maps_xml_name_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_maps_xml_name_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_maps_xml_name_response))
 }
 
 fn xml_map_with_xml_namespace_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlMapWithXmlNamespace",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlMapWithXmlNamespace", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1426,17 +1126,11 @@ fn xml_map_with_xml_namespace_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(
-      svc.parse_xml_map_with_xml_namespace_response,
-    ),
-  )
+    }, parse_response: response_parser(svc.parse_xml_map_with_xml_namespace_response))
 }
 
 fn xml_namespaces_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlNamespaces",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlNamespaces", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1449,15 +1143,11 @@ fn xml_namespaces_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_namespaces_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_namespaces_response))
 }
 
 fn xml_timestamps_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlTimestamps",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlTimestamps", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1470,15 +1160,11 @@ fn xml_timestamps_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_timestamps_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_timestamps_response))
 }
 
 fn xml_unions_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlUnions",
-    build_request: fn(params) {
+  Dispatcher(operation_id: "aws.protocoltests.restxml#XmlUnions", build_request: fn(params) {
       let raw = case params {
         "" -> "{}"
         other -> other
@@ -1491,18 +1177,13 @@ fn xml_unions_dispatcher() -> Dispatcher {
         }
         Error(reason) -> Error(reason)
       }
-    },
-    parse_response: response_parser(svc.parse_xml_unions_response),
-  )
+    }, parse_response: response_parser(svc.parse_xml_unions_response))
 }
-
-fn response_parser(
-  parser: fn(Int, _, BitArray) -> Result(_, String),
-) -> fn(ParsedResponseInput) -> Result(dispatch.ParsedResponse, String) {
+fn response_parser(parser: fn(Int, _, BitArray) -> Result(_, String)) -> fn(ParsedResponseInput) -> Result(dispatch.ParsedResponse, String) {
   fn(input: ParsedResponseInput) {
-    case parser(input.code, input.headers, input.body) {
-      Ok(_) -> Ok(ParsedOutput(json: "{}"))
-      Error(e) -> Error(e)
+      case parser(input.code, input.headers, input.body) {
+        Ok(_) -> Ok(ParsedOutput(json: "{}"))
+        Error(e) -> Error(e)
+      }
     }
-  }
 }

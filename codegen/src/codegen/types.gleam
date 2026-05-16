@@ -156,6 +156,11 @@ pub type MemberDef {
     /// repeated `<member_name><key>K</key><value>V</value></member
     /// _name>` siblings.
     xml_flattened: Bool,
+    /// `@xmlAttribute` — the member becomes an XML attribute on the
+    /// parent element rather than a child element. Smithy restricts
+    /// this to scalar members; the wire form uses `@xmlName` (or
+    /// the Smithy member name) as the attribute name.
+    xml_attribute: Bool,
   )
 }
 
@@ -669,6 +674,8 @@ fn extract_members(
       dict.has_key(mem.traits, ShapeId("smithy.api#idempotencyToken"))
     let xml_flattened =
       dict.has_key(mem.traits, ShapeId("smithy.api#xmlFlattened"))
+    let xml_attribute =
+      dict.has_key(mem.traits, ShapeId("smithy.api#xmlAttribute"))
     MemberDef(
       json_name: wire_name,
       snake_name: stringutils.pascal_to_snake(name),
@@ -681,6 +688,7 @@ fn extract_members(
       default_json: default_json,
       idempotency_token: idempotency_token,
       xml_flattened: xml_flattened,
+      xml_attribute: xml_attribute,
     )
   })
 }

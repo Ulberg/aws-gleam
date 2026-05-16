@@ -118,15 +118,24 @@ pub fn map_element(
   value_name: String,
   entries: Dict(String, String),
 ) -> String {
-  let inner =
-    dict.fold(entries, "", fn(acc, k, v) {
-      acc
-      <> element(
-        "entry",
-        element(key_name, escape_text(k)) <> element(value_name, v),
-      )
-    })
-  element(wrapper, inner)
+  element(wrapper, map_entries(key_name, value_name, entries))
+}
+
+/// Just the `<entry>...</entry>` siblings of a map, no wrapper.
+/// Used for nested maps — the outer map's `<value>` element wraps
+/// the inner map's entries directly.
+pub fn map_entries(
+  key_name: String,
+  value_name: String,
+  entries: Dict(String, String),
+) -> String {
+  dict.fold(entries, "", fn(acc, k, v) {
+    acc
+    <> element(
+      "entry",
+      element(key_name, escape_text(k)) <> element(value_name, v),
+    )
+  })
 }
 
 /// `@xmlFlattened` map: each entry becomes a top-level
