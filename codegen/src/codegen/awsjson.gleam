@@ -108,7 +108,20 @@ pub fn emit_service(
 
       let named_shapes = collect_named_shapes(model, resolved_ops)
       let is_dispatcher = is_dispatcher_target(service_id)
-      let preamble = emit_named_shapes(model, named_shapes, is_dispatcher)
+      let encoder_reachable = case is_dispatcher {
+        // Dispatcher targets emit every encoder (they get
+        // round-tripped). Production services emit encoders only
+        // for input-reachable shapes — see Pass 3a in plan.md.
+        True -> set.new()
+        False -> input_reachable_structs(model, resolved_ops)
+      }
+      let preamble =
+        emit_named_shapes(
+          model,
+          named_shapes,
+          is_dispatcher,
+          encoder_reachable,
+        )
 
       let op_specs =
         list.map(resolved_ops, fn(t) {
@@ -344,10 +357,54 @@ fn remember(
   }
 }
 
+/// Set of struct local-names whose JSON encoder is wire-reachable.
+/// awsJson encodes every input on the wire, so we walk transitively
+/// from each operation's input shape. Outputs are decode-only — a
+/// shape used solely as an output (or its transitive members) has
+/// no encoder caller in production. Always-on for dispatcher
+/// targets, since the dispatcher round-trips through encoders too.
+fn input_reachable_structs(
+  model: Model,
+  resolved_ops: List(#(String, Resolved, Resolved, List(String))),
+) -> Set(String) {
+  list.fold(resolved_ops, set.new(), fn(acc, t) {
+    let #(_, in_r, _, _) = t
+    walk_for_structs(model, acc, in_r)
+  })
+}
+
+fn walk_for_structs(
+  model: Model,
+  acc: Set(String),
+  r: Resolved,
+) -> Set(String) {
+  case r {
+    RStruct(local_name: name, full_id: id, ..) ->
+      case set.contains(acc, name) {
+        True -> acc
+        False -> {
+          let acc = set.insert(acc, name)
+          let members = types.resolve_members(model, id)
+          list.fold(members, acc, fn(a, m) {
+            walk_for_structs(model, a, m.target)
+          })
+        }
+      }
+    RUnion(full_id: id, ..) -> {
+      let members = types.resolve_members(model, id)
+      list.fold(members, acc, fn(a, m) { walk_for_structs(model, a, m.target) })
+    }
+    RList(element: e, ..) -> walk_for_structs(model, acc, e)
+    RMap(value: v, ..) -> walk_for_structs(model, acc, v)
+    _ -> acc
+  }
+}
+
 fn emit_named_shapes(
   model: Model,
   shapes: List(Resolved),
   is_dispatcher: Bool,
+  encoder_reachable: Set(String),
 ) -> String {
   list.fold(shapes, "", fn(acc, r) {
     case r {
@@ -362,9 +419,11 @@ fn emit_named_shapes(
           True -> acc
           False -> {
             let ms = types.resolve_members(model, id)
+            let emit_encoder =
+              is_dispatcher || set.contains(encoder_reachable, ln)
             acc
             <> emit_record_def(n, ms)
-            <> emit_struct_codec(n, ms, is_dispatcher)
+            <> emit_struct_codec(n, ms, is_dispatcher, emit_encoder)
           }
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
@@ -762,29 +821,35 @@ fn emit_struct_codec(
   name: String,
   members: List(MemberDef),
   is_dispatcher: Bool,
+  emit_encoder: Bool,
 ) -> String {
   let snake = stringutils.pascal_to_snake(name)
   // awsJson1_x ignores `@jsonName` per the Smithy protocol spec, so
-  // every codec keys by the Smithy member name. Wire-live:
-  //   * `_struct`     — nested encoder + response decoder, populates
-  //                       `@default`
-  //   * `_struct_top` — operation-input encoder; skips defaults
-  // Dispatcher-only (member-keyed parallel decoder): `_struct_params`.
+  // every codec keys by the Smithy member name. The decoder is
+  // always wire-live (response parsing). The encoder pair is gated
+  // on `emit_encoder` — production services skip encoders for
+  // shapes that aren't reachable from any operation INPUT, since
+  // those shapes only ever appear as outputs.
+  let encoders = case emit_encoder {
+    True -> [
+      struct_codec.encoder(
+        "encode_" <> snake <> "_struct",
+        name,
+        members,
+        False,
+        True,
+      ),
+      struct_codec.encoder(
+        "encode_" <> snake <> "_struct_top",
+        name,
+        members,
+        True,
+        True,
+      ),
+    ]
+    False -> []
+  }
   let always = [
-    struct_codec.encoder(
-      "encode_" <> snake <> "_struct",
-      name,
-      members,
-      False,
-      True,
-    ),
-    struct_codec.encoder(
-      "encode_" <> snake <> "_struct_top",
-      name,
-      members,
-      True,
-      True,
-    ),
     struct_codec.decoder(
       "decode_" <> snake <> "_struct",
       name,
@@ -805,7 +870,9 @@ fn emit_struct_codec(
     ]
     False -> []
   }
-  list.append(always, conditional)
+  encoders
+  |> list.append(always)
+  |> list.append(conditional)
   |> list.map(code.render)
   |> list.fold("", fn(acc, s) { acc <> s <> "\n" })
 }

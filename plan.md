@@ -182,6 +182,58 @@ Independent cleanups. Each one PR.
 3. **Drop unused `input` params** on empty-input XML encoders (`encode_X_xml_inner(input: ...)` warning).
 4. **Drop the JSON struct codecs from the restxml emitter.** Header comment in `codegen/src/codegen/restxml.gleam` self-flags them as dead.
 
+## Pass 7 — kill remaining string concats in the emitter (final pass)
+
+After all the architecture-level changes land (passes 1–6), the
+emitter still leans on `"..." <> "..."` string templating in many
+places — XML codec emission, error-translator helpers, payload
+body setup, query / header / label routing, file headers (before
+pass 5.2 lifted those to `code.Module`). Mixed AST + string output
+is the worst of both worlds: the AST nodes silently lose context
+inside `code.Raw`, and the surrounding `<>` chains keep us one
+typo away from invalid Gleam.
+
+Goal: every emitter writes a `code.Code` tree end-to-end. `code.
+Raw` survives as the escape hatch but is reserved for fragments
+the AST genuinely doesn't model (e.g. user-supplied default
+expressions parsed straight from the Smithy `@default` trait).
+
+Inventory of remaining string-concat call sites (grep
+`"\\n.*<>"` over `codegen/src/codegen`):
+
+- `codegen/src/codegen/restxml.gleam` — `emit_struct_xml_inner_
+  encoder`, `emit_struct_xml_decoder`, `emit_struct_xml_encoder`,
+  `xml_value_expr`, `xml_value_decoder_expr`, `emit_payload_body`,
+  `value_to_string_with_format`, the wireform helpers, the error-
+  translator body, plus `emit_build`'s URI / query / header setup.
+
+- `codegen/src/codegen/restjson.gleam` — `emit_build`,
+  `emit_payload_body`, `value_to_string_with_format`, the error-
+  translator body. Mirrors restxml.
+
+- `codegen/src/codegen/awsjson.gleam` — `emit_build`, `emit_parse`,
+  `emit_error_translator`, `emit_invoke`. Smaller surface because
+  there's no XML or REST binding routing.
+
+- `codegen/src/codegen/types.gleam` — `json_encoder*`,
+  `json_decoder*` produce inline expression strings used both by
+  the struct codec AST and the XML / REST emitters. Lifting these
+  to `Code` nodes is the biggest win — they're the source of most
+  `code.Raw(fragment: ...)` calls in `struct_codec.gleam` today.
+
+- `codegen/src/codegen/dispatcher.gleam` — already strings, but
+  short enough that wrapping the doc + register-chain in a
+  `code.Module` is a five-minute change.
+
+Approach: one PR per emitter (restxml has the biggest surface, do
+it first), each PR is "produce the same byte output, but via the
+AST." Verify by `diff`ing the regenerated services before and
+after.
+
+After this pass, `grep -rn '"\\\\n' codegen/src/codegen` should
+hit ~zero matches outside `code.gleam`'s renderer internals and
+the documented `Raw` escape hatches.
+
 ## Pass 6 — close the 62 restXml codec gaps
 
 Real parity work. Not LOC reduction.
@@ -212,9 +264,11 @@ Pass 3 (per-op LOC)                — standalone; reads better after Pass 5.1 r
 Pass 4 (emitter dedup)             — standalone
 Pass 5 (small wins)                — standalone
 Pass 6 (restXml codec gaps)        — standalone; benefits from pass 4 dedup
+Pass 7 (kill string concats)       — last; needs the arch passes settled so the
+                                     remaining concats are stable refactor targets
 ```
 
-Suggested order: 1 → 2 → 5.1 (rename) → 3 → 4 → 5.2–4 → 6.
+Suggested order: 1 → 2 → 5.1 (rename) → 3 → 4 → 5.2–4 → 6 → 7.
 
 ## Non-goals
 
