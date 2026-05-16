@@ -30,23 +30,30 @@ def main():
         sys.exit(f"not found: {in_path}")
     text = in_path.read_text()
 
-    # All build_<snake>_request fns in emission order.
-    snakes = re.findall(r'pub fn build_(\w+)_request\b', text)
-    # All Input type names in the same order; their Pascal stem matches snake.
-    inputs = re.findall(r'pub type (\w+Input) \{', text)
-    if len(snakes) != len(inputs):
-        sys.exit(f"mismatch: {len(snakes)} build fns vs {len(inputs)} Input types")
+    # Pair each `build_<snake>_request` with the Input type it takes —
+    # this is the only reliable mapping, since the emitter also produces
+    # named Input types in the preamble for nested model shapes and
+    # those interleave with per-op synthesis in an unpredictable order.
+    build_re = re.compile(
+        r'pub fn build_(\w+)_request\(\s*(?:_input|input):\s*(\w+),',
+        re.M,
+    )
+    pairs = build_re.findall(text)
+    if not pairs:
+        sys.exit(f"no build_*_request functions found in {in_path}")
 
     # Whether the module exposes decode_<snake>_input (typed input) or
     # only the singleton (empty input).
     typed_inputs = set(re.findall(r'pub fn decode_(\w+)_input\b', text))
 
     ops_data = []
-    for snake, input_type in zip(snakes, inputs):
-        pascal = input_type[:-5]  # strip "Input"
-        op_id = f"{args.namespace}#{pascal}"
+    for snake, input_type in pairs:
+        # The Smithy operation's local PascalCase name = the snake name
+        # we used to derive build_*_request. Convert snake → PascalCase.
+        op_pascal = ''.join(p.capitalize() for p in snake.split('_'))
+        op_id = f"{args.namespace}#{op_pascal}"
         has_decode = snake in typed_inputs
-        ops_data.append((snake, pascal, op_id, has_decode))
+        ops_data.append((snake, input_type, op_id, has_decode))
 
     out_path = ROOT / 'test' / 'protocol_tests' / f'{args.protocol}_dispatchers.gleam'
     lines = []
@@ -62,11 +69,11 @@ def main():
     lines.append('')
     lines.append('pub fn register_all(registry: Registry) -> Registry {')
     lines.append('  registry')
-    for snake, pascal, op_id, _has_decode in ops_data:
+    for snake, _input_type, _op_id, _has_decode in ops_data:
         lines.append(f'  |> dispatch.register({snake}_dispatcher())')
     lines.append('}')
     lines.append('')
-    for snake, pascal, op_id, has_decode in ops_data:
+    for snake, input_type, op_id, has_decode in ops_data:
         lines.append(f'fn {snake}_dispatcher() -> Dispatcher {{')
         lines.append(f'  Dispatcher(')
         lines.append(f'    operation_id: "{op_id}",')
@@ -89,7 +96,7 @@ def main():
         else:
             lines.append(f'      let _ = params')
             lines.append(f'      let #(method, uri, headers, body) =')
-            lines.append(f'        svc.build_{snake}_request(svc.{pascal}Input)')
+            lines.append(f'        svc.build_{snake}_request(svc.{input_type})')
             lines.append(f'      Ok(BuiltRequest(method:, uri:, headers:, body:))')
         lines.append(f'    }},')
         lines.append(f'    parse_response: response_parser(svc.parse_{snake}_response),')

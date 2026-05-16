@@ -10,14 +10,44 @@ import protocol_tests/dispatch.{
 
 pub fn register_all(registry: Registry) -> Registry {
   registry
+  |> dispatch.register(content_type_parameters_dispatcher())
   |> dispatch.register(empty_input_and_empty_output_dispatcher())
   |> dispatch.register(endpoint_operation_dispatcher())
+  |> dispatch.register(endpoint_with_host_label_operation_dispatcher())
   |> dispatch.register(greeting_with_errors_dispatcher())
   |> dispatch.register(host_with_path_operation_dispatcher())
+  |> dispatch.register(json_unions_dispatcher())
   |> dispatch.register(no_input_and_no_output_dispatcher())
   |> dispatch.register(no_input_and_output_dispatcher())
+  |> dispatch.register(operation_with_defaults_dispatcher())
+  |> dispatch.register(operation_with_nested_structure_dispatcher())
+  |> dispatch.register(operation_with_required_members_dispatcher())
+  |> dispatch.register(
+    operation_with_required_members_with_defaults_dispatcher(),
+  )
   |> dispatch.register(query_incompatible_operation_dispatcher())
   |> dispatch.register(simple_scalar_properties_dispatcher())
+}
+
+fn content_type_parameters_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#ContentTypeParameters",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_content_type_parameters_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_content_type_parameters_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_content_type_parameters_response),
+  )
 }
 
 fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
@@ -64,6 +94,29 @@ fn endpoint_operation_dispatcher() -> Dispatcher {
   )
 }
 
+fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#EndpointWithHostLabelOperation",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_endpoint_with_host_label_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_endpoint_with_host_label_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_endpoint_with_host_label_operation_response,
+    ),
+  )
+}
+
 fn greeting_with_errors_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.json10#GreetingWithErrors",
@@ -106,6 +159,27 @@ fn host_with_path_operation_dispatcher() -> Dispatcher {
   )
 }
 
+fn json_unions_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#JsonUnions",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_json_unions_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_json_unions_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_json_unions_response),
+  )
+}
+
 fn no_input_and_no_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.json10#NoInputAndNoOutput",
@@ -145,6 +219,98 @@ fn no_input_and_output_dispatcher() -> Dispatcher {
       }
     },
     parse_response: response_parser(svc.parse_no_input_and_output_response),
+  )
+}
+
+fn operation_with_defaults_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#OperationWithDefaults",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_operation_with_defaults_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_operation_with_defaults_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_operation_with_defaults_response),
+  )
+}
+
+fn operation_with_nested_structure_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#OperationWithNestedStructure",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_operation_with_nested_structure_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_operation_with_nested_structure_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_operation_with_nested_structure_response,
+    ),
+  )
+}
+
+fn operation_with_required_members_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#OperationWithRequiredMembers",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_operation_with_required_members_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_operation_with_required_members_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_operation_with_required_members_response,
+    ),
+  )
+}
+
+fn operation_with_required_members_with_defaults_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#OperationWithRequiredMembersWithDefaults",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_operation_with_required_members_with_defaults_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_operation_with_required_members_with_defaults_request(
+              input,
+            )
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_operation_with_required_members_with_defaults_response,
+    ),
   )
 }
 

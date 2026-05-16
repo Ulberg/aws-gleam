@@ -10,12 +10,65 @@ import protocol_tests/dispatch.{
 
 pub fn register_all(registry: Registry) -> Registry {
   registry
+  |> dispatch.register(content_type_parameters_dispatcher())
+  |> dispatch.register(datetime_offsets_dispatcher())
   |> dispatch.register(empty_operation_dispatcher())
   |> dispatch.register(endpoint_operation_dispatcher())
+  |> dispatch.register(endpoint_with_host_label_operation_dispatcher())
+  |> dispatch.register(fractional_seconds_dispatcher())
+  |> dispatch.register(greeting_with_errors_dispatcher())
   |> dispatch.register(host_with_path_operation_dispatcher())
+  |> dispatch.register(json_enums_dispatcher())
+  |> dispatch.register(json_int_enums_dispatcher())
+  |> dispatch.register(json_unions_dispatcher())
+  |> dispatch.register(kitchen_sink_operation_dispatcher())
   |> dispatch.register(null_operation_dispatcher())
   |> dispatch.register(operation_with_optional_input_output_dispatcher())
+  |> dispatch.register(put_and_get_inline_documents_dispatcher())
   |> dispatch.register(simple_scalar_properties_dispatcher())
+  |> dispatch.register(sparse_nulls_operation_dispatcher())
+}
+
+fn content_type_parameters_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#ContentTypeParameters",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_content_type_parameters_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_content_type_parameters_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_content_type_parameters_response),
+  )
+}
+
+fn datetime_offsets_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#DatetimeOffsets",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_datetime_offsets_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_datetime_offsets_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_datetime_offsets_response),
+  )
 }
 
 fn empty_operation_dispatcher() -> Dispatcher {
@@ -60,6 +113,71 @@ fn endpoint_operation_dispatcher() -> Dispatcher {
   )
 }
 
+fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#EndpointWithHostLabelOperation",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_endpoint_with_host_label_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_endpoint_with_host_label_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_endpoint_with_host_label_operation_response,
+    ),
+  )
+}
+
+fn fractional_seconds_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#FractionalSeconds",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_fractional_seconds_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_fractional_seconds_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_fractional_seconds_response),
+  )
+}
+
+fn greeting_with_errors_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#GreetingWithErrors",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_greeting_with_errors_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_greeting_with_errors_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_greeting_with_errors_response),
+  )
+}
+
 fn host_with_path_operation_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.json#HostWithPathOperation",
@@ -78,6 +196,90 @@ fn host_with_path_operation_dispatcher() -> Dispatcher {
       }
     },
     parse_response: response_parser(svc.parse_host_with_path_operation_response),
+  )
+}
+
+fn json_enums_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#JsonEnums",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_json_enums_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_json_enums_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_json_enums_response),
+  )
+}
+
+fn json_int_enums_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#JsonIntEnums",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_json_int_enums_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_json_int_enums_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_json_int_enums_response),
+  )
+}
+
+fn json_unions_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#JsonUnions",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_json_unions_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_json_unions_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_json_unions_response),
+  )
+}
+
+fn kitchen_sink_operation_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#KitchenSinkOperation",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_kitchen_sink_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_kitchen_sink_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_kitchen_sink_operation_response),
   )
 }
 
@@ -125,6 +327,29 @@ fn operation_with_optional_input_output_dispatcher() -> Dispatcher {
   )
 }
 
+fn put_and_get_inline_documents_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#PutAndGetInlineDocuments",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_put_and_get_inline_documents_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_put_and_get_inline_documents_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_put_and_get_inline_documents_response,
+    ),
+  )
+}
+
 fn simple_scalar_properties_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.json#SimpleScalarProperties",
@@ -143,6 +368,27 @@ fn simple_scalar_properties_dispatcher() -> Dispatcher {
       }
     },
     parse_response: response_parser(svc.parse_simple_scalar_properties_response),
+  )
+}
+
+fn sparse_nulls_operation_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#SparseNullsOperation",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_sparse_nulls_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_sparse_nulls_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_sparse_nulls_operation_response),
   )
 }
 

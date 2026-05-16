@@ -1,21 +1,26 @@
 //// Code emitter for awsJson1_0 and awsJson1_1.
 ////
-//// Walks a parsed `smithy.Model` and emits one Gleam module per
-//// service. Per operation:
+//// Walks a parsed `smithy.Model`, collects the transitive closure of
+//// shapes referenced from each operation's input + output, then emits:
 ////
-////   * If input and output are both unit (or empty structure), emit
-////     singleton input/output records and a body of `{}`.
-////   * If input or output is a structure of supported primitives
-////     (`String`/`Int`/`Float`/`Bool`), emit typed records with
-////     `Option(T)` fields and JSON encoder + decoder helpers.
-////   * Otherwise skip the operation. The protocol-test runner will
-////     report it as `skip_no_dispatcher` until further shape kinds
-////     (list, map, enum, union, structure, timestamp, blob, document)
-////     land.
+////   * One named-type definition (record / variant) per unique
+////     structure / enum / union it encounters.
+////   * Per-type JSON encoder + decoder helpers.
+////   * Per-operation `<Op>Input` / `<Op>Output` records, an encoder
+////     (input → JSON String), a decoder (JSON String → typed output),
+////     and the `build_<op>_request` / `parse_<op>_response` pair.
+////
+//// Operations whose input or output transitively references an
+//// `Unsupported` shape are skipped at the emitter level — they land in
+//// the protocol-test runner's `skip_no_dispatcher` bucket rather than
+//// producing broken Gleam.
 
-import codegen/types
-import gleam/dict.{type Dict}
+import codegen/types.{
+  type MemberDef, type Resolved, REnum, RIntEnum, RList, RMap, RStruct, RUnion,
+}
+import gleam/dict
 import gleam/list
+import gleam/set.{type Set}
 import gleam/string
 import internal/stringutils
 import smithy/model.{type Model}
@@ -51,345 +56,601 @@ pub fn emit_service(
     Error(_) -> Error("service not found: " <> service_id)
     Ok(shape.Service(operations: refs, ..)) -> {
       let service_target = strip_namespace(service_id)
-      let header = file_header(service_id, protocol)
-      let ops_with_shapes =
+      // Walk each operation's input / output; keep only ops whose
+      // shapes resolve cleanly (no Unsupported anywhere).
+      let resolved_ops =
         list.filter_map(refs, fn(ref) {
           let ShapeId(target) = ref.target
           case model.lookup(model, target) {
-            Ok(shape.Operation(input: in_ref, output: out_ref, ..)) ->
-              Ok(#(target, in_ref, out_ref))
+            Ok(shape.Operation(input: in_ref, output: out_ref, traits: ts, ..)) ->
+              case op_uses_unsupported_trait(ts) {
+                True -> Error(Nil)
+                False -> {
+                  let ShapeId(in_id) = in_ref.target
+                  let ShapeId(out_id) = out_ref.target
+                  let in_r = resolve_or_unit(model, in_id)
+                  let out_r = resolve_or_unit(model, out_id)
+                  case types.is_supported(in_r), types.is_supported(out_r) {
+                    True, True -> Ok(#(target, in_r, out_r))
+                    _, _ -> Error(Nil)
+                  }
+                }
+              }
             _ -> Error(Nil)
           }
         })
-      let emitted_ops =
-        list.filter_map(ops_with_shapes, fn(t) {
-          let #(op_id, in_ref, out_ref) = t
-          emit_operation(
-            model,
-            op_id,
-            in_ref,
-            out_ref,
-            service_target,
-            protocol,
-          )
+
+      // Collect the transitive set of named shapes referenced.
+      let named_shapes = collect_named_shapes(model, resolved_ops)
+      let preamble = emit_named_shapes(model, named_shapes)
+
+      let op_blocks =
+        list.map(resolved_ops, fn(t) {
+          let #(op_id, in_r, out_r) = t
+          emit_operation(model, op_id, service_target, protocol, in_r, out_r)
         })
-      let module_name = derive_module_name(service_id)
       let body =
-        header
+        file_header(service_id, protocol)
         <> "\n"
-        <> list.fold(emitted_ops, "", fn(acc, e) { acc <> e.code })
+        <> preamble
+        <> list.fold(op_blocks, "", fn(acc, code) { acc <> code })
       Ok(EmitResult(
-        module_name: module_name,
+        module_name: derive_module_name(service_id),
         source: body,
-        operations_emitted: list.map(emitted_ops, fn(e) { e.operation_id }),
+        operations_emitted: list.map(resolved_ops, fn(t) { t.0 }),
       ))
     }
     Ok(_) -> Error("not a service: " <> service_id)
   }
 }
 
-type EmittedOp {
-  EmittedOp(operation_id: String, code: String)
-}
-
-/// Pick the right per-op codegen path based on input/output shapes.
-fn emit_operation(
-  model: Model,
-  op_id: String,
-  in_ref: shape.Reference,
-  out_ref: shape.Reference,
-  service_target: String,
-  protocol: Protocol,
-) -> Result(EmittedOp, Nil) {
-  case classify(model, in_ref), classify(model, out_ref) {
-    Empty, Empty -> Ok(emit_op(op_id, service_target, protocol, [], []))
-    EmptyOrPrimitive(in_members), EmptyOrPrimitive(out_members) ->
-      Ok(emit_op(op_id, service_target, protocol, in_members, out_members))
-    _, _ -> Error(Nil)
-  }
-}
-
-type Classified {
-  Empty
-  EmptyOrPrimitive(members: List(MemberSpec))
-  Unsupported
-}
-
-type MemberSpec {
-  MemberSpec(json_name: String, snake_name: String, primitive: types.Primitive)
-}
-
-fn classify(model: Model, ref: shape.Reference) -> Classified {
-  let ShapeId(id) = ref.target
+fn resolve_or_unit(model: Model, id: String) -> Resolved {
+  // `smithy.api#Unit` at the operation input/output position means "no
+  // members"; we tag it as a synthetic struct with the sentinel
+  // `local_name: "Unit"` so the op emitter knows to synthesise a per-op
+  // empty record instead of referencing a non-existent shape.
   case id {
-    "smithy.api#Unit" -> Empty
-    _ ->
-      case model.lookup(model, id) {
-        Ok(shape.Structure(members: m, ..)) ->
-          case dict.size(m) {
-            0 -> Empty
-            _ ->
-              case types.all_members_primitive(model, m) {
-                False -> Unsupported
-                True -> EmptyOrPrimitive(members: extract_members(model, m))
-              }
-          }
-        _ -> Unsupported
-      }
+    "smithy.api#Unit" ->
+      RStruct(local_name: "Unit", gleam_name: "Unit", full_id: "smithy.api#Unit")
+    _ -> types.resolve(model, id)
   }
 }
 
-fn extract_members(
+// ---------- named-shape collection ----------
+
+/// Walk the shape graph starting from each operation's input + output,
+/// returning the list of unique named (struct / union / enum) shapes
+/// that need their own type + codec emitted in the preamble. Cycle
+/// detection via a seen-set keyed on the local Gleam name.
+fn collect_named_shapes(
   model: Model,
-  members: Dict(String, shape.Member),
-) -> List(MemberSpec) {
-  // Sort by JSON name so emission is stable across runs.
-  dict.to_list(members)
-  |> list.sort(fn(a, b) { string.compare(a.0, b.0) })
-  |> list.filter_map(fn(pair) {
-    let #(name, mem) = pair
-    let ShapeId(target) = mem.target
-    case types.resolve(model, target) {
-      types.Resolved(primitive: p) ->
-        Ok(MemberSpec(
-          json_name: name,
-          snake_name: stringutils.pascal_to_snake(name),
-          primitive: p,
-        ))
-      types.Unsupported(..) -> Error(Nil)
+  ops: List(#(String, Resolved, Resolved)),
+) -> List(Resolved) {
+  let init = #(set.new(), [])
+  let #(_seen, found) =
+    list.fold(ops, init, fn(acc, t) {
+      let #(_op_id, in_r, out_r) = t
+      let acc = walk(model, acc, in_r)
+      walk(model, acc, out_r)
+    })
+  list.reverse(found)
+}
+
+fn walk(
+  model: Model,
+  acc: #(Set(String), List(Resolved)),
+  r: Resolved,
+) -> #(Set(String), List(Resolved)) {
+  case r {
+    REnum(local_name: name, ..) | RIntEnum(local_name: name, ..) ->
+      remember(acc, name, r)
+    RStruct(local_name: name, full_id: id, ..)
+    | RUnion(local_name: name, full_id: id, ..) ->
+      case is_seen(acc, name) {
+        True -> acc
+        False -> {
+          // Mark BEFORE recursing — otherwise a cycle through the same
+          // shape loops forever.
+          let acc = remember(acc, name, r)
+          let members = types.resolve_members(model, id)
+          list.fold(members, acc, fn(a, m) { walk(model, a, m.target) })
+        }
+      }
+    RList(element: e) -> walk(model, acc, e)
+    RMap(key: k, value: v) -> {
+      let acc = walk(model, acc, k)
+      walk(model, acc, v)
+    }
+    _ -> acc
+  }
+}
+
+fn is_seen(acc: #(Set(String), List(Resolved)), name: String) -> Bool {
+  set.contains(acc.0, name)
+}
+
+fn remember(
+  acc: #(Set(String), List(Resolved)),
+  name: String,
+  r: Resolved,
+) -> #(Set(String), List(Resolved)) {
+  let #(seen, found) = acc
+  case set.contains(seen, name) {
+    True -> acc
+    False -> #(set.insert(seen, name), [r, ..found])
+  }
+}
+
+fn emit_named_shapes(model: Model, shapes: List(Resolved)) -> String {
+  list.fold(shapes, "", fn(acc, r) {
+    case r {
+      REnum(gleam_name: n, variants: vs, ..) ->
+        acc <> emit_enum_def(n, vs) <> emit_enum_codec(n, vs)
+      RIntEnum(gleam_name: n, variants: vs, ..) ->
+        acc <> emit_int_enum_def(n, vs) <> emit_int_enum_codec(n, vs)
+      RStruct(gleam_name: n, full_id: id, local_name: ln) ->
+        case ln == "Unit" {
+          // The synthetic Unit struct is per-operation, not a top-level
+          // named type — skip in the preamble.
+          True -> acc
+          False -> {
+            let ms = types.resolve_members(model, id)
+            acc <> emit_record_def(n, ms) <> emit_struct_codec(n, ms)
+          }
+        }
+      RUnion(gleam_name: n, full_id: id, ..) -> {
+        let ms = types.resolve_members(model, id)
+        acc <> emit_union_def(n, ms) <> emit_union_codec(n, ms)
+      }
+      _ -> acc
     }
   })
 }
 
-fn emit_op(
+// ---------- per-operation emission ----------
+
+fn emit_operation(
+  model: Model,
   op_id: String,
   service_target: String,
   protocol: Protocol,
-  in_members: List(MemberSpec),
-  out_members: List(MemberSpec),
-) -> EmittedOp {
+  in_r: Resolved,
+  out_r: Resolved,
+) -> String {
   let local_name = strip_namespace(op_id)
   let pascal = local_name
   let snake = stringutils.pascal_to_snake(local_name)
   let target_value = service_target <> "." <> local_name
   let ct = content_type(protocol)
-  let input_record = emit_record(pascal <> "Input", in_members)
-  let output_record = emit_record(pascal <> "Output", out_members)
-  let in_encoder = emit_encoder(pascal, snake, in_members)
-  let in_decoder =
-    emit_struct_decoder(
-      "decode_" <> snake <> "_input",
-      pascal <> "Input",
-      in_members,
-    )
-  let out_decoder =
-    emit_struct_decoder(
-      "decode_" <> snake <> "_output",
-      pascal <> "Output",
-      out_members,
-    )
-  let build = emit_build(pascal, snake, target_value, ct, in_members)
-  let parse = emit_parse(pascal, snake, out_members)
-  let code =
-    "\n"
-    <> input_record
-    <> output_record
-    <> in_encoder
-    <> in_decoder
-    <> out_decoder
-    <> build
-    <> parse
-  EmittedOp(operation_id: op_id, code: code)
-}
 
-fn emit_record(name: String, members: List(MemberSpec)) -> String {
-  case members {
-    [] -> "pub type " <> name <> " {
-  " <> name <> "
-}
+  let in_info = resolve_io_type(model, pascal <> "Input", in_r)
+  let out_info = resolve_io_type(model, pascal <> "Output", out_r)
 
-"
-    _ -> "pub type " <> name <> " {
-  " <> name <> "(
-" <> emit_record_fields(members) <> "  )
-}
-
-"
+  // For Unit input/output we synthesise a singleton type + codec at the
+  // op level. For named-struct sides we reuse the preamble's codec.
+  let synth_in = case in_info.synthesise {
+    True ->
+      emit_record_def(in_info.type_name, [])
+      <> emit_struct_encoder(
+        in_info.type_name,
+        "encode_" <> snake <> "_input_struct",
+        [],
+      )
+      <> emit_struct_decoder(
+        in_info.type_name,
+        "decode_" <> snake <> "_input_struct",
+        [],
+      )
+    False -> ""
   }
-}
-
-fn emit_record_fields(members: List(MemberSpec)) -> String {
-  list.fold(members, "", fn(acc, m) {
-    acc
-    <> "    "
-    <> m.snake_name
-    <> ": option.Option("
-    <> types.gleam_type(m.primitive)
-    <> "),
-"
-  })
-}
-
-fn emit_encoder(
-  pascal: String,
-  snake: String,
-  members: List(MemberSpec),
-) -> String {
-  case members {
-    [] ->
-      "pub fn encode_"
-      <> snake
-      <> "_input(_input: "
-      <> pascal
-      <> "Input) -> String {
-  \"{}\"
-}
-
-"
-    _ ->
-      "pub fn encode_"
-      <> snake
-      <> "_input(input: "
-      <> pascal
-      <> "Input) -> String {
-  let pairs = []
-"
-      <> emit_encoder_field_lines(members)
-      <> "  json.to_string(json.object(pairs))
-}
-
-"
+  let synth_out = case out_info.synthesise {
+    True ->
+      emit_record_def(out_info.type_name, [])
+      <> emit_struct_encoder(
+        out_info.type_name,
+        "encode_" <> snake <> "_output_struct",
+        [],
+      )
+      <> emit_struct_decoder(
+        out_info.type_name,
+        "decode_" <> snake <> "_output_struct",
+        [],
+      )
+    False -> ""
   }
-}
 
-fn emit_encoder_field_lines(members: List(MemberSpec)) -> String {
-  list.fold(members, "", fn(acc, m) {
-    acc <> "  let pairs = case input." <> m.snake_name <> " {
-    option.Some(v) -> [#(\"" <> m.json_name <> "\", " <> types.json_encoder(
-      m.primitive,
-    ) <> "(v)), ..pairs]
-    option.None -> pairs
+  // Encoder/Decoder helper names — point at either the named-shape
+  // codec from the preamble, or the synthetic per-op codec above.
+  let in_struct_encoder_name = case in_info.synthesise {
+    True -> "encode_" <> snake <> "_input_struct"
+    False -> "encode_" <> stringutils.pascal_to_snake(in_info.type_name) <> "_struct"
   }
-"
-  })
+  let out_struct_decoder_name = case out_info.synthesise {
+    True -> "decode_" <> snake <> "_output_struct"
+    False ->
+      "decode_" <> stringutils.pascal_to_snake(out_info.type_name) <> "_struct"
+  }
+
+  let in_encoder =
+    "pub fn encode_"
+    <> snake
+    <> "_input(input: "
+    <> in_info.type_name
+    <> ") -> String {\n  json.to_string("
+    <> in_struct_encoder_name
+    <> "(input))\n}\n\n"
+
+  let in_decoder = emit_parse_via_decoder(
+    "decode_" <> snake <> "_input",
+    in_info.type_name,
+    case in_info.synthesise {
+      True -> "decode_" <> snake <> "_input_struct"
+      False ->
+        "decode_" <> stringutils.pascal_to_snake(in_info.type_name) <> "_struct"
+    },
+  )
+
+  let out_decoder = emit_parse_via_decoder(
+    "decode_" <> snake <> "_output",
+    out_info.type_name,
+    out_struct_decoder_name,
+  )
+
+  let build = emit_build(in_info.type_name, snake, target_value, ct)
+  let parse = emit_parse(out_info.type_name, snake)
+  "\n"
+  <> synth_in
+  <> synth_out
+  <> in_encoder
+  <> in_decoder
+  <> out_decoder
+  <> build
+  <> parse
 }
 
-fn emit_struct_decoder(
+fn emit_parse_via_decoder(
   fn_name: String,
   type_name: String,
-  members: List(MemberSpec),
+  decoder_fn: String,
+) -> String {
+  "pub fn "
+  <> fn_name
+  <> "(body: String) -> Result("
+  <> type_name
+  <> ", String) {\n  case json.parse(body, "
+  <> decoder_fn
+  <> "()) {\n    Ok(v) -> Ok(v)\n    Error(_) -> Error(\"decode failed\")\n  }\n}\n\n"
+}
+
+type IOTypeInfo {
+  IOTypeInfo(type_name: String, members: List(MemberDef), synthesise: Bool)
+}
+
+fn resolve_io_type(model: Model, synth_name: String, r: Resolved) -> IOTypeInfo {
+  case r {
+    RStruct(local_name: ln, gleam_name: gn, full_id: id) ->
+      case ln {
+        "Unit" ->
+          IOTypeInfo(type_name: synth_name, members: [], synthesise: True)
+        _ -> {
+          let ms = types.resolve_members(model, id)
+          IOTypeInfo(type_name: gn, members: ms, synthesise: False)
+        }
+      }
+    _ -> IOTypeInfo(type_name: synth_name, members: [], synthesise: True)
+  }
+}
+
+// ---------- type definitions ----------
+
+fn emit_record_def(name: String, members: List(MemberDef)) -> String {
+  case members {
+    [] -> "pub type " <> name <> " {\n  " <> name <> "\n}\n\n"
+    _ ->
+      "pub type "
+      <> name
+      <> " {\n  "
+      <> name
+      <> "(\n"
+      <> list.fold(members, "", fn(acc, m) {
+        acc
+        <> "    "
+        <> m.snake_name
+        <> ": option.Option("
+        <> types.gleam_type(m.target)
+        <> "),\n"
+      })
+      <> "  )\n}\n\n"
+  }
+}
+
+fn emit_enum_def(name: String, variants: List(types.EnumVariant)) -> String {
+  case variants {
+    [] -> "pub type " <> name <> " {\n  " <> name <> "Unknown\n}\n\n"
+    _ ->
+      "pub type "
+      <> name
+      <> " {\n"
+      <> list.fold(variants, "", fn(acc, v) {
+        acc <> "  " <> v.gleam_ctor <> "\n"
+      })
+      <> "}\n\n"
+  }
+}
+
+fn emit_int_enum_def(name: String, variants: List(types.IntEnumVariant)) -> String {
+  case variants {
+    [] -> "pub type " <> name <> " {\n  " <> name <> "Unknown\n}\n\n"
+    _ ->
+      "pub type "
+      <> name
+      <> " {\n"
+      <> list.fold(variants, "", fn(acc, v) {
+        acc <> "  " <> v.gleam_ctor <> "\n"
+      })
+      <> "}\n\n"
+  }
+}
+
+fn emit_union_def(name: String, members: List(MemberDef)) -> String {
+  case members {
+    [] -> "pub type " <> name <> " {\n  " <> name <> "Empty\n}\n\n"
+    _ ->
+      "pub type "
+      <> name
+      <> " {\n"
+      <> list.fold(members, "", fn(acc, m) {
+        acc
+        <> "  "
+        <> name
+        <> pascalize_member(m.json_name)
+        <> "("
+        <> types.gleam_type(m.target)
+        <> ")\n"
+      })
+      <> "}\n\n"
+  }
+}
+
+// ---------- encoder helpers ----------
+
+fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
+  let snake = stringutils.pascal_to_snake(name)
+  let enc =
+    "pub fn encode_"
+    <> snake
+    <> "_enum(v: "
+    <> name
+    <> ") -> json.Json {\n  case v {\n"
+    <> list.fold(variants, "", fn(acc, v) {
+      acc <> "    " <> v.gleam_ctor <> " -> json.string(\"" <> v.wire_value <> "\")\n"
+    })
+    <> "  }\n}\n\n"
+  let first_ctor = case variants {
+    [v, ..] -> v.gleam_ctor
+    [] -> name <> "Unknown"
+  }
+  let dec =
+    "pub fn decode_"
+    <> snake
+    <> "_enum() -> decode.Decoder("
+    <> name
+    <> ") {\n  decode.then(decode.string, fn(s) {\n    case s {\n"
+    <> list.fold(variants, "", fn(acc, v) {
+      acc <> "      \"" <> v.wire_value <> "\" -> decode.success(" <> v.gleam_ctor <> ")\n"
+    })
+    <> "      _ -> decode.failure("
+    <> first_ctor
+    <> ", \"unknown enum value\")\n    }\n  })\n}\n\n"
+  enc <> dec
+}
+
+fn emit_int_enum_codec(
+  name: String,
+  variants: List(types.IntEnumVariant),
+) -> String {
+  let snake = stringutils.pascal_to_snake(name)
+  let enc =
+    "pub fn encode_"
+    <> snake
+    <> "_int_enum(v: "
+    <> name
+    <> ") -> json.Json {\n  case v {\n"
+    <> list.fold(variants, "", fn(acc, v) {
+      acc <> "    " <> v.gleam_ctor <> " -> json.int(" <> int_to_string(v.wire_value) <> ")\n"
+    })
+    <> "  }\n}\n\n"
+  let first_ctor = case variants {
+    [v, ..] -> v.gleam_ctor
+    [] -> name <> "Unknown"
+  }
+  let dec =
+    "pub fn decode_"
+    <> snake
+    <> "_int_enum() -> decode.Decoder("
+    <> name
+    <> ") {\n  decode.then(decode.int, fn(n) {\n    case n {\n"
+    <> list.fold(variants, "", fn(acc, v) {
+      acc <> "      " <> int_to_string(v.wire_value) <> " -> decode.success(" <> v.gleam_ctor <> ")\n"
+    })
+    <> "      _ -> decode.failure("
+    <> first_ctor
+    <> ", \"unknown int enum value\")\n    }\n  })\n}\n\n"
+  enc <> dec
+}
+
+fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
+  let snake = stringutils.pascal_to_snake(name)
+  emit_struct_encoder(name, "encode_" <> snake <> "_struct", members)
+  <> emit_struct_decoder(name, "decode_" <> snake <> "_struct", members)
+}
+
+/// Emit an encoder that takes a typed value and returns `json.Json`
+/// (used as a building block inside parent encoders).
+fn emit_struct_encoder(
+  type_name: String,
+  fn_name: String,
+  members: List(MemberDef),
 ) -> String {
   case members {
     [] ->
       "pub fn "
       <> fn_name
-      <> "(_body: String) -> Result("
+      <> "(_v: "
       <> type_name
-      <> ", String) {
-  Ok("
-      <> type_name
-      <> ")
-}
-
-"
+      <> ") -> json.Json {\n  json.object([])\n}\n\n"
     _ ->
       "pub fn "
       <> fn_name
-      <> "(body: String) -> Result("
+      <> "(input: "
       <> type_name
-      <> ", String) {
-  let dec = {
-"
-      <> emit_decoder_field_lines(members)
-      <> "    decode.success("
+      <> ") -> json.Json {\n  let pairs = []\n"
+      <> list.fold(members, "", fn(acc, m) {
+        acc
+        <> "  let pairs = case input."
+        <> m.snake_name
+        <> " {\n    option.Some(v) -> [#(\""
+        <> m.json_name
+        <> "\", "
+        <> types.json_encoder(m.target)
+        <> "(v)), ..pairs]\n    option.None -> pairs\n  }\n"
+      })
+      <> "  json.object(pairs)\n}\n\n"
+  }
+}
+
+/// Emit a `Decoder(T)` function — used as a building block inside
+/// parent decoders (for nested structs, list elements, map values).
+fn emit_struct_decoder(
+  type_name: String,
+  fn_name: String,
+  members: List(MemberDef),
+) -> String {
+  case members {
+    [] ->
+      "pub fn "
+      <> fn_name
+      <> "() -> decode.Decoder("
       <> type_name
-      <> "(
-"
-      <> emit_decoder_constructor_args(members)
-      <> "    ))
-  }
-  case json.parse(body, dec) {
-    Ok(v) -> Ok(v)
-    Error(_) -> Error(\"decode failed\")
+      <> ") {\n  decode.success("
+      <> type_name
+      <> ")\n}\n\n"
+    _ ->
+      "pub fn "
+      <> fn_name
+      <> "() -> decode.Decoder("
+      <> type_name
+      <> ") {\n"
+      <> list.fold(members, "", fn(acc, m) {
+        acc
+        <> "  use "
+        <> m.snake_name
+        <> " <- decode.optional_field(\""
+        <> m.json_name
+        <> "\", option.None, decode.optional("
+        <> types.json_decoder(m.target)
+        <> "))\n"
+      })
+      <> "  decode.success("
+      <> type_name
+      <> "(\n"
+      <> list.fold(members, "", fn(acc, m) {
+        acc <> "    " <> m.snake_name <> ": " <> m.snake_name <> ",\n"
+      })
+      <> "  ))\n}\n\n"
   }
 }
 
-"
+fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
+  let snake = stringutils.pascal_to_snake(name)
+  let enc =
+    "pub fn encode_"
+    <> snake
+    <> "_union(v: "
+    <> name
+    <> ") -> json.Json {\n  case v {\n"
+    <> list.fold(members, "", fn(acc, m) {
+      acc
+      <> "    "
+      <> name
+      <> pascalize_member(m.json_name)
+      <> "(x) -> json.object([#(\""
+      <> m.json_name
+      <> "\", "
+      <> types.json_encoder(m.target)
+      <> "(x))])\n"
+    })
+    <> "  }\n}\n\n"
+  // Decoder: try each tagged-object branch in sequence.
+  let dec_body = case members {
+    [] -> "  decode.failure(" <> name <> "Empty, \"empty union\")\n"
+    [first, ..rest] ->
+      "  decode.one_of(\n    "
+      <> emit_union_branch(name, first)
+      <> ",\n    ["
+      <> list.fold(rest, "", fn(acc, m) {
+        acc <> "\n      " <> emit_union_branch(name, m) <> ","
+      })
+      <> "\n    ],\n  )\n"
   }
+  let dec =
+    "pub fn decode_"
+    <> snake
+    <> "_union() -> decode.Decoder("
+    <> name
+    <> ") {\n"
+    <> dec_body
+    <> "}\n\n"
+  enc <> dec
 }
 
-fn emit_decoder_field_lines(members: List(MemberSpec)) -> String {
-  list.fold(members, "", fn(acc, m) {
-    acc
-    <> "    use "
-    <> m.snake_name
-    <> " <- decode.optional_field(\""
-    <> m.json_name
-    <> "\", option.None, decode.optional("
-    <> types.json_decoder(m.primitive)
-    <> "))
-"
-  })
-}
-
-fn emit_decoder_constructor_args(members: List(MemberSpec)) -> String {
-  list.fold(members, "", fn(acc, m) {
-    acc <> "      " <> m.snake_name <> ": " <> m.snake_name <> ",
-"
-  })
+fn emit_union_branch(union_name: String, m: MemberDef) -> String {
+  "decode.field(\""
+  <> m.json_name
+  <> "\", "
+  <> types.json_decoder(m.target)
+  <> ", fn(x) { decode.success("
+  <> union_name
+  <> pascalize_member(m.json_name)
+  <> "(x)) })"
 }
 
 fn emit_build(
-  pascal: String,
+  input_type: String,
   snake: String,
   target_value: String,
   ct: String,
-  members: List(MemberSpec),
 ) -> String {
-  let _ = members
-  "pub fn build_" <> snake <> "_request(
-  input: " <> pascal <> "Input,
-) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_" <> snake <> "_input(input)
-  let headers =
-    dict.from_list([
-      #(\"Content-Type\", \"" <> ct <> "\"),
-      #(\"X-Amz-Target\", \"" <> target_value <> "\"),
-    ])
-  #(\"POST\", \"/\", headers, bit_array.from_string(body_str))
+  "pub fn build_"
+  <> snake
+  <> "_request(\n  input: "
+  <> input_type
+  <> ",\n) -> #(String, String, dict.Dict(String, String), BitArray) {\n  let body_str = encode_"
+  <> snake
+  <> "_input(input)\n  let body = bit_array.from_string(body_str)\n  let headers =\n    dict.from_list([\n      #(\"Content-Type\", \""
+  <> ct
+  <> "\"),\n      #(\"Content-Length\", int.to_string(bit_array.byte_size(body))),\n      #(\"X-Amz-Target\", \""
+  <> target_value
+  <> "\"),\n    ])\n  #(\"POST\", \"/\", headers, body)\n}\n\n"
 }
 
-"
+fn emit_parse(output_type: String, snake: String) -> String {
+  "pub fn parse_"
+  <> snake
+  <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  body: BitArray,\n) -> Result("
+  <> output_type
+  <> ", String) {\n  case bit_array.to_string(body) {\n    Ok(text) -> case text {\n      \"\" -> decode_"
+  <> snake
+  <> "_output(\"{}\")\n      _ -> decode_"
+  <> snake
+  <> "_output(text)\n    }\n    Error(_) -> Error(\"non-utf8 body\")\n  }\n}\n\n"
 }
 
-fn emit_parse(
-  pascal: String,
-  snake: String,
-  members: List(MemberSpec),
-) -> String {
-  case members {
-    [] -> "pub fn parse_" <> snake <> "_response(
-  _code: Int,
-  _headers: dict.Dict(String, String),
-  _body: BitArray,
-) -> Result(" <> pascal <> "Output, String) {
-  Ok(" <> pascal <> "Output)
-}
-
-"
-    _ -> "pub fn parse_" <> snake <> "_response(
-  _code: Int,
-  _headers: dict.Dict(String, String),
-  body: BitArray,
-) -> Result(" <> pascal <> "Output, String) {
-  case bit_array.to_string(body) {
-    Ok(text) -> decode_" <> snake <> "_output(text)
-    Error(_) -> Error(\"non-utf8 body\")
-  }
-}
-
-"
-  }
+/// Operation-level traits the emitter doesn't yet honour. Emitting code
+/// for these would produce wrong-on-the-wire requests.
+fn op_uses_unsupported_trait(traits: shape.Traits) -> Bool {
+  dict.has_key(traits, ShapeId("smithy.api#httpChecksumRequired"))
+  || dict.has_key(traits, ShapeId("smithy.api#requestCompression"))
 }
 
 fn file_header(service_id: String, protocol: Protocol) -> String {
@@ -397,17 +658,25 @@ fn file_header(service_id: String, protocol: Protocol) -> String {
     AwsJson10 -> "awsJson1_0"
     AwsJson11 -> "awsJson1_1"
   }
-  "//// Generated from " <> service_id <> " (" <> proto_str <> ").
+  "//// Generated from "
+  <> service_id
+  <> " ("
+  <> proto_str
+  <> ").
 //// DO NOT EDIT. Re-generate via the codegen subproject.
 
 import aws/internal/codec/json_float
 import gleam/bit_array
 import gleam/dict
 import gleam/dynamic/decode
+import gleam/int
 import gleam/json
+import gleam/list
 import gleam/option
 "
 }
+
+// ---------- helpers ----------
 
 fn strip_namespace(id: String) -> String {
   case string.split_once(id, "#") {
@@ -420,3 +689,42 @@ fn derive_module_name(service_id: String) -> String {
   let local = strip_namespace(service_id)
   stringutils.pascal_to_snake(local)
 }
+
+fn pascalize_member(s: String) -> String {
+  case string.to_graphemes(s) {
+    [first, ..rest] ->
+      string.uppercase(first) <> string.concat(rest)
+    [] -> s
+  }
+}
+
+fn int_to_string(n: Int) -> String {
+  case n {
+    0 -> "0"
+    _ -> int_str(n, "")
+  }
+}
+
+fn int_str(n: Int, acc: String) -> String {
+  case n {
+    0 -> acc
+    _ -> {
+      let d = n - { n / 10 } * 10
+      let c = case d {
+        0 -> "0"
+        1 -> "1"
+        2 -> "2"
+        3 -> "3"
+        4 -> "4"
+        5 -> "5"
+        6 -> "6"
+        7 -> "7"
+        8 -> "8"
+        9 -> "9"
+        _ -> "?"
+      }
+      int_str(n / 10, c <> acc)
+    }
+  }
+}
+
