@@ -1543,20 +1543,28 @@ fn emit_payload_body(m: MemberDef) -> String {
       <> " {\n    option.Some(v) -> bit_array.from_string(v)\n    option.None -> <<>>\n  }\n  let content_type = \""
       <> string_ct
       <> "\"\n"
-    RStruct(local_name: name, ..) ->
+    RStruct(local_name: name, ..) -> {
       // Smithy `@httpPayload` for a struct member: the wire root
-      // element is the **target shape's local name** by default
-      // (`<NestedPayload>` when the payload member targets the
-      // `NestedPayload` struct). `@xmlName` on the target shape
-      // overrides that; on the member, it doesn't apply (the
-      // member is just a routing marker, not a wrapper).
+      // element name comes from (in priority order):
+      //   1. `@xmlName` on the @httpPayload **member** itself —
+      //      detected by `m.json_name != m.member_name`. This is
+      //      the `HttpPayloadWithMemberXmlName` case.
+      //   2. `@xmlName` on the target struct **shape** — would
+      //      win when set, but the shape-level lookup isn't
+      //      plumbed through yet; falls through to (3).
+      //   3. The target shape's Smithy local name.
+      let wrapper = case m.json_name == m.member_name {
+        True -> name
+        False -> m.json_name
+      }
       "  let body = case input."
       <> m.snake_name
       <> " {\n    option.Some(v) -> bit_array.from_string(encode_"
       <> stringutils.pascal_to_snake(name)
       <> "_xml(v, \""
-      <> name
+      <> wrapper
       <> "\"))\n    option.None -> <<>>\n  }\n  let content_type = \"application/xml\"\n"
+    }
     _ ->
       "  let body = case input."
       <> m.snake_name
