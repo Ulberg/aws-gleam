@@ -95,6 +95,11 @@ pub type Code {
   /// list of lines = no comment.
   DocComment(lines: List(String))
 
+  /// A module-level doc comment (`//// ...`). Differs from
+  /// `DocComment` only in slash count; Gleam's parser uses the
+  /// 4-slash form for the module preamble.
+  ModuleDocComment(lines: List(String))
+
   /// A literal blank line. Used between functions / types to keep
   /// the output readable.
   Blank
@@ -247,6 +252,11 @@ fn do_render(c: Code, indent: Int) -> String {
     DocComment(lines: ls) ->
       ls
       |> list.map(fn(l) { pad(indent) <> "/// " <> l })
+      |> string.join("\n")
+
+    ModuleDocComment(lines: ls) ->
+      ls
+      |> list.map(fn(l) { pad(indent) <> "//// " <> l })
       |> string.join("\n")
 
     Blank -> ""

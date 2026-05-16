@@ -132,13 +132,15 @@ pub fn emit_service(
         })
       let client_block = emit_client(metadata)
       let invoke_blocks = list.map(op_specs, emit_invoke)
-      let body =
-        file_header(service_id, protocol)
-        <> "\n"
-        <> client_block
+      let body_content =
+        client_block
         <> preamble
         <> list.fold(op_blocks, "", fn(acc, code) { acc <> code })
         <> list.fold(invoke_blocks, "", fn(acc, code) { acc <> code })
+      let body =
+        file_header(service_id, protocol, body_content)
+        <> "\n"
+        <> body_content
       let dispatcher_specs =
         list.map(op_specs, fn(s) {
           dispatcher.DispatcherSpec(
@@ -947,28 +949,52 @@ fn op_uses_unsupported_trait(traits: shape.Traits) -> Bool {
   || dict.has_key(traits, ShapeId("smithy.api#requestCompression"))
 }
 
-fn file_header(service_id: String, protocol: Protocol) -> String {
+/// Build the module-doc + import block as a `code.Module` AST. The
+/// body itself is still raw string concatenation (each
+/// emit_operation, emit_record_def etc. is independent), so we
+/// scan it for `<module>.` references to decide which imports
+/// survive — this drops e.g. `gleam/string` from `dynamodb.gleam`
+/// where the body never reaches into the `string` module.
+fn file_header(service_id: String, protocol: Protocol, body: String) -> String {
   let proto_str = case protocol {
     AwsJson10 -> "awsJson1_0"
     AwsJson11 -> "awsJson1_1"
   }
-  "//// Generated from " <> service_id <> " (" <> proto_str <> ").
-//// DO NOT EDIT. Re-generate via the codegen subproject.
-
-import aws/credentials
-import aws/internal/client/runtime as runtime
-import aws/internal/codec/json_document
-import aws/internal/codec/json_float
-import aws/internal/codec/json_timestamp
-import aws/internal/http_send
-import gleam/bit_array
-import gleam/dict
-import gleam/dynamic/decode
-import gleam/int
-import gleam/json
-import gleam/list
-import gleam/option
-"
+  let candidates = [
+    #("aws/credentials", "credentials.", code.CodeNone),
+    #(
+      "aws/internal/client/runtime",
+      "runtime.",
+      code.CodeSome("runtime"),
+    ),
+    #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
+    #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
+    #("aws/internal/codec/json_timestamp", "json_timestamp.", code.CodeNone),
+    #("aws/internal/http_send", "http_send.", code.CodeNone),
+    #("gleam/bit_array", "bit_array.", code.CodeNone),
+    #("gleam/dict", "dict.", code.CodeNone),
+    #("gleam/dynamic/decode", "decode.", code.CodeNone),
+    #("gleam/int", "int.", code.CodeNone),
+    #("gleam/json", "json.", code.CodeNone),
+    #("gleam/list", "list.", code.CodeNone),
+    #("gleam/option", "option.", code.CodeNone),
+  ]
+  let used =
+    candidates
+    |> list.filter(fn(c) { string.contains(body, c.1) })
+    |> list.map(fn(c) {
+      code.Import(path: c.0, alias: c.2, unqualified: [])
+    })
+  let items =
+    [
+      code.ModuleDocComment([
+        "Generated from " <> service_id <> " (" <> proto_str <> ").",
+        "DO NOT EDIT. Re-generate via the codegen subproject.",
+      ]),
+      code.Blank,
+    ]
+    |> list.append(used)
+  code.render(code.Module(items: items))
 }
 
 // ---------- helpers ----------

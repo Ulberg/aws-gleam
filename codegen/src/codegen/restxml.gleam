@@ -139,14 +139,13 @@ pub fn emit_service(
         list.map(op_specs, fn(spec) {
           emit_error_type(spec) <> emit_error_translator(spec)
         })
-      let body =
-        file_header(service_id)
-        <> "\n"
-        <> client_block
+      let body_content =
+        client_block
         <> preamble
         <> list.fold(op_blocks, "", fn(acc, code) { acc <> code })
         <> list.fold(error_blocks, "", fn(acc, code) { acc <> code })
         <> list.fold(invoke_blocks, "", fn(acc, code) { acc <> code })
+      let body = file_header(service_id, body_content) <> "\n" <> body_content
       let dispatcher_specs =
         list.map(op_specs, fn(s) {
           dispatcher.DispatcherSpec(
@@ -1531,29 +1530,49 @@ fn emit_parse_with_payload(
   <> "    ))\n  }\n}\n\n"
 }
 
-fn file_header(service_id: String) -> String {
-  "//// Generated from " <> service_id <> " (restXml).
-//// DO NOT EDIT. Re-generate via the codegen subproject.
-
-import aws/credentials
-import aws/internal/client/runtime as runtime
-import aws/internal/codec/json_document
-import aws/internal/codec/json_float
-import aws/internal/codec/json_timestamp
-import aws/internal/codec/rest
-import aws/internal/codec/xml
-import aws/internal/codec/xml_decode
-import aws/internal/http_send
-import gleam/bit_array
-import gleam/dict
-import gleam/dynamic/decode
-import gleam/int
-import gleam/json
-import gleam/list
-import gleam/option
-import gleam/result
-import gleam/string
-"
+/// See `awsjson.file_header` for the design — body-scan picks the
+/// subset of candidate imports actually referenced.
+fn file_header(service_id: String, body: String) -> String {
+  let candidates = [
+    #("aws/credentials", "credentials.", code.CodeNone),
+    #(
+      "aws/internal/client/runtime",
+      "runtime.",
+      code.CodeSome("runtime"),
+    ),
+    #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
+    #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
+    #("aws/internal/codec/json_timestamp", "json_timestamp.", code.CodeNone),
+    #("aws/internal/codec/rest", "rest.", code.CodeNone),
+    #("aws/internal/codec/xml", "xml.", code.CodeNone),
+    #("aws/internal/codec/xml_decode", "xml_decode.", code.CodeNone),
+    #("aws/internal/http_send", "http_send.", code.CodeNone),
+    #("gleam/bit_array", "bit_array.", code.CodeNone),
+    #("gleam/dict", "dict.", code.CodeNone),
+    #("gleam/dynamic/decode", "decode.", code.CodeNone),
+    #("gleam/int", "int.", code.CodeNone),
+    #("gleam/json", "json.", code.CodeNone),
+    #("gleam/list", "list.", code.CodeNone),
+    #("gleam/option", "option.", code.CodeNone),
+    #("gleam/result", "result.", code.CodeNone),
+    #("gleam/string", "string.", code.CodeNone),
+  ]
+  let used =
+    candidates
+    |> list.filter(fn(c) { string.contains(body, c.1) })
+    |> list.map(fn(c) {
+      code.Import(path: c.0, alias: c.2, unqualified: [])
+    })
+  let items =
+    [
+      code.ModuleDocComment([
+        "Generated from " <> service_id <> " (restXml).",
+        "DO NOT EDIT. Re-generate via the codegen subproject.",
+      ]),
+      code.Blank,
+    ]
+    |> list.append(used)
+  code.render(code.Module(items: items))
 }
 
 fn op_uses_unsupported_trait(traits: shape.Traits) -> Bool {
