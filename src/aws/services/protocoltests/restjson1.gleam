@@ -46,29 +46,7 @@ pub fn with_http_send(client: Client, send: http_send.Send) -> Client {
 }
 
 pub type AllQueryStringTypesInput {
-  AllQueryStringTypesInput(
-    query_boolean: option.Option(Bool),
-    query_boolean_list: option.Option(List(Bool)),
-    query_byte: option.Option(Int),
-    query_double: option.Option(json_float.SmithyFloat),
-    query_double_list: option.Option(List(json_float.SmithyFloat)),
-    query_enum: option.Option(FooEnum),
-    query_enum_list: option.Option(List(FooEnum)),
-    query_float: option.Option(json_float.SmithyFloat),
-    query_integer: option.Option(Int),
-    query_integer_enum: option.Option(IntegerEnum),
-    query_integer_enum_list: option.Option(List(IntegerEnum)),
-    query_integer_list: option.Option(List(Int)),
-    query_integer_set: option.Option(List(Int)),
-    query_long: option.Option(Int),
-    query_params_map_of_string_list: option.Option(dict.Dict(String, List(String))),
-    query_short: option.Option(Int),
-    query_string: option.Option(String),
-    query_string_list: option.Option(List(String)),
-    query_string_set: option.Option(List(String)),
-    query_timestamp: option.Option(Int),
-    query_timestamp_list: option.Option(List(Int)),
-  )
+  AllQueryStringTypesInput(query_boolean: option.Option(Bool), query_boolean_list: option.Option(List(Bool)), query_byte: option.Option(Int), query_double: option.Option(json_float.SmithyFloat), query_double_list: option.Option(List(json_float.SmithyFloat)), query_enum: option.Option(FooEnum), query_enum_list: option.Option(List(FooEnum)), query_float: option.Option(json_float.SmithyFloat), query_integer: option.Option(Int), query_integer_enum: option.Option(IntegerEnum), query_integer_enum_list: option.Option(List(IntegerEnum)), query_integer_list: option.Option(List(Int)), query_integer_set: option.Option(List(Int)), query_long: option.Option(Int), query_params_map_of_string_list: option.Option(dict.Dict(String, List(String))), query_short: option.Option(Int), query_string: option.Option(String), query_string_list: option.Option(List(String)), query_string_set: option.Option(List(String)), query_timestamp: option.Option(Int), query_timestamp_list: option.Option(List(Int)))
 }
 
 pub fn encode_all_query_string_types_input_struct(input: AllQueryStringTypesInput) -> json.Json {
@@ -319,10 +297,7 @@ pub fn decode_integer_enum_int_enum() -> decode.Decoder(IntegerEnum) {
 }
 
 pub type ConstantAndVariableQueryStringInput {
-  ConstantAndVariableQueryStringInput(
-    baz: option.Option(String),
-    maybe_set: option.Option(String),
-  )
+  ConstantAndVariableQueryStringInput(baz: option.Option(String), maybe_set: option.Option(String))
 }
 
 pub fn encode_constant_and_variable_query_string_input_struct(input: ConstantAndVariableQueryStringInput) -> json.Json {
@@ -357,9 +332,7 @@ pub fn decode_constant_and_variable_query_string_input_struct_params() -> decode
 }
 
 pub type ConstantQueryStringInput {
-  ConstantQueryStringInput(
-    hello: option.Option(String),
-  )
+  ConstantQueryStringInput(hello: option.Option(String))
 }
 
 pub fn encode_constant_query_string_input_struct(input: ConstantQueryStringInput) -> json.Json {
@@ -386,9 +359,7 @@ pub fn decode_constant_query_string_input_struct_params() -> decode.Decoder(Cons
 }
 
 pub type ContentTypeParametersInput {
-  ContentTypeParametersInput(
-    value: option.Option(Int),
-  )
+  ContentTypeParametersInput(value: option.Option(Int))
 }
 
 pub fn encode_content_type_parameters_input_struct(input: ContentTypeParametersInput) -> json.Json {
@@ -431,9 +402,7 @@ pub fn decode_content_type_parameters_output_struct_params() -> decode.Decoder(C
 }
 
 pub type DatetimeOffsetsOutput {
-  DatetimeOffsetsOutput(
-    datetime: option.Option(Int),
-  )
+  DatetimeOffsetsOutput(datetime: option.Option(Int))
 }
 
 pub fn encode_datetime_offsets_output_struct(input: DatetimeOffsetsOutput) -> json.Json {
@@ -460,10 +429,7 @@ pub fn decode_datetime_offsets_output_struct_params() -> decode.Decoder(Datetime
 }
 
 pub type DocumentTypeInputOutput {
-  DocumentTypeInputOutput(
-    document_value: option.Option(json.Json),
-    string_value: option.Option(String),
-  )
+  DocumentTypeInputOutput(document_value: option.Option(json.Json), string_value: option.Option(String))
 }
 
 pub fn encode_document_type_input_output_struct(input: DocumentTypeInputOutput) -> json.Json {
@@ -498,9 +464,7 @@ pub fn decode_document_type_input_output_struct_params() -> decode.Decoder(Docum
 }
 
 pub type DocumentTypeAsMapValueInputOutput {
-  DocumentTypeAsMapValueInputOutput(
-    doc_valued_map: option.Option(dict.Dict(String, json.Json)),
-  )
+  DocumentTypeAsMapValueInputOutput(doc_valued_map: option.Option(dict.Dict(String, json.Json)))
 }
 
 pub fn encode_document_type_as_map_value_input_output_struct(input: DocumentTypeAsMapValueInputOutput) -> json.Json {
@@ -527,9 +491,7 @@ pub fn decode_document_type_as_map_value_input_output_struct_params() -> decode.
 }
 
 pub type DocumentTypeAsPayloadInputOutput {
-  DocumentTypeAsPayloadInputOutput(
-    document_value: option.Option(json.Json),
-  )
+  DocumentTypeAsPayloadInputOutput(document_value: option.Option(json.Json))
 }
 
 pub fn encode_document_type_as_payload_input_output_struct(input: DocumentTypeAsPayloadInputOutput) -> json.Json {
@@ -556,9 +518,7 @@ pub fn decode_document_type_as_payload_input_output_struct_params() -> decode.De
 }
 
 pub type DuplexStreamInput {
-  DuplexStreamInput(
-    stream: option.Option(EventStream),
-  )
+  DuplexStreamInput(stream: option.Option(EventStream))
 }
 
 pub fn encode_duplex_stream_input_struct(input: DuplexStreamInput) -> json.Json {
@@ -639,9 +599,7 @@ pub fn decode_event_stream_union_params() -> decode.Decoder(EventStream) {
 }
 
 pub type BlobPayloadEvent {
-  BlobPayloadEvent(
-    payload: option.Option(BitArray),
-  )
+  BlobPayloadEvent(payload: option.Option(BitArray))
 }
 
 pub fn encode_blob_payload_event_struct(input: BlobPayloadEvent) -> json.Json {
@@ -668,9 +626,7 @@ pub fn decode_blob_payload_event_struct_params() -> decode.Decoder(BlobPayloadEv
 }
 
 pub type ErrorEvent {
-  ErrorEvent(
-    message: option.Option(String),
-  )
+  ErrorEvent(message: option.Option(String))
 }
 
 pub fn encode_error_event_struct(input: ErrorEvent) -> json.Json {
@@ -697,16 +653,7 @@ pub fn decode_error_event_struct_params() -> decode.Decoder(ErrorEvent) {
 }
 
 pub type HeadersEvent {
-  HeadersEvent(
-    blob_header: option.Option(BitArray),
-    boolean_header: option.Option(Bool),
-    byte_header: option.Option(Int),
-    int_header: option.Option(Int),
-    long_header: option.Option(Int),
-    short_header: option.Option(Int),
-    string_header: option.Option(String),
-    timestamp_header: option.Option(Int),
-  )
+  HeadersEvent(blob_header: option.Option(BitArray), boolean_header: option.Option(Bool), byte_header: option.Option(Int), int_header: option.Option(Int), long_header: option.Option(Int), short_header: option.Option(Int), string_header: option.Option(String), timestamp_header: option.Option(Int))
 }
 
 pub fn encode_headers_event_struct(input: HeadersEvent) -> json.Json {
@@ -789,10 +736,7 @@ pub fn decode_headers_event_struct_params() -> decode.Decoder(HeadersEvent) {
 }
 
 pub type HeadersAndExplicitPayloadEvent {
-  HeadersAndExplicitPayloadEvent(
-    header: option.Option(String),
-    payload: option.Option(PayloadStructure),
-  )
+  HeadersAndExplicitPayloadEvent(header: option.Option(String), payload: option.Option(PayloadStructure))
 }
 
 pub fn encode_headers_and_explicit_payload_event_struct(input: HeadersAndExplicitPayloadEvent) -> json.Json {
@@ -827,9 +771,7 @@ pub fn decode_headers_and_explicit_payload_event_struct_params() -> decode.Decod
 }
 
 pub type PayloadStructure {
-  PayloadStructure(
-    structure_member: option.Option(String),
-  )
+  PayloadStructure(structure_member: option.Option(String))
 }
 
 pub fn encode_payload_structure_struct(input: PayloadStructure) -> json.Json {
@@ -856,10 +798,7 @@ pub fn decode_payload_structure_struct_params() -> decode.Decoder(PayloadStructu
 }
 
 pub type HeadersAndImplicitPayloadEvent {
-  HeadersAndImplicitPayloadEvent(
-    header: option.Option(String),
-    payload: option.Option(String),
-  )
+  HeadersAndImplicitPayloadEvent(header: option.Option(String), payload: option.Option(String))
 }
 
 pub fn encode_headers_and_implicit_payload_event_struct(input: HeadersAndImplicitPayloadEvent) -> json.Json {
@@ -894,9 +833,7 @@ pub fn decode_headers_and_implicit_payload_event_struct_params() -> decode.Decod
 }
 
 pub type StringPayloadEvent {
-  StringPayloadEvent(
-    payload: option.Option(String),
-  )
+  StringPayloadEvent(payload: option.Option(String))
 }
 
 pub fn encode_string_payload_event_struct(input: StringPayloadEvent) -> json.Json {
@@ -923,9 +860,7 @@ pub fn decode_string_payload_event_struct_params() -> decode.Decoder(StringPaylo
 }
 
 pub type StructurePayloadEvent {
-  StructurePayloadEvent(
-    payload: option.Option(PayloadStructure),
-  )
+  StructurePayloadEvent(payload: option.Option(PayloadStructure))
 }
 
 pub fn encode_structure_payload_event_struct(input: StructurePayloadEvent) -> json.Json {
@@ -952,9 +887,7 @@ pub fn decode_structure_payload_event_struct_params() -> decode.Decoder(Structur
 }
 
 pub type UnionPayloadEvent {
-  UnionPayloadEvent(
-    payload: option.Option(PayloadUnion),
-  )
+  UnionPayloadEvent(payload: option.Option(PayloadUnion))
 }
 
 pub fn encode_union_payload_event_struct(input: UnionPayloadEvent) -> json.Json {
@@ -1007,9 +940,7 @@ pub fn decode_payload_union_union_params() -> decode.Decoder(PayloadUnion) {
 }
 
 pub type DuplexStreamOutput {
-  DuplexStreamOutput(
-    stream: option.Option(EventStream),
-  )
+  DuplexStreamOutput(stream: option.Option(EventStream))
 }
 
 pub fn encode_duplex_stream_output_struct(input: DuplexStreamOutput) -> json.Json {
@@ -1036,9 +967,7 @@ pub fn decode_duplex_stream_output_struct_params() -> decode.Decoder(DuplexStrea
 }
 
 pub type DuplexStreamWithDistinctStreamsInput {
-  DuplexStreamWithDistinctStreamsInput(
-    stream: option.Option(EventStream),
-  )
+  DuplexStreamWithDistinctStreamsInput(stream: option.Option(EventStream))
 }
 
 pub fn encode_duplex_stream_with_distinct_streams_input_struct(input: DuplexStreamWithDistinctStreamsInput) -> json.Json {
@@ -1065,9 +994,7 @@ pub fn decode_duplex_stream_with_distinct_streams_input_struct_params() -> decod
 }
 
 pub type DuplexStreamWithDistinctStreamsOutput {
-  DuplexStreamWithDistinctStreamsOutput(
-    stream: option.Option(SingletonEventStream),
-  )
+  DuplexStreamWithDistinctStreamsOutput(stream: option.Option(SingletonEventStream))
 }
 
 pub fn encode_duplex_stream_with_distinct_streams_output_struct(input: DuplexStreamWithDistinctStreamsOutput) -> json.Json {
@@ -1120,9 +1047,7 @@ pub fn decode_singleton_event_stream_union_params() -> decode.Decoder(SingletonE
 }
 
 pub type SingletonEvent {
-  SingletonEvent(
-    value: option.Option(String),
-  )
+  SingletonEvent(value: option.Option(String))
 }
 
 pub fn encode_singleton_event_struct(input: SingletonEvent) -> json.Json {
@@ -1149,10 +1074,7 @@ pub fn decode_singleton_event_struct_params() -> decode.Decoder(SingletonEvent) 
 }
 
 pub type DuplexStreamWithInitialMessagesInput {
-  DuplexStreamWithInitialMessagesInput(
-    initial_request_member: option.Option(String),
-    stream: option.Option(EventStream),
-  )
+  DuplexStreamWithInitialMessagesInput(initial_request_member: option.Option(String), stream: option.Option(EventStream))
 }
 
 pub fn encode_duplex_stream_with_initial_messages_input_struct(input: DuplexStreamWithInitialMessagesInput) -> json.Json {
@@ -1187,10 +1109,7 @@ pub fn decode_duplex_stream_with_initial_messages_input_struct_params() -> decod
 }
 
 pub type DuplexStreamWithInitialMessagesOutput {
-  DuplexStreamWithInitialMessagesOutput(
-    initial_response_member: option.Option(String),
-    stream: option.Option(EventStream),
-  )
+  DuplexStreamWithInitialMessagesOutput(initial_response_member: option.Option(String), stream: option.Option(EventStream))
 }
 
 pub fn encode_duplex_stream_with_initial_messages_output_struct(input: DuplexStreamWithInitialMessagesOutput) -> json.Json {
@@ -1225,9 +1144,7 @@ pub fn decode_duplex_stream_with_initial_messages_output_struct_params() -> deco
 }
 
 pub type ServiceUnavailableError {
-  ServiceUnavailableError(
-    message: option.Option(String),
-  )
+  ServiceUnavailableError(message: option.Option(String))
 }
 
 pub fn encode_service_unavailable_error_struct(input: ServiceUnavailableError) -> json.Json {
@@ -1286,9 +1203,7 @@ pub fn decode_empty_input_and_empty_output_output_struct_params() -> decode.Deco
 }
 
 pub type HostLabelInput {
-  HostLabelInput(
-    label: option.Option(String),
-  )
+  HostLabelInput(label: option.Option(String))
 }
 
 pub fn encode_host_label_input_struct(input: HostLabelInput) -> json.Json {
@@ -1315,9 +1230,7 @@ pub fn decode_host_label_input_struct_params() -> decode.Decoder(HostLabelInput)
 }
 
 pub type FractionalSecondsOutput {
-  FractionalSecondsOutput(
-    datetime: option.Option(Int),
-  )
+  FractionalSecondsOutput(datetime: option.Option(Int))
 }
 
 pub fn encode_fractional_seconds_output_struct(input: FractionalSecondsOutput) -> json.Json {
@@ -1344,9 +1257,7 @@ pub fn decode_fractional_seconds_output_struct_params() -> decode.Decoder(Fracti
 }
 
 pub type GreetingWithErrorsOutput {
-  GreetingWithErrorsOutput(
-    greeting: option.Option(String),
-  )
+  GreetingWithErrorsOutput(greeting: option.Option(String))
 }
 
 pub fn encode_greeting_with_errors_output_struct(input: GreetingWithErrorsOutput) -> json.Json {
@@ -1373,11 +1284,7 @@ pub fn decode_greeting_with_errors_output_struct_params() -> decode.Decoder(Gree
 }
 
 pub type ComplexError {
-  ComplexError(
-    header: option.Option(String),
-    nested: option.Option(ComplexNestedErrorData),
-    top_level: option.Option(String),
-  )
+  ComplexError(header: option.Option(String), nested: option.Option(ComplexNestedErrorData), top_level: option.Option(String))
 }
 
 pub fn encode_complex_error_struct(input: ComplexError) -> json.Json {
@@ -1420,9 +1327,7 @@ pub fn decode_complex_error_struct_params() -> decode.Decoder(ComplexError) {
 }
 
 pub type ComplexNestedErrorData {
-  ComplexNestedErrorData(
-    foo: option.Option(String),
-  )
+  ComplexNestedErrorData(foo: option.Option(String))
 }
 
 pub fn encode_complex_nested_error_data_struct(input: ComplexNestedErrorData) -> json.Json {
@@ -1465,9 +1370,7 @@ pub fn decode_foo_error_struct_params() -> decode.Decoder(FooError) {
 }
 
 pub type InvalidGreeting {
-  InvalidGreeting(
-    message: option.Option(String),
-  )
+  InvalidGreeting(message: option.Option(String))
 }
 
 pub fn encode_invalid_greeting_struct(input: InvalidGreeting) -> json.Json {
@@ -1494,10 +1397,7 @@ pub fn decode_invalid_greeting_struct_params() -> decode.Decoder(InvalidGreeting
 }
 
 pub type HttpEmptyPrefixHeadersInput {
-  HttpEmptyPrefixHeadersInput(
-    prefix_headers: option.Option(dict.Dict(String, String)),
-    specific_header: option.Option(String),
-  )
+  HttpEmptyPrefixHeadersInput(prefix_headers: option.Option(dict.Dict(String, String)), specific_header: option.Option(String))
 }
 
 pub fn encode_http_empty_prefix_headers_input_struct(input: HttpEmptyPrefixHeadersInput) -> json.Json {
@@ -1532,10 +1432,7 @@ pub fn decode_http_empty_prefix_headers_input_struct_params() -> decode.Decoder(
 }
 
 pub type HttpEmptyPrefixHeadersOutput {
-  HttpEmptyPrefixHeadersOutput(
-    prefix_headers: option.Option(dict.Dict(String, String)),
-    specific_header: option.Option(String),
-  )
+  HttpEmptyPrefixHeadersOutput(prefix_headers: option.Option(dict.Dict(String, String)), specific_header: option.Option(String))
 }
 
 pub fn encode_http_empty_prefix_headers_output_struct(input: HttpEmptyPrefixHeadersOutput) -> json.Json {
@@ -1570,9 +1467,7 @@ pub fn decode_http_empty_prefix_headers_output_struct_params() -> decode.Decoder
 }
 
 pub type EnumPayloadInput {
-  EnumPayloadInput(
-    payload: option.Option(StringEnum),
-  )
+  EnumPayloadInput(payload: option.Option(StringEnum))
 }
 
 pub fn encode_enum_payload_input_struct(input: EnumPayloadInput) -> json.Json {
@@ -1618,10 +1513,7 @@ pub fn decode_string_enum_enum() -> decode.Decoder(StringEnum) {
 }
 
 pub type HttpPayloadTraitsInputOutput {
-  HttpPayloadTraitsInputOutput(
-    blob: option.Option(BitArray),
-    foo: option.Option(String),
-  )
+  HttpPayloadTraitsInputOutput(blob: option.Option(BitArray), foo: option.Option(String))
 }
 
 pub fn encode_http_payload_traits_input_output_struct(input: HttpPayloadTraitsInputOutput) -> json.Json {
@@ -1656,10 +1548,7 @@ pub fn decode_http_payload_traits_input_output_struct_params() -> decode.Decoder
 }
 
 pub type HttpPayloadTraitsWithMediaTypeInputOutput {
-  HttpPayloadTraitsWithMediaTypeInputOutput(
-    blob: option.Option(BitArray),
-    foo: option.Option(String),
-  )
+  HttpPayloadTraitsWithMediaTypeInputOutput(blob: option.Option(BitArray), foo: option.Option(String))
 }
 
 pub fn encode_http_payload_traits_with_media_type_input_output_struct(input: HttpPayloadTraitsWithMediaTypeInputOutput) -> json.Json {
@@ -1694,9 +1583,7 @@ pub fn decode_http_payload_traits_with_media_type_input_output_struct_params() -
 }
 
 pub type HttpPayloadWithStructureInputOutput {
-  HttpPayloadWithStructureInputOutput(
-    nested: option.Option(NestedPayload),
-  )
+  HttpPayloadWithStructureInputOutput(nested: option.Option(NestedPayload))
 }
 
 pub fn encode_http_payload_with_structure_input_output_struct(input: HttpPayloadWithStructureInputOutput) -> json.Json {
@@ -1723,10 +1610,7 @@ pub fn decode_http_payload_with_structure_input_output_struct_params() -> decode
 }
 
 pub type NestedPayload {
-  NestedPayload(
-    greeting: option.Option(String),
-    name: option.Option(String),
-  )
+  NestedPayload(greeting: option.Option(String), name: option.Option(String))
 }
 
 pub fn encode_nested_payload_struct(input: NestedPayload) -> json.Json {
@@ -1761,9 +1645,7 @@ pub fn decode_nested_payload_struct_params() -> decode.Decoder(NestedPayload) {
 }
 
 pub type HttpPayloadWithUnionInputOutput {
-  HttpPayloadWithUnionInputOutput(
-    nested: option.Option(UnionPayload),
-  )
+  HttpPayloadWithUnionInputOutput(nested: option.Option(UnionPayload))
 }
 
 pub fn encode_http_payload_with_union_input_output_struct(input: HttpPayloadWithUnionInputOutput) -> json.Json {
@@ -1816,10 +1698,7 @@ pub fn decode_union_payload_union_params() -> decode.Decoder(UnionPayload) {
 }
 
 pub type HttpPrefixHeadersInput {
-  HttpPrefixHeadersInput(
-    foo: option.Option(String),
-    foo_map: option.Option(dict.Dict(String, String)),
-  )
+  HttpPrefixHeadersInput(foo: option.Option(String), foo_map: option.Option(dict.Dict(String, String)))
 }
 
 pub fn encode_http_prefix_headers_input_struct(input: HttpPrefixHeadersInput) -> json.Json {
@@ -1854,10 +1733,7 @@ pub fn decode_http_prefix_headers_input_struct_params() -> decode.Decoder(HttpPr
 }
 
 pub type HttpPrefixHeadersOutput {
-  HttpPrefixHeadersOutput(
-    foo: option.Option(String),
-    foo_map: option.Option(dict.Dict(String, String)),
-  )
+  HttpPrefixHeadersOutput(foo: option.Option(String), foo_map: option.Option(dict.Dict(String, String)))
 }
 
 pub fn encode_http_prefix_headers_output_struct(input: HttpPrefixHeadersOutput) -> json.Json {
@@ -1908,9 +1784,7 @@ pub fn decode_http_prefix_headers_in_response_input_struct_params() -> decode.De
 }
 
 pub type HttpPrefixHeadersInResponseOutput {
-  HttpPrefixHeadersInResponseOutput(
-    prefix_headers: option.Option(dict.Dict(String, String)),
-  )
+  HttpPrefixHeadersInResponseOutput(prefix_headers: option.Option(dict.Dict(String, String)))
 }
 
 pub fn encode_http_prefix_headers_in_response_output_struct(input: HttpPrefixHeadersInResponseOutput) -> json.Json {
@@ -1937,9 +1811,7 @@ pub fn decode_http_prefix_headers_in_response_output_struct_params() -> decode.D
 }
 
 pub type HttpQueryParamsOnlyInput {
-  HttpQueryParamsOnlyInput(
-    query_map: option.Option(dict.Dict(String, String)),
-  )
+  HttpQueryParamsOnlyInput(query_map: option.Option(dict.Dict(String, String)))
 }
 
 pub fn encode_http_query_params_only_input_struct(input: HttpQueryParamsOnlyInput) -> json.Json {
@@ -1966,10 +1838,7 @@ pub fn decode_http_query_params_only_input_struct_params() -> decode.Decoder(Htt
 }
 
 pub type HttpRequestWithFloatLabelsInput {
-  HttpRequestWithFloatLabelsInput(
-    double: option.Option(json_float.SmithyFloat),
-    float: option.Option(json_float.SmithyFloat),
-  )
+  HttpRequestWithFloatLabelsInput(double: option.Option(json_float.SmithyFloat), float: option.Option(json_float.SmithyFloat))
 }
 
 pub fn encode_http_request_with_float_labels_input_struct(input: HttpRequestWithFloatLabelsInput) -> json.Json {
@@ -2004,10 +1873,7 @@ pub fn decode_http_request_with_float_labels_input_struct_params() -> decode.Dec
 }
 
 pub type HttpRequestWithGreedyLabelInPathInput {
-  HttpRequestWithGreedyLabelInPathInput(
-    baz: option.Option(String),
-    foo: option.Option(String),
-  )
+  HttpRequestWithGreedyLabelInPathInput(baz: option.Option(String), foo: option.Option(String))
 }
 
 pub fn encode_http_request_with_greedy_label_in_path_input_struct(input: HttpRequestWithGreedyLabelInPathInput) -> json.Json {
@@ -2042,16 +1908,7 @@ pub fn decode_http_request_with_greedy_label_in_path_input_struct_params() -> de
 }
 
 pub type HttpRequestWithLabelsInput {
-  HttpRequestWithLabelsInput(
-    boolean: option.Option(Bool),
-    double: option.Option(json_float.SmithyFloat),
-    float: option.Option(json_float.SmithyFloat),
-    integer: option.Option(Int),
-    long: option.Option(Int),
-    short: option.Option(Int),
-    string: option.Option(String),
-    timestamp: option.Option(Int),
-  )
+  HttpRequestWithLabelsInput(boolean: option.Option(Bool), double: option.Option(json_float.SmithyFloat), float: option.Option(json_float.SmithyFloat), integer: option.Option(Int), long: option.Option(Int), short: option.Option(Int), string: option.Option(String), timestamp: option.Option(Int))
 }
 
 pub fn encode_http_request_with_labels_input_struct(input: HttpRequestWithLabelsInput) -> json.Json {
@@ -2134,15 +1991,7 @@ pub fn decode_http_request_with_labels_input_struct_params() -> decode.Decoder(H
 }
 
 pub type HttpRequestWithLabelsAndTimestampFormatInput {
-  HttpRequestWithLabelsAndTimestampFormatInput(
-    default_format: option.Option(Int),
-    member_date_time: option.Option(Int),
-    member_epoch_seconds: option.Option(Int),
-    member_http_date: option.Option(Int),
-    target_date_time: option.Option(Int),
-    target_epoch_seconds: option.Option(Int),
-    target_http_date: option.Option(Int),
-  )
+  HttpRequestWithLabelsAndTimestampFormatInput(default_format: option.Option(Int), member_date_time: option.Option(Int), member_epoch_seconds: option.Option(Int), member_http_date: option.Option(Int), target_date_time: option.Option(Int), target_epoch_seconds: option.Option(Int), target_http_date: option.Option(Int))
 }
 
 pub fn encode_http_request_with_labels_and_timestamp_format_input_struct(input: HttpRequestWithLabelsAndTimestampFormatInput) -> json.Json {
@@ -2217,9 +2066,7 @@ pub fn decode_http_request_with_labels_and_timestamp_format_input_struct_params(
 }
 
 pub type HttpRequestWithRegexLiteralInput {
-  HttpRequestWithRegexLiteralInput(
-    str: option.Option(String),
-  )
+  HttpRequestWithRegexLiteralInput(str: option.Option(String))
 }
 
 pub fn encode_http_request_with_regex_literal_input_struct(input: HttpRequestWithRegexLiteralInput) -> json.Json {
@@ -2246,9 +2093,7 @@ pub fn decode_http_request_with_regex_literal_input_struct_params() -> decode.De
 }
 
 pub type HttpResponseCodeOutput {
-  HttpResponseCodeOutput(
-    status: option.Option(Int),
-  )
+  HttpResponseCodeOutput(status: option.Option(Int))
 }
 
 pub fn encode_http_response_code_output_struct(input: HttpResponseCodeOutput) -> json.Json {
@@ -2275,9 +2120,7 @@ pub fn decode_http_response_code_output_struct_params() -> decode.Decoder(HttpRe
 }
 
 pub type StringPayloadInput {
-  StringPayloadInput(
-    payload: option.Option(String),
-  )
+  StringPayloadInput(payload: option.Option(String))
 }
 
 pub fn encode_string_payload_input_struct(input: StringPayloadInput) -> json.Json {
@@ -2304,9 +2147,7 @@ pub fn decode_string_payload_input_struct_params() -> decode.Decoder(StringPaylo
 }
 
 pub type IgnoreQueryParamsInResponseOutput {
-  IgnoreQueryParamsInResponseOutput(
-    baz: option.Option(String),
-  )
+  IgnoreQueryParamsInResponseOutput(baz: option.Option(String))
 }
 
 pub fn encode_ignore_query_params_in_response_output_struct(input: IgnoreQueryParamsInResponseOutput) -> json.Json {
@@ -2333,26 +2174,7 @@ pub fn decode_ignore_query_params_in_response_output_struct_params() -> decode.D
 }
 
 pub type InputAndOutputWithHeadersIO {
-  InputAndOutputWithHeadersIO(
-    header_boolean_list: option.Option(List(Bool)),
-    header_byte: option.Option(Int),
-    header_double: option.Option(json_float.SmithyFloat),
-    header_enum: option.Option(FooEnum),
-    header_enum_list: option.Option(List(FooEnum)),
-    header_false_bool: option.Option(Bool),
-    header_float: option.Option(json_float.SmithyFloat),
-    header_integer: option.Option(Int),
-    header_integer_enum: option.Option(IntegerEnum),
-    header_integer_enum_list: option.Option(List(IntegerEnum)),
-    header_integer_list: option.Option(List(Int)),
-    header_long: option.Option(Int),
-    header_short: option.Option(Int),
-    header_string: option.Option(String),
-    header_string_list: option.Option(List(String)),
-    header_string_set: option.Option(List(String)),
-    header_timestamp_list: option.Option(List(Int)),
-    header_true_bool: option.Option(Bool),
-  )
+  InputAndOutputWithHeadersIO(header_boolean_list: option.Option(List(Bool)), header_byte: option.Option(Int), header_double: option.Option(json_float.SmithyFloat), header_enum: option.Option(FooEnum), header_enum_list: option.Option(List(FooEnum)), header_false_bool: option.Option(Bool), header_float: option.Option(json_float.SmithyFloat), header_integer: option.Option(Int), header_integer_enum: option.Option(IntegerEnum), header_integer_enum_list: option.Option(List(IntegerEnum)), header_integer_list: option.Option(List(Int)), header_long: option.Option(Int), header_short: option.Option(Int), header_string: option.Option(String), header_string_list: option.Option(List(String)), header_string_set: option.Option(List(String)), header_timestamp_list: option.Option(List(Int)), header_true_bool: option.Option(Bool))
 }
 
 pub fn encode_input_and_output_with_headers_io_struct(input: InputAndOutputWithHeadersIO) -> json.Json {
@@ -2515,9 +2337,7 @@ pub fn decode_input_and_output_with_headers_io_struct_params() -> decode.Decoder
 }
 
 pub type InputStreamInput {
-  InputStreamInput(
-    stream: option.Option(EventStream),
-  )
+  InputStreamInput(stream: option.Option(EventStream))
 }
 
 pub fn encode_input_stream_input_struct(input: InputStreamInput) -> json.Json {
@@ -2544,10 +2364,7 @@ pub fn decode_input_stream_input_struct_params() -> decode.Decoder(InputStreamIn
 }
 
 pub type InputStreamWithInitialRequestInput {
-  InputStreamWithInitialRequestInput(
-    initial_request_member: option.Option(String),
-    stream: option.Option(EventStream),
-  )
+  InputStreamWithInitialRequestInput(initial_request_member: option.Option(String), stream: option.Option(EventStream))
 }
 
 pub fn encode_input_stream_with_initial_request_input_struct(input: InputStreamWithInitialRequestInput) -> json.Json {
@@ -2582,9 +2399,7 @@ pub fn decode_input_stream_with_initial_request_input_struct_params() -> decode.
 }
 
 pub type JsonBlobsInputOutput {
-  JsonBlobsInputOutput(
-    data: option.Option(BitArray),
-  )
+  JsonBlobsInputOutput(data: option.Option(BitArray))
 }
 
 pub fn encode_json_blobs_input_output_struct(input: JsonBlobsInputOutput) -> json.Json {
@@ -2611,14 +2426,7 @@ pub fn decode_json_blobs_input_output_struct_params() -> decode.Decoder(JsonBlob
 }
 
 pub type JsonEnumsInputOutput {
-  JsonEnumsInputOutput(
-    foo_enum1: option.Option(FooEnum),
-    foo_enum2: option.Option(FooEnum),
-    foo_enum3: option.Option(FooEnum),
-    foo_enum_list: option.Option(List(FooEnum)),
-    foo_enum_map: option.Option(dict.Dict(String, FooEnum)),
-    foo_enum_set: option.Option(List(FooEnum)),
-  )
+  JsonEnumsInputOutput(foo_enum1: option.Option(FooEnum), foo_enum2: option.Option(FooEnum), foo_enum3: option.Option(FooEnum), foo_enum_list: option.Option(List(FooEnum)), foo_enum_map: option.Option(dict.Dict(String, FooEnum)), foo_enum_set: option.Option(List(FooEnum)))
 }
 
 pub fn encode_json_enums_input_output_struct(input: JsonEnumsInputOutput) -> json.Json {
@@ -2685,14 +2493,7 @@ pub fn decode_json_enums_input_output_struct_params() -> decode.Decoder(JsonEnum
 }
 
 pub type JsonIntEnumsInputOutput {
-  JsonIntEnumsInputOutput(
-    integer_enum1: option.Option(IntegerEnum),
-    integer_enum2: option.Option(IntegerEnum),
-    integer_enum3: option.Option(IntegerEnum),
-    integer_enum_list: option.Option(List(IntegerEnum)),
-    integer_enum_map: option.Option(dict.Dict(String, IntegerEnum)),
-    integer_enum_set: option.Option(List(IntegerEnum)),
-  )
+  JsonIntEnumsInputOutput(integer_enum1: option.Option(IntegerEnum), integer_enum2: option.Option(IntegerEnum), integer_enum3: option.Option(IntegerEnum), integer_enum_list: option.Option(List(IntegerEnum)), integer_enum_map: option.Option(dict.Dict(String, IntegerEnum)), integer_enum_set: option.Option(List(IntegerEnum)))
 }
 
 pub fn encode_json_int_enums_input_output_struct(input: JsonIntEnumsInputOutput) -> json.Json {
@@ -2759,17 +2560,7 @@ pub fn decode_json_int_enums_input_output_struct_params() -> decode.Decoder(Json
 }
 
 pub type JsonListsInputOutput {
-  JsonListsInputOutput(
-    boolean_list: option.Option(List(Bool)),
-    enum_list: option.Option(List(FooEnum)),
-    int_enum_list: option.Option(List(IntegerEnum)),
-    integer_list: option.Option(List(Int)),
-    nested_string_list: option.Option(List(List(String))),
-    string_list: option.Option(List(String)),
-    string_set: option.Option(List(String)),
-    structure_list: option.Option(List(StructureListMember)),
-    timestamp_list: option.Option(List(Int)),
-  )
+  JsonListsInputOutput(boolean_list: option.Option(List(Bool)), enum_list: option.Option(List(FooEnum)), int_enum_list: option.Option(List(IntegerEnum)), integer_list: option.Option(List(Int)), nested_string_list: option.Option(List(List(String))), string_list: option.Option(List(String)), string_set: option.Option(List(String)), structure_list: option.Option(List(StructureListMember)), timestamp_list: option.Option(List(Int)))
 }
 
 pub fn encode_json_lists_input_output_struct(input: JsonListsInputOutput) -> json.Json {
@@ -2860,10 +2651,7 @@ pub fn decode_json_lists_input_output_struct_params() -> decode.Decoder(JsonList
 }
 
 pub type StructureListMember {
-  StructureListMember(
-    a: option.Option(String),
-    b: option.Option(String),
-  )
+  StructureListMember(a: option.Option(String), b: option.Option(String))
 }
 
 pub fn encode_structure_list_member_struct(input: StructureListMember) -> json.Json {
@@ -2898,13 +2686,7 @@ pub fn decode_structure_list_member_struct_params() -> decode.Decoder(StructureL
 }
 
 pub type JsonMapsInputOutput {
-  JsonMapsInputOutput(
-    dense_boolean_map: option.Option(dict.Dict(String, Bool)),
-    dense_number_map: option.Option(dict.Dict(String, Int)),
-    dense_set_map: option.Option(dict.Dict(String, List(String))),
-    dense_string_map: option.Option(dict.Dict(String, String)),
-    dense_struct_map: option.Option(dict.Dict(String, GreetingStructShared)),
-  )
+  JsonMapsInputOutput(dense_boolean_map: option.Option(dict.Dict(String, Bool)), dense_number_map: option.Option(dict.Dict(String, Int)), dense_set_map: option.Option(dict.Dict(String, List(String))), dense_string_map: option.Option(dict.Dict(String, String)), dense_struct_map: option.Option(dict.Dict(String, GreetingStructShared)))
 }
 
 pub fn encode_json_maps_input_output_struct(input: JsonMapsInputOutput) -> json.Json {
@@ -2963,9 +2745,7 @@ pub fn decode_json_maps_input_output_struct_params() -> decode.Decoder(JsonMapsI
 }
 
 pub type GreetingStructShared {
-  GreetingStructShared(
-    hi: option.Option(String),
-  )
+  GreetingStructShared(hi: option.Option(String))
 }
 
 pub fn encode_greeting_struct_shared_struct(input: GreetingStructShared) -> json.Json {
@@ -2992,15 +2772,7 @@ pub fn decode_greeting_struct_shared_struct_params() -> decode.Decoder(GreetingS
 }
 
 pub type JsonTimestampsInputOutput {
-  JsonTimestampsInputOutput(
-    date_time: option.Option(Int),
-    date_time_on_target: option.Option(Int),
-    epoch_seconds: option.Option(Int),
-    epoch_seconds_on_target: option.Option(Int),
-    http_date: option.Option(Int),
-    http_date_on_target: option.Option(Int),
-    normal: option.Option(Int),
-  )
+  JsonTimestampsInputOutput(date_time: option.Option(Int), date_time_on_target: option.Option(Int), epoch_seconds: option.Option(Int), epoch_seconds_on_target: option.Option(Int), http_date: option.Option(Int), http_date_on_target: option.Option(Int), normal: option.Option(Int))
 }
 
 pub fn encode_json_timestamps_input_output_struct(input: JsonTimestampsInputOutput) -> json.Json {
@@ -3075,9 +2847,7 @@ pub fn decode_json_timestamps_input_output_struct_params() -> decode.Decoder(Jso
 }
 
 pub type UnionInputOutput {
-  UnionInputOutput(
-    contents: option.Option(MyUnion),
-  )
+  UnionInputOutput(contents: option.Option(MyUnion))
 }
 
 pub fn encode_union_input_output_struct(input: UnionInputOutput) -> json.Json {
@@ -3166,9 +2936,7 @@ pub fn decode_my_union_union_params() -> decode.Decoder(MyUnion) {
 }
 
 pub type GreetingStructNested {
-  GreetingStructNested(
-    salutation: option.Option(String),
-  )
+  GreetingStructNested(salutation: option.Option(String))
 }
 
 pub fn encode_greeting_struct_nested_struct(input: GreetingStructNested) -> json.Json {
@@ -3195,9 +2963,7 @@ pub fn decode_greeting_struct_nested_struct_params() -> decode.Decoder(GreetingS
 }
 
 pub type MalformedAcceptWithGenericStringOutput {
-  MalformedAcceptWithGenericStringOutput(
-    payload: option.Option(String),
-  )
+  MalformedAcceptWithGenericStringOutput(payload: option.Option(String))
 }
 
 pub fn encode_malformed_accept_with_generic_string_output_struct(input: MalformedAcceptWithGenericStringOutput) -> json.Json {
@@ -3224,9 +2990,7 @@ pub fn decode_malformed_accept_with_generic_string_output_struct_params() -> dec
 }
 
 pub type MalformedAcceptWithPayloadOutput {
-  MalformedAcceptWithPayloadOutput(
-    payload: option.Option(BitArray),
-  )
+  MalformedAcceptWithPayloadOutput(payload: option.Option(BitArray))
 }
 
 pub fn encode_malformed_accept_with_payload_output_struct(input: MalformedAcceptWithPayloadOutput) -> json.Json {
@@ -3253,9 +3017,7 @@ pub fn decode_malformed_accept_with_payload_output_struct_params() -> decode.Dec
 }
 
 pub type MalformedBlobInput {
-  MalformedBlobInput(
-    blob: option.Option(BitArray),
-  )
+  MalformedBlobInput(blob: option.Option(BitArray))
 }
 
 pub fn encode_malformed_blob_input_struct(input: MalformedBlobInput) -> json.Json {
@@ -3282,12 +3044,7 @@ pub fn decode_malformed_blob_input_struct_params() -> decode.Decoder(MalformedBl
 }
 
 pub type MalformedBooleanInput {
-  MalformedBooleanInput(
-    boolean_in_body: option.Option(Bool),
-    boolean_in_header: option.Option(Bool),
-    boolean_in_path: option.Option(Bool),
-    boolean_in_query: option.Option(Bool),
-  )
+  MalformedBooleanInput(boolean_in_body: option.Option(Bool), boolean_in_header: option.Option(Bool), boolean_in_path: option.Option(Bool), boolean_in_query: option.Option(Bool))
 }
 
 pub fn encode_malformed_boolean_input_struct(input: MalformedBooleanInput) -> json.Json {
@@ -3338,12 +3095,7 @@ pub fn decode_malformed_boolean_input_struct_params() -> decode.Decoder(Malforme
 }
 
 pub type MalformedByteInput {
-  MalformedByteInput(
-    byte_in_body: option.Option(Int),
-    byte_in_header: option.Option(Int),
-    byte_in_path: option.Option(Int),
-    byte_in_query: option.Option(Int),
-  )
+  MalformedByteInput(byte_in_body: option.Option(Int), byte_in_header: option.Option(Int), byte_in_path: option.Option(Int), byte_in_query: option.Option(Int))
 }
 
 pub fn encode_malformed_byte_input_struct(input: MalformedByteInput) -> json.Json {
@@ -3394,9 +3146,7 @@ pub fn decode_malformed_byte_input_struct_params() -> decode.Decoder(MalformedBy
 }
 
 pub type MalformedContentTypeWithGenericStringInput {
-  MalformedContentTypeWithGenericStringInput(
-    payload: option.Option(String),
-  )
+  MalformedContentTypeWithGenericStringInput(payload: option.Option(String))
 }
 
 pub fn encode_malformed_content_type_with_generic_string_input_struct(input: MalformedContentTypeWithGenericStringInput) -> json.Json {
@@ -3423,9 +3173,7 @@ pub fn decode_malformed_content_type_with_generic_string_input_struct_params() -
 }
 
 pub type MalformedContentTypeWithoutBodyEmptyInputInput {
-  MalformedContentTypeWithoutBodyEmptyInputInput(
-    header: option.Option(String),
-  )
+  MalformedContentTypeWithoutBodyEmptyInputInput(header: option.Option(String))
 }
 
 pub fn encode_malformed_content_type_without_body_empty_input_input_struct(input: MalformedContentTypeWithoutBodyEmptyInputInput) -> json.Json {
@@ -3452,9 +3200,7 @@ pub fn decode_malformed_content_type_without_body_empty_input_input_struct_param
 }
 
 pub type MalformedContentTypeWithPayloadInput {
-  MalformedContentTypeWithPayloadInput(
-    payload: option.Option(BitArray),
-  )
+  MalformedContentTypeWithPayloadInput(payload: option.Option(BitArray))
 }
 
 pub fn encode_malformed_content_type_with_payload_input_struct(input: MalformedContentTypeWithPayloadInput) -> json.Json {
@@ -3481,12 +3227,7 @@ pub fn decode_malformed_content_type_with_payload_input_struct_params() -> decod
 }
 
 pub type MalformedDoubleInput {
-  MalformedDoubleInput(
-    double_in_body: option.Option(json_float.SmithyFloat),
-    double_in_header: option.Option(json_float.SmithyFloat),
-    double_in_path: option.Option(json_float.SmithyFloat),
-    double_in_query: option.Option(json_float.SmithyFloat),
-  )
+  MalformedDoubleInput(double_in_body: option.Option(json_float.SmithyFloat), double_in_header: option.Option(json_float.SmithyFloat), double_in_path: option.Option(json_float.SmithyFloat), double_in_query: option.Option(json_float.SmithyFloat))
 }
 
 pub fn encode_malformed_double_input_struct(input: MalformedDoubleInput) -> json.Json {
@@ -3537,12 +3278,7 @@ pub fn decode_malformed_double_input_struct_params() -> decode.Decoder(Malformed
 }
 
 pub type MalformedFloatInput {
-  MalformedFloatInput(
-    float_in_body: option.Option(json_float.SmithyFloat),
-    float_in_header: option.Option(json_float.SmithyFloat),
-    float_in_path: option.Option(json_float.SmithyFloat),
-    float_in_query: option.Option(json_float.SmithyFloat),
-  )
+  MalformedFloatInput(float_in_body: option.Option(json_float.SmithyFloat), float_in_header: option.Option(json_float.SmithyFloat), float_in_path: option.Option(json_float.SmithyFloat), float_in_query: option.Option(json_float.SmithyFloat))
 }
 
 pub fn encode_malformed_float_input_struct(input: MalformedFloatInput) -> json.Json {
@@ -3593,12 +3329,7 @@ pub fn decode_malformed_float_input_struct_params() -> decode.Decoder(MalformedF
 }
 
 pub type MalformedIntegerInput {
-  MalformedIntegerInput(
-    integer_in_body: option.Option(Int),
-    integer_in_header: option.Option(Int),
-    integer_in_path: option.Option(Int),
-    integer_in_query: option.Option(Int),
-  )
+  MalformedIntegerInput(integer_in_body: option.Option(Int), integer_in_header: option.Option(Int), integer_in_path: option.Option(Int), integer_in_query: option.Option(Int))
 }
 
 pub fn encode_malformed_integer_input_struct(input: MalformedIntegerInput) -> json.Json {
@@ -3649,9 +3380,7 @@ pub fn decode_malformed_integer_input_struct_params() -> decode.Decoder(Malforme
 }
 
 pub type MalformedListInput {
-  MalformedListInput(
-    body_list: option.Option(List(String)),
-  )
+  MalformedListInput(body_list: option.Option(List(String)))
 }
 
 pub fn encode_malformed_list_input_struct(input: MalformedListInput) -> json.Json {
@@ -3678,12 +3407,7 @@ pub fn decode_malformed_list_input_struct_params() -> decode.Decoder(MalformedLi
 }
 
 pub type MalformedLongInput {
-  MalformedLongInput(
-    long_in_body: option.Option(Int),
-    long_in_header: option.Option(Int),
-    long_in_path: option.Option(Int),
-    long_in_query: option.Option(Int),
-  )
+  MalformedLongInput(long_in_body: option.Option(Int), long_in_header: option.Option(Int), long_in_path: option.Option(Int), long_in_query: option.Option(Int))
 }
 
 pub fn encode_malformed_long_input_struct(input: MalformedLongInput) -> json.Json {
@@ -3734,9 +3458,7 @@ pub fn decode_malformed_long_input_struct_params() -> decode.Decoder(MalformedLo
 }
 
 pub type MalformedMapInput {
-  MalformedMapInput(
-    body_map: option.Option(dict.Dict(String, String)),
-  )
+  MalformedMapInput(body_map: option.Option(dict.Dict(String, String)))
 }
 
 pub fn encode_malformed_map_input_struct(input: MalformedMapInput) -> json.Json {
@@ -3763,10 +3485,7 @@ pub fn decode_malformed_map_input_struct_params() -> decode.Decoder(MalformedMap
 }
 
 pub type MalformedRequestBodyInput {
-  MalformedRequestBodyInput(
-    float: option.Option(json_float.SmithyFloat),
-    int: option.Option(Int),
-  )
+  MalformedRequestBodyInput(float: option.Option(json_float.SmithyFloat), int: option.Option(Int))
 }
 
 pub fn encode_malformed_request_body_input_struct(input: MalformedRequestBodyInput) -> json.Json {
@@ -3801,12 +3520,7 @@ pub fn decode_malformed_request_body_input_struct_params() -> decode.Decoder(Mal
 }
 
 pub type MalformedShortInput {
-  MalformedShortInput(
-    short_in_body: option.Option(Int),
-    short_in_header: option.Option(Int),
-    short_in_path: option.Option(Int),
-    short_in_query: option.Option(Int),
-  )
+  MalformedShortInput(short_in_body: option.Option(Int), short_in_header: option.Option(Int), short_in_path: option.Option(Int), short_in_query: option.Option(Int))
 }
 
 pub fn encode_malformed_short_input_struct(input: MalformedShortInput) -> json.Json {
@@ -3857,9 +3571,7 @@ pub fn decode_malformed_short_input_struct_params() -> decode.Decoder(MalformedS
 }
 
 pub type MalformedStringInput {
-  MalformedStringInput(
-    blob: option.Option(String),
-  )
+  MalformedStringInput(blob: option.Option(String))
 }
 
 pub fn encode_malformed_string_input_struct(input: MalformedStringInput) -> json.Json {
@@ -3886,9 +3598,7 @@ pub fn decode_malformed_string_input_struct_params() -> decode.Decoder(Malformed
 }
 
 pub type MalformedTimestampBodyDateTimeInput {
-  MalformedTimestampBodyDateTimeInput(
-    timestamp: option.Option(Int),
-  )
+  MalformedTimestampBodyDateTimeInput(timestamp: option.Option(Int))
 }
 
 pub fn encode_malformed_timestamp_body_date_time_input_struct(input: MalformedTimestampBodyDateTimeInput) -> json.Json {
@@ -3915,9 +3625,7 @@ pub fn decode_malformed_timestamp_body_date_time_input_struct_params() -> decode
 }
 
 pub type MalformedTimestampBodyDefaultInput {
-  MalformedTimestampBodyDefaultInput(
-    timestamp: option.Option(Int),
-  )
+  MalformedTimestampBodyDefaultInput(timestamp: option.Option(Int))
 }
 
 pub fn encode_malformed_timestamp_body_default_input_struct(input: MalformedTimestampBodyDefaultInput) -> json.Json {
@@ -3944,9 +3652,7 @@ pub fn decode_malformed_timestamp_body_default_input_struct_params() -> decode.D
 }
 
 pub type MalformedTimestampBodyHttpDateInput {
-  MalformedTimestampBodyHttpDateInput(
-    timestamp: option.Option(Int),
-  )
+  MalformedTimestampBodyHttpDateInput(timestamp: option.Option(Int))
 }
 
 pub fn encode_malformed_timestamp_body_http_date_input_struct(input: MalformedTimestampBodyHttpDateInput) -> json.Json {
@@ -3973,9 +3679,7 @@ pub fn decode_malformed_timestamp_body_http_date_input_struct_params() -> decode
 }
 
 pub type MalformedTimestampHeaderDateTimeInput {
-  MalformedTimestampHeaderDateTimeInput(
-    timestamp: option.Option(Int),
-  )
+  MalformedTimestampHeaderDateTimeInput(timestamp: option.Option(Int))
 }
 
 pub fn encode_malformed_timestamp_header_date_time_input_struct(input: MalformedTimestampHeaderDateTimeInput) -> json.Json {
@@ -4002,9 +3706,7 @@ pub fn decode_malformed_timestamp_header_date_time_input_struct_params() -> deco
 }
 
 pub type MalformedTimestampHeaderDefaultInput {
-  MalformedTimestampHeaderDefaultInput(
-    timestamp: option.Option(Int),
-  )
+  MalformedTimestampHeaderDefaultInput(timestamp: option.Option(Int))
 }
 
 pub fn encode_malformed_timestamp_header_default_input_struct(input: MalformedTimestampHeaderDefaultInput) -> json.Json {
@@ -4031,9 +3733,7 @@ pub fn decode_malformed_timestamp_header_default_input_struct_params() -> decode
 }
 
 pub type MalformedTimestampHeaderEpochInput {
-  MalformedTimestampHeaderEpochInput(
-    timestamp: option.Option(Int),
-  )
+  MalformedTimestampHeaderEpochInput(timestamp: option.Option(Int))
 }
 
 pub fn encode_malformed_timestamp_header_epoch_input_struct(input: MalformedTimestampHeaderEpochInput) -> json.Json {
@@ -4060,9 +3760,7 @@ pub fn decode_malformed_timestamp_header_epoch_input_struct_params() -> decode.D
 }
 
 pub type MalformedTimestampPathDefaultInput {
-  MalformedTimestampPathDefaultInput(
-    timestamp: option.Option(Int),
-  )
+  MalformedTimestampPathDefaultInput(timestamp: option.Option(Int))
 }
 
 pub fn encode_malformed_timestamp_path_default_input_struct(input: MalformedTimestampPathDefaultInput) -> json.Json {
@@ -4089,9 +3787,7 @@ pub fn decode_malformed_timestamp_path_default_input_struct_params() -> decode.D
 }
 
 pub type MalformedTimestampPathEpochInput {
-  MalformedTimestampPathEpochInput(
-    timestamp: option.Option(Int),
-  )
+  MalformedTimestampPathEpochInput(timestamp: option.Option(Int))
 }
 
 pub fn encode_malformed_timestamp_path_epoch_input_struct(input: MalformedTimestampPathEpochInput) -> json.Json {
@@ -4118,9 +3814,7 @@ pub fn decode_malformed_timestamp_path_epoch_input_struct_params() -> decode.Dec
 }
 
 pub type MalformedTimestampPathHttpDateInput {
-  MalformedTimestampPathHttpDateInput(
-    timestamp: option.Option(Int),
-  )
+  MalformedTimestampPathHttpDateInput(timestamp: option.Option(Int))
 }
 
 pub fn encode_malformed_timestamp_path_http_date_input_struct(input: MalformedTimestampPathHttpDateInput) -> json.Json {
@@ -4147,9 +3841,7 @@ pub fn decode_malformed_timestamp_path_http_date_input_struct_params() -> decode
 }
 
 pub type MalformedTimestampQueryDefaultInput {
-  MalformedTimestampQueryDefaultInput(
-    timestamp: option.Option(Int),
-  )
+  MalformedTimestampQueryDefaultInput(timestamp: option.Option(Int))
 }
 
 pub fn encode_malformed_timestamp_query_default_input_struct(input: MalformedTimestampQueryDefaultInput) -> json.Json {
@@ -4176,9 +3868,7 @@ pub fn decode_malformed_timestamp_query_default_input_struct_params() -> decode.
 }
 
 pub type MalformedTimestampQueryEpochInput {
-  MalformedTimestampQueryEpochInput(
-    timestamp: option.Option(Int),
-  )
+  MalformedTimestampQueryEpochInput(timestamp: option.Option(Int))
 }
 
 pub fn encode_malformed_timestamp_query_epoch_input_struct(input: MalformedTimestampQueryEpochInput) -> json.Json {
@@ -4205,9 +3895,7 @@ pub fn decode_malformed_timestamp_query_epoch_input_struct_params() -> decode.De
 }
 
 pub type MalformedTimestampQueryHttpDateInput {
-  MalformedTimestampQueryHttpDateInput(
-    timestamp: option.Option(Int),
-  )
+  MalformedTimestampQueryHttpDateInput(timestamp: option.Option(Int))
 }
 
 pub fn encode_malformed_timestamp_query_http_date_input_struct(input: MalformedTimestampQueryHttpDateInput) -> json.Json {
@@ -4234,9 +3922,7 @@ pub fn decode_malformed_timestamp_query_http_date_input_struct_params() -> decod
 }
 
 pub type MalformedUnionInput {
-  MalformedUnionInput(
-    union: option.Option(SimpleUnion),
-  )
+  MalformedUnionInput(union: option.Option(SimpleUnion))
 }
 
 pub fn encode_malformed_union_input_struct(input: MalformedUnionInput) -> json.Json {
@@ -4293,9 +3979,7 @@ pub fn decode_simple_union_union_params() -> decode.Decoder(SimpleUnion) {
 }
 
 pub type MediaTypeHeaderInput {
-  MediaTypeHeaderInput(
-    json: option.Option(String),
-  )
+  MediaTypeHeaderInput(json: option.Option(String))
 }
 
 pub fn encode_media_type_header_input_struct(input: MediaTypeHeaderInput) -> json.Json {
@@ -4322,9 +4006,7 @@ pub fn decode_media_type_header_input_struct_params() -> decode.Decoder(MediaTyp
 }
 
 pub type MediaTypeHeaderOutput {
-  MediaTypeHeaderOutput(
-    json: option.Option(String),
-  )
+  MediaTypeHeaderOutput(json: option.Option(String))
 }
 
 pub fn encode_media_type_header_output_struct(input: MediaTypeHeaderOutput) -> json.Json {
@@ -4367,11 +4049,7 @@ pub fn decode_no_input_and_output_output_struct_params() -> decode.Decoder(NoInp
 }
 
 pub type NullAndEmptyHeadersIO {
-  NullAndEmptyHeadersIO(
-    a: option.Option(String),
-    b: option.Option(String),
-    c: option.Option(List(String)),
-  )
+  NullAndEmptyHeadersIO(a: option.Option(String), b: option.Option(String), c: option.Option(List(String)))
 }
 
 pub fn encode_null_and_empty_headers_io_struct(input: NullAndEmptyHeadersIO) -> json.Json {
@@ -4414,10 +4092,7 @@ pub fn decode_null_and_empty_headers_io_struct_params() -> decode.Decoder(NullAn
 }
 
 pub type OmitsNullSerializesEmptyStringInput {
-  OmitsNullSerializesEmptyStringInput(
-    empty_string: option.Option(String),
-    null_value: option.Option(String),
-  )
+  OmitsNullSerializesEmptyStringInput(empty_string: option.Option(String), null_value: option.Option(String))
 }
 
 pub fn encode_omits_null_serializes_empty_string_input_struct(input: OmitsNullSerializesEmptyStringInput) -> json.Json {
@@ -4452,15 +4127,7 @@ pub fn decode_omits_null_serializes_empty_string_input_struct_params() -> decode
 }
 
 pub type OmitsSerializingEmptyListsInput {
-  OmitsSerializingEmptyListsInput(
-    query_boolean_list: option.Option(List(Bool)),
-    query_double_list: option.Option(List(json_float.SmithyFloat)),
-    query_enum_list: option.Option(List(FooEnum)),
-    query_integer_enum_list: option.Option(List(IntegerEnum)),
-    query_integer_list: option.Option(List(Int)),
-    query_string_list: option.Option(List(String)),
-    query_timestamp_list: option.Option(List(Int)),
-  )
+  OmitsSerializingEmptyListsInput(query_boolean_list: option.Option(List(Bool)), query_double_list: option.Option(List(json_float.SmithyFloat)), query_enum_list: option.Option(List(FooEnum)), query_integer_enum_list: option.Option(List(IntegerEnum)), query_integer_list: option.Option(List(Int)), query_string_list: option.Option(List(String)), query_timestamp_list: option.Option(List(Int)))
 }
 
 pub fn encode_omits_serializing_empty_lists_input_struct(input: OmitsSerializingEmptyListsInput) -> json.Json {
@@ -4535,12 +4202,7 @@ pub fn decode_omits_serializing_empty_lists_input_struct_params() -> decode.Deco
 }
 
 pub type OperationWithDefaultsInput {
-  OperationWithDefaultsInput(
-    client_optional_defaults: option.Option(ClientOptionalDefaults),
-    defaults: option.Option(Defaults),
-    other_top_level_default: option.Option(Int),
-    top_level_default: option.Option(String),
-  )
+  OperationWithDefaultsInput(client_optional_defaults: option.Option(ClientOptionalDefaults), defaults: option.Option(Defaults), other_top_level_default: option.Option(Int), top_level_default: option.Option(String))
 }
 
 pub fn encode_operation_with_defaults_input_struct(input: OperationWithDefaultsInput) -> json.Json {
@@ -4591,9 +4253,7 @@ pub fn decode_operation_with_defaults_input_struct_params() -> decode.Decoder(Op
 }
 
 pub type ClientOptionalDefaults {
-  ClientOptionalDefaults(
-    member: option.Option(Int),
-  )
+  ClientOptionalDefaults(member: option.Option(Int))
 }
 
 pub fn encode_client_optional_defaults_struct(input: ClientOptionalDefaults) -> json.Json {
@@ -4620,36 +4280,7 @@ pub fn decode_client_optional_defaults_struct_params() -> decode.Decoder(ClientO
 }
 
 pub type Defaults {
-  Defaults(
-    default_blob: option.Option(BitArray),
-    default_boolean: option.Option(Bool),
-    default_byte: option.Option(Int),
-    default_document_boolean: option.Option(json.Json),
-    default_document_list: option.Option(json.Json),
-    default_document_map: option.Option(json.Json),
-    default_document_string: option.Option(json.Json),
-    default_double: option.Option(json_float.SmithyFloat),
-    default_enum: option.Option(TestEnum),
-    default_float: option.Option(json_float.SmithyFloat),
-    default_int_enum: option.Option(TestIntEnum),
-    default_integer: option.Option(Int),
-    default_list: option.Option(List(String)),
-    default_long: option.Option(Int),
-    default_map: option.Option(dict.Dict(String, String)),
-    default_null_document: option.Option(json.Json),
-    default_short: option.Option(Int),
-    default_string: option.Option(String),
-    default_timestamp: option.Option(Int),
-    empty_blob: option.Option(BitArray),
-    empty_string: option.Option(String),
-    false_boolean: option.Option(Bool),
-    zero_byte: option.Option(Int),
-    zero_double: option.Option(json_float.SmithyFloat),
-    zero_float: option.Option(json_float.SmithyFloat),
-    zero_integer: option.Option(Int),
-    zero_long: option.Option(Int),
-    zero_short: option.Option(Int),
-  )
+  Defaults(default_blob: option.Option(BitArray), default_boolean: option.Option(Bool), default_byte: option.Option(Int), default_document_boolean: option.Option(json.Json), default_document_list: option.Option(json.Json), default_document_map: option.Option(json.Json), default_document_string: option.Option(json.Json), default_double: option.Option(json_float.SmithyFloat), default_enum: option.Option(TestEnum), default_float: option.Option(json_float.SmithyFloat), default_int_enum: option.Option(TestIntEnum), default_integer: option.Option(Int), default_list: option.Option(List(String)), default_long: option.Option(Int), default_map: option.Option(dict.Dict(String, String)), default_null_document: option.Option(json.Json), default_short: option.Option(Int), default_string: option.Option(String), default_timestamp: option.Option(Int), empty_blob: option.Option(BitArray), empty_string: option.Option(String), false_boolean: option.Option(Bool), zero_byte: option.Option(Int), zero_double: option.Option(json_float.SmithyFloat), zero_float: option.Option(json_float.SmithyFloat), zero_integer: option.Option(Int), zero_long: option.Option(Int), zero_short: option.Option(Int))
 }
 
 pub fn encode_defaults_struct(input: Defaults) -> json.Json {
@@ -4946,36 +4577,7 @@ pub fn decode_test_int_enum_int_enum() -> decode.Decoder(TestIntEnum) {
 }
 
 pub type OperationWithDefaultsOutput {
-  OperationWithDefaultsOutput(
-    default_blob: option.Option(BitArray),
-    default_boolean: option.Option(Bool),
-    default_byte: option.Option(Int),
-    default_document_boolean: option.Option(json.Json),
-    default_document_list: option.Option(json.Json),
-    default_document_map: option.Option(json.Json),
-    default_document_string: option.Option(json.Json),
-    default_double: option.Option(json_float.SmithyFloat),
-    default_enum: option.Option(TestEnum),
-    default_float: option.Option(json_float.SmithyFloat),
-    default_int_enum: option.Option(TestIntEnum),
-    default_integer: option.Option(Int),
-    default_list: option.Option(List(String)),
-    default_long: option.Option(Int),
-    default_map: option.Option(dict.Dict(String, String)),
-    default_null_document: option.Option(json.Json),
-    default_short: option.Option(Int),
-    default_string: option.Option(String),
-    default_timestamp: option.Option(Int),
-    empty_blob: option.Option(BitArray),
-    empty_string: option.Option(String),
-    false_boolean: option.Option(Bool),
-    zero_byte: option.Option(Int),
-    zero_double: option.Option(json_float.SmithyFloat),
-    zero_float: option.Option(json_float.SmithyFloat),
-    zero_integer: option.Option(Int),
-    zero_long: option.Option(Int),
-    zero_short: option.Option(Int),
-  )
+  OperationWithDefaultsOutput(default_blob: option.Option(BitArray), default_boolean: option.Option(Bool), default_byte: option.Option(Int), default_document_boolean: option.Option(json.Json), default_document_list: option.Option(json.Json), default_document_map: option.Option(json.Json), default_document_string: option.Option(json.Json), default_double: option.Option(json_float.SmithyFloat), default_enum: option.Option(TestEnum), default_float: option.Option(json_float.SmithyFloat), default_int_enum: option.Option(TestIntEnum), default_integer: option.Option(Int), default_list: option.Option(List(String)), default_long: option.Option(Int), default_map: option.Option(dict.Dict(String, String)), default_null_document: option.Option(json.Json), default_short: option.Option(Int), default_string: option.Option(String), default_timestamp: option.Option(Int), empty_blob: option.Option(BitArray), empty_string: option.Option(String), false_boolean: option.Option(Bool), zero_byte: option.Option(Int), zero_double: option.Option(json_float.SmithyFloat), zero_float: option.Option(json_float.SmithyFloat), zero_integer: option.Option(Int), zero_long: option.Option(Int), zero_short: option.Option(Int))
 }
 
 pub fn encode_operation_with_defaults_output_struct(input: OperationWithDefaultsOutput) -> json.Json {
@@ -5218,9 +4820,7 @@ pub fn decode_operation_with_defaults_output_struct_params() -> decode.Decoder(O
 }
 
 pub type OperationWithNestedStructureInput {
-  OperationWithNestedStructureInput(
-    top_level: option.Option(TopLevel),
-  )
+  OperationWithNestedStructureInput(top_level: option.Option(TopLevel))
 }
 
 pub fn encode_operation_with_nested_structure_input_struct(input: OperationWithNestedStructureInput) -> json.Json {
@@ -5247,11 +4847,7 @@ pub fn decode_operation_with_nested_structure_input_struct_params() -> decode.De
 }
 
 pub type TopLevel {
-  TopLevel(
-    dialog: option.Option(Dialog),
-    dialog_list: option.Option(List(Dialog)),
-    dialog_map: option.Option(dict.Dict(String, Dialog)),
-  )
+  TopLevel(dialog: option.Option(Dialog), dialog_list: option.Option(List(Dialog)), dialog_map: option.Option(dict.Dict(String, Dialog)))
 }
 
 pub fn encode_top_level_struct(input: TopLevel) -> json.Json {
@@ -5294,11 +4890,7 @@ pub fn decode_top_level_struct_params() -> decode.Decoder(TopLevel) {
 }
 
 pub type Dialog {
-  Dialog(
-    farewell: option.Option(Farewell),
-    greeting: option.Option(String),
-    language: option.Option(String),
-  )
+  Dialog(farewell: option.Option(Farewell), greeting: option.Option(String), language: option.Option(String))
 }
 
 pub fn encode_dialog_struct(input: Dialog) -> json.Json {
@@ -5341,9 +4933,7 @@ pub fn decode_dialog_struct_params() -> decode.Decoder(Dialog) {
 }
 
 pub type Farewell {
-  Farewell(
-    phrase: option.Option(String),
-  )
+  Farewell(phrase: option.Option(String))
 }
 
 pub fn encode_farewell_struct(input: Farewell) -> json.Json {
@@ -5370,11 +4960,7 @@ pub fn decode_farewell_struct_params() -> decode.Decoder(Farewell) {
 }
 
 pub type OperationWithNestedStructureOutput {
-  OperationWithNestedStructureOutput(
-    dialog: option.Option(Dialog),
-    dialog_list: option.Option(List(Dialog)),
-    dialog_map: option.Option(dict.Dict(String, Dialog)),
-  )
+  OperationWithNestedStructureOutput(dialog: option.Option(Dialog), dialog_list: option.Option(List(Dialog)), dialog_map: option.Option(dict.Dict(String, Dialog)))
 }
 
 pub fn encode_operation_with_nested_structure_output_struct(input: OperationWithNestedStructureOutput) -> json.Json {
@@ -5417,9 +5003,7 @@ pub fn decode_operation_with_nested_structure_output_struct_params() -> decode.D
 }
 
 pub type OutputStreamOutput {
-  OutputStreamOutput(
-    stream: option.Option(EventStream),
-  )
+  OutputStreamOutput(stream: option.Option(EventStream))
 }
 
 pub fn encode_output_stream_output_struct(input: OutputStreamOutput) -> json.Json {
@@ -5446,10 +5030,7 @@ pub fn decode_output_stream_output_struct_params() -> decode.Decoder(OutputStrea
 }
 
 pub type OutputStreamWithInitialResponseOutput {
-  OutputStreamWithInitialResponseOutput(
-    initial_response_member: option.Option(String),
-    stream: option.Option(EventStream),
-  )
+  OutputStreamWithInitialResponseOutput(initial_response_member: option.Option(String), stream: option.Option(EventStream))
 }
 
 pub fn encode_output_stream_with_initial_response_output_struct(input: OutputStreamWithInitialResponseOutput) -> json.Json {
@@ -5484,9 +5065,7 @@ pub fn decode_output_stream_with_initial_response_output_struct_params() -> deco
 }
 
 pub type PostPlayerActionInput {
-  PostPlayerActionInput(
-    action: option.Option(PlayerAction),
-  )
+  PostPlayerActionInput(action: option.Option(PlayerAction))
 }
 
 pub fn encode_post_player_action_input_struct(input: PostPlayerActionInput) -> json.Json {
@@ -5539,9 +5118,7 @@ pub fn decode_player_action_union_params() -> decode.Decoder(PlayerAction) {
 }
 
 pub type PostPlayerActionOutput {
-  PostPlayerActionOutput(
-    action: option.Option(PlayerAction),
-  )
+  PostPlayerActionOutput(action: option.Option(PlayerAction))
 }
 
 pub fn encode_post_player_action_output_struct(input: PostPlayerActionOutput) -> json.Json {
@@ -5568,9 +5145,7 @@ pub fn decode_post_player_action_output_struct_params() -> decode.Decoder(PostPl
 }
 
 pub type PostUnionWithJsonNameInput {
-  PostUnionWithJsonNameInput(
-    value: option.Option(UnionWithJsonName),
-  )
+  PostUnionWithJsonNameInput(value: option.Option(UnionWithJsonName))
 }
 
 pub fn encode_post_union_with_json_name_input_struct(input: PostUnionWithJsonNameInput) -> json.Json {
@@ -5631,9 +5206,7 @@ pub fn decode_union_with_json_name_union_params() -> decode.Decoder(UnionWithJso
 }
 
 pub type PostUnionWithJsonNameOutput {
-  PostUnionWithJsonNameOutput(
-    value: option.Option(UnionWithJsonName),
-  )
+  PostUnionWithJsonNameOutput(value: option.Option(UnionWithJsonName))
 }
 
 pub fn encode_post_union_with_json_name_output_struct(input: PostUnionWithJsonNameOutput) -> json.Json {
@@ -5660,10 +5233,7 @@ pub fn decode_post_union_with_json_name_output_struct_params() -> decode.Decoder
 }
 
 pub type PutWithContentEncodingInput {
-  PutWithContentEncodingInput(
-    data: option.Option(String),
-    encoding: option.Option(String),
-  )
+  PutWithContentEncodingInput(data: option.Option(String), encoding: option.Option(String))
 }
 
 pub fn encode_put_with_content_encoding_input_struct(input: PutWithContentEncodingInput) -> json.Json {
@@ -5698,9 +5268,7 @@ pub fn decode_put_with_content_encoding_input_struct_params() -> decode.Decoder(
 }
 
 pub type QueryIdempotencyTokenAutoFillInput {
-  QueryIdempotencyTokenAutoFillInput(
-    token: option.Option(String),
-  )
+  QueryIdempotencyTokenAutoFillInput(token: option.Option(String))
 }
 
 pub fn encode_query_idempotency_token_auto_fill_input_struct(input: QueryIdempotencyTokenAutoFillInput) -> json.Json {
@@ -5727,10 +5295,7 @@ pub fn decode_query_idempotency_token_auto_fill_input_struct_params() -> decode.
 }
 
 pub type QueryParamsAsStringListMapInput {
-  QueryParamsAsStringListMapInput(
-    foo: option.Option(dict.Dict(String, List(String))),
-    qux: option.Option(String),
-  )
+  QueryParamsAsStringListMapInput(foo: option.Option(dict.Dict(String, List(String))), qux: option.Option(String))
 }
 
 pub fn encode_query_params_as_string_list_map_input_struct(input: QueryParamsAsStringListMapInput) -> json.Json {
@@ -5765,10 +5330,7 @@ pub fn decode_query_params_as_string_list_map_input_struct_params() -> decode.De
 }
 
 pub type QueryPrecedenceInput {
-  QueryPrecedenceInput(
-    baz: option.Option(dict.Dict(String, String)),
-    foo: option.Option(String),
-  )
+  QueryPrecedenceInput(baz: option.Option(dict.Dict(String, String)), foo: option.Option(String))
 }
 
 pub fn encode_query_precedence_input_struct(input: QueryPrecedenceInput) -> json.Json {
@@ -5803,9 +5365,7 @@ pub fn decode_query_precedence_input_struct_params() -> decode.Decoder(QueryPrec
 }
 
 pub type RecursiveShapesInputOutput {
-  RecursiveShapesInputOutput(
-    nested: option.Option(RecursiveShapesInputOutputNested1),
-  )
+  RecursiveShapesInputOutput(nested: option.Option(RecursiveShapesInputOutputNested1))
 }
 
 pub fn encode_recursive_shapes_input_output_struct(input: RecursiveShapesInputOutput) -> json.Json {
@@ -5832,10 +5392,7 @@ pub fn decode_recursive_shapes_input_output_struct_params() -> decode.Decoder(Re
 }
 
 pub type RecursiveShapesInputOutputNested1 {
-  RecursiveShapesInputOutputNested1(
-    foo: option.Option(String),
-    nested: option.Option(RecursiveShapesInputOutputNested2),
-  )
+  RecursiveShapesInputOutputNested1(foo: option.Option(String), nested: option.Option(RecursiveShapesInputOutputNested2))
 }
 
 pub fn encode_recursive_shapes_input_output_nested1_struct(input: RecursiveShapesInputOutputNested1) -> json.Json {
@@ -5870,10 +5427,7 @@ pub fn decode_recursive_shapes_input_output_nested1_struct_params() -> decode.De
 }
 
 pub type RecursiveShapesInputOutputNested2 {
-  RecursiveShapesInputOutputNested2(
-    bar: option.Option(String),
-    recursive_member: option.Option(RecursiveShapesInputOutputNested1),
-  )
+  RecursiveShapesInputOutputNested2(bar: option.Option(String), recursive_member: option.Option(RecursiveShapesInputOutputNested1))
 }
 
 pub fn encode_recursive_shapes_input_output_nested2_struct(input: RecursiveShapesInputOutputNested2) -> json.Json {
@@ -5924,9 +5478,7 @@ pub fn decode_response_code_http_fallback_input_output_struct_params() -> decode
 }
 
 pub type ResponseCodeRequiredOutput {
-  ResponseCodeRequiredOutput(
-    response_code: option.Option(Int),
-  )
+  ResponseCodeRequiredOutput(response_code: option.Option(Int))
 }
 
 pub fn encode_response_code_required_output_struct(input: ResponseCodeRequiredOutput) -> json.Json {
@@ -5953,18 +5505,7 @@ pub fn decode_response_code_required_output_struct_params() -> decode.Decoder(Re
 }
 
 pub type SimpleScalarPropertiesInputOutput {
-  SimpleScalarPropertiesInputOutput(
-    byte_value: option.Option(Int),
-    double_value: option.Option(json_float.SmithyFloat),
-    false_boolean_value: option.Option(Bool),
-    float_value: option.Option(json_float.SmithyFloat),
-    foo: option.Option(String),
-    integer_value: option.Option(Int),
-    long_value: option.Option(Int),
-    short_value: option.Option(Int),
-    string_value: option.Option(String),
-    true_boolean_value: option.Option(Bool),
-  )
+  SimpleScalarPropertiesInputOutput(byte_value: option.Option(Int), double_value: option.Option(json_float.SmithyFloat), false_boolean_value: option.Option(Bool), float_value: option.Option(json_float.SmithyFloat), foo: option.Option(String), integer_value: option.Option(Int), long_value: option.Option(Int), short_value: option.Option(Int), string_value: option.Option(String), true_boolean_value: option.Option(Bool))
 }
 
 pub fn encode_simple_scalar_properties_input_output_struct(input: SimpleScalarPropertiesInputOutput) -> json.Json {
@@ -6063,10 +5604,7 @@ pub fn decode_simple_scalar_properties_input_output_struct_params() -> decode.De
 }
 
 pub type SparseJsonListsInputOutput {
-  SparseJsonListsInputOutput(
-    sparse_short_list: option.Option(List(option.Option(Int))),
-    sparse_string_list: option.Option(List(option.Option(String))),
-  )
+  SparseJsonListsInputOutput(sparse_short_list: option.Option(List(option.Option(Int))), sparse_string_list: option.Option(List(option.Option(String))))
 }
 
 pub fn encode_sparse_json_lists_input_output_struct(input: SparseJsonListsInputOutput) -> json.Json {
@@ -6101,13 +5639,7 @@ pub fn decode_sparse_json_lists_input_output_struct_params() -> decode.Decoder(S
 }
 
 pub type SparseJsonMapsInputOutput {
-  SparseJsonMapsInputOutput(
-    sparse_boolean_map: option.Option(dict.Dict(String, option.Option(Bool))),
-    sparse_number_map: option.Option(dict.Dict(String, option.Option(Int))),
-    sparse_set_map: option.Option(dict.Dict(String, option.Option(List(String)))),
-    sparse_string_map: option.Option(dict.Dict(String, option.Option(String))),
-    sparse_struct_map: option.Option(dict.Dict(String, option.Option(GreetingStructShared))),
-  )
+  SparseJsonMapsInputOutput(sparse_boolean_map: option.Option(dict.Dict(String, option.Option(Bool))), sparse_number_map: option.Option(dict.Dict(String, option.Option(Int))), sparse_set_map: option.Option(dict.Dict(String, option.Option(List(String)))), sparse_string_map: option.Option(dict.Dict(String, option.Option(String))), sparse_struct_map: option.Option(dict.Dict(String, option.Option(GreetingStructShared))))
 }
 
 pub fn encode_sparse_json_maps_input_output_struct(input: SparseJsonMapsInputOutput) -> json.Json {
@@ -6166,10 +5698,7 @@ pub fn decode_sparse_json_maps_input_output_struct_params() -> decode.Decoder(Sp
 }
 
 pub type StreamingTraitsInputOutput {
-  StreamingTraitsInputOutput(
-    blob: option.Option(BitArray),
-    foo: option.Option(String),
-  )
+  StreamingTraitsInputOutput(blob: option.Option(BitArray), foo: option.Option(String))
 }
 
 pub fn encode_streaming_traits_input_output_struct(input: StreamingTraitsInputOutput) -> json.Json {
@@ -6204,10 +5733,7 @@ pub fn decode_streaming_traits_input_output_struct_params() -> decode.Decoder(St
 }
 
 pub type StreamingTraitsRequireLengthInput {
-  StreamingTraitsRequireLengthInput(
-    blob: option.Option(BitArray),
-    foo: option.Option(String),
-  )
+  StreamingTraitsRequireLengthInput(blob: option.Option(BitArray), foo: option.Option(String))
 }
 
 pub fn encode_streaming_traits_require_length_input_struct(input: StreamingTraitsRequireLengthInput) -> json.Json {
@@ -6242,10 +5768,7 @@ pub fn decode_streaming_traits_require_length_input_struct_params() -> decode.De
 }
 
 pub type StreamingTraitsWithMediaTypeInputOutput {
-  StreamingTraitsWithMediaTypeInputOutput(
-    blob: option.Option(BitArray),
-    foo: option.Option(String),
-  )
+  StreamingTraitsWithMediaTypeInputOutput(blob: option.Option(BitArray), foo: option.Option(String))
 }
 
 pub fn encode_streaming_traits_with_media_type_input_output_struct(input: StreamingTraitsWithMediaTypeInputOutput) -> json.Json {
@@ -6280,10 +5803,7 @@ pub fn decode_streaming_traits_with_media_type_input_output_struct_params() -> d
 }
 
 pub type TestBodyStructureInputOutput {
-  TestBodyStructureInputOutput(
-    test_config: option.Option(TestConfig),
-    test_id: option.Option(String),
-  )
+  TestBodyStructureInputOutput(test_config: option.Option(TestConfig), test_id: option.Option(String))
 }
 
 pub fn encode_test_body_structure_input_output_struct(input: TestBodyStructureInputOutput) -> json.Json {
@@ -6318,9 +5838,7 @@ pub fn decode_test_body_structure_input_output_struct_params() -> decode.Decoder
 }
 
 pub type TestConfig {
-  TestConfig(
-    timeout: option.Option(Int),
-  )
+  TestConfig(timeout: option.Option(Int))
 }
 
 pub fn encode_test_config_struct(input: TestConfig) -> json.Json {
@@ -6347,9 +5865,7 @@ pub fn decode_test_config_struct_params() -> decode.Decoder(TestConfig) {
 }
 
 pub type TestNoPayloadInputOutput {
-  TestNoPayloadInputOutput(
-    test_id: option.Option(String),
-  )
+  TestNoPayloadInputOutput(test_id: option.Option(String))
 }
 
 pub fn encode_test_no_payload_input_output_struct(input: TestNoPayloadInputOutput) -> json.Json {
@@ -6376,10 +5892,7 @@ pub fn decode_test_no_payload_input_output_struct_params() -> decode.Decoder(Tes
 }
 
 pub type TestPayloadBlobInputOutput {
-  TestPayloadBlobInputOutput(
-    content_type: option.Option(String),
-    data: option.Option(BitArray),
-  )
+  TestPayloadBlobInputOutput(content_type: option.Option(String), data: option.Option(BitArray))
 }
 
 pub fn encode_test_payload_blob_input_output_struct(input: TestPayloadBlobInputOutput) -> json.Json {
@@ -6414,10 +5927,7 @@ pub fn decode_test_payload_blob_input_output_struct_params() -> decode.Decoder(T
 }
 
 pub type TestPayloadStructureInputOutput {
-  TestPayloadStructureInputOutput(
-    payload_config: option.Option(PayloadConfig),
-    test_id: option.Option(String),
-  )
+  TestPayloadStructureInputOutput(payload_config: option.Option(PayloadConfig), test_id: option.Option(String))
 }
 
 pub fn encode_test_payload_structure_input_output_struct(input: TestPayloadStructureInputOutput) -> json.Json {
@@ -6452,9 +5962,7 @@ pub fn decode_test_payload_structure_input_output_struct_params() -> decode.Deco
 }
 
 pub type PayloadConfig {
-  PayloadConfig(
-    data: option.Option(Int),
-  )
+  PayloadConfig(data: option.Option(Int))
 }
 
 pub fn encode_payload_config_struct(input: PayloadConfig) -> json.Json {
@@ -6481,15 +5989,7 @@ pub fn decode_payload_config_struct_params() -> decode.Decoder(PayloadConfig) {
 }
 
 pub type TimestampFormatHeadersIO {
-  TimestampFormatHeadersIO(
-    default_format: option.Option(Int),
-    member_date_time: option.Option(Int),
-    member_epoch_seconds: option.Option(Int),
-    member_http_date: option.Option(Int),
-    target_date_time: option.Option(Int),
-    target_epoch_seconds: option.Option(Int),
-    target_http_date: option.Option(Int),
-  )
+  TimestampFormatHeadersIO(default_format: option.Option(Int), member_date_time: option.Option(Int), member_epoch_seconds: option.Option(Int), member_http_date: option.Option(Int), target_date_time: option.Option(Int), target_epoch_seconds: option.Option(Int), target_http_date: option.Option(Int))
 }
 
 pub fn encode_timestamp_format_headers_io_struct(input: TimestampFormatHeadersIO) -> json.Json {

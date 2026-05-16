@@ -48,14 +48,7 @@ pub fn with_http_send(client: Client, send: http_send.Send) -> Client {
 }
 
 pub type AbortMultipartUploadRequest {
-  AbortMultipartUploadRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    if_match_initiated_time: option.Option(Int),
-    key: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-    upload_id: option.Option(String),
-  )
+  AbortMultipartUploadRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), if_match_initiated_time: option.Option(Int), key: option.Option(String), request_payer: option.Option(RequestPayer), upload_id: option.Option(String))
 }
 
 pub fn encode_abort_multipart_upload_request_struct(input: AbortMultipartUploadRequest) -> json.Json {
@@ -167,9 +160,7 @@ pub fn decode_request_payer_enum() -> decode.Decoder(RequestPayer) {
 }
 
 pub type AbortMultipartUploadOutput {
-  AbortMultipartUploadOutput(
-    request_charged: option.Option(RequestCharged),
-  )
+  AbortMultipartUploadOutput(request_charged: option.Option(RequestCharged))
 }
 
 pub fn encode_abort_multipart_upload_output_struct(input: AbortMultipartUploadOutput) -> json.Json {
@@ -259,31 +250,7 @@ pub fn decode_no_such_upload_xml(_elem: xml_decode.Element) -> Result(NoSuchUplo
 }
 
 pub type CompleteMultipartUploadRequest {
-  CompleteMultipartUploadRequest(
-    bucket: option.Option(String),
-    checksum_crc32: option.Option(String),
-    checksum_crc32_c: option.Option(String),
-    checksum_crc64_nvme: option.Option(String),
-    checksum_md5: option.Option(String),
-    checksum_sha1: option.Option(String),
-    checksum_sha256: option.Option(String),
-    checksum_sha512: option.Option(String),
-    checksum_type: option.Option(ChecksumType),
-    checksum_xxhash128: option.Option(String),
-    checksum_xxhash3: option.Option(String),
-    checksum_xxhash64: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    if_match: option.Option(String),
-    if_none_match: option.Option(String),
-    key: option.Option(String),
-    mpu_object_size: option.Option(Int),
-    multipart_upload: option.Option(CompletedMultipartUpload),
-    request_payer: option.Option(RequestPayer),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    upload_id: option.Option(String),
-  )
+  CompleteMultipartUploadRequest(bucket: option.Option(String), checksum_crc32: option.Option(String), checksum_crc32_c: option.Option(String), checksum_crc64_nvme: option.Option(String), checksum_md5: option.Option(String), checksum_sha1: option.Option(String), checksum_sha256: option.Option(String), checksum_sha512: option.Option(String), checksum_type: option.Option(ChecksumType), checksum_xxhash128: option.Option(String), checksum_xxhash3: option.Option(String), checksum_xxhash64: option.Option(String), expected_bucket_owner: option.Option(String), if_match: option.Option(String), if_none_match: option.Option(String), key: option.Option(String), mpu_object_size: option.Option(Int), multipart_upload: option.Option(CompletedMultipartUpload), request_payer: option.Option(RequestPayer), sse_customer_algorithm: option.Option(String), sse_customer_key: option.Option(String), sse_customer_key_md5: option.Option(String), upload_id: option.Option(String))
 }
 
 pub fn encode_complete_multipart_upload_request_struct(input: CompleteMultipartUploadRequest) -> json.Json {
@@ -568,9 +535,7 @@ pub fn decode_checksum_type_enum() -> decode.Decoder(ChecksumType) {
 }
 
 pub type CompletedMultipartUpload {
-  CompletedMultipartUpload(
-    parts: option.Option(List(CompletedPart)),
-  )
+  CompletedMultipartUpload(parts: option.Option(List(CompletedPart)))
 }
 
 pub fn encode_completed_multipart_upload_struct(input: CompletedMultipartUpload) -> json.Json {
@@ -617,20 +582,7 @@ pub fn decode_completed_multipart_upload_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type CompletedPart {
-  CompletedPart(
-    checksum_crc32: option.Option(String),
-    checksum_crc32_c: option.Option(String),
-    checksum_crc64_nvme: option.Option(String),
-    checksum_md5: option.Option(String),
-    checksum_sha1: option.Option(String),
-    checksum_sha256: option.Option(String),
-    checksum_sha512: option.Option(String),
-    checksum_xxhash128: option.Option(String),
-    checksum_xxhash3: option.Option(String),
-    checksum_xxhash64: option.Option(String),
-    e_tag: option.Option(String),
-    part_number: option.Option(Int),
-  )
+  CompletedPart(checksum_crc32: option.Option(String), checksum_crc32_c: option.Option(String), checksum_crc64_nvme: option.Option(String), checksum_md5: option.Option(String), checksum_sha1: option.Option(String), checksum_sha256: option.Option(String), checksum_sha512: option.Option(String), checksum_xxhash128: option.Option(String), checksum_xxhash3: option.Option(String), checksum_xxhash64: option.Option(String), e_tag: option.Option(String), part_number: option.Option(Int))
 }
 
 pub fn encode_completed_part_struct(input: CompletedPart) -> json.Json {
@@ -831,29 +783,7 @@ pub fn decode_completed_part_xml(elem: xml_decode.Element) -> Result(CompletedPa
 }
 
 pub type CompleteMultipartUploadOutput {
-  CompleteMultipartUploadOutput(
-    bucket: option.Option(String),
-    bucket_key_enabled: option.Option(Bool),
-    checksum_crc32: option.Option(String),
-    checksum_crc32_c: option.Option(String),
-    checksum_crc64_nvme: option.Option(String),
-    checksum_md5: option.Option(String),
-    checksum_sha1: option.Option(String),
-    checksum_sha256: option.Option(String),
-    checksum_sha512: option.Option(String),
-    checksum_type: option.Option(ChecksumType),
-    checksum_xxhash128: option.Option(String),
-    checksum_xxhash3: option.Option(String),
-    checksum_xxhash64: option.Option(String),
-    e_tag: option.Option(String),
-    expiration: option.Option(String),
-    key: option.Option(String),
-    location: option.Option(String),
-    request_charged: option.Option(RequestCharged),
-    ssekms_key_id: option.Option(String),
-    server_side_encryption: option.Option(ServerSideEncryption),
-    version_id: option.Option(String),
-  )
+  CompleteMultipartUploadOutput(bucket: option.Option(String), bucket_key_enabled: option.Option(Bool), checksum_crc32: option.Option(String), checksum_crc32_c: option.Option(String), checksum_crc64_nvme: option.Option(String), checksum_md5: option.Option(String), checksum_sha1: option.Option(String), checksum_sha256: option.Option(String), checksum_sha512: option.Option(String), checksum_type: option.Option(ChecksumType), checksum_xxhash128: option.Option(String), checksum_xxhash3: option.Option(String), checksum_xxhash64: option.Option(String), e_tag: option.Option(String), expiration: option.Option(String), key: option.Option(String), location: option.Option(String), request_charged: option.Option(RequestCharged), ssekms_key_id: option.Option(String), server_side_encryption: option.Option(ServerSideEncryption), version_id: option.Option(String))
 }
 
 pub fn encode_complete_multipart_upload_output_struct(input: CompleteMultipartUploadOutput) -> json.Json {
@@ -1185,51 +1115,7 @@ pub fn decode_server_side_encryption_enum() -> decode.Decoder(ServerSideEncrypti
 }
 
 pub type CopyObjectRequest {
-  CopyObjectRequest(
-    acl: option.Option(ObjectCannedACL),
-    bucket: option.Option(String),
-    bucket_key_enabled: option.Option(Bool),
-    cache_control: option.Option(String),
-    checksum_algorithm: option.Option(ChecksumAlgorithm),
-    content_disposition: option.Option(String),
-    content_encoding: option.Option(String),
-    content_language: option.Option(String),
-    content_type: option.Option(String),
-    copy_source: option.Option(String),
-    copy_source_if_match: option.Option(String),
-    copy_source_if_modified_since: option.Option(Int),
-    copy_source_if_none_match: option.Option(String),
-    copy_source_if_unmodified_since: option.Option(Int),
-    copy_source_sse_customer_algorithm: option.Option(String),
-    copy_source_sse_customer_key: option.Option(String),
-    copy_source_sse_customer_key_md5: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    expected_source_bucket_owner: option.Option(String),
-    expires: option.Option(String),
-    grant_full_control: option.Option(String),
-    grant_read: option.Option(String),
-    grant_read_acp: option.Option(String),
-    grant_write_acp: option.Option(String),
-    if_match: option.Option(String),
-    if_none_match: option.Option(String),
-    key: option.Option(String),
-    metadata: option.Option(dict.Dict(String, String)),
-    metadata_directive: option.Option(MetadataDirective),
-    object_lock_legal_hold_status: option.Option(ObjectLockLegalHoldStatus),
-    object_lock_mode: option.Option(ObjectLockMode),
-    object_lock_retain_until_date: option.Option(Int),
-    request_payer: option.Option(RequestPayer),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    ssekms_encryption_context: option.Option(String),
-    ssekms_key_id: option.Option(String),
-    server_side_encryption: option.Option(ServerSideEncryption),
-    storage_class: option.Option(StorageClass),
-    tagging: option.Option(String),
-    tagging_directive: option.Option(TaggingDirective),
-    website_redirect_location: option.Option(String),
-  )
+  CopyObjectRequest(acl: option.Option(ObjectCannedACL), bucket: option.Option(String), bucket_key_enabled: option.Option(Bool), cache_control: option.Option(String), checksum_algorithm: option.Option(ChecksumAlgorithm), content_disposition: option.Option(String), content_encoding: option.Option(String), content_language: option.Option(String), content_type: option.Option(String), copy_source: option.Option(String), copy_source_if_match: option.Option(String), copy_source_if_modified_since: option.Option(Int), copy_source_if_none_match: option.Option(String), copy_source_if_unmodified_since: option.Option(Int), copy_source_sse_customer_algorithm: option.Option(String), copy_source_sse_customer_key: option.Option(String), copy_source_sse_customer_key_md5: option.Option(String), expected_bucket_owner: option.Option(String), expected_source_bucket_owner: option.Option(String), expires: option.Option(String), grant_full_control: option.Option(String), grant_read: option.Option(String), grant_read_acp: option.Option(String), grant_write_acp: option.Option(String), if_match: option.Option(String), if_none_match: option.Option(String), key: option.Option(String), metadata: option.Option(dict.Dict(String, String)), metadata_directive: option.Option(MetadataDirective), object_lock_legal_hold_status: option.Option(ObjectLockLegalHoldStatus), object_lock_mode: option.Option(ObjectLockMode), object_lock_retain_until_date: option.Option(Int), request_payer: option.Option(RequestPayer), sse_customer_algorithm: option.Option(String), sse_customer_key: option.Option(String), sse_customer_key_md5: option.Option(String), ssekms_encryption_context: option.Option(String), ssekms_key_id: option.Option(String), server_side_encryption: option.Option(ServerSideEncryption), storage_class: option.Option(StorageClass), tagging: option.Option(String), tagging_directive: option.Option(TaggingDirective), website_redirect_location: option.Option(String))
 }
 
 pub fn encode_copy_object_request_struct(input: CopyObjectRequest) -> json.Json {
@@ -1918,19 +1804,7 @@ pub fn decode_tagging_directive_enum() -> decode.Decoder(TaggingDirective) {
 }
 
 pub type CopyObjectOutput {
-  CopyObjectOutput(
-    bucket_key_enabled: option.Option(Bool),
-    copy_object_result: option.Option(CopyObjectResult),
-    copy_source_version_id: option.Option(String),
-    expiration: option.Option(String),
-    request_charged: option.Option(RequestCharged),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    ssekms_encryption_context: option.Option(String),
-    ssekms_key_id: option.Option(String),
-    server_side_encryption: option.Option(ServerSideEncryption),
-    version_id: option.Option(String),
-  )
+  CopyObjectOutput(bucket_key_enabled: option.Option(Bool), copy_object_result: option.Option(CopyObjectResult), copy_source_version_id: option.Option(String), expiration: option.Option(String), request_charged: option.Option(RequestCharged), sse_customer_algorithm: option.Option(String), sse_customer_key_md5: option.Option(String), ssekms_encryption_context: option.Option(String), ssekms_key_id: option.Option(String), server_side_encryption: option.Option(ServerSideEncryption), version_id: option.Option(String))
 }
 
 pub fn encode_copy_object_output_struct(input: CopyObjectOutput) -> json.Json {
@@ -2073,21 +1947,7 @@ pub fn decode_copy_object_output_xml(elem: xml_decode.Element) -> Result(CopyObj
 }
 
 pub type CopyObjectResult {
-  CopyObjectResult(
-    checksum_crc32: option.Option(String),
-    checksum_crc32_c: option.Option(String),
-    checksum_crc64_nvme: option.Option(String),
-    checksum_md5: option.Option(String),
-    checksum_sha1: option.Option(String),
-    checksum_sha256: option.Option(String),
-    checksum_sha512: option.Option(String),
-    checksum_type: option.Option(ChecksumType),
-    checksum_xxhash128: option.Option(String),
-    checksum_xxhash3: option.Option(String),
-    checksum_xxhash64: option.Option(String),
-    e_tag: option.Option(String),
-    last_modified: option.Option(Int),
-  )
+  CopyObjectResult(checksum_crc32: option.Option(String), checksum_crc32_c: option.Option(String), checksum_crc64_nvme: option.Option(String), checksum_md5: option.Option(String), checksum_sha1: option.Option(String), checksum_sha256: option.Option(String), checksum_sha512: option.Option(String), checksum_type: option.Option(ChecksumType), checksum_xxhash128: option.Option(String), checksum_xxhash3: option.Option(String), checksum_xxhash64: option.Option(String), e_tag: option.Option(String), last_modified: option.Option(Int))
 }
 
 pub fn encode_copy_object_result_struct(input: CopyObjectResult) -> json.Json {
@@ -2331,19 +2191,7 @@ pub fn decode_object_not_in_active_tier_error_xml(_elem: xml_decode.Element) -> 
 }
 
 pub type CreateBucketRequest {
-  CreateBucketRequest(
-    acl: option.Option(BucketCannedACL),
-    bucket: option.Option(String),
-    bucket_namespace: option.Option(BucketNamespace),
-    create_bucket_configuration: option.Option(CreateBucketConfiguration),
-    grant_full_control: option.Option(String),
-    grant_read: option.Option(String),
-    grant_read_acp: option.Option(String),
-    grant_write: option.Option(String),
-    grant_write_acp: option.Option(String),
-    object_lock_enabled_for_bucket: option.Option(Bool),
-    object_ownership: option.Option(ObjectOwnership),
-  )
+  CreateBucketRequest(acl: option.Option(BucketCannedACL), bucket: option.Option(String), bucket_namespace: option.Option(BucketNamespace), create_bucket_configuration: option.Option(CreateBucketConfiguration), grant_full_control: option.Option(String), grant_read: option.Option(String), grant_read_acp: option.Option(String), grant_write: option.Option(String), grant_write_acp: option.Option(String), object_lock_enabled_for_bucket: option.Option(Bool), object_ownership: option.Option(ObjectOwnership))
 }
 
 pub fn encode_create_bucket_request_struct(input: CreateBucketRequest) -> json.Json {
@@ -2536,12 +2384,7 @@ pub fn decode_bucket_namespace_enum() -> decode.Decoder(BucketNamespace) {
 }
 
 pub type CreateBucketConfiguration {
-  CreateBucketConfiguration(
-    bucket: option.Option(BucketInfo),
-    location: option.Option(LocationInfo),
-    location_constraint: option.Option(BucketLocationConstraint),
-    tags: option.Option(List(Tag)),
-  )
+  CreateBucketConfiguration(bucket: option.Option(BucketInfo), location: option.Option(LocationInfo), location_constraint: option.Option(BucketLocationConstraint), tags: option.Option(List(Tag)))
 }
 
 pub fn encode_create_bucket_configuration_struct(input: CreateBucketConfiguration) -> json.Json {
@@ -2631,10 +2474,7 @@ pub fn decode_create_bucket_configuration_xml(elem: xml_decode.Element) -> Resul
 }
 
 pub type BucketInfo {
-  BucketInfo(
-    data_redundancy: option.Option(DataRedundancy),
-    type_: option.Option(BucketType),
-  )
+  BucketInfo(data_redundancy: option.Option(DataRedundancy), type_: option.Option(BucketType))
 }
 
 pub fn encode_bucket_info_struct(input: BucketInfo) -> json.Json {
@@ -2738,10 +2578,7 @@ pub fn decode_bucket_type_enum() -> decode.Decoder(BucketType) {
 }
 
 pub type LocationInfo {
-  LocationInfo(
-    name: option.Option(String),
-    type_: option.Option(LocationType),
-  )
+  LocationInfo(name: option.Option(String), type_: option.Option(LocationType))
 }
 
 pub fn encode_location_info_struct(input: LocationInfo) -> json.Json {
@@ -2955,10 +2792,7 @@ pub fn decode_bucket_location_constraint_enum() -> decode.Decoder(BucketLocation
 }
 
 pub type Tag {
-  Tag(
-    key: option.Option(String),
-    value: option.Option(String),
-  )
+  Tag(key: option.Option(String), value: option.Option(String))
 }
 
 pub fn encode_tag_struct(input: Tag) -> json.Json {
@@ -3044,10 +2878,7 @@ pub fn decode_object_ownership_enum() -> decode.Decoder(ObjectOwnership) {
 }
 
 pub type CreateBucketOutput {
-  CreateBucketOutput(
-    bucket_arn: option.Option(String),
-    location: option.Option(String),
-  )
+  CreateBucketOutput(bucket_arn: option.Option(String), location: option.Option(String))
 }
 
 pub fn encode_create_bucket_output_struct(input: CreateBucketOutput) -> json.Json {
@@ -3156,39 +2987,7 @@ pub fn decode_bucket_already_owned_by_you_xml(_elem: xml_decode.Element) -> Resu
 }
 
 pub type CreateMultipartUploadRequest {
-  CreateMultipartUploadRequest(
-    acl: option.Option(ObjectCannedACL),
-    bucket: option.Option(String),
-    bucket_key_enabled: option.Option(Bool),
-    cache_control: option.Option(String),
-    checksum_algorithm: option.Option(ChecksumAlgorithm),
-    checksum_type: option.Option(ChecksumType),
-    content_disposition: option.Option(String),
-    content_encoding: option.Option(String),
-    content_language: option.Option(String),
-    content_type: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    expires: option.Option(String),
-    grant_full_control: option.Option(String),
-    grant_read: option.Option(String),
-    grant_read_acp: option.Option(String),
-    grant_write_acp: option.Option(String),
-    key: option.Option(String),
-    metadata: option.Option(dict.Dict(String, String)),
-    object_lock_legal_hold_status: option.Option(ObjectLockLegalHoldStatus),
-    object_lock_mode: option.Option(ObjectLockMode),
-    object_lock_retain_until_date: option.Option(Int),
-    request_payer: option.Option(RequestPayer),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    ssekms_encryption_context: option.Option(String),
-    ssekms_key_id: option.Option(String),
-    server_side_encryption: option.Option(ServerSideEncryption),
-    storage_class: option.Option(StorageClass),
-    tagging: option.Option(String),
-    website_redirect_location: option.Option(String),
-  )
+  CreateMultipartUploadRequest(acl: option.Option(ObjectCannedACL), bucket: option.Option(String), bucket_key_enabled: option.Option(Bool), cache_control: option.Option(String), checksum_algorithm: option.Option(ChecksumAlgorithm), checksum_type: option.Option(ChecksumType), content_disposition: option.Option(String), content_encoding: option.Option(String), content_language: option.Option(String), content_type: option.Option(String), expected_bucket_owner: option.Option(String), expires: option.Option(String), grant_full_control: option.Option(String), grant_read: option.Option(String), grant_read_acp: option.Option(String), grant_write_acp: option.Option(String), key: option.Option(String), metadata: option.Option(dict.Dict(String, String)), object_lock_legal_hold_status: option.Option(ObjectLockLegalHoldStatus), object_lock_mode: option.Option(ObjectLockMode), object_lock_retain_until_date: option.Option(Int), request_payer: option.Option(RequestPayer), sse_customer_algorithm: option.Option(String), sse_customer_key: option.Option(String), sse_customer_key_md5: option.Option(String), ssekms_encryption_context: option.Option(String), ssekms_key_id: option.Option(String), server_side_encryption: option.Option(ServerSideEncryption), storage_class: option.Option(StorageClass), tagging: option.Option(String), website_redirect_location: option.Option(String))
 }
 
 pub fn encode_create_multipart_upload_request_struct(input: CreateMultipartUploadRequest) -> json.Json {
@@ -3531,22 +3330,7 @@ pub fn decode_create_multipart_upload_request_xml(elem: xml_decode.Element) -> R
 }
 
 pub type CreateMultipartUploadOutput {
-  CreateMultipartUploadOutput(
-    abort_date: option.Option(Int),
-    abort_rule_id: option.Option(String),
-    bucket: option.Option(String),
-    bucket_key_enabled: option.Option(Bool),
-    checksum_algorithm: option.Option(ChecksumAlgorithm),
-    checksum_type: option.Option(ChecksumType),
-    key: option.Option(String),
-    request_charged: option.Option(RequestCharged),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    ssekms_encryption_context: option.Option(String),
-    ssekms_key_id: option.Option(String),
-    server_side_encryption: option.Option(ServerSideEncryption),
-    upload_id: option.Option(String),
-  )
+  CreateMultipartUploadOutput(abort_date: option.Option(Int), abort_rule_id: option.Option(String), bucket: option.Option(String), bucket_key_enabled: option.Option(Bool), checksum_algorithm: option.Option(ChecksumAlgorithm), checksum_type: option.Option(ChecksumType), key: option.Option(String), request_charged: option.Option(RequestCharged), sse_customer_algorithm: option.Option(String), sse_customer_key_md5: option.Option(String), ssekms_encryption_context: option.Option(String), ssekms_key_id: option.Option(String), server_side_encryption: option.Option(ServerSideEncryption), upload_id: option.Option(String))
 }
 
 pub fn encode_create_multipart_upload_output_struct(input: CreateMultipartUploadOutput) -> json.Json {
@@ -3731,14 +3515,7 @@ pub fn decode_create_multipart_upload_output_xml(elem: xml_decode.Element) -> Re
 }
 
 pub type CreateSessionRequest {
-  CreateSessionRequest(
-    bucket: option.Option(String),
-    bucket_key_enabled: option.Option(Bool),
-    ssekms_encryption_context: option.Option(String),
-    ssekms_key_id: option.Option(String),
-    server_side_encryption: option.Option(ServerSideEncryption),
-    session_mode: option.Option(SessionMode),
-  )
+  CreateSessionRequest(bucket: option.Option(String), bucket_key_enabled: option.Option(Bool), ssekms_encryption_context: option.Option(String), ssekms_key_id: option.Option(String), server_side_encryption: option.Option(ServerSideEncryption), session_mode: option.Option(SessionMode))
 }
 
 pub fn encode_create_session_request_struct(input: CreateSessionRequest) -> json.Json {
@@ -3853,13 +3630,7 @@ pub fn decode_session_mode_enum() -> decode.Decoder(SessionMode) {
 }
 
 pub type CreateSessionOutput {
-  CreateSessionOutput(
-    bucket_key_enabled: option.Option(Bool),
-    credentials: option.Option(SessionCredentials),
-    ssekms_encryption_context: option.Option(String),
-    ssekms_key_id: option.Option(String),
-    server_side_encryption: option.Option(ServerSideEncryption),
-  )
+  CreateSessionOutput(bucket_key_enabled: option.Option(Bool), credentials: option.Option(SessionCredentials), ssekms_encryption_context: option.Option(String), ssekms_key_id: option.Option(String), server_side_encryption: option.Option(ServerSideEncryption))
 }
 
 pub fn encode_create_session_output_struct(input: CreateSessionOutput) -> json.Json {
@@ -3946,12 +3717,7 @@ pub fn decode_create_session_output_xml(elem: xml_decode.Element) -> Result(Crea
 }
 
 pub type SessionCredentials {
-  SessionCredentials(
-    access_key_id: option.Option(String),
-    expiration: option.Option(Int),
-    secret_access_key: option.Option(String),
-    session_token: option.Option(String),
-  )
+  SessionCredentials(access_key_id: option.Option(String), expiration: option.Option(Int), secret_access_key: option.Option(String), session_token: option.Option(String))
 }
 
 pub fn encode_session_credentials_struct(input: SessionCredentials) -> json.Json {
@@ -4068,10 +3834,7 @@ pub fn decode_no_such_bucket_xml(_elem: xml_decode.Element) -> Result(NoSuchBuck
 }
 
 pub type DeleteBucketRequest {
-  DeleteBucketRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  DeleteBucketRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_delete_bucket_request_struct(input: DeleteBucketRequest) -> json.Json {
@@ -4124,11 +3887,7 @@ pub fn decode_delete_bucket_request_xml(elem: xml_decode.Element) -> Result(Dele
 }
 
 pub type DeleteBucketAnalyticsConfigurationRequest {
-  DeleteBucketAnalyticsConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    id: option.Option(String),
-  )
+  DeleteBucketAnalyticsConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), id: option.Option(String))
 }
 
 pub fn encode_delete_bucket_analytics_configuration_request_struct(input: DeleteBucketAnalyticsConfigurationRequest) -> json.Json {
@@ -4191,10 +3950,7 @@ pub fn decode_delete_bucket_analytics_configuration_request_xml(elem: xml_decode
 }
 
 pub type DeleteBucketCorsRequest {
-  DeleteBucketCorsRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  DeleteBucketCorsRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_delete_bucket_cors_request_struct(input: DeleteBucketCorsRequest) -> json.Json {
@@ -4247,10 +4003,7 @@ pub fn decode_delete_bucket_cors_request_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type DeleteBucketEncryptionRequest {
-  DeleteBucketEncryptionRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  DeleteBucketEncryptionRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_delete_bucket_encryption_request_struct(input: DeleteBucketEncryptionRequest) -> json.Json {
@@ -4303,11 +4056,7 @@ pub fn decode_delete_bucket_encryption_request_xml(elem: xml_decode.Element) -> 
 }
 
 pub type DeleteBucketIntelligentTieringConfigurationRequest {
-  DeleteBucketIntelligentTieringConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    id: option.Option(String),
-  )
+  DeleteBucketIntelligentTieringConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), id: option.Option(String))
 }
 
 pub fn encode_delete_bucket_intelligent_tiering_configuration_request_struct(input: DeleteBucketIntelligentTieringConfigurationRequest) -> json.Json {
@@ -4370,11 +4119,7 @@ pub fn decode_delete_bucket_intelligent_tiering_configuration_request_xml(elem: 
 }
 
 pub type DeleteBucketInventoryConfigurationRequest {
-  DeleteBucketInventoryConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    id: option.Option(String),
-  )
+  DeleteBucketInventoryConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), id: option.Option(String))
 }
 
 pub fn encode_delete_bucket_inventory_configuration_request_struct(input: DeleteBucketInventoryConfigurationRequest) -> json.Json {
@@ -4437,10 +4182,7 @@ pub fn decode_delete_bucket_inventory_configuration_request_xml(elem: xml_decode
 }
 
 pub type DeleteBucketLifecycleRequest {
-  DeleteBucketLifecycleRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  DeleteBucketLifecycleRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_delete_bucket_lifecycle_request_struct(input: DeleteBucketLifecycleRequest) -> json.Json {
@@ -4493,10 +4235,7 @@ pub fn decode_delete_bucket_lifecycle_request_xml(elem: xml_decode.Element) -> R
 }
 
 pub type DeleteBucketMetadataConfigurationRequest {
-  DeleteBucketMetadataConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  DeleteBucketMetadataConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_delete_bucket_metadata_configuration_request_struct(input: DeleteBucketMetadataConfigurationRequest) -> json.Json {
@@ -4549,10 +4288,7 @@ pub fn decode_delete_bucket_metadata_configuration_request_xml(elem: xml_decode.
 }
 
 pub type DeleteBucketMetadataTableConfigurationRequest {
-  DeleteBucketMetadataTableConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  DeleteBucketMetadataTableConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_delete_bucket_metadata_table_configuration_request_struct(input: DeleteBucketMetadataTableConfigurationRequest) -> json.Json {
@@ -4605,11 +4341,7 @@ pub fn decode_delete_bucket_metadata_table_configuration_request_xml(elem: xml_d
 }
 
 pub type DeleteBucketMetricsConfigurationRequest {
-  DeleteBucketMetricsConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    id: option.Option(String),
-  )
+  DeleteBucketMetricsConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), id: option.Option(String))
 }
 
 pub fn encode_delete_bucket_metrics_configuration_request_struct(input: DeleteBucketMetricsConfigurationRequest) -> json.Json {
@@ -4672,10 +4404,7 @@ pub fn decode_delete_bucket_metrics_configuration_request_xml(elem: xml_decode.E
 }
 
 pub type DeleteBucketOwnershipControlsRequest {
-  DeleteBucketOwnershipControlsRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  DeleteBucketOwnershipControlsRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_delete_bucket_ownership_controls_request_struct(input: DeleteBucketOwnershipControlsRequest) -> json.Json {
@@ -4728,10 +4457,7 @@ pub fn decode_delete_bucket_ownership_controls_request_xml(elem: xml_decode.Elem
 }
 
 pub type DeleteBucketPolicyRequest {
-  DeleteBucketPolicyRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  DeleteBucketPolicyRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_delete_bucket_policy_request_struct(input: DeleteBucketPolicyRequest) -> json.Json {
@@ -4784,10 +4510,7 @@ pub fn decode_delete_bucket_policy_request_xml(elem: xml_decode.Element) -> Resu
 }
 
 pub type DeleteBucketReplicationRequest {
-  DeleteBucketReplicationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  DeleteBucketReplicationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_delete_bucket_replication_request_struct(input: DeleteBucketReplicationRequest) -> json.Json {
@@ -4840,10 +4563,7 @@ pub fn decode_delete_bucket_replication_request_xml(elem: xml_decode.Element) ->
 }
 
 pub type DeleteBucketTaggingRequest {
-  DeleteBucketTaggingRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  DeleteBucketTaggingRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_delete_bucket_tagging_request_struct(input: DeleteBucketTaggingRequest) -> json.Json {
@@ -4896,10 +4616,7 @@ pub fn decode_delete_bucket_tagging_request_xml(elem: xml_decode.Element) -> Res
 }
 
 pub type DeleteBucketWebsiteRequest {
-  DeleteBucketWebsiteRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  DeleteBucketWebsiteRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_delete_bucket_website_request_struct(input: DeleteBucketWebsiteRequest) -> json.Json {
@@ -4952,18 +4669,7 @@ pub fn decode_delete_bucket_website_request_xml(elem: xml_decode.Element) -> Res
 }
 
 pub type DeleteObjectRequest {
-  DeleteObjectRequest(
-    bucket: option.Option(String),
-    bypass_governance_retention: option.Option(Bool),
-    expected_bucket_owner: option.Option(String),
-    if_match: option.Option(String),
-    if_match_last_modified_time: option.Option(Int),
-    if_match_size: option.Option(Int),
-    key: option.Option(String),
-    mfa: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-    version_id: option.Option(String),
-  )
+  DeleteObjectRequest(bucket: option.Option(String), bypass_governance_retention: option.Option(Bool), expected_bucket_owner: option.Option(String), if_match: option.Option(String), if_match_last_modified_time: option.Option(Int), if_match_size: option.Option(Int), key: option.Option(String), mfa: option.Option(String), request_payer: option.Option(RequestPayer), version_id: option.Option(String))
 }
 
 pub fn encode_delete_object_request_struct(input: DeleteObjectRequest) -> json.Json {
@@ -5096,11 +4802,7 @@ pub fn decode_delete_object_request_xml(elem: xml_decode.Element) -> Result(Dele
 }
 
 pub type DeleteObjectOutput {
-  DeleteObjectOutput(
-    delete_marker: option.Option(Bool),
-    request_charged: option.Option(RequestCharged),
-    version_id: option.Option(String),
-  )
+  DeleteObjectOutput(delete_marker: option.Option(Bool), request_charged: option.Option(RequestCharged), version_id: option.Option(String))
 }
 
 pub fn encode_delete_object_output_struct(input: DeleteObjectOutput) -> json.Json {
@@ -5163,12 +4865,7 @@ pub fn decode_delete_object_output_xml(elem: xml_decode.Element) -> Result(Delet
 }
 
 pub type DeleteObjectTaggingRequest {
-  DeleteObjectTaggingRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    key: option.Option(String),
-    version_id: option.Option(String),
-  )
+  DeleteObjectTaggingRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), key: option.Option(String), version_id: option.Option(String))
 }
 
 pub fn encode_delete_object_tagging_request_struct(input: DeleteObjectTaggingRequest) -> json.Json {
@@ -5241,9 +4938,7 @@ pub fn decode_delete_object_tagging_request_xml(elem: xml_decode.Element) -> Res
 }
 
 pub type DeleteObjectTaggingOutput {
-  DeleteObjectTaggingOutput(
-    version_id: option.Option(String),
-  )
+  DeleteObjectTaggingOutput(version_id: option.Option(String))
 }
 
 pub fn encode_delete_object_tagging_output_struct(input: DeleteObjectTaggingOutput) -> json.Json {
@@ -5286,10 +4981,7 @@ pub fn decode_delete_object_tagging_output_xml(elem: xml_decode.Element) -> Resu
 }
 
 pub type DeletePublicAccessBlockRequest {
-  DeletePublicAccessBlockRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  DeletePublicAccessBlockRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_delete_public_access_block_request_struct(input: DeletePublicAccessBlockRequest) -> json.Json {
@@ -5342,10 +5034,7 @@ pub fn decode_delete_public_access_block_request_xml(elem: xml_decode.Element) -
 }
 
 pub type GetBucketAbacRequest {
-  GetBucketAbacRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketAbacRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_abac_request_struct(input: GetBucketAbacRequest) -> json.Json {
@@ -5398,9 +5087,7 @@ pub fn decode_get_bucket_abac_request_xml(elem: xml_decode.Element) -> Result(Ge
 }
 
 pub type GetBucketAbacOutput {
-  GetBucketAbacOutput(
-    abac_status: option.Option(AbacStatus),
-  )
+  GetBucketAbacOutput(abac_status: option.Option(AbacStatus))
 }
 
 pub fn encode_get_bucket_abac_output_struct(input: GetBucketAbacOutput) -> json.Json {
@@ -5443,9 +5130,7 @@ pub fn decode_get_bucket_abac_output_xml(elem: xml_decode.Element) -> Result(Get
 }
 
 pub type AbacStatus {
-  AbacStatus(
-    status: option.Option(BucketAbacStatus),
-  )
+  AbacStatus(status: option.Option(BucketAbacStatus))
 }
 
 pub fn encode_abac_status_struct(input: AbacStatus) -> json.Json {
@@ -5515,11 +5200,7 @@ pub fn decode_bucket_abac_status_enum() -> decode.Decoder(BucketAbacStatus) {
 }
 
 pub type GetBucketAccelerateConfigurationRequest {
-  GetBucketAccelerateConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-  )
+  GetBucketAccelerateConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), request_payer: option.Option(RequestPayer))
 }
 
 pub fn encode_get_bucket_accelerate_configuration_request_struct(input: GetBucketAccelerateConfigurationRequest) -> json.Json {
@@ -5582,10 +5263,7 @@ pub fn decode_get_bucket_accelerate_configuration_request_xml(elem: xml_decode.E
 }
 
 pub type GetBucketAccelerateConfigurationOutput {
-  GetBucketAccelerateConfigurationOutput(
-    request_charged: option.Option(RequestCharged),
-    status: option.Option(BucketAccelerateStatus),
-  )
+  GetBucketAccelerateConfigurationOutput(request_charged: option.Option(RequestCharged), status: option.Option(BucketAccelerateStatus))
 }
 
 pub fn encode_get_bucket_accelerate_configuration_output_struct(input: GetBucketAccelerateConfigurationOutput) -> json.Json {
@@ -5665,10 +5343,7 @@ pub fn decode_bucket_accelerate_status_enum() -> decode.Decoder(BucketAccelerate
 }
 
 pub type GetBucketAclRequest {
-  GetBucketAclRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketAclRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_acl_request_struct(input: GetBucketAclRequest) -> json.Json {
@@ -5721,10 +5396,7 @@ pub fn decode_get_bucket_acl_request_xml(elem: xml_decode.Element) -> Result(Get
 }
 
 pub type GetBucketAclOutput {
-  GetBucketAclOutput(
-    grants: option.Option(List(Grant)),
-    owner: option.Option(Owner),
-  )
+  GetBucketAclOutput(grants: option.Option(List(Grant)), owner: option.Option(Owner))
 }
 
 pub fn encode_get_bucket_acl_output_struct(input: GetBucketAclOutput) -> json.Json {
@@ -5785,10 +5457,7 @@ pub fn decode_get_bucket_acl_output_xml(elem: xml_decode.Element) -> Result(GetB
 }
 
 pub type Grant {
-  Grant(
-    grantee: option.Option(Grantee),
-    permission: option.Option(Permission),
-  )
+  Grant(grantee: option.Option(Grantee), permission: option.Option(Permission))
 }
 
 pub fn encode_grant_struct(input: Grant) -> json.Json {
@@ -5850,13 +5519,7 @@ pub fn decode_grant_xml(elem: xml_decode.Element) -> Result(Grant, String) {
 }
 
 pub type Grantee {
-  Grantee(
-    display_name: option.Option(String),
-    email_address: option.Option(String),
-    id: option.Option(String),
-    type_: option.Option(Type),
-    uri: option.Option(String),
-  )
+  Grantee(display_name: option.Option(String), email_address: option.Option(String), id: option.Option(String), type_: option.Option(Type), uri: option.Option(String))
 }
 
 pub fn encode_grantee_struct(input: Grantee) -> json.Json {
@@ -6016,10 +5679,7 @@ pub fn decode_permission_enum() -> decode.Decoder(Permission) {
 }
 
 pub type Owner {
-  Owner(
-    display_name: option.Option(String),
-    id: option.Option(String),
-  )
+  Owner(display_name: option.Option(String), id: option.Option(String))
 }
 
 pub fn encode_owner_struct(input: Owner) -> json.Json {
@@ -6080,11 +5740,7 @@ pub fn decode_owner_xml(elem: xml_decode.Element) -> Result(Owner, String) {
 }
 
 pub type GetBucketAnalyticsConfigurationRequest {
-  GetBucketAnalyticsConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    id: option.Option(String),
-  )
+  GetBucketAnalyticsConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), id: option.Option(String))
 }
 
 pub fn encode_get_bucket_analytics_configuration_request_struct(input: GetBucketAnalyticsConfigurationRequest) -> json.Json {
@@ -6147,9 +5803,7 @@ pub fn decode_get_bucket_analytics_configuration_request_xml(elem: xml_decode.El
 }
 
 pub type GetBucketAnalyticsConfigurationOutput {
-  GetBucketAnalyticsConfigurationOutput(
-    analytics_configuration: option.Option(AnalyticsConfiguration),
-  )
+  GetBucketAnalyticsConfigurationOutput(analytics_configuration: option.Option(AnalyticsConfiguration))
 }
 
 pub fn encode_get_bucket_analytics_configuration_output_struct(input: GetBucketAnalyticsConfigurationOutput) -> json.Json {
@@ -6192,11 +5846,7 @@ pub fn decode_get_bucket_analytics_configuration_output_xml(elem: xml_decode.Ele
 }
 
 pub type AnalyticsConfiguration {
-  AnalyticsConfiguration(
-    filter: option.Option(AnalyticsFilter),
-    id: option.Option(String),
-    storage_class_analysis: option.Option(StorageClassAnalysis),
-  )
+  AnalyticsConfiguration(filter: option.Option(AnalyticsFilter), id: option.Option(String), storage_class_analysis: option.Option(StorageClassAnalysis))
 }
 
 pub fn encode_analytics_configuration_struct(input: AnalyticsConfiguration) -> json.Json {
@@ -6306,10 +5956,7 @@ pub fn decode_analytics_filter_union_params() -> decode.Decoder(AnalyticsFilter)
 }
 
 pub type AnalyticsAndOperator {
-  AnalyticsAndOperator(
-    prefix: option.Option(String),
-    tags: option.Option(List(Tag)),
-  )
+  AnalyticsAndOperator(prefix: option.Option(String), tags: option.Option(List(Tag)))
 }
 
 pub fn encode_analytics_and_operator_struct(input: AnalyticsAndOperator) -> json.Json {
@@ -6370,9 +6017,7 @@ pub fn decode_analytics_and_operator_xml(elem: xml_decode.Element) -> Result(Ana
 }
 
 pub type StorageClassAnalysis {
-  StorageClassAnalysis(
-    data_export: option.Option(StorageClassAnalysisDataExport),
-  )
+  StorageClassAnalysis(data_export: option.Option(StorageClassAnalysisDataExport))
 }
 
 pub fn encode_storage_class_analysis_struct(input: StorageClassAnalysis) -> json.Json {
@@ -6419,10 +6064,7 @@ pub fn decode_storage_class_analysis_xml(elem: xml_decode.Element) -> Result(Sto
 }
 
 pub type StorageClassAnalysisDataExport {
-  StorageClassAnalysisDataExport(
-    destination: option.Option(AnalyticsExportDestination),
-    output_schema_version: option.Option(StorageClassAnalysisSchemaVersion),
-  )
+  StorageClassAnalysisDataExport(destination: option.Option(AnalyticsExportDestination), output_schema_version: option.Option(StorageClassAnalysisSchemaVersion))
 }
 
 pub fn encode_storage_class_analysis_data_export_struct(input: StorageClassAnalysisDataExport) -> json.Json {
@@ -6484,9 +6126,7 @@ pub fn decode_storage_class_analysis_data_export_xml(elem: xml_decode.Element) -
 }
 
 pub type AnalyticsExportDestination {
-  AnalyticsExportDestination(
-    s3_bucket_destination: option.Option(AnalyticsS3BucketDestination),
-  )
+  AnalyticsExportDestination(s3_bucket_destination: option.Option(AnalyticsS3BucketDestination))
 }
 
 pub fn encode_analytics_export_destination_struct(input: AnalyticsExportDestination) -> json.Json {
@@ -6533,12 +6173,7 @@ pub fn decode_analytics_export_destination_xml(elem: xml_decode.Element) -> Resu
 }
 
 pub type AnalyticsS3BucketDestination {
-  AnalyticsS3BucketDestination(
-    bucket: option.Option(String),
-    bucket_account_id: option.Option(String),
-    format: option.Option(AnalyticsS3ExportFileFormat),
-    prefix: option.Option(String),
-  )
+  AnalyticsS3BucketDestination(bucket: option.Option(String), bucket_account_id: option.Option(String), format: option.Option(AnalyticsS3ExportFileFormat), prefix: option.Option(String))
 }
 
 pub fn encode_analytics_s3_bucket_destination_struct(input: AnalyticsS3BucketDestination) -> json.Json {
@@ -6666,10 +6301,7 @@ pub fn decode_storage_class_analysis_schema_version_enum() -> decode.Decoder(Sto
 }
 
 pub type GetBucketCorsRequest {
-  GetBucketCorsRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketCorsRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_cors_request_struct(input: GetBucketCorsRequest) -> json.Json {
@@ -6722,9 +6354,7 @@ pub fn decode_get_bucket_cors_request_xml(elem: xml_decode.Element) -> Result(Ge
 }
 
 pub type GetBucketCorsOutput {
-  GetBucketCorsOutput(
-    cors_rules: option.Option(List(CORSRule)),
-  )
+  GetBucketCorsOutput(cors_rules: option.Option(List(CORSRule)))
 }
 
 pub fn encode_get_bucket_cors_output_struct(input: GetBucketCorsOutput) -> json.Json {
@@ -6771,14 +6401,7 @@ pub fn decode_get_bucket_cors_output_xml(elem: xml_decode.Element) -> Result(Get
 }
 
 pub type CORSRule {
-  CORSRule(
-    allowed_headers: option.Option(List(String)),
-    allowed_methods: option.Option(List(String)),
-    allowed_origins: option.Option(List(String)),
-    expose_headers: option.Option(List(String)),
-    id: option.Option(String),
-    max_age_seconds: option.Option(Int),
-  )
+  CORSRule(allowed_headers: option.Option(List(String)), allowed_methods: option.Option(List(String)), allowed_origins: option.Option(List(String)), expose_headers: option.Option(List(String)), id: option.Option(String), max_age_seconds: option.Option(Int))
 }
 
 pub fn encode_cors_rule_struct(input: CORSRule) -> json.Json {
@@ -6895,10 +6518,7 @@ pub fn decode_cors_rule_xml(elem: xml_decode.Element) -> Result(CORSRule, String
 }
 
 pub type GetBucketEncryptionRequest {
-  GetBucketEncryptionRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketEncryptionRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_encryption_request_struct(input: GetBucketEncryptionRequest) -> json.Json {
@@ -6951,9 +6571,7 @@ pub fn decode_get_bucket_encryption_request_xml(elem: xml_decode.Element) -> Res
 }
 
 pub type GetBucketEncryptionOutput {
-  GetBucketEncryptionOutput(
-    server_side_encryption_configuration: option.Option(ServerSideEncryptionConfiguration),
-  )
+  GetBucketEncryptionOutput(server_side_encryption_configuration: option.Option(ServerSideEncryptionConfiguration))
 }
 
 pub fn encode_get_bucket_encryption_output_struct(input: GetBucketEncryptionOutput) -> json.Json {
@@ -6996,9 +6614,7 @@ pub fn decode_get_bucket_encryption_output_xml(elem: xml_decode.Element) -> Resu
 }
 
 pub type ServerSideEncryptionConfiguration {
-  ServerSideEncryptionConfiguration(
-    rules: option.Option(List(ServerSideEncryptionRule)),
-  )
+  ServerSideEncryptionConfiguration(rules: option.Option(List(ServerSideEncryptionRule)))
 }
 
 pub fn encode_server_side_encryption_configuration_struct(input: ServerSideEncryptionConfiguration) -> json.Json {
@@ -7045,11 +6661,7 @@ pub fn decode_server_side_encryption_configuration_xml(elem: xml_decode.Element)
 }
 
 pub type ServerSideEncryptionRule {
-  ServerSideEncryptionRule(
-    apply_server_side_encryption_by_default: option.Option(ServerSideEncryptionByDefault),
-    blocked_encryption_types: option.Option(BlockedEncryptionTypes),
-    bucket_key_enabled: option.Option(Bool),
-  )
+  ServerSideEncryptionRule(apply_server_side_encryption_by_default: option.Option(ServerSideEncryptionByDefault), blocked_encryption_types: option.Option(BlockedEncryptionTypes), bucket_key_enabled: option.Option(Bool))
 }
 
 pub fn encode_server_side_encryption_rule_struct(input: ServerSideEncryptionRule) -> json.Json {
@@ -7124,10 +6736,7 @@ pub fn decode_server_side_encryption_rule_xml(elem: xml_decode.Element) -> Resul
 }
 
 pub type ServerSideEncryptionByDefault {
-  ServerSideEncryptionByDefault(
-    kms_master_key_id: option.Option(String),
-    sse_algorithm: option.Option(ServerSideEncryption),
-  )
+  ServerSideEncryptionByDefault(kms_master_key_id: option.Option(String), sse_algorithm: option.Option(ServerSideEncryption))
 }
 
 pub fn encode_server_side_encryption_by_default_struct(input: ServerSideEncryptionByDefault) -> json.Json {
@@ -7189,9 +6798,7 @@ pub fn decode_server_side_encryption_by_default_xml(elem: xml_decode.Element) ->
 }
 
 pub type BlockedEncryptionTypes {
-  BlockedEncryptionTypes(
-    encryption_type: option.Option(List(EncryptionType)),
-  )
+  BlockedEncryptionTypes(encryption_type: option.Option(List(EncryptionType)))
 }
 
 pub fn encode_blocked_encryption_types_struct(input: BlockedEncryptionTypes) -> json.Json {
@@ -7260,11 +6867,7 @@ pub fn decode_encryption_type_enum() -> decode.Decoder(EncryptionType) {
 }
 
 pub type GetBucketIntelligentTieringConfigurationRequest {
-  GetBucketIntelligentTieringConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    id: option.Option(String),
-  )
+  GetBucketIntelligentTieringConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), id: option.Option(String))
 }
 
 pub fn encode_get_bucket_intelligent_tiering_configuration_request_struct(input: GetBucketIntelligentTieringConfigurationRequest) -> json.Json {
@@ -7327,9 +6930,7 @@ pub fn decode_get_bucket_intelligent_tiering_configuration_request_xml(elem: xml
 }
 
 pub type GetBucketIntelligentTieringConfigurationOutput {
-  GetBucketIntelligentTieringConfigurationOutput(
-    intelligent_tiering_configuration: option.Option(IntelligentTieringConfiguration),
-  )
+  GetBucketIntelligentTieringConfigurationOutput(intelligent_tiering_configuration: option.Option(IntelligentTieringConfiguration))
 }
 
 pub fn encode_get_bucket_intelligent_tiering_configuration_output_struct(input: GetBucketIntelligentTieringConfigurationOutput) -> json.Json {
@@ -7372,12 +6973,7 @@ pub fn decode_get_bucket_intelligent_tiering_configuration_output_xml(elem: xml_
 }
 
 pub type IntelligentTieringConfiguration {
-  IntelligentTieringConfiguration(
-    filter: option.Option(IntelligentTieringFilter),
-    id: option.Option(String),
-    status: option.Option(IntelligentTieringStatus),
-    tierings: option.Option(List(Tiering)),
-  )
+  IntelligentTieringConfiguration(filter: option.Option(IntelligentTieringFilter), id: option.Option(String), status: option.Option(IntelligentTieringStatus), tierings: option.Option(List(Tiering)))
 }
 
 pub fn encode_intelligent_tiering_configuration_struct(input: IntelligentTieringConfiguration) -> json.Json {
@@ -7467,11 +7063,7 @@ pub fn decode_intelligent_tiering_configuration_xml(elem: xml_decode.Element) ->
 }
 
 pub type IntelligentTieringFilter {
-  IntelligentTieringFilter(
-    and: option.Option(IntelligentTieringAndOperator),
-    prefix: option.Option(String),
-    tag: option.Option(Tag),
-  )
+  IntelligentTieringFilter(and: option.Option(IntelligentTieringAndOperator), prefix: option.Option(String), tag: option.Option(Tag))
 }
 
 pub fn encode_intelligent_tiering_filter_struct(input: IntelligentTieringFilter) -> json.Json {
@@ -7546,10 +7138,7 @@ pub fn decode_intelligent_tiering_filter_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type IntelligentTieringAndOperator {
-  IntelligentTieringAndOperator(
-    prefix: option.Option(String),
-    tags: option.Option(List(Tag)),
-  )
+  IntelligentTieringAndOperator(prefix: option.Option(String), tags: option.Option(List(Tag)))
 }
 
 pub fn encode_intelligent_tiering_and_operator_struct(input: IntelligentTieringAndOperator) -> json.Json {
@@ -7632,10 +7221,7 @@ pub fn decode_intelligent_tiering_status_enum() -> decode.Decoder(IntelligentTie
 }
 
 pub type Tiering {
-  Tiering(
-    access_tier: option.Option(IntelligentTieringAccessTier),
-    days: option.Option(Int),
-  )
+  Tiering(access_tier: option.Option(IntelligentTieringAccessTier), days: option.Option(Int))
 }
 
 pub fn encode_tiering_struct(input: Tiering) -> json.Json {
@@ -7719,11 +7305,7 @@ pub fn decode_intelligent_tiering_access_tier_enum() -> decode.Decoder(Intellige
 }
 
 pub type GetBucketInventoryConfigurationRequest {
-  GetBucketInventoryConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    id: option.Option(String),
-  )
+  GetBucketInventoryConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), id: option.Option(String))
 }
 
 pub fn encode_get_bucket_inventory_configuration_request_struct(input: GetBucketInventoryConfigurationRequest) -> json.Json {
@@ -7786,9 +7368,7 @@ pub fn decode_get_bucket_inventory_configuration_request_xml(elem: xml_decode.El
 }
 
 pub type GetBucketInventoryConfigurationOutput {
-  GetBucketInventoryConfigurationOutput(
-    inventory_configuration: option.Option(InventoryConfiguration),
-  )
+  GetBucketInventoryConfigurationOutput(inventory_configuration: option.Option(InventoryConfiguration))
 }
 
 pub fn encode_get_bucket_inventory_configuration_output_struct(input: GetBucketInventoryConfigurationOutput) -> json.Json {
@@ -7831,15 +7411,7 @@ pub fn decode_get_bucket_inventory_configuration_output_xml(elem: xml_decode.Ele
 }
 
 pub type InventoryConfiguration {
-  InventoryConfiguration(
-    destination: option.Option(InventoryDestination),
-    filter: option.Option(InventoryFilter),
-    id: option.Option(String),
-    included_object_versions: option.Option(InventoryIncludedObjectVersions),
-    is_enabled: option.Option(Bool),
-    optional_fields: option.Option(List(InventoryOptionalField)),
-    schedule: option.Option(InventorySchedule),
-  )
+  InventoryConfiguration(destination: option.Option(InventoryDestination), filter: option.Option(InventoryFilter), id: option.Option(String), included_object_versions: option.Option(InventoryIncludedObjectVersions), is_enabled: option.Option(Bool), optional_fields: option.Option(List(InventoryOptionalField)), schedule: option.Option(InventorySchedule))
 }
 
 pub fn encode_inventory_configuration_struct(input: InventoryConfiguration) -> json.Json {
@@ -7971,9 +7543,7 @@ pub fn decode_inventory_configuration_xml(elem: xml_decode.Element) -> Result(In
 }
 
 pub type InventoryDestination {
-  InventoryDestination(
-    s3_bucket_destination: option.Option(InventoryS3BucketDestination),
-  )
+  InventoryDestination(s3_bucket_destination: option.Option(InventoryS3BucketDestination))
 }
 
 pub fn encode_inventory_destination_struct(input: InventoryDestination) -> json.Json {
@@ -8020,13 +7590,7 @@ pub fn decode_inventory_destination_xml(elem: xml_decode.Element) -> Result(Inve
 }
 
 pub type InventoryS3BucketDestination {
-  InventoryS3BucketDestination(
-    account_id: option.Option(String),
-    bucket: option.Option(String),
-    encryption: option.Option(InventoryEncryption),
-    format: option.Option(InventoryFormat),
-    prefix: option.Option(String),
-  )
+  InventoryS3BucketDestination(account_id: option.Option(String), bucket: option.Option(String), encryption: option.Option(InventoryEncryption), format: option.Option(InventoryFormat), prefix: option.Option(String))
 }
 
 pub fn encode_inventory_s3_bucket_destination_struct(input: InventoryS3BucketDestination) -> json.Json {
@@ -8130,10 +7694,7 @@ pub fn decode_inventory_s3_bucket_destination_xml(elem: xml_decode.Element) -> R
 }
 
 pub type InventoryEncryption {
-  InventoryEncryption(
-    ssekms: option.Option(SSEKMS),
-    sses3: option.Option(SSES3),
-  )
+  InventoryEncryption(ssekms: option.Option(SSEKMS), sses3: option.Option(SSES3))
 }
 
 pub fn encode_inventory_encryption_struct(input: InventoryEncryption) -> json.Json {
@@ -8194,9 +7755,7 @@ pub fn decode_inventory_encryption_xml(elem: xml_decode.Element) -> Result(Inven
 }
 
 pub type SSEKMS {
-  SSEKMS(
-    key_id: option.Option(String),
-  )
+  SSEKMS(key_id: option.Option(String))
 }
 
 pub fn encode_ssekms_struct(input: SSEKMS) -> json.Json {
@@ -8296,9 +7855,7 @@ pub fn decode_inventory_format_enum() -> decode.Decoder(InventoryFormat) {
 }
 
 pub type InventoryFilter {
-  InventoryFilter(
-    prefix: option.Option(String),
-  )
+  InventoryFilter(prefix: option.Option(String))
 }
 
 pub fn encode_inventory_filter_struct(input: InventoryFilter) -> json.Json {
@@ -8431,9 +7988,7 @@ pub fn decode_inventory_optional_field_enum() -> decode.Decoder(InventoryOptiona
 }
 
 pub type InventorySchedule {
-  InventorySchedule(
-    frequency: option.Option(InventoryFrequency),
-  )
+  InventorySchedule(frequency: option.Option(InventoryFrequency))
 }
 
 pub fn encode_inventory_schedule_struct(input: InventorySchedule) -> json.Json {
@@ -8503,10 +8058,7 @@ pub fn decode_inventory_frequency_enum() -> decode.Decoder(InventoryFrequency) {
 }
 
 pub type GetBucketLifecycleConfigurationRequest {
-  GetBucketLifecycleConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketLifecycleConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_lifecycle_configuration_request_struct(input: GetBucketLifecycleConfigurationRequest) -> json.Json {
@@ -8559,10 +8111,7 @@ pub fn decode_get_bucket_lifecycle_configuration_request_xml(elem: xml_decode.El
 }
 
 pub type GetBucketLifecycleConfigurationOutput {
-  GetBucketLifecycleConfigurationOutput(
-    rules: option.Option(List(LifecycleRule)),
-    transition_default_minimum_object_size: option.Option(TransitionDefaultMinimumObjectSize),
-  )
+  GetBucketLifecycleConfigurationOutput(rules: option.Option(List(LifecycleRule)), transition_default_minimum_object_size: option.Option(TransitionDefaultMinimumObjectSize))
 }
 
 pub fn encode_get_bucket_lifecycle_configuration_output_struct(input: GetBucketLifecycleConfigurationOutput) -> json.Json {
@@ -8619,17 +8168,7 @@ pub fn decode_get_bucket_lifecycle_configuration_output_xml(elem: xml_decode.Ele
 }
 
 pub type LifecycleRule {
-  LifecycleRule(
-    abort_incomplete_multipart_upload: option.Option(AbortIncompleteMultipartUpload),
-    expiration: option.Option(LifecycleExpiration),
-    filter: option.Option(LifecycleRuleFilter),
-    id: option.Option(String),
-    noncurrent_version_expiration: option.Option(NoncurrentVersionExpiration),
-    noncurrent_version_transitions: option.Option(List(NoncurrentVersionTransition)),
-    prefix: option.Option(String),
-    status: option.Option(ExpirationStatus),
-    transitions: option.Option(List(Transition)),
-  )
+  LifecycleRule(abort_incomplete_multipart_upload: option.Option(AbortIncompleteMultipartUpload), expiration: option.Option(LifecycleExpiration), filter: option.Option(LifecycleRuleFilter), id: option.Option(String), noncurrent_version_expiration: option.Option(NoncurrentVersionExpiration), noncurrent_version_transitions: option.Option(List(NoncurrentVersionTransition)), prefix: option.Option(String), status: option.Option(ExpirationStatus), transitions: option.Option(List(Transition)))
 }
 
 pub fn encode_lifecycle_rule_struct(input: LifecycleRule) -> json.Json {
@@ -8789,9 +8328,7 @@ pub fn decode_lifecycle_rule_xml(elem: xml_decode.Element) -> Result(LifecycleRu
 }
 
 pub type AbortIncompleteMultipartUpload {
-  AbortIncompleteMultipartUpload(
-    days_after_initiation: option.Option(Int),
-  )
+  AbortIncompleteMultipartUpload(days_after_initiation: option.Option(Int))
 }
 
 pub fn encode_abort_incomplete_multipart_upload_struct(input: AbortIncompleteMultipartUpload) -> json.Json {
@@ -8838,11 +8375,7 @@ pub fn decode_abort_incomplete_multipart_upload_xml(elem: xml_decode.Element) ->
 }
 
 pub type LifecycleExpiration {
-  LifecycleExpiration(
-    date: option.Option(Int),
-    days: option.Option(Int),
-    expired_object_delete_marker: option.Option(Bool),
-  )
+  LifecycleExpiration(date: option.Option(Int), days: option.Option(Int), expired_object_delete_marker: option.Option(Bool))
 }
 
 pub fn encode_lifecycle_expiration_struct(input: LifecycleExpiration) -> json.Json {
@@ -8917,13 +8450,7 @@ pub fn decode_lifecycle_expiration_xml(elem: xml_decode.Element) -> Result(Lifec
 }
 
 pub type LifecycleRuleFilter {
-  LifecycleRuleFilter(
-    and: option.Option(LifecycleRuleAndOperator),
-    object_size_greater_than: option.Option(Int),
-    object_size_less_than: option.Option(Int),
-    prefix: option.Option(String),
-    tag: option.Option(Tag),
-  )
+  LifecycleRuleFilter(and: option.Option(LifecycleRuleAndOperator), object_size_greater_than: option.Option(Int), object_size_less_than: option.Option(Int), prefix: option.Option(String), tag: option.Option(Tag))
 }
 
 pub fn encode_lifecycle_rule_filter_struct(input: LifecycleRuleFilter) -> json.Json {
@@ -9026,12 +8553,7 @@ pub fn decode_lifecycle_rule_filter_xml(elem: xml_decode.Element) -> Result(Life
 }
 
 pub type LifecycleRuleAndOperator {
-  LifecycleRuleAndOperator(
-    object_size_greater_than: option.Option(Int),
-    object_size_less_than: option.Option(Int),
-    prefix: option.Option(String),
-    tags: option.Option(List(Tag)),
-  )
+  LifecycleRuleAndOperator(object_size_greater_than: option.Option(Int), object_size_less_than: option.Option(Int), prefix: option.Option(String), tags: option.Option(List(Tag)))
 }
 
 pub fn encode_lifecycle_rule_and_operator_struct(input: LifecycleRuleAndOperator) -> json.Json {
@@ -9120,10 +8642,7 @@ pub fn decode_lifecycle_rule_and_operator_xml(elem: xml_decode.Element) -> Resul
 }
 
 pub type NoncurrentVersionExpiration {
-  NoncurrentVersionExpiration(
-    newer_noncurrent_versions: option.Option(Int),
-    noncurrent_days: option.Option(Int),
-  )
+  NoncurrentVersionExpiration(newer_noncurrent_versions: option.Option(Int), noncurrent_days: option.Option(Int))
 }
 
 pub fn encode_noncurrent_version_expiration_struct(input: NoncurrentVersionExpiration) -> json.Json {
@@ -9184,11 +8703,7 @@ pub fn decode_noncurrent_version_expiration_xml(elem: xml_decode.Element) -> Res
 }
 
 pub type NoncurrentVersionTransition {
-  NoncurrentVersionTransition(
-    newer_noncurrent_versions: option.Option(Int),
-    noncurrent_days: option.Option(Int),
-    storage_class: option.Option(TransitionStorageClass),
-  )
+  NoncurrentVersionTransition(newer_noncurrent_versions: option.Option(Int), noncurrent_days: option.Option(Int), storage_class: option.Option(TransitionStorageClass))
 }
 
 pub fn encode_noncurrent_version_transition_struct(input: NoncurrentVersionTransition) -> json.Json {
@@ -9320,11 +8835,7 @@ pub fn decode_expiration_status_enum() -> decode.Decoder(ExpirationStatus) {
 }
 
 pub type Transition {
-  Transition(
-    date: option.Option(Int),
-    days: option.Option(Int),
-    storage_class: option.Option(TransitionStorageClass),
-  )
+  Transition(date: option.Option(Int), days: option.Option(Int), storage_class: option.Option(TransitionStorageClass))
 }
 
 pub fn encode_transition_struct(input: Transition) -> json.Json {
@@ -9422,10 +8933,7 @@ pub fn decode_transition_default_minimum_object_size_enum() -> decode.Decoder(Tr
 }
 
 pub type GetBucketLocationRequest {
-  GetBucketLocationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketLocationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_location_request_struct(input: GetBucketLocationRequest) -> json.Json {
@@ -9478,9 +8986,7 @@ pub fn decode_get_bucket_location_request_xml(elem: xml_decode.Element) -> Resul
 }
 
 pub type GetBucketLocationOutput {
-  GetBucketLocationOutput(
-    location_constraint: option.Option(BucketLocationConstraint),
-  )
+  GetBucketLocationOutput(location_constraint: option.Option(BucketLocationConstraint))
 }
 
 pub fn encode_get_bucket_location_output_struct(input: GetBucketLocationOutput) -> json.Json {
@@ -9528,10 +9034,7 @@ pub fn decode_get_bucket_location_output_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type GetBucketLoggingRequest {
-  GetBucketLoggingRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketLoggingRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_logging_request_struct(input: GetBucketLoggingRequest) -> json.Json {
@@ -9584,9 +9087,7 @@ pub fn decode_get_bucket_logging_request_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type GetBucketLoggingOutput {
-  GetBucketLoggingOutput(
-    logging_enabled: option.Option(LoggingEnabled),
-  )
+  GetBucketLoggingOutput(logging_enabled: option.Option(LoggingEnabled))
 }
 
 pub fn encode_get_bucket_logging_output_struct(input: GetBucketLoggingOutput) -> json.Json {
@@ -9633,12 +9134,7 @@ pub fn decode_get_bucket_logging_output_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type LoggingEnabled {
-  LoggingEnabled(
-    target_bucket: option.Option(String),
-    target_grants: option.Option(List(TargetGrant)),
-    target_object_key_format: option.Option(TargetObjectKeyFormat),
-    target_prefix: option.Option(String),
-  )
+  LoggingEnabled(target_bucket: option.Option(String), target_grants: option.Option(List(TargetGrant)), target_object_key_format: option.Option(TargetObjectKeyFormat), target_prefix: option.Option(String))
 }
 
 pub fn encode_logging_enabled_struct(input: LoggingEnabled) -> json.Json {
@@ -9727,10 +9223,7 @@ pub fn decode_logging_enabled_xml(elem: xml_decode.Element) -> Result(LoggingEna
 }
 
 pub type TargetGrant {
-  TargetGrant(
-    grantee: option.Option(Grantee),
-    permission: option.Option(BucketLogsPermission),
-  )
+  TargetGrant(grantee: option.Option(Grantee), permission: option.Option(BucketLogsPermission))
 }
 
 pub fn encode_target_grant_struct(input: TargetGrant) -> json.Json {
@@ -9817,10 +9310,7 @@ pub fn decode_bucket_logs_permission_enum() -> decode.Decoder(BucketLogsPermissi
 }
 
 pub type TargetObjectKeyFormat {
-  TargetObjectKeyFormat(
-    partitioned_prefix: option.Option(PartitionedPrefix),
-    simple_prefix: option.Option(SimplePrefix),
-  )
+  TargetObjectKeyFormat(partitioned_prefix: option.Option(PartitionedPrefix), simple_prefix: option.Option(SimplePrefix))
 }
 
 pub fn encode_target_object_key_format_struct(input: TargetObjectKeyFormat) -> json.Json {
@@ -9881,9 +9371,7 @@ pub fn decode_target_object_key_format_xml(elem: xml_decode.Element) -> Result(T
 }
 
 pub type PartitionedPrefix {
-  PartitionedPrefix(
-    partition_date_source: option.Option(PartitionDateSource),
-  )
+  PartitionedPrefix(partition_date_source: option.Option(PartitionDateSource))
 }
 
 pub fn encode_partitioned_prefix_struct(input: PartitionedPrefix) -> json.Json {
@@ -9981,10 +9469,7 @@ pub fn decode_simple_prefix_xml(_elem: xml_decode.Element) -> Result(SimplePrefi
 }
 
 pub type GetBucketMetadataConfigurationRequest {
-  GetBucketMetadataConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketMetadataConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_metadata_configuration_request_struct(input: GetBucketMetadataConfigurationRequest) -> json.Json {
@@ -10037,9 +9522,7 @@ pub fn decode_get_bucket_metadata_configuration_request_xml(elem: xml_decode.Ele
 }
 
 pub type GetBucketMetadataConfigurationOutput {
-  GetBucketMetadataConfigurationOutput(
-    get_bucket_metadata_configuration_result: option.Option(GetBucketMetadataConfigurationResult),
-  )
+  GetBucketMetadataConfigurationOutput(get_bucket_metadata_configuration_result: option.Option(GetBucketMetadataConfigurationResult))
 }
 
 pub fn encode_get_bucket_metadata_configuration_output_struct(input: GetBucketMetadataConfigurationOutput) -> json.Json {
@@ -10082,9 +9565,7 @@ pub fn decode_get_bucket_metadata_configuration_output_xml(elem: xml_decode.Elem
 }
 
 pub type GetBucketMetadataConfigurationResult {
-  GetBucketMetadataConfigurationResult(
-    metadata_configuration_result: option.Option(MetadataConfigurationResult),
-  )
+  GetBucketMetadataConfigurationResult(metadata_configuration_result: option.Option(MetadataConfigurationResult))
 }
 
 pub fn encode_get_bucket_metadata_configuration_result_struct(input: GetBucketMetadataConfigurationResult) -> json.Json {
@@ -10131,11 +9612,7 @@ pub fn decode_get_bucket_metadata_configuration_result_xml(elem: xml_decode.Elem
 }
 
 pub type MetadataConfigurationResult {
-  MetadataConfigurationResult(
-    destination_result: option.Option(DestinationResult),
-    inventory_table_configuration_result: option.Option(InventoryTableConfigurationResult),
-    journal_table_configuration_result: option.Option(JournalTableConfigurationResult),
-  )
+  MetadataConfigurationResult(destination_result: option.Option(DestinationResult), inventory_table_configuration_result: option.Option(InventoryTableConfigurationResult), journal_table_configuration_result: option.Option(JournalTableConfigurationResult))
 }
 
 pub fn encode_metadata_configuration_result_struct(input: MetadataConfigurationResult) -> json.Json {
@@ -10210,11 +9687,7 @@ pub fn decode_metadata_configuration_result_xml(elem: xml_decode.Element) -> Res
 }
 
 pub type DestinationResult {
-  DestinationResult(
-    table_bucket_arn: option.Option(String),
-    table_bucket_type: option.Option(S3TablesBucketType),
-    table_namespace: option.Option(String),
-  )
+  DestinationResult(table_bucket_arn: option.Option(String), table_bucket_type: option.Option(S3TablesBucketType), table_namespace: option.Option(String))
 }
 
 pub fn encode_destination_result_struct(input: DestinationResult) -> json.Json {
@@ -10312,13 +9785,7 @@ pub fn decode_s3_tables_bucket_type_enum() -> decode.Decoder(S3TablesBucketType)
 }
 
 pub type InventoryTableConfigurationResult {
-  InventoryTableConfigurationResult(
-    configuration_state: option.Option(InventoryConfigurationState),
-    error: option.Option(ErrorDetails),
-    table_arn: option.Option(String),
-    table_name: option.Option(String),
-    table_status: option.Option(String),
-  )
+  InventoryTableConfigurationResult(configuration_state: option.Option(InventoryConfigurationState), error: option.Option(ErrorDetails), table_arn: option.Option(String), table_name: option.Option(String), table_status: option.Option(String))
 }
 
 pub fn encode_inventory_table_configuration_result_struct(input: InventoryTableConfigurationResult) -> json.Json {
@@ -10444,10 +9911,7 @@ pub fn decode_inventory_configuration_state_enum() -> decode.Decoder(InventoryCo
 }
 
 pub type ErrorDetails {
-  ErrorDetails(
-    error_code: option.Option(String),
-    error_message: option.Option(String),
-  )
+  ErrorDetails(error_code: option.Option(String), error_message: option.Option(String))
 }
 
 pub fn encode_error_details_struct(input: ErrorDetails) -> json.Json {
@@ -10508,13 +9972,7 @@ pub fn decode_error_details_xml(elem: xml_decode.Element) -> Result(ErrorDetails
 }
 
 pub type JournalTableConfigurationResult {
-  JournalTableConfigurationResult(
-    error: option.Option(ErrorDetails),
-    record_expiration: option.Option(RecordExpiration),
-    table_arn: option.Option(String),
-    table_name: option.Option(String),
-    table_status: option.Option(String),
-  )
+  JournalTableConfigurationResult(error: option.Option(ErrorDetails), record_expiration: option.Option(RecordExpiration), table_arn: option.Option(String), table_name: option.Option(String), table_status: option.Option(String))
 }
 
 pub fn encode_journal_table_configuration_result_struct(input: JournalTableConfigurationResult) -> json.Json {
@@ -10617,10 +10075,7 @@ pub fn decode_journal_table_configuration_result_xml(elem: xml_decode.Element) -
 }
 
 pub type RecordExpiration {
-  RecordExpiration(
-    days: option.Option(Int),
-    expiration: option.Option(ExpirationState),
-  )
+  RecordExpiration(days: option.Option(Int), expiration: option.Option(ExpirationState))
 }
 
 pub fn encode_record_expiration_struct(input: RecordExpiration) -> json.Json {
@@ -10704,10 +10159,7 @@ pub fn decode_expiration_state_enum() -> decode.Decoder(ExpirationState) {
 }
 
 pub type GetBucketMetadataTableConfigurationRequest {
-  GetBucketMetadataTableConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketMetadataTableConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_metadata_table_configuration_request_struct(input: GetBucketMetadataTableConfigurationRequest) -> json.Json {
@@ -10760,9 +10212,7 @@ pub fn decode_get_bucket_metadata_table_configuration_request_xml(elem: xml_deco
 }
 
 pub type GetBucketMetadataTableConfigurationOutput {
-  GetBucketMetadataTableConfigurationOutput(
-    get_bucket_metadata_table_configuration_result: option.Option(GetBucketMetadataTableConfigurationResult),
-  )
+  GetBucketMetadataTableConfigurationOutput(get_bucket_metadata_table_configuration_result: option.Option(GetBucketMetadataTableConfigurationResult))
 }
 
 pub fn encode_get_bucket_metadata_table_configuration_output_struct(input: GetBucketMetadataTableConfigurationOutput) -> json.Json {
@@ -10805,11 +10255,7 @@ pub fn decode_get_bucket_metadata_table_configuration_output_xml(elem: xml_decod
 }
 
 pub type GetBucketMetadataTableConfigurationResult {
-  GetBucketMetadataTableConfigurationResult(
-    error: option.Option(ErrorDetails),
-    metadata_table_configuration_result: option.Option(MetadataTableConfigurationResult),
-    status: option.Option(String),
-  )
+  GetBucketMetadataTableConfigurationResult(error: option.Option(ErrorDetails), metadata_table_configuration_result: option.Option(MetadataTableConfigurationResult), status: option.Option(String))
 }
 
 pub fn encode_get_bucket_metadata_table_configuration_result_struct(input: GetBucketMetadataTableConfigurationResult) -> json.Json {
@@ -10884,9 +10330,7 @@ pub fn decode_get_bucket_metadata_table_configuration_result_xml(elem: xml_decod
 }
 
 pub type MetadataTableConfigurationResult {
-  MetadataTableConfigurationResult(
-    s3_tables_destination_result: option.Option(S3TablesDestinationResult),
-  )
+  MetadataTableConfigurationResult(s3_tables_destination_result: option.Option(S3TablesDestinationResult))
 }
 
 pub fn encode_metadata_table_configuration_result_struct(input: MetadataTableConfigurationResult) -> json.Json {
@@ -10933,12 +10377,7 @@ pub fn decode_metadata_table_configuration_result_xml(elem: xml_decode.Element) 
 }
 
 pub type S3TablesDestinationResult {
-  S3TablesDestinationResult(
-    table_arn: option.Option(String),
-    table_bucket_arn: option.Option(String),
-    table_name: option.Option(String),
-    table_namespace: option.Option(String),
-  )
+  S3TablesDestinationResult(table_arn: option.Option(String), table_bucket_arn: option.Option(String), table_name: option.Option(String), table_namespace: option.Option(String))
 }
 
 pub fn encode_s3_tables_destination_result_struct(input: S3TablesDestinationResult) -> json.Json {
@@ -11027,11 +10466,7 @@ pub fn decode_s3_tables_destination_result_xml(elem: xml_decode.Element) -> Resu
 }
 
 pub type GetBucketMetricsConfigurationRequest {
-  GetBucketMetricsConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    id: option.Option(String),
-  )
+  GetBucketMetricsConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), id: option.Option(String))
 }
 
 pub fn encode_get_bucket_metrics_configuration_request_struct(input: GetBucketMetricsConfigurationRequest) -> json.Json {
@@ -11094,9 +10529,7 @@ pub fn decode_get_bucket_metrics_configuration_request_xml(elem: xml_decode.Elem
 }
 
 pub type GetBucketMetricsConfigurationOutput {
-  GetBucketMetricsConfigurationOutput(
-    metrics_configuration: option.Option(MetricsConfiguration),
-  )
+  GetBucketMetricsConfigurationOutput(metrics_configuration: option.Option(MetricsConfiguration))
 }
 
 pub fn encode_get_bucket_metrics_configuration_output_struct(input: GetBucketMetricsConfigurationOutput) -> json.Json {
@@ -11139,10 +10572,7 @@ pub fn decode_get_bucket_metrics_configuration_output_xml(elem: xml_decode.Eleme
 }
 
 pub type MetricsConfiguration {
-  MetricsConfiguration(
-    filter: option.Option(MetricsFilter),
-    id: option.Option(String),
-  )
+  MetricsConfiguration(filter: option.Option(MetricsFilter), id: option.Option(String))
 }
 
 pub fn encode_metrics_configuration_struct(input: MetricsConfiguration) -> json.Json {
@@ -11242,11 +10672,7 @@ pub fn decode_metrics_filter_union_params() -> decode.Decoder(MetricsFilter) {
 }
 
 pub type MetricsAndOperator {
-  MetricsAndOperator(
-    access_point_arn: option.Option(String),
-    prefix: option.Option(String),
-    tags: option.Option(List(Tag)),
-  )
+  MetricsAndOperator(access_point_arn: option.Option(String), prefix: option.Option(String), tags: option.Option(List(Tag)))
 }
 
 pub fn encode_metrics_and_operator_struct(input: MetricsAndOperator) -> json.Json {
@@ -11321,10 +10747,7 @@ pub fn decode_metrics_and_operator_xml(elem: xml_decode.Element) -> Result(Metri
 }
 
 pub type GetBucketNotificationConfigurationRequest {
-  GetBucketNotificationConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketNotificationConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_notification_configuration_request_struct(input: GetBucketNotificationConfigurationRequest) -> json.Json {
@@ -11377,12 +10800,7 @@ pub fn decode_get_bucket_notification_configuration_request_xml(elem: xml_decode
 }
 
 pub type NotificationConfiguration {
-  NotificationConfiguration(
-    event_bridge_configuration: option.Option(EventBridgeConfiguration),
-    lambda_function_configurations: option.Option(List(LambdaFunctionConfiguration)),
-    queue_configurations: option.Option(List(QueueConfiguration)),
-    topic_configurations: option.Option(List(TopicConfiguration)),
-  )
+  NotificationConfiguration(event_bridge_configuration: option.Option(EventBridgeConfiguration), lambda_function_configurations: option.Option(List(LambdaFunctionConfiguration)), queue_configurations: option.Option(List(QueueConfiguration)), topic_configurations: option.Option(List(TopicConfiguration)))
 }
 
 pub fn encode_notification_configuration_struct(input: NotificationConfiguration) -> json.Json {
@@ -11499,12 +10917,7 @@ pub fn decode_event_bridge_configuration_xml(_elem: xml_decode.Element) -> Resul
 }
 
 pub type LambdaFunctionConfiguration {
-  LambdaFunctionConfiguration(
-    events: option.Option(List(Event)),
-    filter: option.Option(NotificationConfigurationFilter),
-    id: option.Option(String),
-    lambda_function_arn: option.Option(String),
-  )
+  LambdaFunctionConfiguration(events: option.Option(List(Event)), filter: option.Option(NotificationConfigurationFilter), id: option.Option(String), lambda_function_arn: option.Option(String))
 }
 
 pub fn encode_lambda_function_configuration_struct(input: LambdaFunctionConfiguration) -> json.Json {
@@ -11690,9 +11103,7 @@ pub fn decode_event_enum() -> decode.Decoder(Event) {
 }
 
 pub type NotificationConfigurationFilter {
-  NotificationConfigurationFilter(
-    key: option.Option(S3KeyFilter),
-  )
+  NotificationConfigurationFilter(key: option.Option(S3KeyFilter))
 }
 
 pub fn encode_notification_configuration_filter_struct(input: NotificationConfigurationFilter) -> json.Json {
@@ -11739,9 +11150,7 @@ pub fn decode_notification_configuration_filter_xml(elem: xml_decode.Element) ->
 }
 
 pub type S3KeyFilter {
-  S3KeyFilter(
-    filter_rules: option.Option(List(FilterRule)),
-  )
+  S3KeyFilter(filter_rules: option.Option(List(FilterRule)))
 }
 
 pub fn encode_s3_key_filter_struct(input: S3KeyFilter) -> json.Json {
@@ -11788,10 +11197,7 @@ pub fn decode_s3_key_filter_xml(elem: xml_decode.Element) -> Result(S3KeyFilter,
 }
 
 pub type FilterRule {
-  FilterRule(
-    name: option.Option(FilterRuleName),
-    value: option.Option(String),
-  )
+  FilterRule(name: option.Option(FilterRuleName), value: option.Option(String))
 }
 
 pub fn encode_filter_rule_struct(input: FilterRule) -> json.Json {
@@ -11875,12 +11281,7 @@ pub fn decode_filter_rule_name_enum() -> decode.Decoder(FilterRuleName) {
 }
 
 pub type QueueConfiguration {
-  QueueConfiguration(
-    events: option.Option(List(Event)),
-    filter: option.Option(NotificationConfigurationFilter),
-    id: option.Option(String),
-    queue_arn: option.Option(String),
-  )
+  QueueConfiguration(events: option.Option(List(Event)), filter: option.Option(NotificationConfigurationFilter), id: option.Option(String), queue_arn: option.Option(String))
 }
 
 pub fn encode_queue_configuration_struct(input: QueueConfiguration) -> json.Json {
@@ -11969,12 +11370,7 @@ pub fn decode_queue_configuration_xml(elem: xml_decode.Element) -> Result(QueueC
 }
 
 pub type TopicConfiguration {
-  TopicConfiguration(
-    events: option.Option(List(Event)),
-    filter: option.Option(NotificationConfigurationFilter),
-    id: option.Option(String),
-    topic_arn: option.Option(String),
-  )
+  TopicConfiguration(events: option.Option(List(Event)), filter: option.Option(NotificationConfigurationFilter), id: option.Option(String), topic_arn: option.Option(String))
 }
 
 pub fn encode_topic_configuration_struct(input: TopicConfiguration) -> json.Json {
@@ -12063,10 +11459,7 @@ pub fn decode_topic_configuration_xml(elem: xml_decode.Element) -> Result(TopicC
 }
 
 pub type GetBucketOwnershipControlsRequest {
-  GetBucketOwnershipControlsRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketOwnershipControlsRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_ownership_controls_request_struct(input: GetBucketOwnershipControlsRequest) -> json.Json {
@@ -12119,9 +11512,7 @@ pub fn decode_get_bucket_ownership_controls_request_xml(elem: xml_decode.Element
 }
 
 pub type GetBucketOwnershipControlsOutput {
-  GetBucketOwnershipControlsOutput(
-    ownership_controls: option.Option(OwnershipControls),
-  )
+  GetBucketOwnershipControlsOutput(ownership_controls: option.Option(OwnershipControls))
 }
 
 pub fn encode_get_bucket_ownership_controls_output_struct(input: GetBucketOwnershipControlsOutput) -> json.Json {
@@ -12164,9 +11555,7 @@ pub fn decode_get_bucket_ownership_controls_output_xml(elem: xml_decode.Element)
 }
 
 pub type OwnershipControls {
-  OwnershipControls(
-    rules: option.Option(List(OwnershipControlsRule)),
-  )
+  OwnershipControls(rules: option.Option(List(OwnershipControlsRule)))
 }
 
 pub fn encode_ownership_controls_struct(input: OwnershipControls) -> json.Json {
@@ -12213,9 +11602,7 @@ pub fn decode_ownership_controls_xml(elem: xml_decode.Element) -> Result(Ownersh
 }
 
 pub type OwnershipControlsRule {
-  OwnershipControlsRule(
-    object_ownership: option.Option(ObjectOwnership),
-  )
+  OwnershipControlsRule(object_ownership: option.Option(ObjectOwnership))
 }
 
 pub fn encode_ownership_controls_rule_struct(input: OwnershipControlsRule) -> json.Json {
@@ -12263,10 +11650,7 @@ pub fn decode_ownership_controls_rule_xml(elem: xml_decode.Element) -> Result(Ow
 }
 
 pub type GetBucketPolicyRequest {
-  GetBucketPolicyRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketPolicyRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_policy_request_struct(input: GetBucketPolicyRequest) -> json.Json {
@@ -12319,9 +11703,7 @@ pub fn decode_get_bucket_policy_request_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type GetBucketPolicyOutput {
-  GetBucketPolicyOutput(
-    policy: option.Option(String),
-  )
+  GetBucketPolicyOutput(policy: option.Option(String))
 }
 
 pub fn encode_get_bucket_policy_output_struct(input: GetBucketPolicyOutput) -> json.Json {
@@ -12364,10 +11746,7 @@ pub fn decode_get_bucket_policy_output_xml(elem: xml_decode.Element) -> Result(G
 }
 
 pub type GetBucketPolicyStatusRequest {
-  GetBucketPolicyStatusRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketPolicyStatusRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_policy_status_request_struct(input: GetBucketPolicyStatusRequest) -> json.Json {
@@ -12420,9 +11799,7 @@ pub fn decode_get_bucket_policy_status_request_xml(elem: xml_decode.Element) -> 
 }
 
 pub type GetBucketPolicyStatusOutput {
-  GetBucketPolicyStatusOutput(
-    policy_status: option.Option(PolicyStatus),
-  )
+  GetBucketPolicyStatusOutput(policy_status: option.Option(PolicyStatus))
 }
 
 pub fn encode_get_bucket_policy_status_output_struct(input: GetBucketPolicyStatusOutput) -> json.Json {
@@ -12465,9 +11842,7 @@ pub fn decode_get_bucket_policy_status_output_xml(elem: xml_decode.Element) -> R
 }
 
 pub type PolicyStatus {
-  PolicyStatus(
-    is_public: option.Option(Bool),
-  )
+  PolicyStatus(is_public: option.Option(Bool))
 }
 
 pub fn encode_policy_status_struct(input: PolicyStatus) -> json.Json {
@@ -12514,10 +11889,7 @@ pub fn decode_policy_status_xml(elem: xml_decode.Element) -> Result(PolicyStatus
 }
 
 pub type GetBucketReplicationRequest {
-  GetBucketReplicationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketReplicationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_replication_request_struct(input: GetBucketReplicationRequest) -> json.Json {
@@ -12570,9 +11942,7 @@ pub fn decode_get_bucket_replication_request_xml(elem: xml_decode.Element) -> Re
 }
 
 pub type GetBucketReplicationOutput {
-  GetBucketReplicationOutput(
-    replication_configuration: option.Option(ReplicationConfiguration),
-  )
+  GetBucketReplicationOutput(replication_configuration: option.Option(ReplicationConfiguration))
 }
 
 pub fn encode_get_bucket_replication_output_struct(input: GetBucketReplicationOutput) -> json.Json {
@@ -12615,10 +11985,7 @@ pub fn decode_get_bucket_replication_output_xml(elem: xml_decode.Element) -> Res
 }
 
 pub type ReplicationConfiguration {
-  ReplicationConfiguration(
-    role: option.Option(String),
-    rules: option.Option(List(ReplicationRule)),
-  )
+  ReplicationConfiguration(role: option.Option(String), rules: option.Option(List(ReplicationRule)))
 }
 
 pub fn encode_replication_configuration_struct(input: ReplicationConfiguration) -> json.Json {
@@ -12679,17 +12046,7 @@ pub fn decode_replication_configuration_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type ReplicationRule {
-  ReplicationRule(
-    delete_marker_replication: option.Option(DeleteMarkerReplication),
-    destination: option.Option(Destination),
-    existing_object_replication: option.Option(ExistingObjectReplication),
-    filter: option.Option(ReplicationRuleFilter),
-    id: option.Option(String),
-    prefix: option.Option(String),
-    priority: option.Option(Int),
-    source_selection_criteria: option.Option(SourceSelectionCriteria),
-    status: option.Option(ReplicationRuleStatus),
-  )
+  ReplicationRule(delete_marker_replication: option.Option(DeleteMarkerReplication), destination: option.Option(Destination), existing_object_replication: option.Option(ExistingObjectReplication), filter: option.Option(ReplicationRuleFilter), id: option.Option(String), prefix: option.Option(String), priority: option.Option(Int), source_selection_criteria: option.Option(SourceSelectionCriteria), status: option.Option(ReplicationRuleStatus))
 }
 
 pub fn encode_replication_rule_struct(input: ReplicationRule) -> json.Json {
@@ -12849,9 +12206,7 @@ pub fn decode_replication_rule_xml(elem: xml_decode.Element) -> Result(Replicati
 }
 
 pub type DeleteMarkerReplication {
-  DeleteMarkerReplication(
-    status: option.Option(DeleteMarkerReplicationStatus),
-  )
+  DeleteMarkerReplication(status: option.Option(DeleteMarkerReplicationStatus))
 }
 
 pub fn encode_delete_marker_replication_struct(input: DeleteMarkerReplication) -> json.Json {
@@ -12921,15 +12276,7 @@ pub fn decode_delete_marker_replication_status_enum() -> decode.Decoder(DeleteMa
 }
 
 pub type Destination {
-  Destination(
-    access_control_translation: option.Option(AccessControlTranslation),
-    account: option.Option(String),
-    bucket: option.Option(String),
-    encryption_configuration: option.Option(EncryptionConfiguration),
-    metrics: option.Option(Metrics),
-    replication_time: option.Option(ReplicationTime),
-    storage_class: option.Option(StorageClass),
-  )
+  Destination(access_control_translation: option.Option(AccessControlTranslation), account: option.Option(String), bucket: option.Option(String), encryption_configuration: option.Option(EncryptionConfiguration), metrics: option.Option(Metrics), replication_time: option.Option(ReplicationTime), storage_class: option.Option(StorageClass))
 }
 
 pub fn encode_destination_struct(input: Destination) -> json.Json {
@@ -13061,9 +12408,7 @@ pub fn decode_destination_xml(elem: xml_decode.Element) -> Result(Destination, S
 }
 
 pub type AccessControlTranslation {
-  AccessControlTranslation(
-    owner: option.Option(OwnerOverride),
-  )
+  AccessControlTranslation(owner: option.Option(OwnerOverride))
 }
 
 pub fn encode_access_control_translation_struct(input: AccessControlTranslation) -> json.Json {
@@ -13130,9 +12475,7 @@ pub fn decode_owner_override_enum() -> decode.Decoder(OwnerOverride) {
 }
 
 pub type EncryptionConfiguration {
-  EncryptionConfiguration(
-    replica_kms_key_id: option.Option(String),
-  )
+  EncryptionConfiguration(replica_kms_key_id: option.Option(String))
 }
 
 pub fn encode_encryption_configuration_struct(input: EncryptionConfiguration) -> json.Json {
@@ -13179,10 +12522,7 @@ pub fn decode_encryption_configuration_xml(elem: xml_decode.Element) -> Result(E
 }
 
 pub type Metrics {
-  Metrics(
-    event_threshold: option.Option(ReplicationTimeValue),
-    status: option.Option(MetricsStatus),
-  )
+  Metrics(event_threshold: option.Option(ReplicationTimeValue), status: option.Option(MetricsStatus))
 }
 
 pub fn encode_metrics_struct(input: Metrics) -> json.Json {
@@ -13244,9 +12584,7 @@ pub fn decode_metrics_xml(elem: xml_decode.Element) -> Result(Metrics, String) {
 }
 
 pub type ReplicationTimeValue {
-  ReplicationTimeValue(
-    minutes: option.Option(Int),
-  )
+  ReplicationTimeValue(minutes: option.Option(Int))
 }
 
 pub fn encode_replication_time_value_struct(input: ReplicationTimeValue) -> json.Json {
@@ -13315,10 +12653,7 @@ pub fn decode_metrics_status_enum() -> decode.Decoder(MetricsStatus) {
 }
 
 pub type ReplicationTime {
-  ReplicationTime(
-    status: option.Option(ReplicationTimeStatus),
-    time: option.Option(ReplicationTimeValue),
-  )
+  ReplicationTime(status: option.Option(ReplicationTimeStatus), time: option.Option(ReplicationTimeValue))
 }
 
 pub fn encode_replication_time_struct(input: ReplicationTime) -> json.Json {
@@ -13402,9 +12737,7 @@ pub fn decode_replication_time_status_enum() -> decode.Decoder(ReplicationTimeSt
 }
 
 pub type ExistingObjectReplication {
-  ExistingObjectReplication(
-    status: option.Option(ExistingObjectReplicationStatus),
-  )
+  ExistingObjectReplication(status: option.Option(ExistingObjectReplicationStatus))
 }
 
 pub fn encode_existing_object_replication_struct(input: ExistingObjectReplication) -> json.Json {
@@ -13474,11 +12807,7 @@ pub fn decode_existing_object_replication_status_enum() -> decode.Decoder(Existi
 }
 
 pub type ReplicationRuleFilter {
-  ReplicationRuleFilter(
-    and: option.Option(ReplicationRuleAndOperator),
-    prefix: option.Option(String),
-    tag: option.Option(Tag),
-  )
+  ReplicationRuleFilter(and: option.Option(ReplicationRuleAndOperator), prefix: option.Option(String), tag: option.Option(Tag))
 }
 
 pub fn encode_replication_rule_filter_struct(input: ReplicationRuleFilter) -> json.Json {
@@ -13553,10 +12882,7 @@ pub fn decode_replication_rule_filter_xml(elem: xml_decode.Element) -> Result(Re
 }
 
 pub type ReplicationRuleAndOperator {
-  ReplicationRuleAndOperator(
-    prefix: option.Option(String),
-    tags: option.Option(List(Tag)),
-  )
+  ReplicationRuleAndOperator(prefix: option.Option(String), tags: option.Option(List(Tag)))
 }
 
 pub fn encode_replication_rule_and_operator_struct(input: ReplicationRuleAndOperator) -> json.Json {
@@ -13617,10 +12943,7 @@ pub fn decode_replication_rule_and_operator_xml(elem: xml_decode.Element) -> Res
 }
 
 pub type SourceSelectionCriteria {
-  SourceSelectionCriteria(
-    replica_modifications: option.Option(ReplicaModifications),
-    sse_kms_encrypted_objects: option.Option(SseKmsEncryptedObjects),
-  )
+  SourceSelectionCriteria(replica_modifications: option.Option(ReplicaModifications), sse_kms_encrypted_objects: option.Option(SseKmsEncryptedObjects))
 }
 
 pub fn encode_source_selection_criteria_struct(input: SourceSelectionCriteria) -> json.Json {
@@ -13681,9 +13004,7 @@ pub fn decode_source_selection_criteria_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type ReplicaModifications {
-  ReplicaModifications(
-    status: option.Option(ReplicaModificationsStatus),
-  )
+  ReplicaModifications(status: option.Option(ReplicaModificationsStatus))
 }
 
 pub fn encode_replica_modifications_struct(input: ReplicaModifications) -> json.Json {
@@ -13753,9 +13074,7 @@ pub fn decode_replica_modifications_status_enum() -> decode.Decoder(ReplicaModif
 }
 
 pub type SseKmsEncryptedObjects {
-  SseKmsEncryptedObjects(
-    status: option.Option(SseKmsEncryptedObjectsStatus),
-  )
+  SseKmsEncryptedObjects(status: option.Option(SseKmsEncryptedObjectsStatus))
 }
 
 pub fn encode_sse_kms_encrypted_objects_struct(input: SseKmsEncryptedObjects) -> json.Json {
@@ -13847,10 +13166,7 @@ pub fn decode_replication_rule_status_enum() -> decode.Decoder(ReplicationRuleSt
 }
 
 pub type GetBucketRequestPaymentRequest {
-  GetBucketRequestPaymentRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketRequestPaymentRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_request_payment_request_struct(input: GetBucketRequestPaymentRequest) -> json.Json {
@@ -13903,9 +13219,7 @@ pub fn decode_get_bucket_request_payment_request_xml(elem: xml_decode.Element) -
 }
 
 pub type GetBucketRequestPaymentOutput {
-  GetBucketRequestPaymentOutput(
-    payer: option.Option(Payer),
-  )
+  GetBucketRequestPaymentOutput(payer: option.Option(Payer))
 }
 
 pub fn encode_get_bucket_request_payment_output_struct(input: GetBucketRequestPaymentOutput) -> json.Json {
@@ -13975,10 +13289,7 @@ pub fn decode_payer_enum() -> decode.Decoder(Payer) {
 }
 
 pub type GetBucketTaggingRequest {
-  GetBucketTaggingRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketTaggingRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_tagging_request_struct(input: GetBucketTaggingRequest) -> json.Json {
@@ -14031,9 +13342,7 @@ pub fn decode_get_bucket_tagging_request_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type GetBucketTaggingOutput {
-  GetBucketTaggingOutput(
-    tag_set: option.Option(List(Tag)),
-  )
+  GetBucketTaggingOutput(tag_set: option.Option(List(Tag)))
 }
 
 pub fn encode_get_bucket_tagging_output_struct(input: GetBucketTaggingOutput) -> json.Json {
@@ -14080,10 +13389,7 @@ pub fn decode_get_bucket_tagging_output_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type GetBucketVersioningRequest {
-  GetBucketVersioningRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketVersioningRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_versioning_request_struct(input: GetBucketVersioningRequest) -> json.Json {
@@ -14136,10 +13442,7 @@ pub fn decode_get_bucket_versioning_request_xml(elem: xml_decode.Element) -> Res
 }
 
 pub type GetBucketVersioningOutput {
-  GetBucketVersioningOutput(
-    mfa_delete: option.Option(MFADeleteStatus),
-    status: option.Option(BucketVersioningStatus),
-  )
+  GetBucketVersioningOutput(mfa_delete: option.Option(MFADeleteStatus), status: option.Option(BucketVersioningStatus))
 }
 
 pub fn encode_get_bucket_versioning_output_struct(input: GetBucketVersioningOutput) -> json.Json {
@@ -14246,10 +13549,7 @@ pub fn decode_bucket_versioning_status_enum() -> decode.Decoder(BucketVersioning
 }
 
 pub type GetBucketWebsiteRequest {
-  GetBucketWebsiteRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetBucketWebsiteRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_bucket_website_request_struct(input: GetBucketWebsiteRequest) -> json.Json {
@@ -14302,12 +13602,7 @@ pub fn decode_get_bucket_website_request_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type GetBucketWebsiteOutput {
-  GetBucketWebsiteOutput(
-    error_document: option.Option(ErrorDocument),
-    index_document: option.Option(IndexDocument),
-    redirect_all_requests_to: option.Option(RedirectAllRequestsTo),
-    routing_rules: option.Option(List(RoutingRule)),
-  )
+  GetBucketWebsiteOutput(error_document: option.Option(ErrorDocument), index_document: option.Option(IndexDocument), redirect_all_requests_to: option.Option(RedirectAllRequestsTo), routing_rules: option.Option(List(RoutingRule)))
 }
 
 pub fn encode_get_bucket_website_output_struct(input: GetBucketWebsiteOutput) -> json.Json {
@@ -14396,9 +13691,7 @@ pub fn decode_get_bucket_website_output_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type ErrorDocument {
-  ErrorDocument(
-    key: option.Option(String),
-  )
+  ErrorDocument(key: option.Option(String))
 }
 
 pub fn encode_error_document_struct(input: ErrorDocument) -> json.Json {
@@ -14445,9 +13738,7 @@ pub fn decode_error_document_xml(elem: xml_decode.Element) -> Result(ErrorDocume
 }
 
 pub type IndexDocument {
-  IndexDocument(
-    suffix: option.Option(String),
-  )
+  IndexDocument(suffix: option.Option(String))
 }
 
 pub fn encode_index_document_struct(input: IndexDocument) -> json.Json {
@@ -14494,10 +13785,7 @@ pub fn decode_index_document_xml(elem: xml_decode.Element) -> Result(IndexDocume
 }
 
 pub type RedirectAllRequestsTo {
-  RedirectAllRequestsTo(
-    host_name: option.Option(String),
-    protocol: option.Option(Protocol),
-  )
+  RedirectAllRequestsTo(host_name: option.Option(String), protocol: option.Option(Protocol))
 }
 
 pub fn encode_redirect_all_requests_to_struct(input: RedirectAllRequestsTo) -> json.Json {
@@ -14581,10 +13869,7 @@ pub fn decode_protocol_enum() -> decode.Decoder(Protocol) {
 }
 
 pub type RoutingRule {
-  RoutingRule(
-    condition: option.Option(Condition),
-    redirect: option.Option(Redirect),
-  )
+  RoutingRule(condition: option.Option(Condition), redirect: option.Option(Redirect))
 }
 
 pub fn encode_routing_rule_struct(input: RoutingRule) -> json.Json {
@@ -14645,10 +13930,7 @@ pub fn decode_routing_rule_xml(elem: xml_decode.Element) -> Result(RoutingRule, 
 }
 
 pub type Condition {
-  Condition(
-    http_error_code_returned_equals: option.Option(String),
-    key_prefix_equals: option.Option(String),
-  )
+  Condition(http_error_code_returned_equals: option.Option(String), key_prefix_equals: option.Option(String))
 }
 
 pub fn encode_condition_struct(input: Condition) -> json.Json {
@@ -14709,13 +13991,7 @@ pub fn decode_condition_xml(elem: xml_decode.Element) -> Result(Condition, Strin
 }
 
 pub type Redirect {
-  Redirect(
-    host_name: option.Option(String),
-    http_redirect_code: option.Option(String),
-    protocol: option.Option(Protocol),
-    replace_key_prefix_with: option.Option(String),
-    replace_key_with: option.Option(String),
-  )
+  Redirect(host_name: option.Option(String), http_redirect_code: option.Option(String), protocol: option.Option(Protocol), replace_key_prefix_with: option.Option(String), replace_key_with: option.Option(String))
 }
 
 pub fn encode_redirect_struct(input: Redirect) -> json.Json {
@@ -14819,13 +14095,7 @@ pub fn decode_redirect_xml(elem: xml_decode.Element) -> Result(Redirect, String)
 }
 
 pub type GetObjectAclRequest {
-  GetObjectAclRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    key: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-    version_id: option.Option(String),
-  )
+  GetObjectAclRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), key: option.Option(String), request_payer: option.Option(RequestPayer), version_id: option.Option(String))
 }
 
 pub fn encode_get_object_acl_request_struct(input: GetObjectAclRequest) -> json.Json {
@@ -14908,11 +14178,7 @@ pub fn decode_get_object_acl_request_xml(elem: xml_decode.Element) -> Result(Get
 }
 
 pub type GetObjectAclOutput {
-  GetObjectAclOutput(
-    grants: option.Option(List(Grant)),
-    owner: option.Option(Owner),
-    request_charged: option.Option(RequestCharged),
-  )
+  GetObjectAclOutput(grants: option.Option(List(Grant)), owner: option.Option(Owner), request_charged: option.Option(RequestCharged))
 }
 
 pub fn encode_get_object_acl_output_struct(input: GetObjectAclOutput) -> json.Json {
@@ -15011,19 +14277,7 @@ pub fn decode_no_such_key_xml(_elem: xml_decode.Element) -> Result(NoSuchKey, St
 }
 
 pub type GetObjectAttributesRequest {
-  GetObjectAttributesRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    key: option.Option(String),
-    max_parts: option.Option(Int),
-    object_attributes: option.Option(List(ObjectAttributes)),
-    part_number_marker: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    version_id: option.Option(String),
-  )
+  GetObjectAttributesRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), key: option.Option(String), max_parts: option.Option(Int), object_attributes: option.Option(List(ObjectAttributes)), part_number_marker: option.Option(String), request_payer: option.Option(RequestPayer), sse_customer_algorithm: option.Option(String), sse_customer_key: option.Option(String), sse_customer_key_md5: option.Option(String), version_id: option.Option(String))
 }
 
 pub fn encode_get_object_attributes_request_struct(input: GetObjectAttributesRequest) -> json.Json {
@@ -15197,17 +14451,7 @@ pub fn decode_object_attributes_enum() -> decode.Decoder(ObjectAttributes) {
 }
 
 pub type GetObjectAttributesOutput {
-  GetObjectAttributesOutput(
-    checksum: option.Option(Checksum),
-    delete_marker: option.Option(Bool),
-    e_tag: option.Option(String),
-    last_modified: option.Option(Int),
-    object_parts: option.Option(GetObjectAttributesParts),
-    object_size: option.Option(Int),
-    request_charged: option.Option(RequestCharged),
-    storage_class: option.Option(StorageClass),
-    version_id: option.Option(String),
-  )
+  GetObjectAttributesOutput(checksum: option.Option(Checksum), delete_marker: option.Option(Bool), e_tag: option.Option(String), last_modified: option.Option(Int), object_parts: option.Option(GetObjectAttributesParts), object_size: option.Option(Int), request_charged: option.Option(RequestCharged), storage_class: option.Option(StorageClass), version_id: option.Option(String))
 }
 
 pub fn encode_get_object_attributes_output_struct(input: GetObjectAttributesOutput) -> json.Json {
@@ -15351,19 +14595,7 @@ pub fn decode_get_object_attributes_output_xml(elem: xml_decode.Element) -> Resu
 }
 
 pub type Checksum {
-  Checksum(
-    checksum_crc32: option.Option(String),
-    checksum_crc32_c: option.Option(String),
-    checksum_crc64_nvme: option.Option(String),
-    checksum_md5: option.Option(String),
-    checksum_sha1: option.Option(String),
-    checksum_sha256: option.Option(String),
-    checksum_sha512: option.Option(String),
-    checksum_type: option.Option(ChecksumType),
-    checksum_xxhash128: option.Option(String),
-    checksum_xxhash3: option.Option(String),
-    checksum_xxhash64: option.Option(String),
-  )
+  Checksum(checksum_crc32: option.Option(String), checksum_crc32_c: option.Option(String), checksum_crc64_nvme: option.Option(String), checksum_md5: option.Option(String), checksum_sha1: option.Option(String), checksum_sha256: option.Option(String), checksum_sha512: option.Option(String), checksum_type: option.Option(ChecksumType), checksum_xxhash128: option.Option(String), checksum_xxhash3: option.Option(String), checksum_xxhash64: option.Option(String))
 }
 
 pub fn encode_checksum_struct(input: Checksum) -> json.Json {
@@ -15551,14 +14783,7 @@ pub fn decode_checksum_xml(elem: xml_decode.Element) -> Result(Checksum, String)
 }
 
 pub type GetObjectAttributesParts {
-  GetObjectAttributesParts(
-    is_truncated: option.Option(Bool),
-    max_parts: option.Option(Int),
-    next_part_number_marker: option.Option(String),
-    part_number_marker: option.Option(String),
-    parts: option.Option(List(ObjectPart)),
-    total_parts_count: option.Option(Int),
-  )
+  GetObjectAttributesParts(is_truncated: option.Option(Bool), max_parts: option.Option(Int), next_part_number_marker: option.Option(String), part_number_marker: option.Option(String), parts: option.Option(List(ObjectPart)), total_parts_count: option.Option(Int))
 }
 
 pub fn encode_get_object_attributes_parts_struct(input: GetObjectAttributesParts) -> json.Json {
@@ -15675,20 +14900,7 @@ pub fn decode_get_object_attributes_parts_xml(elem: xml_decode.Element) -> Resul
 }
 
 pub type ObjectPart {
-  ObjectPart(
-    checksum_crc32: option.Option(String),
-    checksum_crc32_c: option.Option(String),
-    checksum_crc64_nvme: option.Option(String),
-    checksum_md5: option.Option(String),
-    checksum_sha1: option.Option(String),
-    checksum_sha256: option.Option(String),
-    checksum_sha512: option.Option(String),
-    checksum_xxhash128: option.Option(String),
-    checksum_xxhash3: option.Option(String),
-    checksum_xxhash64: option.Option(String),
-    part_number: option.Option(Int),
-    size: option.Option(Int),
-  )
+  ObjectPart(checksum_crc32: option.Option(String), checksum_crc32_c: option.Option(String), checksum_crc64_nvme: option.Option(String), checksum_md5: option.Option(String), checksum_sha1: option.Option(String), checksum_sha256: option.Option(String), checksum_sha512: option.Option(String), checksum_xxhash128: option.Option(String), checksum_xxhash3: option.Option(String), checksum_xxhash64: option.Option(String), part_number: option.Option(Int), size: option.Option(Int))
 }
 
 pub fn encode_object_part_struct(input: ObjectPart) -> json.Json {
@@ -15889,13 +15101,7 @@ pub fn decode_object_part_xml(elem: xml_decode.Element) -> Result(ObjectPart, St
 }
 
 pub type GetObjectLegalHoldRequest {
-  GetObjectLegalHoldRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    key: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-    version_id: option.Option(String),
-  )
+  GetObjectLegalHoldRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), key: option.Option(String), request_payer: option.Option(RequestPayer), version_id: option.Option(String))
 }
 
 pub fn encode_get_object_legal_hold_request_struct(input: GetObjectLegalHoldRequest) -> json.Json {
@@ -15978,9 +15184,7 @@ pub fn decode_get_object_legal_hold_request_xml(elem: xml_decode.Element) -> Res
 }
 
 pub type GetObjectLegalHoldOutput {
-  GetObjectLegalHoldOutput(
-    legal_hold: option.Option(ObjectLockLegalHold),
-  )
+  GetObjectLegalHoldOutput(legal_hold: option.Option(ObjectLockLegalHold))
 }
 
 pub fn encode_get_object_legal_hold_output_struct(input: GetObjectLegalHoldOutput) -> json.Json {
@@ -16023,9 +15227,7 @@ pub fn decode_get_object_legal_hold_output_xml(elem: xml_decode.Element) -> Resu
 }
 
 pub type ObjectLockLegalHold {
-  ObjectLockLegalHold(
-    status: option.Option(ObjectLockLegalHoldStatus),
-  )
+  ObjectLockLegalHold(status: option.Option(ObjectLockLegalHoldStatus))
 }
 
 pub fn encode_object_lock_legal_hold_struct(input: ObjectLockLegalHold) -> json.Json {
@@ -16073,10 +15275,7 @@ pub fn decode_object_lock_legal_hold_xml(elem: xml_decode.Element) -> Result(Obj
 }
 
 pub type GetObjectLockConfigurationRequest {
-  GetObjectLockConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetObjectLockConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_object_lock_configuration_request_struct(input: GetObjectLockConfigurationRequest) -> json.Json {
@@ -16129,9 +15328,7 @@ pub fn decode_get_object_lock_configuration_request_xml(elem: xml_decode.Element
 }
 
 pub type GetObjectLockConfigurationOutput {
-  GetObjectLockConfigurationOutput(
-    object_lock_configuration: option.Option(ObjectLockConfiguration),
-  )
+  GetObjectLockConfigurationOutput(object_lock_configuration: option.Option(ObjectLockConfiguration))
 }
 
 pub fn encode_get_object_lock_configuration_output_struct(input: GetObjectLockConfigurationOutput) -> json.Json {
@@ -16174,10 +15371,7 @@ pub fn decode_get_object_lock_configuration_output_xml(elem: xml_decode.Element)
 }
 
 pub type ObjectLockConfiguration {
-  ObjectLockConfiguration(
-    object_lock_enabled: option.Option(ObjectLockEnabled),
-    rule: option.Option(ObjectLockRule),
-  )
+  ObjectLockConfiguration(object_lock_enabled: option.Option(ObjectLockEnabled), rule: option.Option(ObjectLockRule))
 }
 
 pub fn encode_object_lock_configuration_struct(input: ObjectLockConfiguration) -> json.Json {
@@ -16258,9 +15452,7 @@ pub fn decode_object_lock_enabled_enum() -> decode.Decoder(ObjectLockEnabled) {
 }
 
 pub type ObjectLockRule {
-  ObjectLockRule(
-    default_retention: option.Option(DefaultRetention),
-  )
+  ObjectLockRule(default_retention: option.Option(DefaultRetention))
 }
 
 pub fn encode_object_lock_rule_struct(input: ObjectLockRule) -> json.Json {
@@ -16307,11 +15499,7 @@ pub fn decode_object_lock_rule_xml(elem: xml_decode.Element) -> Result(ObjectLoc
 }
 
 pub type DefaultRetention {
-  DefaultRetention(
-    days: option.Option(Int),
-    mode: option.Option(ObjectLockRetentionMode),
-    years: option.Option(Int),
-  )
+  DefaultRetention(days: option.Option(Int), mode: option.Option(ObjectLockRetentionMode), years: option.Option(Int))
 }
 
 pub fn encode_default_retention_struct(input: DefaultRetention) -> json.Json {
@@ -16409,13 +15597,7 @@ pub fn decode_object_lock_retention_mode_enum() -> decode.Decoder(ObjectLockRete
 }
 
 pub type GetObjectRetentionRequest {
-  GetObjectRetentionRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    key: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-    version_id: option.Option(String),
-  )
+  GetObjectRetentionRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), key: option.Option(String), request_payer: option.Option(RequestPayer), version_id: option.Option(String))
 }
 
 pub fn encode_get_object_retention_request_struct(input: GetObjectRetentionRequest) -> json.Json {
@@ -16498,9 +15680,7 @@ pub fn decode_get_object_retention_request_xml(elem: xml_decode.Element) -> Resu
 }
 
 pub type GetObjectRetentionOutput {
-  GetObjectRetentionOutput(
-    retention: option.Option(ObjectLockRetention),
-  )
+  GetObjectRetentionOutput(retention: option.Option(ObjectLockRetention))
 }
 
 pub fn encode_get_object_retention_output_struct(input: GetObjectRetentionOutput) -> json.Json {
@@ -16543,10 +15723,7 @@ pub fn decode_get_object_retention_output_xml(elem: xml_decode.Element) -> Resul
 }
 
 pub type ObjectLockRetention {
-  ObjectLockRetention(
-    mode: option.Option(ObjectLockRetentionMode),
-    retain_until_date: option.Option(Int),
-  )
+  ObjectLockRetention(mode: option.Option(ObjectLockRetentionMode), retain_until_date: option.Option(Int))
 }
 
 pub fn encode_object_lock_retention_struct(input: ObjectLockRetention) -> json.Json {
@@ -16608,13 +15785,7 @@ pub fn decode_object_lock_retention_xml(elem: xml_decode.Element) -> Result(Obje
 }
 
 pub type GetObjectTaggingRequest {
-  GetObjectTaggingRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    key: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-    version_id: option.Option(String),
-  )
+  GetObjectTaggingRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), key: option.Option(String), request_payer: option.Option(RequestPayer), version_id: option.Option(String))
 }
 
 pub fn encode_get_object_tagging_request_struct(input: GetObjectTaggingRequest) -> json.Json {
@@ -16697,10 +15868,7 @@ pub fn decode_get_object_tagging_request_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type GetObjectTaggingOutput {
-  GetObjectTaggingOutput(
-    tag_set: option.Option(List(Tag)),
-    version_id: option.Option(String),
-  )
+  GetObjectTaggingOutput(tag_set: option.Option(List(Tag)), version_id: option.Option(String))
 }
 
 pub fn encode_get_object_tagging_output_struct(input: GetObjectTaggingOutput) -> json.Json {
@@ -16757,12 +15925,7 @@ pub fn decode_get_object_tagging_output_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type GetObjectTorrentRequest {
-  GetObjectTorrentRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    key: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-  )
+  GetObjectTorrentRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), key: option.Option(String), request_payer: option.Option(RequestPayer))
 }
 
 pub fn encode_get_object_torrent_request_struct(input: GetObjectTorrentRequest) -> json.Json {
@@ -16835,10 +15998,7 @@ pub fn decode_get_object_torrent_request_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type GetObjectTorrentOutput {
-  GetObjectTorrentOutput(
-    body: option.Option(BitArray),
-    request_charged: option.Option(RequestCharged),
-  )
+  GetObjectTorrentOutput(body: option.Option(BitArray), request_charged: option.Option(RequestCharged))
 }
 
 pub fn encode_get_object_torrent_output_struct(input: GetObjectTorrentOutput) -> json.Json {
@@ -16891,10 +16051,7 @@ pub fn decode_get_object_torrent_output_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type GetPublicAccessBlockRequest {
-  GetPublicAccessBlockRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  GetPublicAccessBlockRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_get_public_access_block_request_struct(input: GetPublicAccessBlockRequest) -> json.Json {
@@ -16947,9 +16104,7 @@ pub fn decode_get_public_access_block_request_xml(elem: xml_decode.Element) -> R
 }
 
 pub type GetPublicAccessBlockOutput {
-  GetPublicAccessBlockOutput(
-    public_access_block_configuration: option.Option(PublicAccessBlockConfiguration),
-  )
+  GetPublicAccessBlockOutput(public_access_block_configuration: option.Option(PublicAccessBlockConfiguration))
 }
 
 pub fn encode_get_public_access_block_output_struct(input: GetPublicAccessBlockOutput) -> json.Json {
@@ -16992,12 +16147,7 @@ pub fn decode_get_public_access_block_output_xml(elem: xml_decode.Element) -> Re
 }
 
 pub type PublicAccessBlockConfiguration {
-  PublicAccessBlockConfiguration(
-    block_public_acls: option.Option(Bool),
-    block_public_policy: option.Option(Bool),
-    ignore_public_acls: option.Option(Bool),
-    restrict_public_buckets: option.Option(Bool),
-  )
+  PublicAccessBlockConfiguration(block_public_acls: option.Option(Bool), block_public_policy: option.Option(Bool), ignore_public_acls: option.Option(Bool), restrict_public_buckets: option.Option(Bool))
 }
 
 pub fn encode_public_access_block_configuration_struct(input: PublicAccessBlockConfiguration) -> json.Json {
@@ -17086,10 +16236,7 @@ pub fn decode_public_access_block_configuration_xml(elem: xml_decode.Element) ->
 }
 
 pub type HeadBucketRequest {
-  HeadBucketRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  HeadBucketRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_head_bucket_request_struct(input: HeadBucketRequest) -> json.Json {
@@ -17142,13 +16289,7 @@ pub fn decode_head_bucket_request_xml(elem: xml_decode.Element) -> Result(HeadBu
 }
 
 pub type HeadBucketOutput {
-  HeadBucketOutput(
-    access_point_alias: option.Option(Bool),
-    bucket_arn: option.Option(String),
-    bucket_location_name: option.Option(String),
-    bucket_location_type: option.Option(LocationType),
-    bucket_region: option.Option(String),
-  )
+  HeadBucketOutput(access_point_alias: option.Option(Bool), bucket_arn: option.Option(String), bucket_location_name: option.Option(String), bucket_location_type: option.Option(LocationType), bucket_region: option.Option(String))
 }
 
 pub fn encode_head_bucket_output_struct(input: HeadBucketOutput) -> json.Json {
@@ -17259,29 +16400,7 @@ pub fn decode_not_found_xml(_elem: xml_decode.Element) -> Result(NotFound, Strin
 }
 
 pub type HeadObjectRequest {
-  HeadObjectRequest(
-    bucket: option.Option(String),
-    checksum_mode: option.Option(ChecksumMode),
-    expected_bucket_owner: option.Option(String),
-    if_match: option.Option(String),
-    if_modified_since: option.Option(Int),
-    if_none_match: option.Option(String),
-    if_unmodified_since: option.Option(Int),
-    key: option.Option(String),
-    part_number: option.Option(Int),
-    range: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-    response_cache_control: option.Option(String),
-    response_content_disposition: option.Option(String),
-    response_content_encoding: option.Option(String),
-    response_content_language: option.Option(String),
-    response_content_type: option.Option(String),
-    response_expires: option.Option(Int),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    version_id: option.Option(String),
-  )
+  HeadObjectRequest(bucket: option.Option(String), checksum_mode: option.Option(ChecksumMode), expected_bucket_owner: option.Option(String), if_match: option.Option(String), if_modified_since: option.Option(Int), if_none_match: option.Option(String), if_unmodified_since: option.Option(Int), key: option.Option(String), part_number: option.Option(Int), range: option.Option(String), request_payer: option.Option(RequestPayer), response_cache_control: option.Option(String), response_content_disposition: option.Option(String), response_content_encoding: option.Option(String), response_content_language: option.Option(String), response_content_type: option.Option(String), response_expires: option.Option(Int), sse_customer_algorithm: option.Option(String), sse_customer_key: option.Option(String), sse_customer_key_md5: option.Option(String), version_id: option.Option(String))
 }
 
 pub fn encode_head_object_request_struct(input: HeadObjectRequest) -> json.Json {
@@ -17543,51 +16662,7 @@ pub fn decode_checksum_mode_enum() -> decode.Decoder(ChecksumMode) {
 }
 
 pub type HeadObjectOutput {
-  HeadObjectOutput(
-    accept_ranges: option.Option(String),
-    archive_status: option.Option(ArchiveStatus),
-    bucket_key_enabled: option.Option(Bool),
-    cache_control: option.Option(String),
-    checksum_crc32: option.Option(String),
-    checksum_crc32_c: option.Option(String),
-    checksum_crc64_nvme: option.Option(String),
-    checksum_md5: option.Option(String),
-    checksum_sha1: option.Option(String),
-    checksum_sha256: option.Option(String),
-    checksum_sha512: option.Option(String),
-    checksum_type: option.Option(ChecksumType),
-    checksum_xxhash128: option.Option(String),
-    checksum_xxhash3: option.Option(String),
-    checksum_xxhash64: option.Option(String),
-    content_disposition: option.Option(String),
-    content_encoding: option.Option(String),
-    content_language: option.Option(String),
-    content_length: option.Option(Int),
-    content_range: option.Option(String),
-    content_type: option.Option(String),
-    delete_marker: option.Option(Bool),
-    e_tag: option.Option(String),
-    expiration: option.Option(String),
-    expires: option.Option(String),
-    last_modified: option.Option(Int),
-    metadata: option.Option(dict.Dict(String, String)),
-    missing_meta: option.Option(Int),
-    object_lock_legal_hold_status: option.Option(ObjectLockLegalHoldStatus),
-    object_lock_mode: option.Option(ObjectLockMode),
-    object_lock_retain_until_date: option.Option(Int),
-    parts_count: option.Option(Int),
-    replication_status: option.Option(ReplicationStatus),
-    request_charged: option.Option(RequestCharged),
-    restore: option.Option(String),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    ssekms_key_id: option.Option(String),
-    server_side_encryption: option.Option(ServerSideEncryption),
-    storage_class: option.Option(StorageClass),
-    tag_count: option.Option(Int),
-    version_id: option.Option(String),
-    website_redirect_location: option.Option(String),
-  )
+  HeadObjectOutput(accept_ranges: option.Option(String), archive_status: option.Option(ArchiveStatus), bucket_key_enabled: option.Option(Bool), cache_control: option.Option(String), checksum_crc32: option.Option(String), checksum_crc32_c: option.Option(String), checksum_crc64_nvme: option.Option(String), checksum_md5: option.Option(String), checksum_sha1: option.Option(String), checksum_sha256: option.Option(String), checksum_sha512: option.Option(String), checksum_type: option.Option(ChecksumType), checksum_xxhash128: option.Option(String), checksum_xxhash3: option.Option(String), checksum_xxhash64: option.Option(String), content_disposition: option.Option(String), content_encoding: option.Option(String), content_language: option.Option(String), content_length: option.Option(Int), content_range: option.Option(String), content_type: option.Option(String), delete_marker: option.Option(Bool), e_tag: option.Option(String), expiration: option.Option(String), expires: option.Option(String), last_modified: option.Option(Int), metadata: option.Option(dict.Dict(String, String)), missing_meta: option.Option(Int), object_lock_legal_hold_status: option.Option(ObjectLockLegalHoldStatus), object_lock_mode: option.Option(ObjectLockMode), object_lock_retain_until_date: option.Option(Int), parts_count: option.Option(Int), replication_status: option.Option(ReplicationStatus), request_charged: option.Option(RequestCharged), restore: option.Option(String), sse_customer_algorithm: option.Option(String), sse_customer_key_md5: option.Option(String), ssekms_key_id: option.Option(String), server_side_encryption: option.Option(ServerSideEncryption), storage_class: option.Option(StorageClass), tag_count: option.Option(Int), version_id: option.Option(String), website_redirect_location: option.Option(String))
 }
 
 pub fn encode_head_object_output_struct(input: HeadObjectOutput) -> json.Json {
@@ -18103,11 +17178,7 @@ pub fn decode_replication_status_enum() -> decode.Decoder(ReplicationStatus) {
 }
 
 pub type ListBucketAnalyticsConfigurationsRequest {
-  ListBucketAnalyticsConfigurationsRequest(
-    bucket: option.Option(String),
-    continuation_token: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  ListBucketAnalyticsConfigurationsRequest(bucket: option.Option(String), continuation_token: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_list_bucket_analytics_configurations_request_struct(input: ListBucketAnalyticsConfigurationsRequest) -> json.Json {
@@ -18170,12 +17241,7 @@ pub fn decode_list_bucket_analytics_configurations_request_xml(elem: xml_decode.
 }
 
 pub type ListBucketAnalyticsConfigurationsOutput {
-  ListBucketAnalyticsConfigurationsOutput(
-    analytics_configuration_list: option.Option(List(AnalyticsConfiguration)),
-    continuation_token: option.Option(String),
-    is_truncated: option.Option(Bool),
-    next_continuation_token: option.Option(String),
-  )
+  ListBucketAnalyticsConfigurationsOutput(analytics_configuration_list: option.Option(List(AnalyticsConfiguration)), continuation_token: option.Option(String), is_truncated: option.Option(Bool), next_continuation_token: option.Option(String))
 }
 
 pub fn encode_list_bucket_analytics_configurations_output_struct(input: ListBucketAnalyticsConfigurationsOutput) -> json.Json {
@@ -18264,11 +17330,7 @@ pub fn decode_list_bucket_analytics_configurations_output_xml(elem: xml_decode.E
 }
 
 pub type ListBucketIntelligentTieringConfigurationsRequest {
-  ListBucketIntelligentTieringConfigurationsRequest(
-    bucket: option.Option(String),
-    continuation_token: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  ListBucketIntelligentTieringConfigurationsRequest(bucket: option.Option(String), continuation_token: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_list_bucket_intelligent_tiering_configurations_request_struct(input: ListBucketIntelligentTieringConfigurationsRequest) -> json.Json {
@@ -18331,12 +17393,7 @@ pub fn decode_list_bucket_intelligent_tiering_configurations_request_xml(elem: x
 }
 
 pub type ListBucketIntelligentTieringConfigurationsOutput {
-  ListBucketIntelligentTieringConfigurationsOutput(
-    continuation_token: option.Option(String),
-    intelligent_tiering_configuration_list: option.Option(List(IntelligentTieringConfiguration)),
-    is_truncated: option.Option(Bool),
-    next_continuation_token: option.Option(String),
-  )
+  ListBucketIntelligentTieringConfigurationsOutput(continuation_token: option.Option(String), intelligent_tiering_configuration_list: option.Option(List(IntelligentTieringConfiguration)), is_truncated: option.Option(Bool), next_continuation_token: option.Option(String))
 }
 
 pub fn encode_list_bucket_intelligent_tiering_configurations_output_struct(input: ListBucketIntelligentTieringConfigurationsOutput) -> json.Json {
@@ -18425,11 +17482,7 @@ pub fn decode_list_bucket_intelligent_tiering_configurations_output_xml(elem: xm
 }
 
 pub type ListBucketInventoryConfigurationsRequest {
-  ListBucketInventoryConfigurationsRequest(
-    bucket: option.Option(String),
-    continuation_token: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  ListBucketInventoryConfigurationsRequest(bucket: option.Option(String), continuation_token: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_list_bucket_inventory_configurations_request_struct(input: ListBucketInventoryConfigurationsRequest) -> json.Json {
@@ -18492,12 +17545,7 @@ pub fn decode_list_bucket_inventory_configurations_request_xml(elem: xml_decode.
 }
 
 pub type ListBucketInventoryConfigurationsOutput {
-  ListBucketInventoryConfigurationsOutput(
-    continuation_token: option.Option(String),
-    inventory_configuration_list: option.Option(List(InventoryConfiguration)),
-    is_truncated: option.Option(Bool),
-    next_continuation_token: option.Option(String),
-  )
+  ListBucketInventoryConfigurationsOutput(continuation_token: option.Option(String), inventory_configuration_list: option.Option(List(InventoryConfiguration)), is_truncated: option.Option(Bool), next_continuation_token: option.Option(String))
 }
 
 pub fn encode_list_bucket_inventory_configurations_output_struct(input: ListBucketInventoryConfigurationsOutput) -> json.Json {
@@ -18586,11 +17634,7 @@ pub fn decode_list_bucket_inventory_configurations_output_xml(elem: xml_decode.E
 }
 
 pub type ListBucketMetricsConfigurationsRequest {
-  ListBucketMetricsConfigurationsRequest(
-    bucket: option.Option(String),
-    continuation_token: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-  )
+  ListBucketMetricsConfigurationsRequest(bucket: option.Option(String), continuation_token: option.Option(String), expected_bucket_owner: option.Option(String))
 }
 
 pub fn encode_list_bucket_metrics_configurations_request_struct(input: ListBucketMetricsConfigurationsRequest) -> json.Json {
@@ -18653,12 +17697,7 @@ pub fn decode_list_bucket_metrics_configurations_request_xml(elem: xml_decode.El
 }
 
 pub type ListBucketMetricsConfigurationsOutput {
-  ListBucketMetricsConfigurationsOutput(
-    continuation_token: option.Option(String),
-    is_truncated: option.Option(Bool),
-    metrics_configuration_list: option.Option(List(MetricsConfiguration)),
-    next_continuation_token: option.Option(String),
-  )
+  ListBucketMetricsConfigurationsOutput(continuation_token: option.Option(String), is_truncated: option.Option(Bool), metrics_configuration_list: option.Option(List(MetricsConfiguration)), next_continuation_token: option.Option(String))
 }
 
 pub fn encode_list_bucket_metrics_configurations_output_struct(input: ListBucketMetricsConfigurationsOutput) -> json.Json {
@@ -18747,12 +17786,7 @@ pub fn decode_list_bucket_metrics_configurations_output_xml(elem: xml_decode.Ele
 }
 
 pub type ListBucketsRequest {
-  ListBucketsRequest(
-    bucket_region: option.Option(String),
-    continuation_token: option.Option(String),
-    max_buckets: option.Option(Int),
-    prefix: option.Option(String),
-  )
+  ListBucketsRequest(bucket_region: option.Option(String), continuation_token: option.Option(String), max_buckets: option.Option(Int), prefix: option.Option(String))
 }
 
 pub fn encode_list_buckets_request_struct(input: ListBucketsRequest) -> json.Json {
@@ -18825,12 +17859,7 @@ pub fn decode_list_buckets_request_xml(elem: xml_decode.Element) -> Result(ListB
 }
 
 pub type ListBucketsOutput {
-  ListBucketsOutput(
-    buckets: option.Option(List(Bucket)),
-    continuation_token: option.Option(String),
-    owner: option.Option(Owner),
-    prefix: option.Option(String),
-  )
+  ListBucketsOutput(buckets: option.Option(List(Bucket)), continuation_token: option.Option(String), owner: option.Option(Owner), prefix: option.Option(String))
 }
 
 pub fn encode_list_buckets_output_struct(input: ListBucketsOutput) -> json.Json {
@@ -18919,12 +17948,7 @@ pub fn decode_list_buckets_output_xml(elem: xml_decode.Element) -> Result(ListBu
 }
 
 pub type Bucket {
-  Bucket(
-    bucket_arn: option.Option(String),
-    bucket_region: option.Option(String),
-    creation_date: option.Option(Int),
-    name: option.Option(String),
-  )
+  Bucket(bucket_arn: option.Option(String), bucket_region: option.Option(String), creation_date: option.Option(Int), name: option.Option(String))
 }
 
 pub fn encode_bucket_struct(input: Bucket) -> json.Json {
@@ -19013,10 +18037,7 @@ pub fn decode_bucket_xml(elem: xml_decode.Element) -> Result(Bucket, String) {
 }
 
 pub type ListDirectoryBucketsRequest {
-  ListDirectoryBucketsRequest(
-    continuation_token: option.Option(String),
-    max_directory_buckets: option.Option(Int),
-  )
+  ListDirectoryBucketsRequest(continuation_token: option.Option(String), max_directory_buckets: option.Option(Int))
 }
 
 pub fn encode_list_directory_buckets_request_struct(input: ListDirectoryBucketsRequest) -> json.Json {
@@ -19069,10 +18090,7 @@ pub fn decode_list_directory_buckets_request_xml(elem: xml_decode.Element) -> Re
 }
 
 pub type ListDirectoryBucketsOutput {
-  ListDirectoryBucketsOutput(
-    buckets: option.Option(List(Bucket)),
-    continuation_token: option.Option(String),
-  )
+  ListDirectoryBucketsOutput(buckets: option.Option(List(Bucket)), continuation_token: option.Option(String))
 }
 
 pub fn encode_list_directory_buckets_output_struct(input: ListDirectoryBucketsOutput) -> json.Json {
@@ -19133,17 +18151,7 @@ pub fn decode_list_directory_buckets_output_xml(elem: xml_decode.Element) -> Res
 }
 
 pub type ListMultipartUploadsRequest {
-  ListMultipartUploadsRequest(
-    bucket: option.Option(String),
-    delimiter: option.Option(String),
-    encoding_type: option.Option(EncodingType),
-    expected_bucket_owner: option.Option(String),
-    key_marker: option.Option(String),
-    max_uploads: option.Option(Int),
-    prefix: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-    upload_id_marker: option.Option(String),
-  )
+  ListMultipartUploadsRequest(bucket: option.Option(String), delimiter: option.Option(String), encoding_type: option.Option(EncodingType), expected_bucket_owner: option.Option(String), key_marker: option.Option(String), max_uploads: option.Option(Int), prefix: option.Option(String), request_payer: option.Option(RequestPayer), upload_id_marker: option.Option(String))
 }
 
 pub fn encode_list_multipart_uploads_request_struct(input: ListMultipartUploadsRequest) -> json.Json {
@@ -19285,21 +18293,7 @@ pub fn decode_encoding_type_enum() -> decode.Decoder(EncodingType) {
 }
 
 pub type ListMultipartUploadsOutput {
-  ListMultipartUploadsOutput(
-    bucket: option.Option(String),
-    common_prefixes: option.Option(List(CommonPrefix)),
-    delimiter: option.Option(String),
-    encoding_type: option.Option(EncodingType),
-    is_truncated: option.Option(Bool),
-    key_marker: option.Option(String),
-    max_uploads: option.Option(Int),
-    next_key_marker: option.Option(String),
-    next_upload_id_marker: option.Option(String),
-    prefix: option.Option(String),
-    request_charged: option.Option(RequestCharged),
-    upload_id_marker: option.Option(String),
-    uploads: option.Option(List(MultipartUpload)),
-  )
+  ListMultipartUploadsOutput(bucket: option.Option(String), common_prefixes: option.Option(List(CommonPrefix)), delimiter: option.Option(String), encoding_type: option.Option(EncodingType), is_truncated: option.Option(Bool), key_marker: option.Option(String), max_uploads: option.Option(Int), next_key_marker: option.Option(String), next_upload_id_marker: option.Option(String), prefix: option.Option(String), request_charged: option.Option(RequestCharged), upload_id_marker: option.Option(String), uploads: option.Option(List(MultipartUpload)))
 }
 
 pub fn encode_list_multipart_uploads_output_struct(input: ListMultipartUploadsOutput) -> json.Json {
@@ -19511,9 +18505,7 @@ pub fn decode_list_multipart_uploads_output_xml(elem: xml_decode.Element) -> Res
 }
 
 pub type CommonPrefix {
-  CommonPrefix(
-    prefix: option.Option(String),
-  )
+  CommonPrefix(prefix: option.Option(String))
 }
 
 pub fn encode_common_prefix_struct(input: CommonPrefix) -> json.Json {
@@ -19560,16 +18552,7 @@ pub fn decode_common_prefix_xml(elem: xml_decode.Element) -> Result(CommonPrefix
 }
 
 pub type MultipartUpload {
-  MultipartUpload(
-    checksum_algorithm: option.Option(ChecksumAlgorithm),
-    checksum_type: option.Option(ChecksumType),
-    initiated: option.Option(Int),
-    initiator: option.Option(Initiator),
-    key: option.Option(String),
-    owner: option.Option(Owner),
-    storage_class: option.Option(StorageClass),
-    upload_id: option.Option(String),
-  )
+  MultipartUpload(checksum_algorithm: option.Option(ChecksumAlgorithm), checksum_type: option.Option(ChecksumType), initiated: option.Option(Int), initiator: option.Option(Initiator), key: option.Option(String), owner: option.Option(Owner), storage_class: option.Option(StorageClass), upload_id: option.Option(String))
 }
 
 pub fn encode_multipart_upload_struct(input: MultipartUpload) -> json.Json {
@@ -19717,10 +18700,7 @@ pub fn decode_multipart_upload_xml(elem: xml_decode.Element) -> Result(Multipart
 }
 
 pub type Initiator {
-  Initiator(
-    display_name: option.Option(String),
-    id: option.Option(String),
-  )
+  Initiator(display_name: option.Option(String), id: option.Option(String))
 }
 
 pub fn encode_initiator_struct(input: Initiator) -> json.Json {
@@ -19781,17 +18761,7 @@ pub fn decode_initiator_xml(elem: xml_decode.Element) -> Result(Initiator, Strin
 }
 
 pub type ListObjectsRequest {
-  ListObjectsRequest(
-    bucket: option.Option(String),
-    delimiter: option.Option(String),
-    encoding_type: option.Option(EncodingType),
-    expected_bucket_owner: option.Option(String),
-    marker: option.Option(String),
-    max_keys: option.Option(Int),
-    optional_object_attributes: option.Option(List(OptionalObjectAttributes)),
-    prefix: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-  )
+  ListObjectsRequest(bucket: option.Option(String), delimiter: option.Option(String), encoding_type: option.Option(EncodingType), expected_bucket_owner: option.Option(String), marker: option.Option(String), max_keys: option.Option(Int), optional_object_attributes: option.Option(List(OptionalObjectAttributes)), prefix: option.Option(String), request_payer: option.Option(RequestPayer))
 }
 
 pub fn encode_list_objects_request_struct(input: ListObjectsRequest) -> json.Json {
@@ -19933,19 +18903,7 @@ pub fn decode_optional_object_attributes_enum() -> decode.Decoder(OptionalObject
 }
 
 pub type ListObjectsOutput {
-  ListObjectsOutput(
-    common_prefixes: option.Option(List(CommonPrefix)),
-    contents: option.Option(List(Object)),
-    delimiter: option.Option(String),
-    encoding_type: option.Option(EncodingType),
-    is_truncated: option.Option(Bool),
-    marker: option.Option(String),
-    max_keys: option.Option(Int),
-    name: option.Option(String),
-    next_marker: option.Option(String),
-    prefix: option.Option(String),
-    request_charged: option.Option(RequestCharged),
-  )
+  ListObjectsOutput(common_prefixes: option.Option(List(CommonPrefix)), contents: option.Option(List(Object)), delimiter: option.Option(String), encoding_type: option.Option(EncodingType), is_truncated: option.Option(Bool), marker: option.Option(String), max_keys: option.Option(Int), name: option.Option(String), next_marker: option.Option(String), prefix: option.Option(String), request_charged: option.Option(RequestCharged))
 }
 
 pub fn encode_list_objects_output_struct(input: ListObjectsOutput) -> json.Json {
@@ -20129,17 +19087,7 @@ pub fn decode_list_objects_output_xml(elem: xml_decode.Element) -> Result(ListOb
 }
 
 pub type Object {
-  Object(
-    checksum_algorithm: option.Option(List(ChecksumAlgorithm)),
-    checksum_type: option.Option(ChecksumType),
-    e_tag: option.Option(String),
-    key: option.Option(String),
-    last_modified: option.Option(Int),
-    owner: option.Option(Owner),
-    restore_status: option.Option(RestoreStatus),
-    size: option.Option(Int),
-    storage_class: option.Option(ObjectStorageClass),
-  )
+  Object(checksum_algorithm: option.Option(List(ChecksumAlgorithm)), checksum_type: option.Option(ChecksumType), e_tag: option.Option(String), key: option.Option(String), last_modified: option.Option(Int), owner: option.Option(Owner), restore_status: option.Option(RestoreStatus), size: option.Option(Int), storage_class: option.Option(ObjectStorageClass))
 }
 
 pub fn encode_object_struct(input: Object) -> json.Json {
@@ -20300,10 +19248,7 @@ pub fn decode_object_xml(elem: xml_decode.Element) -> Result(Object, String) {
 }
 
 pub type RestoreStatus {
-  RestoreStatus(
-    is_restore_in_progress: option.Option(Bool),
-    restore_expiry_date: option.Option(Int),
-  )
+  RestoreStatus(is_restore_in_progress: option.Option(Bool), restore_expiry_date: option.Option(Int))
 }
 
 pub fn encode_restore_status_struct(input: RestoreStatus) -> json.Json {
@@ -20419,19 +19364,7 @@ pub fn decode_object_storage_class_enum() -> decode.Decoder(ObjectStorageClass) 
 }
 
 pub type ListObjectsV2Request {
-  ListObjectsV2Request(
-    bucket: option.Option(String),
-    continuation_token: option.Option(String),
-    delimiter: option.Option(String),
-    encoding_type: option.Option(EncodingType),
-    expected_bucket_owner: option.Option(String),
-    fetch_owner: option.Option(Bool),
-    max_keys: option.Option(Int),
-    optional_object_attributes: option.Option(List(OptionalObjectAttributes)),
-    prefix: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-    start_after: option.Option(String),
-  )
+  ListObjectsV2Request(bucket: option.Option(String), continuation_token: option.Option(String), delimiter: option.Option(String), encoding_type: option.Option(EncodingType), expected_bucket_owner: option.Option(String), fetch_owner: option.Option(Bool), max_keys: option.Option(Int), optional_object_attributes: option.Option(List(OptionalObjectAttributes)), prefix: option.Option(String), request_payer: option.Option(RequestPayer), start_after: option.Option(String))
 }
 
 pub fn encode_list_objects_v2_request_struct(input: ListObjectsV2Request) -> json.Json {
@@ -20574,21 +19507,7 @@ pub fn decode_list_objects_v2_request_xml(elem: xml_decode.Element) -> Result(Li
 }
 
 pub type ListObjectsV2Output {
-  ListObjectsV2Output(
-    common_prefixes: option.Option(List(CommonPrefix)),
-    contents: option.Option(List(Object)),
-    continuation_token: option.Option(String),
-    delimiter: option.Option(String),
-    encoding_type: option.Option(EncodingType),
-    is_truncated: option.Option(Bool),
-    key_count: option.Option(Int),
-    max_keys: option.Option(Int),
-    name: option.Option(String),
-    next_continuation_token: option.Option(String),
-    prefix: option.Option(String),
-    request_charged: option.Option(RequestCharged),
-    start_after: option.Option(String),
-  )
+  ListObjectsV2Output(common_prefixes: option.Option(List(CommonPrefix)), contents: option.Option(List(Object)), continuation_token: option.Option(String), delimiter: option.Option(String), encoding_type: option.Option(EncodingType), is_truncated: option.Option(Bool), key_count: option.Option(Int), max_keys: option.Option(Int), name: option.Option(String), next_continuation_token: option.Option(String), prefix: option.Option(String), request_charged: option.Option(RequestCharged), start_after: option.Option(String))
 }
 
 pub fn encode_list_objects_v2_output_struct(input: ListObjectsV2Output) -> json.Json {
@@ -20800,18 +19719,7 @@ pub fn decode_list_objects_v2_output_xml(elem: xml_decode.Element) -> Result(Lis
 }
 
 pub type ListObjectVersionsRequest {
-  ListObjectVersionsRequest(
-    bucket: option.Option(String),
-    delimiter: option.Option(String),
-    encoding_type: option.Option(EncodingType),
-    expected_bucket_owner: option.Option(String),
-    key_marker: option.Option(String),
-    max_keys: option.Option(Int),
-    optional_object_attributes: option.Option(List(OptionalObjectAttributes)),
-    prefix: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-    version_id_marker: option.Option(String),
-  )
+  ListObjectVersionsRequest(bucket: option.Option(String), delimiter: option.Option(String), encoding_type: option.Option(EncodingType), expected_bucket_owner: option.Option(String), key_marker: option.Option(String), max_keys: option.Option(Int), optional_object_attributes: option.Option(List(OptionalObjectAttributes)), prefix: option.Option(String), request_payer: option.Option(RequestPayer), version_id_marker: option.Option(String))
 }
 
 pub fn encode_list_object_versions_request_struct(input: ListObjectVersionsRequest) -> json.Json {
@@ -20944,22 +19852,7 @@ pub fn decode_list_object_versions_request_xml(elem: xml_decode.Element) -> Resu
 }
 
 pub type ListObjectVersionsOutput {
-  ListObjectVersionsOutput(
-    common_prefixes: option.Option(List(CommonPrefix)),
-    delete_markers: option.Option(List(DeleteMarkerEntry)),
-    delimiter: option.Option(String),
-    encoding_type: option.Option(EncodingType),
-    is_truncated: option.Option(Bool),
-    key_marker: option.Option(String),
-    max_keys: option.Option(Int),
-    name: option.Option(String),
-    next_key_marker: option.Option(String),
-    next_version_id_marker: option.Option(String),
-    prefix: option.Option(String),
-    request_charged: option.Option(RequestCharged),
-    version_id_marker: option.Option(String),
-    versions: option.Option(List(ObjectVersion)),
-  )
+  ListObjectVersionsOutput(common_prefixes: option.Option(List(CommonPrefix)), delete_markers: option.Option(List(DeleteMarkerEntry)), delimiter: option.Option(String), encoding_type: option.Option(EncodingType), is_truncated: option.Option(Bool), key_marker: option.Option(String), max_keys: option.Option(Int), name: option.Option(String), next_key_marker: option.Option(String), next_version_id_marker: option.Option(String), prefix: option.Option(String), request_charged: option.Option(RequestCharged), version_id_marker: option.Option(String), versions: option.Option(List(ObjectVersion)))
 }
 
 pub fn encode_list_object_versions_output_struct(input: ListObjectVersionsOutput) -> json.Json {
@@ -21185,13 +20078,7 @@ pub fn decode_list_object_versions_output_xml(elem: xml_decode.Element) -> Resul
 }
 
 pub type DeleteMarkerEntry {
-  DeleteMarkerEntry(
-    is_latest: option.Option(Bool),
-    key: option.Option(String),
-    last_modified: option.Option(Int),
-    owner: option.Option(Owner),
-    version_id: option.Option(String),
-  )
+  DeleteMarkerEntry(is_latest: option.Option(Bool), key: option.Option(String), last_modified: option.Option(Int), owner: option.Option(Owner), version_id: option.Option(String))
 }
 
 pub fn encode_delete_marker_entry_struct(input: DeleteMarkerEntry) -> json.Json {
@@ -21294,19 +20181,7 @@ pub fn decode_delete_marker_entry_xml(elem: xml_decode.Element) -> Result(Delete
 }
 
 pub type ObjectVersion {
-  ObjectVersion(
-    checksum_algorithm: option.Option(List(ChecksumAlgorithm)),
-    checksum_type: option.Option(ChecksumType),
-    e_tag: option.Option(String),
-    is_latest: option.Option(Bool),
-    key: option.Option(String),
-    last_modified: option.Option(Int),
-    owner: option.Option(Owner),
-    restore_status: option.Option(RestoreStatus),
-    size: option.Option(Int),
-    storage_class: option.Option(ObjectVersionStorageClass),
-    version_id: option.Option(String),
-  )
+  ObjectVersion(checksum_algorithm: option.Option(List(ChecksumAlgorithm)), checksum_type: option.Option(ChecksumType), e_tag: option.Option(String), is_latest: option.Option(Bool), key: option.Option(String), last_modified: option.Option(Int), owner: option.Option(Owner), restore_status: option.Option(RestoreStatus), size: option.Option(Int), storage_class: option.Option(ObjectVersionStorageClass), version_id: option.Option(String))
 }
 
 pub fn encode_object_version_struct(input: ObjectVersion) -> json.Json {
@@ -21514,18 +20389,7 @@ pub fn decode_object_version_storage_class_enum() -> decode.Decoder(ObjectVersio
 }
 
 pub type ListPartsRequest {
-  ListPartsRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    key: option.Option(String),
-    max_parts: option.Option(Int),
-    part_number_marker: option.Option(String),
-    request_payer: option.Option(RequestPayer),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    upload_id: option.Option(String),
-  )
+  ListPartsRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), key: option.Option(String), max_parts: option.Option(Int), part_number_marker: option.Option(String), request_payer: option.Option(RequestPayer), sse_customer_algorithm: option.Option(String), sse_customer_key: option.Option(String), sse_customer_key_md5: option.Option(String), upload_id: option.Option(String))
 }
 
 pub fn encode_list_parts_request_struct(input: ListPartsRequest) -> json.Json {
@@ -21658,24 +20522,7 @@ pub fn decode_list_parts_request_xml(elem: xml_decode.Element) -> Result(ListPar
 }
 
 pub type ListPartsOutput {
-  ListPartsOutput(
-    abort_date: option.Option(Int),
-    abort_rule_id: option.Option(String),
-    bucket: option.Option(String),
-    checksum_algorithm: option.Option(ChecksumAlgorithm),
-    checksum_type: option.Option(ChecksumType),
-    initiator: option.Option(Initiator),
-    is_truncated: option.Option(Bool),
-    key: option.Option(String),
-    max_parts: option.Option(Int),
-    next_part_number_marker: option.Option(String),
-    owner: option.Option(Owner),
-    part_number_marker: option.Option(String),
-    parts: option.Option(List(Part)),
-    request_charged: option.Option(RequestCharged),
-    storage_class: option.Option(StorageClass),
-    upload_id: option.Option(String),
-  )
+  ListPartsOutput(abort_date: option.Option(Int), abort_rule_id: option.Option(String), bucket: option.Option(String), checksum_algorithm: option.Option(ChecksumAlgorithm), checksum_type: option.Option(ChecksumType), initiator: option.Option(Initiator), is_truncated: option.Option(Bool), key: option.Option(String), max_parts: option.Option(Int), next_part_number_marker: option.Option(String), owner: option.Option(Owner), part_number_marker: option.Option(String), parts: option.Option(List(Part)), request_charged: option.Option(RequestCharged), storage_class: option.Option(StorageClass), upload_id: option.Option(String))
 }
 
 pub fn encode_list_parts_output_struct(input: ListPartsOutput) -> json.Json {
@@ -21923,22 +20770,7 @@ pub fn decode_list_parts_output_xml(elem: xml_decode.Element) -> Result(ListPart
 }
 
 pub type Part {
-  Part(
-    checksum_crc32: option.Option(String),
-    checksum_crc32_c: option.Option(String),
-    checksum_crc64_nvme: option.Option(String),
-    checksum_md5: option.Option(String),
-    checksum_sha1: option.Option(String),
-    checksum_sha256: option.Option(String),
-    checksum_sha512: option.Option(String),
-    checksum_xxhash128: option.Option(String),
-    checksum_xxhash3: option.Option(String),
-    checksum_xxhash64: option.Option(String),
-    e_tag: option.Option(String),
-    last_modified: option.Option(Int),
-    part_number: option.Option(Int),
-    size: option.Option(Int),
-  )
+  Part(checksum_crc32: option.Option(String), checksum_crc32_c: option.Option(String), checksum_crc64_nvme: option.Option(String), checksum_md5: option.Option(String), checksum_sha1: option.Option(String), checksum_sha256: option.Option(String), checksum_sha512: option.Option(String), checksum_xxhash128: option.Option(String), checksum_xxhash3: option.Option(String), checksum_xxhash64: option.Option(String), e_tag: option.Option(String), last_modified: option.Option(Int), part_number: option.Option(Int), size: option.Option(Int))
 }
 
 pub fn encode_part_struct(input: Part) -> json.Json {
@@ -22167,12 +20999,7 @@ pub fn decode_part_xml(elem: xml_decode.Element) -> Result(Part, String) {
 }
 
 pub type PutBucketAnalyticsConfigurationRequest {
-  PutBucketAnalyticsConfigurationRequest(
-    analytics_configuration: option.Option(AnalyticsConfiguration),
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    id: option.Option(String),
-  )
+  PutBucketAnalyticsConfigurationRequest(analytics_configuration: option.Option(AnalyticsConfiguration), bucket: option.Option(String), expected_bucket_owner: option.Option(String), id: option.Option(String))
 }
 
 pub fn encode_put_bucket_analytics_configuration_request_struct(input: PutBucketAnalyticsConfigurationRequest) -> json.Json {
@@ -22245,12 +21072,7 @@ pub fn decode_put_bucket_analytics_configuration_request_xml(elem: xml_decode.El
 }
 
 pub type PutBucketIntelligentTieringConfigurationRequest {
-  PutBucketIntelligentTieringConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    id: option.Option(String),
-    intelligent_tiering_configuration: option.Option(IntelligentTieringConfiguration),
-  )
+  PutBucketIntelligentTieringConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), id: option.Option(String), intelligent_tiering_configuration: option.Option(IntelligentTieringConfiguration))
 }
 
 pub fn encode_put_bucket_intelligent_tiering_configuration_request_struct(input: PutBucketIntelligentTieringConfigurationRequest) -> json.Json {
@@ -22323,12 +21145,7 @@ pub fn decode_put_bucket_intelligent_tiering_configuration_request_xml(elem: xml
 }
 
 pub type PutBucketInventoryConfigurationRequest {
-  PutBucketInventoryConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    id: option.Option(String),
-    inventory_configuration: option.Option(InventoryConfiguration),
-  )
+  PutBucketInventoryConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), id: option.Option(String), inventory_configuration: option.Option(InventoryConfiguration))
 }
 
 pub fn encode_put_bucket_inventory_configuration_request_struct(input: PutBucketInventoryConfigurationRequest) -> json.Json {
@@ -22401,12 +21218,7 @@ pub fn decode_put_bucket_inventory_configuration_request_xml(elem: xml_decode.El
 }
 
 pub type PutBucketMetricsConfigurationRequest {
-  PutBucketMetricsConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    id: option.Option(String),
-    metrics_configuration: option.Option(MetricsConfiguration),
-  )
+  PutBucketMetricsConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), id: option.Option(String), metrics_configuration: option.Option(MetricsConfiguration))
 }
 
 pub fn encode_put_bucket_metrics_configuration_request_struct(input: PutBucketMetricsConfigurationRequest) -> json.Json {
@@ -22479,12 +21291,7 @@ pub fn decode_put_bucket_metrics_configuration_request_xml(elem: xml_decode.Elem
 }
 
 pub type PutBucketNotificationConfigurationRequest {
-  PutBucketNotificationConfigurationRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    notification_configuration: option.Option(NotificationConfiguration),
-    skip_destination_validation: option.Option(Bool),
-  )
+  PutBucketNotificationConfigurationRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), notification_configuration: option.Option(NotificationConfiguration), skip_destination_validation: option.Option(Bool))
 }
 
 pub fn encode_put_bucket_notification_configuration_request_struct(input: PutBucketNotificationConfigurationRequest) -> json.Json {
@@ -22557,20 +21364,7 @@ pub fn decode_put_bucket_notification_configuration_request_xml(elem: xml_decode
 }
 
 pub type RenameObjectRequest {
-  RenameObjectRequest(
-    bucket: option.Option(String),
-    client_token: option.Option(String),
-    destination_if_match: option.Option(String),
-    destination_if_modified_since: option.Option(Int),
-    destination_if_none_match: option.Option(String),
-    destination_if_unmodified_since: option.Option(Int),
-    key: option.Option(String),
-    rename_source: option.Option(String),
-    source_if_match: option.Option(String),
-    source_if_modified_since: option.Option(Int),
-    source_if_none_match: option.Option(String),
-    source_if_unmodified_since: option.Option(Int),
-  )
+  RenameObjectRequest(bucket: option.Option(String), client_token: option.Option(String), destination_if_match: option.Option(String), destination_if_modified_since: option.Option(Int), destination_if_none_match: option.Option(String), destination_if_unmodified_since: option.Option(Int), key: option.Option(String), rename_source: option.Option(String), source_if_match: option.Option(String), source_if_modified_since: option.Option(Int), source_if_none_match: option.Option(String), source_if_unmodified_since: option.Option(Int))
 }
 
 pub fn encode_rename_object_request_struct(input: RenameObjectRequest) -> json.Json {
@@ -22779,20 +21573,7 @@ pub fn decode_idempotency_parameter_mismatch_xml(_elem: xml_decode.Element) -> R
 }
 
 pub type SelectObjectContentRequest {
-  SelectObjectContentRequest(
-    bucket: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    expression: option.Option(String),
-    expression_type: option.Option(ExpressionType),
-    input_serialization: option.Option(InputSerialization),
-    key: option.Option(String),
-    output_serialization: option.Option(OutputSerialization),
-    request_progress: option.Option(RequestProgress),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    scan_range: option.Option(ScanRange),
-  )
+  SelectObjectContentRequest(bucket: option.Option(String), expected_bucket_owner: option.Option(String), expression: option.Option(String), expression_type: option.Option(ExpressionType), input_serialization: option.Option(InputSerialization), key: option.Option(String), output_serialization: option.Option(OutputSerialization), request_progress: option.Option(RequestProgress), sse_customer_algorithm: option.Option(String), sse_customer_key: option.Option(String), sse_customer_key_md5: option.Option(String), scan_range: option.Option(ScanRange))
 }
 
 pub fn encode_select_object_content_request_struct(input: SelectObjectContentRequest) -> json.Json {
@@ -22989,12 +21770,7 @@ pub fn decode_expression_type_enum() -> decode.Decoder(ExpressionType) {
 }
 
 pub type InputSerialization {
-  InputSerialization(
-    csv: option.Option(CSVInput),
-    compression_type: option.Option(CompressionType),
-    json: option.Option(JSONInput),
-    parquet: option.Option(ParquetInput),
-  )
+  InputSerialization(csv: option.Option(CSVInput), compression_type: option.Option(CompressionType), json: option.Option(JSONInput), parquet: option.Option(ParquetInput))
 }
 
 pub fn encode_input_serialization_struct(input: InputSerialization) -> json.Json {
@@ -23084,15 +21860,7 @@ pub fn decode_input_serialization_xml(elem: xml_decode.Element) -> Result(InputS
 }
 
 pub type CSVInput {
-  CSVInput(
-    allow_quoted_record_delimiter: option.Option(Bool),
-    comments: option.Option(String),
-    field_delimiter: option.Option(String),
-    file_header_info: option.Option(FileHeaderInfo),
-    quote_character: option.Option(String),
-    quote_escape_character: option.Option(String),
-    record_delimiter: option.Option(String),
-  )
+  CSVInput(allow_quoted_record_delimiter: option.Option(Bool), comments: option.Option(String), field_delimiter: option.Option(String), file_header_info: option.Option(FileHeaderInfo), quote_character: option.Option(String), quote_escape_character: option.Option(String), record_delimiter: option.Option(String))
 }
 
 pub fn encode_csv_input_struct(input: CSVInput) -> json.Json {
@@ -23274,9 +22042,7 @@ pub fn decode_compression_type_enum() -> decode.Decoder(CompressionType) {
 }
 
 pub type JSONInput {
-  JSONInput(
-    type_: option.Option(JSONType),
-  )
+  JSONInput(type_: option.Option(JSONType))
 }
 
 pub fn encode_json_input_struct(input: JSONInput) -> json.Json {
@@ -23374,10 +22140,7 @@ pub fn decode_parquet_input_xml(_elem: xml_decode.Element) -> Result(ParquetInpu
 }
 
 pub type OutputSerialization {
-  OutputSerialization(
-    csv: option.Option(CSVOutput),
-    json: option.Option(JSONOutput),
-  )
+  OutputSerialization(csv: option.Option(CSVOutput), json: option.Option(JSONOutput))
 }
 
 pub fn encode_output_serialization_struct(input: OutputSerialization) -> json.Json {
@@ -23438,13 +22201,7 @@ pub fn decode_output_serialization_xml(elem: xml_decode.Element) -> Result(Outpu
 }
 
 pub type CSVOutput {
-  CSVOutput(
-    field_delimiter: option.Option(String),
-    quote_character: option.Option(String),
-    quote_escape_character: option.Option(String),
-    quote_fields: option.Option(QuoteFields),
-    record_delimiter: option.Option(String),
-  )
+  CSVOutput(field_delimiter: option.Option(String), quote_character: option.Option(String), quote_escape_character: option.Option(String), quote_fields: option.Option(QuoteFields), record_delimiter: option.Option(String))
 }
 
 pub fn encode_csv_output_struct(input: CSVOutput) -> json.Json {
@@ -23570,9 +22327,7 @@ pub fn decode_quote_fields_enum() -> decode.Decoder(QuoteFields) {
 }
 
 pub type JSONOutput {
-  JSONOutput(
-    record_delimiter: option.Option(String),
-  )
+  JSONOutput(record_delimiter: option.Option(String))
 }
 
 pub fn encode_json_output_struct(input: JSONOutput) -> json.Json {
@@ -23619,9 +22374,7 @@ pub fn decode_json_output_xml(elem: xml_decode.Element) -> Result(JSONOutput, St
 }
 
 pub type RequestProgress {
-  RequestProgress(
-    enabled: option.Option(Bool),
-  )
+  RequestProgress(enabled: option.Option(Bool))
 }
 
 pub fn encode_request_progress_struct(input: RequestProgress) -> json.Json {
@@ -23668,10 +22421,7 @@ pub fn decode_request_progress_xml(elem: xml_decode.Element) -> Result(RequestPr
 }
 
 pub type ScanRange {
-  ScanRange(
-    end: option.Option(Int),
-    start: option.Option(Int),
-  )
+  ScanRange(end: option.Option(Int), start: option.Option(Int))
 }
 
 pub fn encode_scan_range_struct(input: ScanRange) -> json.Json {
@@ -23732,9 +22482,7 @@ pub fn decode_scan_range_xml(elem: xml_decode.Element) -> Result(ScanRange, Stri
 }
 
 pub type SelectObjectContentOutput {
-  SelectObjectContentOutput(
-    payload: option.Option(SelectObjectContentEventStream),
-  )
+  SelectObjectContentOutput(payload: option.Option(SelectObjectContentEventStream))
 }
 
 pub fn encode_select_object_content_output_struct(input: SelectObjectContentOutput) -> json.Json {
@@ -23875,9 +22623,7 @@ pub fn decode_end_event_xml(_elem: xml_decode.Element) -> Result(EndEvent, Strin
 }
 
 pub type ProgressEvent {
-  ProgressEvent(
-    details: option.Option(Progress),
-  )
+  ProgressEvent(details: option.Option(Progress))
 }
 
 pub fn encode_progress_event_struct(input: ProgressEvent) -> json.Json {
@@ -23924,11 +22670,7 @@ pub fn decode_progress_event_xml(elem: xml_decode.Element) -> Result(ProgressEve
 }
 
 pub type Progress {
-  Progress(
-    bytes_processed: option.Option(Int),
-    bytes_returned: option.Option(Int),
-    bytes_scanned: option.Option(Int),
-  )
+  Progress(bytes_processed: option.Option(Int), bytes_returned: option.Option(Int), bytes_scanned: option.Option(Int))
 }
 
 pub fn encode_progress_struct(input: Progress) -> json.Json {
@@ -24003,9 +22745,7 @@ pub fn decode_progress_xml(elem: xml_decode.Element) -> Result(Progress, String)
 }
 
 pub type RecordsEvent {
-  RecordsEvent(
-    payload: option.Option(BitArray),
-  )
+  RecordsEvent(payload: option.Option(BitArray))
 }
 
 pub fn encode_records_event_struct(input: RecordsEvent) -> json.Json {
@@ -24052,9 +22792,7 @@ pub fn decode_records_event_xml(elem: xml_decode.Element) -> Result(RecordsEvent
 }
 
 pub type StatsEvent {
-  StatsEvent(
-    details: option.Option(Stats),
-  )
+  StatsEvent(details: option.Option(Stats))
 }
 
 pub fn encode_stats_event_struct(input: StatsEvent) -> json.Json {
@@ -24101,11 +22839,7 @@ pub fn decode_stats_event_xml(elem: xml_decode.Element) -> Result(StatsEvent, St
 }
 
 pub type Stats {
-  Stats(
-    bytes_processed: option.Option(Int),
-    bytes_returned: option.Option(Int),
-    bytes_scanned: option.Option(Int),
-  )
+  Stats(bytes_processed: option.Option(Int), bytes_returned: option.Option(Int), bytes_scanned: option.Option(Int))
 }
 
 pub fn encode_stats_struct(input: Stats) -> json.Json {
@@ -24180,27 +22914,7 @@ pub fn decode_stats_xml(elem: xml_decode.Element) -> Result(Stats, String) {
 }
 
 pub type UploadPartCopyRequest {
-  UploadPartCopyRequest(
-    bucket: option.Option(String),
-    copy_source: option.Option(String),
-    copy_source_if_match: option.Option(String),
-    copy_source_if_modified_since: option.Option(Int),
-    copy_source_if_none_match: option.Option(String),
-    copy_source_if_unmodified_since: option.Option(Int),
-    copy_source_range: option.Option(String),
-    copy_source_sse_customer_algorithm: option.Option(String),
-    copy_source_sse_customer_key: option.Option(String),
-    copy_source_sse_customer_key_md5: option.Option(String),
-    expected_bucket_owner: option.Option(String),
-    expected_source_bucket_owner: option.Option(String),
-    key: option.Option(String),
-    part_number: option.Option(Int),
-    request_payer: option.Option(RequestPayer),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    upload_id: option.Option(String),
-  )
+  UploadPartCopyRequest(bucket: option.Option(String), copy_source: option.Option(String), copy_source_if_match: option.Option(String), copy_source_if_modified_since: option.Option(Int), copy_source_if_none_match: option.Option(String), copy_source_if_unmodified_since: option.Option(Int), copy_source_range: option.Option(String), copy_source_sse_customer_algorithm: option.Option(String), copy_source_sse_customer_key: option.Option(String), copy_source_sse_customer_key_md5: option.Option(String), expected_bucket_owner: option.Option(String), expected_source_bucket_owner: option.Option(String), key: option.Option(String), part_number: option.Option(Int), request_payer: option.Option(RequestPayer), sse_customer_algorithm: option.Option(String), sse_customer_key: option.Option(String), sse_customer_key_md5: option.Option(String), upload_id: option.Option(String))
 }
 
 pub fn encode_upload_part_copy_request_struct(input: UploadPartCopyRequest) -> json.Json {
@@ -24423,16 +23137,7 @@ pub fn decode_upload_part_copy_request_xml(elem: xml_decode.Element) -> Result(U
 }
 
 pub type UploadPartCopyOutput {
-  UploadPartCopyOutput(
-    bucket_key_enabled: option.Option(Bool),
-    copy_part_result: option.Option(CopyPartResult),
-    copy_source_version_id: option.Option(String),
-    request_charged: option.Option(RequestCharged),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    ssekms_key_id: option.Option(String),
-    server_side_encryption: option.Option(ServerSideEncryption),
-  )
+  UploadPartCopyOutput(bucket_key_enabled: option.Option(Bool), copy_part_result: option.Option(CopyPartResult), copy_source_version_id: option.Option(String), request_charged: option.Option(RequestCharged), sse_customer_algorithm: option.Option(String), sse_customer_key_md5: option.Option(String), ssekms_key_id: option.Option(String), server_side_encryption: option.Option(ServerSideEncryption))
 }
 
 pub fn encode_upload_part_copy_output_struct(input: UploadPartCopyOutput) -> json.Json {
@@ -24545,20 +23250,7 @@ pub fn decode_upload_part_copy_output_xml(elem: xml_decode.Element) -> Result(Up
 }
 
 pub type CopyPartResult {
-  CopyPartResult(
-    checksum_crc32: option.Option(String),
-    checksum_crc32_c: option.Option(String),
-    checksum_crc64_nvme: option.Option(String),
-    checksum_md5: option.Option(String),
-    checksum_sha1: option.Option(String),
-    checksum_sha256: option.Option(String),
-    checksum_sha512: option.Option(String),
-    checksum_xxhash128: option.Option(String),
-    checksum_xxhash3: option.Option(String),
-    checksum_xxhash64: option.Option(String),
-    e_tag: option.Option(String),
-    last_modified: option.Option(Int),
-  )
+  CopyPartResult(checksum_crc32: option.Option(String), checksum_crc32_c: option.Option(String), checksum_crc64_nvme: option.Option(String), checksum_md5: option.Option(String), checksum_sha1: option.Option(String), checksum_sha256: option.Option(String), checksum_sha512: option.Option(String), checksum_xxhash128: option.Option(String), checksum_xxhash3: option.Option(String), checksum_xxhash64: option.Option(String), e_tag: option.Option(String), last_modified: option.Option(Int))
 }
 
 pub fn encode_copy_part_result_struct(input: CopyPartResult) -> json.Json {
@@ -24759,54 +23451,7 @@ pub fn decode_copy_part_result_xml(elem: xml_decode.Element) -> Result(CopyPartR
 }
 
 pub type WriteGetObjectResponseRequest {
-  WriteGetObjectResponseRequest(
-    accept_ranges: option.Option(String),
-    body: option.Option(BitArray),
-    bucket_key_enabled: option.Option(Bool),
-    cache_control: option.Option(String),
-    checksum_crc32: option.Option(String),
-    checksum_crc32_c: option.Option(String),
-    checksum_crc64_nvme: option.Option(String),
-    checksum_md5: option.Option(String),
-    checksum_sha1: option.Option(String),
-    checksum_sha256: option.Option(String),
-    checksum_sha512: option.Option(String),
-    checksum_xxhash128: option.Option(String),
-    checksum_xxhash3: option.Option(String),
-    checksum_xxhash64: option.Option(String),
-    content_disposition: option.Option(String),
-    content_encoding: option.Option(String),
-    content_language: option.Option(String),
-    content_length: option.Option(Int),
-    content_range: option.Option(String),
-    content_type: option.Option(String),
-    delete_marker: option.Option(Bool),
-    e_tag: option.Option(String),
-    error_code: option.Option(String),
-    error_message: option.Option(String),
-    expiration: option.Option(String),
-    expires: option.Option(String),
-    last_modified: option.Option(Int),
-    metadata: option.Option(dict.Dict(String, String)),
-    missing_meta: option.Option(Int),
-    object_lock_legal_hold_status: option.Option(ObjectLockLegalHoldStatus),
-    object_lock_mode: option.Option(ObjectLockMode),
-    object_lock_retain_until_date: option.Option(Int),
-    parts_count: option.Option(Int),
-    replication_status: option.Option(ReplicationStatus),
-    request_charged: option.Option(RequestCharged),
-    request_route: option.Option(String),
-    request_token: option.Option(String),
-    restore: option.Option(String),
-    sse_customer_algorithm: option.Option(String),
-    sse_customer_key_md5: option.Option(String),
-    ssekms_key_id: option.Option(String),
-    server_side_encryption: option.Option(ServerSideEncryption),
-    status_code: option.Option(Int),
-    storage_class: option.Option(StorageClass),
-    tag_count: option.Option(Int),
-    version_id: option.Option(String),
-  )
+  WriteGetObjectResponseRequest(accept_ranges: option.Option(String), body: option.Option(BitArray), bucket_key_enabled: option.Option(Bool), cache_control: option.Option(String), checksum_crc32: option.Option(String), checksum_crc32_c: option.Option(String), checksum_crc64_nvme: option.Option(String), checksum_md5: option.Option(String), checksum_sha1: option.Option(String), checksum_sha256: option.Option(String), checksum_sha512: option.Option(String), checksum_xxhash128: option.Option(String), checksum_xxhash3: option.Option(String), checksum_xxhash64: option.Option(String), content_disposition: option.Option(String), content_encoding: option.Option(String), content_language: option.Option(String), content_length: option.Option(Int), content_range: option.Option(String), content_type: option.Option(String), delete_marker: option.Option(Bool), e_tag: option.Option(String), error_code: option.Option(String), error_message: option.Option(String), expiration: option.Option(String), expires: option.Option(String), last_modified: option.Option(Int), metadata: option.Option(dict.Dict(String, String)), missing_meta: option.Option(Int), object_lock_legal_hold_status: option.Option(ObjectLockLegalHoldStatus), object_lock_mode: option.Option(ObjectLockMode), object_lock_retain_until_date: option.Option(Int), parts_count: option.Option(Int), replication_status: option.Option(ReplicationStatus), request_charged: option.Option(RequestCharged), request_route: option.Option(String), request_token: option.Option(String), restore: option.Option(String), sse_customer_algorithm: option.Option(String), sse_customer_key_md5: option.Option(String), ssekms_key_id: option.Option(String), server_side_encryption: option.Option(ServerSideEncryption), status_code: option.Option(Int), storage_class: option.Option(StorageClass), tag_count: option.Option(Int), version_id: option.Option(String))
 }
 
 pub fn encode_write_get_object_response_request_struct(input: WriteGetObjectResponseRequest) -> json.Json {

@@ -43,9 +43,7 @@ pub fn with_http_send(client: Client, send: http_send.Send) -> Client {
 }
 
 pub type ContentTypeParametersInput {
-  ContentTypeParametersInput(
-    value: option.Option(Int),
-  )
+  ContentTypeParametersInput(value: option.Option(Int))
 }
 
 pub fn encode_content_type_parameters_input_struct(input: ContentTypeParametersInput) -> json.Json {
@@ -141,9 +139,7 @@ pub fn decode_empty_input_and_empty_output_output_struct_params() -> decode.Deco
 }
 
 pub type EndpointWithHostLabelOperationInput {
-  EndpointWithHostLabelOperationInput(
-    label: option.Option(String),
-  )
+  EndpointWithHostLabelOperationInput(label: option.Option(String))
 }
 
 pub fn encode_endpoint_with_host_label_operation_input_struct(input: EndpointWithHostLabelOperationInput) -> json.Json {
@@ -179,9 +175,7 @@ pub fn decode_endpoint_with_host_label_operation_input_struct_params() -> decode
 }
 
 pub type GreetingWithErrorsInput {
-  GreetingWithErrorsInput(
-    greeting: option.Option(String),
-  )
+  GreetingWithErrorsInput(greeting: option.Option(String))
 }
 
 pub fn encode_greeting_with_errors_input_struct(input: GreetingWithErrorsInput) -> json.Json {
@@ -217,9 +211,7 @@ pub fn decode_greeting_with_errors_input_struct_params() -> decode.Decoder(Greet
 }
 
 pub type GreetingWithErrorsOutput {
-  GreetingWithErrorsOutput(
-    greeting: option.Option(String),
-  )
+  GreetingWithErrorsOutput(greeting: option.Option(String))
 }
 
 pub fn encode_greeting_with_errors_output_struct(input: GreetingWithErrorsOutput) -> json.Json {
@@ -255,10 +247,7 @@ pub fn decode_greeting_with_errors_output_struct_params() -> decode.Decoder(Gree
 }
 
 pub type ComplexError {
-  ComplexError(
-    nested: option.Option(ComplexNestedErrorData),
-    top_level: option.Option(String),
-  )
+  ComplexError(nested: option.Option(ComplexNestedErrorData), top_level: option.Option(String))
 }
 
 pub fn encode_complex_error_struct(input: ComplexError) -> json.Json {
@@ -306,9 +295,7 @@ pub fn decode_complex_error_struct_params() -> decode.Decoder(ComplexError) {
 }
 
 pub type ComplexNestedErrorData {
-  ComplexNestedErrorData(
-    foo: option.Option(String),
-  )
+  ComplexNestedErrorData(foo: option.Option(String))
 }
 
 pub fn encode_complex_nested_error_data_struct(input: ComplexNestedErrorData) -> json.Json {
@@ -364,9 +351,7 @@ pub fn decode_foo_error_struct_params() -> decode.Decoder(FooError) {
 }
 
 pub type InvalidGreeting {
-  InvalidGreeting(
-    message: option.Option(String),
-  )
+  InvalidGreeting(message: option.Option(String))
 }
 
 pub fn encode_invalid_greeting_struct(input: InvalidGreeting) -> json.Json {
@@ -402,9 +387,7 @@ pub fn decode_invalid_greeting_struct_params() -> decode.Decoder(InvalidGreeting
 }
 
 pub type JsonUnionsInput {
-  JsonUnionsInput(
-    contents: option.Option(MyUnion),
-  )
+  JsonUnionsInput(contents: option.Option(MyUnion))
 }
 
 pub fn encode_json_unions_input_struct(input: JsonUnionsInput) -> json.Json {
@@ -558,9 +541,7 @@ pub fn decode_integer_enum_int_enum() -> decode.Decoder(IntegerEnum) {
 }
 
 pub type GreetingStruct {
-  GreetingStruct(
-    hi: option.Option(String),
-  )
+  GreetingStruct(hi: option.Option(String))
 }
 
 pub fn encode_greeting_struct_struct(input: GreetingStruct) -> json.Json {
@@ -596,9 +577,7 @@ pub fn decode_greeting_struct_struct_params() -> decode.Decoder(GreetingStruct) 
 }
 
 pub type JsonUnionsOutput {
-  JsonUnionsOutput(
-    contents: option.Option(MyUnion),
-  )
+  JsonUnionsOutput(contents: option.Option(MyUnion))
 }
 
 pub fn encode_json_unions_output_struct(input: JsonUnionsOutput) -> json.Json {
@@ -654,12 +633,7 @@ pub fn decode_no_input_and_output_output_struct_params() -> decode.Decoder(NoInp
 }
 
 pub type OperationWithDefaultsInput {
-  OperationWithDefaultsInput(
-    client_optional_defaults: option.Option(ClientOptionalDefaults),
-    defaults: option.Option(Defaults),
-    other_top_level_default: option.Option(Int),
-    top_level_default: option.Option(String),
-  )
+  OperationWithDefaultsInput(client_optional_defaults: option.Option(ClientOptionalDefaults), defaults: option.Option(Defaults), other_top_level_default: option.Option(Int), top_level_default: option.Option(String))
 }
 
 pub fn encode_operation_with_defaults_input_struct(input: OperationWithDefaultsInput) -> json.Json {
@@ -731,9 +705,7 @@ pub fn decode_operation_with_defaults_input_struct_params() -> decode.Decoder(Op
 }
 
 pub type ClientOptionalDefaults {
-  ClientOptionalDefaults(
-    member: option.Option(Int),
-  )
+  ClientOptionalDefaults(member: option.Option(Int))
 }
 
 pub fn encode_client_optional_defaults_struct(input: ClientOptionalDefaults) -> json.Json {
@@ -769,36 +741,7 @@ pub fn decode_client_optional_defaults_struct_params() -> decode.Decoder(ClientO
 }
 
 pub type Defaults {
-  Defaults(
-    default_blob: option.Option(BitArray),
-    default_boolean: option.Option(Bool),
-    default_byte: option.Option(Int),
-    default_document_boolean: option.Option(json.Json),
-    default_document_list: option.Option(json.Json),
-    default_document_map: option.Option(json.Json),
-    default_document_string: option.Option(json.Json),
-    default_double: option.Option(json_float.SmithyFloat),
-    default_enum: option.Option(TestEnum),
-    default_float: option.Option(json_float.SmithyFloat),
-    default_int_enum: option.Option(TestIntEnum),
-    default_integer: option.Option(Int),
-    default_list: option.Option(List(String)),
-    default_long: option.Option(Int),
-    default_map: option.Option(dict.Dict(String, String)),
-    default_null_document: option.Option(json.Json),
-    default_short: option.Option(Int),
-    default_string: option.Option(String),
-    default_timestamp: option.Option(Int),
-    empty_blob: option.Option(BitArray),
-    empty_string: option.Option(String),
-    false_boolean: option.Option(Bool),
-    zero_byte: option.Option(Int),
-    zero_double: option.Option(json_float.SmithyFloat),
-    zero_float: option.Option(json_float.SmithyFloat),
-    zero_integer: option.Option(Int),
-    zero_long: option.Option(Int),
-    zero_short: option.Option(Int),
-  )
+  Defaults(default_blob: option.Option(BitArray), default_boolean: option.Option(Bool), default_byte: option.Option(Int), default_document_boolean: option.Option(json.Json), default_document_list: option.Option(json.Json), default_document_map: option.Option(json.Json), default_document_string: option.Option(json.Json), default_double: option.Option(json_float.SmithyFloat), default_enum: option.Option(TestEnum), default_float: option.Option(json_float.SmithyFloat), default_int_enum: option.Option(TestIntEnum), default_integer: option.Option(Int), default_list: option.Option(List(String)), default_long: option.Option(Int), default_map: option.Option(dict.Dict(String, String)), default_null_document: option.Option(json.Json), default_short: option.Option(Int), default_string: option.Option(String), default_timestamp: option.Option(Int), empty_blob: option.Option(BitArray), empty_string: option.Option(String), false_boolean: option.Option(Bool), zero_byte: option.Option(Int), zero_double: option.Option(json_float.SmithyFloat), zero_float: option.Option(json_float.SmithyFloat), zero_integer: option.Option(Int), zero_long: option.Option(Int), zero_short: option.Option(Int))
 }
 
 pub fn encode_defaults_struct(input: Defaults) -> json.Json {
@@ -1205,36 +1148,7 @@ pub fn decode_test_int_enum_int_enum() -> decode.Decoder(TestIntEnum) {
 }
 
 pub type OperationWithDefaultsOutput {
-  OperationWithDefaultsOutput(
-    default_blob: option.Option(BitArray),
-    default_boolean: option.Option(Bool),
-    default_byte: option.Option(Int),
-    default_document_boolean: option.Option(json.Json),
-    default_document_list: option.Option(json.Json),
-    default_document_map: option.Option(json.Json),
-    default_document_string: option.Option(json.Json),
-    default_double: option.Option(json_float.SmithyFloat),
-    default_enum: option.Option(TestEnum),
-    default_float: option.Option(json_float.SmithyFloat),
-    default_int_enum: option.Option(TestIntEnum),
-    default_integer: option.Option(Int),
-    default_list: option.Option(List(String)),
-    default_long: option.Option(Int),
-    default_map: option.Option(dict.Dict(String, String)),
-    default_null_document: option.Option(json.Json),
-    default_short: option.Option(Int),
-    default_string: option.Option(String),
-    default_timestamp: option.Option(Int),
-    empty_blob: option.Option(BitArray),
-    empty_string: option.Option(String),
-    false_boolean: option.Option(Bool),
-    zero_byte: option.Option(Int),
-    zero_double: option.Option(json_float.SmithyFloat),
-    zero_float: option.Option(json_float.SmithyFloat),
-    zero_integer: option.Option(Int),
-    zero_long: option.Option(Int),
-    zero_short: option.Option(Int),
-  )
+  OperationWithDefaultsOutput(default_blob: option.Option(BitArray), default_boolean: option.Option(Bool), default_byte: option.Option(Int), default_document_boolean: option.Option(json.Json), default_document_list: option.Option(json.Json), default_document_map: option.Option(json.Json), default_document_string: option.Option(json.Json), default_double: option.Option(json_float.SmithyFloat), default_enum: option.Option(TestEnum), default_float: option.Option(json_float.SmithyFloat), default_int_enum: option.Option(TestIntEnum), default_integer: option.Option(Int), default_list: option.Option(List(String)), default_long: option.Option(Int), default_map: option.Option(dict.Dict(String, String)), default_null_document: option.Option(json.Json), default_short: option.Option(Int), default_string: option.Option(String), default_timestamp: option.Option(Int), empty_blob: option.Option(BitArray), empty_string: option.Option(String), false_boolean: option.Option(Bool), zero_byte: option.Option(Int), zero_double: option.Option(json_float.SmithyFloat), zero_float: option.Option(json_float.SmithyFloat), zero_integer: option.Option(Int), zero_long: option.Option(Int), zero_short: option.Option(Int))
 }
 
 pub fn encode_operation_with_defaults_output_struct(input: OperationWithDefaultsOutput) -> json.Json {
@@ -1594,9 +1508,7 @@ pub fn decode_operation_with_defaults_output_struct_params() -> decode.Decoder(O
 }
 
 pub type OperationWithNestedStructureInput {
-  OperationWithNestedStructureInput(
-    top_level: option.Option(TopLevel),
-  )
+  OperationWithNestedStructureInput(top_level: option.Option(TopLevel))
 }
 
 pub fn encode_operation_with_nested_structure_input_struct(input: OperationWithNestedStructureInput) -> json.Json {
@@ -1632,11 +1544,7 @@ pub fn decode_operation_with_nested_structure_input_struct_params() -> decode.De
 }
 
 pub type TopLevel {
-  TopLevel(
-    dialog: option.Option(Dialog),
-    dialog_list: option.Option(List(Dialog)),
-    dialog_map: option.Option(dict.Dict(String, Dialog)),
-  )
+  TopLevel(dialog: option.Option(Dialog), dialog_list: option.Option(List(Dialog)), dialog_map: option.Option(dict.Dict(String, Dialog)))
 }
 
 pub fn encode_top_level_struct(input: TopLevel) -> json.Json {
@@ -1696,11 +1604,7 @@ pub fn decode_top_level_struct_params() -> decode.Decoder(TopLevel) {
 }
 
 pub type Dialog {
-  Dialog(
-    farewell: option.Option(Farewell),
-    greeting: option.Option(String),
-    language: option.Option(String),
-  )
+  Dialog(farewell: option.Option(Farewell), greeting: option.Option(String), language: option.Option(String))
 }
 
 pub fn encode_dialog_struct(input: Dialog) -> json.Json {
@@ -1760,9 +1664,7 @@ pub fn decode_dialog_struct_params() -> decode.Decoder(Dialog) {
 }
 
 pub type Farewell {
-  Farewell(
-    phrase: option.Option(String),
-  )
+  Farewell(phrase: option.Option(String))
 }
 
 pub fn encode_farewell_struct(input: Farewell) -> json.Json {
@@ -1798,11 +1700,7 @@ pub fn decode_farewell_struct_params() -> decode.Decoder(Farewell) {
 }
 
 pub type OperationWithNestedStructureOutput {
-  OperationWithNestedStructureOutput(
-    dialog: option.Option(Dialog),
-    dialog_list: option.Option(List(Dialog)),
-    dialog_map: option.Option(dict.Dict(String, Dialog)),
-  )
+  OperationWithNestedStructureOutput(dialog: option.Option(Dialog), dialog_list: option.Option(List(Dialog)), dialog_map: option.Option(dict.Dict(String, Dialog)))
 }
 
 pub fn encode_operation_with_nested_structure_output_struct(input: OperationWithNestedStructureOutput) -> json.Json {
@@ -1862,20 +1760,7 @@ pub fn decode_operation_with_nested_structure_output_struct_params() -> decode.D
 }
 
 pub type OperationWithRequiredMembersOutput {
-  OperationWithRequiredMembersOutput(
-    required_blob: option.Option(BitArray),
-    required_boolean: option.Option(Bool),
-    required_byte: option.Option(Int),
-    required_double: option.Option(json_float.SmithyFloat),
-    required_float: option.Option(json_float.SmithyFloat),
-    required_integer: option.Option(Int),
-    required_list: option.Option(List(String)),
-    required_long: option.Option(Int),
-    required_map: option.Option(dict.Dict(String, String)),
-    required_short: option.Option(Int),
-    required_string: option.Option(String),
-    required_timestamp: option.Option(Int),
-  )
+  OperationWithRequiredMembersOutput(required_blob: option.Option(BitArray), required_boolean: option.Option(Bool), required_byte: option.Option(Int), required_double: option.Option(json_float.SmithyFloat), required_float: option.Option(json_float.SmithyFloat), required_integer: option.Option(Int), required_list: option.Option(List(String)), required_long: option.Option(Int), required_map: option.Option(dict.Dict(String, String)), required_short: option.Option(Int), required_string: option.Option(String), required_timestamp: option.Option(Int))
 }
 
 pub fn encode_operation_with_required_members_output_struct(input: OperationWithRequiredMembersOutput) -> json.Json {
@@ -2043,22 +1928,7 @@ pub fn decode_operation_with_required_members_output_struct_params() -> decode.D
 }
 
 pub type OperationWithRequiredMembersWithDefaultsOutput {
-  OperationWithRequiredMembersWithDefaultsOutput(
-    required_blob: option.Option(BitArray),
-    required_boolean: option.Option(Bool),
-    required_byte: option.Option(Int),
-    required_double: option.Option(json_float.SmithyFloat),
-    required_enum: option.Option(RequiredEnum),
-    required_float: option.Option(json_float.SmithyFloat),
-    required_int_enum: option.Option(RequiredIntEnum),
-    required_integer: option.Option(Int),
-    required_list: option.Option(List(String)),
-    required_long: option.Option(Int),
-    required_map: option.Option(dict.Dict(String, String)),
-    required_short: option.Option(Int),
-    required_string: option.Option(String),
-    required_timestamp: option.Option(Int),
-  )
+  OperationWithRequiredMembersWithDefaultsOutput(required_blob: option.Option(BitArray), required_boolean: option.Option(Bool), required_byte: option.Option(Int), required_double: option.Option(json_float.SmithyFloat), required_enum: option.Option(RequiredEnum), required_float: option.Option(json_float.SmithyFloat), required_int_enum: option.Option(RequiredIntEnum), required_integer: option.Option(Int), required_list: option.Option(List(String)), required_long: option.Option(Int), required_map: option.Option(dict.Dict(String, String)), required_short: option.Option(Int), required_string: option.Option(String), required_timestamp: option.Option(Int))
 }
 
 pub fn encode_operation_with_required_members_with_defaults_output_struct(input: OperationWithRequiredMembersWithDefaultsOutput) -> json.Json {
@@ -2297,10 +2167,7 @@ pub fn decode_required_int_enum_int_enum() -> decode.Decoder(RequiredIntEnum) {
 }
 
 pub type SimpleScalarPropertiesInput {
-  SimpleScalarPropertiesInput(
-    double_value: option.Option(json_float.SmithyFloat),
-    float_value: option.Option(json_float.SmithyFloat),
-  )
+  SimpleScalarPropertiesInput(double_value: option.Option(json_float.SmithyFloat), float_value: option.Option(json_float.SmithyFloat))
 }
 
 pub fn encode_simple_scalar_properties_input_struct(input: SimpleScalarPropertiesInput) -> json.Json {
@@ -2348,10 +2215,7 @@ pub fn decode_simple_scalar_properties_input_struct_params() -> decode.Decoder(S
 }
 
 pub type SimpleScalarPropertiesOutput {
-  SimpleScalarPropertiesOutput(
-    double_value: option.Option(json_float.SmithyFloat),
-    float_value: option.Option(json_float.SmithyFloat),
-  )
+  SimpleScalarPropertiesOutput(double_value: option.Option(json_float.SmithyFloat), float_value: option.Option(json_float.SmithyFloat))
 }
 
 pub fn encode_simple_scalar_properties_output_struct(input: SimpleScalarPropertiesOutput) -> json.Json {

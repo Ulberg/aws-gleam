@@ -16,6 +16,8 @@
 //// producing broken Gleam.
 
 import codegen/client
+import codegen/code
+import codegen/named_shapes
 import codegen/types.{
   type MemberDef, type Resolved, REnum, RIntEnum, RList, RMap, RStruct, RUnion,
 }
@@ -581,75 +583,22 @@ fn resolve_io_type(
 // ---------- type definitions ----------
 
 fn emit_record_def(name: String, members: List(MemberDef)) -> String {
-  case members {
-    [] -> "pub type " <> name <> " {\n  " <> name <> "\n}\n\n"
-    _ ->
-      "pub type "
-      <> name
-      <> " {\n  "
-      <> name
-      <> "(\n"
-      <> list.fold(members, "", fn(acc, m) {
-        acc
-        <> "    "
-        <> m.snake_name
-        <> ": option.Option("
-        <> types.gleam_type(m.target)
-        <> "),\n"
-      })
-      <> "  )\n}\n\n"
-  }
+  code.render(named_shapes.record_def(name, members)) <> "\n"
 }
 
 fn emit_enum_def(name: String, variants: List(types.EnumVariant)) -> String {
-  case variants {
-    [] -> "pub type " <> name <> " {\n  " <> name <> "Unknown\n}\n\n"
-    _ ->
-      "pub type "
-      <> name
-      <> " {\n"
-      <> list.fold(variants, "", fn(acc, v) {
-        acc <> "  " <> v.gleam_ctor <> "\n"
-      })
-      <> "}\n\n"
-  }
+  code.render(named_shapes.enum_def(name, variants)) <> "\n"
 }
 
 fn emit_int_enum_def(
   name: String,
   variants: List(types.IntEnumVariant),
 ) -> String {
-  case variants {
-    [] -> "pub type " <> name <> " {\n  " <> name <> "Unknown\n}\n\n"
-    _ ->
-      "pub type "
-      <> name
-      <> " {\n"
-      <> list.fold(variants, "", fn(acc, v) {
-        acc <> "  " <> v.gleam_ctor <> "\n"
-      })
-      <> "}\n\n"
-  }
+  code.render(named_shapes.int_enum_def(name, variants)) <> "\n"
 }
 
 fn emit_union_def(name: String, members: List(MemberDef)) -> String {
-  case members {
-    [] -> "pub type " <> name <> " {\n  " <> name <> "Empty\n}\n\n"
-    _ ->
-      "pub type "
-      <> name
-      <> " {\n"
-      <> list.fold(members, "", fn(acc, m) {
-        acc
-        <> "  "
-        <> name
-        <> pascalize_member(m.member_name)
-        <> "("
-        <> types.gleam_type(m.target)
-        <> ")\n"
-      })
-      <> "}\n\n"
-  }
+  code.render(named_shapes.union_def(name, members)) <> "\n"
 }
 
 // ---------- encoder helpers ----------

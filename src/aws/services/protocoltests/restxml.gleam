@@ -48,29 +48,7 @@ pub fn with_http_send(client: Client, send: http_send.Send) -> Client {
 }
 
 pub type AllQueryStringTypesInput {
-  AllQueryStringTypesInput(
-    query_boolean: option.Option(Bool),
-    query_boolean_list: option.Option(List(Bool)),
-    query_byte: option.Option(Int),
-    query_double: option.Option(json_float.SmithyFloat),
-    query_double_list: option.Option(List(json_float.SmithyFloat)),
-    query_enum: option.Option(FooEnum),
-    query_enum_list: option.Option(List(FooEnum)),
-    query_float: option.Option(json_float.SmithyFloat),
-    query_integer: option.Option(Int),
-    query_integer_enum: option.Option(IntegerEnum),
-    query_integer_enum_list: option.Option(List(IntegerEnum)),
-    query_integer_list: option.Option(List(Int)),
-    query_integer_set: option.Option(List(Int)),
-    query_long: option.Option(Int),
-    query_params_map_of_strings: option.Option(dict.Dict(String, String)),
-    query_short: option.Option(Int),
-    query_string: option.Option(String),
-    query_string_list: option.Option(List(String)),
-    query_string_set: option.Option(List(String)),
-    query_timestamp: option.Option(Int),
-    query_timestamp_list: option.Option(List(Int)),
-  )
+  AllQueryStringTypesInput(query_boolean: option.Option(Bool), query_boolean_list: option.Option(List(Bool)), query_byte: option.Option(Int), query_double: option.Option(json_float.SmithyFloat), query_double_list: option.Option(List(json_float.SmithyFloat)), query_enum: option.Option(FooEnum), query_enum_list: option.Option(List(FooEnum)), query_float: option.Option(json_float.SmithyFloat), query_integer: option.Option(Int), query_integer_enum: option.Option(IntegerEnum), query_integer_enum_list: option.Option(List(IntegerEnum)), query_integer_list: option.Option(List(Int)), query_integer_set: option.Option(List(Int)), query_long: option.Option(Int), query_params_map_of_strings: option.Option(dict.Dict(String, String)), query_short: option.Option(Int), query_string: option.Option(String), query_string_list: option.Option(List(String)), query_string_set: option.Option(List(String)), query_timestamp: option.Option(Int), query_timestamp_list: option.Option(List(Int)))
 }
 
 pub fn encode_all_query_string_types_input_struct(input: AllQueryStringTypesInput) -> json.Json {
@@ -377,9 +355,7 @@ pub fn decode_integer_enum_int_enum() -> decode.Decoder(IntegerEnum) {
 }
 
 pub type BodyWithXmlNameInputOutput {
-  BodyWithXmlNameInputOutput(
-    nested: option.Option(PayloadWithXmlName),
-  )
+  BodyWithXmlNameInputOutput(nested: option.Option(PayloadWithXmlName))
 }
 
 pub fn encode_body_with_xml_name_input_output_struct(input: BodyWithXmlNameInputOutput) -> json.Json {
@@ -426,9 +402,7 @@ pub fn decode_body_with_xml_name_input_output_xml(elem: xml_decode.Element) -> R
 }
 
 pub type PayloadWithXmlName {
-  PayloadWithXmlName(
-    name: option.Option(String),
-  )
+  PayloadWithXmlName(name: option.Option(String))
 }
 
 pub fn encode_payload_with_xml_name_struct(input: PayloadWithXmlName) -> json.Json {
@@ -475,10 +449,7 @@ pub fn decode_payload_with_xml_name_xml(elem: xml_decode.Element) -> Result(Payl
 }
 
 pub type ConstantAndVariableQueryStringInput {
-  ConstantAndVariableQueryStringInput(
-    baz: option.Option(String),
-    maybe_set: option.Option(String),
-  )
+  ConstantAndVariableQueryStringInput(baz: option.Option(String), maybe_set: option.Option(String))
 }
 
 pub fn encode_constant_and_variable_query_string_input_struct(input: ConstantAndVariableQueryStringInput) -> json.Json {
@@ -531,9 +502,7 @@ pub fn decode_constant_and_variable_query_string_input_xml(elem: xml_decode.Elem
 }
 
 pub type ConstantQueryStringInput {
-  ConstantQueryStringInput(
-    hello: option.Option(String),
-  )
+  ConstantQueryStringInput(hello: option.Option(String))
 }
 
 pub fn encode_constant_query_string_input_struct(input: ConstantQueryStringInput) -> json.Json {
@@ -576,9 +545,7 @@ pub fn decode_constant_query_string_input_xml(elem: xml_decode.Element) -> Resul
 }
 
 pub type ContentTypeParametersInput {
-  ContentTypeParametersInput(
-    value: option.Option(Int),
-  )
+  ContentTypeParametersInput(value: option.Option(Int))
 }
 
 pub fn encode_content_type_parameters_input_struct(input: ContentTypeParametersInput) -> json.Json {
@@ -653,9 +620,7 @@ pub fn decode_content_type_parameters_output_xml(_elem: xml_decode.Element) -> R
 }
 
 pub type DatetimeOffsetsOutput {
-  DatetimeOffsetsOutput(
-    datetime: option.Option(Int),
-  )
+  DatetimeOffsetsOutput(datetime: option.Option(Int))
 }
 
 pub fn encode_datetime_offsets_output_struct(input: DatetimeOffsetsOutput) -> json.Json {
@@ -758,9 +723,7 @@ pub fn decode_empty_input_and_empty_output_output_xml(_elem: xml_decode.Element)
 }
 
 pub type HostLabelHeaderInput {
-  HostLabelHeaderInput(
-    account_id: option.Option(String),
-  )
+  HostLabelHeaderInput(account_id: option.Option(String))
 }
 
 pub fn encode_host_label_header_input_struct(input: HostLabelHeaderInput) -> json.Json {
@@ -803,9 +766,7 @@ pub fn decode_host_label_header_input_xml(elem: xml_decode.Element) -> Result(Ho
 }
 
 pub type EndpointWithHostLabelOperationRequest {
-  EndpointWithHostLabelOperationRequest(
-    label: option.Option(String),
-  )
+  EndpointWithHostLabelOperationRequest(label: option.Option(String))
 }
 
 pub fn encode_endpoint_with_host_label_operation_request_struct(input: EndpointWithHostLabelOperationRequest) -> json.Json {
@@ -852,9 +813,7 @@ pub fn decode_endpoint_with_host_label_operation_request_xml(elem: xml_decode.El
 }
 
 pub type FlattenedXmlMapRequest {
-  FlattenedXmlMapRequest(
-    my_map: option.Option(dict.Dict(String, FooEnum)),
-  )
+  FlattenedXmlMapRequest(my_map: option.Option(dict.Dict(String, FooEnum)))
 }
 
 pub fn encode_flattened_xml_map_request_struct(input: FlattenedXmlMapRequest) -> json.Json {
@@ -902,9 +861,7 @@ pub fn decode_flattened_xml_map_request_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type FlattenedXmlMapResponse {
-  FlattenedXmlMapResponse(
-    my_map: option.Option(dict.Dict(String, FooEnum)),
-  )
+  FlattenedXmlMapResponse(my_map: option.Option(dict.Dict(String, FooEnum)))
 }
 
 pub fn encode_flattened_xml_map_response_struct(input: FlattenedXmlMapResponse) -> json.Json {
@@ -952,9 +909,7 @@ pub fn decode_flattened_xml_map_response_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type FlattenedXmlMapWithXmlNameRequest {
-  FlattenedXmlMapWithXmlNameRequest(
-    my_map: option.Option(dict.Dict(String, String)),
-  )
+  FlattenedXmlMapWithXmlNameRequest(my_map: option.Option(dict.Dict(String, String)))
 }
 
 pub fn encode_flattened_xml_map_with_xml_name_request_struct(input: FlattenedXmlMapWithXmlNameRequest) -> json.Json {
@@ -1002,9 +957,7 @@ pub fn decode_flattened_xml_map_with_xml_name_request_xml(elem: xml_decode.Eleme
 }
 
 pub type FlattenedXmlMapWithXmlNameResponse {
-  FlattenedXmlMapWithXmlNameResponse(
-    my_map: option.Option(dict.Dict(String, String)),
-  )
+  FlattenedXmlMapWithXmlNameResponse(my_map: option.Option(dict.Dict(String, String)))
 }
 
 pub fn encode_flattened_xml_map_with_xml_name_response_struct(input: FlattenedXmlMapWithXmlNameResponse) -> json.Json {
@@ -1052,9 +1005,7 @@ pub fn decode_flattened_xml_map_with_xml_name_response_xml(elem: xml_decode.Elem
 }
 
 pub type FlattenedXmlMapWithXmlNamespaceOutput {
-  FlattenedXmlMapWithXmlNamespaceOutput(
-    my_map: option.Option(dict.Dict(String, String)),
-  )
+  FlattenedXmlMapWithXmlNamespaceOutput(my_map: option.Option(dict.Dict(String, String)))
 }
 
 pub fn encode_flattened_xml_map_with_xml_namespace_output_struct(input: FlattenedXmlMapWithXmlNamespaceOutput) -> json.Json {
@@ -1102,9 +1053,7 @@ pub fn decode_flattened_xml_map_with_xml_namespace_output_xml(elem: xml_decode.E
 }
 
 pub type FractionalSecondsOutput {
-  FractionalSecondsOutput(
-    datetime: option.Option(Int),
-  )
+  FractionalSecondsOutput(datetime: option.Option(Int))
 }
 
 pub fn encode_fractional_seconds_output_struct(input: FractionalSecondsOutput) -> json.Json {
@@ -1151,9 +1100,7 @@ pub fn decode_fractional_seconds_output_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type GreetingWithErrorsOutput {
-  GreetingWithErrorsOutput(
-    greeting: option.Option(String),
-  )
+  GreetingWithErrorsOutput(greeting: option.Option(String))
 }
 
 pub fn encode_greeting_with_errors_output_struct(input: GreetingWithErrorsOutput) -> json.Json {
@@ -1196,11 +1143,7 @@ pub fn decode_greeting_with_errors_output_xml(elem: xml_decode.Element) -> Resul
 }
 
 pub type ComplexError {
-  ComplexError(
-    header: option.Option(String),
-    nested: option.Option(ComplexNestedErrorData),
-    top_level: option.Option(String),
-  )
+  ComplexError(header: option.Option(String), nested: option.Option(ComplexNestedErrorData), top_level: option.Option(String))
 }
 
 pub fn encode_complex_error_struct(input: ComplexError) -> json.Json {
@@ -1271,9 +1214,7 @@ pub fn decode_complex_error_xml(elem: xml_decode.Element) -> Result(ComplexError
 }
 
 pub type ComplexNestedErrorData {
-  ComplexNestedErrorData(
-    foo: option.Option(String),
-  )
+  ComplexNestedErrorData(foo: option.Option(String))
 }
 
 pub fn encode_complex_nested_error_data_struct(input: ComplexNestedErrorData) -> json.Json {
@@ -1320,9 +1261,7 @@ pub fn decode_complex_nested_error_data_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type InvalidGreeting {
-  InvalidGreeting(
-    message: option.Option(String),
-  )
+  InvalidGreeting(message: option.Option(String))
 }
 
 pub fn encode_invalid_greeting_struct(input: InvalidGreeting) -> json.Json {
@@ -1369,10 +1308,7 @@ pub fn decode_invalid_greeting_xml(elem: xml_decode.Element) -> Result(InvalidGr
 }
 
 pub type HttpEmptyPrefixHeadersInput {
-  HttpEmptyPrefixHeadersInput(
-    prefix_headers: option.Option(dict.Dict(String, String)),
-    specific_header: option.Option(String),
-  )
+  HttpEmptyPrefixHeadersInput(prefix_headers: option.Option(dict.Dict(String, String)), specific_header: option.Option(String))
 }
 
 pub fn encode_http_empty_prefix_headers_input_struct(input: HttpEmptyPrefixHeadersInput) -> json.Json {
@@ -1425,10 +1361,7 @@ pub fn decode_http_empty_prefix_headers_input_xml(elem: xml_decode.Element) -> R
 }
 
 pub type HttpEmptyPrefixHeadersOutput {
-  HttpEmptyPrefixHeadersOutput(
-    prefix_headers: option.Option(dict.Dict(String, String)),
-    specific_header: option.Option(String),
-  )
+  HttpEmptyPrefixHeadersOutput(prefix_headers: option.Option(dict.Dict(String, String)), specific_header: option.Option(String))
 }
 
 pub fn encode_http_empty_prefix_headers_output_struct(input: HttpEmptyPrefixHeadersOutput) -> json.Json {
@@ -1481,9 +1414,7 @@ pub fn decode_http_empty_prefix_headers_output_xml(elem: xml_decode.Element) -> 
 }
 
 pub type EnumPayloadInput {
-  EnumPayloadInput(
-    payload: option.Option(StringEnum),
-  )
+  EnumPayloadInput(payload: option.Option(StringEnum))
 }
 
 pub fn encode_enum_payload_input_struct(input: EnumPayloadInput) -> json.Json {
@@ -1545,10 +1476,7 @@ pub fn decode_string_enum_enum() -> decode.Decoder(StringEnum) {
 }
 
 pub type HttpPayloadTraitsInputOutput {
-  HttpPayloadTraitsInputOutput(
-    blob: option.Option(BitArray),
-    foo: option.Option(String),
-  )
+  HttpPayloadTraitsInputOutput(blob: option.Option(BitArray), foo: option.Option(String))
 }
 
 pub fn encode_http_payload_traits_input_output_struct(input: HttpPayloadTraitsInputOutput) -> json.Json {
@@ -1601,10 +1529,7 @@ pub fn decode_http_payload_traits_input_output_xml(elem: xml_decode.Element) -> 
 }
 
 pub type HttpPayloadTraitsWithMediaTypeInputOutput {
-  HttpPayloadTraitsWithMediaTypeInputOutput(
-    blob: option.Option(BitArray),
-    foo: option.Option(String),
-  )
+  HttpPayloadTraitsWithMediaTypeInputOutput(blob: option.Option(BitArray), foo: option.Option(String))
 }
 
 pub fn encode_http_payload_traits_with_media_type_input_output_struct(input: HttpPayloadTraitsWithMediaTypeInputOutput) -> json.Json {
@@ -1657,9 +1582,7 @@ pub fn decode_http_payload_traits_with_media_type_input_output_xml(elem: xml_dec
 }
 
 pub type HttpPayloadWithMemberXmlNameInputOutput {
-  HttpPayloadWithMemberXmlNameInputOutput(
-    nested: option.Option(PayloadWithXmlName),
-  )
+  HttpPayloadWithMemberXmlNameInputOutput(nested: option.Option(PayloadWithXmlName))
 }
 
 pub fn encode_http_payload_with_member_xml_name_input_output_struct(input: HttpPayloadWithMemberXmlNameInputOutput) -> json.Json {
@@ -1702,9 +1625,7 @@ pub fn decode_http_payload_with_member_xml_name_input_output_xml(elem: xml_decod
 }
 
 pub type HttpPayloadWithStructureInputOutput {
-  HttpPayloadWithStructureInputOutput(
-    nested: option.Option(NestedPayload),
-  )
+  HttpPayloadWithStructureInputOutput(nested: option.Option(NestedPayload))
 }
 
 pub fn encode_http_payload_with_structure_input_output_struct(input: HttpPayloadWithStructureInputOutput) -> json.Json {
@@ -1747,10 +1668,7 @@ pub fn decode_http_payload_with_structure_input_output_xml(elem: xml_decode.Elem
 }
 
 pub type NestedPayload {
-  NestedPayload(
-    greeting: option.Option(String),
-    name: option.Option(String),
-  )
+  NestedPayload(greeting: option.Option(String), name: option.Option(String))
 }
 
 pub fn encode_nested_payload_struct(input: NestedPayload) -> json.Json {
@@ -1811,9 +1729,7 @@ pub fn decode_nested_payload_xml(elem: xml_decode.Element) -> Result(NestedPaylo
 }
 
 pub type HttpPayloadWithUnionInputOutput {
-  HttpPayloadWithUnionInputOutput(
-    nested: option.Option(UnionPayload),
-  )
+  HttpPayloadWithUnionInputOutput(nested: option.Option(UnionPayload))
 }
 
 pub fn encode_http_payload_with_union_input_output_struct(input: HttpPayloadWithUnionInputOutput) -> json.Json {
@@ -1882,9 +1798,7 @@ pub fn decode_union_payload_union_params() -> decode.Decoder(UnionPayload) {
 }
 
 pub type HttpPayloadWithXmlNameInputOutput {
-  HttpPayloadWithXmlNameInputOutput(
-    nested: option.Option(PayloadWithXmlName),
-  )
+  HttpPayloadWithXmlNameInputOutput(nested: option.Option(PayloadWithXmlName))
 }
 
 pub fn encode_http_payload_with_xml_name_input_output_struct(input: HttpPayloadWithXmlNameInputOutput) -> json.Json {
@@ -1927,9 +1841,7 @@ pub fn decode_http_payload_with_xml_name_input_output_xml(elem: xml_decode.Eleme
 }
 
 pub type HttpPayloadWithXmlNamespaceInputOutput {
-  HttpPayloadWithXmlNamespaceInputOutput(
-    nested: option.Option(PayloadWithXmlNamespace),
-  )
+  HttpPayloadWithXmlNamespaceInputOutput(nested: option.Option(PayloadWithXmlNamespace))
 }
 
 pub fn encode_http_payload_with_xml_namespace_input_output_struct(input: HttpPayloadWithXmlNamespaceInputOutput) -> json.Json {
@@ -1972,9 +1884,7 @@ pub fn decode_http_payload_with_xml_namespace_input_output_xml(elem: xml_decode.
 }
 
 pub type PayloadWithXmlNamespace {
-  PayloadWithXmlNamespace(
-    name: option.Option(String),
-  )
+  PayloadWithXmlNamespace(name: option.Option(String))
 }
 
 pub fn encode_payload_with_xml_namespace_struct(input: PayloadWithXmlNamespace) -> json.Json {
@@ -2021,9 +1931,7 @@ pub fn decode_payload_with_xml_namespace_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type HttpPayloadWithXmlNamespaceAndPrefixInputOutput {
-  HttpPayloadWithXmlNamespaceAndPrefixInputOutput(
-    nested: option.Option(PayloadWithXmlNamespaceAndPrefix),
-  )
+  HttpPayloadWithXmlNamespaceAndPrefixInputOutput(nested: option.Option(PayloadWithXmlNamespaceAndPrefix))
 }
 
 pub fn encode_http_payload_with_xml_namespace_and_prefix_input_output_struct(input: HttpPayloadWithXmlNamespaceAndPrefixInputOutput) -> json.Json {
@@ -2066,9 +1974,7 @@ pub fn decode_http_payload_with_xml_namespace_and_prefix_input_output_xml(elem: 
 }
 
 pub type PayloadWithXmlNamespaceAndPrefix {
-  PayloadWithXmlNamespaceAndPrefix(
-    name: option.Option(String),
-  )
+  PayloadWithXmlNamespaceAndPrefix(name: option.Option(String))
 }
 
 pub fn encode_payload_with_xml_namespace_and_prefix_struct(input: PayloadWithXmlNamespaceAndPrefix) -> json.Json {
@@ -2115,10 +2021,7 @@ pub fn decode_payload_with_xml_namespace_and_prefix_xml(elem: xml_decode.Element
 }
 
 pub type HttpPrefixHeadersInputOutput {
-  HttpPrefixHeadersInputOutput(
-    foo: option.Option(String),
-    foo_map: option.Option(dict.Dict(String, String)),
-  )
+  HttpPrefixHeadersInputOutput(foo: option.Option(String), foo_map: option.Option(dict.Dict(String, String)))
 }
 
 pub fn encode_http_prefix_headers_input_output_struct(input: HttpPrefixHeadersInputOutput) -> json.Json {
@@ -2171,10 +2074,7 @@ pub fn decode_http_prefix_headers_input_output_xml(elem: xml_decode.Element) -> 
 }
 
 pub type HttpRequestWithFloatLabelsInput {
-  HttpRequestWithFloatLabelsInput(
-    double: option.Option(json_float.SmithyFloat),
-    float: option.Option(json_float.SmithyFloat),
-  )
+  HttpRequestWithFloatLabelsInput(double: option.Option(json_float.SmithyFloat), float: option.Option(json_float.SmithyFloat))
 }
 
 pub fn encode_http_request_with_float_labels_input_struct(input: HttpRequestWithFloatLabelsInput) -> json.Json {
@@ -2227,10 +2127,7 @@ pub fn decode_http_request_with_float_labels_input_xml(elem: xml_decode.Element)
 }
 
 pub type HttpRequestWithGreedyLabelInPathInput {
-  HttpRequestWithGreedyLabelInPathInput(
-    baz: option.Option(String),
-    foo: option.Option(String),
-  )
+  HttpRequestWithGreedyLabelInPathInput(baz: option.Option(String), foo: option.Option(String))
 }
 
 pub fn encode_http_request_with_greedy_label_in_path_input_struct(input: HttpRequestWithGreedyLabelInPathInput) -> json.Json {
@@ -2283,16 +2180,7 @@ pub fn decode_http_request_with_greedy_label_in_path_input_xml(elem: xml_decode.
 }
 
 pub type HttpRequestWithLabelsInput {
-  HttpRequestWithLabelsInput(
-    boolean: option.Option(Bool),
-    double: option.Option(json_float.SmithyFloat),
-    float: option.Option(json_float.SmithyFloat),
-    integer: option.Option(Int),
-    long: option.Option(Int),
-    short: option.Option(Int),
-    string: option.Option(String),
-    timestamp: option.Option(Int),
-  )
+  HttpRequestWithLabelsInput(boolean: option.Option(Bool), double: option.Option(json_float.SmithyFloat), float: option.Option(json_float.SmithyFloat), integer: option.Option(Int), long: option.Option(Int), short: option.Option(Int), string: option.Option(String), timestamp: option.Option(Int))
 }
 
 pub fn encode_http_request_with_labels_input_struct(input: HttpRequestWithLabelsInput) -> json.Json {
@@ -2405,15 +2293,7 @@ pub fn decode_http_request_with_labels_input_xml(elem: xml_decode.Element) -> Re
 }
 
 pub type HttpRequestWithLabelsAndTimestampFormatInput {
-  HttpRequestWithLabelsAndTimestampFormatInput(
-    default_format: option.Option(Int),
-    member_date_time: option.Option(Int),
-    member_epoch_seconds: option.Option(Int),
-    member_http_date: option.Option(Int),
-    target_date_time: option.Option(Int),
-    target_epoch_seconds: option.Option(Int),
-    target_http_date: option.Option(Int),
-  )
+  HttpRequestWithLabelsAndTimestampFormatInput(default_format: option.Option(Int), member_date_time: option.Option(Int), member_epoch_seconds: option.Option(Int), member_http_date: option.Option(Int), target_date_time: option.Option(Int), target_epoch_seconds: option.Option(Int), target_http_date: option.Option(Int))
 }
 
 pub fn encode_http_request_with_labels_and_timestamp_format_input_struct(input: HttpRequestWithLabelsAndTimestampFormatInput) -> json.Json {
@@ -2516,9 +2396,7 @@ pub fn decode_http_request_with_labels_and_timestamp_format_input_xml(elem: xml_
 }
 
 pub type HttpResponseCodeOutput {
-  HttpResponseCodeOutput(
-    status: option.Option(Int),
-  )
+  HttpResponseCodeOutput(status: option.Option(Int))
 }
 
 pub fn encode_http_response_code_output_struct(input: HttpResponseCodeOutput) -> json.Json {
@@ -2561,9 +2439,7 @@ pub fn decode_http_response_code_output_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type StringPayloadInput {
-  StringPayloadInput(
-    payload: option.Option(String),
-  )
+  StringPayloadInput(payload: option.Option(String))
 }
 
 pub fn encode_string_payload_input_struct(input: StringPayloadInput) -> json.Json {
@@ -2606,9 +2482,7 @@ pub fn decode_string_payload_input_xml(elem: xml_decode.Element) -> Result(Strin
 }
 
 pub type IgnoreQueryParamsInResponseOutput {
-  IgnoreQueryParamsInResponseOutput(
-    baz: option.Option(String),
-  )
+  IgnoreQueryParamsInResponseOutput(baz: option.Option(String))
 }
 
 pub fn encode_ignore_query_params_in_response_output_struct(input: IgnoreQueryParamsInResponseOutput) -> json.Json {
@@ -2651,24 +2525,7 @@ pub fn decode_ignore_query_params_in_response_output_xml(elem: xml_decode.Elemen
 }
 
 pub type InputAndOutputWithHeadersIO {
-  InputAndOutputWithHeadersIO(
-    header_boolean_list: option.Option(List(Bool)),
-    header_byte: option.Option(Int),
-    header_double: option.Option(json_float.SmithyFloat),
-    header_enum: option.Option(FooEnum),
-    header_enum_list: option.Option(List(FooEnum)),
-    header_false_bool: option.Option(Bool),
-    header_float: option.Option(json_float.SmithyFloat),
-    header_integer: option.Option(Int),
-    header_integer_list: option.Option(List(Int)),
-    header_long: option.Option(Int),
-    header_short: option.Option(Int),
-    header_string: option.Option(String),
-    header_string_list: option.Option(List(String)),
-    header_string_set: option.Option(List(String)),
-    header_timestamp_list: option.Option(List(Int)),
-    header_true_bool: option.Option(Bool),
-  )
+  InputAndOutputWithHeadersIO(header_boolean_list: option.Option(List(Bool)), header_byte: option.Option(Int), header_double: option.Option(json_float.SmithyFloat), header_enum: option.Option(FooEnum), header_enum_list: option.Option(List(FooEnum)), header_false_bool: option.Option(Bool), header_float: option.Option(json_float.SmithyFloat), header_integer: option.Option(Int), header_integer_list: option.Option(List(Int)), header_long: option.Option(Int), header_short: option.Option(Int), header_string: option.Option(String), header_string_list: option.Option(List(String)), header_string_set: option.Option(List(String)), header_timestamp_list: option.Option(List(Int)), header_true_bool: option.Option(Bool))
 }
 
 pub fn encode_input_and_output_with_headers_io_struct(input: InputAndOutputWithHeadersIO) -> json.Json {
@@ -2861,10 +2718,7 @@ pub fn decode_input_and_output_with_headers_io_xml(elem: xml_decode.Element) -> 
 }
 
 pub type NestedXmlMapsRequest {
-  NestedXmlMapsRequest(
-    flat_nested_map: option.Option(dict.Dict(String, dict.Dict(String, FooEnum))),
-    nested_map: option.Option(dict.Dict(String, dict.Dict(String, FooEnum))),
-  )
+  NestedXmlMapsRequest(flat_nested_map: option.Option(dict.Dict(String, dict.Dict(String, FooEnum))), nested_map: option.Option(dict.Dict(String, dict.Dict(String, FooEnum))))
 }
 
 pub fn encode_nested_xml_maps_request_struct(input: NestedXmlMapsRequest) -> json.Json {
@@ -2927,10 +2781,7 @@ pub fn decode_nested_xml_maps_request_xml(elem: xml_decode.Element) -> Result(Ne
 }
 
 pub type NestedXmlMapsResponse {
-  NestedXmlMapsResponse(
-    flat_nested_map: option.Option(dict.Dict(String, dict.Dict(String, FooEnum))),
-    nested_map: option.Option(dict.Dict(String, dict.Dict(String, FooEnum))),
-  )
+  NestedXmlMapsResponse(flat_nested_map: option.Option(dict.Dict(String, dict.Dict(String, FooEnum))), nested_map: option.Option(dict.Dict(String, dict.Dict(String, FooEnum))))
 }
 
 pub fn encode_nested_xml_maps_response_struct(input: NestedXmlMapsResponse) -> json.Json {
@@ -2993,9 +2844,7 @@ pub fn decode_nested_xml_maps_response_xml(elem: xml_decode.Element) -> Result(N
 }
 
 pub type NestedXmlMapWithXmlNameRequest {
-  NestedXmlMapWithXmlNameRequest(
-    nested_xml_map_with_xml_name_map: option.Option(dict.Dict(String, dict.Dict(String, String))),
-  )
+  NestedXmlMapWithXmlNameRequest(nested_xml_map_with_xml_name_map: option.Option(dict.Dict(String, dict.Dict(String, String))))
 }
 
 pub fn encode_nested_xml_map_with_xml_name_request_struct(input: NestedXmlMapWithXmlNameRequest) -> json.Json {
@@ -3043,9 +2892,7 @@ pub fn decode_nested_xml_map_with_xml_name_request_xml(elem: xml_decode.Element)
 }
 
 pub type NestedXmlMapWithXmlNameResponse {
-  NestedXmlMapWithXmlNameResponse(
-    nested_xml_map_with_xml_name_map: option.Option(dict.Dict(String, dict.Dict(String, String))),
-  )
+  NestedXmlMapWithXmlNameResponse(nested_xml_map_with_xml_name_map: option.Option(dict.Dict(String, dict.Dict(String, String))))
 }
 
 pub fn encode_nested_xml_map_with_xml_name_response_struct(input: NestedXmlMapWithXmlNameResponse) -> json.Json {
@@ -3121,11 +2968,7 @@ pub fn decode_no_input_and_output_output_xml(_elem: xml_decode.Element) -> Resul
 }
 
 pub type NullAndEmptyHeadersIO {
-  NullAndEmptyHeadersIO(
-    a: option.Option(String),
-    b: option.Option(String),
-    c: option.Option(List(String)),
-  )
+  NullAndEmptyHeadersIO(a: option.Option(String), b: option.Option(String), c: option.Option(List(String)))
 }
 
 pub fn encode_null_and_empty_headers_io_struct(input: NullAndEmptyHeadersIO) -> json.Json {
@@ -3188,10 +3031,7 @@ pub fn decode_null_and_empty_headers_io_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type OmitsNullSerializesEmptyStringInput {
-  OmitsNullSerializesEmptyStringInput(
-    empty_string: option.Option(String),
-    null_value: option.Option(String),
-  )
+  OmitsNullSerializesEmptyStringInput(empty_string: option.Option(String), null_value: option.Option(String))
 }
 
 pub fn encode_omits_null_serializes_empty_string_input_struct(input: OmitsNullSerializesEmptyStringInput) -> json.Json {
@@ -3244,10 +3084,7 @@ pub fn decode_omits_null_serializes_empty_string_input_xml(elem: xml_decode.Elem
 }
 
 pub type PutWithContentEncodingInput {
-  PutWithContentEncodingInput(
-    data: option.Option(String),
-    encoding: option.Option(String),
-  )
+  PutWithContentEncodingInput(data: option.Option(String), encoding: option.Option(String))
 }
 
 pub fn encode_put_with_content_encoding_input_struct(input: PutWithContentEncodingInput) -> json.Json {
@@ -3304,9 +3141,7 @@ pub fn decode_put_with_content_encoding_input_xml(elem: xml_decode.Element) -> R
 }
 
 pub type QueryIdempotencyTokenAutoFillInput {
-  QueryIdempotencyTokenAutoFillInput(
-    token: option.Option(String),
-  )
+  QueryIdempotencyTokenAutoFillInput(token: option.Option(String))
 }
 
 pub fn encode_query_idempotency_token_auto_fill_input_struct(input: QueryIdempotencyTokenAutoFillInput) -> json.Json {
@@ -3349,10 +3184,7 @@ pub fn decode_query_idempotency_token_auto_fill_input_xml(elem: xml_decode.Eleme
 }
 
 pub type QueryParamsAsStringListMapInput {
-  QueryParamsAsStringListMapInput(
-    foo: option.Option(dict.Dict(String, List(String))),
-    qux: option.Option(String),
-  )
+  QueryParamsAsStringListMapInput(foo: option.Option(dict.Dict(String, List(String))), qux: option.Option(String))
 }
 
 pub fn encode_query_params_as_string_list_map_input_struct(input: QueryParamsAsStringListMapInput) -> json.Json {
@@ -3405,10 +3237,7 @@ pub fn decode_query_params_as_string_list_map_input_xml(elem: xml_decode.Element
 }
 
 pub type QueryPrecedenceInput {
-  QueryPrecedenceInput(
-    baz: option.Option(dict.Dict(String, String)),
-    foo: option.Option(String),
-  )
+  QueryPrecedenceInput(baz: option.Option(dict.Dict(String, String)), foo: option.Option(String))
 }
 
 pub fn encode_query_precedence_input_struct(input: QueryPrecedenceInput) -> json.Json {
@@ -3461,9 +3290,7 @@ pub fn decode_query_precedence_input_xml(elem: xml_decode.Element) -> Result(Que
 }
 
 pub type RecursiveShapesRequest {
-  RecursiveShapesRequest(
-    nested: option.Option(RecursiveShapesInputOutputNested1),
-  )
+  RecursiveShapesRequest(nested: option.Option(RecursiveShapesInputOutputNested1))
 }
 
 pub fn encode_recursive_shapes_request_struct(input: RecursiveShapesRequest) -> json.Json {
@@ -3510,10 +3337,7 @@ pub fn decode_recursive_shapes_request_xml(elem: xml_decode.Element) -> Result(R
 }
 
 pub type RecursiveShapesInputOutputNested1 {
-  RecursiveShapesInputOutputNested1(
-    foo: option.Option(String),
-    nested: option.Option(RecursiveShapesInputOutputNested2),
-  )
+  RecursiveShapesInputOutputNested1(foo: option.Option(String), nested: option.Option(RecursiveShapesInputOutputNested2))
 }
 
 pub fn encode_recursive_shapes_input_output_nested1_struct(input: RecursiveShapesInputOutputNested1) -> json.Json {
@@ -3574,10 +3398,7 @@ pub fn decode_recursive_shapes_input_output_nested1_xml(elem: xml_decode.Element
 }
 
 pub type RecursiveShapesInputOutputNested2 {
-  RecursiveShapesInputOutputNested2(
-    bar: option.Option(String),
-    recursive_member: option.Option(RecursiveShapesInputOutputNested1),
-  )
+  RecursiveShapesInputOutputNested2(bar: option.Option(String), recursive_member: option.Option(RecursiveShapesInputOutputNested1))
 }
 
 pub fn encode_recursive_shapes_input_output_nested2_struct(input: RecursiveShapesInputOutputNested2) -> json.Json {
@@ -3638,9 +3459,7 @@ pub fn decode_recursive_shapes_input_output_nested2_xml(elem: xml_decode.Element
 }
 
 pub type RecursiveShapesResponse {
-  RecursiveShapesResponse(
-    nested: option.Option(RecursiveShapesInputOutputNested1),
-  )
+  RecursiveShapesResponse(nested: option.Option(RecursiveShapesInputOutputNested1))
 }
 
 pub fn encode_recursive_shapes_response_struct(input: RecursiveShapesResponse) -> json.Json {
@@ -3687,18 +3506,7 @@ pub fn decode_recursive_shapes_response_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type SimpleScalarPropertiesRequest {
-  SimpleScalarPropertiesRequest(
-    byte_value: option.Option(Int),
-    double_value: option.Option(json_float.SmithyFloat),
-    false_boolean_value: option.Option(Bool),
-    float_value: option.Option(json_float.SmithyFloat),
-    foo: option.Option(String),
-    integer_value: option.Option(Int),
-    long_value: option.Option(Int),
-    short_value: option.Option(Int),
-    string_value: option.Option(String),
-    true_boolean_value: option.Option(Bool),
-  )
+  SimpleScalarPropertiesRequest(byte_value: option.Option(Int), double_value: option.Option(json_float.SmithyFloat), false_boolean_value: option.Option(Bool), float_value: option.Option(json_float.SmithyFloat), foo: option.Option(String), integer_value: option.Option(Int), long_value: option.Option(Int), short_value: option.Option(Int), string_value: option.Option(String), true_boolean_value: option.Option(Bool))
 }
 
 pub fn encode_simple_scalar_properties_request_struct(input: SimpleScalarPropertiesRequest) -> json.Json {
@@ -3867,18 +3675,7 @@ pub fn decode_simple_scalar_properties_request_xml(elem: xml_decode.Element) -> 
 }
 
 pub type SimpleScalarPropertiesResponse {
-  SimpleScalarPropertiesResponse(
-    byte_value: option.Option(Int),
-    double_value: option.Option(json_float.SmithyFloat),
-    false_boolean_value: option.Option(Bool),
-    float_value: option.Option(json_float.SmithyFloat),
-    foo: option.Option(String),
-    integer_value: option.Option(Int),
-    long_value: option.Option(Int),
-    short_value: option.Option(Int),
-    string_value: option.Option(String),
-    true_boolean_value: option.Option(Bool),
-  )
+  SimpleScalarPropertiesResponse(byte_value: option.Option(Int), double_value: option.Option(json_float.SmithyFloat), false_boolean_value: option.Option(Bool), float_value: option.Option(json_float.SmithyFloat), foo: option.Option(String), integer_value: option.Option(Int), long_value: option.Option(Int), short_value: option.Option(Int), string_value: option.Option(String), true_boolean_value: option.Option(Bool))
 }
 
 pub fn encode_simple_scalar_properties_response_struct(input: SimpleScalarPropertiesResponse) -> json.Json {
@@ -4047,15 +3844,7 @@ pub fn decode_simple_scalar_properties_response_xml(elem: xml_decode.Element) ->
 }
 
 pub type TimestampFormatHeadersIO {
-  TimestampFormatHeadersIO(
-    default_format: option.Option(Int),
-    member_date_time: option.Option(Int),
-    member_epoch_seconds: option.Option(Int),
-    member_http_date: option.Option(Int),
-    target_date_time: option.Option(Int),
-    target_epoch_seconds: option.Option(Int),
-    target_http_date: option.Option(Int),
-  )
+  TimestampFormatHeadersIO(default_format: option.Option(Int), member_date_time: option.Option(Int), member_epoch_seconds: option.Option(Int), member_http_date: option.Option(Int), target_date_time: option.Option(Int), target_epoch_seconds: option.Option(Int), target_http_date: option.Option(Int))
 }
 
 pub fn encode_timestamp_format_headers_io_struct(input: TimestampFormatHeadersIO) -> json.Json {
@@ -4158,10 +3947,7 @@ pub fn decode_timestamp_format_headers_io_xml(elem: xml_decode.Element) -> Resul
 }
 
 pub type XmlAttributesRequest {
-  XmlAttributesRequest(
-    attr: option.Option(String),
-    foo: option.Option(String),
-  )
+  XmlAttributesRequest(attr: option.Option(String), foo: option.Option(String))
 }
 
 pub fn encode_xml_attributes_request_struct(input: XmlAttributesRequest) -> json.Json {
@@ -4222,10 +4008,7 @@ pub fn decode_xml_attributes_request_xml(elem: xml_decode.Element) -> Result(Xml
 }
 
 pub type XmlAttributesResponse {
-  XmlAttributesResponse(
-    attr: option.Option(String),
-    foo: option.Option(String),
-  )
+  XmlAttributesResponse(attr: option.Option(String), foo: option.Option(String))
 }
 
 pub fn encode_xml_attributes_response_struct(input: XmlAttributesResponse) -> json.Json {
@@ -4286,9 +4069,7 @@ pub fn decode_xml_attributes_response_xml(elem: xml_decode.Element) -> Result(Xm
 }
 
 pub type XmlAttributesInMiddleRequest {
-  XmlAttributesInMiddleRequest(
-    payload: option.Option(XmlAttributesInMiddlePayloadRequest),
-  )
+  XmlAttributesInMiddleRequest(payload: option.Option(XmlAttributesInMiddlePayloadRequest))
 }
 
 pub fn encode_xml_attributes_in_middle_request_struct(input: XmlAttributesInMiddleRequest) -> json.Json {
@@ -4331,11 +4112,7 @@ pub fn decode_xml_attributes_in_middle_request_xml(elem: xml_decode.Element) -> 
 }
 
 pub type XmlAttributesInMiddlePayloadRequest {
-  XmlAttributesInMiddlePayloadRequest(
-    attr: option.Option(String),
-    baz: option.Option(String),
-    foo: option.Option(String),
-  )
+  XmlAttributesInMiddlePayloadRequest(attr: option.Option(String), baz: option.Option(String), foo: option.Option(String))
 }
 
 pub fn encode_xml_attributes_in_middle_payload_request_struct(input: XmlAttributesInMiddlePayloadRequest) -> json.Json {
@@ -4410,9 +4187,7 @@ pub fn decode_xml_attributes_in_middle_payload_request_xml(elem: xml_decode.Elem
 }
 
 pub type XmlAttributesInMiddleResponse {
-  XmlAttributesInMiddleResponse(
-    payload: option.Option(XmlAttributesInMiddlePayloadResponse),
-  )
+  XmlAttributesInMiddleResponse(payload: option.Option(XmlAttributesInMiddlePayloadResponse))
 }
 
 pub fn encode_xml_attributes_in_middle_response_struct(input: XmlAttributesInMiddleResponse) -> json.Json {
@@ -4455,11 +4230,7 @@ pub fn decode_xml_attributes_in_middle_response_xml(elem: xml_decode.Element) ->
 }
 
 pub type XmlAttributesInMiddlePayloadResponse {
-  XmlAttributesInMiddlePayloadResponse(
-    attr: option.Option(String),
-    baz: option.Option(String),
-    foo: option.Option(String),
-  )
+  XmlAttributesInMiddlePayloadResponse(attr: option.Option(String), baz: option.Option(String), foo: option.Option(String))
 }
 
 pub fn encode_xml_attributes_in_middle_payload_response_struct(input: XmlAttributesInMiddlePayloadResponse) -> json.Json {
@@ -4534,9 +4305,7 @@ pub fn decode_xml_attributes_in_middle_payload_response_xml(elem: xml_decode.Ele
 }
 
 pub type XmlAttributesOnPayloadRequest {
-  XmlAttributesOnPayloadRequest(
-    payload: option.Option(XmlAttributesPayloadRequest),
-  )
+  XmlAttributesOnPayloadRequest(payload: option.Option(XmlAttributesPayloadRequest))
 }
 
 pub fn encode_xml_attributes_on_payload_request_struct(input: XmlAttributesOnPayloadRequest) -> json.Json {
@@ -4579,10 +4348,7 @@ pub fn decode_xml_attributes_on_payload_request_xml(elem: xml_decode.Element) ->
 }
 
 pub type XmlAttributesPayloadRequest {
-  XmlAttributesPayloadRequest(
-    attr: option.Option(String),
-    foo: option.Option(String),
-  )
+  XmlAttributesPayloadRequest(attr: option.Option(String), foo: option.Option(String))
 }
 
 pub fn encode_xml_attributes_payload_request_struct(input: XmlAttributesPayloadRequest) -> json.Json {
@@ -4643,9 +4409,7 @@ pub fn decode_xml_attributes_payload_request_xml(elem: xml_decode.Element) -> Re
 }
 
 pub type XmlAttributesOnPayloadResponse {
-  XmlAttributesOnPayloadResponse(
-    payload: option.Option(XmlAttributesPayloadResponse),
-  )
+  XmlAttributesOnPayloadResponse(payload: option.Option(XmlAttributesPayloadResponse))
 }
 
 pub fn encode_xml_attributes_on_payload_response_struct(input: XmlAttributesOnPayloadResponse) -> json.Json {
@@ -4688,10 +4452,7 @@ pub fn decode_xml_attributes_on_payload_response_xml(elem: xml_decode.Element) -
 }
 
 pub type XmlAttributesPayloadResponse {
-  XmlAttributesPayloadResponse(
-    attr: option.Option(String),
-    foo: option.Option(String),
-  )
+  XmlAttributesPayloadResponse(attr: option.Option(String), foo: option.Option(String))
 }
 
 pub fn encode_xml_attributes_payload_response_struct(input: XmlAttributesPayloadResponse) -> json.Json {
@@ -4752,9 +4513,7 @@ pub fn decode_xml_attributes_payload_response_xml(elem: xml_decode.Element) -> R
 }
 
 pub type XmlBlobsRequest {
-  XmlBlobsRequest(
-    data: option.Option(BitArray),
-  )
+  XmlBlobsRequest(data: option.Option(BitArray))
 }
 
 pub fn encode_xml_blobs_request_struct(input: XmlBlobsRequest) -> json.Json {
@@ -4801,9 +4560,7 @@ pub fn decode_xml_blobs_request_xml(elem: xml_decode.Element) -> Result(XmlBlobs
 }
 
 pub type XmlBlobsResponse {
-  XmlBlobsResponse(
-    data: option.Option(BitArray),
-  )
+  XmlBlobsResponse(data: option.Option(BitArray))
 }
 
 pub fn encode_xml_blobs_response_struct(input: XmlBlobsResponse) -> json.Json {
@@ -4850,9 +4607,7 @@ pub fn decode_xml_blobs_response_xml(elem: xml_decode.Element) -> Result(XmlBlob
 }
 
 pub type XmlEmptyBlobsRequest {
-  XmlEmptyBlobsRequest(
-    data: option.Option(BitArray),
-  )
+  XmlEmptyBlobsRequest(data: option.Option(BitArray))
 }
 
 pub fn encode_xml_empty_blobs_request_struct(input: XmlEmptyBlobsRequest) -> json.Json {
@@ -4899,9 +4654,7 @@ pub fn decode_xml_empty_blobs_request_xml(elem: xml_decode.Element) -> Result(Xm
 }
 
 pub type XmlEmptyBlobsResponse {
-  XmlEmptyBlobsResponse(
-    data: option.Option(BitArray),
-  )
+  XmlEmptyBlobsResponse(data: option.Option(BitArray))
 }
 
 pub fn encode_xml_empty_blobs_response_struct(input: XmlEmptyBlobsResponse) -> json.Json {
@@ -4948,23 +4701,7 @@ pub fn decode_xml_empty_blobs_response_xml(elem: xml_decode.Element) -> Result(X
 }
 
 pub type XmlEmptyListsRequest {
-  XmlEmptyListsRequest(
-    boolean_list: option.Option(List(Bool)),
-    enum_list: option.Option(List(FooEnum)),
-    flattened_list: option.Option(List(String)),
-    flattened_list2: option.Option(List(String)),
-    flattened_list_with_member_namespace: option.Option(List(String)),
-    flattened_list_with_namespace: option.Option(List(String)),
-    flattened_structure_list: option.Option(List(StructureListMember)),
-    int_enum_list: option.Option(List(IntegerEnum)),
-    integer_list: option.Option(List(Int)),
-    nested_string_list: option.Option(List(List(String))),
-    renamed_list_members: option.Option(List(String)),
-    string_list: option.Option(List(String)),
-    string_set: option.Option(List(String)),
-    structure_list: option.Option(List(StructureListMember)),
-    timestamp_list: option.Option(List(Int)),
-  )
+  XmlEmptyListsRequest(boolean_list: option.Option(List(Bool)), enum_list: option.Option(List(FooEnum)), flattened_list: option.Option(List(String)), flattened_list2: option.Option(List(String)), flattened_list_with_member_namespace: option.Option(List(String)), flattened_list_with_namespace: option.Option(List(String)), flattened_structure_list: option.Option(List(StructureListMember)), int_enum_list: option.Option(List(IntegerEnum)), integer_list: option.Option(List(Int)), nested_string_list: option.Option(List(List(String))), renamed_list_members: option.Option(List(String)), string_list: option.Option(List(String)), string_set: option.Option(List(String)), structure_list: option.Option(List(StructureListMember)), timestamp_list: option.Option(List(Int)))
 }
 
 pub fn encode_xml_empty_lists_request_struct(input: XmlEmptyListsRequest) -> json.Json {
@@ -5207,10 +4944,7 @@ pub fn decode_xml_empty_lists_request_xml(elem: xml_decode.Element) -> Result(Xm
 }
 
 pub type StructureListMember {
-  StructureListMember(
-    a: option.Option(String),
-    b: option.Option(String),
-  )
+  StructureListMember(a: option.Option(String), b: option.Option(String))
 }
 
 pub fn encode_structure_list_member_struct(input: StructureListMember) -> json.Json {
@@ -5271,23 +5005,7 @@ pub fn decode_structure_list_member_xml(elem: xml_decode.Element) -> Result(Stru
 }
 
 pub type XmlEmptyListsResponse {
-  XmlEmptyListsResponse(
-    boolean_list: option.Option(List(Bool)),
-    enum_list: option.Option(List(FooEnum)),
-    flattened_list: option.Option(List(String)),
-    flattened_list2: option.Option(List(String)),
-    flattened_list_with_member_namespace: option.Option(List(String)),
-    flattened_list_with_namespace: option.Option(List(String)),
-    flattened_structure_list: option.Option(List(StructureListMember)),
-    int_enum_list: option.Option(List(IntegerEnum)),
-    integer_list: option.Option(List(Int)),
-    nested_string_list: option.Option(List(List(String))),
-    renamed_list_members: option.Option(List(String)),
-    string_list: option.Option(List(String)),
-    string_set: option.Option(List(String)),
-    structure_list: option.Option(List(StructureListMember)),
-    timestamp_list: option.Option(List(Int)),
-  )
+  XmlEmptyListsResponse(boolean_list: option.Option(List(Bool)), enum_list: option.Option(List(FooEnum)), flattened_list: option.Option(List(String)), flattened_list2: option.Option(List(String)), flattened_list_with_member_namespace: option.Option(List(String)), flattened_list_with_namespace: option.Option(List(String)), flattened_structure_list: option.Option(List(StructureListMember)), int_enum_list: option.Option(List(IntegerEnum)), integer_list: option.Option(List(Int)), nested_string_list: option.Option(List(List(String))), renamed_list_members: option.Option(List(String)), string_list: option.Option(List(String)), string_set: option.Option(List(String)), structure_list: option.Option(List(StructureListMember)), timestamp_list: option.Option(List(Int)))
 }
 
 pub fn encode_xml_empty_lists_response_struct(input: XmlEmptyListsResponse) -> json.Json {
@@ -5530,9 +5248,7 @@ pub fn decode_xml_empty_lists_response_xml(elem: xml_decode.Element) -> Result(X
 }
 
 pub type XmlEmptyMapsRequest {
-  XmlEmptyMapsRequest(
-    my_map: option.Option(dict.Dict(String, GreetingStruct)),
-  )
+  XmlEmptyMapsRequest(my_map: option.Option(dict.Dict(String, GreetingStruct)))
 }
 
 pub fn encode_xml_empty_maps_request_struct(input: XmlEmptyMapsRequest) -> json.Json {
@@ -5580,9 +5296,7 @@ pub fn decode_xml_empty_maps_request_xml(elem: xml_decode.Element) -> Result(Xml
 }
 
 pub type GreetingStruct {
-  GreetingStruct(
-    hi: option.Option(String),
-  )
+  GreetingStruct(hi: option.Option(String))
 }
 
 pub fn encode_greeting_struct_struct(input: GreetingStruct) -> json.Json {
@@ -5629,9 +5343,7 @@ pub fn decode_greeting_struct_xml(elem: xml_decode.Element) -> Result(GreetingSt
 }
 
 pub type XmlEmptyMapsResponse {
-  XmlEmptyMapsResponse(
-    my_map: option.Option(dict.Dict(String, GreetingStruct)),
-  )
+  XmlEmptyMapsResponse(my_map: option.Option(dict.Dict(String, GreetingStruct)))
 }
 
 pub fn encode_xml_empty_maps_response_struct(input: XmlEmptyMapsResponse) -> json.Json {
@@ -5679,9 +5391,7 @@ pub fn decode_xml_empty_maps_response_xml(elem: xml_decode.Element) -> Result(Xm
 }
 
 pub type XmlEmptyStringsRequest {
-  XmlEmptyStringsRequest(
-    empty_string: option.Option(String),
-  )
+  XmlEmptyStringsRequest(empty_string: option.Option(String))
 }
 
 pub fn encode_xml_empty_strings_request_struct(input: XmlEmptyStringsRequest) -> json.Json {
@@ -5728,9 +5438,7 @@ pub fn decode_xml_empty_strings_request_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type XmlEmptyStringsResponse {
-  XmlEmptyStringsResponse(
-    empty_string: option.Option(String),
-  )
+  XmlEmptyStringsResponse(empty_string: option.Option(String))
 }
 
 pub fn encode_xml_empty_strings_response_struct(input: XmlEmptyStringsResponse) -> json.Json {
@@ -5777,14 +5485,7 @@ pub fn decode_xml_empty_strings_response_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type XmlEnumsRequest {
-  XmlEnumsRequest(
-    foo_enum1: option.Option(FooEnum),
-    foo_enum2: option.Option(FooEnum),
-    foo_enum3: option.Option(FooEnum),
-    foo_enum_list: option.Option(List(FooEnum)),
-    foo_enum_map: option.Option(dict.Dict(String, FooEnum)),
-    foo_enum_set: option.Option(List(FooEnum)),
-  )
+  XmlEnumsRequest(foo_enum1: option.Option(FooEnum), foo_enum2: option.Option(FooEnum), foo_enum3: option.Option(FooEnum), foo_enum_list: option.Option(List(FooEnum)), foo_enum_map: option.Option(dict.Dict(String, FooEnum)), foo_enum_set: option.Option(List(FooEnum)))
 }
 
 pub fn encode_xml_enums_request_struct(input: XmlEnumsRequest) -> json.Json {
@@ -5905,14 +5606,7 @@ pub fn decode_xml_enums_request_xml(elem: xml_decode.Element) -> Result(XmlEnums
 }
 
 pub type XmlEnumsResponse {
-  XmlEnumsResponse(
-    foo_enum1: option.Option(FooEnum),
-    foo_enum2: option.Option(FooEnum),
-    foo_enum3: option.Option(FooEnum),
-    foo_enum_list: option.Option(List(FooEnum)),
-    foo_enum_map: option.Option(dict.Dict(String, FooEnum)),
-    foo_enum_set: option.Option(List(FooEnum)),
-  )
+  XmlEnumsResponse(foo_enum1: option.Option(FooEnum), foo_enum2: option.Option(FooEnum), foo_enum3: option.Option(FooEnum), foo_enum_list: option.Option(List(FooEnum)), foo_enum_map: option.Option(dict.Dict(String, FooEnum)), foo_enum_set: option.Option(List(FooEnum)))
 }
 
 pub fn encode_xml_enums_response_struct(input: XmlEnumsResponse) -> json.Json {
@@ -6033,14 +5727,7 @@ pub fn decode_xml_enums_response_xml(elem: xml_decode.Element) -> Result(XmlEnum
 }
 
 pub type XmlIntEnumsRequest {
-  XmlIntEnumsRequest(
-    int_enum1: option.Option(IntegerEnum),
-    int_enum2: option.Option(IntegerEnum),
-    int_enum3: option.Option(IntegerEnum),
-    int_enum_list: option.Option(List(IntegerEnum)),
-    int_enum_map: option.Option(dict.Dict(String, IntegerEnum)),
-    int_enum_set: option.Option(List(IntegerEnum)),
-  )
+  XmlIntEnumsRequest(int_enum1: option.Option(IntegerEnum), int_enum2: option.Option(IntegerEnum), int_enum3: option.Option(IntegerEnum), int_enum_list: option.Option(List(IntegerEnum)), int_enum_map: option.Option(dict.Dict(String, IntegerEnum)), int_enum_set: option.Option(List(IntegerEnum)))
 }
 
 pub fn encode_xml_int_enums_request_struct(input: XmlIntEnumsRequest) -> json.Json {
@@ -6161,14 +5848,7 @@ pub fn decode_xml_int_enums_request_xml(elem: xml_decode.Element) -> Result(XmlI
 }
 
 pub type XmlIntEnumsResponse {
-  XmlIntEnumsResponse(
-    int_enum1: option.Option(IntegerEnum),
-    int_enum2: option.Option(IntegerEnum),
-    int_enum3: option.Option(IntegerEnum),
-    int_enum_list: option.Option(List(IntegerEnum)),
-    int_enum_map: option.Option(dict.Dict(String, IntegerEnum)),
-    int_enum_set: option.Option(List(IntegerEnum)),
-  )
+  XmlIntEnumsResponse(int_enum1: option.Option(IntegerEnum), int_enum2: option.Option(IntegerEnum), int_enum3: option.Option(IntegerEnum), int_enum_list: option.Option(List(IntegerEnum)), int_enum_map: option.Option(dict.Dict(String, IntegerEnum)), int_enum_set: option.Option(List(IntegerEnum)))
 }
 
 pub fn encode_xml_int_enums_response_struct(input: XmlIntEnumsResponse) -> json.Json {
@@ -6289,23 +5969,7 @@ pub fn decode_xml_int_enums_response_xml(elem: xml_decode.Element) -> Result(Xml
 }
 
 pub type XmlListsRequest {
-  XmlListsRequest(
-    boolean_list: option.Option(List(Bool)),
-    enum_list: option.Option(List(FooEnum)),
-    flattened_list: option.Option(List(String)),
-    flattened_list2: option.Option(List(String)),
-    flattened_list_with_member_namespace: option.Option(List(String)),
-    flattened_list_with_namespace: option.Option(List(String)),
-    flattened_structure_list: option.Option(List(StructureListMember)),
-    int_enum_list: option.Option(List(IntegerEnum)),
-    integer_list: option.Option(List(Int)),
-    nested_string_list: option.Option(List(List(String))),
-    renamed_list_members: option.Option(List(String)),
-    string_list: option.Option(List(String)),
-    string_set: option.Option(List(String)),
-    structure_list: option.Option(List(StructureListMember)),
-    timestamp_list: option.Option(List(Int)),
-  )
+  XmlListsRequest(boolean_list: option.Option(List(Bool)), enum_list: option.Option(List(FooEnum)), flattened_list: option.Option(List(String)), flattened_list2: option.Option(List(String)), flattened_list_with_member_namespace: option.Option(List(String)), flattened_list_with_namespace: option.Option(List(String)), flattened_structure_list: option.Option(List(StructureListMember)), int_enum_list: option.Option(List(IntegerEnum)), integer_list: option.Option(List(Int)), nested_string_list: option.Option(List(List(String))), renamed_list_members: option.Option(List(String)), string_list: option.Option(List(String)), string_set: option.Option(List(String)), structure_list: option.Option(List(StructureListMember)), timestamp_list: option.Option(List(Int)))
 }
 
 pub fn encode_xml_lists_request_struct(input: XmlListsRequest) -> json.Json {
@@ -6548,23 +6212,7 @@ pub fn decode_xml_lists_request_xml(elem: xml_decode.Element) -> Result(XmlLists
 }
 
 pub type XmlListsResponse {
-  XmlListsResponse(
-    boolean_list: option.Option(List(Bool)),
-    enum_list: option.Option(List(FooEnum)),
-    flattened_list: option.Option(List(String)),
-    flattened_list2: option.Option(List(String)),
-    flattened_list_with_member_namespace: option.Option(List(String)),
-    flattened_list_with_namespace: option.Option(List(String)),
-    flattened_structure_list: option.Option(List(StructureListMember)),
-    int_enum_list: option.Option(List(IntegerEnum)),
-    integer_list: option.Option(List(Int)),
-    nested_string_list: option.Option(List(List(String))),
-    renamed_list_members: option.Option(List(String)),
-    string_list: option.Option(List(String)),
-    string_set: option.Option(List(String)),
-    structure_list: option.Option(List(StructureListMember)),
-    timestamp_list: option.Option(List(Int)),
-  )
+  XmlListsResponse(boolean_list: option.Option(List(Bool)), enum_list: option.Option(List(FooEnum)), flattened_list: option.Option(List(String)), flattened_list2: option.Option(List(String)), flattened_list_with_member_namespace: option.Option(List(String)), flattened_list_with_namespace: option.Option(List(String)), flattened_structure_list: option.Option(List(StructureListMember)), int_enum_list: option.Option(List(IntegerEnum)), integer_list: option.Option(List(Int)), nested_string_list: option.Option(List(List(String))), renamed_list_members: option.Option(List(String)), string_list: option.Option(List(String)), string_set: option.Option(List(String)), structure_list: option.Option(List(StructureListMember)), timestamp_list: option.Option(List(Int)))
 }
 
 pub fn encode_xml_lists_response_struct(input: XmlListsResponse) -> json.Json {
@@ -6807,9 +6455,7 @@ pub fn decode_xml_lists_response_xml(elem: xml_decode.Element) -> Result(XmlList
 }
 
 pub type XmlMapsRequest {
-  XmlMapsRequest(
-    my_map: option.Option(dict.Dict(String, GreetingStruct)),
-  )
+  XmlMapsRequest(my_map: option.Option(dict.Dict(String, GreetingStruct)))
 }
 
 pub fn encode_xml_maps_request_struct(input: XmlMapsRequest) -> json.Json {
@@ -6857,9 +6503,7 @@ pub fn decode_xml_maps_request_xml(elem: xml_decode.Element) -> Result(XmlMapsRe
 }
 
 pub type XmlMapsResponse {
-  XmlMapsResponse(
-    my_map: option.Option(dict.Dict(String, GreetingStruct)),
-  )
+  XmlMapsResponse(my_map: option.Option(dict.Dict(String, GreetingStruct)))
 }
 
 pub fn encode_xml_maps_response_struct(input: XmlMapsResponse) -> json.Json {
@@ -6907,9 +6551,7 @@ pub fn decode_xml_maps_response_xml(elem: xml_decode.Element) -> Result(XmlMapsR
 }
 
 pub type XmlMapsXmlNameRequest {
-  XmlMapsXmlNameRequest(
-    my_map: option.Option(dict.Dict(String, GreetingStruct)),
-  )
+  XmlMapsXmlNameRequest(my_map: option.Option(dict.Dict(String, GreetingStruct)))
 }
 
 pub fn encode_xml_maps_xml_name_request_struct(input: XmlMapsXmlNameRequest) -> json.Json {
@@ -6957,9 +6599,7 @@ pub fn decode_xml_maps_xml_name_request_xml(elem: xml_decode.Element) -> Result(
 }
 
 pub type XmlMapsXmlNameResponse {
-  XmlMapsXmlNameResponse(
-    my_map: option.Option(dict.Dict(String, GreetingStruct)),
-  )
+  XmlMapsXmlNameResponse(my_map: option.Option(dict.Dict(String, GreetingStruct)))
 }
 
 pub fn encode_xml_maps_xml_name_response_struct(input: XmlMapsXmlNameResponse) -> json.Json {
@@ -7007,9 +6647,7 @@ pub fn decode_xml_maps_xml_name_response_xml(elem: xml_decode.Element) -> Result
 }
 
 pub type XmlMapWithXmlNamespaceRequest {
-  XmlMapWithXmlNamespaceRequest(
-    my_map: option.Option(dict.Dict(String, String)),
-  )
+  XmlMapWithXmlNamespaceRequest(my_map: option.Option(dict.Dict(String, String)))
 }
 
 pub fn encode_xml_map_with_xml_namespace_request_struct(input: XmlMapWithXmlNamespaceRequest) -> json.Json {
@@ -7057,9 +6695,7 @@ pub fn decode_xml_map_with_xml_namespace_request_xml(elem: xml_decode.Element) -
 }
 
 pub type XmlMapWithXmlNamespaceResponse {
-  XmlMapWithXmlNamespaceResponse(
-    my_map: option.Option(dict.Dict(String, String)),
-  )
+  XmlMapWithXmlNamespaceResponse(my_map: option.Option(dict.Dict(String, String)))
 }
 
 pub fn encode_xml_map_with_xml_namespace_response_struct(input: XmlMapWithXmlNamespaceResponse) -> json.Json {
@@ -7107,9 +6743,7 @@ pub fn decode_xml_map_with_xml_namespace_response_xml(elem: xml_decode.Element) 
 }
 
 pub type XmlNamespacesRequest {
-  XmlNamespacesRequest(
-    nested: option.Option(XmlNamespaceNested),
-  )
+  XmlNamespacesRequest(nested: option.Option(XmlNamespaceNested))
 }
 
 pub fn encode_xml_namespaces_request_struct(input: XmlNamespacesRequest) -> json.Json {
@@ -7156,10 +6790,7 @@ pub fn decode_xml_namespaces_request_xml(elem: xml_decode.Element) -> Result(Xml
 }
 
 pub type XmlNamespaceNested {
-  XmlNamespaceNested(
-    foo: option.Option(String),
-    values: option.Option(List(String)),
-  )
+  XmlNamespaceNested(foo: option.Option(String), values: option.Option(List(String)))
 }
 
 pub fn encode_xml_namespace_nested_struct(input: XmlNamespaceNested) -> json.Json {
@@ -7220,9 +6851,7 @@ pub fn decode_xml_namespace_nested_xml(elem: xml_decode.Element) -> Result(XmlNa
 }
 
 pub type XmlNamespacesResponse {
-  XmlNamespacesResponse(
-    nested: option.Option(XmlNamespaceNested),
-  )
+  XmlNamespacesResponse(nested: option.Option(XmlNamespaceNested))
 }
 
 pub fn encode_xml_namespaces_response_struct(input: XmlNamespacesResponse) -> json.Json {
@@ -7269,15 +6898,7 @@ pub fn decode_xml_namespaces_response_xml(elem: xml_decode.Element) -> Result(Xm
 }
 
 pub type XmlTimestampsRequest {
-  XmlTimestampsRequest(
-    date_time: option.Option(Int),
-    date_time_on_target: option.Option(Int),
-    epoch_seconds: option.Option(Int),
-    epoch_seconds_on_target: option.Option(Int),
-    http_date: option.Option(Int),
-    http_date_on_target: option.Option(Int),
-    normal: option.Option(Int),
-  )
+  XmlTimestampsRequest(date_time: option.Option(Int), date_time_on_target: option.Option(Int), epoch_seconds: option.Option(Int), epoch_seconds_on_target: option.Option(Int), http_date: option.Option(Int), http_date_on_target: option.Option(Int), normal: option.Option(Int))
 }
 
 pub fn encode_xml_timestamps_request_struct(input: XmlTimestampsRequest) -> json.Json {
@@ -7408,15 +7029,7 @@ pub fn decode_xml_timestamps_request_xml(elem: xml_decode.Element) -> Result(Xml
 }
 
 pub type XmlTimestampsResponse {
-  XmlTimestampsResponse(
-    date_time: option.Option(Int),
-    date_time_on_target: option.Option(Int),
-    epoch_seconds: option.Option(Int),
-    epoch_seconds_on_target: option.Option(Int),
-    http_date: option.Option(Int),
-    http_date_on_target: option.Option(Int),
-    normal: option.Option(Int),
-  )
+  XmlTimestampsResponse(date_time: option.Option(Int), date_time_on_target: option.Option(Int), epoch_seconds: option.Option(Int), epoch_seconds_on_target: option.Option(Int), http_date: option.Option(Int), http_date_on_target: option.Option(Int), normal: option.Option(Int))
 }
 
 pub fn encode_xml_timestamps_response_struct(input: XmlTimestampsResponse) -> json.Json {
@@ -7547,9 +7160,7 @@ pub fn decode_xml_timestamps_response_xml(elem: xml_decode.Element) -> Result(Xm
 }
 
 pub type XmlUnionsRequest {
-  XmlUnionsRequest(
-    union_value: option.Option(XmlUnionShape),
-  )
+  XmlUnionsRequest(union_value: option.Option(XmlUnionShape))
 }
 
 pub fn encode_xml_unions_request_struct(input: XmlUnionsRequest) -> json.Json {
@@ -7659,16 +7270,7 @@ pub fn decode_xml_union_shape_union_params() -> decode.Decoder(XmlUnionShape) {
 }
 
 pub type XmlNestedUnionStruct {
-  XmlNestedUnionStruct(
-    boolean_value: option.Option(Bool),
-    byte_value: option.Option(Int),
-    double_value: option.Option(json_float.SmithyFloat),
-    float_value: option.Option(json_float.SmithyFloat),
-    integer_value: option.Option(Int),
-    long_value: option.Option(Int),
-    short_value: option.Option(Int),
-    string_value: option.Option(String),
-  )
+  XmlNestedUnionStruct(boolean_value: option.Option(Bool), byte_value: option.Option(Int), double_value: option.Option(json_float.SmithyFloat), float_value: option.Option(json_float.SmithyFloat), integer_value: option.Option(Int), long_value: option.Option(Int), short_value: option.Option(Int), string_value: option.Option(String))
 }
 
 pub fn encode_xml_nested_union_struct_struct(input: XmlNestedUnionStruct) -> json.Json {
@@ -7813,9 +7415,7 @@ pub fn decode_xml_nested_union_struct_xml(elem: xml_decode.Element) -> Result(Xm
 }
 
 pub type XmlUnionsResponse {
-  XmlUnionsResponse(
-    union_value: option.Option(XmlUnionShape),
-  )
+  XmlUnionsResponse(union_value: option.Option(XmlUnionShape))
 }
 
 pub fn encode_xml_unions_response_struct(input: XmlUnionsResponse) -> json.Json {

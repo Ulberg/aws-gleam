@@ -104,8 +104,13 @@ pub type Variant {
   /// `Ctor` — zero-field variant.
   UnitVariant(name: String)
 
-  /// `Ctor(field1: T1, field2: T2, ...)`.
+  /// `Ctor(field1: T1, field2: T2, ...)` — labelled fields, suitable
+  /// for record variants. Generated structs use this form.
   Variant(name: String, fields: List(Param))
+
+  /// `Ctor(T1, T2, ...)` — positional fields. Generated unions use
+  /// this form so callers can pattern-match as `Ctor(x)` directly.
+  PositionalVariant(name: String, types: List(String))
 }
 
 pub type Param {
@@ -327,6 +332,7 @@ fn render_variant(v: Variant) -> String {
         |> string.join(", ")
       n <> "(" <> fields_str <> ")"
     }
+    PositionalVariant(name: n, types: ts) -> n <> "(" <> string.join(ts, ", ") <> ")"
   }
 }
 

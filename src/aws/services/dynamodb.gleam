@@ -43,10 +43,7 @@ pub fn with_http_send(client: Client, send: http_send.Send) -> Client {
 }
 
 pub type BatchExecuteStatementInput {
-  BatchExecuteStatementInput(
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-    statements: option.Option(List(BatchStatementRequest)),
-  )
+  BatchExecuteStatementInput(return_consumed_capacity: option.Option(ReturnConsumedCapacity), statements: option.Option(List(BatchStatementRequest)))
 }
 
 pub fn encode_batch_execute_statement_input_struct(input: BatchExecuteStatementInput) -> json.Json {
@@ -119,12 +116,7 @@ pub fn decode_return_consumed_capacity_enum() -> decode.Decoder(ReturnConsumedCa
 }
 
 pub type BatchStatementRequest {
-  BatchStatementRequest(
-    consistent_read: option.Option(Bool),
-    parameters: option.Option(List(AttributeValue)),
-    return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure),
-    statement: option.Option(String),
-  )
+  BatchStatementRequest(consistent_read: option.Option(Bool), parameters: option.Option(List(AttributeValue)), return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure), statement: option.Option(String))
 }
 
 pub fn encode_batch_statement_request_struct(input: BatchStatementRequest) -> json.Json {
@@ -280,10 +272,7 @@ pub fn decode_return_values_on_condition_check_failure_enum() -> decode.Decoder(
 }
 
 pub type BatchExecuteStatementOutput {
-  BatchExecuteStatementOutput(
-    consumed_capacity: option.Option(List(ConsumedCapacity)),
-    responses: option.Option(List(BatchStatementResponse)),
-  )
+  BatchExecuteStatementOutput(consumed_capacity: option.Option(List(ConsumedCapacity)), responses: option.Option(List(BatchStatementResponse)))
 }
 
 pub fn encode_batch_execute_statement_output_struct(input: BatchExecuteStatementOutput) -> json.Json {
@@ -331,15 +320,7 @@ pub fn decode_batch_execute_statement_output_struct_params() -> decode.Decoder(B
 }
 
 pub type ConsumedCapacity {
-  ConsumedCapacity(
-    capacity_units: option.Option(json_float.SmithyFloat),
-    global_secondary_indexes: option.Option(dict.Dict(String, Capacity)),
-    local_secondary_indexes: option.Option(dict.Dict(String, Capacity)),
-    read_capacity_units: option.Option(json_float.SmithyFloat),
-    table: option.Option(Capacity),
-    table_name: option.Option(String),
-    write_capacity_units: option.Option(json_float.SmithyFloat),
-  )
+  ConsumedCapacity(capacity_units: option.Option(json_float.SmithyFloat), global_secondary_indexes: option.Option(dict.Dict(String, Capacity)), local_secondary_indexes: option.Option(dict.Dict(String, Capacity)), read_capacity_units: option.Option(json_float.SmithyFloat), table: option.Option(Capacity), table_name: option.Option(String), write_capacity_units: option.Option(json_float.SmithyFloat))
 }
 
 pub fn encode_consumed_capacity_struct(input: ConsumedCapacity) -> json.Json {
@@ -447,11 +428,7 @@ pub fn decode_consumed_capacity_struct_params() -> decode.Decoder(ConsumedCapaci
 }
 
 pub type Capacity {
-  Capacity(
-    capacity_units: option.Option(json_float.SmithyFloat),
-    read_capacity_units: option.Option(json_float.SmithyFloat),
-    write_capacity_units: option.Option(json_float.SmithyFloat),
-  )
+  Capacity(capacity_units: option.Option(json_float.SmithyFloat), read_capacity_units: option.Option(json_float.SmithyFloat), write_capacity_units: option.Option(json_float.SmithyFloat))
 }
 
 pub fn encode_capacity_struct(input: Capacity) -> json.Json {
@@ -511,11 +488,7 @@ pub fn decode_capacity_struct_params() -> decode.Decoder(Capacity) {
 }
 
 pub type BatchStatementResponse {
-  BatchStatementResponse(
-    error: option.Option(BatchStatementError),
-    item: option.Option(dict.Dict(String, AttributeValue)),
-    table_name: option.Option(String),
-  )
+  BatchStatementResponse(error: option.Option(BatchStatementError), item: option.Option(dict.Dict(String, AttributeValue)), table_name: option.Option(String))
 }
 
 pub fn encode_batch_statement_response_struct(input: BatchStatementResponse) -> json.Json {
@@ -575,11 +548,7 @@ pub fn decode_batch_statement_response_struct_params() -> decode.Decoder(BatchSt
 }
 
 pub type BatchStatementError {
-  BatchStatementError(
-    code: option.Option(BatchStatementErrorCodeEnum),
-    item: option.Option(dict.Dict(String, AttributeValue)),
-    message: option.Option(String),
-  )
+  BatchStatementError(code: option.Option(BatchStatementErrorCodeEnum), item: option.Option(dict.Dict(String, AttributeValue)), message: option.Option(String))
 }
 
 pub fn encode_batch_statement_error_struct(input: BatchStatementError) -> json.Json {
@@ -688,9 +657,7 @@ pub fn decode_batch_statement_error_code_enum_enum() -> decode.Decoder(BatchStat
 }
 
 pub type InternalServerError {
-  InternalServerError(
-    message: option.Option(String),
-  )
+  InternalServerError(message: option.Option(String))
 }
 
 pub fn encode_internal_server_error_struct(input: InternalServerError) -> json.Json {
@@ -726,10 +693,7 @@ pub fn decode_internal_server_error_struct_params() -> decode.Decoder(InternalSe
 }
 
 pub type RequestLimitExceeded {
-  RequestLimitExceeded(
-    throttling_reasons: option.Option(List(ThrottlingReason)),
-    message: option.Option(String),
-  )
+  RequestLimitExceeded(throttling_reasons: option.Option(List(ThrottlingReason)), message: option.Option(String))
 }
 
 pub fn encode_request_limit_exceeded_struct(input: RequestLimitExceeded) -> json.Json {
@@ -777,10 +741,7 @@ pub fn decode_request_limit_exceeded_struct_params() -> decode.Decoder(RequestLi
 }
 
 pub type ThrottlingReason {
-  ThrottlingReason(
-    reason: option.Option(String),
-    resource: option.Option(String),
-  )
+  ThrottlingReason(reason: option.Option(String), resource: option.Option(String))
 }
 
 pub fn encode_throttling_reason_struct(input: ThrottlingReason) -> json.Json {
@@ -828,10 +789,7 @@ pub fn decode_throttling_reason_struct_params() -> decode.Decoder(ThrottlingReas
 }
 
 pub type ThrottlingException {
-  ThrottlingException(
-    message: option.Option(String),
-    throttling_reasons: option.Option(List(ThrottlingReason)),
-  )
+  ThrottlingException(message: option.Option(String), throttling_reasons: option.Option(List(ThrottlingReason)))
 }
 
 pub fn encode_throttling_exception_struct(input: ThrottlingException) -> json.Json {
@@ -879,10 +837,7 @@ pub fn decode_throttling_exception_struct_params() -> decode.Decoder(ThrottlingE
 }
 
 pub type BatchGetItemInput {
-  BatchGetItemInput(
-    request_items: option.Option(dict.Dict(String, KeysAndAttributes)),
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-  )
+  BatchGetItemInput(request_items: option.Option(dict.Dict(String, KeysAndAttributes)), return_consumed_capacity: option.Option(ReturnConsumedCapacity))
 }
 
 pub fn encode_batch_get_item_input_struct(input: BatchGetItemInput) -> json.Json {
@@ -930,13 +885,7 @@ pub fn decode_batch_get_item_input_struct_params() -> decode.Decoder(BatchGetIte
 }
 
 pub type KeysAndAttributes {
-  KeysAndAttributes(
-    attributes_to_get: option.Option(List(String)),
-    consistent_read: option.Option(Bool),
-    expression_attribute_names: option.Option(dict.Dict(String, String)),
-    keys: option.Option(List(dict.Dict(String, AttributeValue))),
-    projection_expression: option.Option(String),
-  )
+  KeysAndAttributes(attributes_to_get: option.Option(List(String)), consistent_read: option.Option(Bool), expression_attribute_names: option.Option(dict.Dict(String, String)), keys: option.Option(List(dict.Dict(String, AttributeValue))), projection_expression: option.Option(String))
 }
 
 pub fn encode_keys_and_attributes_struct(input: KeysAndAttributes) -> json.Json {
@@ -1020,11 +969,7 @@ pub fn decode_keys_and_attributes_struct_params() -> decode.Decoder(KeysAndAttri
 }
 
 pub type BatchGetItemOutput {
-  BatchGetItemOutput(
-    consumed_capacity: option.Option(List(ConsumedCapacity)),
-    responses: option.Option(dict.Dict(String, List(dict.Dict(String, AttributeValue)))),
-    unprocessed_keys: option.Option(dict.Dict(String, KeysAndAttributes)),
-  )
+  BatchGetItemOutput(consumed_capacity: option.Option(List(ConsumedCapacity)), responses: option.Option(dict.Dict(String, List(dict.Dict(String, AttributeValue)))), unprocessed_keys: option.Option(dict.Dict(String, KeysAndAttributes)))
 }
 
 pub fn encode_batch_get_item_output_struct(input: BatchGetItemOutput) -> json.Json {
@@ -1084,9 +1029,7 @@ pub fn decode_batch_get_item_output_struct_params() -> decode.Decoder(BatchGetIt
 }
 
 pub type InvalidEndpointException {
-  InvalidEndpointException(
-    message: option.Option(String),
-  )
+  InvalidEndpointException(message: option.Option(String))
 }
 
 pub fn encode_invalid_endpoint_exception_struct(input: InvalidEndpointException) -> json.Json {
@@ -1122,10 +1065,7 @@ pub fn decode_invalid_endpoint_exception_struct_params() -> decode.Decoder(Inval
 }
 
 pub type ProvisionedThroughputExceededException {
-  ProvisionedThroughputExceededException(
-    throttling_reasons: option.Option(List(ThrottlingReason)),
-    message: option.Option(String),
-  )
+  ProvisionedThroughputExceededException(throttling_reasons: option.Option(List(ThrottlingReason)), message: option.Option(String))
 }
 
 pub fn encode_provisioned_throughput_exceeded_exception_struct(input: ProvisionedThroughputExceededException) -> json.Json {
@@ -1173,9 +1113,7 @@ pub fn decode_provisioned_throughput_exceeded_exception_struct_params() -> decod
 }
 
 pub type ResourceNotFoundException {
-  ResourceNotFoundException(
-    message: option.Option(String),
-  )
+  ResourceNotFoundException(message: option.Option(String))
 }
 
 pub fn encode_resource_not_found_exception_struct(input: ResourceNotFoundException) -> json.Json {
@@ -1211,11 +1149,7 @@ pub fn decode_resource_not_found_exception_struct_params() -> decode.Decoder(Res
 }
 
 pub type BatchWriteItemInput {
-  BatchWriteItemInput(
-    request_items: option.Option(dict.Dict(String, List(WriteRequest))),
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-    return_item_collection_metrics: option.Option(ReturnItemCollectionMetrics),
-  )
+  BatchWriteItemInput(request_items: option.Option(dict.Dict(String, List(WriteRequest))), return_consumed_capacity: option.Option(ReturnConsumedCapacity), return_item_collection_metrics: option.Option(ReturnItemCollectionMetrics))
 }
 
 pub fn encode_batch_write_item_input_struct(input: BatchWriteItemInput) -> json.Json {
@@ -1275,10 +1209,7 @@ pub fn decode_batch_write_item_input_struct_params() -> decode.Decoder(BatchWrit
 }
 
 pub type WriteRequest {
-  WriteRequest(
-    delete_request: option.Option(DeleteRequest),
-    put_request: option.Option(PutRequest),
-  )
+  WriteRequest(delete_request: option.Option(DeleteRequest), put_request: option.Option(PutRequest))
 }
 
 pub fn encode_write_request_struct(input: WriteRequest) -> json.Json {
@@ -1326,9 +1257,7 @@ pub fn decode_write_request_struct_params() -> decode.Decoder(WriteRequest) {
 }
 
 pub type DeleteRequest {
-  DeleteRequest(
-    key: option.Option(dict.Dict(String, AttributeValue)),
-  )
+  DeleteRequest(key: option.Option(dict.Dict(String, AttributeValue)))
 }
 
 pub fn encode_delete_request_struct(input: DeleteRequest) -> json.Json {
@@ -1364,9 +1293,7 @@ pub fn decode_delete_request_struct_params() -> decode.Decoder(DeleteRequest) {
 }
 
 pub type PutRequest {
-  PutRequest(
-    item: option.Option(dict.Dict(String, AttributeValue)),
-  )
+  PutRequest(item: option.Option(dict.Dict(String, AttributeValue)))
 }
 
 pub fn encode_put_request_struct(input: PutRequest) -> json.Json {
@@ -1424,11 +1351,7 @@ pub fn decode_return_item_collection_metrics_enum() -> decode.Decoder(ReturnItem
 }
 
 pub type BatchWriteItemOutput {
-  BatchWriteItemOutput(
-    consumed_capacity: option.Option(List(ConsumedCapacity)),
-    item_collection_metrics: option.Option(dict.Dict(String, List(ItemCollectionMetrics))),
-    unprocessed_items: option.Option(dict.Dict(String, List(WriteRequest))),
-  )
+  BatchWriteItemOutput(consumed_capacity: option.Option(List(ConsumedCapacity)), item_collection_metrics: option.Option(dict.Dict(String, List(ItemCollectionMetrics))), unprocessed_items: option.Option(dict.Dict(String, List(WriteRequest))))
 }
 
 pub fn encode_batch_write_item_output_struct(input: BatchWriteItemOutput) -> json.Json {
@@ -1488,10 +1411,7 @@ pub fn decode_batch_write_item_output_struct_params() -> decode.Decoder(BatchWri
 }
 
 pub type ItemCollectionMetrics {
-  ItemCollectionMetrics(
-    item_collection_key: option.Option(dict.Dict(String, AttributeValue)),
-    size_estimate_range_gb: option.Option(List(json_float.SmithyFloat)),
-  )
+  ItemCollectionMetrics(item_collection_key: option.Option(dict.Dict(String, AttributeValue)), size_estimate_range_gb: option.Option(List(json_float.SmithyFloat)))
 }
 
 pub fn encode_item_collection_metrics_struct(input: ItemCollectionMetrics) -> json.Json {
@@ -1539,9 +1459,7 @@ pub fn decode_item_collection_metrics_struct_params() -> decode.Decoder(ItemColl
 }
 
 pub type ItemCollectionSizeLimitExceededException {
-  ItemCollectionSizeLimitExceededException(
-    message: option.Option(String),
-  )
+  ItemCollectionSizeLimitExceededException(message: option.Option(String))
 }
 
 pub fn encode_item_collection_size_limit_exceeded_exception_struct(input: ItemCollectionSizeLimitExceededException) -> json.Json {
@@ -1577,9 +1495,7 @@ pub fn decode_item_collection_size_limit_exceeded_exception_struct_params() -> d
 }
 
 pub type ReplicatedWriteConflictException {
-  ReplicatedWriteConflictException(
-    message: option.Option(String),
-  )
+  ReplicatedWriteConflictException(message: option.Option(String))
 }
 
 pub fn encode_replicated_write_conflict_exception_struct(input: ReplicatedWriteConflictException) -> json.Json {
@@ -1615,10 +1531,7 @@ pub fn decode_replicated_write_conflict_exception_struct_params() -> decode.Deco
 }
 
 pub type CreateBackupInput {
-  CreateBackupInput(
-    backup_name: option.Option(String),
-    table_name: option.Option(String),
-  )
+  CreateBackupInput(backup_name: option.Option(String), table_name: option.Option(String))
 }
 
 pub fn encode_create_backup_input_struct(input: CreateBackupInput) -> json.Json {
@@ -1666,9 +1579,7 @@ pub fn decode_create_backup_input_struct_params() -> decode.Decoder(CreateBackup
 }
 
 pub type CreateBackupOutput {
-  CreateBackupOutput(
-    backup_details: option.Option(BackupDetails),
-  )
+  CreateBackupOutput(backup_details: option.Option(BackupDetails))
 }
 
 pub fn encode_create_backup_output_struct(input: CreateBackupOutput) -> json.Json {
@@ -1704,15 +1615,7 @@ pub fn decode_create_backup_output_struct_params() -> decode.Decoder(CreateBacku
 }
 
 pub type BackupDetails {
-  BackupDetails(
-    backup_arn: option.Option(String),
-    backup_creation_date_time: option.Option(Int),
-    backup_expiry_date_time: option.Option(Int),
-    backup_name: option.Option(String),
-    backup_size_bytes: option.Option(Int),
-    backup_status: option.Option(BackupStatus),
-    backup_type: option.Option(BackupType),
-  )
+  BackupDetails(backup_arn: option.Option(String), backup_creation_date_time: option.Option(Int), backup_expiry_date_time: option.Option(Int), backup_name: option.Option(String), backup_size_bytes: option.Option(Int), backup_status: option.Option(BackupStatus), backup_type: option.Option(BackupType))
 }
 
 pub fn encode_backup_details_struct(input: BackupDetails) -> json.Json {
@@ -1870,9 +1773,7 @@ pub fn decode_backup_type_enum() -> decode.Decoder(BackupType) {
 }
 
 pub type BackupInUseException {
-  BackupInUseException(
-    message: option.Option(String),
-  )
+  BackupInUseException(message: option.Option(String))
 }
 
 pub fn encode_backup_in_use_exception_struct(input: BackupInUseException) -> json.Json {
@@ -1908,9 +1809,7 @@ pub fn decode_backup_in_use_exception_struct_params() -> decode.Decoder(BackupIn
 }
 
 pub type ContinuousBackupsUnavailableException {
-  ContinuousBackupsUnavailableException(
-    message: option.Option(String),
-  )
+  ContinuousBackupsUnavailableException(message: option.Option(String))
 }
 
 pub fn encode_continuous_backups_unavailable_exception_struct(input: ContinuousBackupsUnavailableException) -> json.Json {
@@ -1946,9 +1845,7 @@ pub fn decode_continuous_backups_unavailable_exception_struct_params() -> decode
 }
 
 pub type LimitExceededException {
-  LimitExceededException(
-    message: option.Option(String),
-  )
+  LimitExceededException(message: option.Option(String))
 }
 
 pub fn encode_limit_exceeded_exception_struct(input: LimitExceededException) -> json.Json {
@@ -1984,9 +1881,7 @@ pub fn decode_limit_exceeded_exception_struct_params() -> decode.Decoder(LimitEx
 }
 
 pub type TableInUseException {
-  TableInUseException(
-    message: option.Option(String),
-  )
+  TableInUseException(message: option.Option(String))
 }
 
 pub fn encode_table_in_use_exception_struct(input: TableInUseException) -> json.Json {
@@ -2022,9 +1917,7 @@ pub fn decode_table_in_use_exception_struct_params() -> decode.Decoder(TableInUs
 }
 
 pub type TableNotFoundException {
-  TableNotFoundException(
-    message: option.Option(String),
-  )
+  TableNotFoundException(message: option.Option(String))
 }
 
 pub fn encode_table_not_found_exception_struct(input: TableNotFoundException) -> json.Json {
@@ -2060,10 +1953,7 @@ pub fn decode_table_not_found_exception_struct_params() -> decode.Decoder(TableN
 }
 
 pub type CreateGlobalTableInput {
-  CreateGlobalTableInput(
-    global_table_name: option.Option(String),
-    replication_group: option.Option(List(Replica)),
-  )
+  CreateGlobalTableInput(global_table_name: option.Option(String), replication_group: option.Option(List(Replica)))
 }
 
 pub fn encode_create_global_table_input_struct(input: CreateGlobalTableInput) -> json.Json {
@@ -2111,9 +2001,7 @@ pub fn decode_create_global_table_input_struct_params() -> decode.Decoder(Create
 }
 
 pub type Replica {
-  Replica(
-    region_name: option.Option(String),
-  )
+  Replica(region_name: option.Option(String))
 }
 
 pub fn encode_replica_struct(input: Replica) -> json.Json {
@@ -2149,9 +2037,7 @@ pub fn decode_replica_struct_params() -> decode.Decoder(Replica) {
 }
 
 pub type CreateGlobalTableOutput {
-  CreateGlobalTableOutput(
-    global_table_description: option.Option(GlobalTableDescription),
-  )
+  CreateGlobalTableOutput(global_table_description: option.Option(GlobalTableDescription))
 }
 
 pub fn encode_create_global_table_output_struct(input: CreateGlobalTableOutput) -> json.Json {
@@ -2187,13 +2073,7 @@ pub fn decode_create_global_table_output_struct_params() -> decode.Decoder(Creat
 }
 
 pub type GlobalTableDescription {
-  GlobalTableDescription(
-    creation_date_time: option.Option(Int),
-    global_table_arn: option.Option(String),
-    global_table_name: option.Option(String),
-    global_table_status: option.Option(GlobalTableStatus),
-    replication_group: option.Option(List(ReplicaDescription)),
-  )
+  GlobalTableDescription(creation_date_time: option.Option(Int), global_table_arn: option.Option(String), global_table_name: option.Option(String), global_table_status: option.Option(GlobalTableStatus), replication_group: option.Option(List(ReplicaDescription)))
 }
 
 pub fn encode_global_table_description_struct(input: GlobalTableDescription) -> json.Json {
@@ -2305,21 +2185,7 @@ pub fn decode_global_table_status_enum() -> decode.Decoder(GlobalTableStatus) {
 }
 
 pub type ReplicaDescription {
-  ReplicaDescription(
-    global_secondary_indexes: option.Option(List(ReplicaGlobalSecondaryIndexDescription)),
-    global_table_settings_replication_mode: option.Option(GlobalTableSettingsReplicationMode),
-    kms_master_key_id: option.Option(String),
-    on_demand_throughput_override: option.Option(OnDemandThroughputOverride),
-    provisioned_throughput_override: option.Option(ProvisionedThroughputOverride),
-    region_name: option.Option(String),
-    replica_arn: option.Option(String),
-    replica_inaccessible_date_time: option.Option(Int),
-    replica_status: option.Option(ReplicaStatus),
-    replica_status_description: option.Option(String),
-    replica_status_percent_progress: option.Option(String),
-    replica_table_class_summary: option.Option(TableClassSummary),
-    warm_throughput: option.Option(TableWarmThroughputDescription),
-  )
+  ReplicaDescription(global_secondary_indexes: option.Option(List(ReplicaGlobalSecondaryIndexDescription)), global_table_settings_replication_mode: option.Option(GlobalTableSettingsReplicationMode), kms_master_key_id: option.Option(String), on_demand_throughput_override: option.Option(OnDemandThroughputOverride), provisioned_throughput_override: option.Option(ProvisionedThroughputOverride), region_name: option.Option(String), replica_arn: option.Option(String), replica_inaccessible_date_time: option.Option(Int), replica_status: option.Option(ReplicaStatus), replica_status_description: option.Option(String), replica_status_percent_progress: option.Option(String), replica_table_class_summary: option.Option(TableClassSummary), warm_throughput: option.Option(TableWarmThroughputDescription))
 }
 
 pub fn encode_replica_description_struct(input: ReplicaDescription) -> json.Json {
@@ -2499,12 +2365,7 @@ pub fn decode_replica_description_struct_params() -> decode.Decoder(ReplicaDescr
 }
 
 pub type ReplicaGlobalSecondaryIndexDescription {
-  ReplicaGlobalSecondaryIndexDescription(
-    index_name: option.Option(String),
-    on_demand_throughput_override: option.Option(OnDemandThroughputOverride),
-    provisioned_throughput_override: option.Option(ProvisionedThroughputOverride),
-    warm_throughput: option.Option(GlobalSecondaryIndexWarmThroughputDescription),
-  )
+  ReplicaGlobalSecondaryIndexDescription(index_name: option.Option(String), on_demand_throughput_override: option.Option(OnDemandThroughputOverride), provisioned_throughput_override: option.Option(ProvisionedThroughputOverride), warm_throughput: option.Option(GlobalSecondaryIndexWarmThroughputDescription))
 }
 
 pub fn encode_replica_global_secondary_index_description_struct(input: ReplicaGlobalSecondaryIndexDescription) -> json.Json {
@@ -2576,9 +2437,7 @@ pub fn decode_replica_global_secondary_index_description_struct_params() -> deco
 }
 
 pub type OnDemandThroughputOverride {
-  OnDemandThroughputOverride(
-    max_read_request_units: option.Option(Int),
-  )
+  OnDemandThroughputOverride(max_read_request_units: option.Option(Int))
 }
 
 pub fn encode_on_demand_throughput_override_struct(input: OnDemandThroughputOverride) -> json.Json {
@@ -2614,9 +2473,7 @@ pub fn decode_on_demand_throughput_override_struct_params() -> decode.Decoder(On
 }
 
 pub type ProvisionedThroughputOverride {
-  ProvisionedThroughputOverride(
-    read_capacity_units: option.Option(Int),
-  )
+  ProvisionedThroughputOverride(read_capacity_units: option.Option(Int))
 }
 
 pub fn encode_provisioned_throughput_override_struct(input: ProvisionedThroughputOverride) -> json.Json {
@@ -2652,11 +2509,7 @@ pub fn decode_provisioned_throughput_override_struct_params() -> decode.Decoder(
 }
 
 pub type GlobalSecondaryIndexWarmThroughputDescription {
-  GlobalSecondaryIndexWarmThroughputDescription(
-    read_units_per_second: option.Option(Int),
-    status: option.Option(IndexStatus),
-    write_units_per_second: option.Option(Int),
-  )
+  GlobalSecondaryIndexWarmThroughputDescription(read_units_per_second: option.Option(Int), status: option.Option(IndexStatus), write_units_per_second: option.Option(Int))
 }
 
 pub fn encode_global_secondary_index_warm_throughput_description_struct(input: GlobalSecondaryIndexWarmThroughputDescription) -> json.Json {
@@ -2815,10 +2668,7 @@ pub fn decode_replica_status_enum() -> decode.Decoder(ReplicaStatus) {
 }
 
 pub type TableClassSummary {
-  TableClassSummary(
-    last_update_date_time: option.Option(Int),
-    table_class: option.Option(TableClass),
-  )
+  TableClassSummary(last_update_date_time: option.Option(Int), table_class: option.Option(TableClass))
 }
 
 pub fn encode_table_class_summary_struct(input: TableClassSummary) -> json.Json {
@@ -2888,11 +2738,7 @@ pub fn decode_table_class_enum() -> decode.Decoder(TableClass) {
 }
 
 pub type TableWarmThroughputDescription {
-  TableWarmThroughputDescription(
-    read_units_per_second: option.Option(Int),
-    status: option.Option(TableStatus),
-    write_units_per_second: option.Option(Int),
-  )
+  TableWarmThroughputDescription(read_units_per_second: option.Option(Int), status: option.Option(TableStatus), write_units_per_second: option.Option(Int))
 }
 
 pub fn encode_table_warm_throughput_description_struct(input: TableWarmThroughputDescription) -> json.Json {
@@ -2992,9 +2838,7 @@ pub fn decode_table_status_enum() -> decode.Decoder(TableStatus) {
 }
 
 pub type GlobalTableAlreadyExistsException {
-  GlobalTableAlreadyExistsException(
-    message: option.Option(String),
-  )
+  GlobalTableAlreadyExistsException(message: option.Option(String))
 }
 
 pub fn encode_global_table_already_exists_exception_struct(input: GlobalTableAlreadyExistsException) -> json.Json {
@@ -3030,25 +2874,7 @@ pub fn decode_global_table_already_exists_exception_struct_params() -> decode.De
 }
 
 pub type CreateTableInput {
-  CreateTableInput(
-    attribute_definitions: option.Option(List(AttributeDefinition)),
-    billing_mode: option.Option(BillingMode),
-    deletion_protection_enabled: option.Option(Bool),
-    global_secondary_indexes: option.Option(List(GlobalSecondaryIndex)),
-    global_table_settings_replication_mode: option.Option(GlobalTableSettingsReplicationMode),
-    global_table_source_arn: option.Option(String),
-    key_schema: option.Option(List(KeySchemaElement)),
-    local_secondary_indexes: option.Option(List(LocalSecondaryIndex)),
-    on_demand_throughput: option.Option(OnDemandThroughput),
-    provisioned_throughput: option.Option(ProvisionedThroughput),
-    resource_policy: option.Option(String),
-    sse_specification: option.Option(SSESpecification),
-    stream_specification: option.Option(StreamSpecification),
-    table_class: option.Option(TableClass),
-    table_name: option.Option(String),
-    tags: option.Option(List(Tag)),
-    warm_throughput: option.Option(WarmThroughput),
-  )
+  CreateTableInput(attribute_definitions: option.Option(List(AttributeDefinition)), billing_mode: option.Option(BillingMode), deletion_protection_enabled: option.Option(Bool), global_secondary_indexes: option.Option(List(GlobalSecondaryIndex)), global_table_settings_replication_mode: option.Option(GlobalTableSettingsReplicationMode), global_table_source_arn: option.Option(String), key_schema: option.Option(List(KeySchemaElement)), local_secondary_indexes: option.Option(List(LocalSecondaryIndex)), on_demand_throughput: option.Option(OnDemandThroughput), provisioned_throughput: option.Option(ProvisionedThroughput), resource_policy: option.Option(String), sse_specification: option.Option(SSESpecification), stream_specification: option.Option(StreamSpecification), table_class: option.Option(TableClass), table_name: option.Option(String), tags: option.Option(List(Tag)), warm_throughput: option.Option(WarmThroughput))
 }
 
 pub fn encode_create_table_input_struct(input: CreateTableInput) -> json.Json {
@@ -3276,10 +3102,7 @@ pub fn decode_create_table_input_struct_params() -> decode.Decoder(CreateTableIn
 }
 
 pub type AttributeDefinition {
-  AttributeDefinition(
-    attribute_name: option.Option(String),
-    attribute_type: option.Option(ScalarAttributeType),
-  )
+  AttributeDefinition(attribute_name: option.Option(String), attribute_type: option.Option(ScalarAttributeType))
 }
 
 pub fn encode_attribute_definition_struct(input: AttributeDefinition) -> json.Json {
@@ -3374,14 +3197,7 @@ pub fn decode_billing_mode_enum() -> decode.Decoder(BillingMode) {
 }
 
 pub type GlobalSecondaryIndex {
-  GlobalSecondaryIndex(
-    index_name: option.Option(String),
-    key_schema: option.Option(List(KeySchemaElement)),
-    on_demand_throughput: option.Option(OnDemandThroughput),
-    projection: option.Option(Projection),
-    provisioned_throughput: option.Option(ProvisionedThroughput),
-    warm_throughput: option.Option(WarmThroughput),
-  )
+  GlobalSecondaryIndex(index_name: option.Option(String), key_schema: option.Option(List(KeySchemaElement)), on_demand_throughput: option.Option(OnDemandThroughput), projection: option.Option(Projection), provisioned_throughput: option.Option(ProvisionedThroughput), warm_throughput: option.Option(WarmThroughput))
 }
 
 pub fn encode_global_secondary_index_struct(input: GlobalSecondaryIndex) -> json.Json {
@@ -3477,10 +3293,7 @@ pub fn decode_global_secondary_index_struct_params() -> decode.Decoder(GlobalSec
 }
 
 pub type KeySchemaElement {
-  KeySchemaElement(
-    attribute_name: option.Option(String),
-    key_type: option.Option(KeyType),
-  )
+  KeySchemaElement(attribute_name: option.Option(String), key_type: option.Option(KeyType))
 }
 
 pub fn encode_key_schema_element_struct(input: KeySchemaElement) -> json.Json {
@@ -3550,10 +3363,7 @@ pub fn decode_key_type_enum() -> decode.Decoder(KeyType) {
 }
 
 pub type OnDemandThroughput {
-  OnDemandThroughput(
-    max_read_request_units: option.Option(Int),
-    max_write_request_units: option.Option(Int),
-  )
+  OnDemandThroughput(max_read_request_units: option.Option(Int), max_write_request_units: option.Option(Int))
 }
 
 pub fn encode_on_demand_throughput_struct(input: OnDemandThroughput) -> json.Json {
@@ -3601,10 +3411,7 @@ pub fn decode_on_demand_throughput_struct_params() -> decode.Decoder(OnDemandThr
 }
 
 pub type Projection {
-  Projection(
-    non_key_attributes: option.Option(List(String)),
-    projection_type: option.Option(ProjectionType),
-  )
+  Projection(non_key_attributes: option.Option(List(String)), projection_type: option.Option(ProjectionType))
 }
 
 pub fn encode_projection_struct(input: Projection) -> json.Json {
@@ -3677,10 +3484,7 @@ pub fn decode_projection_type_enum() -> decode.Decoder(ProjectionType) {
 }
 
 pub type ProvisionedThroughput {
-  ProvisionedThroughput(
-    read_capacity_units: option.Option(Int),
-    write_capacity_units: option.Option(Int),
-  )
+  ProvisionedThroughput(read_capacity_units: option.Option(Int), write_capacity_units: option.Option(Int))
 }
 
 pub fn encode_provisioned_throughput_struct(input: ProvisionedThroughput) -> json.Json {
@@ -3728,10 +3532,7 @@ pub fn decode_provisioned_throughput_struct_params() -> decode.Decoder(Provision
 }
 
 pub type WarmThroughput {
-  WarmThroughput(
-    read_units_per_second: option.Option(Int),
-    write_units_per_second: option.Option(Int),
-  )
+  WarmThroughput(read_units_per_second: option.Option(Int), write_units_per_second: option.Option(Int))
 }
 
 pub fn encode_warm_throughput_struct(input: WarmThroughput) -> json.Json {
@@ -3779,11 +3580,7 @@ pub fn decode_warm_throughput_struct_params() -> decode.Decoder(WarmThroughput) 
 }
 
 pub type LocalSecondaryIndex {
-  LocalSecondaryIndex(
-    index_name: option.Option(String),
-    key_schema: option.Option(List(KeySchemaElement)),
-    projection: option.Option(Projection),
-  )
+  LocalSecondaryIndex(index_name: option.Option(String), key_schema: option.Option(List(KeySchemaElement)), projection: option.Option(Projection))
 }
 
 pub fn encode_local_secondary_index_struct(input: LocalSecondaryIndex) -> json.Json {
@@ -3843,11 +3640,7 @@ pub fn decode_local_secondary_index_struct_params() -> decode.Decoder(LocalSecon
 }
 
 pub type SSESpecification {
-  SSESpecification(
-    enabled: option.Option(Bool),
-    kms_master_key_id: option.Option(String),
-    sse_type: option.Option(SSEType),
-  )
+  SSESpecification(enabled: option.Option(Bool), kms_master_key_id: option.Option(String), sse_type: option.Option(SSEType))
 }
 
 pub fn encode_sse_specification_struct(input: SSESpecification) -> json.Json {
@@ -3929,10 +3722,7 @@ pub fn decode_sse_type_enum() -> decode.Decoder(SSEType) {
 }
 
 pub type StreamSpecification {
-  StreamSpecification(
-    stream_enabled: option.Option(Bool),
-    stream_view_type: option.Option(StreamViewType),
-  )
+  StreamSpecification(stream_enabled: option.Option(Bool), stream_view_type: option.Option(StreamViewType))
 }
 
 pub fn encode_stream_specification_struct(input: StreamSpecification) -> json.Json {
@@ -4008,10 +3798,7 @@ pub fn decode_stream_view_type_enum() -> decode.Decoder(StreamViewType) {
 }
 
 pub type Tag {
-  Tag(
-    key: option.Option(String),
-    value: option.Option(String),
-  )
+  Tag(key: option.Option(String), value: option.Option(String))
 }
 
 pub fn encode_tag_struct(input: Tag) -> json.Json {
@@ -4059,9 +3846,7 @@ pub fn decode_tag_struct_params() -> decode.Decoder(Tag) {
 }
 
 pub type CreateTableOutput {
-  CreateTableOutput(
-    table_description: option.Option(TableDescription),
-  )
+  CreateTableOutput(table_description: option.Option(TableDescription))
 }
 
 pub fn encode_create_table_output_struct(input: CreateTableOutput) -> json.Json {
@@ -4097,36 +3882,7 @@ pub fn decode_create_table_output_struct_params() -> decode.Decoder(CreateTableO
 }
 
 pub type TableDescription {
-  TableDescription(
-    archival_summary: option.Option(ArchivalSummary),
-    attribute_definitions: option.Option(List(AttributeDefinition)),
-    billing_mode_summary: option.Option(BillingModeSummary),
-    creation_date_time: option.Option(Int),
-    deletion_protection_enabled: option.Option(Bool),
-    global_secondary_indexes: option.Option(List(GlobalSecondaryIndexDescription)),
-    global_table_settings_replication_mode: option.Option(GlobalTableSettingsReplicationMode),
-    global_table_version: option.Option(String),
-    global_table_witnesses: option.Option(List(GlobalTableWitnessDescription)),
-    item_count: option.Option(Int),
-    key_schema: option.Option(List(KeySchemaElement)),
-    latest_stream_arn: option.Option(String),
-    latest_stream_label: option.Option(String),
-    local_secondary_indexes: option.Option(List(LocalSecondaryIndexDescription)),
-    multi_region_consistency: option.Option(MultiRegionConsistency),
-    on_demand_throughput: option.Option(OnDemandThroughput),
-    provisioned_throughput: option.Option(ProvisionedThroughputDescription),
-    replicas: option.Option(List(ReplicaDescription)),
-    restore_summary: option.Option(RestoreSummary),
-    sse_description: option.Option(SSEDescription),
-    stream_specification: option.Option(StreamSpecification),
-    table_arn: option.Option(String),
-    table_class_summary: option.Option(TableClassSummary),
-    table_id: option.Option(String),
-    table_name: option.Option(String),
-    table_size_bytes: option.Option(Int),
-    table_status: option.Option(TableStatus),
-    warm_throughput: option.Option(TableWarmThroughputDescription),
-  )
+  TableDescription(archival_summary: option.Option(ArchivalSummary), attribute_definitions: option.Option(List(AttributeDefinition)), billing_mode_summary: option.Option(BillingModeSummary), creation_date_time: option.Option(Int), deletion_protection_enabled: option.Option(Bool), global_secondary_indexes: option.Option(List(GlobalSecondaryIndexDescription)), global_table_settings_replication_mode: option.Option(GlobalTableSettingsReplicationMode), global_table_version: option.Option(String), global_table_witnesses: option.Option(List(GlobalTableWitnessDescription)), item_count: option.Option(Int), key_schema: option.Option(List(KeySchemaElement)), latest_stream_arn: option.Option(String), latest_stream_label: option.Option(String), local_secondary_indexes: option.Option(List(LocalSecondaryIndexDescription)), multi_region_consistency: option.Option(MultiRegionConsistency), on_demand_throughput: option.Option(OnDemandThroughput), provisioned_throughput: option.Option(ProvisionedThroughputDescription), replicas: option.Option(List(ReplicaDescription)), restore_summary: option.Option(RestoreSummary), sse_description: option.Option(SSEDescription), stream_specification: option.Option(StreamSpecification), table_arn: option.Option(String), table_class_summary: option.Option(TableClassSummary), table_id: option.Option(String), table_name: option.Option(String), table_size_bytes: option.Option(Int), table_status: option.Option(TableStatus), warm_throughput: option.Option(TableWarmThroughputDescription))
 }
 
 pub fn encode_table_description_struct(input: TableDescription) -> json.Json {
@@ -4486,11 +4242,7 @@ pub fn decode_table_description_struct_params() -> decode.Decoder(TableDescripti
 }
 
 pub type ArchivalSummary {
-  ArchivalSummary(
-    archival_backup_arn: option.Option(String),
-    archival_date_time: option.Option(Int),
-    archival_reason: option.Option(String),
-  )
+  ArchivalSummary(archival_backup_arn: option.Option(String), archival_date_time: option.Option(Int), archival_reason: option.Option(String))
 }
 
 pub fn encode_archival_summary_struct(input: ArchivalSummary) -> json.Json {
@@ -4550,10 +4302,7 @@ pub fn decode_archival_summary_struct_params() -> decode.Decoder(ArchivalSummary
 }
 
 pub type BillingModeSummary {
-  BillingModeSummary(
-    billing_mode: option.Option(BillingMode),
-    last_update_to_pay_per_request_date_time: option.Option(Int),
-  )
+  BillingModeSummary(billing_mode: option.Option(BillingMode), last_update_to_pay_per_request_date_time: option.Option(Int))
 }
 
 pub fn encode_billing_mode_summary_struct(input: BillingModeSummary) -> json.Json {
@@ -4601,19 +4350,7 @@ pub fn decode_billing_mode_summary_struct_params() -> decode.Decoder(BillingMode
 }
 
 pub type GlobalSecondaryIndexDescription {
-  GlobalSecondaryIndexDescription(
-    backfilling: option.Option(Bool),
-    index_arn: option.Option(String),
-    index_name: option.Option(String),
-    index_size_bytes: option.Option(Int),
-    index_status: option.Option(IndexStatus),
-    item_count: option.Option(Int),
-    key_schema: option.Option(List(KeySchemaElement)),
-    on_demand_throughput: option.Option(OnDemandThroughput),
-    projection: option.Option(Projection),
-    provisioned_throughput: option.Option(ProvisionedThroughputDescription),
-    warm_throughput: option.Option(GlobalSecondaryIndexWarmThroughputDescription),
-  )
+  GlobalSecondaryIndexDescription(backfilling: option.Option(Bool), index_arn: option.Option(String), index_name: option.Option(String), index_size_bytes: option.Option(Int), index_status: option.Option(IndexStatus), item_count: option.Option(Int), key_schema: option.Option(List(KeySchemaElement)), on_demand_throughput: option.Option(OnDemandThroughput), projection: option.Option(Projection), provisioned_throughput: option.Option(ProvisionedThroughputDescription), warm_throughput: option.Option(GlobalSecondaryIndexWarmThroughputDescription))
 }
 
 pub fn encode_global_secondary_index_description_struct(input: GlobalSecondaryIndexDescription) -> json.Json {
@@ -4769,13 +4506,7 @@ pub fn decode_global_secondary_index_description_struct_params() -> decode.Decod
 }
 
 pub type ProvisionedThroughputDescription {
-  ProvisionedThroughputDescription(
-    last_decrease_date_time: option.Option(Int),
-    last_increase_date_time: option.Option(Int),
-    number_of_decreases_today: option.Option(Int),
-    read_capacity_units: option.Option(Int),
-    write_capacity_units: option.Option(Int),
-  )
+  ProvisionedThroughputDescription(last_decrease_date_time: option.Option(Int), last_increase_date_time: option.Option(Int), number_of_decreases_today: option.Option(Int), read_capacity_units: option.Option(Int), write_capacity_units: option.Option(Int))
 }
 
 pub fn encode_provisioned_throughput_description_struct(input: ProvisionedThroughputDescription) -> json.Json {
@@ -4859,10 +4590,7 @@ pub fn decode_provisioned_throughput_description_struct_params() -> decode.Decod
 }
 
 pub type GlobalTableWitnessDescription {
-  GlobalTableWitnessDescription(
-    region_name: option.Option(String),
-    witness_status: option.Option(WitnessStatus),
-  )
+  GlobalTableWitnessDescription(region_name: option.Option(String), witness_status: option.Option(WitnessStatus))
 }
 
 pub fn encode_global_table_witness_description_struct(input: GlobalTableWitnessDescription) -> json.Json {
@@ -4935,14 +4663,7 @@ pub fn decode_witness_status_enum() -> decode.Decoder(WitnessStatus) {
 }
 
 pub type LocalSecondaryIndexDescription {
-  LocalSecondaryIndexDescription(
-    index_arn: option.Option(String),
-    index_name: option.Option(String),
-    index_size_bytes: option.Option(Int),
-    item_count: option.Option(Int),
-    key_schema: option.Option(List(KeySchemaElement)),
-    projection: option.Option(Projection),
-  )
+  LocalSecondaryIndexDescription(index_arn: option.Option(String), index_name: option.Option(String), index_size_bytes: option.Option(Int), item_count: option.Option(Int), key_schema: option.Option(List(KeySchemaElement)), projection: option.Option(Projection))
 }
 
 pub fn encode_local_secondary_index_description_struct(input: LocalSecondaryIndexDescription) -> json.Json {
@@ -5060,12 +4781,7 @@ pub fn decode_multi_region_consistency_enum() -> decode.Decoder(MultiRegionConsi
 }
 
 pub type RestoreSummary {
-  RestoreSummary(
-    restore_date_time: option.Option(Int),
-    restore_in_progress: option.Option(Bool),
-    source_backup_arn: option.Option(String),
-    source_table_arn: option.Option(String),
-  )
+  RestoreSummary(restore_date_time: option.Option(Int), restore_in_progress: option.Option(Bool), source_backup_arn: option.Option(String), source_table_arn: option.Option(String))
 }
 
 pub fn encode_restore_summary_struct(input: RestoreSummary) -> json.Json {
@@ -5137,12 +4853,7 @@ pub fn decode_restore_summary_struct_params() -> decode.Decoder(RestoreSummary) 
 }
 
 pub type SSEDescription {
-  SSEDescription(
-    inaccessible_encryption_date_time: option.Option(Int),
-    kms_master_key_arn: option.Option(String),
-    sse_type: option.Option(SSEType),
-    status: option.Option(SSEStatus),
-  )
+  SSEDescription(inaccessible_encryption_date_time: option.Option(Int), kms_master_key_arn: option.Option(String), sse_type: option.Option(SSEType), status: option.Option(SSEStatus))
 }
 
 pub fn encode_sse_description_struct(input: SSEDescription) -> json.Json {
@@ -5245,9 +4956,7 @@ pub fn decode_sse_status_enum() -> decode.Decoder(SSEStatus) {
 }
 
 pub type ResourceInUseException {
-  ResourceInUseException(
-    message: option.Option(String),
-  )
+  ResourceInUseException(message: option.Option(String))
 }
 
 pub fn encode_resource_in_use_exception_struct(input: ResourceInUseException) -> json.Json {
@@ -5283,9 +4992,7 @@ pub fn decode_resource_in_use_exception_struct_params() -> decode.Decoder(Resour
 }
 
 pub type DeleteBackupInput {
-  DeleteBackupInput(
-    backup_arn: option.Option(String),
-  )
+  DeleteBackupInput(backup_arn: option.Option(String))
 }
 
 pub fn encode_delete_backup_input_struct(input: DeleteBackupInput) -> json.Json {
@@ -5321,9 +5028,7 @@ pub fn decode_delete_backup_input_struct_params() -> decode.Decoder(DeleteBackup
 }
 
 pub type DeleteBackupOutput {
-  DeleteBackupOutput(
-    backup_description: option.Option(BackupDescription),
-  )
+  DeleteBackupOutput(backup_description: option.Option(BackupDescription))
 }
 
 pub fn encode_delete_backup_output_struct(input: DeleteBackupOutput) -> json.Json {
@@ -5359,11 +5064,7 @@ pub fn decode_delete_backup_output_struct_params() -> decode.Decoder(DeleteBacku
 }
 
 pub type BackupDescription {
-  BackupDescription(
-    backup_details: option.Option(BackupDetails),
-    source_table_details: option.Option(SourceTableDetails),
-    source_table_feature_details: option.Option(SourceTableFeatureDetails),
-  )
+  BackupDescription(backup_details: option.Option(BackupDetails), source_table_details: option.Option(SourceTableDetails), source_table_feature_details: option.Option(SourceTableFeatureDetails))
 }
 
 pub fn encode_backup_description_struct(input: BackupDescription) -> json.Json {
@@ -5423,18 +5124,7 @@ pub fn decode_backup_description_struct_params() -> decode.Decoder(BackupDescrip
 }
 
 pub type SourceTableDetails {
-  SourceTableDetails(
-    billing_mode: option.Option(BillingMode),
-    item_count: option.Option(Int),
-    key_schema: option.Option(List(KeySchemaElement)),
-    on_demand_throughput: option.Option(OnDemandThroughput),
-    provisioned_throughput: option.Option(ProvisionedThroughput),
-    table_arn: option.Option(String),
-    table_creation_date_time: option.Option(Int),
-    table_id: option.Option(String),
-    table_name: option.Option(String),
-    table_size_bytes: option.Option(Int),
-  )
+  SourceTableDetails(billing_mode: option.Option(BillingMode), item_count: option.Option(Int), key_schema: option.Option(List(KeySchemaElement)), on_demand_throughput: option.Option(OnDemandThroughput), provisioned_throughput: option.Option(ProvisionedThroughput), table_arn: option.Option(String), table_creation_date_time: option.Option(Int), table_id: option.Option(String), table_name: option.Option(String), table_size_bytes: option.Option(Int))
 }
 
 pub fn encode_source_table_details_struct(input: SourceTableDetails) -> json.Json {
@@ -5578,13 +5268,7 @@ pub fn decode_source_table_details_struct_params() -> decode.Decoder(SourceTable
 }
 
 pub type SourceTableFeatureDetails {
-  SourceTableFeatureDetails(
-    global_secondary_indexes: option.Option(List(GlobalSecondaryIndexInfo)),
-    local_secondary_indexes: option.Option(List(LocalSecondaryIndexInfo)),
-    sse_description: option.Option(SSEDescription),
-    stream_description: option.Option(StreamSpecification),
-    time_to_live_description: option.Option(TimeToLiveDescription),
-  )
+  SourceTableFeatureDetails(global_secondary_indexes: option.Option(List(GlobalSecondaryIndexInfo)), local_secondary_indexes: option.Option(List(LocalSecondaryIndexInfo)), sse_description: option.Option(SSEDescription), stream_description: option.Option(StreamSpecification), time_to_live_description: option.Option(TimeToLiveDescription))
 }
 
 pub fn encode_source_table_feature_details_struct(input: SourceTableFeatureDetails) -> json.Json {
@@ -5668,13 +5352,7 @@ pub fn decode_source_table_feature_details_struct_params() -> decode.Decoder(Sou
 }
 
 pub type GlobalSecondaryIndexInfo {
-  GlobalSecondaryIndexInfo(
-    index_name: option.Option(String),
-    key_schema: option.Option(List(KeySchemaElement)),
-    on_demand_throughput: option.Option(OnDemandThroughput),
-    projection: option.Option(Projection),
-    provisioned_throughput: option.Option(ProvisionedThroughput),
-  )
+  GlobalSecondaryIndexInfo(index_name: option.Option(String), key_schema: option.Option(List(KeySchemaElement)), on_demand_throughput: option.Option(OnDemandThroughput), projection: option.Option(Projection), provisioned_throughput: option.Option(ProvisionedThroughput))
 }
 
 pub fn encode_global_secondary_index_info_struct(input: GlobalSecondaryIndexInfo) -> json.Json {
@@ -5758,11 +5436,7 @@ pub fn decode_global_secondary_index_info_struct_params() -> decode.Decoder(Glob
 }
 
 pub type LocalSecondaryIndexInfo {
-  LocalSecondaryIndexInfo(
-    index_name: option.Option(String),
-    key_schema: option.Option(List(KeySchemaElement)),
-    projection: option.Option(Projection),
-  )
+  LocalSecondaryIndexInfo(index_name: option.Option(String), key_schema: option.Option(List(KeySchemaElement)), projection: option.Option(Projection))
 }
 
 pub fn encode_local_secondary_index_info_struct(input: LocalSecondaryIndexInfo) -> json.Json {
@@ -5822,10 +5496,7 @@ pub fn decode_local_secondary_index_info_struct_params() -> decode.Decoder(Local
 }
 
 pub type TimeToLiveDescription {
-  TimeToLiveDescription(
-    attribute_name: option.Option(String),
-    time_to_live_status: option.Option(TimeToLiveStatus),
-  )
+  TimeToLiveDescription(attribute_name: option.Option(String), time_to_live_status: option.Option(TimeToLiveStatus))
 }
 
 pub fn encode_time_to_live_description_struct(input: TimeToLiveDescription) -> json.Json {
@@ -5901,9 +5572,7 @@ pub fn decode_time_to_live_status_enum() -> decode.Decoder(TimeToLiveStatus) {
 }
 
 pub type BackupNotFoundException {
-  BackupNotFoundException(
-    message: option.Option(String),
-  )
+  BackupNotFoundException(message: option.Option(String))
 }
 
 pub fn encode_backup_not_found_exception_struct(input: BackupNotFoundException) -> json.Json {
@@ -5939,19 +5608,7 @@ pub fn decode_backup_not_found_exception_struct_params() -> decode.Decoder(Backu
 }
 
 pub type DeleteItemInput {
-  DeleteItemInput(
-    condition_expression: option.Option(String),
-    conditional_operator: option.Option(ConditionalOperator),
-    expected: option.Option(dict.Dict(String, ExpectedAttributeValue)),
-    expression_attribute_names: option.Option(dict.Dict(String, String)),
-    expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)),
-    key: option.Option(dict.Dict(String, AttributeValue)),
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-    return_item_collection_metrics: option.Option(ReturnItemCollectionMetrics),
-    return_values: option.Option(ReturnValue),
-    return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure),
-    table_name: option.Option(String),
-  )
+  DeleteItemInput(condition_expression: option.Option(String), conditional_operator: option.Option(ConditionalOperator), expected: option.Option(dict.Dict(String, ExpectedAttributeValue)), expression_attribute_names: option.Option(dict.Dict(String, String)), expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)), key: option.Option(dict.Dict(String, AttributeValue)), return_consumed_capacity: option.Option(ReturnConsumedCapacity), return_item_collection_metrics: option.Option(ReturnItemCollectionMetrics), return_values: option.Option(ReturnValue), return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure), table_name: option.Option(String))
 }
 
 pub fn encode_delete_item_input_struct(input: DeleteItemInput) -> json.Json {
@@ -6129,12 +5786,7 @@ pub fn decode_conditional_operator_enum() -> decode.Decoder(ConditionalOperator)
 }
 
 pub type ExpectedAttributeValue {
-  ExpectedAttributeValue(
-    attribute_value_list: option.Option(List(AttributeValue)),
-    comparison_operator: option.Option(ComparisonOperator),
-    exists: option.Option(Bool),
-    value: option.Option(AttributeValue),
-  )
+  ExpectedAttributeValue(attribute_value_list: option.Option(List(AttributeValue)), comparison_operator: option.Option(ComparisonOperator), exists: option.Option(Bool), value: option.Option(AttributeValue))
 }
 
 pub fn encode_expected_attribute_value_struct(input: ExpectedAttributeValue) -> json.Json {
@@ -6292,11 +5944,7 @@ pub fn decode_return_value_enum() -> decode.Decoder(ReturnValue) {
 }
 
 pub type DeleteItemOutput {
-  DeleteItemOutput(
-    attributes: option.Option(dict.Dict(String, AttributeValue)),
-    consumed_capacity: option.Option(ConsumedCapacity),
-    item_collection_metrics: option.Option(ItemCollectionMetrics),
-  )
+  DeleteItemOutput(attributes: option.Option(dict.Dict(String, AttributeValue)), consumed_capacity: option.Option(ConsumedCapacity), item_collection_metrics: option.Option(ItemCollectionMetrics))
 }
 
 pub fn encode_delete_item_output_struct(input: DeleteItemOutput) -> json.Json {
@@ -6356,10 +6004,7 @@ pub fn decode_delete_item_output_struct_params() -> decode.Decoder(DeleteItemOut
 }
 
 pub type ConditionalCheckFailedException {
-  ConditionalCheckFailedException(
-    item: option.Option(dict.Dict(String, AttributeValue)),
-    message: option.Option(String),
-  )
+  ConditionalCheckFailedException(item: option.Option(dict.Dict(String, AttributeValue)), message: option.Option(String))
 }
 
 pub fn encode_conditional_check_failed_exception_struct(input: ConditionalCheckFailedException) -> json.Json {
@@ -6407,9 +6052,7 @@ pub fn decode_conditional_check_failed_exception_struct_params() -> decode.Decod
 }
 
 pub type TransactionConflictException {
-  TransactionConflictException(
-    message: option.Option(String),
-  )
+  TransactionConflictException(message: option.Option(String))
 }
 
 pub fn encode_transaction_conflict_exception_struct(input: TransactionConflictException) -> json.Json {
@@ -6445,10 +6088,7 @@ pub fn decode_transaction_conflict_exception_struct_params() -> decode.Decoder(T
 }
 
 pub type DeleteResourcePolicyInput {
-  DeleteResourcePolicyInput(
-    expected_revision_id: option.Option(String),
-    resource_arn: option.Option(String),
-  )
+  DeleteResourcePolicyInput(expected_revision_id: option.Option(String), resource_arn: option.Option(String))
 }
 
 pub fn encode_delete_resource_policy_input_struct(input: DeleteResourcePolicyInput) -> json.Json {
@@ -6496,9 +6136,7 @@ pub fn decode_delete_resource_policy_input_struct_params() -> decode.Decoder(Del
 }
 
 pub type DeleteResourcePolicyOutput {
-  DeleteResourcePolicyOutput(
-    revision_id: option.Option(String),
-  )
+  DeleteResourcePolicyOutput(revision_id: option.Option(String))
 }
 
 pub fn encode_delete_resource_policy_output_struct(input: DeleteResourcePolicyOutput) -> json.Json {
@@ -6534,9 +6172,7 @@ pub fn decode_delete_resource_policy_output_struct_params() -> decode.Decoder(De
 }
 
 pub type PolicyNotFoundException {
-  PolicyNotFoundException(
-    message: option.Option(String),
-  )
+  PolicyNotFoundException(message: option.Option(String))
 }
 
 pub fn encode_policy_not_found_exception_struct(input: PolicyNotFoundException) -> json.Json {
@@ -6572,9 +6208,7 @@ pub fn decode_policy_not_found_exception_struct_params() -> decode.Decoder(Polic
 }
 
 pub type DeleteTableInput {
-  DeleteTableInput(
-    table_name: option.Option(String),
-  )
+  DeleteTableInput(table_name: option.Option(String))
 }
 
 pub fn encode_delete_table_input_struct(input: DeleteTableInput) -> json.Json {
@@ -6610,9 +6244,7 @@ pub fn decode_delete_table_input_struct_params() -> decode.Decoder(DeleteTableIn
 }
 
 pub type DeleteTableOutput {
-  DeleteTableOutput(
-    table_description: option.Option(TableDescription),
-  )
+  DeleteTableOutput(table_description: option.Option(TableDescription))
 }
 
 pub fn encode_delete_table_output_struct(input: DeleteTableOutput) -> json.Json {
@@ -6648,9 +6280,7 @@ pub fn decode_delete_table_output_struct_params() -> decode.Decoder(DeleteTableO
 }
 
 pub type DescribeBackupInput {
-  DescribeBackupInput(
-    backup_arn: option.Option(String),
-  )
+  DescribeBackupInput(backup_arn: option.Option(String))
 }
 
 pub fn encode_describe_backup_input_struct(input: DescribeBackupInput) -> json.Json {
@@ -6686,9 +6316,7 @@ pub fn decode_describe_backup_input_struct_params() -> decode.Decoder(DescribeBa
 }
 
 pub type DescribeBackupOutput {
-  DescribeBackupOutput(
-    backup_description: option.Option(BackupDescription),
-  )
+  DescribeBackupOutput(backup_description: option.Option(BackupDescription))
 }
 
 pub fn encode_describe_backup_output_struct(input: DescribeBackupOutput) -> json.Json {
@@ -6724,9 +6352,7 @@ pub fn decode_describe_backup_output_struct_params() -> decode.Decoder(DescribeB
 }
 
 pub type DescribeContinuousBackupsInput {
-  DescribeContinuousBackupsInput(
-    table_name: option.Option(String),
-  )
+  DescribeContinuousBackupsInput(table_name: option.Option(String))
 }
 
 pub fn encode_describe_continuous_backups_input_struct(input: DescribeContinuousBackupsInput) -> json.Json {
@@ -6762,9 +6388,7 @@ pub fn decode_describe_continuous_backups_input_struct_params() -> decode.Decode
 }
 
 pub type DescribeContinuousBackupsOutput {
-  DescribeContinuousBackupsOutput(
-    continuous_backups_description: option.Option(ContinuousBackupsDescription),
-  )
+  DescribeContinuousBackupsOutput(continuous_backups_description: option.Option(ContinuousBackupsDescription))
 }
 
 pub fn encode_describe_continuous_backups_output_struct(input: DescribeContinuousBackupsOutput) -> json.Json {
@@ -6800,10 +6424,7 @@ pub fn decode_describe_continuous_backups_output_struct_params() -> decode.Decod
 }
 
 pub type ContinuousBackupsDescription {
-  ContinuousBackupsDescription(
-    continuous_backups_status: option.Option(ContinuousBackupsStatus),
-    point_in_time_recovery_description: option.Option(PointInTimeRecoveryDescription),
-  )
+  ContinuousBackupsDescription(continuous_backups_status: option.Option(ContinuousBackupsStatus), point_in_time_recovery_description: option.Option(PointInTimeRecoveryDescription))
 }
 
 pub fn encode_continuous_backups_description_struct(input: ContinuousBackupsDescription) -> json.Json {
@@ -6873,12 +6494,7 @@ pub fn decode_continuous_backups_status_enum() -> decode.Decoder(ContinuousBacku
 }
 
 pub type PointInTimeRecoveryDescription {
-  PointInTimeRecoveryDescription(
-    earliest_restorable_date_time: option.Option(Int),
-    latest_restorable_date_time: option.Option(Int),
-    point_in_time_recovery_status: option.Option(PointInTimeRecoveryStatus),
-    recovery_period_in_days: option.Option(Int),
-  )
+  PointInTimeRecoveryDescription(earliest_restorable_date_time: option.Option(Int), latest_restorable_date_time: option.Option(Int), point_in_time_recovery_status: option.Option(PointInTimeRecoveryStatus), recovery_period_in_days: option.Option(Int))
 }
 
 pub fn encode_point_in_time_recovery_description_struct(input: PointInTimeRecoveryDescription) -> json.Json {
@@ -6972,10 +6588,7 @@ pub fn decode_point_in_time_recovery_status_enum() -> decode.Decoder(PointInTime
 }
 
 pub type DescribeContributorInsightsInput {
-  DescribeContributorInsightsInput(
-    index_name: option.Option(String),
-    table_name: option.Option(String),
-  )
+  DescribeContributorInsightsInput(index_name: option.Option(String), table_name: option.Option(String))
 }
 
 pub fn encode_describe_contributor_insights_input_struct(input: DescribeContributorInsightsInput) -> json.Json {
@@ -7023,15 +6636,7 @@ pub fn decode_describe_contributor_insights_input_struct_params() -> decode.Deco
 }
 
 pub type DescribeContributorInsightsOutput {
-  DescribeContributorInsightsOutput(
-    contributor_insights_mode: option.Option(ContributorInsightsMode),
-    contributor_insights_rule_list: option.Option(List(String)),
-    contributor_insights_status: option.Option(ContributorInsightsStatus),
-    failure_exception: option.Option(FailureException),
-    index_name: option.Option(String),
-    last_update_date_time: option.Option(Int),
-    table_name: option.Option(String),
-  )
+  DescribeContributorInsightsOutput(contributor_insights_mode: option.Option(ContributorInsightsMode), contributor_insights_rule_list: option.Option(List(String)), contributor_insights_status: option.Option(ContributorInsightsStatus), failure_exception: option.Option(FailureException), index_name: option.Option(String), last_update_date_time: option.Option(Int), table_name: option.Option(String))
 }
 
 pub fn encode_describe_contributor_insights_output_struct(input: DescribeContributorInsightsOutput) -> json.Json {
@@ -7192,10 +6797,7 @@ pub fn decode_contributor_insights_status_enum() -> decode.Decoder(ContributorIn
 }
 
 pub type FailureException {
-  FailureException(
-    exception_description: option.Option(String),
-    exception_name: option.Option(String),
-  )
+  FailureException(exception_description: option.Option(String), exception_name: option.Option(String))
 }
 
 pub fn encode_failure_exception_struct(input: FailureException) -> json.Json {
@@ -7263,9 +6865,7 @@ pub fn decode_describe_endpoints_request_struct_params() -> decode.Decoder(Descr
 }
 
 pub type DescribeEndpointsResponse {
-  DescribeEndpointsResponse(
-    endpoints: option.Option(List(Endpoint)),
-  )
+  DescribeEndpointsResponse(endpoints: option.Option(List(Endpoint)))
 }
 
 pub fn encode_describe_endpoints_response_struct(input: DescribeEndpointsResponse) -> json.Json {
@@ -7301,10 +6901,7 @@ pub fn decode_describe_endpoints_response_struct_params() -> decode.Decoder(Desc
 }
 
 pub type Endpoint {
-  Endpoint(
-    address: option.Option(String),
-    cache_period_in_minutes: option.Option(Int),
-  )
+  Endpoint(address: option.Option(String), cache_period_in_minutes: option.Option(Int))
 }
 
 pub fn encode_endpoint_struct(input: Endpoint) -> json.Json {
@@ -7352,9 +6949,7 @@ pub fn decode_endpoint_struct_params() -> decode.Decoder(Endpoint) {
 }
 
 pub type DescribeExportInput {
-  DescribeExportInput(
-    export_arn: option.Option(String),
-  )
+  DescribeExportInput(export_arn: option.Option(String))
 }
 
 pub fn encode_describe_export_input_struct(input: DescribeExportInput) -> json.Json {
@@ -7390,9 +6985,7 @@ pub fn decode_describe_export_input_struct_params() -> decode.Decoder(DescribeEx
 }
 
 pub type DescribeExportOutput {
-  DescribeExportOutput(
-    export_description: option.Option(ExportDescription),
-  )
+  DescribeExportOutput(export_description: option.Option(ExportDescription))
 }
 
 pub fn encode_describe_export_output_struct(input: DescribeExportOutput) -> json.Json {
@@ -7428,29 +7021,7 @@ pub fn decode_describe_export_output_struct_params() -> decode.Decoder(DescribeE
 }
 
 pub type ExportDescription {
-  ExportDescription(
-    billed_size_bytes: option.Option(Int),
-    client_token: option.Option(String),
-    end_time: option.Option(Int),
-    export_arn: option.Option(String),
-    export_format: option.Option(ExportFormat),
-    export_manifest: option.Option(String),
-    export_status: option.Option(ExportStatus),
-    export_time: option.Option(Int),
-    export_type: option.Option(ExportType),
-    failure_code: option.Option(String),
-    failure_message: option.Option(String),
-    incremental_export_specification: option.Option(IncrementalExportSpecification),
-    item_count: option.Option(Int),
-    s3_bucket: option.Option(String),
-    s3_bucket_owner: option.Option(String),
-    s3_prefix: option.Option(String),
-    s3_sse_algorithm: option.Option(S3SseAlgorithm),
-    s3_sse_kms_key_id: option.Option(String),
-    start_time: option.Option(Int),
-    table_arn: option.Option(String),
-    table_id: option.Option(String),
-  )
+  ExportDescription(billed_size_bytes: option.Option(Int), client_token: option.Option(String), end_time: option.Option(Int), export_arn: option.Option(String), export_format: option.Option(ExportFormat), export_manifest: option.Option(String), export_status: option.Option(ExportStatus), export_time: option.Option(Int), export_type: option.Option(ExportType), failure_code: option.Option(String), failure_message: option.Option(String), incremental_export_specification: option.Option(IncrementalExportSpecification), item_count: option.Option(Int), s3_bucket: option.Option(String), s3_bucket_owner: option.Option(String), s3_prefix: option.Option(String), s3_sse_algorithm: option.Option(S3SseAlgorithm), s3_sse_kms_key_id: option.Option(String), start_time: option.Option(Int), table_arn: option.Option(String), table_id: option.Option(String))
 }
 
 pub fn encode_export_description_struct(input: ExportDescription) -> json.Json {
@@ -7795,11 +7366,7 @@ pub fn decode_export_type_enum() -> decode.Decoder(ExportType) {
 }
 
 pub type IncrementalExportSpecification {
-  IncrementalExportSpecification(
-    export_from_time: option.Option(Int),
-    export_to_time: option.Option(Int),
-    export_view_type: option.Option(ExportViewType),
-  )
+  IncrementalExportSpecification(export_from_time: option.Option(Int), export_to_time: option.Option(Int), export_view_type: option.Option(ExportViewType))
 }
 
 pub fn encode_incremental_export_specification_struct(input: IncrementalExportSpecification) -> json.Json {
@@ -7903,9 +7470,7 @@ pub fn decode_s3_sse_algorithm_enum() -> decode.Decoder(S3SseAlgorithm) {
 }
 
 pub type ExportNotFoundException {
-  ExportNotFoundException(
-    message: option.Option(String),
-  )
+  ExportNotFoundException(message: option.Option(String))
 }
 
 pub fn encode_export_not_found_exception_struct(input: ExportNotFoundException) -> json.Json {
@@ -7941,9 +7506,7 @@ pub fn decode_export_not_found_exception_struct_params() -> decode.Decoder(Expor
 }
 
 pub type DescribeGlobalTableInput {
-  DescribeGlobalTableInput(
-    global_table_name: option.Option(String),
-  )
+  DescribeGlobalTableInput(global_table_name: option.Option(String))
 }
 
 pub fn encode_describe_global_table_input_struct(input: DescribeGlobalTableInput) -> json.Json {
@@ -7979,9 +7542,7 @@ pub fn decode_describe_global_table_input_struct_params() -> decode.Decoder(Desc
 }
 
 pub type DescribeGlobalTableOutput {
-  DescribeGlobalTableOutput(
-    global_table_description: option.Option(GlobalTableDescription),
-  )
+  DescribeGlobalTableOutput(global_table_description: option.Option(GlobalTableDescription))
 }
 
 pub fn encode_describe_global_table_output_struct(input: DescribeGlobalTableOutput) -> json.Json {
@@ -8017,9 +7578,7 @@ pub fn decode_describe_global_table_output_struct_params() -> decode.Decoder(Des
 }
 
 pub type GlobalTableNotFoundException {
-  GlobalTableNotFoundException(
-    message: option.Option(String),
-  )
+  GlobalTableNotFoundException(message: option.Option(String))
 }
 
 pub fn encode_global_table_not_found_exception_struct(input: GlobalTableNotFoundException) -> json.Json {
@@ -8055,9 +7614,7 @@ pub fn decode_global_table_not_found_exception_struct_params() -> decode.Decoder
 }
 
 pub type DescribeGlobalTableSettingsInput {
-  DescribeGlobalTableSettingsInput(
-    global_table_name: option.Option(String),
-  )
+  DescribeGlobalTableSettingsInput(global_table_name: option.Option(String))
 }
 
 pub fn encode_describe_global_table_settings_input_struct(input: DescribeGlobalTableSettingsInput) -> json.Json {
@@ -8093,10 +7650,7 @@ pub fn decode_describe_global_table_settings_input_struct_params() -> decode.Dec
 }
 
 pub type DescribeGlobalTableSettingsOutput {
-  DescribeGlobalTableSettingsOutput(
-    global_table_name: option.Option(String),
-    replica_settings: option.Option(List(ReplicaSettingsDescription)),
-  )
+  DescribeGlobalTableSettingsOutput(global_table_name: option.Option(String), replica_settings: option.Option(List(ReplicaSettingsDescription)))
 }
 
 pub fn encode_describe_global_table_settings_output_struct(input: DescribeGlobalTableSettingsOutput) -> json.Json {
@@ -8144,17 +7698,7 @@ pub fn decode_describe_global_table_settings_output_struct_params() -> decode.De
 }
 
 pub type ReplicaSettingsDescription {
-  ReplicaSettingsDescription(
-    region_name: option.Option(String),
-    replica_billing_mode_summary: option.Option(BillingModeSummary),
-    replica_global_secondary_index_settings: option.Option(List(ReplicaGlobalSecondaryIndexSettingsDescription)),
-    replica_provisioned_read_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription),
-    replica_provisioned_read_capacity_units: option.Option(Int),
-    replica_provisioned_write_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription),
-    replica_provisioned_write_capacity_units: option.Option(Int),
-    replica_status: option.Option(ReplicaStatus),
-    replica_table_class_summary: option.Option(TableClassSummary),
-  )
+  ReplicaSettingsDescription(region_name: option.Option(String), replica_billing_mode_summary: option.Option(BillingModeSummary), replica_global_secondary_index_settings: option.Option(List(ReplicaGlobalSecondaryIndexSettingsDescription)), replica_provisioned_read_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription), replica_provisioned_read_capacity_units: option.Option(Int), replica_provisioned_write_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription), replica_provisioned_write_capacity_units: option.Option(Int), replica_status: option.Option(ReplicaStatus), replica_table_class_summary: option.Option(TableClassSummary))
 }
 
 pub fn encode_replica_settings_description_struct(input: ReplicaSettingsDescription) -> json.Json {
@@ -8286,14 +7830,7 @@ pub fn decode_replica_settings_description_struct_params() -> decode.Decoder(Rep
 }
 
 pub type ReplicaGlobalSecondaryIndexSettingsDescription {
-  ReplicaGlobalSecondaryIndexSettingsDescription(
-    index_name: option.Option(String),
-    index_status: option.Option(IndexStatus),
-    provisioned_read_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription),
-    provisioned_read_capacity_units: option.Option(Int),
-    provisioned_write_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription),
-    provisioned_write_capacity_units: option.Option(Int),
-  )
+  ReplicaGlobalSecondaryIndexSettingsDescription(index_name: option.Option(String), index_status: option.Option(IndexStatus), provisioned_read_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription), provisioned_read_capacity_units: option.Option(Int), provisioned_write_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription), provisioned_write_capacity_units: option.Option(Int))
 }
 
 pub fn encode_replica_global_secondary_index_settings_description_struct(input: ReplicaGlobalSecondaryIndexSettingsDescription) -> json.Json {
@@ -8389,13 +7926,7 @@ pub fn decode_replica_global_secondary_index_settings_description_struct_params(
 }
 
 pub type AutoScalingSettingsDescription {
-  AutoScalingSettingsDescription(
-    auto_scaling_disabled: option.Option(Bool),
-    auto_scaling_role_arn: option.Option(String),
-    maximum_units: option.Option(Int),
-    minimum_units: option.Option(Int),
-    scaling_policies: option.Option(List(AutoScalingPolicyDescription)),
-  )
+  AutoScalingSettingsDescription(auto_scaling_disabled: option.Option(Bool), auto_scaling_role_arn: option.Option(String), maximum_units: option.Option(Int), minimum_units: option.Option(Int), scaling_policies: option.Option(List(AutoScalingPolicyDescription)))
 }
 
 pub fn encode_auto_scaling_settings_description_struct(input: AutoScalingSettingsDescription) -> json.Json {
@@ -8479,10 +8010,7 @@ pub fn decode_auto_scaling_settings_description_struct_params() -> decode.Decode
 }
 
 pub type AutoScalingPolicyDescription {
-  AutoScalingPolicyDescription(
-    policy_name: option.Option(String),
-    target_tracking_scaling_policy_configuration: option.Option(AutoScalingTargetTrackingScalingPolicyConfigurationDescription),
-  )
+  AutoScalingPolicyDescription(policy_name: option.Option(String), target_tracking_scaling_policy_configuration: option.Option(AutoScalingTargetTrackingScalingPolicyConfigurationDescription))
 }
 
 pub fn encode_auto_scaling_policy_description_struct(input: AutoScalingPolicyDescription) -> json.Json {
@@ -8530,12 +8058,7 @@ pub fn decode_auto_scaling_policy_description_struct_params() -> decode.Decoder(
 }
 
 pub type AutoScalingTargetTrackingScalingPolicyConfigurationDescription {
-  AutoScalingTargetTrackingScalingPolicyConfigurationDescription(
-    disable_scale_in: option.Option(Bool),
-    scale_in_cooldown: option.Option(Int),
-    scale_out_cooldown: option.Option(Int),
-    target_value: option.Option(json_float.SmithyFloat),
-  )
+  AutoScalingTargetTrackingScalingPolicyConfigurationDescription(disable_scale_in: option.Option(Bool), scale_in_cooldown: option.Option(Int), scale_out_cooldown: option.Option(Int), target_value: option.Option(json_float.SmithyFloat))
 }
 
 pub fn encode_auto_scaling_target_tracking_scaling_policy_configuration_description_struct(input: AutoScalingTargetTrackingScalingPolicyConfigurationDescription) -> json.Json {
@@ -8607,9 +8130,7 @@ pub fn decode_auto_scaling_target_tracking_scaling_policy_configuration_descript
 }
 
 pub type DescribeImportInput {
-  DescribeImportInput(
-    import_arn: option.Option(String),
-  )
+  DescribeImportInput(import_arn: option.Option(String))
 }
 
 pub fn encode_describe_import_input_struct(input: DescribeImportInput) -> json.Json {
@@ -8645,9 +8166,7 @@ pub fn decode_describe_import_input_struct_params() -> decode.Decoder(DescribeIm
 }
 
 pub type DescribeImportOutput {
-  DescribeImportOutput(
-    import_table_description: option.Option(ImportTableDescription),
-  )
+  DescribeImportOutput(import_table_description: option.Option(ImportTableDescription))
 }
 
 pub fn encode_describe_import_output_struct(input: DescribeImportOutput) -> json.Json {
@@ -8683,27 +8202,7 @@ pub fn decode_describe_import_output_struct_params() -> decode.Decoder(DescribeI
 }
 
 pub type ImportTableDescription {
-  ImportTableDescription(
-    client_token: option.Option(String),
-    cloud_watch_log_group_arn: option.Option(String),
-    end_time: option.Option(Int),
-    error_count: option.Option(Int),
-    failure_code: option.Option(String),
-    failure_message: option.Option(String),
-    import_arn: option.Option(String),
-    import_status: option.Option(ImportStatus),
-    imported_item_count: option.Option(Int),
-    input_compression_type: option.Option(InputCompressionType),
-    input_format: option.Option(InputFormat),
-    input_format_options: option.Option(InputFormatOptions),
-    processed_item_count: option.Option(Int),
-    processed_size_bytes: option.Option(Int),
-    s3_bucket_source: option.Option(S3BucketSource),
-    start_time: option.Option(Int),
-    table_arn: option.Option(String),
-    table_creation_parameters: option.Option(TableCreationParameters),
-    table_id: option.Option(String),
-  )
+  ImportTableDescription(client_token: option.Option(String), cloud_watch_log_group_arn: option.Option(String), end_time: option.Option(Int), error_count: option.Option(Int), failure_code: option.Option(String), failure_message: option.Option(String), import_arn: option.Option(String), import_status: option.Option(ImportStatus), imported_item_count: option.Option(Int), input_compression_type: option.Option(InputCompressionType), input_format: option.Option(InputFormat), input_format_options: option.Option(InputFormatOptions), processed_item_count: option.Option(Int), processed_size_bytes: option.Option(Int), s3_bucket_source: option.Option(S3BucketSource), start_time: option.Option(Int), table_arn: option.Option(String), table_creation_parameters: option.Option(TableCreationParameters), table_id: option.Option(String))
 }
 
 pub fn encode_import_table_description_struct(input: ImportTableDescription) -> json.Json {
@@ -9036,9 +8535,7 @@ pub fn decode_input_format_enum() -> decode.Decoder(InputFormat) {
 }
 
 pub type InputFormatOptions {
-  InputFormatOptions(
-    csv: option.Option(CsvOptions),
-  )
+  InputFormatOptions(csv: option.Option(CsvOptions))
 }
 
 pub fn encode_input_format_options_struct(input: InputFormatOptions) -> json.Json {
@@ -9074,10 +8571,7 @@ pub fn decode_input_format_options_struct_params() -> decode.Decoder(InputFormat
 }
 
 pub type CsvOptions {
-  CsvOptions(
-    delimiter: option.Option(String),
-    header_list: option.Option(List(String)),
-  )
+  CsvOptions(delimiter: option.Option(String), header_list: option.Option(List(String)))
 }
 
 pub fn encode_csv_options_struct(input: CsvOptions) -> json.Json {
@@ -9125,11 +8619,7 @@ pub fn decode_csv_options_struct_params() -> decode.Decoder(CsvOptions) {
 }
 
 pub type S3BucketSource {
-  S3BucketSource(
-    s3_bucket: option.Option(String),
-    s3_bucket_owner: option.Option(String),
-    s3_key_prefix: option.Option(String),
-  )
+  S3BucketSource(s3_bucket: option.Option(String), s3_bucket_owner: option.Option(String), s3_key_prefix: option.Option(String))
 }
 
 pub fn encode_s3_bucket_source_struct(input: S3BucketSource) -> json.Json {
@@ -9189,16 +8679,7 @@ pub fn decode_s3_bucket_source_struct_params() -> decode.Decoder(S3BucketSource)
 }
 
 pub type TableCreationParameters {
-  TableCreationParameters(
-    attribute_definitions: option.Option(List(AttributeDefinition)),
-    billing_mode: option.Option(BillingMode),
-    global_secondary_indexes: option.Option(List(GlobalSecondaryIndex)),
-    key_schema: option.Option(List(KeySchemaElement)),
-    on_demand_throughput: option.Option(OnDemandThroughput),
-    provisioned_throughput: option.Option(ProvisionedThroughput),
-    sse_specification: option.Option(SSESpecification),
-    table_name: option.Option(String),
-  )
+  TableCreationParameters(attribute_definitions: option.Option(List(AttributeDefinition)), billing_mode: option.Option(BillingMode), global_secondary_indexes: option.Option(List(GlobalSecondaryIndex)), key_schema: option.Option(List(KeySchemaElement)), on_demand_throughput: option.Option(OnDemandThroughput), provisioned_throughput: option.Option(ProvisionedThroughput), sse_specification: option.Option(SSESpecification), table_name: option.Option(String))
 }
 
 pub fn encode_table_creation_parameters_struct(input: TableCreationParameters) -> json.Json {
@@ -9318,9 +8799,7 @@ pub fn decode_table_creation_parameters_struct_params() -> decode.Decoder(TableC
 }
 
 pub type ImportNotFoundException {
-  ImportNotFoundException(
-    message: option.Option(String),
-  )
+  ImportNotFoundException(message: option.Option(String))
 }
 
 pub fn encode_import_not_found_exception_struct(input: ImportNotFoundException) -> json.Json {
@@ -9356,9 +8835,7 @@ pub fn decode_import_not_found_exception_struct_params() -> decode.Decoder(Impor
 }
 
 pub type DescribeKinesisStreamingDestinationInput {
-  DescribeKinesisStreamingDestinationInput(
-    table_name: option.Option(String),
-  )
+  DescribeKinesisStreamingDestinationInput(table_name: option.Option(String))
 }
 
 pub fn encode_describe_kinesis_streaming_destination_input_struct(input: DescribeKinesisStreamingDestinationInput) -> json.Json {
@@ -9394,10 +8871,7 @@ pub fn decode_describe_kinesis_streaming_destination_input_struct_params() -> de
 }
 
 pub type DescribeKinesisStreamingDestinationOutput {
-  DescribeKinesisStreamingDestinationOutput(
-    kinesis_data_stream_destinations: option.Option(List(KinesisDataStreamDestination)),
-    table_name: option.Option(String),
-  )
+  DescribeKinesisStreamingDestinationOutput(kinesis_data_stream_destinations: option.Option(List(KinesisDataStreamDestination)), table_name: option.Option(String))
 }
 
 pub fn encode_describe_kinesis_streaming_destination_output_struct(input: DescribeKinesisStreamingDestinationOutput) -> json.Json {
@@ -9445,12 +8919,7 @@ pub fn decode_describe_kinesis_streaming_destination_output_struct_params() -> d
 }
 
 pub type KinesisDataStreamDestination {
-  KinesisDataStreamDestination(
-    approximate_creation_date_time_precision: option.Option(ApproximateCreationDateTimePrecision),
-    destination_status: option.Option(DestinationStatus),
-    destination_status_description: option.Option(String),
-    stream_arn: option.Option(String),
-  )
+  KinesisDataStreamDestination(approximate_creation_date_time_precision: option.Option(ApproximateCreationDateTimePrecision), destination_status: option.Option(DestinationStatus), destination_status_description: option.Option(String), stream_arn: option.Option(String))
 }
 
 pub fn encode_kinesis_data_stream_destination_struct(input: KinesisDataStreamDestination) -> json.Json {
@@ -9598,12 +9067,7 @@ pub fn decode_describe_limits_input_struct_params() -> decode.Decoder(DescribeLi
 }
 
 pub type DescribeLimitsOutput {
-  DescribeLimitsOutput(
-    account_max_read_capacity_units: option.Option(Int),
-    account_max_write_capacity_units: option.Option(Int),
-    table_max_read_capacity_units: option.Option(Int),
-    table_max_write_capacity_units: option.Option(Int),
-  )
+  DescribeLimitsOutput(account_max_read_capacity_units: option.Option(Int), account_max_write_capacity_units: option.Option(Int), table_max_read_capacity_units: option.Option(Int), table_max_write_capacity_units: option.Option(Int))
 }
 
 pub fn encode_describe_limits_output_struct(input: DescribeLimitsOutput) -> json.Json {
@@ -9675,9 +9139,7 @@ pub fn decode_describe_limits_output_struct_params() -> decode.Decoder(DescribeL
 }
 
 pub type DescribeTableInput {
-  DescribeTableInput(
-    table_name: option.Option(String),
-  )
+  DescribeTableInput(table_name: option.Option(String))
 }
 
 pub fn encode_describe_table_input_struct(input: DescribeTableInput) -> json.Json {
@@ -9713,9 +9175,7 @@ pub fn decode_describe_table_input_struct_params() -> decode.Decoder(DescribeTab
 }
 
 pub type DescribeTableOutput {
-  DescribeTableOutput(
-    table: option.Option(TableDescription),
-  )
+  DescribeTableOutput(table: option.Option(TableDescription))
 }
 
 pub fn encode_describe_table_output_struct(input: DescribeTableOutput) -> json.Json {
@@ -9751,9 +9211,7 @@ pub fn decode_describe_table_output_struct_params() -> decode.Decoder(DescribeTa
 }
 
 pub type DescribeTableReplicaAutoScalingInput {
-  DescribeTableReplicaAutoScalingInput(
-    table_name: option.Option(String),
-  )
+  DescribeTableReplicaAutoScalingInput(table_name: option.Option(String))
 }
 
 pub fn encode_describe_table_replica_auto_scaling_input_struct(input: DescribeTableReplicaAutoScalingInput) -> json.Json {
@@ -9789,9 +9247,7 @@ pub fn decode_describe_table_replica_auto_scaling_input_struct_params() -> decod
 }
 
 pub type DescribeTableReplicaAutoScalingOutput {
-  DescribeTableReplicaAutoScalingOutput(
-    table_auto_scaling_description: option.Option(TableAutoScalingDescription),
-  )
+  DescribeTableReplicaAutoScalingOutput(table_auto_scaling_description: option.Option(TableAutoScalingDescription))
 }
 
 pub fn encode_describe_table_replica_auto_scaling_output_struct(input: DescribeTableReplicaAutoScalingOutput) -> json.Json {
@@ -9827,11 +9283,7 @@ pub fn decode_describe_table_replica_auto_scaling_output_struct_params() -> deco
 }
 
 pub type TableAutoScalingDescription {
-  TableAutoScalingDescription(
-    replicas: option.Option(List(ReplicaAutoScalingDescription)),
-    table_name: option.Option(String),
-    table_status: option.Option(TableStatus),
-  )
+  TableAutoScalingDescription(replicas: option.Option(List(ReplicaAutoScalingDescription)), table_name: option.Option(String), table_status: option.Option(TableStatus))
 }
 
 pub fn encode_table_auto_scaling_description_struct(input: TableAutoScalingDescription) -> json.Json {
@@ -9891,13 +9343,7 @@ pub fn decode_table_auto_scaling_description_struct_params() -> decode.Decoder(T
 }
 
 pub type ReplicaAutoScalingDescription {
-  ReplicaAutoScalingDescription(
-    global_secondary_indexes: option.Option(List(ReplicaGlobalSecondaryIndexAutoScalingDescription)),
-    region_name: option.Option(String),
-    replica_provisioned_read_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription),
-    replica_provisioned_write_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription),
-    replica_status: option.Option(ReplicaStatus),
-  )
+  ReplicaAutoScalingDescription(global_secondary_indexes: option.Option(List(ReplicaGlobalSecondaryIndexAutoScalingDescription)), region_name: option.Option(String), replica_provisioned_read_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription), replica_provisioned_write_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription), replica_status: option.Option(ReplicaStatus))
 }
 
 pub fn encode_replica_auto_scaling_description_struct(input: ReplicaAutoScalingDescription) -> json.Json {
@@ -9981,12 +9427,7 @@ pub fn decode_replica_auto_scaling_description_struct_params() -> decode.Decoder
 }
 
 pub type ReplicaGlobalSecondaryIndexAutoScalingDescription {
-  ReplicaGlobalSecondaryIndexAutoScalingDescription(
-    index_name: option.Option(String),
-    index_status: option.Option(IndexStatus),
-    provisioned_read_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription),
-    provisioned_write_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription),
-  )
+  ReplicaGlobalSecondaryIndexAutoScalingDescription(index_name: option.Option(String), index_status: option.Option(IndexStatus), provisioned_read_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription), provisioned_write_capacity_auto_scaling_settings: option.Option(AutoScalingSettingsDescription))
 }
 
 pub fn encode_replica_global_secondary_index_auto_scaling_description_struct(input: ReplicaGlobalSecondaryIndexAutoScalingDescription) -> json.Json {
@@ -10058,9 +9499,7 @@ pub fn decode_replica_global_secondary_index_auto_scaling_description_struct_par
 }
 
 pub type DescribeTimeToLiveInput {
-  DescribeTimeToLiveInput(
-    table_name: option.Option(String),
-  )
+  DescribeTimeToLiveInput(table_name: option.Option(String))
 }
 
 pub fn encode_describe_time_to_live_input_struct(input: DescribeTimeToLiveInput) -> json.Json {
@@ -10096,9 +9535,7 @@ pub fn decode_describe_time_to_live_input_struct_params() -> decode.Decoder(Desc
 }
 
 pub type DescribeTimeToLiveOutput {
-  DescribeTimeToLiveOutput(
-    time_to_live_description: option.Option(TimeToLiveDescription),
-  )
+  DescribeTimeToLiveOutput(time_to_live_description: option.Option(TimeToLiveDescription))
 }
 
 pub fn encode_describe_time_to_live_output_struct(input: DescribeTimeToLiveOutput) -> json.Json {
@@ -10134,11 +9571,7 @@ pub fn decode_describe_time_to_live_output_struct_params() -> decode.Decoder(Des
 }
 
 pub type KinesisStreamingDestinationInput {
-  KinesisStreamingDestinationInput(
-    enable_kinesis_streaming_configuration: option.Option(EnableKinesisStreamingConfiguration),
-    stream_arn: option.Option(String),
-    table_name: option.Option(String),
-  )
+  KinesisStreamingDestinationInput(enable_kinesis_streaming_configuration: option.Option(EnableKinesisStreamingConfiguration), stream_arn: option.Option(String), table_name: option.Option(String))
 }
 
 pub fn encode_kinesis_streaming_destination_input_struct(input: KinesisStreamingDestinationInput) -> json.Json {
@@ -10198,9 +9631,7 @@ pub fn decode_kinesis_streaming_destination_input_struct_params() -> decode.Deco
 }
 
 pub type EnableKinesisStreamingConfiguration {
-  EnableKinesisStreamingConfiguration(
-    approximate_creation_date_time_precision: option.Option(ApproximateCreationDateTimePrecision),
-  )
+  EnableKinesisStreamingConfiguration(approximate_creation_date_time_precision: option.Option(ApproximateCreationDateTimePrecision))
 }
 
 pub fn encode_enable_kinesis_streaming_configuration_struct(input: EnableKinesisStreamingConfiguration) -> json.Json {
@@ -10236,12 +9667,7 @@ pub fn decode_enable_kinesis_streaming_configuration_struct_params() -> decode.D
 }
 
 pub type KinesisStreamingDestinationOutput {
-  KinesisStreamingDestinationOutput(
-    destination_status: option.Option(DestinationStatus),
-    enable_kinesis_streaming_configuration: option.Option(EnableKinesisStreamingConfiguration),
-    stream_arn: option.Option(String),
-    table_name: option.Option(String),
-  )
+  KinesisStreamingDestinationOutput(destination_status: option.Option(DestinationStatus), enable_kinesis_streaming_configuration: option.Option(EnableKinesisStreamingConfiguration), stream_arn: option.Option(String), table_name: option.Option(String))
 }
 
 pub fn encode_kinesis_streaming_destination_output_struct(input: KinesisStreamingDestinationOutput) -> json.Json {
@@ -10313,15 +9739,7 @@ pub fn decode_kinesis_streaming_destination_output_struct_params() -> decode.Dec
 }
 
 pub type ExecuteStatementInput {
-  ExecuteStatementInput(
-    consistent_read: option.Option(Bool),
-    limit: option.Option(Int),
-    next_token: option.Option(String),
-    parameters: option.Option(List(AttributeValue)),
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-    return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure),
-    statement: option.Option(String),
-  )
+  ExecuteStatementInput(consistent_read: option.Option(Bool), limit: option.Option(Int), next_token: option.Option(String), parameters: option.Option(List(AttributeValue)), return_consumed_capacity: option.Option(ReturnConsumedCapacity), return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure), statement: option.Option(String))
 }
 
 pub fn encode_execute_statement_input_struct(input: ExecuteStatementInput) -> json.Json {
@@ -10429,12 +9847,7 @@ pub fn decode_execute_statement_input_struct_params() -> decode.Decoder(ExecuteS
 }
 
 pub type ExecuteStatementOutput {
-  ExecuteStatementOutput(
-    consumed_capacity: option.Option(ConsumedCapacity),
-    items: option.Option(List(dict.Dict(String, AttributeValue))),
-    last_evaluated_key: option.Option(dict.Dict(String, AttributeValue)),
-    next_token: option.Option(String),
-  )
+  ExecuteStatementOutput(consumed_capacity: option.Option(ConsumedCapacity), items: option.Option(List(dict.Dict(String, AttributeValue))), last_evaluated_key: option.Option(dict.Dict(String, AttributeValue)), next_token: option.Option(String))
 }
 
 pub fn encode_execute_statement_output_struct(input: ExecuteStatementOutput) -> json.Json {
@@ -10506,9 +9919,7 @@ pub fn decode_execute_statement_output_struct_params() -> decode.Decoder(Execute
 }
 
 pub type DuplicateItemException {
-  DuplicateItemException(
-    message: option.Option(String),
-  )
+  DuplicateItemException(message: option.Option(String))
 }
 
 pub fn encode_duplicate_item_exception_struct(input: DuplicateItemException) -> json.Json {
@@ -10544,11 +9955,7 @@ pub fn decode_duplicate_item_exception_struct_params() -> decode.Decoder(Duplica
 }
 
 pub type ExecuteTransactionInput {
-  ExecuteTransactionInput(
-    client_request_token: option.Option(String),
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-    transact_statements: option.Option(List(ParameterizedStatement)),
-  )
+  ExecuteTransactionInput(client_request_token: option.Option(String), return_consumed_capacity: option.Option(ReturnConsumedCapacity), transact_statements: option.Option(List(ParameterizedStatement)))
 }
 
 pub fn encode_execute_transaction_input_struct(input: ExecuteTransactionInput) -> json.Json {
@@ -10608,11 +10015,7 @@ pub fn decode_execute_transaction_input_struct_params() -> decode.Decoder(Execut
 }
 
 pub type ParameterizedStatement {
-  ParameterizedStatement(
-    parameters: option.Option(List(AttributeValue)),
-    return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure),
-    statement: option.Option(String),
-  )
+  ParameterizedStatement(parameters: option.Option(List(AttributeValue)), return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure), statement: option.Option(String))
 }
 
 pub fn encode_parameterized_statement_struct(input: ParameterizedStatement) -> json.Json {
@@ -10672,10 +10075,7 @@ pub fn decode_parameterized_statement_struct_params() -> decode.Decoder(Paramete
 }
 
 pub type ExecuteTransactionOutput {
-  ExecuteTransactionOutput(
-    consumed_capacity: option.Option(List(ConsumedCapacity)),
-    responses: option.Option(List(ItemResponse)),
-  )
+  ExecuteTransactionOutput(consumed_capacity: option.Option(List(ConsumedCapacity)), responses: option.Option(List(ItemResponse)))
 }
 
 pub fn encode_execute_transaction_output_struct(input: ExecuteTransactionOutput) -> json.Json {
@@ -10723,9 +10123,7 @@ pub fn decode_execute_transaction_output_struct_params() -> decode.Decoder(Execu
 }
 
 pub type ItemResponse {
-  ItemResponse(
-    item: option.Option(dict.Dict(String, AttributeValue)),
-  )
+  ItemResponse(item: option.Option(dict.Dict(String, AttributeValue)))
 }
 
 pub fn encode_item_response_struct(input: ItemResponse) -> json.Json {
@@ -10761,9 +10159,7 @@ pub fn decode_item_response_struct_params() -> decode.Decoder(ItemResponse) {
 }
 
 pub type IdempotentParameterMismatchException {
-  IdempotentParameterMismatchException(
-    message: option.Option(String),
-  )
+  IdempotentParameterMismatchException(message: option.Option(String))
 }
 
 pub fn encode_idempotent_parameter_mismatch_exception_struct(input: IdempotentParameterMismatchException) -> json.Json {
@@ -10799,10 +10195,7 @@ pub fn decode_idempotent_parameter_mismatch_exception_struct_params() -> decode.
 }
 
 pub type TransactionCanceledException {
-  TransactionCanceledException(
-    cancellation_reasons: option.Option(List(CancellationReason)),
-    message: option.Option(String),
-  )
+  TransactionCanceledException(cancellation_reasons: option.Option(List(CancellationReason)), message: option.Option(String))
 }
 
 pub fn encode_transaction_canceled_exception_struct(input: TransactionCanceledException) -> json.Json {
@@ -10850,11 +10243,7 @@ pub fn decode_transaction_canceled_exception_struct_params() -> decode.Decoder(T
 }
 
 pub type CancellationReason {
-  CancellationReason(
-    code: option.Option(String),
-    item: option.Option(dict.Dict(String, AttributeValue)),
-    message: option.Option(String),
-  )
+  CancellationReason(code: option.Option(String), item: option.Option(dict.Dict(String, AttributeValue)), message: option.Option(String))
 }
 
 pub fn encode_cancellation_reason_struct(input: CancellationReason) -> json.Json {
@@ -10914,9 +10303,7 @@ pub fn decode_cancellation_reason_struct_params() -> decode.Decoder(Cancellation
 }
 
 pub type TransactionInProgressException {
-  TransactionInProgressException(
-    message: option.Option(String),
-  )
+  TransactionInProgressException(message: option.Option(String))
 }
 
 pub fn encode_transaction_in_progress_exception_struct(input: TransactionInProgressException) -> json.Json {
@@ -10952,19 +10339,7 @@ pub fn decode_transaction_in_progress_exception_struct_params() -> decode.Decode
 }
 
 pub type ExportTableToPointInTimeInput {
-  ExportTableToPointInTimeInput(
-    client_token: option.Option(String),
-    export_format: option.Option(ExportFormat),
-    export_time: option.Option(Int),
-    export_type: option.Option(ExportType),
-    incremental_export_specification: option.Option(IncrementalExportSpecification),
-    s3_bucket: option.Option(String),
-    s3_bucket_owner: option.Option(String),
-    s3_prefix: option.Option(String),
-    s3_sse_algorithm: option.Option(S3SseAlgorithm),
-    s3_sse_kms_key_id: option.Option(String),
-    table_arn: option.Option(String),
-  )
+  ExportTableToPointInTimeInput(client_token: option.Option(String), export_format: option.Option(ExportFormat), export_time: option.Option(Int), export_type: option.Option(ExportType), incremental_export_specification: option.Option(IncrementalExportSpecification), s3_bucket: option.Option(String), s3_bucket_owner: option.Option(String), s3_prefix: option.Option(String), s3_sse_algorithm: option.Option(S3SseAlgorithm), s3_sse_kms_key_id: option.Option(String), table_arn: option.Option(String))
 }
 
 pub fn encode_export_table_to_point_in_time_input_struct(input: ExportTableToPointInTimeInput) -> json.Json {
@@ -11120,9 +10495,7 @@ pub fn decode_export_table_to_point_in_time_input_struct_params() -> decode.Deco
 }
 
 pub type ExportTableToPointInTimeOutput {
-  ExportTableToPointInTimeOutput(
-    export_description: option.Option(ExportDescription),
-  )
+  ExportTableToPointInTimeOutput(export_description: option.Option(ExportDescription))
 }
 
 pub fn encode_export_table_to_point_in_time_output_struct(input: ExportTableToPointInTimeOutput) -> json.Json {
@@ -11158,9 +10531,7 @@ pub fn decode_export_table_to_point_in_time_output_struct_params() -> decode.Dec
 }
 
 pub type ExportConflictException {
-  ExportConflictException(
-    message: option.Option(String),
-  )
+  ExportConflictException(message: option.Option(String))
 }
 
 pub fn encode_export_conflict_exception_struct(input: ExportConflictException) -> json.Json {
@@ -11196,9 +10567,7 @@ pub fn decode_export_conflict_exception_struct_params() -> decode.Decoder(Export
 }
 
 pub type InvalidExportTimeException {
-  InvalidExportTimeException(
-    message: option.Option(String),
-  )
+  InvalidExportTimeException(message: option.Option(String))
 }
 
 pub fn encode_invalid_export_time_exception_struct(input: InvalidExportTimeException) -> json.Json {
@@ -11234,9 +10603,7 @@ pub fn decode_invalid_export_time_exception_struct_params() -> decode.Decoder(In
 }
 
 pub type PointInTimeRecoveryUnavailableException {
-  PointInTimeRecoveryUnavailableException(
-    message: option.Option(String),
-  )
+  PointInTimeRecoveryUnavailableException(message: option.Option(String))
 }
 
 pub fn encode_point_in_time_recovery_unavailable_exception_struct(input: PointInTimeRecoveryUnavailableException) -> json.Json {
@@ -11272,15 +10639,7 @@ pub fn decode_point_in_time_recovery_unavailable_exception_struct_params() -> de
 }
 
 pub type GetItemInput {
-  GetItemInput(
-    attributes_to_get: option.Option(List(String)),
-    consistent_read: option.Option(Bool),
-    expression_attribute_names: option.Option(dict.Dict(String, String)),
-    key: option.Option(dict.Dict(String, AttributeValue)),
-    projection_expression: option.Option(String),
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-    table_name: option.Option(String),
-  )
+  GetItemInput(attributes_to_get: option.Option(List(String)), consistent_read: option.Option(Bool), expression_attribute_names: option.Option(dict.Dict(String, String)), key: option.Option(dict.Dict(String, AttributeValue)), projection_expression: option.Option(String), return_consumed_capacity: option.Option(ReturnConsumedCapacity), table_name: option.Option(String))
 }
 
 pub fn encode_get_item_input_struct(input: GetItemInput) -> json.Json {
@@ -11388,10 +10747,7 @@ pub fn decode_get_item_input_struct_params() -> decode.Decoder(GetItemInput) {
 }
 
 pub type GetItemOutput {
-  GetItemOutput(
-    consumed_capacity: option.Option(ConsumedCapacity),
-    item: option.Option(dict.Dict(String, AttributeValue)),
-  )
+  GetItemOutput(consumed_capacity: option.Option(ConsumedCapacity), item: option.Option(dict.Dict(String, AttributeValue)))
 }
 
 pub fn encode_get_item_output_struct(input: GetItemOutput) -> json.Json {
@@ -11439,9 +10795,7 @@ pub fn decode_get_item_output_struct_params() -> decode.Decoder(GetItemOutput) {
 }
 
 pub type GetResourcePolicyInput {
-  GetResourcePolicyInput(
-    resource_arn: option.Option(String),
-  )
+  GetResourcePolicyInput(resource_arn: option.Option(String))
 }
 
 pub fn encode_get_resource_policy_input_struct(input: GetResourcePolicyInput) -> json.Json {
@@ -11477,10 +10831,7 @@ pub fn decode_get_resource_policy_input_struct_params() -> decode.Decoder(GetRes
 }
 
 pub type GetResourcePolicyOutput {
-  GetResourcePolicyOutput(
-    policy: option.Option(String),
-    revision_id: option.Option(String),
-  )
+  GetResourcePolicyOutput(policy: option.Option(String), revision_id: option.Option(String))
 }
 
 pub fn encode_get_resource_policy_output_struct(input: GetResourcePolicyOutput) -> json.Json {
@@ -11528,14 +10879,7 @@ pub fn decode_get_resource_policy_output_struct_params() -> decode.Decoder(GetRe
 }
 
 pub type ImportTableInput {
-  ImportTableInput(
-    client_token: option.Option(String),
-    input_compression_type: option.Option(InputCompressionType),
-    input_format: option.Option(InputFormat),
-    input_format_options: option.Option(InputFormatOptions),
-    s3_bucket_source: option.Option(S3BucketSource),
-    table_creation_parameters: option.Option(TableCreationParameters),
-  )
+  ImportTableInput(client_token: option.Option(String), input_compression_type: option.Option(InputCompressionType), input_format: option.Option(InputFormat), input_format_options: option.Option(InputFormatOptions), s3_bucket_source: option.Option(S3BucketSource), table_creation_parameters: option.Option(TableCreationParameters))
 }
 
 pub fn encode_import_table_input_struct(input: ImportTableInput) -> json.Json {
@@ -11631,9 +10975,7 @@ pub fn decode_import_table_input_struct_params() -> decode.Decoder(ImportTableIn
 }
 
 pub type ImportTableOutput {
-  ImportTableOutput(
-    import_table_description: option.Option(ImportTableDescription),
-  )
+  ImportTableOutput(import_table_description: option.Option(ImportTableDescription))
 }
 
 pub fn encode_import_table_output_struct(input: ImportTableOutput) -> json.Json {
@@ -11669,9 +11011,7 @@ pub fn decode_import_table_output_struct_params() -> decode.Decoder(ImportTableO
 }
 
 pub type ImportConflictException {
-  ImportConflictException(
-    message: option.Option(String),
-  )
+  ImportConflictException(message: option.Option(String))
 }
 
 pub fn encode_import_conflict_exception_struct(input: ImportConflictException) -> json.Json {
@@ -11707,14 +11047,7 @@ pub fn decode_import_conflict_exception_struct_params() -> decode.Decoder(Import
 }
 
 pub type ListBackupsInput {
-  ListBackupsInput(
-    backup_type: option.Option(BackupTypeFilter),
-    exclusive_start_backup_arn: option.Option(String),
-    limit: option.Option(Int),
-    table_name: option.Option(String),
-    time_range_lower_bound: option.Option(Int),
-    time_range_upper_bound: option.Option(Int),
-  )
+  ListBackupsInput(backup_type: option.Option(BackupTypeFilter), exclusive_start_backup_arn: option.Option(String), limit: option.Option(Int), table_name: option.Option(String), time_range_lower_bound: option.Option(Int), time_range_upper_bound: option.Option(Int))
 }
 
 pub fn encode_list_backups_input_struct(input: ListBackupsInput) -> json.Json {
@@ -11838,10 +11171,7 @@ pub fn decode_backup_type_filter_enum() -> decode.Decoder(BackupTypeFilter) {
 }
 
 pub type ListBackupsOutput {
-  ListBackupsOutput(
-    backup_summaries: option.Option(List(BackupSummary)),
-    last_evaluated_backup_arn: option.Option(String),
-  )
+  ListBackupsOutput(backup_summaries: option.Option(List(BackupSummary)), last_evaluated_backup_arn: option.Option(String))
 }
 
 pub fn encode_list_backups_output_struct(input: ListBackupsOutput) -> json.Json {
@@ -11889,18 +11219,7 @@ pub fn decode_list_backups_output_struct_params() -> decode.Decoder(ListBackupsO
 }
 
 pub type BackupSummary {
-  BackupSummary(
-    backup_arn: option.Option(String),
-    backup_creation_date_time: option.Option(Int),
-    backup_expiry_date_time: option.Option(Int),
-    backup_name: option.Option(String),
-    backup_size_bytes: option.Option(Int),
-    backup_status: option.Option(BackupStatus),
-    backup_type: option.Option(BackupType),
-    table_arn: option.Option(String),
-    table_id: option.Option(String),
-    table_name: option.Option(String),
-  )
+  BackupSummary(backup_arn: option.Option(String), backup_creation_date_time: option.Option(Int), backup_expiry_date_time: option.Option(Int), backup_name: option.Option(String), backup_size_bytes: option.Option(Int), backup_status: option.Option(BackupStatus), backup_type: option.Option(BackupType), table_arn: option.Option(String), table_id: option.Option(String), table_name: option.Option(String))
 }
 
 pub fn encode_backup_summary_struct(input: BackupSummary) -> json.Json {
@@ -12044,11 +11363,7 @@ pub fn decode_backup_summary_struct_params() -> decode.Decoder(BackupSummary) {
 }
 
 pub type ListContributorInsightsInput {
-  ListContributorInsightsInput(
-    max_results: option.Option(Int),
-    next_token: option.Option(String),
-    table_name: option.Option(String),
-  )
+  ListContributorInsightsInput(max_results: option.Option(Int), next_token: option.Option(String), table_name: option.Option(String))
 }
 
 pub fn encode_list_contributor_insights_input_struct(input: ListContributorInsightsInput) -> json.Json {
@@ -12108,10 +11423,7 @@ pub fn decode_list_contributor_insights_input_struct_params() -> decode.Decoder(
 }
 
 pub type ListContributorInsightsOutput {
-  ListContributorInsightsOutput(
-    contributor_insights_summaries: option.Option(List(ContributorInsightsSummary)),
-    next_token: option.Option(String),
-  )
+  ListContributorInsightsOutput(contributor_insights_summaries: option.Option(List(ContributorInsightsSummary)), next_token: option.Option(String))
 }
 
 pub fn encode_list_contributor_insights_output_struct(input: ListContributorInsightsOutput) -> json.Json {
@@ -12159,12 +11471,7 @@ pub fn decode_list_contributor_insights_output_struct_params() -> decode.Decoder
 }
 
 pub type ContributorInsightsSummary {
-  ContributorInsightsSummary(
-    contributor_insights_mode: option.Option(ContributorInsightsMode),
-    contributor_insights_status: option.Option(ContributorInsightsStatus),
-    index_name: option.Option(String),
-    table_name: option.Option(String),
-  )
+  ContributorInsightsSummary(contributor_insights_mode: option.Option(ContributorInsightsMode), contributor_insights_status: option.Option(ContributorInsightsStatus), index_name: option.Option(String), table_name: option.Option(String))
 }
 
 pub fn encode_contributor_insights_summary_struct(input: ContributorInsightsSummary) -> json.Json {
@@ -12236,11 +11543,7 @@ pub fn decode_contributor_insights_summary_struct_params() -> decode.Decoder(Con
 }
 
 pub type ListExportsInput {
-  ListExportsInput(
-    max_results: option.Option(Int),
-    next_token: option.Option(String),
-    table_arn: option.Option(String),
-  )
+  ListExportsInput(max_results: option.Option(Int), next_token: option.Option(String), table_arn: option.Option(String))
 }
 
 pub fn encode_list_exports_input_struct(input: ListExportsInput) -> json.Json {
@@ -12300,10 +11603,7 @@ pub fn decode_list_exports_input_struct_params() -> decode.Decoder(ListExportsIn
 }
 
 pub type ListExportsOutput {
-  ListExportsOutput(
-    export_summaries: option.Option(List(ExportSummary)),
-    next_token: option.Option(String),
-  )
+  ListExportsOutput(export_summaries: option.Option(List(ExportSummary)), next_token: option.Option(String))
 }
 
 pub fn encode_list_exports_output_struct(input: ListExportsOutput) -> json.Json {
@@ -12351,11 +11651,7 @@ pub fn decode_list_exports_output_struct_params() -> decode.Decoder(ListExportsO
 }
 
 pub type ExportSummary {
-  ExportSummary(
-    export_arn: option.Option(String),
-    export_status: option.Option(ExportStatus),
-    export_type: option.Option(ExportType),
-  )
+  ExportSummary(export_arn: option.Option(String), export_status: option.Option(ExportStatus), export_type: option.Option(ExportType))
 }
 
 pub fn encode_export_summary_struct(input: ExportSummary) -> json.Json {
@@ -12415,11 +11711,7 @@ pub fn decode_export_summary_struct_params() -> decode.Decoder(ExportSummary) {
 }
 
 pub type ListGlobalTablesInput {
-  ListGlobalTablesInput(
-    exclusive_start_global_table_name: option.Option(String),
-    limit: option.Option(Int),
-    region_name: option.Option(String),
-  )
+  ListGlobalTablesInput(exclusive_start_global_table_name: option.Option(String), limit: option.Option(Int), region_name: option.Option(String))
 }
 
 pub fn encode_list_global_tables_input_struct(input: ListGlobalTablesInput) -> json.Json {
@@ -12479,10 +11771,7 @@ pub fn decode_list_global_tables_input_struct_params() -> decode.Decoder(ListGlo
 }
 
 pub type ListGlobalTablesOutput {
-  ListGlobalTablesOutput(
-    global_tables: option.Option(List(GlobalTable)),
-    last_evaluated_global_table_name: option.Option(String),
-  )
+  ListGlobalTablesOutput(global_tables: option.Option(List(GlobalTable)), last_evaluated_global_table_name: option.Option(String))
 }
 
 pub fn encode_list_global_tables_output_struct(input: ListGlobalTablesOutput) -> json.Json {
@@ -12530,10 +11819,7 @@ pub fn decode_list_global_tables_output_struct_params() -> decode.Decoder(ListGl
 }
 
 pub type GlobalTable {
-  GlobalTable(
-    global_table_name: option.Option(String),
-    replication_group: option.Option(List(Replica)),
-  )
+  GlobalTable(global_table_name: option.Option(String), replication_group: option.Option(List(Replica)))
 }
 
 pub fn encode_global_table_struct(input: GlobalTable) -> json.Json {
@@ -12581,11 +11867,7 @@ pub fn decode_global_table_struct_params() -> decode.Decoder(GlobalTable) {
 }
 
 pub type ListImportsInput {
-  ListImportsInput(
-    next_token: option.Option(String),
-    page_size: option.Option(Int),
-    table_arn: option.Option(String),
-  )
+  ListImportsInput(next_token: option.Option(String), page_size: option.Option(Int), table_arn: option.Option(String))
 }
 
 pub fn encode_list_imports_input_struct(input: ListImportsInput) -> json.Json {
@@ -12645,10 +11927,7 @@ pub fn decode_list_imports_input_struct_params() -> decode.Decoder(ListImportsIn
 }
 
 pub type ListImportsOutput {
-  ListImportsOutput(
-    import_summary_list: option.Option(List(ImportSummary)),
-    next_token: option.Option(String),
-  )
+  ListImportsOutput(import_summary_list: option.Option(List(ImportSummary)), next_token: option.Option(String))
 }
 
 pub fn encode_list_imports_output_struct(input: ListImportsOutput) -> json.Json {
@@ -12696,16 +11975,7 @@ pub fn decode_list_imports_output_struct_params() -> decode.Decoder(ListImportsO
 }
 
 pub type ImportSummary {
-  ImportSummary(
-    cloud_watch_log_group_arn: option.Option(String),
-    end_time: option.Option(Int),
-    import_arn: option.Option(String),
-    import_status: option.Option(ImportStatus),
-    input_format: option.Option(InputFormat),
-    s3_bucket_source: option.Option(S3BucketSource),
-    start_time: option.Option(Int),
-    table_arn: option.Option(String),
-  )
+  ImportSummary(cloud_watch_log_group_arn: option.Option(String), end_time: option.Option(Int), import_arn: option.Option(String), import_status: option.Option(ImportStatus), input_format: option.Option(InputFormat), s3_bucket_source: option.Option(S3BucketSource), start_time: option.Option(Int), table_arn: option.Option(String))
 }
 
 pub fn encode_import_summary_struct(input: ImportSummary) -> json.Json {
@@ -12825,10 +12095,7 @@ pub fn decode_import_summary_struct_params() -> decode.Decoder(ImportSummary) {
 }
 
 pub type ListTablesInput {
-  ListTablesInput(
-    exclusive_start_table_name: option.Option(String),
-    limit: option.Option(Int),
-  )
+  ListTablesInput(exclusive_start_table_name: option.Option(String), limit: option.Option(Int))
 }
 
 pub fn encode_list_tables_input_struct(input: ListTablesInput) -> json.Json {
@@ -12876,10 +12143,7 @@ pub fn decode_list_tables_input_struct_params() -> decode.Decoder(ListTablesInpu
 }
 
 pub type ListTablesOutput {
-  ListTablesOutput(
-    last_evaluated_table_name: option.Option(String),
-    table_names: option.Option(List(String)),
-  )
+  ListTablesOutput(last_evaluated_table_name: option.Option(String), table_names: option.Option(List(String)))
 }
 
 pub fn encode_list_tables_output_struct(input: ListTablesOutput) -> json.Json {
@@ -12927,10 +12191,7 @@ pub fn decode_list_tables_output_struct_params() -> decode.Decoder(ListTablesOut
 }
 
 pub type ListTagsOfResourceInput {
-  ListTagsOfResourceInput(
-    next_token: option.Option(String),
-    resource_arn: option.Option(String),
-  )
+  ListTagsOfResourceInput(next_token: option.Option(String), resource_arn: option.Option(String))
 }
 
 pub fn encode_list_tags_of_resource_input_struct(input: ListTagsOfResourceInput) -> json.Json {
@@ -12978,10 +12239,7 @@ pub fn decode_list_tags_of_resource_input_struct_params() -> decode.Decoder(List
 }
 
 pub type ListTagsOfResourceOutput {
-  ListTagsOfResourceOutput(
-    next_token: option.Option(String),
-    tags: option.Option(List(Tag)),
-  )
+  ListTagsOfResourceOutput(next_token: option.Option(String), tags: option.Option(List(Tag)))
 }
 
 pub fn encode_list_tags_of_resource_output_struct(input: ListTagsOfResourceOutput) -> json.Json {
@@ -13029,19 +12287,7 @@ pub fn decode_list_tags_of_resource_output_struct_params() -> decode.Decoder(Lis
 }
 
 pub type PutItemInput {
-  PutItemInput(
-    condition_expression: option.Option(String),
-    conditional_operator: option.Option(ConditionalOperator),
-    expected: option.Option(dict.Dict(String, ExpectedAttributeValue)),
-    expression_attribute_names: option.Option(dict.Dict(String, String)),
-    expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)),
-    item: option.Option(dict.Dict(String, AttributeValue)),
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-    return_item_collection_metrics: option.Option(ReturnItemCollectionMetrics),
-    return_values: option.Option(ReturnValue),
-    return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure),
-    table_name: option.Option(String),
-  )
+  PutItemInput(condition_expression: option.Option(String), conditional_operator: option.Option(ConditionalOperator), expected: option.Option(dict.Dict(String, ExpectedAttributeValue)), expression_attribute_names: option.Option(dict.Dict(String, String)), expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)), item: option.Option(dict.Dict(String, AttributeValue)), return_consumed_capacity: option.Option(ReturnConsumedCapacity), return_item_collection_metrics: option.Option(ReturnItemCollectionMetrics), return_values: option.Option(ReturnValue), return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure), table_name: option.Option(String))
 }
 
 pub fn encode_put_item_input_struct(input: PutItemInput) -> json.Json {
@@ -13197,11 +12443,7 @@ pub fn decode_put_item_input_struct_params() -> decode.Decoder(PutItemInput) {
 }
 
 pub type PutItemOutput {
-  PutItemOutput(
-    attributes: option.Option(dict.Dict(String, AttributeValue)),
-    consumed_capacity: option.Option(ConsumedCapacity),
-    item_collection_metrics: option.Option(ItemCollectionMetrics),
-  )
+  PutItemOutput(attributes: option.Option(dict.Dict(String, AttributeValue)), consumed_capacity: option.Option(ConsumedCapacity), item_collection_metrics: option.Option(ItemCollectionMetrics))
 }
 
 pub fn encode_put_item_output_struct(input: PutItemOutput) -> json.Json {
@@ -13261,12 +12503,7 @@ pub fn decode_put_item_output_struct_params() -> decode.Decoder(PutItemOutput) {
 }
 
 pub type PutResourcePolicyInput {
-  PutResourcePolicyInput(
-    confirm_remove_self_resource_access: option.Option(Bool),
-    expected_revision_id: option.Option(String),
-    policy: option.Option(String),
-    resource_arn: option.Option(String),
-  )
+  PutResourcePolicyInput(confirm_remove_self_resource_access: option.Option(Bool), expected_revision_id: option.Option(String), policy: option.Option(String), resource_arn: option.Option(String))
 }
 
 pub fn encode_put_resource_policy_input_struct(input: PutResourcePolicyInput) -> json.Json {
@@ -13338,9 +12575,7 @@ pub fn decode_put_resource_policy_input_struct_params() -> decode.Decoder(PutRes
 }
 
 pub type PutResourcePolicyOutput {
-  PutResourcePolicyOutput(
-    revision_id: option.Option(String),
-  )
+  PutResourcePolicyOutput(revision_id: option.Option(String))
 }
 
 pub fn encode_put_resource_policy_output_struct(input: PutResourcePolicyOutput) -> json.Json {
@@ -13376,25 +12611,7 @@ pub fn decode_put_resource_policy_output_struct_params() -> decode.Decoder(PutRe
 }
 
 pub type QueryInput {
-  QueryInput(
-    attributes_to_get: option.Option(List(String)),
-    conditional_operator: option.Option(ConditionalOperator),
-    consistent_read: option.Option(Bool),
-    exclusive_start_key: option.Option(dict.Dict(String, AttributeValue)),
-    expression_attribute_names: option.Option(dict.Dict(String, String)),
-    expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)),
-    filter_expression: option.Option(String),
-    index_name: option.Option(String),
-    key_condition_expression: option.Option(String),
-    key_conditions: option.Option(dict.Dict(String, Condition)),
-    limit: option.Option(Int),
-    projection_expression: option.Option(String),
-    query_filter: option.Option(dict.Dict(String, Condition)),
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-    scan_index_forward: option.Option(Bool),
-    select: option.Option(Select),
-    table_name: option.Option(String),
-  )
+  QueryInput(attributes_to_get: option.Option(List(String)), conditional_operator: option.Option(ConditionalOperator), consistent_read: option.Option(Bool), exclusive_start_key: option.Option(dict.Dict(String, AttributeValue)), expression_attribute_names: option.Option(dict.Dict(String, String)), expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)), filter_expression: option.Option(String), index_name: option.Option(String), key_condition_expression: option.Option(String), key_conditions: option.Option(dict.Dict(String, Condition)), limit: option.Option(Int), projection_expression: option.Option(String), query_filter: option.Option(dict.Dict(String, Condition)), return_consumed_capacity: option.Option(ReturnConsumedCapacity), scan_index_forward: option.Option(Bool), select: option.Option(Select), table_name: option.Option(String))
 }
 
 pub fn encode_query_input_struct(input: QueryInput) -> json.Json {
@@ -13622,10 +12839,7 @@ pub fn decode_query_input_struct_params() -> decode.Decoder(QueryInput) {
 }
 
 pub type Condition {
-  Condition(
-    attribute_value_list: option.Option(List(AttributeValue)),
-    comparison_operator: option.Option(ComparisonOperator),
-  )
+  Condition(attribute_value_list: option.Option(List(AttributeValue)), comparison_operator: option.Option(ComparisonOperator))
 }
 
 pub fn encode_condition_struct(input: Condition) -> json.Json {
@@ -13701,13 +12915,7 @@ pub fn decode_select_enum() -> decode.Decoder(Select) {
 }
 
 pub type QueryOutput {
-  QueryOutput(
-    consumed_capacity: option.Option(ConsumedCapacity),
-    count: option.Option(Int),
-    items: option.Option(List(dict.Dict(String, AttributeValue))),
-    last_evaluated_key: option.Option(dict.Dict(String, AttributeValue)),
-    scanned_count: option.Option(Int),
-  )
+  QueryOutput(consumed_capacity: option.Option(ConsumedCapacity), count: option.Option(Int), items: option.Option(List(dict.Dict(String, AttributeValue))), last_evaluated_key: option.Option(dict.Dict(String, AttributeValue)), scanned_count: option.Option(Int))
 }
 
 pub fn encode_query_output_struct(input: QueryOutput) -> json.Json {
@@ -13791,16 +12999,7 @@ pub fn decode_query_output_struct_params() -> decode.Decoder(QueryOutput) {
 }
 
 pub type RestoreTableFromBackupInput {
-  RestoreTableFromBackupInput(
-    backup_arn: option.Option(String),
-    billing_mode_override: option.Option(BillingMode),
-    global_secondary_index_override: option.Option(List(GlobalSecondaryIndex)),
-    local_secondary_index_override: option.Option(List(LocalSecondaryIndex)),
-    on_demand_throughput_override: option.Option(OnDemandThroughput),
-    provisioned_throughput_override: option.Option(ProvisionedThroughput),
-    sse_specification_override: option.Option(SSESpecification),
-    target_table_name: option.Option(String),
-  )
+  RestoreTableFromBackupInput(backup_arn: option.Option(String), billing_mode_override: option.Option(BillingMode), global_secondary_index_override: option.Option(List(GlobalSecondaryIndex)), local_secondary_index_override: option.Option(List(LocalSecondaryIndex)), on_demand_throughput_override: option.Option(OnDemandThroughput), provisioned_throughput_override: option.Option(ProvisionedThroughput), sse_specification_override: option.Option(SSESpecification), target_table_name: option.Option(String))
 }
 
 pub fn encode_restore_table_from_backup_input_struct(input: RestoreTableFromBackupInput) -> json.Json {
@@ -13920,9 +13119,7 @@ pub fn decode_restore_table_from_backup_input_struct_params() -> decode.Decoder(
 }
 
 pub type RestoreTableFromBackupOutput {
-  RestoreTableFromBackupOutput(
-    table_description: option.Option(TableDescription),
-  )
+  RestoreTableFromBackupOutput(table_description: option.Option(TableDescription))
 }
 
 pub fn encode_restore_table_from_backup_output_struct(input: RestoreTableFromBackupOutput) -> json.Json {
@@ -13958,9 +13155,7 @@ pub fn decode_restore_table_from_backup_output_struct_params() -> decode.Decoder
 }
 
 pub type TableAlreadyExistsException {
-  TableAlreadyExistsException(
-    message: option.Option(String),
-  )
+  TableAlreadyExistsException(message: option.Option(String))
 }
 
 pub fn encode_table_already_exists_exception_struct(input: TableAlreadyExistsException) -> json.Json {
@@ -13996,19 +13191,7 @@ pub fn decode_table_already_exists_exception_struct_params() -> decode.Decoder(T
 }
 
 pub type RestoreTableToPointInTimeInput {
-  RestoreTableToPointInTimeInput(
-    billing_mode_override: option.Option(BillingMode),
-    global_secondary_index_override: option.Option(List(GlobalSecondaryIndex)),
-    local_secondary_index_override: option.Option(List(LocalSecondaryIndex)),
-    on_demand_throughput_override: option.Option(OnDemandThroughput),
-    provisioned_throughput_override: option.Option(ProvisionedThroughput),
-    restore_date_time: option.Option(Int),
-    sse_specification_override: option.Option(SSESpecification),
-    source_table_arn: option.Option(String),
-    source_table_name: option.Option(String),
-    target_table_name: option.Option(String),
-    use_latest_restorable_time: option.Option(Bool),
-  )
+  RestoreTableToPointInTimeInput(billing_mode_override: option.Option(BillingMode), global_secondary_index_override: option.Option(List(GlobalSecondaryIndex)), local_secondary_index_override: option.Option(List(LocalSecondaryIndex)), on_demand_throughput_override: option.Option(OnDemandThroughput), provisioned_throughput_override: option.Option(ProvisionedThroughput), restore_date_time: option.Option(Int), sse_specification_override: option.Option(SSESpecification), source_table_arn: option.Option(String), source_table_name: option.Option(String), target_table_name: option.Option(String), use_latest_restorable_time: option.Option(Bool))
 }
 
 pub fn encode_restore_table_to_point_in_time_input_struct(input: RestoreTableToPointInTimeInput) -> json.Json {
@@ -14164,9 +13347,7 @@ pub fn decode_restore_table_to_point_in_time_input_struct_params() -> decode.Dec
 }
 
 pub type RestoreTableToPointInTimeOutput {
-  RestoreTableToPointInTimeOutput(
-    table_description: option.Option(TableDescription),
-  )
+  RestoreTableToPointInTimeOutput(table_description: option.Option(TableDescription))
 }
 
 pub fn encode_restore_table_to_point_in_time_output_struct(input: RestoreTableToPointInTimeOutput) -> json.Json {
@@ -14202,9 +13383,7 @@ pub fn decode_restore_table_to_point_in_time_output_struct_params() -> decode.De
 }
 
 pub type InvalidRestoreTimeException {
-  InvalidRestoreTimeException(
-    message: option.Option(String),
-  )
+  InvalidRestoreTimeException(message: option.Option(String))
 }
 
 pub fn encode_invalid_restore_time_exception_struct(input: InvalidRestoreTimeException) -> json.Json {
@@ -14240,24 +13419,7 @@ pub fn decode_invalid_restore_time_exception_struct_params() -> decode.Decoder(I
 }
 
 pub type ScanInput {
-  ScanInput(
-    attributes_to_get: option.Option(List(String)),
-    conditional_operator: option.Option(ConditionalOperator),
-    consistent_read: option.Option(Bool),
-    exclusive_start_key: option.Option(dict.Dict(String, AttributeValue)),
-    expression_attribute_names: option.Option(dict.Dict(String, String)),
-    expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)),
-    filter_expression: option.Option(String),
-    index_name: option.Option(String),
-    limit: option.Option(Int),
-    projection_expression: option.Option(String),
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-    scan_filter: option.Option(dict.Dict(String, Condition)),
-    segment: option.Option(Int),
-    select: option.Option(Select),
-    table_name: option.Option(String),
-    total_segments: option.Option(Int),
-  )
+  ScanInput(attributes_to_get: option.Option(List(String)), conditional_operator: option.Option(ConditionalOperator), consistent_read: option.Option(Bool), exclusive_start_key: option.Option(dict.Dict(String, AttributeValue)), expression_attribute_names: option.Option(dict.Dict(String, String)), expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)), filter_expression: option.Option(String), index_name: option.Option(String), limit: option.Option(Int), projection_expression: option.Option(String), return_consumed_capacity: option.Option(ReturnConsumedCapacity), scan_filter: option.Option(dict.Dict(String, Condition)), segment: option.Option(Int), select: option.Option(Select), table_name: option.Option(String), total_segments: option.Option(Int))
 }
 
 pub fn encode_scan_input_struct(input: ScanInput) -> json.Json {
@@ -14473,13 +13635,7 @@ pub fn decode_scan_input_struct_params() -> decode.Decoder(ScanInput) {
 }
 
 pub type ScanOutput {
-  ScanOutput(
-    consumed_capacity: option.Option(ConsumedCapacity),
-    count: option.Option(Int),
-    items: option.Option(List(dict.Dict(String, AttributeValue))),
-    last_evaluated_key: option.Option(dict.Dict(String, AttributeValue)),
-    scanned_count: option.Option(Int),
-  )
+  ScanOutput(consumed_capacity: option.Option(ConsumedCapacity), count: option.Option(Int), items: option.Option(List(dict.Dict(String, AttributeValue))), last_evaluated_key: option.Option(dict.Dict(String, AttributeValue)), scanned_count: option.Option(Int))
 }
 
 pub fn encode_scan_output_struct(input: ScanOutput) -> json.Json {
@@ -14563,10 +13719,7 @@ pub fn decode_scan_output_struct_params() -> decode.Decoder(ScanOutput) {
 }
 
 pub type TagResourceInput {
-  TagResourceInput(
-    resource_arn: option.Option(String),
-    tags: option.Option(List(Tag)),
-  )
+  TagResourceInput(resource_arn: option.Option(String), tags: option.Option(List(Tag)))
 }
 
 pub fn encode_tag_resource_input_struct(input: TagResourceInput) -> json.Json {
@@ -14614,10 +13767,7 @@ pub fn decode_tag_resource_input_struct_params() -> decode.Decoder(TagResourceIn
 }
 
 pub type TransactGetItemsInput {
-  TransactGetItemsInput(
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-    transact_items: option.Option(List(TransactGetItem)),
-  )
+  TransactGetItemsInput(return_consumed_capacity: option.Option(ReturnConsumedCapacity), transact_items: option.Option(List(TransactGetItem)))
 }
 
 pub fn encode_transact_get_items_input_struct(input: TransactGetItemsInput) -> json.Json {
@@ -14665,9 +13815,7 @@ pub fn decode_transact_get_items_input_struct_params() -> decode.Decoder(Transac
 }
 
 pub type TransactGetItem {
-  TransactGetItem(
-    get: option.Option(Get),
-  )
+  TransactGetItem(get: option.Option(Get))
 }
 
 pub fn encode_transact_get_item_struct(input: TransactGetItem) -> json.Json {
@@ -14703,12 +13851,7 @@ pub fn decode_transact_get_item_struct_params() -> decode.Decoder(TransactGetIte
 }
 
 pub type Get {
-  Get(
-    expression_attribute_names: option.Option(dict.Dict(String, String)),
-    key: option.Option(dict.Dict(String, AttributeValue)),
-    projection_expression: option.Option(String),
-    table_name: option.Option(String),
-  )
+  Get(expression_attribute_names: option.Option(dict.Dict(String, String)), key: option.Option(dict.Dict(String, AttributeValue)), projection_expression: option.Option(String), table_name: option.Option(String))
 }
 
 pub fn encode_get_struct(input: Get) -> json.Json {
@@ -14780,10 +13923,7 @@ pub fn decode_get_struct_params() -> decode.Decoder(Get) {
 }
 
 pub type TransactGetItemsOutput {
-  TransactGetItemsOutput(
-    consumed_capacity: option.Option(List(ConsumedCapacity)),
-    responses: option.Option(List(ItemResponse)),
-  )
+  TransactGetItemsOutput(consumed_capacity: option.Option(List(ConsumedCapacity)), responses: option.Option(List(ItemResponse)))
 }
 
 pub fn encode_transact_get_items_output_struct(input: TransactGetItemsOutput) -> json.Json {
@@ -14831,12 +13971,7 @@ pub fn decode_transact_get_items_output_struct_params() -> decode.Decoder(Transa
 }
 
 pub type TransactWriteItemsInput {
-  TransactWriteItemsInput(
-    client_request_token: option.Option(String),
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-    return_item_collection_metrics: option.Option(ReturnItemCollectionMetrics),
-    transact_items: option.Option(List(TransactWriteItem)),
-  )
+  TransactWriteItemsInput(client_request_token: option.Option(String), return_consumed_capacity: option.Option(ReturnConsumedCapacity), return_item_collection_metrics: option.Option(ReturnItemCollectionMetrics), transact_items: option.Option(List(TransactWriteItem)))
 }
 
 pub fn encode_transact_write_items_input_struct(input: TransactWriteItemsInput) -> json.Json {
@@ -14908,12 +14043,7 @@ pub fn decode_transact_write_items_input_struct_params() -> decode.Decoder(Trans
 }
 
 pub type TransactWriteItem {
-  TransactWriteItem(
-    condition_check: option.Option(ConditionCheck),
-    delete: option.Option(Delete),
-    put: option.Option(Put),
-    update: option.Option(Update),
-  )
+  TransactWriteItem(condition_check: option.Option(ConditionCheck), delete: option.Option(Delete), put: option.Option(Put), update: option.Option(Update))
 }
 
 pub fn encode_transact_write_item_struct(input: TransactWriteItem) -> json.Json {
@@ -14985,14 +14115,7 @@ pub fn decode_transact_write_item_struct_params() -> decode.Decoder(TransactWrit
 }
 
 pub type ConditionCheck {
-  ConditionCheck(
-    condition_expression: option.Option(String),
-    expression_attribute_names: option.Option(dict.Dict(String, String)),
-    expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)),
-    key: option.Option(dict.Dict(String, AttributeValue)),
-    return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure),
-    table_name: option.Option(String),
-  )
+  ConditionCheck(condition_expression: option.Option(String), expression_attribute_names: option.Option(dict.Dict(String, String)), expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)), key: option.Option(dict.Dict(String, AttributeValue)), return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure), table_name: option.Option(String))
 }
 
 pub fn encode_condition_check_struct(input: ConditionCheck) -> json.Json {
@@ -15088,14 +14211,7 @@ pub fn decode_condition_check_struct_params() -> decode.Decoder(ConditionCheck) 
 }
 
 pub type Delete {
-  Delete(
-    condition_expression: option.Option(String),
-    expression_attribute_names: option.Option(dict.Dict(String, String)),
-    expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)),
-    key: option.Option(dict.Dict(String, AttributeValue)),
-    return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure),
-    table_name: option.Option(String),
-  )
+  Delete(condition_expression: option.Option(String), expression_attribute_names: option.Option(dict.Dict(String, String)), expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)), key: option.Option(dict.Dict(String, AttributeValue)), return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure), table_name: option.Option(String))
 }
 
 pub fn encode_delete_struct(input: Delete) -> json.Json {
@@ -15191,14 +14307,7 @@ pub fn decode_delete_struct_params() -> decode.Decoder(Delete) {
 }
 
 pub type Put {
-  Put(
-    condition_expression: option.Option(String),
-    expression_attribute_names: option.Option(dict.Dict(String, String)),
-    expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)),
-    item: option.Option(dict.Dict(String, AttributeValue)),
-    return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure),
-    table_name: option.Option(String),
-  )
+  Put(condition_expression: option.Option(String), expression_attribute_names: option.Option(dict.Dict(String, String)), expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)), item: option.Option(dict.Dict(String, AttributeValue)), return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure), table_name: option.Option(String))
 }
 
 pub fn encode_put_struct(input: Put) -> json.Json {
@@ -15294,15 +14403,7 @@ pub fn decode_put_struct_params() -> decode.Decoder(Put) {
 }
 
 pub type Update {
-  Update(
-    condition_expression: option.Option(String),
-    expression_attribute_names: option.Option(dict.Dict(String, String)),
-    expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)),
-    key: option.Option(dict.Dict(String, AttributeValue)),
-    return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure),
-    table_name: option.Option(String),
-    update_expression: option.Option(String),
-  )
+  Update(condition_expression: option.Option(String), expression_attribute_names: option.Option(dict.Dict(String, String)), expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)), key: option.Option(dict.Dict(String, AttributeValue)), return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure), table_name: option.Option(String), update_expression: option.Option(String))
 }
 
 pub fn encode_update_struct(input: Update) -> json.Json {
@@ -15410,10 +14511,7 @@ pub fn decode_update_struct_params() -> decode.Decoder(Update) {
 }
 
 pub type TransactWriteItemsOutput {
-  TransactWriteItemsOutput(
-    consumed_capacity: option.Option(List(ConsumedCapacity)),
-    item_collection_metrics: option.Option(dict.Dict(String, List(ItemCollectionMetrics))),
-  )
+  TransactWriteItemsOutput(consumed_capacity: option.Option(List(ConsumedCapacity)), item_collection_metrics: option.Option(dict.Dict(String, List(ItemCollectionMetrics))))
 }
 
 pub fn encode_transact_write_items_output_struct(input: TransactWriteItemsOutput) -> json.Json {
@@ -15461,10 +14559,7 @@ pub fn decode_transact_write_items_output_struct_params() -> decode.Decoder(Tran
 }
 
 pub type UntagResourceInput {
-  UntagResourceInput(
-    resource_arn: option.Option(String),
-    tag_keys: option.Option(List(String)),
-  )
+  UntagResourceInput(resource_arn: option.Option(String), tag_keys: option.Option(List(String)))
 }
 
 pub fn encode_untag_resource_input_struct(input: UntagResourceInput) -> json.Json {
@@ -15512,10 +14607,7 @@ pub fn decode_untag_resource_input_struct_params() -> decode.Decoder(UntagResour
 }
 
 pub type UpdateContinuousBackupsInput {
-  UpdateContinuousBackupsInput(
-    point_in_time_recovery_specification: option.Option(PointInTimeRecoverySpecification),
-    table_name: option.Option(String),
-  )
+  UpdateContinuousBackupsInput(point_in_time_recovery_specification: option.Option(PointInTimeRecoverySpecification), table_name: option.Option(String))
 }
 
 pub fn encode_update_continuous_backups_input_struct(input: UpdateContinuousBackupsInput) -> json.Json {
@@ -15563,10 +14655,7 @@ pub fn decode_update_continuous_backups_input_struct_params() -> decode.Decoder(
 }
 
 pub type PointInTimeRecoverySpecification {
-  PointInTimeRecoverySpecification(
-    point_in_time_recovery_enabled: option.Option(Bool),
-    recovery_period_in_days: option.Option(Int),
-  )
+  PointInTimeRecoverySpecification(point_in_time_recovery_enabled: option.Option(Bool), recovery_period_in_days: option.Option(Int))
 }
 
 pub fn encode_point_in_time_recovery_specification_struct(input: PointInTimeRecoverySpecification) -> json.Json {
@@ -15614,9 +14703,7 @@ pub fn decode_point_in_time_recovery_specification_struct_params() -> decode.Dec
 }
 
 pub type UpdateContinuousBackupsOutput {
-  UpdateContinuousBackupsOutput(
-    continuous_backups_description: option.Option(ContinuousBackupsDescription),
-  )
+  UpdateContinuousBackupsOutput(continuous_backups_description: option.Option(ContinuousBackupsDescription))
 }
 
 pub fn encode_update_continuous_backups_output_struct(input: UpdateContinuousBackupsOutput) -> json.Json {
@@ -15652,12 +14739,7 @@ pub fn decode_update_continuous_backups_output_struct_params() -> decode.Decoder
 }
 
 pub type UpdateContributorInsightsInput {
-  UpdateContributorInsightsInput(
-    contributor_insights_action: option.Option(ContributorInsightsAction),
-    contributor_insights_mode: option.Option(ContributorInsightsMode),
-    index_name: option.Option(String),
-    table_name: option.Option(String),
-  )
+  UpdateContributorInsightsInput(contributor_insights_action: option.Option(ContributorInsightsAction), contributor_insights_mode: option.Option(ContributorInsightsMode), index_name: option.Option(String), table_name: option.Option(String))
 }
 
 pub fn encode_update_contributor_insights_input_struct(input: UpdateContributorInsightsInput) -> json.Json {
@@ -15751,12 +14833,7 @@ pub fn decode_contributor_insights_action_enum() -> decode.Decoder(ContributorIn
 }
 
 pub type UpdateContributorInsightsOutput {
-  UpdateContributorInsightsOutput(
-    contributor_insights_mode: option.Option(ContributorInsightsMode),
-    contributor_insights_status: option.Option(ContributorInsightsStatus),
-    index_name: option.Option(String),
-    table_name: option.Option(String),
-  )
+  UpdateContributorInsightsOutput(contributor_insights_mode: option.Option(ContributorInsightsMode), contributor_insights_status: option.Option(ContributorInsightsStatus), index_name: option.Option(String), table_name: option.Option(String))
 }
 
 pub fn encode_update_contributor_insights_output_struct(input: UpdateContributorInsightsOutput) -> json.Json {
@@ -15828,10 +14905,7 @@ pub fn decode_update_contributor_insights_output_struct_params() -> decode.Decod
 }
 
 pub type UpdateGlobalTableInput {
-  UpdateGlobalTableInput(
-    global_table_name: option.Option(String),
-    replica_updates: option.Option(List(ReplicaUpdate)),
-  )
+  UpdateGlobalTableInput(global_table_name: option.Option(String), replica_updates: option.Option(List(ReplicaUpdate)))
 }
 
 pub fn encode_update_global_table_input_struct(input: UpdateGlobalTableInput) -> json.Json {
@@ -15879,10 +14953,7 @@ pub fn decode_update_global_table_input_struct_params() -> decode.Decoder(Update
 }
 
 pub type ReplicaUpdate {
-  ReplicaUpdate(
-    create: option.Option(CreateReplicaAction),
-    delete: option.Option(DeleteReplicaAction),
-  )
+  ReplicaUpdate(create: option.Option(CreateReplicaAction), delete: option.Option(DeleteReplicaAction))
 }
 
 pub fn encode_replica_update_struct(input: ReplicaUpdate) -> json.Json {
@@ -15930,9 +15001,7 @@ pub fn decode_replica_update_struct_params() -> decode.Decoder(ReplicaUpdate) {
 }
 
 pub type CreateReplicaAction {
-  CreateReplicaAction(
-    region_name: option.Option(String),
-  )
+  CreateReplicaAction(region_name: option.Option(String))
 }
 
 pub fn encode_create_replica_action_struct(input: CreateReplicaAction) -> json.Json {
@@ -15968,9 +15037,7 @@ pub fn decode_create_replica_action_struct_params() -> decode.Decoder(CreateRepl
 }
 
 pub type DeleteReplicaAction {
-  DeleteReplicaAction(
-    region_name: option.Option(String),
-  )
+  DeleteReplicaAction(region_name: option.Option(String))
 }
 
 pub fn encode_delete_replica_action_struct(input: DeleteReplicaAction) -> json.Json {
@@ -16006,9 +15073,7 @@ pub fn decode_delete_replica_action_struct_params() -> decode.Decoder(DeleteRepl
 }
 
 pub type UpdateGlobalTableOutput {
-  UpdateGlobalTableOutput(
-    global_table_description: option.Option(GlobalTableDescription),
-  )
+  UpdateGlobalTableOutput(global_table_description: option.Option(GlobalTableDescription))
 }
 
 pub fn encode_update_global_table_output_struct(input: UpdateGlobalTableOutput) -> json.Json {
@@ -16044,9 +15109,7 @@ pub fn decode_update_global_table_output_struct_params() -> decode.Decoder(Updat
 }
 
 pub type ReplicaAlreadyExistsException {
-  ReplicaAlreadyExistsException(
-    message: option.Option(String),
-  )
+  ReplicaAlreadyExistsException(message: option.Option(String))
 }
 
 pub fn encode_replica_already_exists_exception_struct(input: ReplicaAlreadyExistsException) -> json.Json {
@@ -16082,9 +15145,7 @@ pub fn decode_replica_already_exists_exception_struct_params() -> decode.Decoder
 }
 
 pub type ReplicaNotFoundException {
-  ReplicaNotFoundException(
-    message: option.Option(String),
-  )
+  ReplicaNotFoundException(message: option.Option(String))
 }
 
 pub fn encode_replica_not_found_exception_struct(input: ReplicaNotFoundException) -> json.Json {
@@ -16120,14 +15181,7 @@ pub fn decode_replica_not_found_exception_struct_params() -> decode.Decoder(Repl
 }
 
 pub type UpdateGlobalTableSettingsInput {
-  UpdateGlobalTableSettingsInput(
-    global_table_billing_mode: option.Option(BillingMode),
-    global_table_global_secondary_index_settings_update: option.Option(List(GlobalTableGlobalSecondaryIndexSettingsUpdate)),
-    global_table_name: option.Option(String),
-    global_table_provisioned_write_capacity_auto_scaling_settings_update: option.Option(AutoScalingSettingsUpdate),
-    global_table_provisioned_write_capacity_units: option.Option(Int),
-    replica_settings_update: option.Option(List(ReplicaSettingsUpdate)),
-  )
+  UpdateGlobalTableSettingsInput(global_table_billing_mode: option.Option(BillingMode), global_table_global_secondary_index_settings_update: option.Option(List(GlobalTableGlobalSecondaryIndexSettingsUpdate)), global_table_name: option.Option(String), global_table_provisioned_write_capacity_auto_scaling_settings_update: option.Option(AutoScalingSettingsUpdate), global_table_provisioned_write_capacity_units: option.Option(Int), replica_settings_update: option.Option(List(ReplicaSettingsUpdate)))
 }
 
 pub fn encode_update_global_table_settings_input_struct(input: UpdateGlobalTableSettingsInput) -> json.Json {
@@ -16223,11 +15277,7 @@ pub fn decode_update_global_table_settings_input_struct_params() -> decode.Decod
 }
 
 pub type GlobalTableGlobalSecondaryIndexSettingsUpdate {
-  GlobalTableGlobalSecondaryIndexSettingsUpdate(
-    index_name: option.Option(String),
-    provisioned_write_capacity_auto_scaling_settings_update: option.Option(AutoScalingSettingsUpdate),
-    provisioned_write_capacity_units: option.Option(Int),
-  )
+  GlobalTableGlobalSecondaryIndexSettingsUpdate(index_name: option.Option(String), provisioned_write_capacity_auto_scaling_settings_update: option.Option(AutoScalingSettingsUpdate), provisioned_write_capacity_units: option.Option(Int))
 }
 
 pub fn encode_global_table_global_secondary_index_settings_update_struct(input: GlobalTableGlobalSecondaryIndexSettingsUpdate) -> json.Json {
@@ -16287,13 +15337,7 @@ pub fn decode_global_table_global_secondary_index_settings_update_struct_params(
 }
 
 pub type AutoScalingSettingsUpdate {
-  AutoScalingSettingsUpdate(
-    auto_scaling_disabled: option.Option(Bool),
-    auto_scaling_role_arn: option.Option(String),
-    maximum_units: option.Option(Int),
-    minimum_units: option.Option(Int),
-    scaling_policy_update: option.Option(AutoScalingPolicyUpdate),
-  )
+  AutoScalingSettingsUpdate(auto_scaling_disabled: option.Option(Bool), auto_scaling_role_arn: option.Option(String), maximum_units: option.Option(Int), minimum_units: option.Option(Int), scaling_policy_update: option.Option(AutoScalingPolicyUpdate))
 }
 
 pub fn encode_auto_scaling_settings_update_struct(input: AutoScalingSettingsUpdate) -> json.Json {
@@ -16377,10 +15421,7 @@ pub fn decode_auto_scaling_settings_update_struct_params() -> decode.Decoder(Aut
 }
 
 pub type AutoScalingPolicyUpdate {
-  AutoScalingPolicyUpdate(
-    policy_name: option.Option(String),
-    target_tracking_scaling_policy_configuration: option.Option(AutoScalingTargetTrackingScalingPolicyConfigurationUpdate),
-  )
+  AutoScalingPolicyUpdate(policy_name: option.Option(String), target_tracking_scaling_policy_configuration: option.Option(AutoScalingTargetTrackingScalingPolicyConfigurationUpdate))
 }
 
 pub fn encode_auto_scaling_policy_update_struct(input: AutoScalingPolicyUpdate) -> json.Json {
@@ -16428,12 +15469,7 @@ pub fn decode_auto_scaling_policy_update_struct_params() -> decode.Decoder(AutoS
 }
 
 pub type AutoScalingTargetTrackingScalingPolicyConfigurationUpdate {
-  AutoScalingTargetTrackingScalingPolicyConfigurationUpdate(
-    disable_scale_in: option.Option(Bool),
-    scale_in_cooldown: option.Option(Int),
-    scale_out_cooldown: option.Option(Int),
-    target_value: option.Option(json_float.SmithyFloat),
-  )
+  AutoScalingTargetTrackingScalingPolicyConfigurationUpdate(disable_scale_in: option.Option(Bool), scale_in_cooldown: option.Option(Int), scale_out_cooldown: option.Option(Int), target_value: option.Option(json_float.SmithyFloat))
 }
 
 pub fn encode_auto_scaling_target_tracking_scaling_policy_configuration_update_struct(input: AutoScalingTargetTrackingScalingPolicyConfigurationUpdate) -> json.Json {
@@ -16505,13 +15541,7 @@ pub fn decode_auto_scaling_target_tracking_scaling_policy_configuration_update_s
 }
 
 pub type ReplicaSettingsUpdate {
-  ReplicaSettingsUpdate(
-    region_name: option.Option(String),
-    replica_global_secondary_index_settings_update: option.Option(List(ReplicaGlobalSecondaryIndexSettingsUpdate)),
-    replica_provisioned_read_capacity_auto_scaling_settings_update: option.Option(AutoScalingSettingsUpdate),
-    replica_provisioned_read_capacity_units: option.Option(Int),
-    replica_table_class: option.Option(TableClass),
-  )
+  ReplicaSettingsUpdate(region_name: option.Option(String), replica_global_secondary_index_settings_update: option.Option(List(ReplicaGlobalSecondaryIndexSettingsUpdate)), replica_provisioned_read_capacity_auto_scaling_settings_update: option.Option(AutoScalingSettingsUpdate), replica_provisioned_read_capacity_units: option.Option(Int), replica_table_class: option.Option(TableClass))
 }
 
 pub fn encode_replica_settings_update_struct(input: ReplicaSettingsUpdate) -> json.Json {
@@ -16595,11 +15625,7 @@ pub fn decode_replica_settings_update_struct_params() -> decode.Decoder(ReplicaS
 }
 
 pub type ReplicaGlobalSecondaryIndexSettingsUpdate {
-  ReplicaGlobalSecondaryIndexSettingsUpdate(
-    index_name: option.Option(String),
-    provisioned_read_capacity_auto_scaling_settings_update: option.Option(AutoScalingSettingsUpdate),
-    provisioned_read_capacity_units: option.Option(Int),
-  )
+  ReplicaGlobalSecondaryIndexSettingsUpdate(index_name: option.Option(String), provisioned_read_capacity_auto_scaling_settings_update: option.Option(AutoScalingSettingsUpdate), provisioned_read_capacity_units: option.Option(Int))
 }
 
 pub fn encode_replica_global_secondary_index_settings_update_struct(input: ReplicaGlobalSecondaryIndexSettingsUpdate) -> json.Json {
@@ -16659,10 +15685,7 @@ pub fn decode_replica_global_secondary_index_settings_update_struct_params() -> 
 }
 
 pub type UpdateGlobalTableSettingsOutput {
-  UpdateGlobalTableSettingsOutput(
-    global_table_name: option.Option(String),
-    replica_settings: option.Option(List(ReplicaSettingsDescription)),
-  )
+  UpdateGlobalTableSettingsOutput(global_table_name: option.Option(String), replica_settings: option.Option(List(ReplicaSettingsDescription)))
 }
 
 pub fn encode_update_global_table_settings_output_struct(input: UpdateGlobalTableSettingsOutput) -> json.Json {
@@ -16710,9 +15733,7 @@ pub fn decode_update_global_table_settings_output_struct_params() -> decode.Deco
 }
 
 pub type IndexNotFoundException {
-  IndexNotFoundException(
-    message: option.Option(String),
-  )
+  IndexNotFoundException(message: option.Option(String))
 }
 
 pub fn encode_index_not_found_exception_struct(input: IndexNotFoundException) -> json.Json {
@@ -16748,21 +15769,7 @@ pub fn decode_index_not_found_exception_struct_params() -> decode.Decoder(IndexN
 }
 
 pub type UpdateItemInput {
-  UpdateItemInput(
-    attribute_updates: option.Option(dict.Dict(String, AttributeValueUpdate)),
-    condition_expression: option.Option(String),
-    conditional_operator: option.Option(ConditionalOperator),
-    expected: option.Option(dict.Dict(String, ExpectedAttributeValue)),
-    expression_attribute_names: option.Option(dict.Dict(String, String)),
-    expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)),
-    key: option.Option(dict.Dict(String, AttributeValue)),
-    return_consumed_capacity: option.Option(ReturnConsumedCapacity),
-    return_item_collection_metrics: option.Option(ReturnItemCollectionMetrics),
-    return_values: option.Option(ReturnValue),
-    return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure),
-    table_name: option.Option(String),
-    update_expression: option.Option(String),
-  )
+  UpdateItemInput(attribute_updates: option.Option(dict.Dict(String, AttributeValueUpdate)), condition_expression: option.Option(String), conditional_operator: option.Option(ConditionalOperator), expected: option.Option(dict.Dict(String, ExpectedAttributeValue)), expression_attribute_names: option.Option(dict.Dict(String, String)), expression_attribute_values: option.Option(dict.Dict(String, AttributeValue)), key: option.Option(dict.Dict(String, AttributeValue)), return_consumed_capacity: option.Option(ReturnConsumedCapacity), return_item_collection_metrics: option.Option(ReturnItemCollectionMetrics), return_values: option.Option(ReturnValue), return_values_on_condition_check_failure: option.Option(ReturnValuesOnConditionCheckFailure), table_name: option.Option(String), update_expression: option.Option(String))
 }
 
 pub fn encode_update_item_input_struct(input: UpdateItemInput) -> json.Json {
@@ -16942,10 +15949,7 @@ pub fn decode_update_item_input_struct_params() -> decode.Decoder(UpdateItemInpu
 }
 
 pub type AttributeValueUpdate {
-  AttributeValueUpdate(
-    action: option.Option(AttributeAction),
-    value: option.Option(AttributeValue),
-  )
+  AttributeValueUpdate(action: option.Option(AttributeAction), value: option.Option(AttributeValue))
 }
 
 pub fn encode_attribute_value_update_struct(input: AttributeValueUpdate) -> json.Json {
@@ -17018,11 +16022,7 @@ pub fn decode_attribute_action_enum() -> decode.Decoder(AttributeAction) {
 }
 
 pub type UpdateItemOutput {
-  UpdateItemOutput(
-    attributes: option.Option(dict.Dict(String, AttributeValue)),
-    consumed_capacity: option.Option(ConsumedCapacity),
-    item_collection_metrics: option.Option(ItemCollectionMetrics),
-  )
+  UpdateItemOutput(attributes: option.Option(dict.Dict(String, AttributeValue)), consumed_capacity: option.Option(ConsumedCapacity), item_collection_metrics: option.Option(ItemCollectionMetrics))
 }
 
 pub fn encode_update_item_output_struct(input: UpdateItemOutput) -> json.Json {
@@ -17082,11 +16082,7 @@ pub fn decode_update_item_output_struct_params() -> decode.Decoder(UpdateItemOut
 }
 
 pub type UpdateKinesisStreamingDestinationInput {
-  UpdateKinesisStreamingDestinationInput(
-    stream_arn: option.Option(String),
-    table_name: option.Option(String),
-    update_kinesis_streaming_configuration: option.Option(UpdateKinesisStreamingConfiguration),
-  )
+  UpdateKinesisStreamingDestinationInput(stream_arn: option.Option(String), table_name: option.Option(String), update_kinesis_streaming_configuration: option.Option(UpdateKinesisStreamingConfiguration))
 }
 
 pub fn encode_update_kinesis_streaming_destination_input_struct(input: UpdateKinesisStreamingDestinationInput) -> json.Json {
@@ -17146,9 +16142,7 @@ pub fn decode_update_kinesis_streaming_destination_input_struct_params() -> deco
 }
 
 pub type UpdateKinesisStreamingConfiguration {
-  UpdateKinesisStreamingConfiguration(
-    approximate_creation_date_time_precision: option.Option(ApproximateCreationDateTimePrecision),
-  )
+  UpdateKinesisStreamingConfiguration(approximate_creation_date_time_precision: option.Option(ApproximateCreationDateTimePrecision))
 }
 
 pub fn encode_update_kinesis_streaming_configuration_struct(input: UpdateKinesisStreamingConfiguration) -> json.Json {
@@ -17184,12 +16178,7 @@ pub fn decode_update_kinesis_streaming_configuration_struct_params() -> decode.D
 }
 
 pub type UpdateKinesisStreamingDestinationOutput {
-  UpdateKinesisStreamingDestinationOutput(
-    destination_status: option.Option(DestinationStatus),
-    stream_arn: option.Option(String),
-    table_name: option.Option(String),
-    update_kinesis_streaming_configuration: option.Option(UpdateKinesisStreamingConfiguration),
-  )
+  UpdateKinesisStreamingDestinationOutput(destination_status: option.Option(DestinationStatus), stream_arn: option.Option(String), table_name: option.Option(String), update_kinesis_streaming_configuration: option.Option(UpdateKinesisStreamingConfiguration))
 }
 
 pub fn encode_update_kinesis_streaming_destination_output_struct(input: UpdateKinesisStreamingDestinationOutput) -> json.Json {
@@ -17261,23 +16250,7 @@ pub fn decode_update_kinesis_streaming_destination_output_struct_params() -> dec
 }
 
 pub type UpdateTableInput {
-  UpdateTableInput(
-    attribute_definitions: option.Option(List(AttributeDefinition)),
-    billing_mode: option.Option(BillingMode),
-    deletion_protection_enabled: option.Option(Bool),
-    global_secondary_index_updates: option.Option(List(GlobalSecondaryIndexUpdate)),
-    global_table_settings_replication_mode: option.Option(GlobalTableSettingsReplicationMode),
-    global_table_witness_updates: option.Option(List(GlobalTableWitnessGroupUpdate)),
-    multi_region_consistency: option.Option(MultiRegionConsistency),
-    on_demand_throughput: option.Option(OnDemandThroughput),
-    provisioned_throughput: option.Option(ProvisionedThroughput),
-    replica_updates: option.Option(List(ReplicationGroupUpdate)),
-    sse_specification: option.Option(SSESpecification),
-    stream_specification: option.Option(StreamSpecification),
-    table_class: option.Option(TableClass),
-    table_name: option.Option(String),
-    warm_throughput: option.Option(WarmThroughput),
-  )
+  UpdateTableInput(attribute_definitions: option.Option(List(AttributeDefinition)), billing_mode: option.Option(BillingMode), deletion_protection_enabled: option.Option(Bool), global_secondary_index_updates: option.Option(List(GlobalSecondaryIndexUpdate)), global_table_settings_replication_mode: option.Option(GlobalTableSettingsReplicationMode), global_table_witness_updates: option.Option(List(GlobalTableWitnessGroupUpdate)), multi_region_consistency: option.Option(MultiRegionConsistency), on_demand_throughput: option.Option(OnDemandThroughput), provisioned_throughput: option.Option(ProvisionedThroughput), replica_updates: option.Option(List(ReplicationGroupUpdate)), sse_specification: option.Option(SSESpecification), stream_specification: option.Option(StreamSpecification), table_class: option.Option(TableClass), table_name: option.Option(String), warm_throughput: option.Option(WarmThroughput))
 }
 
 pub fn encode_update_table_input_struct(input: UpdateTableInput) -> json.Json {
@@ -17481,11 +16454,7 @@ pub fn decode_update_table_input_struct_params() -> decode.Decoder(UpdateTableIn
 }
 
 pub type GlobalSecondaryIndexUpdate {
-  GlobalSecondaryIndexUpdate(
-    create: option.Option(CreateGlobalSecondaryIndexAction),
-    delete: option.Option(DeleteGlobalSecondaryIndexAction),
-    update: option.Option(UpdateGlobalSecondaryIndexAction),
-  )
+  GlobalSecondaryIndexUpdate(create: option.Option(CreateGlobalSecondaryIndexAction), delete: option.Option(DeleteGlobalSecondaryIndexAction), update: option.Option(UpdateGlobalSecondaryIndexAction))
 }
 
 pub fn encode_global_secondary_index_update_struct(input: GlobalSecondaryIndexUpdate) -> json.Json {
@@ -17545,14 +16514,7 @@ pub fn decode_global_secondary_index_update_struct_params() -> decode.Decoder(Gl
 }
 
 pub type CreateGlobalSecondaryIndexAction {
-  CreateGlobalSecondaryIndexAction(
-    index_name: option.Option(String),
-    key_schema: option.Option(List(KeySchemaElement)),
-    on_demand_throughput: option.Option(OnDemandThroughput),
-    projection: option.Option(Projection),
-    provisioned_throughput: option.Option(ProvisionedThroughput),
-    warm_throughput: option.Option(WarmThroughput),
-  )
+  CreateGlobalSecondaryIndexAction(index_name: option.Option(String), key_schema: option.Option(List(KeySchemaElement)), on_demand_throughput: option.Option(OnDemandThroughput), projection: option.Option(Projection), provisioned_throughput: option.Option(ProvisionedThroughput), warm_throughput: option.Option(WarmThroughput))
 }
 
 pub fn encode_create_global_secondary_index_action_struct(input: CreateGlobalSecondaryIndexAction) -> json.Json {
@@ -17648,9 +16610,7 @@ pub fn decode_create_global_secondary_index_action_struct_params() -> decode.Dec
 }
 
 pub type DeleteGlobalSecondaryIndexAction {
-  DeleteGlobalSecondaryIndexAction(
-    index_name: option.Option(String),
-  )
+  DeleteGlobalSecondaryIndexAction(index_name: option.Option(String))
 }
 
 pub fn encode_delete_global_secondary_index_action_struct(input: DeleteGlobalSecondaryIndexAction) -> json.Json {
@@ -17686,12 +16646,7 @@ pub fn decode_delete_global_secondary_index_action_struct_params() -> decode.Dec
 }
 
 pub type UpdateGlobalSecondaryIndexAction {
-  UpdateGlobalSecondaryIndexAction(
-    index_name: option.Option(String),
-    on_demand_throughput: option.Option(OnDemandThroughput),
-    provisioned_throughput: option.Option(ProvisionedThroughput),
-    warm_throughput: option.Option(WarmThroughput),
-  )
+  UpdateGlobalSecondaryIndexAction(index_name: option.Option(String), on_demand_throughput: option.Option(OnDemandThroughput), provisioned_throughput: option.Option(ProvisionedThroughput), warm_throughput: option.Option(WarmThroughput))
 }
 
 pub fn encode_update_global_secondary_index_action_struct(input: UpdateGlobalSecondaryIndexAction) -> json.Json {
@@ -17763,10 +16718,7 @@ pub fn decode_update_global_secondary_index_action_struct_params() -> decode.Dec
 }
 
 pub type GlobalTableWitnessGroupUpdate {
-  GlobalTableWitnessGroupUpdate(
-    create: option.Option(CreateGlobalTableWitnessGroupMemberAction),
-    delete: option.Option(DeleteGlobalTableWitnessGroupMemberAction),
-  )
+  GlobalTableWitnessGroupUpdate(create: option.Option(CreateGlobalTableWitnessGroupMemberAction), delete: option.Option(DeleteGlobalTableWitnessGroupMemberAction))
 }
 
 pub fn encode_global_table_witness_group_update_struct(input: GlobalTableWitnessGroupUpdate) -> json.Json {
@@ -17814,9 +16766,7 @@ pub fn decode_global_table_witness_group_update_struct_params() -> decode.Decode
 }
 
 pub type CreateGlobalTableWitnessGroupMemberAction {
-  CreateGlobalTableWitnessGroupMemberAction(
-    region_name: option.Option(String),
-  )
+  CreateGlobalTableWitnessGroupMemberAction(region_name: option.Option(String))
 }
 
 pub fn encode_create_global_table_witness_group_member_action_struct(input: CreateGlobalTableWitnessGroupMemberAction) -> json.Json {
@@ -17852,9 +16802,7 @@ pub fn decode_create_global_table_witness_group_member_action_struct_params() ->
 }
 
 pub type DeleteGlobalTableWitnessGroupMemberAction {
-  DeleteGlobalTableWitnessGroupMemberAction(
-    region_name: option.Option(String),
-  )
+  DeleteGlobalTableWitnessGroupMemberAction(region_name: option.Option(String))
 }
 
 pub fn encode_delete_global_table_witness_group_member_action_struct(input: DeleteGlobalTableWitnessGroupMemberAction) -> json.Json {
@@ -17890,11 +16838,7 @@ pub fn decode_delete_global_table_witness_group_member_action_struct_params() ->
 }
 
 pub type ReplicationGroupUpdate {
-  ReplicationGroupUpdate(
-    create: option.Option(CreateReplicationGroupMemberAction),
-    delete: option.Option(DeleteReplicationGroupMemberAction),
-    update: option.Option(UpdateReplicationGroupMemberAction),
-  )
+  ReplicationGroupUpdate(create: option.Option(CreateReplicationGroupMemberAction), delete: option.Option(DeleteReplicationGroupMemberAction), update: option.Option(UpdateReplicationGroupMemberAction))
 }
 
 pub fn encode_replication_group_update_struct(input: ReplicationGroupUpdate) -> json.Json {
@@ -17954,14 +16898,7 @@ pub fn decode_replication_group_update_struct_params() -> decode.Decoder(Replica
 }
 
 pub type CreateReplicationGroupMemberAction {
-  CreateReplicationGroupMemberAction(
-    global_secondary_indexes: option.Option(List(ReplicaGlobalSecondaryIndex)),
-    kms_master_key_id: option.Option(String),
-    on_demand_throughput_override: option.Option(OnDemandThroughputOverride),
-    provisioned_throughput_override: option.Option(ProvisionedThroughputOverride),
-    region_name: option.Option(String),
-    table_class_override: option.Option(TableClass),
-  )
+  CreateReplicationGroupMemberAction(global_secondary_indexes: option.Option(List(ReplicaGlobalSecondaryIndex)), kms_master_key_id: option.Option(String), on_demand_throughput_override: option.Option(OnDemandThroughputOverride), provisioned_throughput_override: option.Option(ProvisionedThroughputOverride), region_name: option.Option(String), table_class_override: option.Option(TableClass))
 }
 
 pub fn encode_create_replication_group_member_action_struct(input: CreateReplicationGroupMemberAction) -> json.Json {
@@ -18057,11 +16994,7 @@ pub fn decode_create_replication_group_member_action_struct_params() -> decode.D
 }
 
 pub type ReplicaGlobalSecondaryIndex {
-  ReplicaGlobalSecondaryIndex(
-    index_name: option.Option(String),
-    on_demand_throughput_override: option.Option(OnDemandThroughputOverride),
-    provisioned_throughput_override: option.Option(ProvisionedThroughputOverride),
-  )
+  ReplicaGlobalSecondaryIndex(index_name: option.Option(String), on_demand_throughput_override: option.Option(OnDemandThroughputOverride), provisioned_throughput_override: option.Option(ProvisionedThroughputOverride))
 }
 
 pub fn encode_replica_global_secondary_index_struct(input: ReplicaGlobalSecondaryIndex) -> json.Json {
@@ -18121,9 +17054,7 @@ pub fn decode_replica_global_secondary_index_struct_params() -> decode.Decoder(R
 }
 
 pub type DeleteReplicationGroupMemberAction {
-  DeleteReplicationGroupMemberAction(
-    region_name: option.Option(String),
-  )
+  DeleteReplicationGroupMemberAction(region_name: option.Option(String))
 }
 
 pub fn encode_delete_replication_group_member_action_struct(input: DeleteReplicationGroupMemberAction) -> json.Json {
@@ -18159,14 +17090,7 @@ pub fn decode_delete_replication_group_member_action_struct_params() -> decode.D
 }
 
 pub type UpdateReplicationGroupMemberAction {
-  UpdateReplicationGroupMemberAction(
-    global_secondary_indexes: option.Option(List(ReplicaGlobalSecondaryIndex)),
-    kms_master_key_id: option.Option(String),
-    on_demand_throughput_override: option.Option(OnDemandThroughputOverride),
-    provisioned_throughput_override: option.Option(ProvisionedThroughputOverride),
-    region_name: option.Option(String),
-    table_class_override: option.Option(TableClass),
-  )
+  UpdateReplicationGroupMemberAction(global_secondary_indexes: option.Option(List(ReplicaGlobalSecondaryIndex)), kms_master_key_id: option.Option(String), on_demand_throughput_override: option.Option(OnDemandThroughputOverride), provisioned_throughput_override: option.Option(ProvisionedThroughputOverride), region_name: option.Option(String), table_class_override: option.Option(TableClass))
 }
 
 pub fn encode_update_replication_group_member_action_struct(input: UpdateReplicationGroupMemberAction) -> json.Json {
@@ -18262,9 +17186,7 @@ pub fn decode_update_replication_group_member_action_struct_params() -> decode.D
 }
 
 pub type UpdateTableOutput {
-  UpdateTableOutput(
-    table_description: option.Option(TableDescription),
-  )
+  UpdateTableOutput(table_description: option.Option(TableDescription))
 }
 
 pub fn encode_update_table_output_struct(input: UpdateTableOutput) -> json.Json {
@@ -18300,12 +17222,7 @@ pub fn decode_update_table_output_struct_params() -> decode.Decoder(UpdateTableO
 }
 
 pub type UpdateTableReplicaAutoScalingInput {
-  UpdateTableReplicaAutoScalingInput(
-    global_secondary_index_updates: option.Option(List(GlobalSecondaryIndexAutoScalingUpdate)),
-    provisioned_write_capacity_auto_scaling_update: option.Option(AutoScalingSettingsUpdate),
-    replica_updates: option.Option(List(ReplicaAutoScalingUpdate)),
-    table_name: option.Option(String),
-  )
+  UpdateTableReplicaAutoScalingInput(global_secondary_index_updates: option.Option(List(GlobalSecondaryIndexAutoScalingUpdate)), provisioned_write_capacity_auto_scaling_update: option.Option(AutoScalingSettingsUpdate), replica_updates: option.Option(List(ReplicaAutoScalingUpdate)), table_name: option.Option(String))
 }
 
 pub fn encode_update_table_replica_auto_scaling_input_struct(input: UpdateTableReplicaAutoScalingInput) -> json.Json {
@@ -18377,10 +17294,7 @@ pub fn decode_update_table_replica_auto_scaling_input_struct_params() -> decode.
 }
 
 pub type GlobalSecondaryIndexAutoScalingUpdate {
-  GlobalSecondaryIndexAutoScalingUpdate(
-    index_name: option.Option(String),
-    provisioned_write_capacity_auto_scaling_update: option.Option(AutoScalingSettingsUpdate),
-  )
+  GlobalSecondaryIndexAutoScalingUpdate(index_name: option.Option(String), provisioned_write_capacity_auto_scaling_update: option.Option(AutoScalingSettingsUpdate))
 }
 
 pub fn encode_global_secondary_index_auto_scaling_update_struct(input: GlobalSecondaryIndexAutoScalingUpdate) -> json.Json {
@@ -18428,11 +17342,7 @@ pub fn decode_global_secondary_index_auto_scaling_update_struct_params() -> deco
 }
 
 pub type ReplicaAutoScalingUpdate {
-  ReplicaAutoScalingUpdate(
-    region_name: option.Option(String),
-    replica_global_secondary_index_updates: option.Option(List(ReplicaGlobalSecondaryIndexAutoScalingUpdate)),
-    replica_provisioned_read_capacity_auto_scaling_update: option.Option(AutoScalingSettingsUpdate),
-  )
+  ReplicaAutoScalingUpdate(region_name: option.Option(String), replica_global_secondary_index_updates: option.Option(List(ReplicaGlobalSecondaryIndexAutoScalingUpdate)), replica_provisioned_read_capacity_auto_scaling_update: option.Option(AutoScalingSettingsUpdate))
 }
 
 pub fn encode_replica_auto_scaling_update_struct(input: ReplicaAutoScalingUpdate) -> json.Json {
@@ -18492,10 +17402,7 @@ pub fn decode_replica_auto_scaling_update_struct_params() -> decode.Decoder(Repl
 }
 
 pub type ReplicaGlobalSecondaryIndexAutoScalingUpdate {
-  ReplicaGlobalSecondaryIndexAutoScalingUpdate(
-    index_name: option.Option(String),
-    provisioned_read_capacity_auto_scaling_update: option.Option(AutoScalingSettingsUpdate),
-  )
+  ReplicaGlobalSecondaryIndexAutoScalingUpdate(index_name: option.Option(String), provisioned_read_capacity_auto_scaling_update: option.Option(AutoScalingSettingsUpdate))
 }
 
 pub fn encode_replica_global_secondary_index_auto_scaling_update_struct(input: ReplicaGlobalSecondaryIndexAutoScalingUpdate) -> json.Json {
@@ -18543,9 +17450,7 @@ pub fn decode_replica_global_secondary_index_auto_scaling_update_struct_params()
 }
 
 pub type UpdateTableReplicaAutoScalingOutput {
-  UpdateTableReplicaAutoScalingOutput(
-    table_auto_scaling_description: option.Option(TableAutoScalingDescription),
-  )
+  UpdateTableReplicaAutoScalingOutput(table_auto_scaling_description: option.Option(TableAutoScalingDescription))
 }
 
 pub fn encode_update_table_replica_auto_scaling_output_struct(input: UpdateTableReplicaAutoScalingOutput) -> json.Json {
@@ -18581,10 +17486,7 @@ pub fn decode_update_table_replica_auto_scaling_output_struct_params() -> decode
 }
 
 pub type UpdateTimeToLiveInput {
-  UpdateTimeToLiveInput(
-    table_name: option.Option(String),
-    time_to_live_specification: option.Option(TimeToLiveSpecification),
-  )
+  UpdateTimeToLiveInput(table_name: option.Option(String), time_to_live_specification: option.Option(TimeToLiveSpecification))
 }
 
 pub fn encode_update_time_to_live_input_struct(input: UpdateTimeToLiveInput) -> json.Json {
@@ -18632,10 +17534,7 @@ pub fn decode_update_time_to_live_input_struct_params() -> decode.Decoder(Update
 }
 
 pub type TimeToLiveSpecification {
-  TimeToLiveSpecification(
-    attribute_name: option.Option(String),
-    enabled: option.Option(Bool),
-  )
+  TimeToLiveSpecification(attribute_name: option.Option(String), enabled: option.Option(Bool))
 }
 
 pub fn encode_time_to_live_specification_struct(input: TimeToLiveSpecification) -> json.Json {
@@ -18683,9 +17582,7 @@ pub fn decode_time_to_live_specification_struct_params() -> decode.Decoder(TimeT
 }
 
 pub type UpdateTimeToLiveOutput {
-  UpdateTimeToLiveOutput(
-    time_to_live_specification: option.Option(TimeToLiveSpecification),
-  )
+  UpdateTimeToLiveOutput(time_to_live_specification: option.Option(TimeToLiveSpecification))
 }
 
 pub fn encode_update_time_to_live_output_struct(input: UpdateTimeToLiveOutput) -> json.Json {
