@@ -12,7 +12,7 @@ import codegen/code.{
 }
 import codegen/types.{type EnumVariant, type IntEnumVariant, type MemberDef}
 import gleam/list
-import gleam/string
+import internal/stringutils
 
 /// `pub type Name { Name(field: option.Option(T), ...) }`. Body-less
 /// variant for member-less structs falls back to `pub type Name { Name }`.
@@ -93,20 +93,10 @@ pub fn union_def(name: String, members: List(MemberDef)) -> Code {
         name: name,
         variants: list.map(members, fn(m) {
           PositionalVariant(
-            name: name <> pascalize_member(m.member_name),
+            name: name <> stringutils.pascalize_member(m.member_name),
             types: [types.gleam_type(m.target)],
           )
         }),
       )
-  }
-}
-
-/// Capitalize the first grapheme of a Smithy member name to form a
-/// valid Gleam variant constructor. Reused across all per-protocol
-/// union emitters; kept here so the rule lives in one place.
-pub fn pascalize_member(s: String) -> String {
-  case string.to_graphemes(s) {
-    [first, ..rest] -> string.uppercase(first) <> string.concat(rest)
-    [] -> s
   }
 }

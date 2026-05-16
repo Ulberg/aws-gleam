@@ -277,28 +277,16 @@ fn emit_error_type(spec: OpSpec) -> String {
 fn emit_error_translator(spec: OpSpec) -> String {
   let name = spec.local <> "Error"
   let snake = spec.snake
-  "fn "
-  <> snake
-  <> "_error_decoders() {
+  "fn " <> snake <> "_error_decoders() {
   []
 }
 
-fn translate_"
-  <> snake
-  <> "_error(err: runtime.ClientError) -> "
-  <> name
-  <> " {
+fn translate_" <> snake <> "_error(err: runtime.ClientError) -> " <> name <> " {
   runtime.translate_service_error(
     err,
-    "
-  <> snake
-  <> "_error_decoders(),
-    fn(reason) { "
-  <> name
-  <> "Transport(reason: reason) },
-    fn(et, s, body) { "
-  <> name
-  <> "Unknown(error_type: et, status: s, body: body) },
+    " <> snake <> "_error_decoders(),
+    fn(reason) { " <> name <> "Transport(reason: reason) },
+    fn(et, s, body) { " <> name <> "Unknown(error_type: et, status: s, body: body) },
   )
 }
 
@@ -1042,7 +1030,7 @@ fn emit_struct_xml_inner_encoder(
         <> "  let inner = case input."
         <> m.snake_name
         <> " {\n    option.Some(v) -> inner <> "
-        <> xml_value_expr(m.target, m.json_name)
+        <> xml_value_expr(m)
         <> "\n    option.None -> inner\n  }\n"
       })
       <> "  inner\n}\n\n"
@@ -1052,8 +1040,9 @@ fn emit_struct_xml_inner_encoder(
 /// Render `v` (a Gleam value of `target`'s type) as an XML element
 /// `<member_name>...</member_name>`. Recursive for nested structs and
 /// lists.
-fn xml_value_expr(target: Resolved, member_name: String) -> String {
-  case target {
+fn xml_value_expr(m: MemberDef) -> String {
+  let member_name = m.json_name
+  case m.target {
     RPrim(primitive: types.PString) ->
       "xml.element(\"" <> member_name <> "\", xml.escape_text(v))"
     RPrim(primitive: types.PInt) ->
@@ -1065,12 +1054,21 @@ fn xml_value_expr(target: Resolved, member_name: String) -> String {
       <> member_name
       <> "\", case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" })"
     RBlob -> "xml.element(\"" <> member_name <> "\", xml.blob_text(v))"
-    RTimestamp -> "xml.element(\"" <> member_name <> "\", xml.int_text(v))"
+    RTimestamp ->
+      // restXml's protocol default is `date-time` (ISO 8601). The
+      // `@timestampFormat` member trait overrides it; the member
+      // walker collapses both the member-level and target-shape
+      // trait into `m.timestamp_format`.
+      "xml.element(\""
+      <> member_name
+      <> "\", "
+      <> xml_timestamp_format_expr(m.timestamp_format)
+      <> "(v))"
     REnum(local_name: _, ..) ->
       "xml.element(\""
       <> member_name
       <> "\", rest.enum_wire_value("
-      <> types.json_encoder(target)
+      <> types.json_encoder(m.target)
       <> "(v)))"
     RIntEnum(local_name: _, ..) ->
       "xml.element(\"" <> member_name <> "\", xml.int_text(case v { _ -> 0 }))"
@@ -1093,13 +1091,25 @@ fn xml_value_expr(target: Resolved, member_name: String) -> String {
       <> "\", \""
       <> entry
       <> "\", list.map(v, fn(item) { let v = item "
-      <> xml_inner_expr_for_list_element(target)
+      <> xml_inner_expr_for_list_element(m.target)
       <> " }))"
     RMap(value: _v, key: _k, ..) ->
       "xml.empty_element(\"" <> member_name <> "\")"
     RDocument -> "xml.element(\"" <> member_name <> "\", \"\")"
     RUnit -> "xml.empty_element(\"" <> member_name <> "\")"
     Unsupported(..) -> "\"\""
+  }
+}
+
+/// Map a member-level `@timestampFormat` to the wire-format helper
+/// the runtime exposes. restXml's protocol default is `date-time`
+/// (ISO 8601); the trait overrides it. The returned expression
+/// names a `fn(Int) -> String` ready to splice into `xml.element`.
+fn xml_timestamp_format_expr(format: Option(String)) -> String {
+  case format {
+    Some("epoch-seconds") -> "xml.int_text"
+    Some("http-date") -> "json_timestamp.format_http_date"
+    _ -> "json_timestamp.format_iso8601"
   }
 }
 
@@ -1594,11 +1604,7 @@ fn emit_parse_with_payload(
 fn file_header(service_id: String, body: String) -> String {
   let candidates = [
     #("aws/credentials", "credentials.", code.CodeNone),
-    #(
-      "aws/internal/client/runtime",
-      "runtime.",
-      code.CodeSome("runtime"),
-    ),
+    #("aws/internal/client/runtime", "runtime.", code.CodeSome("runtime")),
     #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
     #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
     #("aws/internal/codec/json_timestamp", "json_timestamp.", code.CodeNone),
@@ -1619,9 +1625,7 @@ fn file_header(service_id: String, body: String) -> String {
   let used =
     candidates
     |> list.filter(fn(c) { string.contains(body, c.1) })
-    |> list.map(fn(c) {
-      code.Import(path: c.0, alias: c.2, unqualified: [])
-    })
+    |> list.map(fn(c) { code.Import(path: c.0, alias: c.2, unqualified: []) })
   let items =
     [
       code.ModuleDocComment([
@@ -1690,7 +1694,6 @@ fn derive_module_name(service_id: String) -> String {
   let local = strip_namespace(service_id)
   stringutils.pascal_to_snake(local)
 }
-
 // `pascalize_member`, `int_to_string` live in
 // `codegen/src/internal/stringutils.gleam` — see Pass 4 in
 // plan.md for the de-duplication.
