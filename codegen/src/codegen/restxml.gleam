@@ -935,12 +935,13 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> String {
       <> member_name
       <> "\", xml_decode.bool_text)"
     RPrim(primitive: types.PFloat) ->
-      // Wrap raw float in FloatValue. Special-float wire forms (NaN /
-      // Infinity / -Infinity) aren't part of the restXml spec; if they
-      // ever appear we'd dispatch on text content here.
+      // `smithy_float_text` recognises the Smithy IEEE-754 special
+      // tokens (`NaN` / `Infinity` / `-Infinity`) and returns the
+      // matching `json_float.SmithyFloat` variant directly, so
+      // `<floatValue>NaN</floatValue>` round-trips correctly.
       "xml_decode.optional_child(elem, \""
       <> member_name
-      <> "\", fn(e) { case xml_decode.float_text(e) { Ok(f) -> Ok(json_float.FloatValue(f)) Error(r) -> Error(r) } })"
+      <> "\", xml_decode.smithy_float_text)"
     RBlob ->
       // S3 wraps blob bodies in base64; decode the text content then
       // base64-decode. Failure on either side produces a String error.

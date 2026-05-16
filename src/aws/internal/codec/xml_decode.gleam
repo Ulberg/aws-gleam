@@ -11,6 +11,7 @@
 //// name without thinking about layout. Repeated child elements (used
 //// for `@xmlFlattened` lists) are surfaced by `find_children`.
 
+import aws/internal/codec/json_float
 import gleam/float
 import gleam/int
 import gleam/list
@@ -177,6 +178,25 @@ pub fn float_text(e: Element) -> Result(Float, String) {
       case int.parse(t) {
         Ok(n) -> Ok(int.to_float(n))
         Error(_) -> Error("xml: invalid float: " <> t)
+      }
+  }
+}
+
+/// Like `float_text` but recognises the Smithy IEEE-754 special-
+/// value tokens (`NaN` / `Infinity` / `-Infinity`) and surfaces
+/// them as `json_float.SmithyFloat` variants. Used by generated
+/// Float decoders so the typed output carries the special value
+/// rather than failing the entire decode.
+pub fn smithy_float_text(e: Element) -> Result(json_float.SmithyFloat, String) {
+  let t = string.trim(text_content(e))
+  case t {
+    "NaN" -> Ok(json_float.NaN)
+    "Infinity" -> Ok(json_float.PosInfinity)
+    "-Infinity" -> Ok(json_float.NegInfinity)
+    _ ->
+      case float_text(e) {
+        Ok(f) -> Ok(json_float.FloatValue(f))
+        Error(r) -> Error(r)
       }
   }
 }
