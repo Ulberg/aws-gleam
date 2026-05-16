@@ -197,7 +197,10 @@ fn do_render(c: Code, indent: Int) -> String {
       pad(indent) <> "let " <> n <> " = " <> do_render_expr(v, indent)
 
     Use(name: n, callee: c2) ->
-      pad(indent) <> "use " <> n <> " <- " <> do_render_expr(c2, indent)
+      case n {
+        "" -> pad(indent) <> "use <- " <> do_render_expr(c2, indent)
+        _ -> pad(indent) <> "use " <> n <> " <- " <> do_render_expr(c2, indent)
+      }
 
     Case(scrutinee: s, branches: bs) -> {
       let header = pad(indent) <> "case " <> do_render_expr(s, indent) <> " {"

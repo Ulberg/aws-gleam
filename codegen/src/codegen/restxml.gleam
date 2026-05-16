@@ -27,6 +27,7 @@
 import codegen/client
 import codegen/code
 import codegen/named_shapes
+import codegen/struct_codec
 import codegen/types.{
   type MemberDef, type Resolved, Body, Header, Label, Payload, PrefixHeaders,
   Query, QueryParams, RBlob, RDocument, REnum, RIntEnum, RList, RMap, RPrim,
@@ -421,31 +422,41 @@ fn emit_operation(
   let synth_in = case in_info.synthesise {
     True ->
       emit_record_def(in_info.type_name, [])
-      <> emit_struct_encoder(
-        in_info.type_name,
+      <> code.render(struct_codec.encoder(
         "encode_" <> snake <> "_input_struct",
-        [],
-      )
-      <> emit_struct_decoder(
         in_info.type_name,
-        "decode_" <> snake <> "_input_struct",
         [],
-      )
+        False,
+        False,
+      ))
+      <> "\n"
+      <> code.render(struct_codec.decoder(
+        "decode_" <> snake <> "_input_struct",
+        in_info.type_name,
+        [],
+        False,
+      ))
+      <> "\n"
     False -> ""
   }
   let synth_out = case out_info.synthesise {
     True ->
       emit_record_def(out_info.type_name, [])
-      <> emit_struct_encoder(
-        out_info.type_name,
+      <> code.render(struct_codec.encoder(
         "encode_" <> snake <> "_output_struct",
-        [],
-      )
-      <> emit_struct_decoder(
         out_info.type_name,
-        "decode_" <> snake <> "_output_struct",
         [],
-      )
+        False,
+        False,
+      ))
+      <> "\n"
+      <> code.render(struct_codec.decoder(
+        "decode_" <> snake <> "_output_struct",
+        out_info.type_name,
+        [],
+        False,
+      ))
+      <> "\n"
     False -> ""
   }
   let in_struct_encoder_name = case in_info.synthesise {
@@ -702,13 +713,31 @@ fn emit_int_enum_codec(
 
 fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
   let snake = stringutils.pascal_to_snake(name)
-  emit_struct_encoder(name, "encode_" <> snake <> "_struct", members)
-  <> emit_struct_decoder(name, "decode_" <> snake <> "_struct", members)
-  <> emit_struct_decoder_params(
-    name,
-    "decode_" <> snake <> "_struct_params",
-    members,
-  )
+  let json_pair =
+    [
+      struct_codec.encoder(
+        "encode_" <> snake <> "_struct",
+        name,
+        members,
+        False,
+        False,
+      ),
+      struct_codec.decoder(
+        "decode_" <> snake <> "_struct",
+        name,
+        members,
+        False,
+      ),
+      struct_codec.decoder(
+        "decode_" <> snake <> "_struct_params",
+        name,
+        members,
+        True,
+      ),
+    ]
+    |> list.map(code.render)
+    |> list.fold("", fn(acc, s) { acc <> s <> "\n" })
+  json_pair
   <> emit_struct_xml_inner_encoder(
     name,
     "encode_" <> snake <> "_xml_inner",
@@ -716,46 +745,6 @@ fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
   )
   <> emit_struct_xml_encoder(name, "encode_" <> snake <> "_xml", snake)
   <> emit_struct_xml_decoder(name, "decode_" <> snake <> "_xml", members)
-}
-
-fn emit_struct_decoder_params(
-  type_name: String,
-  fn_name: String,
-  members: List(MemberDef),
-) -> String {
-  case members {
-    [] ->
-      "pub fn "
-      <> fn_name
-      <> "() -> decode.Decoder("
-      <> type_name
-      <> ") {\n  decode.success("
-      <> type_name
-      <> ")\n}\n\n"
-    _ ->
-      "pub fn "
-      <> fn_name
-      <> "() -> decode.Decoder("
-      <> type_name
-      <> ") {\n  use <- decode.recursive\n"
-      <> list.fold(members, "", fn(acc, m) {
-        acc
-        <> "  use "
-        <> m.snake_name
-        <> " <- decode.optional_field(\""
-        <> m.member_name
-        <> "\", option.None, decode.optional("
-        <> types.json_decoder_member_params(m.target, m.timestamp_format)
-        <> "))\n"
-      })
-      <> "  decode.success("
-      <> type_name
-      <> "(\n"
-      <> list.fold(members, "", fn(acc, m) {
-        acc <> "    " <> m.snake_name <> ": " <> m.snake_name <> ",\n"
-      })
-      <> "  ))\n}\n\n"
-  }
 }
 
 /// Emit `decode_<snake>_xml(elem) -> Result(<Type>, String)`. Reads
@@ -1024,85 +1013,6 @@ fn xml_inner_expr_for_list_element(target: Resolved) -> String {
         _ -> "\"\""
       }
     _ -> "\"\""
-  }
-}
-
-fn emit_struct_encoder(
-  type_name: String,
-  fn_name: String,
-  members: List(MemberDef),
-) -> String {
-  case members {
-    [] ->
-      "pub fn "
-      <> fn_name
-      <> "(_v: "
-      <> type_name
-      <> ") -> json.Json {\n  json.object([])\n}\n\n"
-    _ ->
-      "pub fn "
-      <> fn_name
-      <> "(input: "
-      <> type_name
-      <> ") -> json.Json {\n  let pairs = []\n"
-      <> list.fold(members, "", fn(acc, m) {
-        let none_branch = case m.default_json {
-          option.Some(expr) ->
-            "[#(\"" <> m.json_name <> "\", " <> expr <> "), ..pairs]"
-          option.None -> "pairs"
-        }
-        acc
-        <> "  let pairs = case input."
-        <> m.snake_name
-        <> " {\n    option.Some(v) -> [#(\""
-        <> m.json_name
-        <> "\", "
-        <> types.json_encoder_member(m.target, m.timestamp_format)
-        <> "(v)), ..pairs]\n    option.None -> "
-        <> none_branch
-        <> "\n  }\n"
-      })
-      <> "  json.object(pairs)\n}\n\n"
-  }
-}
-
-fn emit_struct_decoder(
-  type_name: String,
-  fn_name: String,
-  members: List(MemberDef),
-) -> String {
-  case members {
-    [] ->
-      "pub fn "
-      <> fn_name
-      <> "() -> decode.Decoder("
-      <> type_name
-      <> ") {\n  decode.success("
-      <> type_name
-      <> ")\n}\n\n"
-    _ ->
-      "pub fn "
-      <> fn_name
-      <> "() -> decode.Decoder("
-      <> type_name
-      <> ") {\n  use <- decode.recursive\n"
-      <> list.fold(members, "", fn(acc, m) {
-        acc
-        <> "  use "
-        <> m.snake_name
-        <> " <- decode.optional_field(\""
-        <> m.json_name
-        <> "\", option.None, decode.optional("
-        <> types.json_decoder_member(m.target, m.timestamp_format)
-        <> "))\n"
-      })
-      <> "  decode.success("
-      <> type_name
-      <> "(\n"
-      <> list.fold(members, "", fn(acc, m) {
-        acc <> "    " <> m.snake_name <> ": " <> m.snake_name <> ",\n"
-      })
-      <> "  ))\n}\n\n"
   }
 }
 
@@ -1455,11 +1365,9 @@ fn emit_payload_body(m: MemberDef) -> String {
 
 /// Render a Resolved value as a Gleam expression that produces a
 /// String — used in label / query / header position where everything
-/// is stringified.
-fn value_to_string(target: Resolved) -> String {
-  value_to_string_with_format(target, None)
-}
-
+/// is stringified. Format-aware variant; the no-format wrapper has
+/// been removed since every caller carries an explicit timestamp
+/// format.
 fn value_to_string_with_format(
   target: Resolved,
   timestamp_format: Option(String),
