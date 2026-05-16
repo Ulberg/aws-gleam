@@ -831,6 +831,31 @@ fn emit_struct_xml_decoder(
   fn_name: String,
   members: List(MemberDef),
 ) -> String {
+  // A struct's `elem` is only read if it has at least one
+  // Body-bound member with a decoder that reaches into the XML
+  // tree. Enum / int-enum / union / map / document / unit / unsupported
+  // members route through the unsupported-decoder placeholder
+  // (which emits a constant `Ok(option.None)` and never touches
+  // `elem`), so a struct whose only body members are these types
+  // still ends up with `elem` unused. Bind as `_elem` in that case.
+  // Mirrors the dispatch table in `xml_value_decoder_expr`.
+  let has_real_body_read =
+    list.any(members, fn(m) {
+      case m.binding {
+        Body ->
+          case m.target {
+            REnum(..) -> False
+            RIntEnum(..) -> False
+            RUnion(..) -> False
+            RMap(..) -> False
+            RDocument -> False
+            RUnit -> False
+            Unsupported(..) -> False
+            _ -> True
+          }
+        _ -> False
+      }
+    })
   case members {
     [] ->
       "pub fn "
@@ -840,10 +865,16 @@ fn emit_struct_xml_decoder(
       <> ", String) {\n  Ok("
       <> type_name
       <> ")\n}\n\n"
-    _ ->
+    _ -> {
+      let param = case has_real_body_read {
+        True -> "elem"
+        False -> "_elem"
+      }
       "pub fn "
       <> fn_name
-      <> "(elem: xml_decode.Element) -> Result("
+      <> "("
+      <> param
+      <> ": xml_decode.Element) -> Result("
       <> type_name
       <> ", String) {\n"
       <> list.fold(members, "", fn(acc, m) {
@@ -865,6 +896,7 @@ fn emit_struct_xml_decoder(
         acc <> "    " <> m.snake_name <> ": " <> m.snake_name <> ",\n"
       })
       <> "  ))\n}\n\n"
+    }
   }
 }
 
@@ -980,7 +1012,19 @@ fn emit_struct_xml_inner_encoder(
   fn_name: String,
   members: List(MemberDef),
 ) -> String {
-  case members {
+  // A struct may have members yet still produce empty XML — e.g.
+  // every member is URI / query / header bound. `input` is then
+  // unused; the previous emitter still wrote `input:` and got
+  // an "unused argument" warning per op. Filter to the Body
+  // subset before deciding whether to bind the param.
+  let body_members =
+    list.filter(members, fn(m) {
+      case m.binding {
+        Body -> True
+        _ -> False
+      }
+    })
+  case body_members {
     [] ->
       "pub fn "
       <> fn_name
@@ -993,20 +1037,13 @@ fn emit_struct_xml_inner_encoder(
       <> "(input: "
       <> type_name
       <> ") -> String {\n  let inner = \"\"\n"
-      <> list.fold(members, "", fn(acc, m) {
-        case m.binding {
-          // Only Body-bound members go into the XML element. URI /
-          // query / header members are routed elsewhere by the build
-          // function.
-          Body ->
-            acc
-            <> "  let inner = case input."
-            <> m.snake_name
-            <> " {\n    option.Some(v) -> inner <> "
-            <> xml_value_expr(m.target, m.json_name)
-            <> "\n    option.None -> inner\n  }\n"
-          _ -> acc
-        }
+      <> list.fold(body_members, "", fn(acc, m) {
+        acc
+        <> "  let inner = case input."
+        <> m.snake_name
+        <> " {\n    option.Some(v) -> inner <> "
+        <> xml_value_expr(m.target, m.json_name)
+        <> "\n    option.None -> inner\n  }\n"
       })
       <> "  inner\n}\n\n"
   }
@@ -1228,9 +1265,22 @@ fn emit_build(
       }
     })
 
-  let header_or_input = case is_unit {
-    True -> "_input"
-    False -> "input"
+  // Mirror `restjson.emit_build`: a named-but-empty input ends up
+  // with `input` unused, so bind as `_input` rather than triggering
+  // an unused-argument warning.
+  let input_consumed =
+    !is_unit
+    && {
+      [labels, queries, query_maps, headers, prefix_headers, body_members]
+      |> list.any(fn(xs) { xs != [] })
+      || case payload {
+        Ok(_) -> True
+        Error(_) -> False
+      }
+    }
+  let header_or_input = case input_consumed {
+    True -> "input"
+    False -> "_input"
   }
 
   let path_setup = emit_path_setup(http.uri, labels)
@@ -1517,9 +1567,18 @@ fn emit_parse_with_payload(
     }
     _ -> "let payload = option.None"
   }
+  // Payload bindings that fall through to `option.None` (e.g. Union
+  // payloads, not yet implemented) leave `body` unused — bind as
+  // `_body` to silence the warning.
+  let body_param = case string.contains(payload_decode, "body") {
+    True -> "body"
+    False -> "_body"
+  }
   "pub fn parse_"
   <> snake
-  <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  body: BitArray,\n) -> Result("
+  <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  "
+  <> body_param
+  <> ": BitArray,\n) -> Result("
   <> output_type
   <> ", String) {\n  {\n    "
   <> payload_decode

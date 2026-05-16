@@ -941,9 +941,24 @@ fn emit_build(
       }
     })
 
-  let header_or_input = case is_unit {
-    True -> "_input"
-    False -> "input"
+  // `input` is referenced from any of the bind-categorised setups
+  // (labels, queries, headers, prefix_headers, body or payload).
+  // For a named-but-empty input — every member non-Body / non-Label
+  // / etc. — those lists are empty and `input` is unused. Bind as
+  // `_input` in that case, matching the synth Unit-input style.
+  let input_consumed =
+    !is_unit
+    && {
+      [labels, queries, query_maps, headers, prefix_headers, body_members]
+      |> list.any(fn(xs) { xs != [] })
+      || case payload {
+        Ok(_) -> True
+        Error(_) -> False
+      }
+    }
+  let header_or_input = case input_consumed {
+    True -> "input"
+    False -> "_input"
   }
 
   let path_setup = emit_path_setup(http.uri, labels)
@@ -1370,9 +1385,18 @@ fn emit_parse_with_payload(
     }
     _ -> "let payload = option.None"
   }
+  // Payload bindings that fall through to `option.None` (e.g. Union
+  // payloads, not yet implemented) leave `body` unused — bind as
+  // `_body` to silence the warning.
+  let body_param = case string.contains(payload_decode, "body") {
+    True -> "body"
+    False -> "_body"
+  }
   "pub fn parse_"
   <> snake
-  <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  body: BitArray,\n) -> Result("
+  <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  "
+  <> body_param
+  <> ": BitArray,\n) -> Result("
   <> output_type
   <> ", String) {\n  {\n    "
   <> payload_decode
