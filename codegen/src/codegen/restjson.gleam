@@ -13,7 +13,9 @@
 //// milestone (M6.5) adds.
 
 import codegen/types.{
-  type MemberDef, type Resolved, REnum, RIntEnum, RList, RMap, RStruct, RUnion,
+  type HttpBinding, type MemberDef, type Resolved, Body, Header, Label, Payload,
+  PrefixHeaders, Query, QueryParams, REnum, RIntEnum, RList, RMap, RPrim,
+  RStruct, RUnion, RTimestamp, ResponseCode,
 }
 import gleam/dict.{type Dict}
 import gleam/list
@@ -265,8 +267,16 @@ fn emit_operation(
       out_info.type_name,
       out_struct_decoder_name,
     )
+  let in_members = in_info.members
+  let body_members = list.filter(in_members, fn(m) {
+    case m.binding {
+      Body -> True
+      _ -> False
+    }
+  })
+  let body_encoder = emit_body_encoder(snake, in_info.type_name, body_members)
   let build =
-    emit_build(in_info.type_name, in_info.synthesise, snake, http)
+    emit_build(in_info.type_name, in_info.synthesise, snake, http, in_members)
   let parse = emit_parse(out_info.type_name, snake)
   "\n"
   <> synth_in
@@ -274,6 +284,7 @@ fn emit_operation(
   <> in_encoder
   <> in_decoder
   <> out_decoder
+  <> body_encoder
   <> build
   <> parse
 }
@@ -603,35 +614,284 @@ fn emit_union_branch(union_name: String, m: MemberDef) -> String {
   <> "(x)) })"
 }
 
+/// Emit the per-op `build_<op>_request`. Partitions members by HTTP
+/// binding and emits routing for each:
+///
+///   * `@httpLabel` members are substituted into the URI template.
+///   * `@httpQuery` / `@httpQueryParams` build the query string.
+///   * `@httpHeader` / `@httpPrefixHeaders` populate headers.
+///   * `@httpPayload`, if present, IS the body (no JSON wrapper).
+///   * Otherwise, remaining `Body`-bound members go into a JSON object
+///     body via the per-op `encode_<op>_body` helper.
 fn emit_build(
   input_type: String,
   is_unit: Bool,
   snake: String,
   http: HttpTrait,
+  members: List(MemberDef),
 ) -> String {
-  case is_unit {
-    True ->
-      "pub fn build_"
+  let payload = list.find(members, fn(m) {
+    case m.binding {
+      Payload -> True
+      _ -> False
+    }
+  })
+  let labels =
+    list.filter(members, fn(m) {
+      case m.binding {
+        Label -> True
+        _ -> False
+      }
+    })
+  let queries =
+    list.filter(members, fn(m) {
+      case m.binding {
+        Query(_) -> True
+        _ -> False
+      }
+    })
+  let query_maps =
+    list.filter(members, fn(m) {
+      case m.binding {
+        QueryParams -> True
+        _ -> False
+      }
+    })
+  let headers =
+    list.filter(members, fn(m) {
+      case m.binding {
+        Header(_) -> True
+        _ -> False
+      }
+    })
+  let prefix_headers =
+    list.filter(members, fn(m) {
+      case m.binding {
+        PrefixHeaders(_) -> True
+        _ -> False
+      }
+    })
+  let body_members =
+    list.filter(members, fn(m) {
+      case m.binding {
+        Body -> True
+        _ -> False
+      }
+    })
+
+  let header_or_input = case is_unit {
+    True -> "_input"
+    False -> "input"
+  }
+
+  let path_setup = emit_path_setup(http.uri, labels)
+  let query_setup = emit_query_setup(queries, query_maps)
+  let header_setup = emit_header_setup(headers, prefix_headers)
+  let body_setup = case payload {
+    Ok(p) -> emit_payload_body(p)
+    Error(_) ->
+      case body_members {
+        [] -> "  let body = <<>>\n  let content_type = \"\"\n"
+        _ ->
+          "  let body_json = encode_"
+          <> snake
+          <> "_body(input)\n  let body = bit_array.from_string(json.to_string(body_json))\n  let content_type = \"application/json\"\n"
+      }
+  }
+
+  "pub fn build_"
+  <> snake
+  <> "_request(\n  "
+  <> header_or_input
+  <> ": "
+  <> input_type
+  <> ",\n) -> #(String, String, dict.Dict(String, String), BitArray) {\n"
+  <> path_setup
+  <> query_setup
+  <> header_setup
+  <> body_setup
+  <> "  let headers = case content_type {\n    \"\" -> headers\n    _ -> dict.insert(headers, \"Content-Type\", content_type)\n  }\n  let path = rest.build_path(path, query)\n  #(\""
+  <> http.method
+  <> "\", path, headers, body)\n}\n\n"
+}
+
+fn emit_path_setup(uri_template: String, labels: List(MemberDef)) -> String {
+  let initial = "  let path = \"" <> uri_template <> "\"\n"
+  list.fold(labels, initial, fn(acc, m) {
+    let greedy = string.contains(uri_template, "{" <> m.json_name <> "+}")
+    let greedy_str = case greedy {
+      True -> "True"
+      False -> "False"
+    }
+    acc
+    <> "  let path = case input."
+    <> m.snake_name
+    <> " {\n    option.Some(v) -> rest.substitute_label(path, \""
+    <> m.json_name
+    <> "\", "
+    <> value_to_string(m.target)
+    <> ", "
+    <> greedy_str
+    <> ")\n    option.None -> path\n  }\n"
+  })
+}
+
+fn emit_query_setup(
+  queries: List(MemberDef),
+  query_maps: List(MemberDef),
+) -> String {
+  let initial = "  let query = \"\"\n"
+  let with_queries =
+    list.fold(queries, initial, fn(acc, m) {
+      let query_name = case m.binding {
+        Query(query_name: n) -> n
+        _ -> m.json_name
+      }
+      acc
+      <> "  let query = case input."
+      <> m.snake_name
+      <> " {\n    option.Some(v) -> rest.add_query(query, \""
+      <> query_name
+      <> "\", "
+      <> value_to_string(m.target)
+      <> ")\n    option.None -> query\n  }\n"
+    })
+  list.fold(query_maps, with_queries, fn(acc, m) {
+    // Dispatch on the map's value type: Map<String, String> uses
+    // `add_query_params`, Map<String, List<String>> uses
+    // `add_query_params_list`. Anything else: skip.
+    let helper = case m.target {
+      RMap(key: _, value: RList(element: RPrim(primitive: types.PString))) ->
+        Ok("rest.add_query_params_list")
+      RMap(key: _, value: RPrim(primitive: types.PString)) ->
+        Ok("rest.add_query_params")
+      _ -> Error(Nil)
+    }
+    case helper {
+      Ok(fn_name) ->
+        acc
+        <> "  let query = case input."
+        <> m.snake_name
+        <> " {\n    option.Some(m) -> "
+        <> fn_name
+        <> "(query, m)\n    option.None -> query\n  }\n"
+      Error(_) -> acc
+    }
+  })
+}
+
+fn emit_header_setup(
+  headers: List(MemberDef),
+  prefix_headers: List(MemberDef),
+) -> String {
+  let initial = "  let headers = dict.new()\n"
+  let with_headers =
+    list.fold(headers, initial, fn(acc, m) {
+      let header_name = case m.binding {
+        Header(header_name: n) -> n
+        _ -> m.json_name
+      }
+      acc
+      <> "  let headers = case input."
+      <> m.snake_name
+      <> " {\n    option.Some(v) -> rest.maybe_set_header(headers, \""
+      <> header_name
+      <> "\", "
+      <> value_to_string(m.target)
+      <> ")\n    option.None -> headers\n  }\n"
+    })
+  list.fold(prefix_headers, with_headers, fn(acc, m) {
+    let prefix = case m.binding {
+      PrefixHeaders(prefix: p) -> p
+      _ -> ""
+    }
+    acc
+    <> "  let headers = case input."
+    <> m.snake_name
+    <> " {\n    option.Some(m) -> rest.add_prefix_headers(headers, \""
+    <> prefix
+    <> "\", m)\n    option.None -> headers\n  }\n"
+  })
+}
+
+fn emit_payload_body(m: MemberDef) -> String {
+  // @httpPayload — the member's value IS the body. For blob members
+  // the body is the raw bytes; for struct/string members it's the
+  // JSON-encoded value; for primitive strings, the raw string.
+  case m.target {
+    types.RBlob ->
+      "  let body = case input."
+      <> m.snake_name
+      <> " {\n    option.Some(v) -> v\n    option.None -> <<>>\n  }\n  let content_type = \"application/octet-stream\"\n"
+    RPrim(primitive: types.PString) ->
+      "  let body = case input."
+      <> m.snake_name
+      <> " {\n    option.Some(v) -> bit_array.from_string(v)\n    option.None -> <<>>\n  }\n  let content_type = \"text/plain\"\n"
+    _ ->
+      "  let body = case input."
+      <> m.snake_name
+      <> " {\n    option.Some(v) -> bit_array.from_string(json.to_string("
+      <> types.json_encoder(m.target)
+      <> "(v)))\n    option.None -> <<>>\n  }\n  let content_type = \"application/json\"\n"
+  }
+}
+
+/// Render a Resolved value as a Gleam expression that produces a
+/// String — used in label / query / header position where everything
+/// is stringified.
+fn value_to_string(target: Resolved) -> String {
+  case target {
+    RPrim(primitive: types.PString) -> "v"
+    RPrim(primitive: types.PInt) -> "rest.int_to_query(v)"
+    RPrim(primitive: types.PFloat) ->
+      "case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
+    RPrim(primitive: types.PBool) -> "rest.bool_to_query(v)"
+    // Enum: encode to json.string, then strip the surrounding quotes
+    // off. Cheaper than emitting a per-variant case (which would need
+    // the variant list at this site).
+    REnum(local_name: _, ..) ->
+      "rest.enum_wire_value(" <> types.json_encoder(target) <> "(v))"
+    RIntEnum(local_name: _, ..) ->
+      "rest.int_to_query(case "
+      <> types.json_encoder(target)
+      <> "(v) { _ -> 0 })"
+    RTimestamp -> "rest.timestamp_to_header(v)"
+    _ -> "\"\""
+  }
+}
+
+/// Emit a per-op body encoder that ONLY includes Body-bound members.
+/// Generated as a separate function so the operation's URI/query/
+/// header members don't double-encode into the JSON body.
+fn emit_body_encoder(
+  snake: String,
+  input_type: String,
+  body_members: List(MemberDef),
+) -> String {
+  case body_members {
+    [] ->
+      "pub fn encode_"
       <> snake
-      <> "_request(\n  _input: "
+      <> "_body(_input: "
       <> input_type
-      <> ",\n) -> #(String, String, dict.Dict(String, String), BitArray) {\n  #(\""
-      <> http.method
-      <> "\", \""
-      <> http.uri
-      <> "\", dict.new(), <<>>)\n}\n\n"
-    False ->
-      "pub fn build_"
+      <> ") -> json.Json {\n  json.object([])\n}\n\n"
+    _ ->
+      "pub fn encode_"
       <> snake
-      <> "_request(\n  input: "
+      <> "_body(input: "
       <> input_type
-      <> ",\n) -> #(String, String, dict.Dict(String, String), BitArray) {\n  let body_str = encode_"
-      <> snake
-      <> "_input(input)\n  let headers = dict.from_list([#(\"Content-Type\", \"application/json\")])\n  #(\""
-      <> http.method
-      <> "\", \""
-      <> http.uri
-      <> "\", headers, bit_array.from_string(body_str))\n}\n\n"
+      <> ") -> json.Json {\n  let pairs = []\n"
+      <> list.fold(body_members, "", fn(acc, m) {
+        acc
+        <> "  let pairs = case input."
+        <> m.snake_name
+        <> " {\n    option.Some(v) -> [#(\""
+        <> m.json_name
+        <> "\", "
+        <> types.json_encoder(m.target)
+        <> "(v)), ..pairs]\n    option.None -> pairs\n  }\n"
+      })
+      <> "  json.object(pairs)\n}\n\n"
   }
 }
 
@@ -654,6 +914,7 @@ fn file_header(service_id: String) -> String {
 //// DO NOT EDIT. Re-generate via the codegen subproject.
 
 import aws/internal/codec/json_float
+import aws/internal/codec/rest
 import gleam/bit_array
 import gleam/dict
 import gleam/dynamic/decode

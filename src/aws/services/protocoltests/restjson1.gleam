@@ -2,6 +2,7 @@
 //// DO NOT EDIT. Re-generate via the codegen subproject.
 
 import aws/internal/codec/json_float
+import aws/internal/codec/rest
 import gleam/bit_array
 import gleam/dict
 import gleam/dynamic/decode
@@ -7233,17 +7234,135 @@ pub fn decode_all_query_string_types_output(
   }
 }
 
+pub fn encode_all_query_string_types_body(
+  _input: AllQueryStringTypesInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_all_query_string_types_request(
   input: AllQueryStringTypesInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_all_query_string_types_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/AllQueryStringTypesInput",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/AllQueryStringTypesInput"
+  let query = ""
+  let query = case input.query_boolean {
+    option.Some(v) -> rest.add_query(query, "Boolean", rest.bool_to_query(v))
+    option.None -> query
+  }
+  let query = case input.query_boolean_list {
+    option.Some(v) -> rest.add_query(query, "BooleanList", "")
+    option.None -> query
+  }
+  let query = case input.query_byte {
+    option.Some(v) -> rest.add_query(query, "Byte", rest.int_to_query(v))
+    option.None -> query
+  }
+  let query = case input.query_double {
+    option.Some(v) ->
+      rest.add_query(query, "Double", case v {
+        json_float.FloatValue(f) -> rest.float_to_query(f)
+        json_float.NaN -> "NaN"
+        json_float.PosInfinity -> "Infinity"
+        json_float.NegInfinity -> "-Infinity"
+      })
+    option.None -> query
+  }
+  let query = case input.query_double_list {
+    option.Some(v) -> rest.add_query(query, "DoubleList", "")
+    option.None -> query
+  }
+  let query = case input.query_enum {
+    option.Some(v) ->
+      rest.add_query(
+        query,
+        "Enum",
+        rest.enum_wire_value(encode_foo_enum_enum(v)),
+      )
+    option.None -> query
+  }
+  let query = case input.query_enum_list {
+    option.Some(v) -> rest.add_query(query, "EnumList", "")
+    option.None -> query
+  }
+  let query = case input.query_float {
+    option.Some(v) ->
+      rest.add_query(query, "Float", case v {
+        json_float.FloatValue(f) -> rest.float_to_query(f)
+        json_float.NaN -> "NaN"
+        json_float.PosInfinity -> "Infinity"
+        json_float.NegInfinity -> "-Infinity"
+      })
+    option.None -> query
+  }
+  let query = case input.query_integer {
+    option.Some(v) -> rest.add_query(query, "Integer", rest.int_to_query(v))
+    option.None -> query
+  }
+  let query = case input.query_integer_enum {
+    option.Some(v) ->
+      rest.add_query(
+        query,
+        "IntegerEnum",
+        rest.int_to_query(case encode_integer_enum_int_enum(v) {
+          _ -> 0
+        }),
+      )
+    option.None -> query
+  }
+  let query = case input.query_integer_enum_list {
+    option.Some(v) -> rest.add_query(query, "IntegerEnumList", "")
+    option.None -> query
+  }
+  let query = case input.query_integer_list {
+    option.Some(v) -> rest.add_query(query, "IntegerList", "")
+    option.None -> query
+  }
+  let query = case input.query_integer_set {
+    option.Some(v) -> rest.add_query(query, "IntegerSet", "")
+    option.None -> query
+  }
+  let query = case input.query_long {
+    option.Some(v) -> rest.add_query(query, "Long", rest.int_to_query(v))
+    option.None -> query
+  }
+  let query = case input.query_short {
+    option.Some(v) -> rest.add_query(query, "Short", rest.int_to_query(v))
+    option.None -> query
+  }
+  let query = case input.query_string {
+    option.Some(v) -> rest.add_query(query, "String", v)
+    option.None -> query
+  }
+  let query = case input.query_string_list {
+    option.Some(v) -> rest.add_query(query, "StringList", "")
+    option.None -> query
+  }
+  let query = case input.query_string_set {
+    option.Some(v) -> rest.add_query(query, "StringSet", "")
+    option.None -> query
+  }
+  let query = case input.query_timestamp {
+    option.Some(v) ->
+      rest.add_query(query, "Timestamp", rest.timestamp_to_header(v))
+    option.None -> query
+  }
+  let query = case input.query_timestamp_list {
+    option.Some(v) -> rest.add_query(query, "TimestampList", "")
+    option.None -> query
+  }
+  let query = case input.query_params_map_of_string_list {
+    option.Some(m) -> rest.add_query_params_list(query, m)
+    option.None -> query
+  }
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_all_query_string_types_response(
@@ -7305,17 +7424,34 @@ pub fn decode_constant_and_variable_query_string_output(
   }
 }
 
+pub fn encode_constant_and_variable_query_string_body(
+  _input: ConstantAndVariableQueryStringInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_constant_and_variable_query_string_request(
   input: ConstantAndVariableQueryStringInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_constant_and_variable_query_string_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/ConstantAndVariableQueryString?foo=bar",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/ConstantAndVariableQueryString?foo=bar"
+  let query = ""
+  let query = case input.baz {
+    option.Some(v) -> rest.add_query(query, "baz", v)
+    option.None -> query
+  }
+  let query = case input.maybe_set {
+    option.Some(v) -> rest.add_query(query, "maybeSet", v)
+    option.None -> query
+  }
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_constant_and_variable_query_string_response(
@@ -7373,17 +7509,30 @@ pub fn decode_constant_query_string_output(
   }
 }
 
+pub fn encode_constant_query_string_body(
+  _input: ConstantQueryStringInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_constant_query_string_request(
   input: ConstantQueryStringInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_constant_query_string_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/ConstantQueryString/{hello}?foo=bar&hello",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/ConstantQueryString/{hello}?foo=bar&hello"
+  let path = case input.hello {
+    option.Some(v) -> rest.substitute_label(path, "hello", v, False)
+    option.None -> path
+  }
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_constant_query_string_response(
@@ -7425,12 +7574,32 @@ pub fn decode_content_type_parameters_output(
   }
 }
 
+pub fn encode_content_type_parameters_body(
+  input: ContentTypeParametersInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.value {
+    option.Some(v) -> [#("value", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_content_type_parameters_request(
   input: ContentTypeParametersInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_content_type_parameters_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/ContentTypeParameters", headers, bit_array.from_string(body_str))
+  let path = "/ContentTypeParameters"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_content_type_parameters_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_content_type_parameters_response(
@@ -7486,10 +7655,24 @@ pub fn decode_datetime_offsets_output(
   }
 }
 
+pub fn encode_datetime_offsets_body(_input: DatetimeOffsetsInput) -> json.Json {
+  json.object([])
+}
+
 pub fn build_datetime_offsets_request(
   _input: DatetimeOffsetsInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/DatetimeOffsets", dict.new(), <<>>)
+  let path = "/DatetimeOffsets"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_datetime_offsets_response(
@@ -7529,12 +7712,34 @@ pub fn decode_document_type_output(
   }
 }
 
+pub fn encode_document_type_body(input: DocumentTypeInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.document_value {
+    option.Some(v) -> [#("documentValue", fn(j) { j }(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.string_value {
+    option.Some(v) -> [#("stringValue", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_document_type_request(
   input: DocumentTypeInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_document_type_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("PUT", "/DocumentType", headers, bit_array.from_string(body_str))
+  let path = "/DocumentType"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_document_type_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_document_type_response(
@@ -7580,12 +7785,43 @@ pub fn decode_document_type_as_map_value_output(
   }
 }
 
+pub fn encode_document_type_as_map_value_body(
+  input: DocumentTypeAsMapValueInputOutput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.doc_valued_map {
+    option.Some(v) -> [
+      #(
+        "docValuedMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) { #(pair.0, fn(j) { j }(pair.1)) }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_document_type_as_map_value_request(
   input: DocumentTypeAsMapValueInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_document_type_as_map_value_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("PUT", "/DocumentTypeAsMapValue", headers, bit_array.from_string(body_str))
+  let path = "/DocumentTypeAsMapValue"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_document_type_as_map_value_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_document_type_as_map_value_response(
@@ -7627,12 +7863,29 @@ pub fn decode_document_type_as_payload_output(
   }
 }
 
+pub fn encode_document_type_as_payload_body(
+  _input: DocumentTypeAsPayloadInputOutput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_document_type_as_payload_request(
   input: DocumentTypeAsPayloadInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_document_type_as_payload_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("PUT", "/DocumentTypeAsPayload", headers, bit_array.from_string(body_str))
+  let path = "/DocumentTypeAsPayload"
+  let query = ""
+  let headers = dict.new()
+  let body = case input.document_value {
+    option.Some(v) -> bit_array.from_string(json.to_string(fn(j) { j }(v)))
+    option.None -> <<>>
+  }
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_document_type_as_payload_response(
@@ -7672,12 +7925,28 @@ pub fn decode_duplex_stream_output(
   }
 }
 
+pub fn encode_duplex_stream_body(_input: DuplexStreamInput) -> json.Json {
+  json.object([])
+}
+
 pub fn build_duplex_stream_request(
   input: DuplexStreamInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_duplex_stream_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/DuplexStream", headers, bit_array.from_string(body_str))
+  let path = "/DuplexStream"
+  let query = ""
+  let headers = dict.new()
+  let body = case input.stream {
+    option.Some(v) ->
+      bit_array.from_string(json.to_string(encode_event_stream_union(v)))
+    option.None -> <<>>
+  }
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_duplex_stream_response(
@@ -7723,17 +7992,30 @@ pub fn decode_duplex_stream_with_distinct_streams_output(
   }
 }
 
+pub fn encode_duplex_stream_with_distinct_streams_body(
+  _input: DuplexStreamWithDistinctStreamsInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_duplex_stream_with_distinct_streams_request(
   input: DuplexStreamWithDistinctStreamsInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_duplex_stream_with_distinct_streams_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/DuplexStreamWithDistinctStreams",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/DuplexStreamWithDistinctStreams"
+  let query = ""
+  let headers = dict.new()
+  let body = case input.stream {
+    option.Some(v) ->
+      bit_array.from_string(json.to_string(encode_event_stream_union(v)))
+    option.None -> <<>>
+  }
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_duplex_stream_with_distinct_streams_response(
@@ -7779,17 +8061,35 @@ pub fn decode_duplex_stream_with_initial_messages_output(
   }
 }
 
+pub fn encode_duplex_stream_with_initial_messages_body(
+  _input: DuplexStreamWithInitialMessagesInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_duplex_stream_with_initial_messages_request(
   input: DuplexStreamWithInitialMessagesInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_duplex_stream_with_initial_messages_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/DuplexStreamWithInitialMessages",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/DuplexStreamWithInitialMessages"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.initial_request_member {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "initial-request-member", v)
+    option.None -> headers
+  }
+  let body = case input.stream {
+    option.Some(v) ->
+      bit_array.from_string(json.to_string(encode_event_stream_union(v)))
+    option.None -> <<>>
+  }
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_duplex_stream_with_initial_messages_response(
@@ -7831,17 +8131,26 @@ pub fn decode_empty_input_and_empty_output_output(
   }
 }
 
+pub fn encode_empty_input_and_empty_output_body(
+  _input: EmptyInputAndEmptyOutputInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_empty_input_and_empty_output_request(
   input: EmptyInputAndEmptyOutputInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_empty_input_and_empty_output_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/EmptyInputAndEmptyOutput",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/EmptyInputAndEmptyOutput"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_empty_input_and_empty_output_response(
@@ -7915,10 +8224,26 @@ pub fn decode_endpoint_operation_output(
   }
 }
 
+pub fn encode_endpoint_operation_body(
+  _input: EndpointOperationInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_endpoint_operation_request(
   _input: EndpointOperationInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/EndpointOperation", dict.new(), <<>>)
+  let path = "/EndpointOperation"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_endpoint_operation_response(
@@ -7978,17 +8303,32 @@ pub fn decode_endpoint_with_host_label_operation_output(
   }
 }
 
+pub fn encode_endpoint_with_host_label_operation_body(
+  input: HostLabelInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.label {
+    option.Some(v) -> [#("label", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_endpoint_with_host_label_operation_request(
   input: HostLabelInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_endpoint_with_host_label_operation_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/EndpointWithHostLabelOperation",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/EndpointWithHostLabelOperation"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_endpoint_with_host_label_operation_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_endpoint_with_host_label_operation_response(
@@ -8046,10 +8386,26 @@ pub fn decode_fractional_seconds_output(
   }
 }
 
+pub fn encode_fractional_seconds_body(
+  _input: FractionalSecondsInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_fractional_seconds_request(
   _input: FractionalSecondsInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/FractionalSeconds", dict.new(), <<>>)
+  let path = "/FractionalSeconds"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_fractional_seconds_response(
@@ -8107,10 +8463,26 @@ pub fn decode_greeting_with_errors_output(
   }
 }
 
+pub fn encode_greeting_with_errors_body(
+  _input: GreetingWithErrorsInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_greeting_with_errors_request(
   _input: GreetingWithErrorsInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("PUT", "/GreetingWithErrors", dict.new(), <<>>)
+  let path = "/GreetingWithErrors"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_greeting_with_errors_response(
@@ -8184,10 +8556,26 @@ pub fn decode_host_with_path_operation_output(
   }
 }
 
+pub fn encode_host_with_path_operation_body(
+  _input: HostWithPathOperationInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_host_with_path_operation_request(
   _input: HostWithPathOperationInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("GET", "/HostWithPathOperation", dict.new(), <<>>)
+  let path = "/HostWithPathOperation"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_host_with_path_operation_response(
@@ -8229,12 +8617,34 @@ pub fn decode_http_empty_prefix_headers_output(
   }
 }
 
+pub fn encode_http_empty_prefix_headers_body(
+  _input: HttpEmptyPrefixHeadersInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_empty_prefix_headers_request(
   input: HttpEmptyPrefixHeadersInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_empty_prefix_headers_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("GET", "/HttpEmptyPrefixHeaders", headers, bit_array.from_string(body_str))
+  let path = "/HttpEmptyPrefixHeaders"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.specific_header {
+    option.Some(v) -> rest.maybe_set_header(headers, "hello", v)
+    option.None -> headers
+  }
+  let headers = case input.prefix_headers {
+    option.Some(m) -> rest.add_prefix_headers(headers, "", m)
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_http_empty_prefix_headers_response(
@@ -8274,12 +8684,28 @@ pub fn decode_http_enum_payload_output(
   }
 }
 
+pub fn encode_http_enum_payload_body(_input: EnumPayloadInput) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_enum_payload_request(
   input: EnumPayloadInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_enum_payload_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/EnumPayload", headers, bit_array.from_string(body_str))
+  let path = "/EnumPayload"
+  let query = ""
+  let headers = dict.new()
+  let body = case input.payload {
+    option.Some(v) ->
+      bit_array.from_string(json.to_string(encode_string_enum_enum(v)))
+    option.None -> <<>>
+  }
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_http_enum_payload_response(
@@ -8321,12 +8747,33 @@ pub fn decode_http_payload_traits_output(
   }
 }
 
+pub fn encode_http_payload_traits_body(
+  _input: HttpPayloadTraitsInputOutput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_payload_traits_request(
   input: HttpPayloadTraitsInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_payload_traits_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/HttpPayloadTraits", headers, bit_array.from_string(body_str))
+  let path = "/HttpPayloadTraits"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.foo {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Foo", v)
+    option.None -> headers
+  }
+  let body = case input.blob {
+    option.Some(v) -> v
+    option.None -> <<>>
+  }
+  let content_type = "application/octet-stream"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_http_payload_traits_response(
@@ -8380,17 +8827,33 @@ pub fn decode_http_payload_traits_with_media_type_output(
   }
 }
 
+pub fn encode_http_payload_traits_with_media_type_body(
+  _input: HttpPayloadTraitsWithMediaTypeInputOutput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_payload_traits_with_media_type_request(
   input: HttpPayloadTraitsWithMediaTypeInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_payload_traits_with_media_type_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/HttpPayloadTraitsWithMediaType",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/HttpPayloadTraitsWithMediaType"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.foo {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Foo", v)
+    option.None -> headers
+  }
+  let body = case input.blob {
+    option.Some(v) -> v
+    option.None -> <<>>
+  }
+  let content_type = "application/octet-stream"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_http_payload_traits_with_media_type_response(
@@ -8436,17 +8899,30 @@ pub fn decode_http_payload_with_structure_output(
   }
 }
 
+pub fn encode_http_payload_with_structure_body(
+  _input: HttpPayloadWithStructureInputOutput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_payload_with_structure_request(
   input: HttpPayloadWithStructureInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_payload_with_structure_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "PUT",
-    "/HttpPayloadWithStructure",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/HttpPayloadWithStructure"
+  let query = ""
+  let headers = dict.new()
+  let body = case input.nested {
+    option.Some(v) ->
+      bit_array.from_string(json.to_string(encode_nested_payload_struct(v)))
+    option.None -> <<>>
+  }
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_http_payload_with_structure_response(
@@ -8488,12 +8964,30 @@ pub fn decode_http_payload_with_union_output(
   }
 }
 
+pub fn encode_http_payload_with_union_body(
+  _input: HttpPayloadWithUnionInputOutput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_payload_with_union_request(
   input: HttpPayloadWithUnionInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_payload_with_union_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("PUT", "/HttpPayloadWithUnion", headers, bit_array.from_string(body_str))
+  let path = "/HttpPayloadWithUnion"
+  let query = ""
+  let headers = dict.new()
+  let body = case input.nested {
+    option.Some(v) ->
+      bit_array.from_string(json.to_string(encode_union_payload_union(v)))
+    option.None -> <<>>
+  }
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_http_payload_with_union_response(
@@ -8535,12 +9029,34 @@ pub fn decode_http_prefix_headers_output(
   }
 }
 
+pub fn encode_http_prefix_headers_body(
+  _input: HttpPrefixHeadersInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_prefix_headers_request(
   input: HttpPrefixHeadersInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_prefix_headers_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("GET", "/HttpPrefixHeaders", headers, bit_array.from_string(body_str))
+  let path = "/HttpPrefixHeaders"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.foo {
+    option.Some(v) -> rest.maybe_set_header(headers, "x-foo", v)
+    option.None -> headers
+  }
+  let headers = case input.foo_map {
+    option.Some(m) -> rest.add_prefix_headers(headers, "x-foo-", m)
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_http_prefix_headers_response(
@@ -8584,17 +9100,26 @@ pub fn decode_http_prefix_headers_in_response_output(
   }
 }
 
+pub fn encode_http_prefix_headers_in_response_body(
+  _input: HttpPrefixHeadersInResponseInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_prefix_headers_in_response_request(
   input: HttpPrefixHeadersInResponseInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_prefix_headers_in_response_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/HttpPrefixHeadersResponse",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/HttpPrefixHeadersResponse"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_http_prefix_headers_in_response_response(
@@ -8654,12 +9179,30 @@ pub fn decode_http_query_params_only_operation_output(
   }
 }
 
+pub fn encode_http_query_params_only_operation_body(
+  _input: HttpQueryParamsOnlyInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_query_params_only_operation_request(
   input: HttpQueryParamsOnlyInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_query_params_only_operation_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("GET", "/http-query-params-only", headers, bit_array.from_string(body_str))
+  let path = "/http-query-params-only"
+  let query = ""
+  let query = case input.query_map {
+    option.Some(m) -> rest.add_query_params(query, m)
+    option.None -> query
+  }
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_http_query_params_only_operation_response(
@@ -8717,17 +9260,56 @@ pub fn decode_http_request_with_float_labels_output(
   }
 }
 
+pub fn encode_http_request_with_float_labels_body(
+  _input: HttpRequestWithFloatLabelsInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_request_with_float_labels_request(
   input: HttpRequestWithFloatLabelsInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_request_with_float_labels_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/FloatHttpLabels/{float}/{double}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/FloatHttpLabels/{float}/{double}"
+  let path = case input.double {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "double",
+        case v {
+          json_float.FloatValue(f) -> rest.float_to_query(f)
+          json_float.NaN -> "NaN"
+          json_float.PosInfinity -> "Infinity"
+          json_float.NegInfinity -> "-Infinity"
+        },
+        False,
+      )
+    option.None -> path
+  }
+  let path = case input.float {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "float",
+        case v {
+          json_float.FloatValue(f) -> rest.float_to_query(f)
+          json_float.NaN -> "NaN"
+          json_float.PosInfinity -> "Infinity"
+          json_float.NegInfinity -> "-Infinity"
+        },
+        False,
+      )
+    option.None -> path
+  }
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_http_request_with_float_labels_response(
@@ -8797,17 +9379,34 @@ pub fn decode_http_request_with_greedy_label_in_path_output(
   }
 }
 
+pub fn encode_http_request_with_greedy_label_in_path_body(
+  _input: HttpRequestWithGreedyLabelInPathInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_request_with_greedy_label_in_path_request(
   input: HttpRequestWithGreedyLabelInPathInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_request_with_greedy_label_in_path_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/HttpRequestWithGreedyLabelInPath/foo/{foo}/baz/{baz+}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/HttpRequestWithGreedyLabelInPath/foo/{foo}/baz/{baz+}"
+  let path = case input.baz {
+    option.Some(v) -> rest.substitute_label(path, "baz", v, True)
+    option.None -> path
+  }
+  let path = case input.foo {
+    option.Some(v) -> rest.substitute_label(path, "foo", v, False)
+    option.None -> path
+  }
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_http_request_with_greedy_label_in_path_response(
@@ -8865,17 +9464,91 @@ pub fn decode_http_request_with_labels_output(
   }
 }
 
+pub fn encode_http_request_with_labels_body(
+  _input: HttpRequestWithLabelsInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_request_with_labels_request(
   input: HttpRequestWithLabelsInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_request_with_labels_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/HttpRequestWithLabels/{string}/{short}/{integer}/{long}/{float}/{double}/{boolean}/{timestamp}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path =
+    "/HttpRequestWithLabels/{string}/{short}/{integer}/{long}/{float}/{double}/{boolean}/{timestamp}"
+  let path = case input.boolean {
+    option.Some(v) ->
+      rest.substitute_label(path, "boolean", rest.bool_to_query(v), False)
+    option.None -> path
+  }
+  let path = case input.double {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "double",
+        case v {
+          json_float.FloatValue(f) -> rest.float_to_query(f)
+          json_float.NaN -> "NaN"
+          json_float.PosInfinity -> "Infinity"
+          json_float.NegInfinity -> "-Infinity"
+        },
+        False,
+      )
+    option.None -> path
+  }
+  let path = case input.float {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "float",
+        case v {
+          json_float.FloatValue(f) -> rest.float_to_query(f)
+          json_float.NaN -> "NaN"
+          json_float.PosInfinity -> "Infinity"
+          json_float.NegInfinity -> "-Infinity"
+        },
+        False,
+      )
+    option.None -> path
+  }
+  let path = case input.integer {
+    option.Some(v) ->
+      rest.substitute_label(path, "integer", rest.int_to_query(v), False)
+    option.None -> path
+  }
+  let path = case input.long {
+    option.Some(v) ->
+      rest.substitute_label(path, "long", rest.int_to_query(v), False)
+    option.None -> path
+  }
+  let path = case input.short {
+    option.Some(v) ->
+      rest.substitute_label(path, "short", rest.int_to_query(v), False)
+    option.None -> path
+  }
+  let path = case input.string {
+    option.Some(v) -> rest.substitute_label(path, "string", v, False)
+    option.None -> path
+  }
+  let path = case input.timestamp {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "timestamp",
+        rest.timestamp_to_header(v),
+        False,
+      )
+    option.None -> path
+  }
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_http_request_with_labels_response(
@@ -8945,18 +9618,97 @@ pub fn decode_http_request_with_labels_and_timestamp_format_output(
   }
 }
 
+pub fn encode_http_request_with_labels_and_timestamp_format_body(
+  _input: HttpRequestWithLabelsAndTimestampFormatInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_request_with_labels_and_timestamp_format_request(
   input: HttpRequestWithLabelsAndTimestampFormatInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str =
-    encode_http_request_with_labels_and_timestamp_format_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/HttpRequestWithLabelsAndTimestampFormat/{memberEpochSeconds}/{memberHttpDate}/{memberDateTime}/{defaultFormat}/{targetEpochSeconds}/{targetHttpDate}/{targetDateTime}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path =
+    "/HttpRequestWithLabelsAndTimestampFormat/{memberEpochSeconds}/{memberHttpDate}/{memberDateTime}/{defaultFormat}/{targetEpochSeconds}/{targetHttpDate}/{targetDateTime}"
+  let path = case input.default_format {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "defaultFormat",
+        rest.timestamp_to_header(v),
+        False,
+      )
+    option.None -> path
+  }
+  let path = case input.member_date_time {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "memberDateTime",
+        rest.timestamp_to_header(v),
+        False,
+      )
+    option.None -> path
+  }
+  let path = case input.member_epoch_seconds {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "memberEpochSeconds",
+        rest.timestamp_to_header(v),
+        False,
+      )
+    option.None -> path
+  }
+  let path = case input.member_http_date {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "memberHttpDate",
+        rest.timestamp_to_header(v),
+        False,
+      )
+    option.None -> path
+  }
+  let path = case input.target_date_time {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "targetDateTime",
+        rest.timestamp_to_header(v),
+        False,
+      )
+    option.None -> path
+  }
+  let path = case input.target_epoch_seconds {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "targetEpochSeconds",
+        rest.timestamp_to_header(v),
+        False,
+      )
+    option.None -> path
+  }
+  let path = case input.target_http_date {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "targetHttpDate",
+        rest.timestamp_to_header(v),
+        False,
+      )
+    option.None -> path
+  }
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_http_request_with_labels_and_timestamp_format_response(
@@ -9016,17 +9768,30 @@ pub fn decode_http_request_with_regex_literal_output(
   }
 }
 
+pub fn encode_http_request_with_regex_literal_body(
+  _input: HttpRequestWithRegexLiteralInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_request_with_regex_literal_request(
   input: HttpRequestWithRegexLiteralInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_request_with_regex_literal_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/ReDosLiteral/{str}/(a+)+",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/ReDosLiteral/{str}/(a+)+"
+  let path = case input.str {
+    option.Some(v) -> rest.substitute_label(path, "str", v, False)
+    option.None -> path
+  }
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_http_request_with_regex_literal_response(
@@ -9082,10 +9847,26 @@ pub fn decode_http_response_code_output(
   }
 }
 
+pub fn encode_http_response_code_body(
+  _input: HttpResponseCodeInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_response_code_request(
   _input: HttpResponseCodeInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("PUT", "/HttpResponseCode", dict.new(), <<>>)
+  let path = "/HttpResponseCode"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_http_response_code_response(
@@ -9125,12 +9906,29 @@ pub fn decode_http_string_payload_output(
   }
 }
 
+pub fn encode_http_string_payload_body(
+  _input: StringPayloadInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_http_string_payload_request(
   input: StringPayloadInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_http_string_payload_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/StringPayload", headers, bit_array.from_string(body_str))
+  let path = "/StringPayload"
+  let query = ""
+  let headers = dict.new()
+  let body = case input.payload {
+    option.Some(v) -> bit_array.from_string(v)
+    option.None -> <<>>
+  }
+  let content_type = "text/plain"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_http_string_payload_response(
@@ -9190,10 +9988,26 @@ pub fn decode_ignore_query_params_in_response_output(
   }
 }
 
+pub fn encode_ignore_query_params_in_response_body(
+  _input: IgnoreQueryParamsInResponseInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_ignore_query_params_in_response_request(
   _input: IgnoreQueryParamsInResponseInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("GET", "/IgnoreQueryParamsInResponse", dict.new(), <<>>)
+  let path = "/IgnoreQueryParamsInResponse"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_ignore_query_params_in_response_response(
@@ -9235,17 +10049,128 @@ pub fn decode_input_and_output_with_headers_output(
   }
 }
 
+pub fn encode_input_and_output_with_headers_body(
+  _input: InputAndOutputWithHeadersIO,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_input_and_output_with_headers_request(
   input: InputAndOutputWithHeadersIO,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_input_and_output_with_headers_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/InputAndOutputWithHeaders",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/InputAndOutputWithHeaders"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.header_boolean_list {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-BooleanList", "")
+    option.None -> headers
+  }
+  let headers = case input.header_byte {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "X-Byte", rest.int_to_query(v))
+    option.None -> headers
+  }
+  let headers = case input.header_double {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "X-Double", case v {
+        json_float.FloatValue(f) -> rest.float_to_query(f)
+        json_float.NaN -> "NaN"
+        json_float.PosInfinity -> "Infinity"
+        json_float.NegInfinity -> "-Infinity"
+      })
+    option.None -> headers
+  }
+  let headers = case input.header_enum {
+    option.Some(v) ->
+      rest.maybe_set_header(
+        headers,
+        "X-Enum",
+        rest.enum_wire_value(encode_foo_enum_enum(v)),
+      )
+    option.None -> headers
+  }
+  let headers = case input.header_enum_list {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-EnumList", "")
+    option.None -> headers
+  }
+  let headers = case input.header_false_bool {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "X-Boolean2", rest.bool_to_query(v))
+    option.None -> headers
+  }
+  let headers = case input.header_float {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "X-Float", case v {
+        json_float.FloatValue(f) -> rest.float_to_query(f)
+        json_float.NaN -> "NaN"
+        json_float.PosInfinity -> "Infinity"
+        json_float.NegInfinity -> "-Infinity"
+      })
+    option.None -> headers
+  }
+  let headers = case input.header_integer {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "X-Integer", rest.int_to_query(v))
+    option.None -> headers
+  }
+  let headers = case input.header_integer_enum {
+    option.Some(v) ->
+      rest.maybe_set_header(
+        headers,
+        "X-IntegerEnum",
+        rest.int_to_query(case encode_integer_enum_int_enum(v) {
+          _ -> 0
+        }),
+      )
+    option.None -> headers
+  }
+  let headers = case input.header_integer_enum_list {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-IntegerEnumList", "")
+    option.None -> headers
+  }
+  let headers = case input.header_integer_list {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-IntegerList", "")
+    option.None -> headers
+  }
+  let headers = case input.header_long {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "X-Long", rest.int_to_query(v))
+    option.None -> headers
+  }
+  let headers = case input.header_short {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "X-Short", rest.int_to_query(v))
+    option.None -> headers
+  }
+  let headers = case input.header_string {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-String", v)
+    option.None -> headers
+  }
+  let headers = case input.header_string_list {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-StringList", "")
+    option.None -> headers
+  }
+  let headers = case input.header_string_set {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-StringSet", "")
+    option.None -> headers
+  }
+  let headers = case input.header_timestamp_list {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-TimestampList", "")
+    option.None -> headers
+  }
+  let headers = case input.header_true_bool {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "X-Boolean1", rest.bool_to_query(v))
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_input_and_output_with_headers_response(
@@ -9297,12 +10222,28 @@ pub fn decode_input_stream_output(
   }
 }
 
+pub fn encode_input_stream_body(_input: InputStreamInput) -> json.Json {
+  json.object([])
+}
+
 pub fn build_input_stream_request(
   input: InputStreamInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_input_stream_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/InputStream", headers, bit_array.from_string(body_str))
+  let path = "/InputStream"
+  let query = ""
+  let headers = dict.new()
+  let body = case input.stream {
+    option.Some(v) ->
+      bit_array.from_string(json.to_string(encode_event_stream_union(v)))
+    option.None -> <<>>
+  }
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_input_stream_response(
@@ -9364,17 +10305,35 @@ pub fn decode_input_stream_with_initial_request_output(
   }
 }
 
+pub fn encode_input_stream_with_initial_request_body(
+  _input: InputStreamWithInitialRequestInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_input_stream_with_initial_request_request(
   input: InputStreamWithInitialRequestInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_input_stream_with_initial_request_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/InputStreamWithInitialRequest",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/InputStreamWithInitialRequest"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.initial_request_member {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "initial-request-member", v)
+    option.None -> headers
+  }
+  let body = case input.stream {
+    option.Some(v) ->
+      bit_array.from_string(json.to_string(encode_event_stream_union(v)))
+    option.None -> <<>>
+  }
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_input_stream_with_initial_request_response(
@@ -9414,12 +10373,33 @@ pub fn decode_json_blobs_output(
   }
 }
 
+pub fn encode_json_blobs_body(input: JsonBlobsInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.data {
+    option.Some(v) -> [
+      #("data", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_json_blobs_request(
   input: JsonBlobsInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_json_blobs_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/JsonBlobs", headers, bit_array.from_string(body_str))
+  let path = "/JsonBlobs"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_json_blobs_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_json_blobs_response(
@@ -9459,12 +10439,67 @@ pub fn decode_json_enums_output(
   }
 }
 
+pub fn encode_json_enums_body(input: JsonEnumsInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.foo_enum1 {
+    option.Some(v) -> [#("fooEnum1", encode_foo_enum_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.foo_enum2 {
+    option.Some(v) -> [#("fooEnum2", encode_foo_enum_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.foo_enum3 {
+    option.Some(v) -> [#("fooEnum3", encode_foo_enum_enum(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.foo_enum_list {
+    option.Some(v) -> [
+      #("fooEnumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.foo_enum_map {
+    option.Some(v) -> [
+      #(
+        "fooEnumMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) { #(pair.0, encode_foo_enum_enum(pair.1)) }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.foo_enum_set {
+    option.Some(v) -> [
+      #("fooEnumSet", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_json_enums_request(
   input: JsonEnumsInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_json_enums_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("PUT", "/JsonEnums", headers, bit_array.from_string(body_str))
+  let path = "/JsonEnums"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_json_enums_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_json_enums_response(
@@ -9504,12 +10539,84 @@ pub fn decode_json_int_enums_output(
   }
 }
 
+pub fn encode_json_int_enums_body(input: JsonIntEnumsInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.integer_enum1 {
+    option.Some(v) -> [
+      #("integerEnum1", encode_integer_enum_int_enum(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.integer_enum2 {
+    option.Some(v) -> [
+      #("integerEnum2", encode_integer_enum_int_enum(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.integer_enum3 {
+    option.Some(v) -> [
+      #("integerEnum3", encode_integer_enum_int_enum(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.integer_enum_list {
+    option.Some(v) -> [
+      #(
+        "integerEnumList",
+        fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.integer_enum_map {
+    option.Some(v) -> [
+      #(
+        "integerEnumMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) {
+              #(pair.0, encode_integer_enum_int_enum(pair.1))
+            }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.integer_enum_set {
+    option.Some(v) -> [
+      #(
+        "integerEnumSet",
+        fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_json_int_enums_request(
   input: JsonIntEnumsInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_json_int_enums_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("PUT", "/JsonIntEnums", headers, bit_array.from_string(body_str))
+  let path = "/JsonIntEnums"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_json_int_enums_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_json_int_enums_response(
@@ -9549,12 +10656,98 @@ pub fn decode_json_lists_output(
   }
 }
 
+pub fn encode_json_lists_body(input: JsonListsInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.boolean_list {
+    option.Some(v) -> [
+      #("booleanList", fn(xs) { json.array(xs, json.bool) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.enum_list {
+    option.Some(v) -> [
+      #("enumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.int_enum_list {
+    option.Some(v) -> [
+      #(
+        "intEnumList",
+        fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.integer_list {
+    option.Some(v) -> [
+      #("integerList", fn(xs) { json.array(xs, json.int) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.nested_string_list {
+    option.Some(v) -> [
+      #(
+        "nestedStringList",
+        fn(xs) { json.array(xs, fn(xs) { json.array(xs, json.string) }) }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.string_list {
+    option.Some(v) -> [
+      #("stringList", fn(xs) { json.array(xs, json.string) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.string_set {
+    option.Some(v) -> [
+      #("stringSet", fn(xs) { json.array(xs, json.string) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.structure_list {
+    option.Some(v) -> [
+      #(
+        "structureList",
+        fn(xs) { json.array(xs, encode_structure_list_member_struct) }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.timestamp_list {
+    option.Some(v) -> [
+      #("timestampList", fn(xs) { json.array(xs, json.int) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_json_lists_request(
   input: JsonListsInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_json_lists_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("PUT", "/JsonLists", headers, bit_array.from_string(body_str))
+  let path = "/JsonLists"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_json_lists_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_json_lists_response(
@@ -9594,12 +10787,105 @@ pub fn decode_json_maps_output(
   }
 }
 
+pub fn encode_json_maps_body(input: JsonMapsInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.dense_boolean_map {
+    option.Some(v) -> [
+      #(
+        "denseBooleanMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) { #(pair.0, json.bool(pair.1)) }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.dense_number_map {
+    option.Some(v) -> [
+      #(
+        "denseNumberMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) { #(pair.0, json.int(pair.1)) }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.dense_set_map {
+    option.Some(v) -> [
+      #(
+        "denseSetMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) {
+              #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1))
+            }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.dense_string_map {
+    option.Some(v) -> [
+      #(
+        "denseStringMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.dense_struct_map {
+    option.Some(v) -> [
+      #(
+        "denseStructMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) {
+              #(pair.0, encode_greeting_struct_struct(pair.1))
+            }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_json_maps_request(
   input: JsonMapsInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_json_maps_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/JsonMaps", headers, bit_array.from_string(body_str))
+  let path = "/JsonMaps"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_json_maps_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_json_maps_response(
@@ -9641,12 +10927,56 @@ pub fn decode_json_timestamps_output(
   }
 }
 
+pub fn encode_json_timestamps_body(
+  input: JsonTimestampsInputOutput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.date_time {
+    option.Some(v) -> [#("dateTime", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.date_time_on_target {
+    option.Some(v) -> [#("dateTimeOnTarget", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.epoch_seconds {
+    option.Some(v) -> [#("epochSeconds", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.epoch_seconds_on_target {
+    option.Some(v) -> [#("epochSecondsOnTarget", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.http_date {
+    option.Some(v) -> [#("httpDate", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.http_date_on_target {
+    option.Some(v) -> [#("httpDateOnTarget", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.normal {
+    option.Some(v) -> [#("normal", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_json_timestamps_request(
   input: JsonTimestampsInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_json_timestamps_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/JsonTimestamps", headers, bit_array.from_string(body_str))
+  let path = "/JsonTimestamps"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_json_timestamps_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_json_timestamps_response(
@@ -9686,12 +11016,30 @@ pub fn decode_json_unions_output(
   }
 }
 
+pub fn encode_json_unions_body(input: UnionInputOutput) -> json.Json {
+  let pairs = []
+  let pairs = case input.contents {
+    option.Some(v) -> [#("contents", encode_my_union_union(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_json_unions_request(
   input: UnionInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_json_unions_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("PUT", "/JsonUnions", headers, bit_array.from_string(body_str))
+  let path = "/JsonUnions"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_json_unions_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_json_unions_response(
@@ -9749,10 +11097,26 @@ pub fn decode_malformed_accept_with_body_output(
   }
 }
 
+pub fn encode_malformed_accept_with_body_body(
+  _input: MalformedAcceptWithBodyInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_accept_with_body_request(
   _input: MalformedAcceptWithBodyInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/MalformedAcceptWithBody", dict.new(), <<>>)
+  let path = "/MalformedAcceptWithBody"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_accept_with_body_response(
@@ -9817,10 +11181,26 @@ pub fn decode_malformed_accept_with_generic_string_output(
   }
 }
 
+pub fn encode_malformed_accept_with_generic_string_body(
+  _input: MalformedAcceptWithGenericStringInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_accept_with_generic_string_request(
   _input: MalformedAcceptWithGenericStringInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/MalformedAcceptWithGenericString", dict.new(), <<>>)
+  let path = "/MalformedAcceptWithGenericString"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_accept_with_generic_string_response(
@@ -9878,10 +11258,26 @@ pub fn decode_malformed_accept_with_payload_output(
   }
 }
 
+pub fn encode_malformed_accept_with_payload_body(
+  _input: MalformedAcceptWithPayloadInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_accept_with_payload_request(
   _input: MalformedAcceptWithPayloadInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/MalformedAcceptWithPayload", dict.new(), <<>>)
+  let path = "/MalformedAcceptWithPayload"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_accept_with_payload_response(
@@ -9937,12 +11333,33 @@ pub fn decode_malformed_blob_output(
   }
 }
 
+pub fn encode_malformed_blob_body(input: MalformedBlobInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.blob {
+    option.Some(v) -> [
+      #("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_blob_request(
   input: MalformedBlobInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_blob_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/MalformedBlob", headers, bit_array.from_string(body_str))
+  let path = "/MalformedBlob"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_malformed_blob_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_blob_response(
@@ -9998,17 +11415,47 @@ pub fn decode_malformed_boolean_output(
   }
 }
 
+pub fn encode_malformed_boolean_body(
+  input: MalformedBooleanInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.boolean_in_body {
+    option.Some(v) -> [#("booleanInBody", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_boolean_request(
   input: MalformedBooleanInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_boolean_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedBoolean/{booleanInPath}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedBoolean/{booleanInPath}"
+  let path = case input.boolean_in_path {
+    option.Some(v) ->
+      rest.substitute_label(path, "booleanInPath", rest.bool_to_query(v), False)
+    option.None -> path
+  }
+  let query = ""
+  let query = case input.boolean_in_query {
+    option.Some(v) ->
+      rest.add_query(query, "booleanInQuery", rest.bool_to_query(v))
+    option.None -> query
+  }
+  let headers = dict.new()
+  let headers = case input.boolean_in_header {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "booleanInHeader", rest.bool_to_query(v))
+    option.None -> headers
+  }
+  let body_json = encode_malformed_boolean_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_boolean_response(
@@ -10064,17 +11511,44 @@ pub fn decode_malformed_byte_output(
   }
 }
 
+pub fn encode_malformed_byte_body(input: MalformedByteInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.byte_in_body {
+    option.Some(v) -> [#("byteInBody", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_byte_request(
   input: MalformedByteInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_byte_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedByte/{byteInPath}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedByte/{byteInPath}"
+  let path = case input.byte_in_path {
+    option.Some(v) ->
+      rest.substitute_label(path, "byteInPath", rest.int_to_query(v), False)
+    option.None -> path
+  }
+  let query = ""
+  let query = case input.byte_in_query {
+    option.Some(v) -> rest.add_query(query, "byteInQuery", rest.int_to_query(v))
+    option.None -> query
+  }
+  let headers = dict.new()
+  let headers = case input.byte_in_header {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "byteInHeader", rest.int_to_query(v))
+    option.None -> headers
+  }
+  let body_json = encode_malformed_byte_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_byte_response(
@@ -10134,17 +11608,32 @@ pub fn decode_malformed_content_type_with_body_output(
   }
 }
 
+pub fn encode_malformed_content_type_with_body_body(
+  input: GreetingStruct,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.hi {
+    option.Some(v) -> [#("hi", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_content_type_with_body_request(
   input: GreetingStruct,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_content_type_with_body_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedContentTypeWithBody",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedContentTypeWithBody"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_malformed_content_type_with_body_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_content_type_with_body_response(
@@ -10214,17 +11703,29 @@ pub fn decode_malformed_content_type_with_generic_string_output(
   }
 }
 
+pub fn encode_malformed_content_type_with_generic_string_body(
+  _input: MalformedContentTypeWithGenericStringInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_content_type_with_generic_string_request(
   input: MalformedContentTypeWithGenericStringInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_content_type_with_generic_string_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedContentTypeWithGenericString",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedContentTypeWithGenericString"
+  let query = ""
+  let headers = dict.new()
+  let body = case input.payload {
+    option.Some(v) -> bit_array.from_string(v)
+    option.None -> <<>>
+  }
+  let content_type = "text/plain"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_content_type_with_generic_string_response(
@@ -10302,10 +11803,26 @@ pub fn decode_malformed_content_type_without_body_output(
   }
 }
 
+pub fn encode_malformed_content_type_without_body_body(
+  _input: MalformedContentTypeWithoutBodyInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_content_type_without_body_request(
   _input: MalformedContentTypeWithoutBodyInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/MalformedContentTypeWithoutBody", dict.new(), <<>>)
+  let path = "/MalformedContentTypeWithoutBody"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_content_type_without_body_response(
@@ -10375,18 +11892,30 @@ pub fn decode_malformed_content_type_without_body_empty_input_output(
   }
 }
 
+pub fn encode_malformed_content_type_without_body_empty_input_body(
+  _input: MalformedContentTypeWithoutBodyEmptyInputInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_content_type_without_body_empty_input_request(
   input: MalformedContentTypeWithoutBodyEmptyInputInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str =
-    encode_malformed_content_type_without_body_empty_input_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedContentTypeWithoutBodyEmptyInput",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedContentTypeWithoutBodyEmptyInput"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.header {
+    option.Some(v) -> rest.maybe_set_header(headers, "header", v)
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_content_type_without_body_empty_input_response(
@@ -10449,17 +11978,29 @@ pub fn decode_malformed_content_type_with_payload_output(
   }
 }
 
+pub fn encode_malformed_content_type_with_payload_body(
+  _input: MalformedContentTypeWithPayloadInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_content_type_with_payload_request(
   input: MalformedContentTypeWithPayloadInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_content_type_with_payload_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedContentTypeWithPayload",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedContentTypeWithPayload"
+  let query = ""
+  let headers = dict.new()
+  let body = case input.payload {
+    option.Some(v) -> v
+    option.None -> <<>>
+  }
+  let content_type = "application/octet-stream"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_content_type_with_payload_response(
@@ -10515,17 +12056,65 @@ pub fn decode_malformed_double_output(
   }
 }
 
+pub fn encode_malformed_double_body(input: MalformedDoubleInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.double_in_body {
+    option.Some(v) -> [#("doubleInBody", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_double_request(
   input: MalformedDoubleInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_double_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedDouble/{doubleInPath}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedDouble/{doubleInPath}"
+  let path = case input.double_in_path {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "doubleInPath",
+        case v {
+          json_float.FloatValue(f) -> rest.float_to_query(f)
+          json_float.NaN -> "NaN"
+          json_float.PosInfinity -> "Infinity"
+          json_float.NegInfinity -> "-Infinity"
+        },
+        False,
+      )
+    option.None -> path
+  }
+  let query = ""
+  let query = case input.double_in_query {
+    option.Some(v) ->
+      rest.add_query(query, "doubleInQuery", case v {
+        json_float.FloatValue(f) -> rest.float_to_query(f)
+        json_float.NaN -> "NaN"
+        json_float.PosInfinity -> "Infinity"
+        json_float.NegInfinity -> "-Infinity"
+      })
+    option.None -> query
+  }
+  let headers = dict.new()
+  let headers = case input.double_in_header {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "doubleInHeader", case v {
+        json_float.FloatValue(f) -> rest.float_to_query(f)
+        json_float.NaN -> "NaN"
+        json_float.PosInfinity -> "Infinity"
+        json_float.NegInfinity -> "-Infinity"
+      })
+    option.None -> headers
+  }
+  let body_json = encode_malformed_double_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_double_response(
@@ -10581,17 +12170,65 @@ pub fn decode_malformed_float_output(
   }
 }
 
+pub fn encode_malformed_float_body(input: MalformedFloatInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.float_in_body {
+    option.Some(v) -> [#("floatInBody", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_float_request(
   input: MalformedFloatInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_float_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedFloat/{floatInPath}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedFloat/{floatInPath}"
+  let path = case input.float_in_path {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "floatInPath",
+        case v {
+          json_float.FloatValue(f) -> rest.float_to_query(f)
+          json_float.NaN -> "NaN"
+          json_float.PosInfinity -> "Infinity"
+          json_float.NegInfinity -> "-Infinity"
+        },
+        False,
+      )
+    option.None -> path
+  }
+  let query = ""
+  let query = case input.float_in_query {
+    option.Some(v) ->
+      rest.add_query(query, "floatInQuery", case v {
+        json_float.FloatValue(f) -> rest.float_to_query(f)
+        json_float.NaN -> "NaN"
+        json_float.PosInfinity -> "Infinity"
+        json_float.NegInfinity -> "-Infinity"
+      })
+    option.None -> query
+  }
+  let headers = dict.new()
+  let headers = case input.float_in_header {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "floatInHeader", case v {
+        json_float.FloatValue(f) -> rest.float_to_query(f)
+        json_float.NaN -> "NaN"
+        json_float.PosInfinity -> "Infinity"
+        json_float.NegInfinity -> "-Infinity"
+      })
+    option.None -> headers
+  }
+  let body_json = encode_malformed_float_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_float_response(
@@ -10647,17 +12284,47 @@ pub fn decode_malformed_integer_output(
   }
 }
 
+pub fn encode_malformed_integer_body(
+  input: MalformedIntegerInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.integer_in_body {
+    option.Some(v) -> [#("integerInBody", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_integer_request(
   input: MalformedIntegerInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_integer_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedInteger/{integerInPath}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedInteger/{integerInPath}"
+  let path = case input.integer_in_path {
+    option.Some(v) ->
+      rest.substitute_label(path, "integerInPath", rest.int_to_query(v), False)
+    option.None -> path
+  }
+  let query = ""
+  let query = case input.integer_in_query {
+    option.Some(v) ->
+      rest.add_query(query, "integerInQuery", rest.int_to_query(v))
+    option.None -> query
+  }
+  let headers = dict.new()
+  let headers = case input.integer_in_header {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "integerInHeader", rest.int_to_query(v))
+    option.None -> headers
+  }
+  let body_json = encode_malformed_integer_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_integer_response(
@@ -10713,12 +12380,33 @@ pub fn decode_malformed_list_output(
   }
 }
 
+pub fn encode_malformed_list_body(input: MalformedListInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.body_list {
+    option.Some(v) -> [
+      #("bodyList", fn(xs) { json.array(xs, json.string) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_list_request(
   input: MalformedListInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_list_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/MalformedList", headers, bit_array.from_string(body_str))
+  let path = "/MalformedList"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_malformed_list_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_list_response(
@@ -10774,17 +12462,44 @@ pub fn decode_malformed_long_output(
   }
 }
 
+pub fn encode_malformed_long_body(input: MalformedLongInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.long_in_body {
+    option.Some(v) -> [#("longInBody", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_long_request(
   input: MalformedLongInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_long_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedLong/{longInPath}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedLong/{longInPath}"
+  let path = case input.long_in_path {
+    option.Some(v) ->
+      rest.substitute_label(path, "longInPath", rest.int_to_query(v), False)
+    option.None -> path
+  }
+  let query = ""
+  let query = case input.long_in_query {
+    option.Some(v) -> rest.add_query(query, "longInQuery", rest.int_to_query(v))
+    option.None -> query
+  }
+  let headers = dict.new()
+  let headers = case input.long_in_header {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "longInHeader", rest.int_to_query(v))
+    option.None -> headers
+  }
+  let body_json = encode_malformed_long_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_long_response(
@@ -10838,12 +12553,41 @@ pub fn decode_malformed_map_output(
   }
 }
 
+pub fn encode_malformed_map_body(input: MalformedMapInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.body_map {
+    option.Some(v) -> [
+      #(
+        "bodyMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_map_request(
   input: MalformedMapInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_map_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/MalformedMap", headers, bit_array.from_string(body_str))
+  let path = "/MalformedMap"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_malformed_map_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_map_response(
@@ -10901,12 +12645,36 @@ pub fn decode_malformed_request_body_output(
   }
 }
 
+pub fn encode_malformed_request_body_body(
+  input: MalformedRequestBodyInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.float {
+    option.Some(v) -> [#("float", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.int {
+    option.Some(v) -> [#("int", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_request_body_request(
   input: MalformedRequestBodyInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_request_body_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/MalformedRequestBody", headers, bit_array.from_string(body_str))
+  let path = "/MalformedRequestBody"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_malformed_request_body_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_request_body_response(
@@ -10962,17 +12730,45 @@ pub fn decode_malformed_short_output(
   }
 }
 
+pub fn encode_malformed_short_body(input: MalformedShortInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.short_in_body {
+    option.Some(v) -> [#("shortInBody", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_short_request(
   input: MalformedShortInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_short_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedShort/{shortInPath}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedShort/{shortInPath}"
+  let path = case input.short_in_path {
+    option.Some(v) ->
+      rest.substitute_label(path, "shortInPath", rest.int_to_query(v), False)
+    option.None -> path
+  }
+  let query = ""
+  let query = case input.short_in_query {
+    option.Some(v) ->
+      rest.add_query(query, "shortInQuery", rest.int_to_query(v))
+    option.None -> query
+  }
+  let headers = dict.new()
+  let headers = case input.short_in_header {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "shortInHeader", rest.int_to_query(v))
+    option.None -> headers
+  }
+  let body_json = encode_malformed_short_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_short_response(
@@ -11028,12 +12824,29 @@ pub fn decode_malformed_string_output(
   }
 }
 
+pub fn encode_malformed_string_body(_input: MalformedStringInput) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_string_request(
   input: MalformedStringInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_string_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/MalformedString", headers, bit_array.from_string(body_str))
+  let path = "/MalformedString"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.blob {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "amz-media-typed-header", v)
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_string_response(
@@ -11095,17 +12908,32 @@ pub fn decode_malformed_timestamp_body_date_time_output(
   }
 }
 
+pub fn encode_malformed_timestamp_body_date_time_body(
+  input: MalformedTimestampBodyDateTimeInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.timestamp {
+    option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_timestamp_body_date_time_request(
   input: MalformedTimestampBodyDateTimeInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_timestamp_body_date_time_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedTimestampBodyDateTime",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedTimestampBodyDateTime"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_malformed_timestamp_body_date_time_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_timestamp_body_date_time_response(
@@ -11167,17 +12995,32 @@ pub fn decode_malformed_timestamp_body_default_output(
   }
 }
 
+pub fn encode_malformed_timestamp_body_default_body(
+  input: MalformedTimestampBodyDefaultInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.timestamp {
+    option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_timestamp_body_default_request(
   input: MalformedTimestampBodyDefaultInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_timestamp_body_default_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedTimestampBodyDefault",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedTimestampBodyDefault"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_malformed_timestamp_body_default_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_timestamp_body_default_response(
@@ -11239,17 +13082,32 @@ pub fn decode_malformed_timestamp_body_http_date_output(
   }
 }
 
+pub fn encode_malformed_timestamp_body_http_date_body(
+  input: MalformedTimestampBodyHttpDateInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.timestamp {
+    option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_timestamp_body_http_date_request(
   input: MalformedTimestampBodyHttpDateInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_timestamp_body_http_date_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedTimestampBodyHttpDate",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedTimestampBodyHttpDate"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_malformed_timestamp_body_http_date_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_timestamp_body_http_date_response(
@@ -11314,17 +13172,31 @@ pub fn decode_malformed_timestamp_header_date_time_output(
   }
 }
 
+pub fn encode_malformed_timestamp_header_date_time_body(
+  _input: MalformedTimestampHeaderDateTimeInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_timestamp_header_date_time_request(
   input: MalformedTimestampHeaderDateTimeInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_timestamp_header_date_time_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedTimestampHeaderDateTime",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedTimestampHeaderDateTime"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.timestamp {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "timestamp", rest.timestamp_to_header(v))
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_timestamp_header_date_time_response(
@@ -11386,17 +13258,31 @@ pub fn decode_malformed_timestamp_header_default_output(
   }
 }
 
+pub fn encode_malformed_timestamp_header_default_body(
+  _input: MalformedTimestampHeaderDefaultInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_timestamp_header_default_request(
   input: MalformedTimestampHeaderDefaultInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_timestamp_header_default_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedTimestampHeaderDefault",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedTimestampHeaderDefault"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.timestamp {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "timestamp", rest.timestamp_to_header(v))
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_timestamp_header_default_response(
@@ -11458,17 +13344,31 @@ pub fn decode_malformed_timestamp_header_epoch_output(
   }
 }
 
+pub fn encode_malformed_timestamp_header_epoch_body(
+  _input: MalformedTimestampHeaderEpochInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_timestamp_header_epoch_request(
   input: MalformedTimestampHeaderEpochInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_timestamp_header_epoch_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedTimestampHeaderEpoch",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedTimestampHeaderEpoch"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.timestamp {
+    option.Some(v) ->
+      rest.maybe_set_header(headers, "timestamp", rest.timestamp_to_header(v))
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_timestamp_header_epoch_response(
@@ -11530,17 +13430,36 @@ pub fn decode_malformed_timestamp_path_default_output(
   }
 }
 
+pub fn encode_malformed_timestamp_path_default_body(
+  _input: MalformedTimestampPathDefaultInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_timestamp_path_default_request(
   input: MalformedTimestampPathDefaultInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_timestamp_path_default_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedTimestampPathDefault/{timestamp}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedTimestampPathDefault/{timestamp}"
+  let path = case input.timestamp {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "timestamp",
+        rest.timestamp_to_header(v),
+        False,
+      )
+    option.None -> path
+  }
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_timestamp_path_default_response(
@@ -11598,17 +13517,36 @@ pub fn decode_malformed_timestamp_path_epoch_output(
   }
 }
 
+pub fn encode_malformed_timestamp_path_epoch_body(
+  _input: MalformedTimestampPathEpochInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_timestamp_path_epoch_request(
   input: MalformedTimestampPathEpochInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_timestamp_path_epoch_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedTimestampPathEpoch/{timestamp}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedTimestampPathEpoch/{timestamp}"
+  let path = case input.timestamp {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "timestamp",
+        rest.timestamp_to_header(v),
+        False,
+      )
+    option.None -> path
+  }
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_timestamp_path_epoch_response(
@@ -11670,17 +13608,36 @@ pub fn decode_malformed_timestamp_path_http_date_output(
   }
 }
 
+pub fn encode_malformed_timestamp_path_http_date_body(
+  _input: MalformedTimestampPathHttpDateInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_timestamp_path_http_date_request(
   input: MalformedTimestampPathHttpDateInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_timestamp_path_http_date_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedTimestampPathHttpDate/{timestamp}",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedTimestampPathHttpDate/{timestamp}"
+  let path = case input.timestamp {
+    option.Some(v) ->
+      rest.substitute_label(
+        path,
+        "timestamp",
+        rest.timestamp_to_header(v),
+        False,
+      )
+    option.None -> path
+  }
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_timestamp_path_http_date_response(
@@ -11742,17 +13699,31 @@ pub fn decode_malformed_timestamp_query_default_output(
   }
 }
 
+pub fn encode_malformed_timestamp_query_default_body(
+  _input: MalformedTimestampQueryDefaultInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_timestamp_query_default_request(
   input: MalformedTimestampQueryDefaultInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_timestamp_query_default_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedTimestampQueryDefault",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedTimestampQueryDefault"
+  let query = ""
+  let query = case input.timestamp {
+    option.Some(v) ->
+      rest.add_query(query, "timestamp", rest.timestamp_to_header(v))
+    option.None -> query
+  }
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_timestamp_query_default_response(
@@ -11812,17 +13783,31 @@ pub fn decode_malformed_timestamp_query_epoch_output(
   }
 }
 
+pub fn encode_malformed_timestamp_query_epoch_body(
+  _input: MalformedTimestampQueryEpochInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_timestamp_query_epoch_request(
   input: MalformedTimestampQueryEpochInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_timestamp_query_epoch_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedTimestampQueryEpoch",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedTimestampQueryEpoch"
+  let query = ""
+  let query = case input.timestamp {
+    option.Some(v) ->
+      rest.add_query(query, "timestamp", rest.timestamp_to_header(v))
+    option.None -> query
+  }
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_timestamp_query_epoch_response(
@@ -11884,17 +13869,31 @@ pub fn decode_malformed_timestamp_query_http_date_output(
   }
 }
 
+pub fn encode_malformed_timestamp_query_http_date_body(
+  _input: MalformedTimestampQueryHttpDateInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_malformed_timestamp_query_http_date_request(
   input: MalformedTimestampQueryHttpDateInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_timestamp_query_http_date_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/MalformedTimestampQueryHttpDate",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/MalformedTimestampQueryHttpDate"
+  let query = ""
+  let query = case input.timestamp {
+    option.Some(v) ->
+      rest.add_query(query, "timestamp", rest.timestamp_to_header(v))
+    option.None -> query
+  }
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_timestamp_query_http_date_response(
@@ -11950,12 +13949,30 @@ pub fn decode_malformed_union_output(
   }
 }
 
+pub fn encode_malformed_union_body(input: MalformedUnionInput) -> json.Json {
+  let pairs = []
+  let pairs = case input.union {
+    option.Some(v) -> [#("union", encode_simple_union_union(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_malformed_union_request(
   input: MalformedUnionInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_malformed_union_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/MalformedUnion", headers, bit_array.from_string(body_str))
+  let path = "/MalformedUnion"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_malformed_union_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_malformed_union_response(
@@ -11995,12 +14012,30 @@ pub fn decode_media_type_header_output(
   }
 }
 
+pub fn encode_media_type_header_body(
+  _input: MediaTypeHeaderInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_media_type_header_request(
   input: MediaTypeHeaderInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_media_type_header_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("GET", "/MediaTypeHeader", headers, bit_array.from_string(body_str))
+  let path = "/MediaTypeHeader"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.json {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Json", v)
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_media_type_header_response(
@@ -12074,10 +14109,26 @@ pub fn decode_no_input_and_no_output_output(
   }
 }
 
+pub fn encode_no_input_and_no_output_body(
+  _input: NoInputAndNoOutputInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_no_input_and_no_output_request(
   _input: NoInputAndNoOutputInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/NoInputAndNoOutput", dict.new(), <<>>)
+  let path = "/NoInputAndNoOutput"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_no_input_and_no_output_response(
@@ -12135,10 +14186,26 @@ pub fn decode_no_input_and_output_output(
   }
 }
 
+pub fn encode_no_input_and_output_body(
+  _input: NoInputAndOutputInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_no_input_and_output_request(
   _input: NoInputAndOutputInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/NoInputAndOutputOutput", dict.new(), <<>>)
+  let path = "/NoInputAndOutputOutput"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_no_input_and_output_response(
@@ -12180,17 +14247,38 @@ pub fn decode_null_and_empty_headers_client_output(
   }
 }
 
+pub fn encode_null_and_empty_headers_client_body(
+  _input: NullAndEmptyHeadersIO,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_null_and_empty_headers_client_request(
   input: NullAndEmptyHeadersIO,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_null_and_empty_headers_client_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/NullAndEmptyHeadersClient",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/NullAndEmptyHeadersClient"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.a {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-A", v)
+    option.None -> headers
+  }
+  let headers = case input.b {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-B", v)
+    option.None -> headers
+  }
+  let headers = case input.c {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-C", "")
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_null_and_empty_headers_client_response(
@@ -12232,17 +14320,38 @@ pub fn decode_null_and_empty_headers_server_output(
   }
 }
 
+pub fn encode_null_and_empty_headers_server_body(
+  _input: NullAndEmptyHeadersIO,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_null_and_empty_headers_server_request(
   input: NullAndEmptyHeadersIO,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_null_and_empty_headers_server_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/NullAndEmptyHeadersServer",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/NullAndEmptyHeadersServer"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.a {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-A", v)
+    option.None -> headers
+  }
+  let headers = case input.b {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-B", v)
+    option.None -> headers
+  }
+  let headers = case input.c {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-C", "")
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_null_and_empty_headers_server_response(
@@ -12304,17 +14413,34 @@ pub fn decode_omits_null_serializes_empty_string_output(
   }
 }
 
+pub fn encode_omits_null_serializes_empty_string_body(
+  _input: OmitsNullSerializesEmptyStringInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_omits_null_serializes_empty_string_request(
   input: OmitsNullSerializesEmptyStringInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_omits_null_serializes_empty_string_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/OmitsNullSerializesEmptyString",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/OmitsNullSerializesEmptyString"
+  let query = ""
+  let query = case input.empty_string {
+    option.Some(v) -> rest.add_query(query, "Empty", v)
+    option.None -> query
+  }
+  let query = case input.null_value {
+    option.Some(v) -> rest.add_query(query, "Null", v)
+    option.None -> query
+  }
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_omits_null_serializes_empty_string_response(
@@ -12372,17 +14498,54 @@ pub fn decode_omits_serializing_empty_lists_output(
   }
 }
 
+pub fn encode_omits_serializing_empty_lists_body(
+  _input: OmitsSerializingEmptyListsInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_omits_serializing_empty_lists_request(
   input: OmitsSerializingEmptyListsInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_omits_serializing_empty_lists_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/OmitsSerializingEmptyLists",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/OmitsSerializingEmptyLists"
+  let query = ""
+  let query = case input.query_boolean_list {
+    option.Some(v) -> rest.add_query(query, "BooleanList", "")
+    option.None -> query
+  }
+  let query = case input.query_double_list {
+    option.Some(v) -> rest.add_query(query, "DoubleList", "")
+    option.None -> query
+  }
+  let query = case input.query_enum_list {
+    option.Some(v) -> rest.add_query(query, "EnumList", "")
+    option.None -> query
+  }
+  let query = case input.query_integer_enum_list {
+    option.Some(v) -> rest.add_query(query, "IntegerEnumList", "")
+    option.None -> query
+  }
+  let query = case input.query_integer_list {
+    option.Some(v) -> rest.add_query(query, "IntegerList", "")
+    option.None -> query
+  }
+  let query = case input.query_string_list {
+    option.Some(v) -> rest.add_query(query, "StringList", "")
+    option.None -> query
+  }
+  let query = case input.query_timestamp_list {
+    option.Some(v) -> rest.add_query(query, "TimestampList", "")
+    option.None -> query
+  }
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_omits_serializing_empty_lists_response(
@@ -12424,12 +14587,47 @@ pub fn decode_operation_with_defaults_output(
   }
 }
 
+pub fn encode_operation_with_defaults_body(
+  input: OperationWithDefaultsInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.client_optional_defaults {
+    option.Some(v) -> [
+      #("clientOptionalDefaults", encode_client_optional_defaults_struct(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.defaults {
+    option.Some(v) -> [#("defaults", encode_defaults_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.other_top_level_default {
+    option.Some(v) -> [#("otherTopLevelDefault", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.top_level_default {
+    option.Some(v) -> [#("topLevelDefault", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_operation_with_defaults_request(
   input: OperationWithDefaultsInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_operation_with_defaults_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/OperationWithDefaults", headers, bit_array.from_string(body_str))
+  let path = "/OperationWithDefaults"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_operation_with_defaults_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_operation_with_defaults_response(
@@ -12473,17 +14671,32 @@ pub fn decode_operation_with_nested_structure_output(
   }
 }
 
+pub fn encode_operation_with_nested_structure_body(
+  input: OperationWithNestedStructureInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.top_level {
+    option.Some(v) -> [#("topLevel", encode_top_level_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_operation_with_nested_structure_request(
   input: OperationWithNestedStructureInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_operation_with_nested_structure_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/OperationWithNestedStructure",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/OperationWithNestedStructure"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_operation_with_nested_structure_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_operation_with_nested_structure_response(
@@ -12535,10 +14748,24 @@ pub fn decode_output_stream_output(
   }
 }
 
+pub fn encode_output_stream_body(_input: OutputStreamInput) -> json.Json {
+  json.object([])
+}
+
 pub fn build_output_stream_request(
   _input: OutputStreamInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/OutputStream", dict.new(), <<>>)
+  let path = "/OutputStream"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_output_stream_response(
@@ -12600,10 +14827,26 @@ pub fn decode_output_stream_with_initial_response_output(
   }
 }
 
+pub fn encode_output_stream_with_initial_response_body(
+  _input: OutputStreamWithInitialResponseInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_output_stream_with_initial_response_request(
   _input: OutputStreamWithInitialResponseInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/OutputStreamWithInitialResponse", dict.new(), <<>>)
+  let path = "/OutputStreamWithInitialResponse"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_output_stream_with_initial_response_response(
@@ -12643,12 +14886,32 @@ pub fn decode_post_player_action_output(
   }
 }
 
+pub fn encode_post_player_action_body(
+  input: PostPlayerActionInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.action {
+    option.Some(v) -> [#("action", encode_player_action_union(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_post_player_action_request(
   input: PostPlayerActionInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_post_player_action_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/PostPlayerAction", headers, bit_array.from_string(body_str))
+  let path = "/PostPlayerAction"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_post_player_action_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_post_player_action_response(
@@ -12690,12 +14953,35 @@ pub fn decode_post_union_with_json_name_output(
   }
 }
 
+pub fn encode_post_union_with_json_name_body(
+  input: PostUnionWithJsonNameInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.value {
+    option.Some(v) -> [
+      #("value", encode_union_with_json_name_union(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_post_union_with_json_name_request(
   input: PostUnionWithJsonNameInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_post_union_with_json_name_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/PostUnionWithJsonName", headers, bit_array.from_string(body_str))
+  let path = "/PostUnionWithJsonName"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_post_union_with_json_name_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_post_union_with_json_name_response(
@@ -12753,17 +15039,36 @@ pub fn decode_put_with_content_encoding_output(
   }
 }
 
+pub fn encode_put_with_content_encoding_body(
+  input: PutWithContentEncodingInput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.data {
+    option.Some(v) -> [#("data", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_put_with_content_encoding_request(
   input: PutWithContentEncodingInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_put_with_content_encoding_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/requestcompression/putcontentwithencoding",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/requestcompression/putcontentwithencoding"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.encoding {
+    option.Some(v) -> rest.maybe_set_header(headers, "Content-Encoding", v)
+    option.None -> headers
+  }
+  let body_json = encode_put_with_content_encoding_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_put_with_content_encoding_response(
@@ -12825,17 +15130,30 @@ pub fn decode_query_idempotency_token_auto_fill_output(
   }
 }
 
+pub fn encode_query_idempotency_token_auto_fill_body(
+  _input: QueryIdempotencyTokenAutoFillInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_query_idempotency_token_auto_fill_request(
   input: QueryIdempotencyTokenAutoFillInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_query_idempotency_token_auto_fill_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/QueryIdempotencyTokenAutoFill",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/QueryIdempotencyTokenAutoFill"
+  let query = ""
+  let query = case input.token {
+    option.Some(v) -> rest.add_query(query, "token", v)
+    option.None -> query
+  }
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_query_idempotency_token_auto_fill_response(
@@ -12895,12 +15213,34 @@ pub fn decode_query_params_as_string_list_map_output(
   }
 }
 
+pub fn encode_query_params_as_string_list_map_body(
+  _input: QueryParamsAsStringListMapInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_query_params_as_string_list_map_request(
   input: QueryParamsAsStringListMapInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_query_params_as_string_list_map_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/StringListMap", headers, bit_array.from_string(body_str))
+  let path = "/StringListMap"
+  let query = ""
+  let query = case input.qux {
+    option.Some(v) -> rest.add_query(query, "corge", v)
+    option.None -> query
+  }
+  let query = case input.foo {
+    option.Some(m) -> rest.add_query_params_list(query, m)
+    option.None -> query
+  }
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_query_params_as_string_list_map_response(
@@ -12956,12 +15296,32 @@ pub fn decode_query_precedence_output(
   }
 }
 
+pub fn encode_query_precedence_body(_input: QueryPrecedenceInput) -> json.Json {
+  json.object([])
+}
+
 pub fn build_query_precedence_request(
   input: QueryPrecedenceInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_query_precedence_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/Precedence", headers, bit_array.from_string(body_str))
+  let path = "/Precedence"
+  let query = ""
+  let query = case input.foo {
+    option.Some(v) -> rest.add_query(query, "bar", v)
+    option.None -> query
+  }
+  let query = case input.baz {
+    option.Some(m) -> rest.add_query_params(query, m)
+    option.None -> query
+  }
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_query_precedence_response(
@@ -13003,12 +15363,35 @@ pub fn decode_recursive_shapes_output(
   }
 }
 
+pub fn encode_recursive_shapes_body(
+  input: RecursiveShapesInputOutput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.nested {
+    option.Some(v) -> [
+      #("nested", encode_recursive_shapes_input_output_nested1_struct(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_recursive_shapes_request(
   input: RecursiveShapesInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_recursive_shapes_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("PUT", "/RecursiveShapes", headers, bit_array.from_string(body_str))
+  let path = "/RecursiveShapes"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_recursive_shapes_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_recursive_shapes_response(
@@ -13054,17 +15437,26 @@ pub fn decode_response_code_http_fallback_output(
   }
 }
 
+pub fn encode_response_code_http_fallback_body(
+  _input: ResponseCodeHttpFallbackInputOutput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_response_code_http_fallback_request(
   input: ResponseCodeHttpFallbackInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_response_code_http_fallback_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "GET",
-    "/responseCodeHttpFallback",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/responseCodeHttpFallback"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_response_code_http_fallback_response(
@@ -13122,10 +15514,26 @@ pub fn decode_response_code_required_output(
   }
 }
 
+pub fn encode_response_code_required_body(
+  _input: ResponseCodeRequiredInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_response_code_required_request(
   _input: ResponseCodeRequiredInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("GET", "/responseCodeRequired", dict.new(), <<>>)
+  let path = "/responseCodeRequired"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_response_code_required_response(
@@ -13167,12 +15575,68 @@ pub fn decode_simple_scalar_properties_output(
   }
 }
 
+pub fn encode_simple_scalar_properties_body(
+  input: SimpleScalarPropertiesInputOutput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.byte_value {
+    option.Some(v) -> [#("byteValue", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.double_value {
+    option.Some(v) -> [#("doubleValue", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.false_boolean_value {
+    option.Some(v) -> [#("falseBooleanValue", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.float_value {
+    option.Some(v) -> [#("floatValue", json_float.encode(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.integer_value {
+    option.Some(v) -> [#("integerValue", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.long_value {
+    option.Some(v) -> [#("longValue", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.short_value {
+    option.Some(v) -> [#("shortValue", json.int(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.string_value {
+    option.Some(v) -> [#("stringValue", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.true_boolean_value {
+    option.Some(v) -> [#("trueBooleanValue", json.bool(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_simple_scalar_properties_request(
   input: SimpleScalarPropertiesInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_simple_scalar_properties_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("PUT", "/SimpleScalarProperties", headers, bit_array.from_string(body_str))
+  let path = "/SimpleScalarProperties"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.foo {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Foo", v)
+    option.None -> headers
+  }
+  let body_json = encode_simple_scalar_properties_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_simple_scalar_properties_response(
@@ -13214,12 +15678,42 @@ pub fn decode_sparse_json_lists_output(
   }
 }
 
+pub fn encode_sparse_json_lists_body(
+  input: SparseJsonListsInputOutput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.sparse_short_list {
+    option.Some(v) -> [
+      #("sparseShortList", fn(xs) { json.array(xs, json.int) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.sparse_string_list {
+    option.Some(v) -> [
+      #("sparseStringList", fn(xs) { json.array(xs, json.string) }(v)),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_sparse_json_lists_request(
   input: SparseJsonListsInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_sparse_json_lists_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("PUT", "/SparseJsonLists", headers, bit_array.from_string(body_str))
+  let path = "/SparseJsonLists"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_sparse_json_lists_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("PUT", path, headers, body)
 }
 
 pub fn parse_sparse_json_lists_response(
@@ -13261,12 +15755,107 @@ pub fn decode_sparse_json_maps_output(
   }
 }
 
+pub fn encode_sparse_json_maps_body(
+  input: SparseJsonMapsInputOutput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.sparse_boolean_map {
+    option.Some(v) -> [
+      #(
+        "sparseBooleanMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) { #(pair.0, json.bool(pair.1)) }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.sparse_number_map {
+    option.Some(v) -> [
+      #(
+        "sparseNumberMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) { #(pair.0, json.int(pair.1)) }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.sparse_set_map {
+    option.Some(v) -> [
+      #(
+        "sparseSetMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) {
+              #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1))
+            }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.sparse_string_map {
+    option.Some(v) -> [
+      #(
+        "sparseStringMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  let pairs = case input.sparse_struct_map {
+    option.Some(v) -> [
+      #(
+        "sparseStructMap",
+        fn(d) {
+          json.object(
+            dict.to_list(d)
+            |> list.map(fn(pair) {
+              #(pair.0, encode_greeting_struct_struct(pair.1))
+            }),
+          )
+        }(v),
+      ),
+      ..pairs
+    ]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_sparse_json_maps_request(
   input: SparseJsonMapsInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_sparse_json_maps_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/SparseJsonMaps", headers, bit_array.from_string(body_str))
+  let path = "/SparseJsonMaps"
+  let query = ""
+  let headers = dict.new()
+  let body_json = encode_sparse_json_maps_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_sparse_json_maps_response(
@@ -13308,12 +15897,33 @@ pub fn decode_streaming_traits_output(
   }
 }
 
+pub fn encode_streaming_traits_body(
+  _input: StreamingTraitsInputOutput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_streaming_traits_request(
   input: StreamingTraitsInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_streaming_traits_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/StreamingTraits", headers, bit_array.from_string(body_str))
+  let path = "/StreamingTraits"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.foo {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Foo", v)
+    option.None -> headers
+  }
+  let body = case input.blob {
+    option.Some(v) -> v
+    option.None -> <<>>
+  }
+  let content_type = "application/octet-stream"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_streaming_traits_response(
@@ -13373,17 +15983,33 @@ pub fn decode_streaming_traits_require_length_output(
   }
 }
 
+pub fn encode_streaming_traits_require_length_body(
+  _input: StreamingTraitsRequireLengthInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_streaming_traits_require_length_request(
   input: StreamingTraitsRequireLengthInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_streaming_traits_require_length_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/StreamingTraitsRequireLength",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/StreamingTraitsRequireLength"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.foo {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Foo", v)
+    option.None -> headers
+  }
+  let body = case input.blob {
+    option.Some(v) -> v
+    option.None -> <<>>
+  }
+  let content_type = "application/octet-stream"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_streaming_traits_require_length_response(
@@ -13437,17 +16063,33 @@ pub fn decode_streaming_traits_with_media_type_output(
   }
 }
 
+pub fn encode_streaming_traits_with_media_type_body(
+  _input: StreamingTraitsWithMediaTypeInputOutput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_streaming_traits_with_media_type_request(
   input: StreamingTraitsWithMediaTypeInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_streaming_traits_with_media_type_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #(
-    "POST",
-    "/StreamingTraitsWithMediaType",
-    headers,
-    bit_array.from_string(body_str),
-  )
+  let path = "/StreamingTraitsWithMediaType"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.foo {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Foo", v)
+    option.None -> headers
+  }
+  let body = case input.blob {
+    option.Some(v) -> v
+    option.None -> <<>>
+  }
+  let content_type = "application/octet-stream"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_streaming_traits_with_media_type_response(
@@ -13489,12 +16131,36 @@ pub fn decode_test_body_structure_output(
   }
 }
 
+pub fn encode_test_body_structure_body(
+  input: TestBodyStructureInputOutput,
+) -> json.Json {
+  let pairs = []
+  let pairs = case input.test_config {
+    option.Some(v) -> [#("testConfig", encode_test_config_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
 pub fn build_test_body_structure_request(
   input: TestBodyStructureInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_test_body_structure_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/body", headers, bit_array.from_string(body_str))
+  let path = "/body"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.test_id {
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-test-id", v)
+    option.None -> headers
+  }
+  let body_json = encode_test_body_structure_body(input)
+  let body = bit_array.from_string(json.to_string(body_json))
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_test_body_structure_response(
@@ -13552,10 +16218,26 @@ pub fn decode_test_get_no_input_no_payload_output(
   }
 }
 
+pub fn encode_test_get_no_input_no_payload_body(
+  _input: TestGetNoInputNoPayloadInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_test_get_no_input_no_payload_request(
   _input: TestGetNoInputNoPayloadInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("GET", "/no_input_no_payload", dict.new(), <<>>)
+  let path = "/no_input_no_payload"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_test_get_no_input_no_payload_response(
@@ -13597,12 +16279,30 @@ pub fn decode_test_get_no_payload_output(
   }
 }
 
+pub fn encode_test_get_no_payload_body(
+  _input: TestNoPayloadInputOutput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_test_get_no_payload_request(
   input: TestNoPayloadInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_test_get_no_payload_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("GET", "/no_payload", headers, bit_array.from_string(body_str))
+  let path = "/no_payload"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.test_id {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Amz-Test-Id", v)
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("GET", path, headers, body)
 }
 
 pub fn parse_test_get_no_payload_response(
@@ -13644,12 +16344,33 @@ pub fn decode_test_payload_blob_output(
   }
 }
 
+pub fn encode_test_payload_blob_body(
+  _input: TestPayloadBlobInputOutput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_test_payload_blob_request(
   input: TestPayloadBlobInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_test_payload_blob_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/blob_payload", headers, bit_array.from_string(body_str))
+  let path = "/blob_payload"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.content_type {
+    option.Some(v) -> rest.maybe_set_header(headers, "Content-Type", v)
+    option.None -> headers
+  }
+  let body = case input.data {
+    option.Some(v) -> v
+    option.None -> <<>>
+  }
+  let content_type = "application/octet-stream"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_test_payload_blob_response(
@@ -13691,12 +16412,34 @@ pub fn decode_test_payload_structure_output(
   }
 }
 
+pub fn encode_test_payload_structure_body(
+  _input: TestPayloadStructureInputOutput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_test_payload_structure_request(
   input: TestPayloadStructureInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_test_payload_structure_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/payload", headers, bit_array.from_string(body_str))
+  let path = "/payload"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.test_id {
+    option.Some(v) -> rest.maybe_set_header(headers, "x-amz-test-id", v)
+    option.None -> headers
+  }
+  let body = case input.payload_config {
+    option.Some(v) ->
+      bit_array.from_string(json.to_string(encode_payload_config_struct(v)))
+    option.None -> <<>>
+  }
+  let content_type = "application/json"
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_test_payload_structure_response(
@@ -13754,10 +16497,26 @@ pub fn decode_test_post_no_input_no_payload_output(
   }
 }
 
+pub fn encode_test_post_no_input_no_payload_body(
+  _input: TestPostNoInputNoPayloadInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_test_post_no_input_no_payload_request(
   _input: TestPostNoInputNoPayloadInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/no_input_no_payload", dict.new(), <<>>)
+  let path = "/no_input_no_payload"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_test_post_no_input_no_payload_response(
@@ -13799,12 +16558,30 @@ pub fn decode_test_post_no_payload_output(
   }
 }
 
+pub fn encode_test_post_no_payload_body(
+  _input: TestNoPayloadInputOutput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_test_post_no_payload_request(
   input: TestNoPayloadInputOutput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_test_post_no_payload_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/no_payload", headers, bit_array.from_string(body_str))
+  let path = "/no_payload"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.test_id {
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Amz-Test-Id", v)
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_test_post_no_payload_response(
@@ -13846,12 +16623,89 @@ pub fn decode_timestamp_format_headers_output(
   }
 }
 
+pub fn encode_timestamp_format_headers_body(
+  _input: TimestampFormatHeadersIO,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_timestamp_format_headers_request(
   input: TimestampFormatHeadersIO,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let body_str = encode_timestamp_format_headers_input(input)
-  let headers = dict.from_list([#("Content-Type", "application/json")])
-  #("POST", "/TimestampFormatHeaders", headers, bit_array.from_string(body_str))
+  let path = "/TimestampFormatHeaders"
+  let query = ""
+  let headers = dict.new()
+  let headers = case input.default_format {
+    option.Some(v) ->
+      rest.maybe_set_header(
+        headers,
+        "X-defaultFormat",
+        rest.timestamp_to_header(v),
+      )
+    option.None -> headers
+  }
+  let headers = case input.member_date_time {
+    option.Some(v) ->
+      rest.maybe_set_header(
+        headers,
+        "X-memberDateTime",
+        rest.timestamp_to_header(v),
+      )
+    option.None -> headers
+  }
+  let headers = case input.member_epoch_seconds {
+    option.Some(v) ->
+      rest.maybe_set_header(
+        headers,
+        "X-memberEpochSeconds",
+        rest.timestamp_to_header(v),
+      )
+    option.None -> headers
+  }
+  let headers = case input.member_http_date {
+    option.Some(v) ->
+      rest.maybe_set_header(
+        headers,
+        "X-memberHttpDate",
+        rest.timestamp_to_header(v),
+      )
+    option.None -> headers
+  }
+  let headers = case input.target_date_time {
+    option.Some(v) ->
+      rest.maybe_set_header(
+        headers,
+        "X-targetDateTime",
+        rest.timestamp_to_header(v),
+      )
+    option.None -> headers
+  }
+  let headers = case input.target_epoch_seconds {
+    option.Some(v) ->
+      rest.maybe_set_header(
+        headers,
+        "X-targetEpochSeconds",
+        rest.timestamp_to_header(v),
+      )
+    option.None -> headers
+  }
+  let headers = case input.target_http_date {
+    option.Some(v) ->
+      rest.maybe_set_header(
+        headers,
+        "X-targetHttpDate",
+        rest.timestamp_to_header(v),
+      )
+    option.None -> headers
+  }
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_timestamp_format_headers_response(
@@ -13925,10 +16779,26 @@ pub fn decode_unit_input_and_output_output(
   }
 }
 
+pub fn encode_unit_input_and_output_body(
+  _input: UnitInputAndOutputInput,
+) -> json.Json {
+  json.object([])
+}
+
 pub fn build_unit_input_and_output_request(
   _input: UnitInputAndOutputInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  #("POST", "/UnitInputAndOutput", dict.new(), <<>>)
+  let path = "/UnitInputAndOutput"
+  let query = ""
+  let headers = dict.new()
+  let body = <<>>
+  let content_type = ""
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let path = rest.build_path(path, query)
+  #("POST", path, headers, body)
 }
 
 pub fn parse_unit_input_and_output_response(
