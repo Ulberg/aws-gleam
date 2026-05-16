@@ -274,50 +274,64 @@ fn emit_error_type(spec: OpSpec) -> String {
   <> "Unknown(error_type: String, status: Int, body: String)\n}\n\n"
 }
 
+/// See `awsjson.emit_error_translator` for the table-style design.
 fn emit_error_translator(spec: OpSpec) -> String {
   let name = spec.local <> "Error"
   let snake = spec.snake
-  let matches =
-    list.fold(spec.error_ids, "", fn(acc, err_id) {
-      let local = strip_namespace(err_id)
-      let err_snake = stringutils.pascal_to_snake(local)
-      acc
-      <> "        case runtime.error_type_matches(et, \""
-      <> local
-      <> "\") {\n          True -> case bit_array.to_string(b) {\n            Ok(text) -> case json.parse(text, decode_"
-      <> err_snake
-      <> "_struct()) {\n              Ok(v) -> "
-      <> name
-      <> local
-      <> "(value: v)\n              Error(_) -> "
-      <> name
-      <> "Unknown(error_type: et, status: s, body: text)\n            }\n            Error(_) -> "
-      <> name
-      <> "Unknown(error_type: et, status: s, body: \"\")\n          }\n          False -> "
-    })
-  let fallback =
-    "case bit_array.to_string(b) {\n          Ok(text) -> "
-    <> name
-    <> "Unknown(error_type: et, status: s, body: text)\n          Error(_) -> "
-    <> name
-    <> "Unknown(error_type: et, status: s, body: \"\")\n        }"
-  let chain_end =
-    list.fold(spec.error_ids, "", fn(acc, _) { acc <> "\n        }" })
-  "fn translate_"
+  let decoders = case spec.error_ids {
+    [] -> "[]"
+    _ -> {
+      let entries =
+        list.fold(spec.error_ids, "", fn(acc, err_id) {
+          let local = strip_namespace(err_id)
+          let err_snake = stringutils.pascal_to_snake(local)
+          acc
+          <> "    #(\""
+          <> local
+          <> "\", fn(body) {
+      case json.parse(body, decode_"
+          <> err_snake
+          <> "_struct()) {
+        Ok(v) -> Ok("
+          <> name
+          <> local
+          <> "(value: v))
+        Error(_) -> Error(Nil)
+      }
+    }),
+"
+        })
+      "[\n" <> entries <> "  ]"
+    }
+  }
+  "fn "
+  <> snake
+  <> "_error_decoders() {
+  "
+  <> decoders
+  <> "
+}
+
+fn translate_"
   <> snake
   <> "_error(err: runtime.ClientError) -> "
   <> name
-  <> " {\n  case err {\n    runtime.ServiceError(status: s, error_type: et, body: b) -> {\n"
-  <> matches
-  <> fallback
-  <> chain_end
-  <> "\n    }\n    runtime.TransportError(_) -> "
+  <> " {
+  runtime.translate_service_error(
+    err,
+    "
+  <> snake
+  <> "_error_decoders(),
+    fn(reason) { "
   <> name
-  <> "Transport(reason: \"transport error\")\n    runtime.CredentialsError(_) -> "
+  <> "Transport(reason: reason) },
+    fn(et, s, body) { "
   <> name
-  <> "Transport(reason: \"credentials error\")\n    runtime.DecodeError(reason: r) -> "
-  <> name
-  <> "Transport(reason: \"decode: \" <> r)\n  }\n}\n\n"
+  <> "Unknown(error_type: et, status: s, body: body) },
+  )
+}
+
+"
 }
 
 type HttpTrait {

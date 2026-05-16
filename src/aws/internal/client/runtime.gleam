@@ -212,6 +212,45 @@ pub fn error_type_matches(error_type: String, local: String) -> Bool {
   error_type == local
 }
 
+/// Generic translator from the runtime's `ClientError` to a per-op
+/// typed-error enum. Each generated `translate_<op>_error` is a
+/// one-liner that supplies its operation's decoder table plus
+/// constructors for the always-present `*Transport` and `*Unknown`
+/// variants. Saves ~15–25 LOC/op vs the previous open-coded nested
+/// match — see Pass 3c in plan.md.
+///
+/// `decoders` is a list of `(wire_error_type_local_name, decoder)`
+/// pairs. The first pair whose error_type matches gets to attempt the
+/// decode; if its decoder returns `Error(Nil)`, we fall back to
+/// `on_unknown` with the textified body so the caller still sees
+/// something useful instead of a panic.
+pub fn translate_service_error(
+  err: ClientError,
+  decoders: List(#(String, fn(String) -> Result(t, Nil))),
+  on_transport: fn(String) -> t,
+  on_unknown: fn(String, Int, String) -> t,
+) -> t {
+  case err {
+    ServiceError(status: s, error_type: et, body: b) -> {
+      let text = case bit_array.to_string(b) {
+        Ok(t) -> t
+        Error(_) -> ""
+      }
+      case list.find(decoders, fn(d) { error_type_matches(et, d.0) }) {
+        Ok(#(_, decoder)) ->
+          case decoder(text) {
+            Ok(v) -> v
+            Error(_) -> on_unknown(et, s, text)
+          }
+        Error(_) -> on_unknown(et, s, text)
+      }
+    }
+    TransportError(_) -> on_transport("transport error")
+    CredentialsError(_) -> on_transport("credentials error")
+    DecodeError(reason: r) -> on_transport("decode: " <> r)
+  }
+}
+
 fn extract_error_type(headers: Dict(String, String), body: BitArray) -> String {
   case dict.get(headers, "x-amzn-errortype") {
     Ok(v) -> normalise_error_type(v)

@@ -269,47 +269,41 @@ fn emit_error_type(spec: OpSpec) -> String {
   <> "Unknown(error_type: String, status: Int, body: String)\n}\n\n"
 }
 
+/// See `awsjson.emit_error_translator` for the table-style design.
+/// restXml's decoder table is intentionally empty today: the runtime
+/// can't yet pull an `error_type` out of an XML `<Code>` element, so
+/// every service error lands in the `*Unknown` variant. Pass 6 of
+/// plan.md teaches the runtime to read XML error bodies; the table
+/// will populate once that lands.
 fn emit_error_translator(spec: OpSpec) -> String {
   let name = spec.local <> "Error"
   let snake = spec.snake
-  // restXml error_type currently arrives empty (no header, no JSON
-  // code field). The match chain is still emitted so callers get
-  // typed variants once the runtime's XML error-type extractor lands.
-  let matches =
-    list.fold(spec.error_ids, "", fn(acc, err_id) {
-      let local = strip_namespace(err_id)
-      acc
-      <> "        case runtime.error_type_matches(et, \""
-      <> local
-      <> "\") {\n          True -> case bit_array.to_string(b) {\n            Ok(text) -> "
-      <> name
-      <> "Unknown(error_type: et, status: s, body: text)\n            Error(_) -> "
-      <> name
-      <> "Unknown(error_type: et, status: s, body: \"\")\n          }\n          False -> "
-    })
-  let fallback =
-    "case bit_array.to_string(b) {\n          Ok(text) -> "
-    <> name
-    <> "Unknown(error_type: et, status: s, body: text)\n          Error(_) -> "
-    <> name
-    <> "Unknown(error_type: et, status: s, body: \"\")\n        }"
-  let chain_end =
-    list.fold(spec.error_ids, "", fn(acc, _) { acc <> "\n        }" })
-  "fn translate_"
+  "fn "
+  <> snake
+  <> "_error_decoders() {
+  []
+}
+
+fn translate_"
   <> snake
   <> "_error(err: runtime.ClientError) -> "
   <> name
-  <> " {\n  case err {\n    runtime.ServiceError(status: s, error_type: et, body: b) -> {\n"
-  <> matches
-  <> fallback
-  <> chain_end
-  <> "\n    }\n    runtime.TransportError(_) -> "
+  <> " {
+  runtime.translate_service_error(
+    err,
+    "
+  <> snake
+  <> "_error_decoders(),
+    fn(reason) { "
   <> name
-  <> "Transport(reason: \"transport error\")\n    runtime.CredentialsError(_) -> "
+  <> "Transport(reason: reason) },
+    fn(et, s, body) { "
   <> name
-  <> "Transport(reason: \"credentials error\")\n    runtime.DecodeError(reason: r) -> "
-  <> name
-  <> "Transport(reason: \"decode: \" <> r)\n  }\n}\n\n"
+  <> "Unknown(error_type: et, status: s, body: body) },
+  )
+}
+
+"
 }
 
 type HttpTrait {
