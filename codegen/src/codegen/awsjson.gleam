@@ -259,6 +259,7 @@ fn resolve_or_unit(model: Model, id: String) -> Resolved {
         gleam_name: "Unit",
         full_id: "smithy.api#Unit",
         xml_name: option.None,
+        xml_namespace: option.None,
       )
     _ -> types.resolve(model, id)
   }

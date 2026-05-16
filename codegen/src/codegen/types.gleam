@@ -76,6 +76,11 @@ pub type Resolved {
     /// struct members — e.g. `<Hello>` instead of `<PayloadWithXml
     /// Name>`. `None` falls through to `local_name`.
     xml_name: option.Option(String),
+    /// `@xmlNamespace` trait on the struct shape. `Some(#(prefix,
+    /// uri))` adds `xmlns:<prefix>="<uri>"` (or `xmlns="<uri>"` when
+    /// prefix is empty) to the wrapping element when the struct is
+    /// used as an `@httpPayload` body root or as the request body.
+    xml_namespace: option.Option(#(String, String)),
   )
   /// Reference to a Smithy union, same as RStruct.
   RUnion(local_name: String, gleam_name: String, full_id: String)
@@ -379,6 +384,34 @@ fn xml_name_of(traits: shape.Traits) -> option.Option(String) {
   }
 }
 
+/// Read `@xmlNamespace` on a shape's traits. The trait body is a
+/// dict `{uri: "...", prefix: "..."}`. Returns
+/// `Some(#(prefix, uri))`; `prefix` is `""` for the default
+/// (un-prefixed) namespace. Used by `RStruct` to emit the matching
+/// `xmlns="..."` / `xmlns:prefix="..."` attribute when the shape
+/// becomes a wire wrapper.
+fn xml_namespace_of(
+  traits: shape.Traits,
+) -> option.Option(#(String, String)) {
+  case dict.get(traits, ShapeId("smithy.api#xmlNamespace")) {
+    Ok(option.Some(trait.Dict(d))) -> {
+      let uri = case dict.get(d, ShapeId("uri")) {
+        Ok(trait.String(s)) -> s
+        _ -> ""
+      }
+      let prefix = case dict.get(d, ShapeId("prefix")) {
+        Ok(trait.String(s)) -> s
+        _ -> ""
+      }
+      case uri {
+        "" -> option.None
+        _ -> option.Some(#(prefix, uri))
+      }
+    }
+    _ -> option.None
+  }
+}
+
 fn pascalize(s: String) -> String {
   case string.to_graphemes(s) {
     [] -> s
@@ -394,7 +427,13 @@ fn pascalize(s: String) -> String {
 /// after `resolve`.
 pub fn apply_rename(r: Resolved, rename: Dict(String, String)) -> Resolved {
   case r {
-    RStruct(full_id: id, local_name: ln, gleam_name: gn, xml_name: xn) -> {
+    RStruct(
+      full_id: id,
+      local_name: ln,
+      gleam_name: gn,
+      xml_name: xn,
+      xml_namespace: xns,
+    ) -> {
       let new = gleam_name_for(rename, id)
       case new == ln {
         True -> r
@@ -404,6 +443,7 @@ pub fn apply_rename(r: Resolved, rename: Dict(String, String)) -> Resolved {
             gleam_name: new,
             full_id: id,
             xml_name: xn,
+            xml_namespace: xns,
           )
       }
       |> fn(x) {
@@ -544,6 +584,7 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
         gleam_name: strip_namespace(target_id),
         full_id: target_id,
         xml_name: xml_name_of(t),
+        xml_namespace: xml_namespace_of(t),
       )
     shape.Union(..) ->
       RUnion(

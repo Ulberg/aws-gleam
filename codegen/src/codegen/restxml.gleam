@@ -292,6 +292,7 @@ fn resolve_or_unit(model: Model, id: String) -> Resolved {
         gleam_name: "Unit",
         full_id: "smithy.api#Unit",
         xml_name: option.None,
+        xml_namespace: option.None,
       )
     _ -> types.resolve(model, id)
   }
@@ -380,7 +381,13 @@ fn emit_named_shapes(
         acc <> emit_enum_def(n, vs) <> emit_enum_codec(n, vs, is_dispatcher)
       RIntEnum(gleam_name: n, variants: vs, ..) ->
         acc <> emit_int_enum_def(n, vs) <> emit_int_enum_codec(n, vs)
-      RStruct(gleam_name: n, full_id: id, local_name: ln, ..) ->
+      RStruct(
+        gleam_name: n,
+        full_id: id,
+        local_name: ln,
+        xml_namespace: xns,
+        ..,
+      ) ->
         case ln == "Unit" {
           True -> acc
           False -> {
@@ -388,7 +395,7 @@ fn emit_named_shapes(
             let emit_json_encoder = set.contains(union_reachable, ln)
             acc
             <> emit_record_def(n, ms)
-            <> emit_struct_codec(n, ms, is_dispatcher, emit_json_encoder)
+            <> emit_struct_codec(n, ms, is_dispatcher, emit_json_encoder, xns)
           }
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
@@ -614,6 +621,9 @@ type IOTypeInfo {
     /// the body XML (e.g. `<Ahoy>` instead of `<BodyWithXmlNameInput
     /// Output>`).
     xml_name: option.Option(String),
+    /// `@xmlNamespace` on the input/output struct shape. `Some(#(
+    /// prefix, uri))` adds an `xmlns` attribute to the body root.
+    xml_namespace: option.Option(#(String, String)),
   )
 }
 
@@ -623,7 +633,13 @@ fn resolve_io_type(
   r: Resolved,
 ) -> IOTypeInfo {
   case r {
-    RStruct(local_name: ln, gleam_name: gn, full_id: id, xml_name: xn) ->
+    RStruct(
+      local_name: ln,
+      gleam_name: gn,
+      full_id: id,
+      xml_name: xn,
+      xml_namespace: xns,
+    ) ->
       case ln {
         "Unit" ->
           IOTypeInfo(
@@ -631,6 +647,7 @@ fn resolve_io_type(
             members: [],
             synthesise: True,
             xml_name: option.None,
+            xml_namespace: option.None,
           )
         _ -> {
           let ms = types.resolve_members(model, id)
@@ -639,6 +656,7 @@ fn resolve_io_type(
             members: ms,
             synthesise: False,
             xml_name: xn,
+            xml_namespace: xns,
           )
         }
       }
@@ -648,6 +666,7 @@ fn resolve_io_type(
         members: [],
         synthesise: True,
         xml_name: option.None,
+        xml_namespace: option.None,
       )
   }
 }
@@ -792,6 +811,7 @@ fn emit_struct_codec(
   members: List(MemberDef),
   is_dispatcher: Bool,
   emit_json_encoder: Bool,
+  xml_namespace: option.Option(#(String, String)),
 ) -> String {
   let snake = stringutils.pascal_to_snake(name)
   // restXml wire is XML — the JSON encoder is only emitted when
@@ -831,7 +851,13 @@ fn emit_struct_codec(
     "encode_" <> snake <> "_xml_inner",
     members,
   )
-  <> emit_struct_xml_encoder(name, "encode_" <> snake <> "_xml", snake, members)
+  <> emit_struct_xml_encoder(
+    name,
+    "encode_" <> snake <> "_xml",
+    snake,
+    members,
+    xml_namespace,
+  )
   <> emit_struct_xml_decoder(name, "decode_" <> snake <> "_xml", members)
 }
 
@@ -1017,10 +1043,14 @@ fn emit_struct_xml_encoder(
   fn_name: String,
   snake: String,
   members: List(MemberDef),
+  xml_namespace: option.Option(#(String, String)),
 ) -> String {
   // `@xmlAttribute` members land on the outer wrapper's open tag
   // (`<Root attr="value">`), not in the inner content. They're
-  // collected by `_xml_attrs`; the inner encoder skips them.
+  // collected by `_xml_attrs`; the inner encoder skips them. The
+  // shape-level `@xmlNamespace` trait contributes a fixed
+  // `xmlns="..."` / `xmlns:prefix="..."` attribute to the same
+  // open tag.
   let attr_members =
     list.filter(members, fn(m) {
       case m.binding, m.xml_attribute {
@@ -1028,8 +1058,9 @@ fn emit_struct_xml_encoder(
         _, _ -> False
       }
     })
-  case attr_members {
-    [] ->
+  let xmlns_attr = xmlns_attr_expr(xml_namespace)
+  case attr_members, xml_namespace {
+    [], option.None ->
       "pub fn "
       <> fn_name
       <> "(input: "
@@ -1037,17 +1068,46 @@ fn emit_struct_xml_encoder(
       <> ", root: String) -> String {\n  xml.element(root, encode_"
       <> snake
       <> "_xml_inner(input))\n}\n\n"
-    _ ->
+    _, _ -> {
+      // Build the attribute list expression: either just the
+      // `xmlns` literal, just the user-attrs accumulator, or a
+      // concat of both. The list syntax tolerates either form.
+      let attrs_expr = case attr_members, xml_namespace {
+        [], option.Some(_) -> "[" <> xmlns_attr <> "]"
+        _, option.None -> "encode_" <> snake <> "_xml_attrs(input)"
+        _, option.Some(_) ->
+          "[" <> xmlns_attr <> ", ..encode_" <> snake <> "_xml_attrs(input)]"
+      }
+      let attrs_emitter = case attr_members {
+        [] -> ""
+        _ -> emit_struct_xml_attrs(snake, type_name, attr_members)
+      }
       "pub fn "
       <> fn_name
       <> "(input: "
       <> type_name
-      <> ", root: String) -> String {\n  xml.element_with_attrs(root, encode_"
-      <> snake
-      <> "_xml_attrs(input), encode_"
+      <> ", root: String) -> String {\n  xml.element_with_attrs(root, "
+      <> attrs_expr
+      <> ", encode_"
       <> snake
       <> "_xml_inner(input))\n}\n\n"
-      <> emit_struct_xml_attrs(snake, type_name, attr_members)
+      <> attrs_emitter
+    }
+  }
+}
+
+/// Render the `xmlns` / `xmlns:prefix` attribute tuple expression
+/// for an `@xmlNamespace` trait. Returns the empty string when
+/// there's no namespace — the caller still emits the list literal,
+/// which collapses to `[]` if no other attrs are present.
+fn xmlns_attr_expr(
+  ns: option.Option(#(String, String)),
+) -> String {
+  case ns {
+    option.None -> ""
+    option.Some(#("", uri)) -> "#(\"xmlns\", \"" <> uri <> "\")"
+    option.Some(#(prefix, uri)) ->
+      "#(\"xmlns:" <> prefix <> "\", \"" <> uri <> "\")"
   }
 }
 
