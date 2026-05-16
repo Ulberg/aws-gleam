@@ -87,6 +87,21 @@ pub fn maybe_set_list_header(
   dict.insert(headers, name, string.join(values, ", "))
 }
 
+/// Append a `@requestCompression` encoding to the `Content-Encoding`
+/// header. Existing encodings (e.g. caller-set `Content-Encoding:
+/// custom`) are preserved with the new value appended after a comma:
+/// `custom` + `gzip` ⇒ `custom, gzip`.
+pub fn append_content_encoding(
+  headers: Dict(String, String),
+  encoding: String,
+) -> Dict(String, String) {
+  case dict.get(headers, "Content-Encoding") {
+    Ok(existing) ->
+      dict.insert(headers, "Content-Encoding", existing <> ", " <> encoding)
+    Error(_) -> dict.insert(headers, "Content-Encoding", encoding)
+  }
+}
+
 /// Generated `@idempotencyToken` value, used when a request member
 /// with that trait is left as `Option.None`. Backed by the runtime
 /// FFI so tests can pin a deterministic UUID via `application:set_env`.

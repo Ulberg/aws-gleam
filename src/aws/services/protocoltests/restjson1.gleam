@@ -2900,7 +2900,7 @@ pub type JsonMapsInputOutput {
     dense_number_map: option.Option(dict.Dict(String, Int)),
     dense_set_map: option.Option(dict.Dict(String, List(String))),
     dense_string_map: option.Option(dict.Dict(String, String)),
-    dense_struct_map: option.Option(dict.Dict(String, GreetingStruct)),
+    dense_struct_map: option.Option(dict.Dict(String, GreetingStructShared)),
   )
 }
 
@@ -2923,7 +2923,7 @@ pub fn encode_json_maps_input_output_struct(input: JsonMapsInputOutput) -> json.
     option.None -> pairs
   }
   let pairs = case input.dense_struct_map {
-    option.Some(v) -> [#("denseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_greeting_struct_struct(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("denseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_greeting_struct_shared_struct(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -2934,7 +2934,7 @@ pub fn decode_json_maps_input_output_struct() -> decode.Decoder(JsonMapsInputOut
   use dense_number_map <- decode.optional_field("denseNumberMap", option.None, decode.optional(decode.dict(decode.string, decode.int)))
   use dense_set_map <- decode.optional_field("denseSetMap", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
   use dense_string_map <- decode.optional_field("denseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use dense_struct_map <- decode.optional_field("denseStructMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())))
+  use dense_struct_map <- decode.optional_field("denseStructMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_shared_struct())))
   decode.success(JsonMapsInputOutput(
     dense_boolean_map: dense_boolean_map,
     dense_number_map: dense_number_map,
@@ -2949,7 +2949,7 @@ pub fn decode_json_maps_input_output_struct_params() -> decode.Decoder(JsonMapsI
   use dense_number_map <- decode.optional_field("denseNumberMap", option.None, decode.optional(decode.dict(decode.string, decode.int)))
   use dense_set_map <- decode.optional_field("denseSetMap", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
   use dense_string_map <- decode.optional_field("denseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
-  use dense_struct_map <- decode.optional_field("denseStructMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct_params())))
+  use dense_struct_map <- decode.optional_field("denseStructMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_shared_struct_params())))
   decode.success(JsonMapsInputOutput(
     dense_boolean_map: dense_boolean_map,
     dense_number_map: dense_number_map,
@@ -2959,13 +2959,13 @@ pub fn decode_json_maps_input_output_struct_params() -> decode.Decoder(JsonMapsI
   ))
 }
 
-pub type GreetingStruct {
-  GreetingStruct(
+pub type GreetingStructShared {
+  GreetingStructShared(
     hi: option.Option(String),
   )
 }
 
-pub fn encode_greeting_struct_struct(input: GreetingStruct) -> json.Json {
+pub fn encode_greeting_struct_shared_struct(input: GreetingStructShared) -> json.Json {
   let pairs = []
   let pairs = case input.hi {
     option.Some(v) -> [#("hi", json.string(v)), ..pairs]
@@ -2974,16 +2974,16 @@ pub fn encode_greeting_struct_struct(input: GreetingStruct) -> json.Json {
   json.object(pairs)
 }
 
-pub fn decode_greeting_struct_struct() -> decode.Decoder(GreetingStruct) {
+pub fn decode_greeting_struct_shared_struct() -> decode.Decoder(GreetingStructShared) {
   use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
-  decode.success(GreetingStruct(
+  decode.success(GreetingStructShared(
     hi: hi,
   ))
 }
 
-pub fn decode_greeting_struct_struct_params() -> decode.Decoder(GreetingStruct) {
+pub fn decode_greeting_struct_shared_struct_params() -> decode.Decoder(GreetingStructShared) {
   use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
-  decode.success(GreetingStruct(
+  decode.success(GreetingStructShared(
     hi: hi,
   ))
 }
@@ -3107,9 +3107,9 @@ pub type MyUnion {
   MyUnionListValue(List(String))
   MyUnionMapValue(dict.Dict(String, String))
   MyUnionNumberValue(Int)
-  MyUnionRenamedStructureValue(GreetingStruct)
+  MyUnionRenamedStructureValue(GreetingStructNested)
   MyUnionStringValue(String)
-  MyUnionStructureValue(GreetingStruct)
+  MyUnionStructureValue(GreetingStructShared)
   MyUnionTimestampValue(Int)
 }
 
@@ -3121,9 +3121,9 @@ pub fn encode_my_union_union(v: MyUnion) -> json.Json {
     MyUnionListValue(x) -> json.object([#("listValue", fn(xs) { json.array(xs, json.string) }(x))])
     MyUnionMapValue(x) -> json.object([#("mapValue", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(x))])
     MyUnionNumberValue(x) -> json.object([#("numberValue", json.int(x))])
-    MyUnionRenamedStructureValue(x) -> json.object([#("renamedStructureValue", encode_greeting_struct_struct(x))])
+    MyUnionRenamedStructureValue(x) -> json.object([#("renamedStructureValue", encode_greeting_struct_nested_struct(x))])
     MyUnionStringValue(x) -> json.object([#("stringValue", json.string(x))])
-    MyUnionStructureValue(x) -> json.object([#("structureValue", encode_greeting_struct_struct(x))])
+    MyUnionStructureValue(x) -> json.object([#("structureValue", encode_greeting_struct_shared_struct(x))])
     MyUnionTimestampValue(x) -> json.object([#("timestampValue", json.int(x))])
   }
 }
@@ -3137,9 +3137,9 @@ pub fn decode_my_union_union() -> decode.Decoder(MyUnion) {
       decode.field("listValue", decode.list(decode.string), fn(x) { decode.success(MyUnionListValue(x)) }),
       decode.field("mapValue", decode.dict(decode.string, decode.string), fn(x) { decode.success(MyUnionMapValue(x)) }),
       decode.field("numberValue", decode.int, fn(x) { decode.success(MyUnionNumberValue(x)) }),
-      decode.field("renamedStructureValue", decode_greeting_struct_struct(), fn(x) { decode.success(MyUnionRenamedStructureValue(x)) }),
+      decode.field("renamedStructureValue", decode_greeting_struct_nested_struct(), fn(x) { decode.success(MyUnionRenamedStructureValue(x)) }),
       decode.field("stringValue", decode.string, fn(x) { decode.success(MyUnionStringValue(x)) }),
-      decode.field("structureValue", decode_greeting_struct_struct(), fn(x) { decode.success(MyUnionStructureValue(x)) }),
+      decode.field("structureValue", decode_greeting_struct_shared_struct(), fn(x) { decode.success(MyUnionStructureValue(x)) }),
       decode.field("timestampValue", json_timestamp.decoder(), fn(x) { decode.success(MyUnionTimestampValue(x)) }),
     ],
   )
@@ -3154,12 +3154,41 @@ pub fn decode_my_union_union_params() -> decode.Decoder(MyUnion) {
       decode.field("listValue", decode.list(decode.string), fn(x) { decode.success(MyUnionListValue(x)) }),
       decode.field("mapValue", decode.dict(decode.string, decode.string), fn(x) { decode.success(MyUnionMapValue(x)) }),
       decode.field("numberValue", decode.int, fn(x) { decode.success(MyUnionNumberValue(x)) }),
-      decode.field("renamedStructureValue", decode_greeting_struct_struct_params(), fn(x) { decode.success(MyUnionRenamedStructureValue(x)) }),
+      decode.field("renamedStructureValue", decode_greeting_struct_nested_struct_params(), fn(x) { decode.success(MyUnionRenamedStructureValue(x)) }),
       decode.field("stringValue", decode.string, fn(x) { decode.success(MyUnionStringValue(x)) }),
-      decode.field("structureValue", decode_greeting_struct_struct_params(), fn(x) { decode.success(MyUnionStructureValue(x)) }),
+      decode.field("structureValue", decode_greeting_struct_shared_struct_params(), fn(x) { decode.success(MyUnionStructureValue(x)) }),
       decode.field("timestampValue", json_timestamp.decoder(), fn(x) { decode.success(MyUnionTimestampValue(x)) }),
     ],
   )
+}
+
+pub type GreetingStructNested {
+  GreetingStructNested(
+    salutation: option.Option(String),
+  )
+}
+
+pub fn encode_greeting_struct_nested_struct(input: GreetingStructNested) -> json.Json {
+  let pairs = []
+  let pairs = case input.salutation {
+    option.Some(v) -> [#("salutation", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn decode_greeting_struct_nested_struct() -> decode.Decoder(GreetingStructNested) {
+  use salutation <- decode.optional_field("salutation", option.None, decode.optional(decode.string))
+  decode.success(GreetingStructNested(
+    salutation: salutation,
+  ))
+}
+
+pub fn decode_greeting_struct_nested_struct_params() -> decode.Decoder(GreetingStructNested) {
+  use salutation <- decode.optional_field("salutation", option.None, decode.optional(decode.string))
+  decode.success(GreetingStructNested(
+    salutation: salutation,
+  ))
 }
 
 pub type MalformedAcceptWithGenericStringOutput {
@@ -6074,7 +6103,7 @@ pub type SparseJsonMapsInputOutput {
     sparse_number_map: option.Option(dict.Dict(String, option.Option(Int))),
     sparse_set_map: option.Option(dict.Dict(String, option.Option(List(String)))),
     sparse_string_map: option.Option(dict.Dict(String, option.Option(String))),
-    sparse_struct_map: option.Option(dict.Dict(String, option.Option(GreetingStruct))),
+    sparse_struct_map: option.Option(dict.Dict(String, option.Option(GreetingStructShared))),
   )
 }
 
@@ -6097,7 +6126,7 @@ pub fn encode_sparse_json_maps_input_output_struct(input: SparseJsonMapsInputOut
     option.None -> pairs
   }
   let pairs = case input.sparse_struct_map {
-    option.Some(v) -> [#("sparseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> encode_greeting_struct_struct(x) option.None -> json.null() }) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> encode_greeting_struct_shared_struct(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -6108,7 +6137,7 @@ pub fn decode_sparse_json_maps_input_output_struct() -> decode.Decoder(SparseJso
   use sparse_number_map <- decode.optional_field("sparseNumberMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.int))))
   use sparse_set_map <- decode.optional_field("sparseSetMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.list(decode.string)))))
   use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.string))))
-  use sparse_struct_map <- decode.optional_field("sparseStructMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode_greeting_struct_struct()))))
+  use sparse_struct_map <- decode.optional_field("sparseStructMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode_greeting_struct_shared_struct()))))
   decode.success(SparseJsonMapsInputOutput(
     sparse_boolean_map: sparse_boolean_map,
     sparse_number_map: sparse_number_map,
@@ -6123,7 +6152,7 @@ pub fn decode_sparse_json_maps_input_output_struct_params() -> decode.Decoder(Sp
   use sparse_number_map <- decode.optional_field("sparseNumberMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.int))))
   use sparse_set_map <- decode.optional_field("sparseSetMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.list(decode.string)))))
   use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode.string))))
-  use sparse_struct_map <- decode.optional_field("sparseStructMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode_greeting_struct_struct_params()))))
+  use sparse_struct_map <- decode.optional_field("sparseStructMap", option.None, decode.optional(decode.dict(decode.string, decode.optional(decode_greeting_struct_shared_struct_params()))))
   decode.success(SparseJsonMapsInputOutput(
     sparse_boolean_map: sparse_boolean_map,
     sparse_number_map: sparse_number_map,
@@ -9612,7 +9641,7 @@ pub fn encode_json_maps_body(input: JsonMapsInputOutput) -> json.Json {
     option.None -> pairs
   }
   let pairs = case input.dense_struct_map {
-    option.Some(v) -> [#("denseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_greeting_struct_struct(pair.1)) })) }(v)), ..pairs]
+    option.Some(v) -> [#("denseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_greeting_struct_shared_struct(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -9830,8 +9859,8 @@ pub fn decode_malformed_accept_with_body_input(body: String) -> Result(Malformed
   }
 }
 
-pub fn decode_malformed_accept_with_body_output(body: String) -> Result(GreetingStruct, String) {
-  case json.parse(body, decode_greeting_struct_struct()) {
+pub fn decode_malformed_accept_with_body_output(body: String) -> Result(GreetingStructShared, String) {
+  case json.parse(body, decode_greeting_struct_shared_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -9866,7 +9895,7 @@ pub fn parse_malformed_accept_with_body_response(
   _code: Int,
   _headers: dict.Dict(String, String),
   body: BitArray,
-) -> Result(GreetingStruct, String) {
+) -> Result(GreetingStructShared, String) {
   case bit_array.to_string(body) {
     Ok(text) -> case text {
       "" -> decode_malformed_accept_with_body_output("{}")
@@ -10264,12 +10293,12 @@ pub fn decode_malformed_content_type_with_body_output_struct() -> decode.Decoder
   decode.success(MalformedContentTypeWithBodyOutput)
 }
 
-pub fn encode_malformed_content_type_with_body_input(input: GreetingStruct) -> String {
-  json.to_string(encode_greeting_struct_struct(input))
+pub fn encode_malformed_content_type_with_body_input(input: GreetingStructShared) -> String {
+  json.to_string(encode_greeting_struct_shared_struct(input))
 }
 
-pub fn decode_malformed_content_type_with_body_input(body: String) -> Result(GreetingStruct, String) {
-  case json.parse(body, decode_greeting_struct_struct_params()) {
+pub fn decode_malformed_content_type_with_body_input(body: String) -> Result(GreetingStructShared, String) {
+  case json.parse(body, decode_greeting_struct_shared_struct_params()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
@@ -10282,7 +10311,7 @@ pub fn decode_malformed_content_type_with_body_output(body: String) -> Result(Ma
   }
 }
 
-pub fn encode_malformed_content_type_with_body_body(input: GreetingStruct) -> json.Json {
+pub fn encode_malformed_content_type_with_body_body(input: GreetingStructShared) -> json.Json {
   let pairs = []
   let pairs = case input.hi {
     option.Some(v) -> [#("hi", json.string(v)), ..pairs]
@@ -10292,7 +10321,7 @@ pub fn encode_malformed_content_type_with_body_body(input: GreetingStruct) -> js
 }
 
 pub fn build_malformed_content_type_with_body_request(
-  input: GreetingStruct,
+  input: GreetingStructShared,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedContentTypeWithBody"
   let query = ""
@@ -13185,6 +13214,7 @@ pub fn build_put_with_content_encoding_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
+  let headers = rest.append_content_encoding(headers, "gzip")
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -13807,7 +13837,7 @@ pub fn encode_sparse_json_maps_body(input: SparseJsonMapsInputOutput) -> json.Js
     option.None -> pairs
   }
   let pairs = case input.sparse_struct_map {
-    option.Some(v) -> [#("sparseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> encode_greeting_struct_struct(x) option.None -> json.null() }) })) }(v)), ..pairs]
+    option.Some(v) -> [#("sparseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> encode_greeting_struct_shared_struct(x) option.None -> json.null() }) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -17170,7 +17200,7 @@ pub fn json_unions(client: Client, input: UnionInputOutput) -> Result(UnionInput
   }
 }
 
-pub fn malformed_accept_with_body(client: Client, input: MalformedAcceptWithBodyInput) -> Result(GreetingStruct, MalformedAcceptWithBodyError) {
+pub fn malformed_accept_with_body(client: Client, input: MalformedAcceptWithBodyInput) -> Result(GreetingStructShared, MalformedAcceptWithBodyError) {
   case awsjson_client.invoke(client.config, build_malformed_accept_with_body_request(input), parse_malformed_accept_with_body_response) {
     Ok(out) -> Ok(out)
     Error(err) -> Error(translate_malformed_accept_with_body_error(err))
@@ -17212,7 +17242,7 @@ pub fn malformed_byte(client: Client, input: MalformedByteInput) -> Result(Malfo
   }
 }
 
-pub fn malformed_content_type_with_body(client: Client, input: GreetingStruct) -> Result(MalformedContentTypeWithBodyOutput, MalformedContentTypeWithBodyError) {
+pub fn malformed_content_type_with_body(client: Client, input: GreetingStructShared) -> Result(MalformedContentTypeWithBodyOutput, MalformedContentTypeWithBodyError) {
   case awsjson_client.invoke(client.config, build_malformed_content_type_with_body_request(input), parse_malformed_content_type_with_body_response) {
     Ok(out) -> Ok(out)
     Error(err) -> Error(translate_malformed_content_type_with_body_error(err))

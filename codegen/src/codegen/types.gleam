@@ -279,6 +279,134 @@ pub type HttpBinding {
   ResponseCode
 }
 
+/// Build a `full_id → unique gleam_name` map for the whole model.
+/// Two Smithy shapes with the same local name but different
+/// namespaces collapse to the same Gleam type name otherwise; we
+/// disambiguate by prefixing the namespace's final segment in
+/// PascalCase (`...restjson.nested#GreetingStruct` becomes
+/// `NestedGreetingStruct`).
+pub fn build_rename_map(model: Model) -> Dict(String, String) {
+  // Group full_ids by local name.
+  let by_local =
+    dict.fold(model.shapes, dict.new(), fn(acc, sid, _shape) {
+      let ShapeId(full_id) = sid
+      case full_id {
+        // Skip the prelude — these are well-known and don't collide.
+        "smithy.api#" <> _ -> acc
+        _ -> {
+          let local = strip_namespace(full_id)
+          let existing =
+            dict.get(acc, local)
+            |> option.from_result()
+            |> option.unwrap([])
+          dict.insert(acc, local, [full_id, ..existing])
+        }
+      }
+    })
+  // For each collision (>1 full_id for same local), apply namespace
+  // disambiguation. Singletons keep the bare local name.
+  dict.fold(by_local, dict.new(), fn(acc, local, full_ids) {
+    case full_ids {
+      [single] -> dict.insert(acc, single, local)
+      multiple ->
+        list.fold(multiple, acc, fn(acc2, full_id) {
+          let unique = local <> namespace_suffix(full_id)
+          dict.insert(acc2, full_id, unique)
+        })
+    }
+  })
+}
+
+/// Take the last `.`-separated segment of a Smithy namespace and turn
+/// it into a PascalCase fragment suitable for splicing into a Gleam
+/// type name. Used for namespace-disambiguating collisions.
+fn namespace_suffix(full_id: String) -> String {
+  case string.split_once(full_id, "#") {
+    Ok(#(ns, _)) -> {
+      let last = case string.split(ns, ".") {
+        [] -> ns
+        parts -> {
+          let assert Ok(tail) = list.last(parts)
+          tail
+        }
+      }
+      pascalize(last)
+    }
+    Error(_) -> "X"
+  }
+}
+
+fn pascalize(s: String) -> String {
+  case string.to_graphemes(s) {
+    [] -> s
+    [first, ..rest] -> string.uppercase(first) <> string.concat(rest)
+  }
+}
+
+/// Walk a `Resolved` tree and rewrite every `RStruct` / `RUnion` /
+/// `REnum` / `RIntEnum` to use the disambiguated Gleam name from the
+/// rename map. Identity for shapes not in the map. The walker bottoms
+/// out at thin struct/union references — recursion is bounded by the
+/// shape graph (lists, maps, primitives) — so this is safe to call
+/// after `resolve`.
+pub fn apply_rename(r: Resolved, rename: Dict(String, String)) -> Resolved {
+  case r {
+    RStruct(full_id: id, local_name: ln, gleam_name: gn) -> {
+      let new = gleam_name_for(rename, id)
+      case new == ln {
+        True -> r
+        False -> RStruct(local_name: new, gleam_name: new, full_id: id)
+      }
+      |> fn(x) {
+        let _ = gn
+        x
+      }
+    }
+    RUnion(full_id: id, local_name: ln, gleam_name: gn) -> {
+      let new = gleam_name_for(rename, id)
+      case new == ln {
+        True -> r
+        False -> RUnion(local_name: new, gleam_name: new, full_id: id)
+      }
+      |> fn(x) {
+        let _ = gn
+        x
+      }
+    }
+    RList(element: e, xml_entry_name: xen, sparse: sp) ->
+      RList(element: apply_rename(e, rename), xml_entry_name: xen, sparse: sp)
+    RMap(key: k, value: v, sparse: sp) ->
+      RMap(
+        key: apply_rename(k, rename),
+        value: apply_rename(v, rename),
+        sparse: sp,
+      )
+    _ -> r
+  }
+}
+
+/// Apply `apply_rename` to a `MemberDef`'s target — used when
+/// emitting members of a renamed struct.
+pub fn apply_rename_member(
+  m: MemberDef,
+  rename: Dict(String, String),
+) -> MemberDef {
+  MemberDef(..m, target: apply_rename(m.target, rename))
+}
+
+/// Look up the disambiguated Gleam name for a shape. Falls back to
+/// the bare local name when the shape isn't in the rename map (e.g.
+/// during the rename-map's own construction).
+pub fn gleam_name_for(
+  rename: Dict(String, String),
+  full_id: String,
+) -> String {
+  case dict.get(rename, full_id) {
+    Ok(name) -> name
+    Error(_) -> strip_namespace(full_id)
+  }
+}
+
 /// Resolve a Smithy target shape ID to a `Resolved`. Recursive shape
 /// nesting is safe because struct/union targets are returned as thin
 /// `RStruct` / `RUnion` references — the caller looks up members

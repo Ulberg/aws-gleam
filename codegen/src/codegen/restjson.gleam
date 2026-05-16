@@ -83,16 +83,36 @@ pub fn emit_service(
           }
         })
 
+      // Build the rename map for namespace collisions (e.g.
+      // `aws.protocoltests.restjson#GreetingStruct` vs
+      // `aws.protocoltests.restjson.nested#GreetingStruct`). All
+      // Resolved references and members run through `apply_rename`
+      // before emission so collided types get unique Gleam names.
+      let rename = types.build_rename_map(model)
+      let resolved_ops =
+        list.map(resolved_ops, fn(t) {
+          let #(op_id, http, in_r, out_r, err_ids) = t
+          #(
+            op_id,
+            http,
+            types.apply_rename(in_r, rename),
+            types.apply_rename(out_r, rename),
+            err_ids,
+          )
+        })
       let named_shapes = collect_named_shapes(model, resolved_ops)
-      let preamble = emit_named_shapes(model, named_shapes)
+      let named_shapes =
+        list.map(named_shapes, fn(r) { types.apply_rename(r, rename) })
+      let preamble = emit_named_shapes(model, named_shapes, rename)
 
       let op_specs =
         list.map(resolved_ops, fn(t) {
           let #(op_id, _, in_r, out_r, err_ids) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
-          let in_info = resolve_io_type(model, local <> "Input", in_r)
-          let out_info = resolve_io_type(model, local <> "Output", out_r)
+          let in_info = resolve_io_type(model, local <> "Input", in_r, rename)
+          let out_info =
+            resolve_io_type(model, local <> "Output", out_r, rename)
           OpSpec(
             op_id: op_id,
             local: local,
@@ -106,7 +126,7 @@ pub fn emit_service(
       let op_blocks =
         list.map(resolved_ops, fn(t) {
           let #(op_id, http, in_r, out_r, _) = t
-          emit_operation(model, op_id, http, in_r, out_r)
+          emit_operation(model, op_id, http, in_r, out_r, rename)
         })
       let client_block = emit_client(metadata)
       let invoke_blocks = list.map(op_specs, emit_invoke)
@@ -301,7 +321,16 @@ fn emit_error_translator(spec: OpSpec) -> String {
 }
 
 type HttpTrait {
-  HttpTrait(method: String, uri: String, code: Int)
+  /// `compression` carries the `@requestCompression` encodings list,
+  /// e.g. `["gzip"]`. When non-empty the SDK appends each encoding to
+  /// the request's `Content-Encoding` header (Smithy
+  /// `SDKAppliedContentEncoding` protocol test).
+  HttpTrait(
+    method: String,
+    uri: String,
+    code: Int,
+    compression: List(String),
+  )
 }
 
 fn resolve_or_unit(model: Model, id: String) -> Resolved {
@@ -335,6 +364,10 @@ fn collect_named_shapes(
   model: Model,
   ops: List(#(String, HttpTrait, Resolved, Resolved, List(String))),
 ) -> List(Resolved) {
+  // Dedup keyed by `full_id` so two shapes with the same local name in
+  // different namespaces both make it into the named-shape list. The
+  // rename map (built in `emit_service`) ensures the resulting Gleam
+  // type names are unique on emission.
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
@@ -356,12 +389,11 @@ fn walk(
   case r {
     REnum(local_name: name, ..) | RIntEnum(local_name: name, ..) ->
       remember(acc, name, r)
-    RStruct(local_name: name, full_id: id, ..)
-    | RUnion(local_name: name, full_id: id, ..) ->
-      case set.contains(acc.0, name) {
+    RStruct(full_id: id, ..) | RUnion(full_id: id, ..) ->
+      case set.contains(acc.0, id) {
         True -> acc
         False -> {
-          let acc = remember(acc, name, r)
+          let acc = remember(acc, id, r)
           let members = types.resolve_members(model, id)
           list.fold(members, acc, fn(a, m) { walk(model, a, m.target) })
         }
@@ -387,7 +419,11 @@ fn remember(
   }
 }
 
-fn emit_named_shapes(model: Model, shapes: List(Resolved)) -> String {
+fn emit_named_shapes(
+  model: Model,
+  shapes: List(Resolved),
+  rename: dict.Dict(String, String),
+) -> String {
   list.fold(shapes, "", fn(acc, r) {
     case r {
       REnum(gleam_name: n, variants: vs, ..) ->
@@ -398,12 +434,16 @@ fn emit_named_shapes(model: Model, shapes: List(Resolved)) -> String {
         case ln == "Unit" {
           True -> acc
           False -> {
-            let ms = types.resolve_members(model, id)
+            let ms =
+              types.resolve_members(model, id)
+              |> list.map(fn(m) { types.apply_rename_member(m, rename) })
             acc <> emit_record_def(n, ms) <> emit_struct_codec(n, ms)
           }
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
-        let ms = types.resolve_members(model, id)
+        let ms =
+          types.resolve_members(model, id)
+          |> list.map(fn(m) { types.apply_rename_member(m, rename) })
         acc <> emit_union_def(n, ms) <> emit_union_codec(n, ms)
       }
       _ -> acc
@@ -419,12 +459,13 @@ fn emit_operation(
   http: HttpTrait,
   in_r: Resolved,
   out_r: Resolved,
+  rename: dict.Dict(String, String),
 ) -> String {
   let local = strip_namespace(op_id)
   let pascal = local
   let snake = stringutils.pascal_to_snake(local)
-  let in_info = resolve_io_type(model, pascal <> "Input", in_r)
-  let out_info = resolve_io_type(model, pascal <> "Output", out_r)
+  let in_info = resolve_io_type(model, pascal <> "Input", in_r, rename)
+  let out_info = resolve_io_type(model, pascal <> "Output", out_r, rename)
 
   let synth_in = case in_info.synthesise {
     True ->
@@ -541,6 +582,7 @@ fn resolve_io_type(
   model: Model,
   synth_name: String,
   r: Resolved,
+  rename: dict.Dict(String, String),
 ) -> IOTypeInfo {
   case r {
     RStruct(local_name: ln, gleam_name: gn, full_id: id) ->
@@ -548,7 +590,9 @@ fn resolve_io_type(
         "Unit" ->
           IOTypeInfo(type_name: synth_name, members: [], synthesise: True)
         _ -> {
-          let ms = types.resolve_members(model, id)
+          let ms =
+            types.resolve_members(model, id)
+            |> list.map(fn(m) { types.apply_rename_member(m, rename) })
           IOTypeInfo(type_name: gn, members: ms, synthesise: False)
         }
       }
@@ -1053,9 +1097,27 @@ fn emit_build(
   <> query_setup
   <> header_setup
   <> body_setup
-  <> "  let headers = case content_type, dict.has_key(headers, \"Content-Type\") {\n    \"\", _ -> headers\n    _, True -> headers\n    _, False -> dict.insert(headers, \"Content-Type\", content_type)\n  }\n  let headers = case content_type {\n    \"\" -> headers\n    _ -> dict.insert(headers, \"Content-Length\", int.to_string(bit_array.byte_size(body)))\n  }\n  let path = rest.build_path(path, query)\n  #(\""
+  <> "  let headers = case content_type, dict.has_key(headers, \"Content-Type\") {\n    \"\", _ -> headers\n    _, True -> headers\n    _, False -> dict.insert(headers, \"Content-Type\", content_type)\n  }\n  let headers = case content_type {\n    \"\" -> headers\n    _ -> dict.insert(headers, \"Content-Length\", int.to_string(bit_array.byte_size(body)))\n  }\n"
+  <> emit_content_encoding(http.compression)
+  <> "  let path = rest.build_path(path, query)\n  #(\""
   <> http.method
   <> "\", path, headers, body)\n}\n\n"
+}
+
+/// Emit `Content-Encoding` mutation for `@requestCompression`
+/// encodings. Each encoding is appended to any existing value.
+/// Empty list ⇒ no-op.
+fn emit_content_encoding(encodings: List(String)) -> String {
+  case encodings {
+    [] -> ""
+    _ ->
+      list.fold(encodings, "", fn(acc, enc) {
+        acc
+        <> "  let headers = rest.append_content_encoding(headers, \""
+        <> enc
+        <> "\")\n"
+      })
+  }
 }
 
 fn emit_path_setup(uri_template: String, labels: List(MemberDef)) -> String {
@@ -1483,12 +1545,36 @@ fn http_trait(traits: shape.Traits) -> Option(HttpTrait) {
       let method = string_field(d, "method")
       let uri = string_field(d, "uri")
       let code = int_field(d, "code", 200)
+      let compression = request_compression_encodings(traits)
       case method, uri {
-        Some(m), Some(u) -> Some(HttpTrait(method: m, uri: u, code: code))
+        Some(m), Some(u) ->
+          Some(HttpTrait(
+            method: m,
+            uri: u,
+            code: code,
+            compression: compression,
+          ))
         _, _ -> None
       }
     }
     _ -> None
+  }
+}
+
+fn request_compression_encodings(traits: shape.Traits) -> List(String) {
+  case dict.get(traits, ShapeId("smithy.api#requestCompression")) {
+    Ok(Some(trait.Dict(d))) ->
+      case dict.get(d, ShapeId("encodings")) {
+        Ok(trait.List(items)) ->
+          list.filter_map(items, fn(t) {
+            case t {
+              trait.String(s) -> Ok(s)
+              _ -> Error(Nil)
+            }
+          })
+        _ -> []
+      }
+    _ -> []
   }
 }
 
