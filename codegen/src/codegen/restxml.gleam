@@ -719,6 +719,30 @@ fn emit_enum_codec(
       <> "\")\n"
     })
     <> "  }\n}\n\n"
+  // Inverse wire→Gleam helper for XML response decoders. Sentinel-
+  // first variant gets returned on unknown wire values so callers
+  // can still pattern-match exhaustively.
+  let first_ctor = case variants {
+    [v, ..] -> v.gleam_ctor
+    [] -> name <> "Unknown"
+  }
+  let from_wire =
+    "pub fn "
+    <> snake
+    <> "_from_wire(s: String) -> Result("
+    <> name
+    <> ", String) {\n  case s {\n"
+    <> list.fold(variants, "", fn(acc, v) {
+      acc
+      <> "    \""
+      <> v.wire_value
+      <> "\" -> Ok("
+      <> v.gleam_ctor
+      <> ")\n"
+    })
+    <> "    _ -> Ok("
+    <> first_ctor
+    <> ")\n  }\n}\n\n"
   let dec = case is_dispatcher {
     True -> {
       let first_ctor = case variants {
@@ -744,7 +768,7 @@ fn emit_enum_codec(
     }
     False -> ""
   }
-  enc <> dec
+  enc <> from_wire <> dec
 }
 
 fn emit_int_enum_codec(
@@ -803,7 +827,25 @@ fn emit_int_enum_codec(
     <> "      _ -> decode.failure("
     <> first_ctor
     <> ", \"unknown int enum value\")\n    }\n  })\n}\n\n"
-  int_value <> enc <> dec
+  // Inverse Int → Gleam helper for XML response decoders.
+  let from_int =
+    "pub fn "
+    <> snake
+    <> "_from_int(n: Int) -> Result("
+    <> name
+    <> ", String) {\n  case n {\n"
+    <> list.fold(variants, "", fn(acc, v) {
+      acc
+      <> "    "
+      <> stringutils.int_to_string(v.wire_value)
+      <> " -> Ok("
+      <> v.gleam_ctor
+      <> ")\n"
+    })
+    <> "    _ -> Ok("
+    <> first_ctor
+    <> ")\n  }\n}\n\n"
+  int_value <> enc <> from_int <> dec
 }
 
 fn emit_struct_codec(
@@ -1001,11 +1043,14 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> String {
         RTimestamp -> "xml_decode.timestamp_text"
         RStruct(local_name: n, ..) ->
           "decode_" <> stringutils.pascal_to_snake(n) <> "_xml"
-        // IntEnum / Enum / Union lists fall back to the unsupported
-        // placeholder for now — the typed record expects the enum
-        // constructor, but we only have the int / wire form. Inverse
-        // lookup helpers (Int → IntEnum, String → Enum) aren't
-        // emitted yet.
+        REnum(local_name: n, ..) ->
+          "fn(e) { case xml_decode.string_text(e) { Ok(s) -> "
+          <> stringutils.pascal_to_snake(n)
+          <> "_from_wire(s) Error(r) -> Error(r) } }"
+        RIntEnum(local_name: n, ..) ->
+          "fn(e) { case xml_decode.int_text(e) { Ok(i) -> "
+          <> stringutils.pascal_to_snake(n)
+          <> "_from_int(i) Error(r) -> Error(r) } }"
         _ -> "fn(_) { Error(\"xml: unsupported list element\") }"
       }
       "xml_decode.optional_list(elem, \""
@@ -1239,10 +1284,15 @@ fn xml_value_expr(m: MemberDef) -> String {
       <> "_xml(v, \""
       <> member_name
       <> "\")"
-    RUnion(local_name: _, ..) ->
-      // Unions in XML body need per-variant element emission; not
-      // implemented yet — emit an empty element as a placeholder.
-      "xml.empty_element(\"" <> member_name <> "\")"
+    RUnion(local_name: n, ..) ->
+      // Wrap the union variant's emission in the outer member's
+      // element. `encode_<U>_union_xml_inner` handles dispatching
+      // on the variant and emitting `<variant_tag>...</variant_tag>`.
+      "xml.element(\""
+      <> member_name
+      <> "\", encode_"
+      <> stringutils.pascal_to_snake(n)
+      <> "_union_xml_inner(v))"
     RList(element: _e, xml_entry_name: entry, ..) -> {
       // Smithy default list: `<MemberName><member>...</member>...
       // </MemberName>`. The list shape's member `@xmlName` overrides
@@ -1409,6 +1459,47 @@ fn emit_union_codec(
       <> "(x))])\n"
     })
     <> "  }\n}\n\n"
+  // XML union encoder: pattern-match on the variant and emit the
+  // matching `<variant_tag>...</variant_tag>` block. Smithy's wire
+  // form for a union is exactly one tag — the variant's @xmlName /
+  // member name. The outer wrapping element (e.g. `<myUnion>`) is
+  // added by the caller via `xml_value_expr`.
+  let xml_inner =
+    "pub fn encode_"
+    <> snake
+    <> "_union_xml_inner(v: "
+    <> name
+    <> ") -> String {\n  case v {\n"
+    <> list.fold(members, "", fn(acc, m) {
+      let inner = case m.target {
+        RPrim(primitive: types.PString) -> "xml.escape_text(x)"
+        RPrim(primitive: types.PInt) -> "xml.int_text(x)"
+        RPrim(primitive: types.PBool) -> "xml.bool_text(x)"
+        RPrim(primitive: types.PFloat) ->
+          "case x { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
+        RBlob -> "xml.blob_text(x)"
+        RTimestamp -> "json_timestamp.format_iso8601(x)"
+        REnum(..) ->
+          "rest.enum_wire_value(" <> types.json_encoder(m.target) <> "(x))"
+        RIntEnum(local_name: n, ..) ->
+          "xml.int_text(" <> stringutils.pascal_to_snake(n) <> "_int_value(x))"
+        RStruct(local_name: n, ..) ->
+          "encode_" <> stringutils.pascal_to_snake(n) <> "_xml_inner(x)"
+        RUnion(local_name: n, ..) ->
+          "encode_" <> stringutils.pascal_to_snake(n) <> "_union_xml_inner(x)"
+        _ -> "\"\""
+      }
+      acc
+      <> "    "
+      <> name
+      <> stringutils.pascalize_member(m.member_name)
+      <> "(x) -> xml.element(\""
+      <> m.json_name
+      <> "\", "
+      <> inner
+      <> ")\n"
+    })
+    <> "  }\n}\n\n"
   let dec_params = case is_dispatcher {
     True -> {
       let lazy_wrap = case members {
@@ -1437,7 +1528,7 @@ fn emit_union_codec(
     }
     False -> ""
   }
-  enc <> dec_params
+  enc <> xml_inner <> dec_params
 }
 
 fn emit_union_branch_params(union_name: String, m: MemberDef) -> String {
