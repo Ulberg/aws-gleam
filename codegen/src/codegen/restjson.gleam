@@ -284,17 +284,9 @@ fn emit_error_translator(spec: OpSpec) -> String {
         list.fold(spec.error_ids, "", fn(acc, err_id) {
           let local = strip_namespace(err_id)
           let err_snake = stringutils.pascal_to_snake(local)
-          acc
-          <> "    #(\""
-          <> local
-          <> "\", fn(body) {
-      case json.parse(body, decode_"
-          <> err_snake
-          <> "_struct()) {
-        Ok(v) -> Ok("
-          <> name
-          <> local
-          <> "(value: v))
+          acc <> "    #(\"" <> local <> "\", fn(body) {
+      case json.parse(body, decode_" <> err_snake <> "_struct()) {
+        Ok(v) -> Ok(" <> name <> local <> "(value: v))
         Error(_) -> Error(Nil)
       }
     }),
@@ -303,30 +295,16 @@ fn emit_error_translator(spec: OpSpec) -> String {
       "[\n" <> entries <> "  ]"
     }
   }
-  "fn "
-  <> snake
-  <> "_error_decoders() {
-  "
-  <> decoders
-  <> "
+  "fn " <> snake <> "_error_decoders() {
+  " <> decoders <> "
 }
 
-fn translate_"
-  <> snake
-  <> "_error(err: runtime.ClientError) -> "
-  <> name
-  <> " {
+fn translate_" <> snake <> "_error(err: runtime.ClientError) -> " <> name <> " {
   runtime.translate_service_error(
     err,
-    "
-  <> snake
-  <> "_error_decoders(),
-    fn(reason) { "
-  <> name
-  <> "Transport(reason: reason) },
-    fn(et, s, body) { "
-  <> name
-  <> "Unknown(error_type: et, status: s, body: body) },
+    " <> snake <> "_error_decoders(),
+    fn(reason) { " <> name <> "Transport(reason: reason) },
+    fn(et, s, body) { " <> name <> "Unknown(error_type: et, status: s, body: body) },
   )
 }
 
@@ -1412,11 +1390,7 @@ fn emit_parse_with_payload(
 fn file_header(service_id: String, body: String) -> String {
   let candidates = [
     #("aws/credentials", "credentials.", code.CodeNone),
-    #(
-      "aws/internal/client/runtime",
-      "runtime.",
-      code.CodeSome("runtime"),
-    ),
+    #("aws/internal/client/runtime", "runtime.", code.CodeSome("runtime")),
     #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
     #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
     #("aws/internal/codec/json_timestamp", "json_timestamp.", code.CodeNone),
@@ -1435,9 +1409,7 @@ fn file_header(service_id: String, body: String) -> String {
   let used =
     candidates
     |> list.filter(fn(c) { string.contains(body, c.1) })
-    |> list.map(fn(c) {
-      code.Import(path: c.0, alias: c.2, unqualified: [])
-    })
+    |> list.map(fn(c) { code.Import(path: c.0, alias: c.2, unqualified: []) })
   let items =
     [
       code.ModuleDocComment([
@@ -1519,7 +1491,6 @@ fn derive_module_name(service_id: String) -> String {
   let local = strip_namespace(service_id)
   stringutils.pascal_to_snake(local)
 }
-
 // `pascalize_member`, `int_to_string` live in
 // `codegen/src/internal/stringutils.gleam` — see Pass 4 in
 // plan.md for the de-duplication.

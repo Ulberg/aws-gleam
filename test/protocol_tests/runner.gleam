@@ -9,6 +9,7 @@
 //// Each per-protocol entry file decides that — typically failing the
 //// suite if `fail > 0`.
 
+import aws/internal/codec/xml_decode
 import gleam/bit_array
 import gleam/dict.{type Dict}
 import gleam/int
@@ -392,9 +393,10 @@ fn assert_body_bytes(
           // comparators as those protocols' codecs land.
           case media_type {
             Some(mt) ->
-              case is_json_media(mt) {
-                True -> assert_json_semantic_equal(want, actual)
-                False -> body_mismatch(want, actual)
+              case is_json_media(mt), is_xml_media(mt) {
+                True, _ -> assert_json_semantic_equal(want, actual)
+                _, True -> assert_xml_semantic_equal(want, actual)
+                _, _ -> body_mismatch(want, actual)
               }
             None -> body_mismatch(want, actual)
           }
@@ -415,6 +417,165 @@ fn body_mismatch(want: String, actual: BitArray) -> Outcome {
 
 fn is_json_media(mt: String) -> Bool {
   string.contains(mt, "json")
+}
+
+fn is_xml_media(mt: String) -> Bool {
+  string.contains(mt, "xml")
+}
+
+/// Compare two XML bodies structurally — same element tree, same
+/// attribute set per element, same text content modulo surrounding
+/// whitespace. The Smithy `httpRequestTests` fixtures are pretty-
+/// printed, but the emitter produces single-line XML; the
+/// byte-comparison stage rejects those even when the wire payloads
+/// are semantically identical.
+fn assert_xml_semantic_equal(want: String, actual_bytes: BitArray) -> Outcome {
+  case bit_array_to_string(actual_bytes) {
+    Error(_) -> Failed(reason: "actual body is not utf-8")
+    Ok(actual) ->
+      case xml_decode.parse(want), xml_decode.parse(actual) {
+        Ok(w), Ok(a) ->
+          case xml_elements_equal(w, a) {
+            True -> Passed
+            False -> body_mismatch(want, actual_bytes)
+          }
+        Error(_), _ -> Failed(reason: "expected body is not valid xml")
+        _, Error(_) -> Failed(reason: "actual body is not valid xml")
+      }
+  }
+}
+
+fn xml_elements_equal(a: xml_decode.Element, b: xml_decode.Element) -> Bool {
+  a.name == b.name
+  && attr_set_equal(a.attrs, b.attrs)
+  && xml_children_equal(a.children, b.children)
+}
+
+fn attr_set_equal(
+  a: List(#(String, String)),
+  b: List(#(String, String)),
+) -> Bool {
+  let sa = list.sort(a, by: fn(p, q) { string.compare(p.0, q.0) })
+  let sb = list.sort(b, by: fn(p, q) { string.compare(p.0, q.0) })
+  sa == sb
+}
+
+fn xml_children_equal(
+  a: List(xml_decode.Node),
+  b: List(xml_decode.Node),
+) -> Bool {
+  // Drop whitespace-only Text nodes from both sides; the Smithy
+  // fixture pretty-printer inserts them, and they carry no
+  // semantic content. Element order matters when sibling names
+  // differ (XML is sequenced); when *every* sibling shares a name
+  // (a map's `<entry>` or a list's `<member>`), we compare as a
+  // multiset so dict iteration order doesn't break the test. The
+  // generated list encoder preserves input order, so multiset
+  // compare doesn't mask list-ordering bugs in practice.
+  let na = normalise_children(a)
+  let nb = normalise_children(b)
+  case length(na) == length(nb) {
+    False -> False
+    True ->
+      case same_name_siblings(na), same_name_siblings(nb) {
+        True, True -> children_multiset_equal(na, nb)
+        _, _ -> children_ordered_equal(na, nb)
+      }
+  }
+}
+
+fn length(xs: List(a)) -> Int {
+  list.length(xs)
+}
+
+fn same_name_siblings(ns: List(xml_decode.Node)) -> Bool {
+  case ns {
+    [] -> False
+    [first, ..rest] ->
+      case first {
+        xml_decode.ElementNode(element: e) -> {
+          let name = e.name
+          list.all(rest, fn(n) {
+            case n {
+              xml_decode.ElementNode(element: oe) -> oe.name == name
+              _ -> False
+            }
+          })
+        }
+        _ -> False
+      }
+  }
+}
+
+fn children_ordered_equal(
+  a: List(xml_decode.Node),
+  b: List(xml_decode.Node),
+) -> Bool {
+  case a, b {
+    [], [] -> True
+    [], _ | _, [] -> False
+    [ah, ..at], [bh, ..bt] ->
+      xml_node_equal(ah, bh) && children_ordered_equal(at, bt)
+  }
+}
+
+fn children_multiset_equal(
+  a: List(xml_decode.Node),
+  b: List(xml_decode.Node),
+) -> Bool {
+  case a {
+    [] ->
+      case b {
+        [] -> True
+        _ -> False
+      }
+    [ah, ..at] ->
+      case remove_first_match(b, ah) {
+        Ok(b_rest) -> children_multiset_equal(at, b_rest)
+        Error(_) -> False
+      }
+  }
+}
+
+fn remove_first_match(
+  xs: List(xml_decode.Node),
+  target: xml_decode.Node,
+) -> Result(List(xml_decode.Node), Nil) {
+  remove_match_help(xs, target, [])
+}
+
+fn remove_match_help(
+  remaining: List(xml_decode.Node),
+  target: xml_decode.Node,
+  seen: List(xml_decode.Node),
+) -> Result(List(xml_decode.Node), Nil) {
+  case remaining {
+    [] -> Error(Nil)
+    [head, ..rest] ->
+      case xml_node_equal(head, target) {
+        True -> Ok(list.append(list.reverse(seen), rest))
+        False -> remove_match_help(rest, target, [head, ..seen])
+      }
+  }
+}
+
+fn normalise_children(ns: List(xml_decode.Node)) -> List(xml_decode.Node) {
+  list.filter(ns, fn(n) {
+    case n {
+      xml_decode.Text(value: v) -> string.trim(v) != ""
+      xml_decode.ElementNode(..) -> True
+    }
+  })
+}
+
+fn xml_node_equal(a: xml_decode.Node, b: xml_decode.Node) -> Bool {
+  case a, b {
+    xml_decode.ElementNode(element: ae), xml_decode.ElementNode(element: be) ->
+      xml_elements_equal(ae, be)
+    xml_decode.Text(value: av), xml_decode.Text(value: bv) ->
+      string.trim(av) == string.trim(bv)
+    _, _ -> False
+  }
 }
 
 fn assert_json_semantic_equal(want: String, actual_bytes: BitArray) -> Outcome {

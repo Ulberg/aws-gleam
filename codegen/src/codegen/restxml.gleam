@@ -560,10 +560,16 @@ fn emit_body_encoder_xml(
   op_local: String,
   synthesised: Bool,
 ) -> String {
-  // For synthetic Unit inputs (operation declares no input shape), the
-  // named-shape walker never sees an `<Input>` struct, so we emit an
-  // empty-element body directly. Otherwise delegate to the struct's
-  // `_xml` encoder emitted into the named-shapes preamble.
+  // The Smithy spec wraps the request body in an element named after
+  // the **input shape's local name** (e.g. `XmlTimestampsRequest`),
+  // not the operation's local name (`XmlTimestamps`). For synthetic
+  // Unit inputs there's no input shape, so we fall back to the op
+  // name — that case currently has no protocol-test fixtures for
+  // restXml so the choice is observable only in error messages.
+  let root = case synthesised {
+    True -> op_local
+    False -> input_type
+  }
   case synthesised {
     True ->
       "pub fn encode_"
@@ -571,7 +577,7 @@ fn emit_body_encoder_xml(
       <> "_body_xml(_input: "
       <> input_type
       <> ") -> String {\n  xml.empty_element(\""
-      <> op_local
+      <> root
       <> "\")\n}\n\n"
     False -> {
       let input_snake = stringutils.pascal_to_snake(input_type)
@@ -582,7 +588,7 @@ fn emit_body_encoder_xml(
       <> ") -> String {\n  encode_"
       <> input_snake
       <> "_xml(input, \""
-      <> op_local
+      <> root
       <> "\")\n}\n\n"
     }
   }
@@ -1093,11 +1099,44 @@ fn xml_value_expr(m: MemberDef) -> String {
       <> "\", list.map(v, fn(item) { let v = item "
       <> xml_inner_expr_for_list_element(m.target)
       <> " }))"
-    RMap(value: _v, key: _k, ..) ->
-      "xml.empty_element(\"" <> member_name <> "\")"
+    RMap(value: v, ..) ->
+      // Smithy default XML map shape:
+      //   <wrapper>
+      //     <entry><key>K</key><value>V</value></entry>
+      //     ...
+      //   </wrapper>
+      // `@xmlName` overrides on the key / value members + `@xml
+      // Flattened` are still TODO — covers most of the XmlMaps
+      // family but not the *XmlName / Flattened* variants.
+      "xml.map_element(\""
+      <> member_name
+      <> "\", \"key\", \"value\", dict.map_values(v, fn(_, v) { "
+      <> xml_map_value_expr(v)
+      <> " }))"
     RDocument -> "xml.element(\"" <> member_name <> "\", \"\")"
     RUnit -> "xml.empty_element(\"" <> member_name <> "\")"
     Unsupported(..) -> "\"\""
+  }
+}
+
+/// Render an XML map's *value* — what goes inside the `<value>...
+/// </value>` wrapper. Structs become inline-no-wrapper XML; the
+/// `<value>` element wraps. Primitives become their text form.
+fn xml_map_value_expr(target: Resolved) -> String {
+  case target {
+    RPrim(primitive: types.PString) -> "xml.escape_text(v)"
+    RPrim(primitive: types.PInt) -> "xml.int_text(v)"
+    RPrim(primitive: types.PBool) -> "xml.bool_text(v)"
+    RPrim(primitive: types.PFloat) ->
+      "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
+    RBlob -> "xml.blob_text(v)"
+    RTimestamp -> "json_timestamp.format_iso8601(v)"
+    REnum(..) -> "rest.enum_wire_value(" <> types.json_encoder(target) <> "(v))"
+    RIntEnum(local_name: n, ..) ->
+      "xml.int_text(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))"
+    RStruct(local_name: name, ..) ->
+      "encode_" <> stringutils.pascal_to_snake(name) <> "_xml_inner(v)"
+    _ -> "\"\""
   }
 }
 
@@ -1423,7 +1462,7 @@ fn emit_header_setup(
           <> " {\n    option.Some(xs) -> rest.maybe_set_list_header(headers, \""
           <> header_name
           <> "\", list.map(xs, fn(item) { let v = item "
-          <> value_to_string_with_format(e, m.timestamp_format)
+          <> value_to_string_for_header(e, m.timestamp_format)
           <> " }))\n    option.None -> headers\n  }\n"
         _ ->
           acc
@@ -1432,7 +1471,7 @@ fn emit_header_setup(
           <> " {\n    option.Some(v) -> rest.maybe_set_header(headers, \""
           <> header_name
           <> "\", "
-          <> value_to_string_with_format(m.target, m.timestamp_format)
+          <> value_to_string_for_header(m.target, m.timestamp_format)
           <> ")\n    option.None -> headers\n  }\n"
       }
     })
@@ -1492,6 +1531,25 @@ fn value_to_string_with_format(
   target: Resolved,
   timestamp_format: Option(String),
 ) -> String {
+  // Default to date-time (ISO 8601) when the member carries no
+  // explicit `@timestampFormat`. Headers diverge — their protocol
+  // default is `http-date` — so the header emitter calls
+  // `value_to_string_for_header` instead of this one.
+  value_to_string_for_default(target, timestamp_format, "date-time")
+}
+
+fn value_to_string_for_header(
+  target: Resolved,
+  timestamp_format: Option(String),
+) -> String {
+  value_to_string_for_default(target, timestamp_format, "http-date")
+}
+
+fn value_to_string_for_default(
+  target: Resolved,
+  timestamp_format: Option(String),
+  default: String,
+) -> String {
   case target {
     RPrim(primitive: types.PString) -> "v"
     RPrim(primitive: types.PInt) -> "rest.int_to_query(v)"
@@ -1502,12 +1560,17 @@ fn value_to_string_with_format(
       "rest.enum_wire_value(" <> types.json_encoder(target) <> "(v))"
     RIntEnum(local_name: n, ..) ->
       "rest.int_to_query(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))"
-    RTimestamp ->
-      case timestamp_format {
-        Some("epoch-seconds") -> "rest.int_to_query(v)"
-        Some("http-date") -> "json_timestamp.format_http_date(v)"
+    RTimestamp -> {
+      let chosen = case timestamp_format {
+        Some(f) -> f
+        None -> default
+      }
+      case chosen {
+        "epoch-seconds" -> "rest.int_to_query(v)"
+        "http-date" -> "json_timestamp.format_http_date(v)"
         _ -> "json_timestamp.format_iso8601(v)"
       }
+    }
     _ -> "\"\""
   }
 }
