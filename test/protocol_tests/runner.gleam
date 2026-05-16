@@ -203,11 +203,24 @@ fn assert_request(c: RequestCase, built: BuiltRequest) -> Outcome {
   // emulates the runtime's join by stripping the prefix from the
   // expected URI before comparing.
   let expected_uri = strip_host_path_prefix(c.host, c.uri)
+  // Split our built `uri` into path + query. Smithy's `c.uri` is the
+  // path component only; dynamic query params arrive separately via
+  // `c.query_params` / `c.require_query_params` / `c.forbid_query_params`.
+  let #(got_path, got_query) = case string.split_once(uri, "?") {
+    Ok(#(p, q)) -> #(p, q)
+    Error(_) -> #(uri, "")
+  }
   use _ <- chain(
-    check(expected_uri == uri, fn() {
-      "uri mismatch: expected " <> expected_uri <> ", got " <> uri
+    check(expected_uri == got_path, fn() {
+      "uri mismatch: expected " <> expected_uri <> ", got " <> got_path
     }),
   )
+  use _ <- chain(assert_query_params(
+    c.query_params,
+    c.require_query_params,
+    c.forbid_query_params,
+    got_query,
+  ))
   use _ <- chain(assert_headers(
     c.headers,
     c.require_headers,
@@ -216,6 +229,47 @@ fn assert_request(c: RequestCase, built: BuiltRequest) -> Outcome {
   ))
   use _ <- chain(assert_body_bytes(c.body, c.body_media_type, body))
   Passed
+}
+
+/// Validate the query string. Smithy supplies three lists:
+///   * `query_params` — every entry must appear in the generated query
+///     (as `Name=Value`); pure presence check, order doesn't matter.
+///   * `require_query_params` — every NAME (without value) must appear.
+///   * `forbid_query_params` — every NAME must NOT appear.
+fn assert_query_params(
+  expected: List(String),
+  required: List(String),
+  forbidden: List(String),
+  got: String,
+) -> Outcome {
+  let entries = case got {
+    "" -> []
+    _ -> string.split(got, "&")
+  }
+  let names = list.map(entries, fn(e) {
+    case string.split_once(e, "=") {
+      Ok(#(n, _)) -> n
+      Error(_) -> e
+    }
+  })
+  use _ <- chain(
+    case list.find(expected, fn(want) { !list.contains(entries, want) }) {
+      Ok(missing) ->
+        Failed(reason: "missing query param: " <> missing <> " (got: " <> got <> ")")
+      Error(_) -> Passed
+    },
+  )
+  use _ <- chain(
+    case list.find(required, fn(want) { !list.contains(names, want) }) {
+      Ok(missing) ->
+        Failed(reason: "missing required query param name: " <> missing)
+      Error(_) -> Passed
+    },
+  )
+  case list.find(forbidden, fn(bad) { list.contains(names, bad) }) {
+    Ok(found) -> Failed(reason: "forbidden query param present: " <> found)
+    Error(_) -> Passed
+  }
 }
 
 fn strip_host_path_prefix(host: Option(String), uri: String) -> String {

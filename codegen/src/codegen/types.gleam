@@ -44,8 +44,11 @@ pub type Resolved {
     gleam_name: String,
     variants: List(IntEnumVariant),
   )
-  /// Smithy list/set of T.
-  RList(element: Resolved)
+  /// Smithy list/set of T. `xml_entry_name` is the per-entry element
+  /// name used by restXml / awsQuery / ec2Query — defaults to "member"
+  /// and is overridden by `@xmlName` on the list shape's member. For
+  /// JSON-shaped protocols this field is irrelevant.
+  RList(element: Resolved, xml_entry_name: String)
   /// Smithy map of K → V.
   RMap(key: Resolved, value: Resolved)
   /// Reference to a Smithy structure. The full ID lets the emitter look
@@ -170,7 +173,13 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
 
     shape.List(member: mem, ..) -> {
       let ShapeId(t) = mem.target
-      RList(element: resolve(model, t))
+      let entry_name = case
+        dict.get(mem.traits, ShapeId("smithy.api#xmlName"))
+      {
+        Ok(option.Some(trait.String(s))) -> s
+        _ -> "member"
+      }
+      RList(element: resolve(model, t), xml_entry_name: entry_name)
     }
     shape.Map(key: k, value: v, ..) -> {
       let ShapeId(kt) = k.target
@@ -272,7 +281,9 @@ fn extract_members(
   })
 }
 
-fn binding_of(traits: Dict(ShapeId, option.Option(trait.Trait))) -> HttpBinding {
+fn binding_of(
+  traits: Dict(ShapeId, option.Option(trait.Trait)),
+) -> HttpBinding {
   case dict.has_key(traits, ShapeId("smithy.api#httpLabel")) {
     True -> Label
     False ->
@@ -331,7 +342,7 @@ fn maybe_string_trait(
 pub fn is_supported(r: Resolved) -> Bool {
   case r {
     Unsupported(..) -> False
-    RList(element: e) -> is_supported(e)
+    RList(element: e, ..) -> is_supported(e)
     RMap(key: k, value: v) -> is_supported(k) && is_supported(v)
     _ -> True
   }
@@ -346,7 +357,7 @@ pub fn gleam_type(r: Resolved) -> String {
     RPrim(primitive: PFloat) -> "json_float.SmithyFloat"
     RPrim(primitive: PBool) -> "Bool"
     REnum(gleam_name: n, ..) | RIntEnum(gleam_name: n, ..) -> n
-    RList(element: e) -> "List(" <> gleam_type(e) <> ")"
+    RList(element: e, ..) -> "List(" <> gleam_type(e) <> ")"
     RMap(key: _k, value: v) -> "dict.Dict(String, " <> gleam_type(v) <> ")"
     RStruct(gleam_name: n, ..) | RUnion(gleam_name: n, ..) -> n
     RTimestamp -> "Int"
@@ -369,7 +380,7 @@ pub fn json_encoder(r: Resolved) -> String {
       "encode_" <> stringutils.pascal_to_snake(n) <> "_enum"
     RIntEnum(local_name: n, ..) ->
       "encode_" <> stringutils.pascal_to_snake(n) <> "_int_enum"
-    RList(element: e) ->
+    RList(element: e, ..) ->
       "fn(xs) { json.array(xs, " <> json_encoder(e) <> ") }"
     RMap(value: v, ..) ->
       "fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, "
@@ -398,7 +409,7 @@ pub fn json_decoder(r: Resolved) -> String {
       "decode_" <> stringutils.pascal_to_snake(n) <> "_enum()"
     RIntEnum(local_name: n, ..) ->
       "decode_" <> stringutils.pascal_to_snake(n) <> "_int_enum()"
-    RList(element: e) -> "decode.list(" <> json_decoder(e) <> ")"
+    RList(element: e, ..) -> "decode.list(" <> json_decoder(e) <> ")"
     RMap(value: v, ..) ->
       "decode.dict(decode.string, " <> json_decoder(v) <> ")"
     RStruct(local_name: n, ..) ->

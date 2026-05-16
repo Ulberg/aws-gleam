@@ -61,12 +61,19 @@ pub fn emit_service(
       let service_target = strip_namespace(service_id)
       let metadata = service_metadata(svc_traits, service_target)
       // Walk each operation's input / output; keep only ops whose
-      // shapes resolve cleanly (no Unsupported anywhere).
+      // shapes resolve cleanly (no Unsupported anywhere). Each entry
+      // also carries the operation's `errors` list (Smithy error
+      // shape IDs) so the per-op typed-error enum can be emitted.
       let resolved_ops =
         list.filter_map(refs, fn(ref) {
           let ShapeId(target) = ref.target
           case model.lookup(model, target) {
-            Ok(shape.Operation(input: in_ref, output: out_ref, traits: ts, ..)) ->
+            Ok(shape.Operation(
+              input: in_ref,
+              output: out_ref,
+              errors: errs,
+              traits: ts,
+            )) ->
               case op_uses_unsupported_trait(ts) {
                 True -> Error(Nil)
                 False -> {
@@ -74,8 +81,13 @@ pub fn emit_service(
                   let ShapeId(out_id) = out_ref.target
                   let in_r = resolve_or_unit(model, in_id)
                   let out_r = resolve_or_unit(model, out_id)
+                  let err_ids =
+                    list.map(errs, fn(r) {
+                      let ShapeId(t) = r.target
+                      t
+                    })
                   case types.is_supported(in_r), types.is_supported(out_r) {
-                    True, True -> Ok(#(target, in_r, out_r))
+                    True, True -> Ok(#(target, in_r, out_r, err_ids))
                     _, _ -> Error(Nil)
                   }
                 }
@@ -89,7 +101,7 @@ pub fn emit_service(
 
       let op_specs =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, in_r, out_r) = t
+          let #(op_id, in_r, out_r, err_ids) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info = resolve_io_type(model, local <> "Input", in_r)
@@ -100,6 +112,7 @@ pub fn emit_service(
             snake: snake,
             in_info: in_info,
             out_info: out_info,
+            error_ids: err_ids,
           )
         })
       let op_blocks =
@@ -118,7 +131,10 @@ pub fn emit_service(
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
-        operations_emitted: list.map(resolved_ops, fn(t) { t.0 }),
+        operations_emitted: list.map(resolved_ops, fn(t) {
+          let #(op_id, _, _, _) = t
+          op_id
+        }),
       ))
     }
     Ok(_) -> Error("not a service: " <> service_id)
@@ -126,11 +142,7 @@ pub fn emit_service(
 }
 
 type Metadata {
-  Metadata(
-    service_local: String,
-    endpoint_prefix: String,
-    signing_name: String,
-  )
+  Metadata(service_local: String, endpoint_prefix: String, signing_name: String)
 }
 
 type OpSpec {
@@ -140,6 +152,10 @@ type OpSpec {
     snake: String,
     in_info: IOTypeInfo,
     out_info: IOTypeInfo,
+    /// Full IDs of error shapes the operation can return. Used by the
+    /// typed-error emitter to build `<Op>Error` variants and the
+    /// `translate_<op>_error` dispatcher.
+    error_ids: List(String),
   )
 }
 
@@ -191,12 +207,8 @@ pub fn new(
   Client(config: awsjson_client.default_config(
     provider,
     region,
-    \""
-  <> metadata.endpoint_prefix
-  <> "\",
-    \""
-  <> metadata.signing_name
-  <> "\",
+    \"" <> metadata.endpoint_prefix <> "\",
+    \"" <> metadata.signing_name <> "\",
   ))
 }
 
@@ -220,7 +232,13 @@ fn emit_invoke(spec: OpSpec) -> String {
   "/// Invoke "
   <> spec.local
   <> ". Signs the request with SigV4 and dispatches via the configured
-/// HTTP transport.
+/// HTTP transport. Service errors come back as typed `"
+  <> spec.local
+  <> "Error`
+/// variants; transport, decode, and credentials failures all collapse
+/// into the generic `"
+  <> spec.local
+  <> "ErrorTransport` variant.
 pub fn "
   <> spec.snake
   <> "(
@@ -230,8 +248,10 @@ pub fn "
   <> ",
 ) -> Result("
   <> spec.out_info.type_name
-  <> ", awsjson_client.ClientError) {
-  awsjson_client.invoke(
+  <> ", "
+  <> spec.local
+  <> "Error) {
+  case awsjson_client.invoke(
     client.config,
     build_"
   <> spec.snake
@@ -239,7 +259,12 @@ pub fn "
     parse_"
   <> spec.snake
   <> "_response,
-  )
+  ) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_"
+  <> spec.snake
+  <> "_error(err))
+  }
 }
 
 "
@@ -252,7 +277,11 @@ fn resolve_or_unit(model: Model, id: String) -> Resolved {
   // empty record instead of referencing a non-existent shape.
   case id {
     "smithy.api#Unit" ->
-      RStruct(local_name: "Unit", gleam_name: "Unit", full_id: "smithy.api#Unit")
+      RStruct(
+        local_name: "Unit",
+        gleam_name: "Unit",
+        full_id: "smithy.api#Unit",
+      )
     _ -> types.resolve(model, id)
   }
 }
@@ -265,14 +294,17 @@ fn resolve_or_unit(model: Model, id: String) -> Resolved {
 /// detection via a seen-set keyed on the local Gleam name.
 fn collect_named_shapes(
   model: Model,
-  ops: List(#(String, Resolved, Resolved)),
+  ops: List(#(String, Resolved, Resolved, List(String))),
 ) -> List(Resolved) {
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_op_id, in_r, out_r) = t
+      let #(_op_id, in_r, out_r, err_ids) = t
       let acc = walk(model, acc, in_r)
-      walk(model, acc, out_r)
+      let acc = walk(model, acc, out_r)
+      list.fold(err_ids, acc, fn(a, err_id) {
+        walk(model, a, types.resolve(model, err_id))
+      })
     })
   list.reverse(found)
 }
@@ -297,7 +329,7 @@ fn walk(
           list.fold(members, acc, fn(a, m) { walk(model, a, m.target) })
         }
       }
-    RList(element: e) -> walk(model, acc, e)
+    RList(element: e, ..) -> walk(model, acc, e)
     RMap(key: k, value: v) -> {
       let acc = walk(model, acc, k)
       walk(model, acc, v)
@@ -361,12 +393,84 @@ fn emit_operation_with(
   let ct = content_type(protocol)
   let in_info = spec.in_info
   let out_info = spec.out_info
-  let _ = model_unused()
   emit_operation_body(snake, target_value, ct, in_info, out_info)
+  <> emit_error_type(spec)
+  <> emit_error_translator(spec)
 }
 
-fn model_unused() -> Nil {
-  Nil
+/// Emit the per-operation typed-error sum type. One variant per error
+/// shape on the operation, plus `Transport(reason: String)` for
+/// non-service failures (network, decode, credentials) and
+/// `Unknown(error_type, status, body)` for service errors we don't
+/// have a typed variant for.
+fn emit_error_type(spec: OpSpec) -> String {
+  let name = spec.local <> "Error"
+  let variants =
+    list.fold(spec.error_ids, "", fn(acc, err_id) {
+      let local = strip_namespace(err_id)
+      acc <> "  " <> name <> local <> "(value: " <> local <> ")\n"
+    })
+  "pub type "
+  <> name
+  <> " {\n"
+  <> variants
+  <> "  "
+  <> name
+  <> "Transport(reason: String)\n  "
+  <> name
+  <> "Unknown(error_type: String, status: Int, body: String)\n}\n\n"
+}
+
+/// Emit `translate_<op>_error` — maps `awsjson_client.ClientError`
+/// to the typed `<Op>Error` enum. Transport / decode / credentials
+/// failures become the generic `Transport` variant. Service errors
+/// dispatch on `error_type` (matched as a suffix to ignore namespace
+/// prefixes the wire format may include) against the operation's
+/// declared error shapes, falling through to `Unknown`.
+fn emit_error_translator(spec: OpSpec) -> String {
+  let name = spec.local <> "Error"
+  let snake = spec.snake
+  let matches =
+    list.fold(spec.error_ids, "", fn(acc, err_id) {
+      let local = strip_namespace(err_id)
+      let err_snake = stringutils.pascal_to_snake(local)
+      acc
+      <> "        case awsjson_client.error_type_matches(et, \""
+      <> local
+      <> "\") {\n          True -> case bit_array.to_string(b) {\n            Ok(text) -> case json.parse(text, decode_"
+      <> err_snake
+      <> "_struct()) {\n              Ok(v) -> "
+      <> name
+      <> local
+      <> "(value: v)\n              Error(_) -> "
+      <> name
+      <> "Unknown(error_type: et, status: s, body: text)\n            }\n            Error(_) -> "
+      <> name
+      <> "Unknown(error_type: et, status: s, body: \"\")\n          }\n          False -> "
+    })
+  let fallback =
+    "case bit_array.to_string(b) {\n          Ok(text) -> "
+    <> name
+    <> "Unknown(error_type: et, status: s, body: text)\n          Error(_) -> "
+    <> name
+    <> "Unknown(error_type: et, status: s, body: \"\")\n        }"
+  let chain_end =
+    list.fold(spec.error_ids, "", fn(acc, _) { acc <> "\n        }" })
+  "fn translate_"
+  <> snake
+  <> "_error(err: awsjson_client.ClientError) -> "
+  <> name
+  <> " {\n  case err {\n    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {\n"
+  <> matches
+  <> fallback
+  <> chain_end
+  <> "\n    }\n    awsjson_client.TransportError(_) -> "
+  <> name
+  <> "Transport(reason: \"transport error\")\n    awsjson_client.CredentialsError(_) -> "
+  <> name
+  <> "Transport(reason: \"credentials error\")\n    awsjson_client.DecodeError(reason: r) -> "
+  <> name
+  <> "Transport(reason: \"decode: \" <> r)\n  }\n}\n\n"
 }
 
 fn emit_operation_body(
@@ -376,7 +480,6 @@ fn emit_operation_body(
   in_info: IOTypeInfo,
   out_info: IOTypeInfo,
 ) -> String {
-
   // For Unit input/output we synthesise a singleton type + codec at the
   // op level. For named-struct sides we reuse the preamble's codec.
   let synth_in = case in_info.synthesise {
@@ -414,7 +517,8 @@ fn emit_operation_body(
   // codec from the preamble, or the synthetic per-op codec above.
   let in_struct_encoder_name = case in_info.synthesise {
     True -> "encode_" <> snake <> "_input_struct"
-    False -> "encode_" <> stringutils.pascal_to_snake(in_info.type_name) <> "_struct"
+    False ->
+      "encode_" <> stringutils.pascal_to_snake(in_info.type_name) <> "_struct"
   }
   let out_struct_decoder_name = case out_info.synthesise {
     True -> "decode_" <> snake <> "_output_struct"
@@ -431,21 +535,25 @@ fn emit_operation_body(
     <> in_struct_encoder_name
     <> "(input))\n}\n\n"
 
-  let in_decoder = emit_parse_via_decoder(
-    "decode_" <> snake <> "_input",
-    in_info.type_name,
-    case in_info.synthesise {
-      True -> "decode_" <> snake <> "_input_struct"
-      False ->
-        "decode_" <> stringutils.pascal_to_snake(in_info.type_name) <> "_struct"
-    },
-  )
+  let in_decoder =
+    emit_parse_via_decoder(
+      "decode_" <> snake <> "_input",
+      in_info.type_name,
+      case in_info.synthesise {
+        True -> "decode_" <> snake <> "_input_struct"
+        False ->
+          "decode_"
+          <> stringutils.pascal_to_snake(in_info.type_name)
+          <> "_struct"
+      },
+    )
 
-  let out_decoder = emit_parse_via_decoder(
-    "decode_" <> snake <> "_output",
-    out_info.type_name,
-    out_struct_decoder_name,
-  )
+  let out_decoder =
+    emit_parse_via_decoder(
+      "decode_" <> snake <> "_output",
+      out_info.type_name,
+      out_struct_decoder_name,
+    )
 
   let build = emit_build(in_info.type_name, snake, target_value, ct)
   let parse = emit_parse(out_info.type_name, snake)
@@ -477,7 +585,11 @@ type IOTypeInfo {
   IOTypeInfo(type_name: String, members: List(MemberDef), synthesise: Bool)
 }
 
-fn resolve_io_type(model: Model, synth_name: String, r: Resolved) -> IOTypeInfo {
+fn resolve_io_type(
+  model: Model,
+  synth_name: String,
+  r: Resolved,
+) -> IOTypeInfo {
   case r {
     RStruct(local_name: ln, gleam_name: gn, full_id: id) ->
       case ln {
@@ -529,7 +641,10 @@ fn emit_enum_def(name: String, variants: List(types.EnumVariant)) -> String {
   }
 }
 
-fn emit_int_enum_def(name: String, variants: List(types.IntEnumVariant)) -> String {
+fn emit_int_enum_def(
+  name: String,
+  variants: List(types.IntEnumVariant),
+) -> String {
   case variants {
     [] -> "pub type " <> name <> " {\n  " <> name <> "Unknown\n}\n\n"
     _ ->
@@ -574,7 +689,12 @@ fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
     <> name
     <> ") -> json.Json {\n  case v {\n"
     <> list.fold(variants, "", fn(acc, v) {
-      acc <> "    " <> v.gleam_ctor <> " -> json.string(\"" <> v.wire_value <> "\")\n"
+      acc
+      <> "    "
+      <> v.gleam_ctor
+      <> " -> json.string(\""
+      <> v.wire_value
+      <> "\")\n"
     })
     <> "  }\n}\n\n"
   let first_ctor = case variants {
@@ -588,7 +708,12 @@ fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
     <> name
     <> ") {\n  decode.then(decode.string, fn(s) {\n    case s {\n"
     <> list.fold(variants, "", fn(acc, v) {
-      acc <> "      \"" <> v.wire_value <> "\" -> decode.success(" <> v.gleam_ctor <> ")\n"
+      acc
+      <> "      \""
+      <> v.wire_value
+      <> "\" -> decode.success("
+      <> v.gleam_ctor
+      <> ")\n"
     })
     <> "      _ -> decode.failure("
     <> first_ctor
@@ -608,7 +733,12 @@ fn emit_int_enum_codec(
     <> name
     <> ") -> json.Json {\n  case v {\n"
     <> list.fold(variants, "", fn(acc, v) {
-      acc <> "    " <> v.gleam_ctor <> " -> json.int(" <> int_to_string(v.wire_value) <> ")\n"
+      acc
+      <> "    "
+      <> v.gleam_ctor
+      <> " -> json.int("
+      <> int_to_string(v.wire_value)
+      <> ")\n"
     })
     <> "  }\n}\n\n"
   let first_ctor = case variants {
@@ -622,7 +752,12 @@ fn emit_int_enum_codec(
     <> name
     <> ") {\n  decode.then(decode.int, fn(n) {\n    case n {\n"
     <> list.fold(variants, "", fn(acc, v) {
-      acc <> "      " <> int_to_string(v.wire_value) <> " -> decode.success(" <> v.gleam_ctor <> ")\n"
+      acc
+      <> "      "
+      <> int_to_string(v.wire_value)
+      <> " -> decode.success("
+      <> v.gleam_ctor
+      <> ")\n"
     })
     <> "      _ -> decode.failure("
     <> first_ctor
@@ -809,11 +944,7 @@ fn file_header(service_id: String, protocol: Protocol) -> String {
     AwsJson10 -> "awsJson1_0"
     AwsJson11 -> "awsJson1_1"
   }
-  "//// Generated from "
-  <> service_id
-  <> " ("
-  <> proto_str
-  <> ").
+  "//// Generated from " <> service_id <> " (" <> proto_str <> ").
 //// DO NOT EDIT. Re-generate via the codegen subproject.
 
 import aws/credentials
@@ -846,8 +977,7 @@ fn derive_module_name(service_id: String) -> String {
 
 fn pascalize_member(s: String) -> String {
   case string.to_graphemes(s) {
-    [first, ..rest] ->
-      string.uppercase(first) <> string.concat(rest)
+    [first, ..rest] -> string.uppercase(first) <> string.concat(rest)
     [] -> s
   }
 }
@@ -881,4 +1011,3 @@ fn int_str(n: Int, acc: String) -> String {
     }
   }
 }
-

@@ -15,7 +15,7 @@
 import codegen/types.{
   type HttpBinding, type MemberDef, type Resolved, Body, Header, Label, Payload,
   PrefixHeaders, Query, QueryParams, REnum, RIntEnum, RList, RMap, RPrim,
-  RStruct, RUnion, RTimestamp, ResponseCode,
+  RStruct, RTimestamp, RUnion, ResponseCode,
 }
 import gleam/dict.{type Dict}
 import gleam/list
@@ -53,24 +53,27 @@ pub fn emit_service(
             Ok(shape.Operation(
               input: in_ref,
               output: out_ref,
+              errors: errs,
               traits: op_traits,
-              ..,
             )) ->
-              case
-                http_trait(op_traits),
-                op_uses_unsupported_trait(op_traits)
-              {
+              case http_trait(op_traits), op_uses_unsupported_trait(op_traits) {
                 Some(http), False -> {
                   let ShapeId(in_id) = in_ref.target
                   let ShapeId(out_id) = out_ref.target
                   let in_r = resolve_or_unit(model, in_id)
                   let out_r = resolve_or_unit(model, out_id)
+                  let err_ids =
+                    list.map(errs, fn(r) {
+                      let ShapeId(t) = r.target
+                      t
+                    })
                   case
                     members_have_no_http_bindings(in_r),
                     types.is_supported(in_r),
                     types.is_supported(out_r)
                   {
-                    True, True, True -> Ok(#(target, http, in_r, out_r))
+                    True, True, True ->
+                      Ok(#(target, http, in_r, out_r, err_ids))
                     _, _, _ -> Error(Nil)
                   }
                 }
@@ -85,7 +88,7 @@ pub fn emit_service(
 
       let op_specs =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, _, in_r, out_r) = t
+          let #(op_id, _, in_r, out_r, err_ids) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info = resolve_io_type(model, local <> "Input", in_r)
@@ -96,27 +99,36 @@ pub fn emit_service(
             snake: snake,
             in_info: in_info,
             out_info: out_info,
+            error_ids: err_ids,
           )
         })
 
       let op_blocks =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, http, in_r, out_r) = t
+          let #(op_id, http, in_r, out_r, _) = t
           emit_operation(model, op_id, http, in_r, out_r)
         })
       let client_block = emit_client(metadata)
       let invoke_blocks = list.map(op_specs, emit_invoke)
+      let error_blocks =
+        list.map(op_specs, fn(spec) {
+          emit_error_type(spec) <> emit_error_translator(spec)
+        })
       let body =
         file_header(service_id)
         <> "\n"
         <> client_block
         <> preamble
         <> list.fold(op_blocks, "", fn(acc, code) { acc <> code })
+        <> list.fold(error_blocks, "", fn(acc, code) { acc <> code })
         <> list.fold(invoke_blocks, "", fn(acc, code) { acc <> code })
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
-        operations_emitted: list.map(resolved_ops, fn(t) { t.0 }),
+        operations_emitted: list.map(resolved_ops, fn(t) {
+          let #(op_id, _, _, _, _) = t
+          op_id
+        }),
       ))
     }
     Ok(_) -> Error("not a service: " <> service_id)
@@ -124,11 +136,7 @@ pub fn emit_service(
 }
 
 type Metadata {
-  Metadata(
-    service_local: String,
-    endpoint_prefix: String,
-    signing_name: String,
-  )
+  Metadata(service_local: String, endpoint_prefix: String, signing_name: String)
 }
 
 type OpSpec {
@@ -138,6 +146,7 @@ type OpSpec {
     snake: String,
     in_info: IOTypeInfo,
     out_info: IOTypeInfo,
+    error_ids: List(String),
   )
 }
 
@@ -182,12 +191,8 @@ pub fn new(
   Client(config: awsjson_client.default_config(
     provider,
     region,
-    \""
-  <> metadata.endpoint_prefix
-  <> "\",
-    \""
-  <> metadata.signing_name
-  <> "\",
+    \"" <> metadata.endpoint_prefix <> "\",
+    \"" <> metadata.signing_name <> "\",
   ))
 }
 
@@ -209,15 +214,90 @@ fn emit_invoke(spec: OpSpec) -> String {
   <> spec.in_info.type_name
   <> ") -> Result("
   <> spec.out_info.type_name
-  <> ", awsjson_client.ClientError) {
-  awsjson_client.invoke(client.config, build_"
+  <> ", "
+  <> spec.local
+  <> "Error) {
+  case awsjson_client.invoke(client.config, build_"
   <> spec.snake
   <> "_request(input), parse_"
   <> spec.snake
-  <> "_response)
+  <> "_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_"
+  <> spec.snake
+  <> "_error(err))
+  }
 }
 
 "
+}
+
+/// Per-op typed-error enum. One variant per error shape on the
+/// operation, plus `Transport` and `Unknown` fall-backs. Mirrors the
+/// awsjson emitter — restJson1 errors are still JSON-shaped on the
+/// wire, so the same decoder path works.
+fn emit_error_type(spec: OpSpec) -> String {
+  let name = spec.local <> "Error"
+  let variants =
+    list.fold(spec.error_ids, "", fn(acc, err_id) {
+      let local = strip_namespace(err_id)
+      acc <> "  " <> name <> local <> "(value: " <> local <> ")\n"
+    })
+  "pub type "
+  <> name
+  <> " {\n"
+  <> variants
+  <> "  "
+  <> name
+  <> "Transport(reason: String)\n  "
+  <> name
+  <> "Unknown(error_type: String, status: Int, body: String)\n}\n\n"
+}
+
+fn emit_error_translator(spec: OpSpec) -> String {
+  let name = spec.local <> "Error"
+  let snake = spec.snake
+  let matches =
+    list.fold(spec.error_ids, "", fn(acc, err_id) {
+      let local = strip_namespace(err_id)
+      let err_snake = stringutils.pascal_to_snake(local)
+      acc
+      <> "        case awsjson_client.error_type_matches(et, \""
+      <> local
+      <> "\") {\n          True -> case bit_array.to_string(b) {\n            Ok(text) -> case json.parse(text, decode_"
+      <> err_snake
+      <> "_struct()) {\n              Ok(v) -> "
+      <> name
+      <> local
+      <> "(value: v)\n              Error(_) -> "
+      <> name
+      <> "Unknown(error_type: et, status: s, body: text)\n            }\n            Error(_) -> "
+      <> name
+      <> "Unknown(error_type: et, status: s, body: \"\")\n          }\n          False -> "
+    })
+  let fallback =
+    "case bit_array.to_string(b) {\n          Ok(text) -> "
+    <> name
+    <> "Unknown(error_type: et, status: s, body: text)\n          Error(_) -> "
+    <> name
+    <> "Unknown(error_type: et, status: s, body: \"\")\n        }"
+  let chain_end =
+    list.fold(spec.error_ids, "", fn(acc, _) { acc <> "\n        }" })
+  "fn translate_"
+  <> snake
+  <> "_error(err: awsjson_client.ClientError) -> "
+  <> name
+  <> " {\n  case err {\n    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {\n"
+  <> matches
+  <> fallback
+  <> chain_end
+  <> "\n    }\n    awsjson_client.TransportError(_) -> "
+  <> name
+  <> "Transport(reason: \"transport error\")\n    awsjson_client.CredentialsError(_) -> "
+  <> name
+  <> "Transport(reason: \"credentials error\")\n    awsjson_client.DecodeError(reason: r) -> "
+  <> name
+  <> "Transport(reason: \"decode: \" <> r)\n  }\n}\n\n"
 }
 
 type HttpTrait {
@@ -227,7 +307,11 @@ type HttpTrait {
 fn resolve_or_unit(model: Model, id: String) -> Resolved {
   case id {
     "smithy.api#Unit" ->
-      RStruct(local_name: "Unit", gleam_name: "Unit", full_id: "smithy.api#Unit")
+      RStruct(
+        local_name: "Unit",
+        gleam_name: "Unit",
+        full_id: "smithy.api#Unit",
+      )
     _ -> types.resolve(model, id)
   }
 }
@@ -249,14 +333,17 @@ fn members_have_no_http_bindings(_r: Resolved) -> Bool {
 
 fn collect_named_shapes(
   model: Model,
-  ops: List(#(String, HttpTrait, Resolved, Resolved)),
+  ops: List(#(String, HttpTrait, Resolved, Resolved, List(String))),
 ) -> List(Resolved) {
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_, _, in_r, out_r) = t
+      let #(_, _, in_r, out_r, err_ids) = t
       let acc = walk(model, acc, in_r)
-      walk(model, acc, out_r)
+      let acc = walk(model, acc, out_r)
+      list.fold(err_ids, acc, fn(a, err_id) {
+        walk(model, a, types.resolve(model, err_id))
+      })
     })
   list.reverse(found)
 }
@@ -279,7 +366,7 @@ fn walk(
           list.fold(members, acc, fn(a, m) { walk(model, a, m.target) })
         }
       }
-    RList(element: e) -> walk(model, acc, e)
+    RList(element: e, ..) -> walk(model, acc, e)
     RMap(key: k, value: v) -> {
       let acc = walk(model, acc, k)
       walk(model, acc, v)
@@ -342,15 +429,31 @@ fn emit_operation(
   let synth_in = case in_info.synthesise {
     True ->
       emit_record_def(in_info.type_name, [])
-      <> emit_struct_encoder(in_info.type_name, "encode_" <> snake <> "_input_struct", [])
-      <> emit_struct_decoder(in_info.type_name, "decode_" <> snake <> "_input_struct", [])
+      <> emit_struct_encoder(
+        in_info.type_name,
+        "encode_" <> snake <> "_input_struct",
+        [],
+      )
+      <> emit_struct_decoder(
+        in_info.type_name,
+        "decode_" <> snake <> "_input_struct",
+        [],
+      )
     False -> ""
   }
   let synth_out = case out_info.synthesise {
     True ->
       emit_record_def(out_info.type_name, [])
-      <> emit_struct_encoder(out_info.type_name, "encode_" <> snake <> "_output_struct", [])
-      <> emit_struct_decoder(out_info.type_name, "decode_" <> snake <> "_output_struct", [])
+      <> emit_struct_encoder(
+        out_info.type_name,
+        "encode_" <> snake <> "_output_struct",
+        [],
+      )
+      <> emit_struct_decoder(
+        out_info.type_name,
+        "decode_" <> snake <> "_output_struct",
+        [],
+      )
     False -> ""
   }
   let in_struct_encoder_name = case in_info.synthesise {
@@ -378,7 +481,9 @@ fn emit_operation(
       case in_info.synthesise {
         True -> "decode_" <> snake <> "_input_struct"
         False ->
-          "decode_" <> stringutils.pascal_to_snake(in_info.type_name) <> "_struct"
+          "decode_"
+          <> stringutils.pascal_to_snake(in_info.type_name)
+          <> "_struct"
       },
     )
   let out_decoder =
@@ -388,12 +493,13 @@ fn emit_operation(
       out_struct_decoder_name,
     )
   let in_members = in_info.members
-  let body_members = list.filter(in_members, fn(m) {
-    case m.binding {
-      Body -> True
-      _ -> False
-    }
-  })
+  let body_members =
+    list.filter(in_members, fn(m) {
+      case m.binding {
+        Body -> True
+        _ -> False
+      }
+    })
   let body_encoder = emit_body_encoder(snake, in_info.type_name, body_members)
   let build =
     emit_build(in_info.type_name, in_info.synthesise, snake, http, in_members)
@@ -427,7 +533,11 @@ type IOTypeInfo {
   IOTypeInfo(type_name: String, members: List(MemberDef), synthesise: Bool)
 }
 
-fn resolve_io_type(model: Model, synth_name: String, r: Resolved) -> IOTypeInfo {
+fn resolve_io_type(
+  model: Model,
+  synth_name: String,
+  r: Resolved,
+) -> IOTypeInfo {
   case r {
     RStruct(local_name: ln, gleam_name: gn, full_id: id) ->
       case ln {
@@ -750,12 +860,13 @@ fn emit_build(
   http: HttpTrait,
   members: List(MemberDef),
 ) -> String {
-  let payload = list.find(members, fn(m) {
-    case m.binding {
-      Payload -> True
-      _ -> False
-    }
-  })
+  let payload =
+    list.find(members, fn(m) {
+      case m.binding {
+        Payload -> True
+        _ -> False
+      }
+    })
   let labels =
     list.filter(members, fn(m) {
       case m.binding {
@@ -830,7 +941,7 @@ fn emit_build(
   <> query_setup
   <> header_setup
   <> body_setup
-  <> "  let headers = case content_type {\n    \"\" -> headers\n    _ -> dict.insert(headers, \"Content-Type\", content_type)\n  }\n  let path = rest.build_path(path, query)\n  #(\""
+  <> "  let headers = case content_type {\n    \"\" -> headers\n    _ -> dict.insert(headers, \"Content-Type\", content_type)\n  }\n  let headers = case content_type {\n    \"\" -> headers\n    _ -> dict.insert(headers, \"Content-Length\", int.to_string(bit_array.byte_size(body)))\n  }\n  let path = rest.build_path(path, query)\n  #(\""
   <> http.method
   <> "\", path, headers, body)\n}\n\n"
 }
@@ -867,21 +978,37 @@ fn emit_query_setup(
         Query(query_name: n) -> n
         _ -> m.json_name
       }
-      acc
-      <> "  let query = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(v) -> rest.add_query(query, \""
-      <> query_name
-      <> "\", "
-      <> value_to_string(m.target)
-      <> ")\n    option.None -> query\n  }\n"
+      case m.target {
+        RList(element: e, ..) ->
+          // `@httpQuery` on a list emits `Name=v1&Name=v2&...`. The
+          // element-to-string conversion is the same as the scalar
+          // case — reuse `value_to_string` by rebinding `v` to each
+          // entry inside the fold.
+          acc
+          <> "  let query = case input."
+          <> m.snake_name
+          <> " {\n    option.Some(xs) -> list.fold(xs, query, fn(q, item) {\n      let v = item\n      rest.add_query(q, \""
+          <> query_name
+          <> "\", "
+          <> value_to_string(e)
+          <> ")\n    })\n    option.None -> query\n  }\n"
+        _ ->
+          acc
+          <> "  let query = case input."
+          <> m.snake_name
+          <> " {\n    option.Some(v) -> rest.add_query(query, \""
+          <> query_name
+          <> "\", "
+          <> value_to_string(m.target)
+          <> ")\n    option.None -> query\n  }\n"
+      }
     })
   list.fold(query_maps, with_queries, fn(acc, m) {
     // Dispatch on the map's value type: Map<String, String> uses
     // `add_query_params`, Map<String, List<String>> uses
     // `add_query_params_list`. Anything else: skip.
     let helper = case m.target {
-      RMap(key: _, value: RList(element: RPrim(primitive: types.PString))) ->
+      RMap(key: _, value: RList(element: RPrim(primitive: types.PString), ..)) ->
         Ok("rest.add_query_params_list")
       RMap(key: _, value: RPrim(primitive: types.PString)) ->
         Ok("rest.add_query_params")
@@ -911,14 +1038,30 @@ fn emit_header_setup(
         Header(header_name: n) -> n
         _ -> m.json_name
       }
-      acc
-      <> "  let headers = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(v) -> rest.maybe_set_header(headers, \""
-      <> header_name
-      <> "\", "
-      <> value_to_string(m.target)
-      <> ")\n    option.None -> headers\n  }\n"
+      case m.target {
+        RList(element: e, ..) ->
+          // `@httpHeader` on a list emits `Name: v1, v2, v3` per the
+          // HTTP/1.1 header-folding rule. Each entry is rendered by
+          // the same scalar `value_to_string`; we collect them with
+          // `list.map` and hand to `maybe_set_list_header`.
+          acc
+          <> "  let headers = case input."
+          <> m.snake_name
+          <> " {\n    option.Some(xs) -> rest.maybe_set_list_header(headers, \""
+          <> header_name
+          <> "\", list.map(xs, fn(item) { let v = item "
+          <> value_to_string(e)
+          <> " }))\n    option.None -> headers\n  }\n"
+        _ ->
+          acc
+          <> "  let headers = case input."
+          <> m.snake_name
+          <> " {\n    option.Some(v) -> rest.maybe_set_header(headers, \""
+          <> header_name
+          <> "\", "
+          <> value_to_string(m.target)
+          <> ")\n    option.None -> headers\n  }\n"
+      }
     })
   list.fold(prefix_headers, with_headers, fn(acc, m) {
     let prefix = case m.binding {
@@ -1028,9 +1171,7 @@ fn emit_parse(output_type: String, snake: String) -> String {
 }
 
 fn file_header(service_id: String) -> String {
-  "//// Generated from "
-  <> service_id
-  <> " (restJson1).
+  "//// Generated from " <> service_id <> " (restJson1).
 //// DO NOT EDIT. Re-generate via the codegen subproject.
 
 import aws/credentials

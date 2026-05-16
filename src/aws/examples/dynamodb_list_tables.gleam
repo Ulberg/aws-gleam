@@ -18,7 +18,6 @@
 //// below.
 
 import aws/credentials
-import aws/internal/client/awsjson as awsjson_client
 import aws/internal/http_send
 import aws/services/dynamodb
 import gleam/int
@@ -46,7 +45,7 @@ pub fn main() {
       io.println("ok: ListTables returned " <> tables_summary(out))
     }
     Error(err) -> {
-      io.println("error: " <> describe_client_error(err))
+      io.println("error: " <> describe_error(err))
     }
   }
 }
@@ -61,18 +60,17 @@ fn tables_summary(out: dynamodb.ListTablesOutput) -> String {
   }
 }
 
-fn describe_client_error(err: awsjson_client.ClientError) -> String {
+/// Surface the typed `ListTablesError` produced by the generated
+/// client. ServiceError-style variants (InternalServerError etc.)
+/// carry their own struct; Transport / Unknown carry plain strings.
+fn describe_error(err: dynamodb.ListTablesError) -> String {
   case err {
-    awsjson_client.CredentialsError(_) ->
-      "credentials provider chain failed — check env vars or ~/.aws/credentials"
-    awsjson_client.TransportError(_) ->
-      "transport error — TLS/DNS/timeout on the HTTP send"
-    awsjson_client.DecodeError(reason: r) -> "could not decode response: " <> r
-    awsjson_client.ServiceError(status: s, error_type: t, ..) ->
-      "service returned HTTP "
-      <> int.to_string(s)
-      <> " ("
-      <> t
-      <> ") — common causes: missing IAM permission, wrong region"
+    dynamodb.ListTablesErrorTransport(reason: r) -> "transport: " <> r
+    dynamodb.ListTablesErrorInternalServerError(..) ->
+      "service: InternalServerError"
+    dynamodb.ListTablesErrorInvalidEndpointException(..) ->
+      "service: InvalidEndpointException"
+    dynamodb.ListTablesErrorUnknown(error_type: t, status: s, ..) ->
+      "service: HTTP " <> int.to_string(s) <> " (" <> t <> ")"
   }
 }

@@ -1,9 +1,31 @@
 -module(aws_ffi).
+-include_lib("xmerl/include/xmerl.hrl").
 -export([sha256/1, hmac_sha256/2, hex_encode/1, get_env/1, read_file/1,
          unix_seconds/0, parse_iso8601/1, run_process/2, sha1_hex/1,
          aws_timestamp/0, random_float/0, encode_dynamic_to_json/1,
          float_nan/0, float_infinity/0, float_neg_infinity/0,
-         float_is_nan/1, float_is_infinite/1, json_canonicalize/1]).
+         float_is_nan/1, float_is_infinite/1, json_canonicalize/1,
+         xml_parse/1, float_short/1, format_iso8601/1]).
+
+%% Shortest round-tripping float string, e.g. `1.1` not `1.10000000…e+00`.
+%% Used by query / header / URI-label / XML formatters; matches AWS's
+%% canonical wire form for the SimpleScalarProperties protocol-test
+%% suite. Requires OTP 25+.
+float_short(F) when is_float(F) -> float_to_binary(F, [short]).
+
+%% Inverse of `parse_iso8601`: epoch seconds (Int) → `"YYYY-MM-DDTHH:MM:SSZ"`
+%% UTC string. The default `@timestampFormat` for `date-time` in
+%% restJson1 / restXml is RFC 3339 with second precision; we never emit
+%% fractional seconds. Negative epoch seconds (pre-1970) round-trip via
+%% `calendar:gregorian_seconds_to_datetime`.
+format_iso8601(Seconds) when is_integer(Seconds) ->
+    Epoch = 62167219200,
+    {{Y, Mo, D}, {H, Mi, S}} =
+        calendar:gregorian_seconds_to_datetime(Seconds + Epoch),
+    iolist_to_binary(io_lib:format(
+        "~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0wZ",
+        [Y, Mo, D, H, Mi, S]
+    )).
 
 sha256(Data) ->
     crypto:hash(sha256, Data).
@@ -221,17 +243,25 @@ do_encode_canonical(M) when is_map(M) ->
 %% Returns {ok, Seconds} | {error, nil}. Used by IMDS/STS/SSO providers to
 %% turn the Expiration field of a credentials response into expires_at.
 parse_iso8601(Bin) when is_binary(Bin) ->
-    %% Strip fractional seconds and trailing Z, then leverage calendar.
-    Re = "^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\\.[0-9]+)?Z$",
+    %% Accept either `Z` or `±HH:MM` zone suffix, with optional fractional
+    %% seconds. The offset is folded into the returned epoch seconds.
+    Re = "^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\\.[0-9]+)?(Z|([+-])([0-9]{2}):([0-9]{2}))$",
     case re:run(Bin, Re, [{capture, all_but_first, binary}]) of
-        {match, [Y, Mo, D, H, Mi, S]} ->
+        {match, [Y, Mo, D, H, Mi, S | Zone]} ->
             DateTime = {
                 {binary_to_integer(Y), binary_to_integer(Mo), binary_to_integer(D)},
                 {binary_to_integer(H), binary_to_integer(Mi), binary_to_integer(S)}
             },
-            %% gregorian seconds (year 0) minus epoch offset = unix seconds
             Epoch = 62167219200,
-            {ok, calendar:datetime_to_gregorian_seconds(DateTime) - Epoch};
+            Base = calendar:datetime_to_gregorian_seconds(DateTime) - Epoch,
+            OffsetSec = case Zone of
+                [<<"Z">>] -> 0;
+                [<<"Z">>, _, _, _] -> 0;
+                [_, Sign, OffH, OffM] ->
+                    Sec = binary_to_integer(OffH) * 3600 + binary_to_integer(OffM) * 60,
+                    case Sign of <<"-">> -> Sec; <<"+">> -> -Sec end
+            end,
+            {ok, Base + OffsetSec};
         _ ->
             {error, nil}
     end.
@@ -268,3 +298,54 @@ collect_port(Port, Acc) ->
         try port_close(Port) catch _:_ -> ok end,
         {error, nil}
     end.
+
+%% Parse an XML document into a simple nested tuple tree usable from
+%% Gleam without pulling in the xmerl record headers. Returns
+%%   {ok, {element, Name, Attrs, Children}}
+%% where:
+%%   Name    :: binary()
+%%   Attrs   :: [{binary(), binary()}]
+%%   Children:: [{element, _, _, _} | {text, binary()}]
+%%
+%% Whitespace-only text nodes between elements are dropped, so the
+%% generated decoders can address members by element name without
+%% accounting for layout whitespace. Returns {error, nil} on parse
+%% failure. Backed by xmerl_scan; xmerl is in the OTP standard library
+%% and pulls in no extra dependencies.
+xml_parse(Bin) when is_binary(Bin) ->
+    try
+        Str = binary_to_list(Bin),
+        {Doc, _} = xmerl_scan:string(Str, [{quiet, true}]),
+        {ok, convert_xmerl(Doc)}
+    catch
+        _:_ -> {error, nil}
+    end.
+
+convert_xmerl(#xmlElement{name = Name, attributes = Attrs, content = Content}) ->
+    AttrTuples = [convert_attr(A) || A <- Attrs],
+    Children = lists:filtermap(
+        fun
+            (#xmlElement{} = X) -> {true, convert_xmerl(X)};
+            (#xmlText{value = V}) ->
+                Bin = unicode:characters_to_binary(V),
+                case is_blank(Bin) of
+                    true -> false;
+                    false -> {true, {text, Bin}}
+                end;
+            (_) -> false
+        end,
+        Content
+    ),
+    {element, name_to_binary(Name), AttrTuples, Children}.
+
+convert_attr(#xmlAttribute{name = Name, value = Value}) ->
+    {name_to_binary(Name), unicode:characters_to_binary(Value)}.
+
+name_to_binary(N) when is_atom(N) -> atom_to_binary(N, utf8);
+name_to_binary(N) when is_list(N) -> list_to_binary(N);
+name_to_binary(N) when is_binary(N) -> N.
+
+is_blank(<<>>) -> true;
+is_blank(<<C, R/binary>>) when C =:= $\s; C =:= $\t; C =:= $\n; C =:= $\r ->
+    is_blank(R);
+is_blank(_) -> false.

@@ -92,11 +92,20 @@ pub fn invoke(
     [#("host", host), ..dict.to_list(headers)]
     |> list.map(fn(p) { our_http.Header(name: p.0, value: p.1) })
 
+  // Split the path and query so SigV4 canonicalises them separately:
+  // `/foo?x-id=Bar` must hash with CanonicalURI=`/foo` and
+  // CanonicalQueryString=`x-id=Bar`, never with `?x-id=Bar` baked
+  // into the URI. Builds that produce no query (`/foo`) come through
+  // unchanged with `path_only`=path, `query_str`="".
+  let #(path_only, query_str) = case string.split_once(uri, "?") {
+    Ok(#(p, q)) -> #(p, q)
+    Error(_) -> #(uri, "")
+  }
   let unsigned =
     our_http.HttpRequest(
       method: method,
-      path: uri,
-      query: "",
+      path: path_only,
+      query: query_str,
       headers: header_pairs,
       body: body,
     )
@@ -172,12 +181,20 @@ fn parse_method(method: String) -> http.Method {
   }
 }
 
-fn headers_to_dict(
-  headers: List(#(String, String)),
-) -> Dict(String, String) {
+fn headers_to_dict(headers: List(#(String, String))) -> Dict(String, String) {
   list.fold(headers, dict.new(), fn(acc, p) {
     dict.insert(acc, string.lowercase(p.0), p.1)
   })
+}
+
+/// Match an AWS `error_type` wire value against a local Smithy
+/// shape name. Used by the generated per-op `translate_<op>_error`
+/// dispatchers. `error_type` already passes through
+/// `normalise_error_type` (namespace + suffix stripped) at the
+/// invoke layer, so a plain equality check suffices; we keep this
+/// behind a helper to give the codegen one stable call-site.
+pub fn error_type_matches(error_type: String, local: String) -> Bool {
+  error_type == local
 }
 
 fn extract_error_type(headers: Dict(String, String), body: BitArray) -> String {

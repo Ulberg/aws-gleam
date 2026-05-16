@@ -3,6 +3,7 @@
 
 import gleam/dict
 
+
 pub type DatetimeOffsetsInput {
   DatetimeOffsetsInput
 }
@@ -40,9 +41,7 @@ pub fn build_empty_input_and_empty_output_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let headers =
     dict.from_list([#("Content-Type", "application/x-www-form-urlencoded")])
-  #("POST", "/", headers, <<
-    "Action=EmptyInputAndEmptyOutput&Version=2020-01-08",
-  >>)
+  #("POST", "/", headers, <<"Action=EmptyInputAndEmptyOutput&Version=2020-01-08">>)
 }
 
 pub fn parse_empty_input_and_empty_output_response(
@@ -114,9 +113,7 @@ pub fn build_flattened_xml_map_with_xml_name_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let headers =
     dict.from_list([#("Content-Type", "application/x-www-form-urlencoded")])
-  #("POST", "/", headers, <<
-    "Action=FlattenedXmlMapWithXmlName&Version=2020-01-08",
-  >>)
+  #("POST", "/", headers, <<"Action=FlattenedXmlMapWithXmlName&Version=2020-01-08">>)
 }
 
 pub fn parse_flattened_xml_map_with_xml_name_response(
@@ -140,9 +137,7 @@ pub fn build_flattened_xml_map_with_xml_namespace_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let headers =
     dict.from_list([#("Content-Type", "application/x-www-form-urlencoded")])
-  #("POST", "/", headers, <<
-    "Action=FlattenedXmlMapWithXmlNamespace&Version=2020-01-08",
-  >>)
+  #("POST", "/", headers, <<"Action=FlattenedXmlMapWithXmlNamespace&Version=2020-01-08">>)
 }
 
 pub fn parse_flattened_xml_map_with_xml_namespace_response(
@@ -334,9 +329,7 @@ pub fn build_simple_scalar_xml_properties_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let headers =
     dict.from_list([#("Content-Type", "application/x-www-form-urlencoded")])
-  #("POST", "/", headers, <<
-    "Action=SimpleScalarXmlProperties&Version=2020-01-08",
-  >>)
+  #("POST", "/", headers, <<"Action=SimpleScalarXmlProperties&Version=2020-01-08">>)
 }
 
 pub fn parse_simple_scalar_xml_properties_response(

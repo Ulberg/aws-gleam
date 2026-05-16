@@ -61,23 +61,52 @@ pub fn int_to_query(n: Int) -> String {
   int.to_string(n)
 }
 
-/// Float → query / header value with full precision.
+/// Float → query / header / URI-label value. Uses Erlang's `short`
+/// formatter so `1.1` round-trips as the literal `"1.1"` — the AWS
+/// SimpleScalarProperties protocol-test corpus rejects scientific
+/// notation in these positions.
 pub fn float_to_query(f: Float) -> String {
-  // Use Erlang's float formatting; Gleam's `float.to_string` uses
-  // exponential for some values which we don't want for query
-  // parameters.
   float_to_string(f)
 }
 
-@external(erlang, "erlang", "float_to_binary")
+@external(erlang, "aws_ffi", "float_short")
 fn float_to_string(f: Float) -> String
+
+/// `@httpHeader` on a list member emits the values comma-joined, per
+/// HTTP/1.1 header-folding rules. `Some(["a", "b"])` becomes
+/// `Name: a, b`. Empty lists drop the header entirely.
+pub fn maybe_set_list_header(
+  headers: Dict(String, String),
+  name: String,
+  values: List(String),
+) -> Dict(String, String) {
+  case values {
+    [] -> headers
+    _ -> dict.insert(headers, name, string.join(values, ", "))
+  }
+}
 
 /// Build the full path: substitute labels, then append query (with `?`)
 /// if non-empty.
+/// Merge a path that may already carry a static query string (from the
+/// `@http` URI template, e.g. `/Foo?bar=baz`) with the dynamically
+/// built query string from `@httpQuery` members. Either or both can be
+/// empty. The static-query side wins on key order; dynamic params are
+/// appended.
 pub fn build_path(uri_path: String, query: String) -> String {
-  case query {
-    "" -> uri_path
-    _ -> uri_path <> "?" <> query
+  let #(path_only, static_query) = case string.split_once(uri_path, "?") {
+    Ok(#(p, q)) -> #(p, q)
+    Error(_) -> #(uri_path, "")
+  }
+  let combined = case static_query, query {
+    "", "" -> ""
+    "", q -> q
+    sq, "" -> sq
+    sq, q -> sq <> "&" <> q
+  }
+  case combined {
+    "" -> path_only
+    _ -> path_only <> "?" <> combined
   }
 }
 
@@ -125,12 +154,17 @@ pub fn add_query_params_list(
   })
 }
 
-/// Format an `If-Modified-Since` header / similar epoch-seconds
-/// timestamps in HTTP-date form. Placeholder while we don't honour
-/// @timestampFormat — emits raw integer for now.
+/// Format a timestamp for use in URI labels / query strings / headers.
+/// Smithy's default `@timestampFormat` for `date-time` (the
+/// restJson1 + restXml default) is RFC 3339, e.g. `2019-12-16T23:48:18Z`.
+/// We always emit Z-suffixed UTC; the wire form remains stable even if
+/// the input came from a system clock in a different zone.
 pub fn timestamp_to_header(epoch_seconds: Int) -> String {
-  int.to_string(epoch_seconds)
+  iso8601_format(epoch_seconds)
 }
+
+@external(erlang, "aws_ffi", "format_iso8601")
+fn iso8601_format(epoch_seconds: Int) -> String
 
 /// Extract the raw wire string from a JSON-encoded enum value. The
 /// generated `encode_<enum>_enum(v)` returns a `json.Json` like

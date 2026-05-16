@@ -55,9 +55,7 @@ pub type AllQueryStringTypesInput {
     query_integer_list: option.Option(List(Int)),
     query_integer_set: option.Option(List(Int)),
     query_long: option.Option(Int),
-    query_params_map_of_string_list: option.Option(
-      dict.Dict(String, List(String)),
-    ),
+    query_params_map_of_string_list: option.Option(dict.Dict(String, List(String))),
     query_short: option.Option(Int),
     query_string: option.Option(String),
     query_string_list: option.Option(List(String)),
@@ -67,19 +65,14 @@ pub type AllQueryStringTypesInput {
   )
 }
 
-pub fn encode_all_query_string_types_input_struct(
-  input: AllQueryStringTypesInput,
-) -> json.Json {
+pub fn encode_all_query_string_types_input_struct(input: AllQueryStringTypesInput) -> json.Json {
   let pairs = []
   let pairs = case input.query_boolean {
     option.Some(v) -> [#("queryBoolean", json.bool(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_boolean_list {
-    option.Some(v) -> [
-      #("queryBooleanList", fn(xs) { json.array(xs, json.bool) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryBooleanList", fn(xs) { json.array(xs, json.bool) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_byte {
@@ -91,10 +84,7 @@ pub fn encode_all_query_string_types_input_struct(
     option.None -> pairs
   }
   let pairs = case input.query_double_list {
-    option.Some(v) -> [
-      #("queryDoubleList", fn(xs) { json.array(xs, json_float.encode) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryDoubleList", fn(xs) { json.array(xs, json_float.encode) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_enum {
@@ -102,10 +92,7 @@ pub fn encode_all_query_string_types_input_struct(
     option.None -> pairs
   }
   let pairs = case input.query_enum_list {
-    option.Some(v) -> [
-      #("queryEnumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryEnumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_float {
@@ -117,34 +104,19 @@ pub fn encode_all_query_string_types_input_struct(
     option.None -> pairs
   }
   let pairs = case input.query_integer_enum {
-    option.Some(v) -> [
-      #("queryIntegerEnum", encode_integer_enum_int_enum(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryIntegerEnum", encode_integer_enum_int_enum(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_integer_enum_list {
-    option.Some(v) -> [
-      #(
-        "queryIntegerEnumList",
-        fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryIntegerEnumList", fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_integer_list {
-    option.Some(v) -> [
-      #("queryIntegerList", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryIntegerList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_integer_set {
-    option.Some(v) -> [
-      #("queryIntegerSet", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryIntegerSet", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_long {
@@ -152,20 +124,7 @@ pub fn encode_all_query_string_types_input_struct(
     option.None -> pairs
   }
   let pairs = case input.query_params_map_of_string_list {
-    option.Some(v) -> [
-      #(
-        "queryParamsMapOfStringList",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) {
-              #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1))
-            }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryParamsMapOfStringList", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_short {
@@ -177,17 +136,11 @@ pub fn encode_all_query_string_types_input_struct(
     option.None -> pairs
   }
   let pairs = case input.query_string_list {
-    option.Some(v) -> [
-      #("queryStringList", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryStringList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_string_set {
-    option.Some(v) -> [
-      #("queryStringSet", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryStringSet", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_timestamp {
@@ -195,123 +148,34 @@ pub fn encode_all_query_string_types_input_struct(
     option.None -> pairs
   }
   let pairs = case input.query_timestamp_list {
-    option.Some(v) -> [
-      #("queryTimestampList", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryTimestampList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_all_query_string_types_input_struct() -> decode.Decoder(
-  AllQueryStringTypesInput,
-) {
-  use query_boolean <- decode.optional_field(
-    "queryBoolean",
-    option.None,
-    decode.optional(decode.bool),
-  )
-  use query_boolean_list <- decode.optional_field(
-    "queryBooleanList",
-    option.None,
-    decode.optional(decode.list(decode.bool)),
-  )
-  use query_byte <- decode.optional_field(
-    "queryByte",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use query_double <- decode.optional_field(
-    "queryDouble",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use query_double_list <- decode.optional_field(
-    "queryDoubleList",
-    option.None,
-    decode.optional(decode.list(json_float.decoder())),
-  )
-  use query_enum <- decode.optional_field(
-    "queryEnum",
-    option.None,
-    decode.optional(decode_foo_enum_enum()),
-  )
-  use query_enum_list <- decode.optional_field(
-    "queryEnumList",
-    option.None,
-    decode.optional(decode.list(decode_foo_enum_enum())),
-  )
-  use query_float <- decode.optional_field(
-    "queryFloat",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use query_integer <- decode.optional_field(
-    "queryInteger",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use query_integer_enum <- decode.optional_field(
-    "queryIntegerEnum",
-    option.None,
-    decode.optional(decode_integer_enum_int_enum()),
-  )
-  use query_integer_enum_list <- decode.optional_field(
-    "queryIntegerEnumList",
-    option.None,
-    decode.optional(decode.list(decode_integer_enum_int_enum())),
-  )
-  use query_integer_list <- decode.optional_field(
-    "queryIntegerList",
-    option.None,
-    decode.optional(decode.list(decode.int)),
-  )
-  use query_integer_set <- decode.optional_field(
-    "queryIntegerSet",
-    option.None,
-    decode.optional(decode.list(decode.int)),
-  )
-  use query_long <- decode.optional_field(
-    "queryLong",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use query_params_map_of_string_list <- decode.optional_field(
-    "queryParamsMapOfStringList",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.list(decode.string))),
-  )
-  use query_short <- decode.optional_field(
-    "queryShort",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use query_string <- decode.optional_field(
-    "queryString",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use query_string_list <- decode.optional_field(
-    "queryStringList",
-    option.None,
-    decode.optional(decode.list(decode.string)),
-  )
-  use query_string_set <- decode.optional_field(
-    "queryStringSet",
-    option.None,
-    decode.optional(decode.list(decode.string)),
-  )
-  use query_timestamp <- decode.optional_field(
-    "queryTimestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use query_timestamp_list <- decode.optional_field(
-    "queryTimestampList",
-    option.None,
-    decode.optional(decode.list(decode.int)),
-  )
+pub fn decode_all_query_string_types_input_struct() -> decode.Decoder(AllQueryStringTypesInput) {
+  use query_boolean <- decode.optional_field("queryBoolean", option.None, decode.optional(decode.bool))
+  use query_boolean_list <- decode.optional_field("queryBooleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use query_byte <- decode.optional_field("queryByte", option.None, decode.optional(decode.int))
+  use query_double <- decode.optional_field("queryDouble", option.None, decode.optional(json_float.decoder()))
+  use query_double_list <- decode.optional_field("queryDoubleList", option.None, decode.optional(decode.list(json_float.decoder())))
+  use query_enum <- decode.optional_field("queryEnum", option.None, decode.optional(decode_foo_enum_enum()))
+  use query_enum_list <- decode.optional_field("queryEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use query_float <- decode.optional_field("queryFloat", option.None, decode.optional(json_float.decoder()))
+  use query_integer <- decode.optional_field("queryInteger", option.None, decode.optional(decode.int))
+  use query_integer_enum <- decode.optional_field("queryIntegerEnum", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use query_integer_enum_list <- decode.optional_field("queryIntegerEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use query_integer_list <- decode.optional_field("queryIntegerList", option.None, decode.optional(decode.list(decode.int)))
+  use query_integer_set <- decode.optional_field("queryIntegerSet", option.None, decode.optional(decode.list(decode.int)))
+  use query_long <- decode.optional_field("queryLong", option.None, decode.optional(decode.int))
+  use query_params_map_of_string_list <- decode.optional_field("queryParamsMapOfStringList", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
+  use query_short <- decode.optional_field("queryShort", option.None, decode.optional(decode.int))
+  use query_string <- decode.optional_field("queryString", option.None, decode.optional(decode.string))
+  use query_string_list <- decode.optional_field("queryStringList", option.None, decode.optional(decode.list(decode.string)))
+  use query_string_set <- decode.optional_field("queryStringSet", option.None, decode.optional(decode.list(decode.string)))
+  use query_timestamp <- decode.optional_field("queryTimestamp", option.None, decode.optional(decode.int))
+  use query_timestamp_list <- decode.optional_field("queryTimestampList", option.None, decode.optional(decode.list(decode.int)))
   decode.success(AllQueryStringTypesInput(
     query_boolean: query_boolean,
     query_boolean_list: query_boolean_list,
@@ -400,9 +264,7 @@ pub type ConstantAndVariableQueryStringInput {
   )
 }
 
-pub fn encode_constant_and_variable_query_string_input_struct(
-  input: ConstantAndVariableQueryStringInput,
-) -> json.Json {
+pub fn encode_constant_and_variable_query_string_input_struct(input: ConstantAndVariableQueryStringInput) -> json.Json {
   let pairs = []
   let pairs = case input.baz {
     option.Some(v) -> [#("baz", json.string(v)), ..pairs]
@@ -415,19 +277,9 @@ pub fn encode_constant_and_variable_query_string_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_constant_and_variable_query_string_input_struct() -> decode.Decoder(
-  ConstantAndVariableQueryStringInput,
-) {
-  use baz <- decode.optional_field(
-    "baz",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use maybe_set <- decode.optional_field(
-    "maybeSet",
-    option.None,
-    decode.optional(decode.string),
-  )
+pub fn decode_constant_and_variable_query_string_input_struct() -> decode.Decoder(ConstantAndVariableQueryStringInput) {
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
+  use maybe_set <- decode.optional_field("maybeSet", option.None, decode.optional(decode.string))
   decode.success(ConstantAndVariableQueryStringInput(
     baz: baz,
     maybe_set: maybe_set,
@@ -435,12 +287,12 @@ pub fn decode_constant_and_variable_query_string_input_struct() -> decode.Decode
 }
 
 pub type ConstantQueryStringInput {
-  ConstantQueryStringInput(hello: option.Option(String))
+  ConstantQueryStringInput(
+    hello: option.Option(String),
+  )
 }
 
-pub fn encode_constant_query_string_input_struct(
-  input: ConstantQueryStringInput,
-) -> json.Json {
+pub fn encode_constant_query_string_input_struct(input: ConstantQueryStringInput) -> json.Json {
   let pairs = []
   let pairs = case input.hello {
     option.Some(v) -> [#("hello", json.string(v)), ..pairs]
@@ -449,24 +301,20 @@ pub fn encode_constant_query_string_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_constant_query_string_input_struct() -> decode.Decoder(
-  ConstantQueryStringInput,
-) {
-  use hello <- decode.optional_field(
-    "hello",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(ConstantQueryStringInput(hello: hello))
+pub fn decode_constant_query_string_input_struct() -> decode.Decoder(ConstantQueryStringInput) {
+  use hello <- decode.optional_field("hello", option.None, decode.optional(decode.string))
+  decode.success(ConstantQueryStringInput(
+    hello: hello,
+  ))
 }
 
 pub type ContentTypeParametersInput {
-  ContentTypeParametersInput(value: option.Option(Int))
+  ContentTypeParametersInput(
+    value: option.Option(Int),
+  )
 }
 
-pub fn encode_content_type_parameters_input_struct(
-  input: ContentTypeParametersInput,
-) -> json.Json {
+pub fn encode_content_type_parameters_input_struct(input: ContentTypeParametersInput) -> json.Json {
   let pairs = []
   let pairs = case input.value {
     option.Some(v) -> [#("value", json.int(v)), ..pairs]
@@ -475,40 +323,32 @@ pub fn encode_content_type_parameters_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_content_type_parameters_input_struct() -> decode.Decoder(
-  ContentTypeParametersInput,
-) {
-  use value <- decode.optional_field(
-    "value",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(ContentTypeParametersInput(value: value))
+pub fn decode_content_type_parameters_input_struct() -> decode.Decoder(ContentTypeParametersInput) {
+  use value <- decode.optional_field("value", option.None, decode.optional(decode.int))
+  decode.success(ContentTypeParametersInput(
+    value: value,
+  ))
 }
 
 pub type ContentTypeParametersOutput {
   ContentTypeParametersOutput
 }
 
-pub fn encode_content_type_parameters_output_struct(
-  _v: ContentTypeParametersOutput,
-) -> json.Json {
+pub fn encode_content_type_parameters_output_struct(_v: ContentTypeParametersOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_content_type_parameters_output_struct() -> decode.Decoder(
-  ContentTypeParametersOutput,
-) {
+pub fn decode_content_type_parameters_output_struct() -> decode.Decoder(ContentTypeParametersOutput) {
   decode.success(ContentTypeParametersOutput)
 }
 
 pub type DatetimeOffsetsOutput {
-  DatetimeOffsetsOutput(datetime: option.Option(Int))
+  DatetimeOffsetsOutput(
+    datetime: option.Option(Int),
+  )
 }
 
-pub fn encode_datetime_offsets_output_struct(
-  input: DatetimeOffsetsOutput,
-) -> json.Json {
+pub fn encode_datetime_offsets_output_struct(input: DatetimeOffsetsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.datetime {
     option.Some(v) -> [#("datetime", json.int(v)), ..pairs]
@@ -517,15 +357,11 @@ pub fn encode_datetime_offsets_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_datetime_offsets_output_struct() -> decode.Decoder(
-  DatetimeOffsetsOutput,
-) {
-  use datetime <- decode.optional_field(
-    "datetime",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(DatetimeOffsetsOutput(datetime: datetime))
+pub fn decode_datetime_offsets_output_struct() -> decode.Decoder(DatetimeOffsetsOutput) {
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(decode.int))
+  decode.success(DatetimeOffsetsOutput(
+    datetime: datetime,
+  ))
 }
 
 pub type DocumentTypeInputOutput {
@@ -535,9 +371,7 @@ pub type DocumentTypeInputOutput {
   )
 }
 
-pub fn encode_document_type_input_output_struct(
-  input: DocumentTypeInputOutput,
-) -> json.Json {
+pub fn encode_document_type_input_output_struct(input: DocumentTypeInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.document_value {
     option.Some(v) -> [#("documentValue", fn(j) { j }(v)), ..pairs]
@@ -550,19 +384,9 @@ pub fn encode_document_type_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_document_type_input_output_struct() -> decode.Decoder(
-  DocumentTypeInputOutput,
-) {
-  use document_value <- decode.optional_field(
-    "documentValue",
-    option.None,
-    decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })),
-  )
-  use string_value <- decode.optional_field(
-    "stringValue",
-    option.None,
-    decode.optional(decode.string),
-  )
+pub fn decode_document_type_input_output_struct() -> decode.Decoder(DocumentTypeInputOutput) {
+  use document_value <- decode.optional_field("documentValue", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use string_value <- decode.optional_field("stringValue", option.None, decode.optional(decode.string))
   decode.success(DocumentTypeInputOutput(
     document_value: document_value,
     string_value: string_value,
@@ -575,51 +399,29 @@ pub type DocumentTypeAsMapValueInputOutput {
   )
 }
 
-pub fn encode_document_type_as_map_value_input_output_struct(
-  input: DocumentTypeAsMapValueInputOutput,
-) -> json.Json {
+pub fn encode_document_type_as_map_value_input_output_struct(input: DocumentTypeAsMapValueInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.doc_valued_map {
-    option.Some(v) -> [
-      #(
-        "docValuedMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, fn(j) { j }(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("docValuedMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(j) { j }(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_document_type_as_map_value_input_output_struct() -> decode.Decoder(
-  DocumentTypeAsMapValueInputOutput,
-) {
-  use doc_valued_map <- decode.optional_field(
-    "docValuedMap",
-    option.None,
-    decode.optional(decode.dict(
-      decode.string,
-      decode.dynamic |> decode.map(fn(_) { json.null() }),
-    )),
-  )
+pub fn decode_document_type_as_map_value_input_output_struct() -> decode.Decoder(DocumentTypeAsMapValueInputOutput) {
+  use doc_valued_map <- decode.optional_field("docValuedMap", option.None, decode.optional(decode.dict(decode.string, decode.dynamic |> decode.map(fn(_) { json.null() }))))
   decode.success(DocumentTypeAsMapValueInputOutput(
     doc_valued_map: doc_valued_map,
   ))
 }
 
 pub type DocumentTypeAsPayloadInputOutput {
-  DocumentTypeAsPayloadInputOutput(document_value: option.Option(json.Json))
+  DocumentTypeAsPayloadInputOutput(
+    document_value: option.Option(json.Json),
+  )
 }
 
-pub fn encode_document_type_as_payload_input_output_struct(
-  input: DocumentTypeAsPayloadInputOutput,
-) -> json.Json {
+pub fn encode_document_type_as_payload_input_output_struct(input: DocumentTypeAsPayloadInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.document_value {
     option.Some(v) -> [#("documentValue", fn(j) { j }(v)), ..pairs]
@@ -628,26 +430,20 @@ pub fn encode_document_type_as_payload_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_document_type_as_payload_input_output_struct() -> decode.Decoder(
-  DocumentTypeAsPayloadInputOutput,
-) {
-  use document_value <- decode.optional_field(
-    "documentValue",
-    option.None,
-    decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })),
-  )
+pub fn decode_document_type_as_payload_input_output_struct() -> decode.Decoder(DocumentTypeAsPayloadInputOutput) {
+  use document_value <- decode.optional_field("documentValue", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
   decode.success(DocumentTypeAsPayloadInputOutput(
     document_value: document_value,
   ))
 }
 
 pub type DuplexStreamInput {
-  DuplexStreamInput(stream: option.Option(EventStream))
+  DuplexStreamInput(
+    stream: option.Option(EventStream),
+  )
 }
 
-pub fn encode_duplex_stream_input_struct(
-  input: DuplexStreamInput,
-) -> json.Json {
+pub fn encode_duplex_stream_input_struct(input: DuplexStreamInput) -> json.Json {
   let pairs = []
   let pairs = case input.stream {
     option.Some(v) -> [#("stream", encode_event_stream_union(v)), ..pairs]
@@ -657,12 +453,10 @@ pub fn encode_duplex_stream_input_struct(
 }
 
 pub fn decode_duplex_stream_input_struct() -> decode.Decoder(DuplexStreamInput) {
-  use stream <- decode.optional_field(
-    "stream",
-    option.None,
-    decode.optional(decode_event_stream_union()),
-  )
-  decode.success(DuplexStreamInput(stream: stream))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(DuplexStreamInput(
+    stream: stream,
+  ))
 }
 
 pub type EventStream {
@@ -678,105 +472,58 @@ pub type EventStream {
 
 pub fn encode_event_stream_union(v: EventStream) -> json.Json {
   case v {
-    EventStreamBlobPayload(x) ->
-      json.object([#("blobPayload", encode_blob_payload_event_struct(x))])
-    EventStreamError(x) ->
-      json.object([#("error", encode_error_event_struct(x))])
-    EventStreamHeaders(x) ->
-      json.object([#("headers", encode_headers_event_struct(x))])
-    EventStreamHeadersAndExplicitPayload(x) ->
-      json.object([
-        #(
-          "headersAndExplicitPayload",
-          encode_headers_and_explicit_payload_event_struct(x),
-        ),
-      ])
-    EventStreamHeadersAndImplicitPayload(x) ->
-      json.object([
-        #(
-          "headersAndImplicitPayload",
-          encode_headers_and_implicit_payload_event_struct(x),
-        ),
-      ])
-    EventStreamStringPayload(x) ->
-      json.object([#("stringPayload", encode_string_payload_event_struct(x))])
-    EventStreamStructurePayload(x) ->
-      json.object([
-        #("structurePayload", encode_structure_payload_event_struct(x)),
-      ])
-    EventStreamUnionPayload(x) ->
-      json.object([#("unionPayload", encode_union_payload_event_struct(x))])
+    EventStreamBlobPayload(x) -> json.object([#("blobPayload", encode_blob_payload_event_struct(x))])
+    EventStreamError(x) -> json.object([#("error", encode_error_event_struct(x))])
+    EventStreamHeaders(x) -> json.object([#("headers", encode_headers_event_struct(x))])
+    EventStreamHeadersAndExplicitPayload(x) -> json.object([#("headersAndExplicitPayload", encode_headers_and_explicit_payload_event_struct(x))])
+    EventStreamHeadersAndImplicitPayload(x) -> json.object([#("headersAndImplicitPayload", encode_headers_and_implicit_payload_event_struct(x))])
+    EventStreamStringPayload(x) -> json.object([#("stringPayload", encode_string_payload_event_struct(x))])
+    EventStreamStructurePayload(x) -> json.object([#("structurePayload", encode_structure_payload_event_struct(x))])
+    EventStreamUnionPayload(x) -> json.object([#("unionPayload", encode_union_payload_event_struct(x))])
   }
 }
 
 pub fn decode_event_stream_union() -> decode.Decoder(EventStream) {
   decode.one_of(
-    decode.field("blobPayload", decode_blob_payload_event_struct(), fn(x) {
-      decode.success(EventStreamBlobPayload(x))
-    }),
+    decode.field("blobPayload", decode_blob_payload_event_struct(), fn(x) { decode.success(EventStreamBlobPayload(x)) }),
     [
-      decode.field("error", decode_error_event_struct(), fn(x) {
-        decode.success(EventStreamError(x))
-      }),
-      decode.field("headers", decode_headers_event_struct(), fn(x) {
-        decode.success(EventStreamHeaders(x))
-      }),
-      decode.field(
-        "headersAndExplicitPayload",
-        decode_headers_and_explicit_payload_event_struct(),
-        fn(x) { decode.success(EventStreamHeadersAndExplicitPayload(x)) },
-      ),
-      decode.field(
-        "headersAndImplicitPayload",
-        decode_headers_and_implicit_payload_event_struct(),
-        fn(x) { decode.success(EventStreamHeadersAndImplicitPayload(x)) },
-      ),
-      decode.field("stringPayload", decode_string_payload_event_struct(), fn(x) {
-        decode.success(EventStreamStringPayload(x))
-      }),
-      decode.field(
-        "structurePayload",
-        decode_structure_payload_event_struct(),
-        fn(x) { decode.success(EventStreamStructurePayload(x)) },
-      ),
-      decode.field("unionPayload", decode_union_payload_event_struct(), fn(x) {
-        decode.success(EventStreamUnionPayload(x))
-      }),
+      decode.field("error", decode_error_event_struct(), fn(x) { decode.success(EventStreamError(x)) }),
+      decode.field("headers", decode_headers_event_struct(), fn(x) { decode.success(EventStreamHeaders(x)) }),
+      decode.field("headersAndExplicitPayload", decode_headers_and_explicit_payload_event_struct(), fn(x) { decode.success(EventStreamHeadersAndExplicitPayload(x)) }),
+      decode.field("headersAndImplicitPayload", decode_headers_and_implicit_payload_event_struct(), fn(x) { decode.success(EventStreamHeadersAndImplicitPayload(x)) }),
+      decode.field("stringPayload", decode_string_payload_event_struct(), fn(x) { decode.success(EventStreamStringPayload(x)) }),
+      decode.field("structurePayload", decode_structure_payload_event_struct(), fn(x) { decode.success(EventStreamStructurePayload(x)) }),
+      decode.field("unionPayload", decode_union_payload_event_struct(), fn(x) { decode.success(EventStreamUnionPayload(x)) }),
     ],
   )
 }
 
 pub type BlobPayloadEvent {
-  BlobPayloadEvent(payload: option.Option(BitArray))
+  BlobPayloadEvent(
+    payload: option.Option(BitArray),
+  )
 }
 
 pub fn encode_blob_payload_event_struct(input: BlobPayloadEvent) -> json.Json {
   let pairs = []
   let pairs = case input.payload {
-    option.Some(v) -> [
-      #("payload", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("payload", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_blob_payload_event_struct() -> decode.Decoder(BlobPayloadEvent) {
-  use payload <- decode.optional_field(
-    "payload",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  decode.success(BlobPayloadEvent(payload: payload))
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(BlobPayloadEvent(
+    payload: payload,
+  ))
 }
 
 pub type ErrorEvent {
-  ErrorEvent(message: option.Option(String))
+  ErrorEvent(
+    message: option.Option(String),
+  )
 }
 
 pub fn encode_error_event_struct(input: ErrorEvent) -> json.Json {
@@ -789,12 +536,10 @@ pub fn encode_error_event_struct(input: ErrorEvent) -> json.Json {
 }
 
 pub fn decode_error_event_struct() -> decode.Decoder(ErrorEvent) {
-  use message <- decode.optional_field(
-    "message",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(ErrorEvent(message: message))
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ErrorEvent(
+    message: message,
+  ))
 }
 
 pub type HeadersEvent {
@@ -813,13 +558,7 @@ pub type HeadersEvent {
 pub fn encode_headers_event_struct(input: HeadersEvent) -> json.Json {
   let pairs = []
   let pairs = case input.blob_header {
-    option.Some(v) -> [
-      #(
-        "blobHeader",
-        fn(b) { json.string(bit_array.base64_encode(b, True)) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("blobHeader", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.boolean_header {
@@ -854,50 +593,14 @@ pub fn encode_headers_event_struct(input: HeadersEvent) -> json.Json {
 }
 
 pub fn decode_headers_event_struct() -> decode.Decoder(HeadersEvent) {
-  use blob_header <- decode.optional_field(
-    "blobHeader",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  use boolean_header <- decode.optional_field(
-    "booleanHeader",
-    option.None,
-    decode.optional(decode.bool),
-  )
-  use byte_header <- decode.optional_field(
-    "byteHeader",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use int_header <- decode.optional_field(
-    "intHeader",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use long_header <- decode.optional_field(
-    "longHeader",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use short_header <- decode.optional_field(
-    "shortHeader",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use string_header <- decode.optional_field(
-    "stringHeader",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use timestamp_header <- decode.optional_field(
-    "timestampHeader",
-    option.None,
-    decode.optional(decode.int),
-  )
+  use blob_header <- decode.optional_field("blobHeader", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use boolean_header <- decode.optional_field("booleanHeader", option.None, decode.optional(decode.bool))
+  use byte_header <- decode.optional_field("byteHeader", option.None, decode.optional(decode.int))
+  use int_header <- decode.optional_field("intHeader", option.None, decode.optional(decode.int))
+  use long_header <- decode.optional_field("longHeader", option.None, decode.optional(decode.int))
+  use short_header <- decode.optional_field("shortHeader", option.None, decode.optional(decode.int))
+  use string_header <- decode.optional_field("stringHeader", option.None, decode.optional(decode.string))
+  use timestamp_header <- decode.optional_field("timestampHeader", option.None, decode.optional(decode.int))
   decode.success(HeadersEvent(
     blob_header: blob_header,
     boolean_header: boolean_header,
@@ -917,37 +620,22 @@ pub type HeadersAndExplicitPayloadEvent {
   )
 }
 
-pub fn encode_headers_and_explicit_payload_event_struct(
-  input: HeadersAndExplicitPayloadEvent,
-) -> json.Json {
+pub fn encode_headers_and_explicit_payload_event_struct(input: HeadersAndExplicitPayloadEvent) -> json.Json {
   let pairs = []
   let pairs = case input.header {
     option.Some(v) -> [#("header", json.string(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.payload {
-    option.Some(v) -> [
-      #("payload", encode_payload_structure_struct(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("payload", encode_payload_structure_struct(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_headers_and_explicit_payload_event_struct() -> decode.Decoder(
-  HeadersAndExplicitPayloadEvent,
-) {
-  use header <- decode.optional_field(
-    "header",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use payload <- decode.optional_field(
-    "payload",
-    option.None,
-    decode.optional(decode_payload_structure_struct()),
-  )
+pub fn decode_headers_and_explicit_payload_event_struct() -> decode.Decoder(HeadersAndExplicitPayloadEvent) {
+  use header <- decode.optional_field("header", option.None, decode.optional(decode.string))
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_payload_structure_struct()))
   decode.success(HeadersAndExplicitPayloadEvent(
     header: header,
     payload: payload,
@@ -955,7 +643,9 @@ pub fn decode_headers_and_explicit_payload_event_struct() -> decode.Decoder(
 }
 
 pub type PayloadStructure {
-  PayloadStructure(structure_member: option.Option(String))
+  PayloadStructure(
+    structure_member: option.Option(String),
+  )
 }
 
 pub fn encode_payload_structure_struct(input: PayloadStructure) -> json.Json {
@@ -968,12 +658,10 @@ pub fn encode_payload_structure_struct(input: PayloadStructure) -> json.Json {
 }
 
 pub fn decode_payload_structure_struct() -> decode.Decoder(PayloadStructure) {
-  use structure_member <- decode.optional_field(
-    "structureMember",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(PayloadStructure(structure_member: structure_member))
+  use structure_member <- decode.optional_field("structureMember", option.None, decode.optional(decode.string))
+  decode.success(PayloadStructure(
+    structure_member: structure_member,
+  ))
 }
 
 pub type HeadersAndImplicitPayloadEvent {
@@ -983,9 +671,7 @@ pub type HeadersAndImplicitPayloadEvent {
   )
 }
 
-pub fn encode_headers_and_implicit_payload_event_struct(
-  input: HeadersAndImplicitPayloadEvent,
-) -> json.Json {
+pub fn encode_headers_and_implicit_payload_event_struct(input: HeadersAndImplicitPayloadEvent) -> json.Json {
   let pairs = []
   let pairs = case input.header {
     option.Some(v) -> [#("header", json.string(v)), ..pairs]
@@ -998,19 +684,9 @@ pub fn encode_headers_and_implicit_payload_event_struct(
   json.object(pairs)
 }
 
-pub fn decode_headers_and_implicit_payload_event_struct() -> decode.Decoder(
-  HeadersAndImplicitPayloadEvent,
-) {
-  use header <- decode.optional_field(
-    "header",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use payload <- decode.optional_field(
-    "payload",
-    option.None,
-    decode.optional(decode.string),
-  )
+pub fn decode_headers_and_implicit_payload_event_struct() -> decode.Decoder(HeadersAndImplicitPayloadEvent) {
+  use header <- decode.optional_field("header", option.None, decode.optional(decode.string))
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
   decode.success(HeadersAndImplicitPayloadEvent(
     header: header,
     payload: payload,
@@ -1018,12 +694,12 @@ pub fn decode_headers_and_implicit_payload_event_struct() -> decode.Decoder(
 }
 
 pub type StringPayloadEvent {
-  StringPayloadEvent(payload: option.Option(String))
+  StringPayloadEvent(
+    payload: option.Option(String),
+  )
 }
 
-pub fn encode_string_payload_event_struct(
-  input: StringPayloadEvent,
-) -> json.Json {
+pub fn encode_string_payload_event_struct(input: StringPayloadEvent) -> json.Json {
   let pairs = []
   let pairs = case input.payload {
     option.Some(v) -> [#("payload", json.string(v)), ..pairs]
@@ -1032,53 +708,42 @@ pub fn encode_string_payload_event_struct(
   json.object(pairs)
 }
 
-pub fn decode_string_payload_event_struct() -> decode.Decoder(
-  StringPayloadEvent,
-) {
-  use payload <- decode.optional_field(
-    "payload",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(StringPayloadEvent(payload: payload))
+pub fn decode_string_payload_event_struct() -> decode.Decoder(StringPayloadEvent) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
+  decode.success(StringPayloadEvent(
+    payload: payload,
+  ))
 }
 
 pub type StructurePayloadEvent {
-  StructurePayloadEvent(payload: option.Option(PayloadStructure))
+  StructurePayloadEvent(
+    payload: option.Option(PayloadStructure),
+  )
 }
 
-pub fn encode_structure_payload_event_struct(
-  input: StructurePayloadEvent,
-) -> json.Json {
+pub fn encode_structure_payload_event_struct(input: StructurePayloadEvent) -> json.Json {
   let pairs = []
   let pairs = case input.payload {
-    option.Some(v) -> [
-      #("payload", encode_payload_structure_struct(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("payload", encode_payload_structure_struct(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_structure_payload_event_struct() -> decode.Decoder(
-  StructurePayloadEvent,
-) {
-  use payload <- decode.optional_field(
-    "payload",
-    option.None,
-    decode.optional(decode_payload_structure_struct()),
-  )
-  decode.success(StructurePayloadEvent(payload: payload))
+pub fn decode_structure_payload_event_struct() -> decode.Decoder(StructurePayloadEvent) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_payload_structure_struct()))
+  decode.success(StructurePayloadEvent(
+    payload: payload,
+  ))
 }
 
 pub type UnionPayloadEvent {
-  UnionPayloadEvent(payload: option.Option(PayloadUnion))
+  UnionPayloadEvent(
+    payload: option.Option(PayloadUnion),
+  )
 }
 
-pub fn encode_union_payload_event_struct(
-  input: UnionPayloadEvent,
-) -> json.Json {
+pub fn encode_union_payload_event_struct(input: UnionPayloadEvent) -> json.Json {
   let pairs = []
   let pairs = case input.payload {
     option.Some(v) -> [#("payload", encode_payload_union_union(v)), ..pairs]
@@ -1088,12 +753,10 @@ pub fn encode_union_payload_event_struct(
 }
 
 pub fn decode_union_payload_event_struct() -> decode.Decoder(UnionPayloadEvent) {
-  use payload <- decode.optional_field(
-    "payload",
-    option.None,
-    decode.optional(decode_payload_union_union()),
-  )
-  decode.success(UnionPayloadEvent(payload: payload))
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_payload_union_union()))
+  decode.success(UnionPayloadEvent(
+    payload: payload,
+  ))
 }
 
 pub type PayloadUnion {
@@ -1102,27 +765,25 @@ pub type PayloadUnion {
 
 pub fn encode_payload_union_union(v: PayloadUnion) -> json.Json {
   case v {
-    PayloadUnionUnionMember(x) ->
-      json.object([#("unionMember", json.string(x))])
+    PayloadUnionUnionMember(x) -> json.object([#("unionMember", json.string(x))])
   }
 }
 
 pub fn decode_payload_union_union() -> decode.Decoder(PayloadUnion) {
   decode.one_of(
-    decode.field("unionMember", decode.string, fn(x) {
-      decode.success(PayloadUnionUnionMember(x))
-    }),
-    [],
+    decode.field("unionMember", decode.string, fn(x) { decode.success(PayloadUnionUnionMember(x)) }),
+    [
+    ],
   )
 }
 
 pub type DuplexStreamOutput {
-  DuplexStreamOutput(stream: option.Option(EventStream))
+  DuplexStreamOutput(
+    stream: option.Option(EventStream),
+  )
 }
 
-pub fn encode_duplex_stream_output_struct(
-  input: DuplexStreamOutput,
-) -> json.Json {
+pub fn encode_duplex_stream_output_struct(input: DuplexStreamOutput) -> json.Json {
   let pairs = []
   let pairs = case input.stream {
     option.Some(v) -> [#("stream", encode_event_stream_union(v)), ..pairs]
@@ -1131,24 +792,20 @@ pub fn encode_duplex_stream_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_duplex_stream_output_struct() -> decode.Decoder(
-  DuplexStreamOutput,
-) {
-  use stream <- decode.optional_field(
-    "stream",
-    option.None,
-    decode.optional(decode_event_stream_union()),
-  )
-  decode.success(DuplexStreamOutput(stream: stream))
+pub fn decode_duplex_stream_output_struct() -> decode.Decoder(DuplexStreamOutput) {
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(DuplexStreamOutput(
+    stream: stream,
+  ))
 }
 
 pub type DuplexStreamWithDistinctStreamsInput {
-  DuplexStreamWithDistinctStreamsInput(stream: option.Option(EventStream))
+  DuplexStreamWithDistinctStreamsInput(
+    stream: option.Option(EventStream),
+  )
 }
 
-pub fn encode_duplex_stream_with_distinct_streams_input_struct(
-  input: DuplexStreamWithDistinctStreamsInput,
-) -> json.Json {
+pub fn encode_duplex_stream_with_distinct_streams_input_struct(input: DuplexStreamWithDistinctStreamsInput) -> json.Json {
   let pairs = []
   let pairs = case input.stream {
     option.Some(v) -> [#("stream", encode_event_stream_union(v)), ..pairs]
@@ -1157,15 +814,11 @@ pub fn encode_duplex_stream_with_distinct_streams_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_duplex_stream_with_distinct_streams_input_struct() -> decode.Decoder(
-  DuplexStreamWithDistinctStreamsInput,
-) {
-  use stream <- decode.optional_field(
-    "stream",
-    option.None,
-    decode.optional(decode_event_stream_union()),
-  )
-  decode.success(DuplexStreamWithDistinctStreamsInput(stream: stream))
+pub fn decode_duplex_stream_with_distinct_streams_input_struct() -> decode.Decoder(DuplexStreamWithDistinctStreamsInput) {
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(DuplexStreamWithDistinctStreamsInput(
+    stream: stream,
+  ))
 }
 
 pub type DuplexStreamWithDistinctStreamsOutput {
@@ -1174,57 +827,44 @@ pub type DuplexStreamWithDistinctStreamsOutput {
   )
 }
 
-pub fn encode_duplex_stream_with_distinct_streams_output_struct(
-  input: DuplexStreamWithDistinctStreamsOutput,
-) -> json.Json {
+pub fn encode_duplex_stream_with_distinct_streams_output_struct(input: DuplexStreamWithDistinctStreamsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.stream {
-    option.Some(v) -> [
-      #("stream", encode_singleton_event_stream_union(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("stream", encode_singleton_event_stream_union(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_duplex_stream_with_distinct_streams_output_struct() -> decode.Decoder(
-  DuplexStreamWithDistinctStreamsOutput,
-) {
-  use stream <- decode.optional_field(
-    "stream",
-    option.None,
-    decode.optional(decode_singleton_event_stream_union()),
-  )
-  decode.success(DuplexStreamWithDistinctStreamsOutput(stream: stream))
+pub fn decode_duplex_stream_with_distinct_streams_output_struct() -> decode.Decoder(DuplexStreamWithDistinctStreamsOutput) {
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_singleton_event_stream_union()))
+  decode.success(DuplexStreamWithDistinctStreamsOutput(
+    stream: stream,
+  ))
 }
 
 pub type SingletonEventStream {
   SingletonEventStreamSingleton(SingletonEvent)
 }
 
-pub fn encode_singleton_event_stream_union(
-  v: SingletonEventStream,
-) -> json.Json {
+pub fn encode_singleton_event_stream_union(v: SingletonEventStream) -> json.Json {
   case v {
-    SingletonEventStreamSingleton(x) ->
-      json.object([#("singleton", encode_singleton_event_struct(x))])
+    SingletonEventStreamSingleton(x) -> json.object([#("singleton", encode_singleton_event_struct(x))])
   }
 }
 
-pub fn decode_singleton_event_stream_union() -> decode.Decoder(
-  SingletonEventStream,
-) {
+pub fn decode_singleton_event_stream_union() -> decode.Decoder(SingletonEventStream) {
   decode.one_of(
-    decode.field("singleton", decode_singleton_event_struct(), fn(x) {
-      decode.success(SingletonEventStreamSingleton(x))
-    }),
-    [],
+    decode.field("singleton", decode_singleton_event_struct(), fn(x) { decode.success(SingletonEventStreamSingleton(x)) }),
+    [
+    ],
   )
 }
 
 pub type SingletonEvent {
-  SingletonEvent(value: option.Option(String))
+  SingletonEvent(
+    value: option.Option(String),
+  )
 }
 
 pub fn encode_singleton_event_struct(input: SingletonEvent) -> json.Json {
@@ -1237,12 +877,10 @@ pub fn encode_singleton_event_struct(input: SingletonEvent) -> json.Json {
 }
 
 pub fn decode_singleton_event_struct() -> decode.Decoder(SingletonEvent) {
-  use value <- decode.optional_field(
-    "value",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(SingletonEvent(value: value))
+  use value <- decode.optional_field("value", option.None, decode.optional(decode.string))
+  decode.success(SingletonEvent(
+    value: value,
+  ))
 }
 
 pub type DuplexStreamWithInitialMessagesInput {
@@ -1252,9 +890,7 @@ pub type DuplexStreamWithInitialMessagesInput {
   )
 }
 
-pub fn encode_duplex_stream_with_initial_messages_input_struct(
-  input: DuplexStreamWithInitialMessagesInput,
-) -> json.Json {
+pub fn encode_duplex_stream_with_initial_messages_input_struct(input: DuplexStreamWithInitialMessagesInput) -> json.Json {
   let pairs = []
   let pairs = case input.initial_request_member {
     option.Some(v) -> [#("initialRequestMember", json.string(v)), ..pairs]
@@ -1267,19 +903,9 @@ pub fn encode_duplex_stream_with_initial_messages_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_duplex_stream_with_initial_messages_input_struct() -> decode.Decoder(
-  DuplexStreamWithInitialMessagesInput,
-) {
-  use initial_request_member <- decode.optional_field(
-    "initialRequestMember",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use stream <- decode.optional_field(
-    "stream",
-    option.None,
-    decode.optional(decode_event_stream_union()),
-  )
+pub fn decode_duplex_stream_with_initial_messages_input_struct() -> decode.Decoder(DuplexStreamWithInitialMessagesInput) {
+  use initial_request_member <- decode.optional_field("initialRequestMember", option.None, decode.optional(decode.string))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
   decode.success(DuplexStreamWithInitialMessagesInput(
     initial_request_member: initial_request_member,
     stream: stream,
@@ -1293,9 +919,7 @@ pub type DuplexStreamWithInitialMessagesOutput {
   )
 }
 
-pub fn encode_duplex_stream_with_initial_messages_output_struct(
-  input: DuplexStreamWithInitialMessagesOutput,
-) -> json.Json {
+pub fn encode_duplex_stream_with_initial_messages_output_struct(input: DuplexStreamWithInitialMessagesOutput) -> json.Json {
   let pairs = []
   let pairs = case input.initial_response_member {
     option.Some(v) -> [#("initialResponseMember", json.string(v)), ..pairs]
@@ -1308,22 +932,34 @@ pub fn encode_duplex_stream_with_initial_messages_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_duplex_stream_with_initial_messages_output_struct() -> decode.Decoder(
-  DuplexStreamWithInitialMessagesOutput,
-) {
-  use initial_response_member <- decode.optional_field(
-    "initialResponseMember",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use stream <- decode.optional_field(
-    "stream",
-    option.None,
-    decode.optional(decode_event_stream_union()),
-  )
+pub fn decode_duplex_stream_with_initial_messages_output_struct() -> decode.Decoder(DuplexStreamWithInitialMessagesOutput) {
+  use initial_response_member <- decode.optional_field("initialResponseMember", option.None, decode.optional(decode.string))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
   decode.success(DuplexStreamWithInitialMessagesOutput(
     initial_response_member: initial_response_member,
     stream: stream,
+  ))
+}
+
+pub type ServiceUnavailableError {
+  ServiceUnavailableError(
+    message: option.Option(String),
+  )
+}
+
+pub fn encode_service_unavailable_error_struct(input: ServiceUnavailableError) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn decode_service_unavailable_error_struct() -> decode.Decoder(ServiceUnavailableError) {
+  use message <- decode.optional_field("message", option.None, decode.optional(decode.string))
+  decode.success(ServiceUnavailableError(
+    message: message,
   ))
 }
 
@@ -1331,15 +967,11 @@ pub type EmptyInputAndEmptyOutputInput {
   EmptyInputAndEmptyOutputInput
 }
 
-pub fn encode_empty_input_and_empty_output_input_struct(
-  _v: EmptyInputAndEmptyOutputInput,
-) -> json.Json {
+pub fn encode_empty_input_and_empty_output_input_struct(_v: EmptyInputAndEmptyOutputInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_empty_input_and_empty_output_input_struct() -> decode.Decoder(
-  EmptyInputAndEmptyOutputInput,
-) {
+pub fn decode_empty_input_and_empty_output_input_struct() -> decode.Decoder(EmptyInputAndEmptyOutputInput) {
   decode.success(EmptyInputAndEmptyOutputInput)
 }
 
@@ -1347,20 +979,18 @@ pub type EmptyInputAndEmptyOutputOutput {
   EmptyInputAndEmptyOutputOutput
 }
 
-pub fn encode_empty_input_and_empty_output_output_struct(
-  _v: EmptyInputAndEmptyOutputOutput,
-) -> json.Json {
+pub fn encode_empty_input_and_empty_output_output_struct(_v: EmptyInputAndEmptyOutputOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_empty_input_and_empty_output_output_struct() -> decode.Decoder(
-  EmptyInputAndEmptyOutputOutput,
-) {
+pub fn decode_empty_input_and_empty_output_output_struct() -> decode.Decoder(EmptyInputAndEmptyOutputOutput) {
   decode.success(EmptyInputAndEmptyOutputOutput)
 }
 
 pub type HostLabelInput {
-  HostLabelInput(label: option.Option(String))
+  HostLabelInput(
+    label: option.Option(String),
+  )
 }
 
 pub fn encode_host_label_input_struct(input: HostLabelInput) -> json.Json {
@@ -1373,21 +1003,19 @@ pub fn encode_host_label_input_struct(input: HostLabelInput) -> json.Json {
 }
 
 pub fn decode_host_label_input_struct() -> decode.Decoder(HostLabelInput) {
-  use label <- decode.optional_field(
-    "label",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(HostLabelInput(label: label))
+  use label <- decode.optional_field("label", option.None, decode.optional(decode.string))
+  decode.success(HostLabelInput(
+    label: label,
+  ))
 }
 
 pub type FractionalSecondsOutput {
-  FractionalSecondsOutput(datetime: option.Option(Int))
+  FractionalSecondsOutput(
+    datetime: option.Option(Int),
+  )
 }
 
-pub fn encode_fractional_seconds_output_struct(
-  input: FractionalSecondsOutput,
-) -> json.Json {
+pub fn encode_fractional_seconds_output_struct(input: FractionalSecondsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.datetime {
     option.Some(v) -> [#("datetime", json.int(v)), ..pairs]
@@ -1396,24 +1024,20 @@ pub fn encode_fractional_seconds_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_fractional_seconds_output_struct() -> decode.Decoder(
-  FractionalSecondsOutput,
-) {
-  use datetime <- decode.optional_field(
-    "datetime",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(FractionalSecondsOutput(datetime: datetime))
+pub fn decode_fractional_seconds_output_struct() -> decode.Decoder(FractionalSecondsOutput) {
+  use datetime <- decode.optional_field("datetime", option.None, decode.optional(decode.int))
+  decode.success(FractionalSecondsOutput(
+    datetime: datetime,
+  ))
 }
 
 pub type GreetingWithErrorsOutput {
-  GreetingWithErrorsOutput(greeting: option.Option(String))
+  GreetingWithErrorsOutput(
+    greeting: option.Option(String),
+  )
 }
 
-pub fn encode_greeting_with_errors_output_struct(
-  input: GreetingWithErrorsOutput,
-) -> json.Json {
+pub fn encode_greeting_with_errors_output_struct(input: GreetingWithErrorsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.greeting {
     option.Some(v) -> [#("greeting", json.string(v)), ..pairs]
@@ -1422,15 +1046,103 @@ pub fn encode_greeting_with_errors_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_greeting_with_errors_output_struct() -> decode.Decoder(
-  GreetingWithErrorsOutput,
-) {
-  use greeting <- decode.optional_field(
-    "greeting",
-    option.None,
-    decode.optional(decode.string),
+pub fn decode_greeting_with_errors_output_struct() -> decode.Decoder(GreetingWithErrorsOutput) {
+  use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
+  decode.success(GreetingWithErrorsOutput(
+    greeting: greeting,
+  ))
+}
+
+pub type ComplexError {
+  ComplexError(
+    header: option.Option(String),
+    nested: option.Option(ComplexNestedErrorData),
+    top_level: option.Option(String),
   )
-  decode.success(GreetingWithErrorsOutput(greeting: greeting))
+}
+
+pub fn encode_complex_error_struct(input: ComplexError) -> json.Json {
+  let pairs = []
+  let pairs = case input.header {
+    option.Some(v) -> [#("Header", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.nested {
+    option.Some(v) -> [#("Nested", encode_complex_nested_error_data_struct(v)), ..pairs]
+    option.None -> pairs
+  }
+  let pairs = case input.top_level {
+    option.Some(v) -> [#("TopLevel", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn decode_complex_error_struct() -> decode.Decoder(ComplexError) {
+  use header <- decode.optional_field("Header", option.None, decode.optional(decode.string))
+  use nested <- decode.optional_field("Nested", option.None, decode.optional(decode_complex_nested_error_data_struct()))
+  use top_level <- decode.optional_field("TopLevel", option.None, decode.optional(decode.string))
+  decode.success(ComplexError(
+    header: header,
+    nested: nested,
+    top_level: top_level,
+  ))
+}
+
+pub type ComplexNestedErrorData {
+  ComplexNestedErrorData(
+    foo: option.Option(String),
+  )
+}
+
+pub fn encode_complex_nested_error_data_struct(input: ComplexNestedErrorData) -> json.Json {
+  let pairs = []
+  let pairs = case input.foo {
+    option.Some(v) -> [#("Foo", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn decode_complex_nested_error_data_struct() -> decode.Decoder(ComplexNestedErrorData) {
+  use foo <- decode.optional_field("Foo", option.None, decode.optional(decode.string))
+  decode.success(ComplexNestedErrorData(
+    foo: foo,
+  ))
+}
+
+pub type FooError {
+  FooError
+}
+
+pub fn encode_foo_error_struct(_v: FooError) -> json.Json {
+  json.object([])
+}
+
+pub fn decode_foo_error_struct() -> decode.Decoder(FooError) {
+  decode.success(FooError)
+}
+
+pub type InvalidGreeting {
+  InvalidGreeting(
+    message: option.Option(String),
+  )
+}
+
+pub fn encode_invalid_greeting_struct(input: InvalidGreeting) -> json.Json {
+  let pairs = []
+  let pairs = case input.message {
+    option.Some(v) -> [#("Message", json.string(v)), ..pairs]
+    option.None -> pairs
+  }
+  json.object(pairs)
+}
+
+pub fn decode_invalid_greeting_struct() -> decode.Decoder(InvalidGreeting) {
+  use message <- decode.optional_field("Message", option.None, decode.optional(decode.string))
+  decode.success(InvalidGreeting(
+    message: message,
+  ))
 }
 
 pub type HttpEmptyPrefixHeadersInput {
@@ -1440,23 +1152,10 @@ pub type HttpEmptyPrefixHeadersInput {
   )
 }
 
-pub fn encode_http_empty_prefix_headers_input_struct(
-  input: HttpEmptyPrefixHeadersInput,
-) -> json.Json {
+pub fn encode_http_empty_prefix_headers_input_struct(input: HttpEmptyPrefixHeadersInput) -> json.Json {
   let pairs = []
   let pairs = case input.prefix_headers {
-    option.Some(v) -> [
-      #(
-        "prefixHeaders",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("prefixHeaders", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.specific_header {
@@ -1466,19 +1165,9 @@ pub fn encode_http_empty_prefix_headers_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_http_empty_prefix_headers_input_struct() -> decode.Decoder(
-  HttpEmptyPrefixHeadersInput,
-) {
-  use prefix_headers <- decode.optional_field(
-    "prefixHeaders",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.string)),
-  )
-  use specific_header <- decode.optional_field(
-    "specificHeader",
-    option.None,
-    decode.optional(decode.string),
-  )
+pub fn decode_http_empty_prefix_headers_input_struct() -> decode.Decoder(HttpEmptyPrefixHeadersInput) {
+  use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use specific_header <- decode.optional_field("specificHeader", option.None, decode.optional(decode.string))
   decode.success(HttpEmptyPrefixHeadersInput(
     prefix_headers: prefix_headers,
     specific_header: specific_header,
@@ -1492,23 +1181,10 @@ pub type HttpEmptyPrefixHeadersOutput {
   )
 }
 
-pub fn encode_http_empty_prefix_headers_output_struct(
-  input: HttpEmptyPrefixHeadersOutput,
-) -> json.Json {
+pub fn encode_http_empty_prefix_headers_output_struct(input: HttpEmptyPrefixHeadersOutput) -> json.Json {
   let pairs = []
   let pairs = case input.prefix_headers {
-    option.Some(v) -> [
-      #(
-        "prefixHeaders",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("prefixHeaders", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.specific_header {
@@ -1518,19 +1194,9 @@ pub fn encode_http_empty_prefix_headers_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_http_empty_prefix_headers_output_struct() -> decode.Decoder(
-  HttpEmptyPrefixHeadersOutput,
-) {
-  use prefix_headers <- decode.optional_field(
-    "prefixHeaders",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.string)),
-  )
-  use specific_header <- decode.optional_field(
-    "specificHeader",
-    option.None,
-    decode.optional(decode.string),
-  )
+pub fn decode_http_empty_prefix_headers_output_struct() -> decode.Decoder(HttpEmptyPrefixHeadersOutput) {
+  use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use specific_header <- decode.optional_field("specificHeader", option.None, decode.optional(decode.string))
   decode.success(HttpEmptyPrefixHeadersOutput(
     prefix_headers: prefix_headers,
     specific_header: specific_header,
@@ -1538,7 +1204,9 @@ pub fn decode_http_empty_prefix_headers_output_struct() -> decode.Decoder(
 }
 
 pub type EnumPayloadInput {
-  EnumPayloadInput(payload: option.Option(StringEnum))
+  EnumPayloadInput(
+    payload: option.Option(StringEnum),
+  )
 }
 
 pub fn encode_enum_payload_input_struct(input: EnumPayloadInput) -> json.Json {
@@ -1551,12 +1219,10 @@ pub fn encode_enum_payload_input_struct(input: EnumPayloadInput) -> json.Json {
 }
 
 pub fn decode_enum_payload_input_struct() -> decode.Decoder(EnumPayloadInput) {
-  use payload <- decode.optional_field(
-    "payload",
-    option.None,
-    decode.optional(decode_string_enum_enum()),
-  )
-  decode.success(EnumPayloadInput(payload: payload))
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode_string_enum_enum()))
+  decode.success(EnumPayloadInput(
+    payload: payload,
+  ))
 }
 
 pub type StringEnum {
@@ -1585,15 +1251,10 @@ pub type HttpPayloadTraitsInputOutput {
   )
 }
 
-pub fn encode_http_payload_traits_input_output_struct(
-  input: HttpPayloadTraitsInputOutput,
-) -> json.Json {
+pub fn encode_http_payload_traits_input_output_struct(input: HttpPayloadTraitsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.blob {
-    option.Some(v) -> [
-      #("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.foo {
@@ -1603,24 +1264,13 @@ pub fn encode_http_payload_traits_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_http_payload_traits_input_output_struct() -> decode.Decoder(
-  HttpPayloadTraitsInputOutput,
-) {
-  use blob <- decode.optional_field(
-    "blob",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  use foo <- decode.optional_field(
-    "foo",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(HttpPayloadTraitsInputOutput(blob: blob, foo: foo))
+pub fn decode_http_payload_traits_input_output_struct() -> decode.Decoder(HttpPayloadTraitsInputOutput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(HttpPayloadTraitsInputOutput(
+    blob: blob,
+    foo: foo,
+  ))
 }
 
 pub type HttpPayloadTraitsWithMediaTypeInputOutput {
@@ -1630,15 +1280,10 @@ pub type HttpPayloadTraitsWithMediaTypeInputOutput {
   )
 }
 
-pub fn encode_http_payload_traits_with_media_type_input_output_struct(
-  input: HttpPayloadTraitsWithMediaTypeInputOutput,
-) -> json.Json {
+pub fn encode_http_payload_traits_with_media_type_input_output_struct(input: HttpPayloadTraitsWithMediaTypeInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.blob {
-    option.Some(v) -> [
-      #("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.foo {
@@ -1648,33 +1293,22 @@ pub fn encode_http_payload_traits_with_media_type_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_http_payload_traits_with_media_type_input_output_struct() -> decode.Decoder(
-  HttpPayloadTraitsWithMediaTypeInputOutput,
-) {
-  use blob <- decode.optional_field(
-    "blob",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  use foo <- decode.optional_field(
-    "foo",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(HttpPayloadTraitsWithMediaTypeInputOutput(blob: blob, foo: foo))
+pub fn decode_http_payload_traits_with_media_type_input_output_struct() -> decode.Decoder(HttpPayloadTraitsWithMediaTypeInputOutput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(HttpPayloadTraitsWithMediaTypeInputOutput(
+    blob: blob,
+    foo: foo,
+  ))
 }
 
 pub type HttpPayloadWithStructureInputOutput {
-  HttpPayloadWithStructureInputOutput(nested: option.Option(NestedPayload))
+  HttpPayloadWithStructureInputOutput(
+    nested: option.Option(NestedPayload),
+  )
 }
 
-pub fn encode_http_payload_with_structure_input_output_struct(
-  input: HttpPayloadWithStructureInputOutput,
-) -> json.Json {
+pub fn encode_http_payload_with_structure_input_output_struct(input: HttpPayloadWithStructureInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.nested {
     option.Some(v) -> [#("nested", encode_nested_payload_struct(v)), ..pairs]
@@ -1683,19 +1317,18 @@ pub fn encode_http_payload_with_structure_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_http_payload_with_structure_input_output_struct() -> decode.Decoder(
-  HttpPayloadWithStructureInputOutput,
-) {
-  use nested <- decode.optional_field(
-    "nested",
-    option.None,
-    decode.optional(decode_nested_payload_struct()),
-  )
-  decode.success(HttpPayloadWithStructureInputOutput(nested: nested))
+pub fn decode_http_payload_with_structure_input_output_struct() -> decode.Decoder(HttpPayloadWithStructureInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_nested_payload_struct()))
+  decode.success(HttpPayloadWithStructureInputOutput(
+    nested: nested,
+  ))
 }
 
 pub type NestedPayload {
-  NestedPayload(greeting: option.Option(String), name: option.Option(String))
+  NestedPayload(
+    greeting: option.Option(String),
+    name: option.Option(String),
+  )
 }
 
 pub fn encode_nested_payload_struct(input: NestedPayload) -> json.Json {
@@ -1712,26 +1345,21 @@ pub fn encode_nested_payload_struct(input: NestedPayload) -> json.Json {
 }
 
 pub fn decode_nested_payload_struct() -> decode.Decoder(NestedPayload) {
-  use greeting <- decode.optional_field(
-    "greeting",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use name <- decode.optional_field(
-    "name",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(NestedPayload(greeting: greeting, name: name))
+  use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
+  use name <- decode.optional_field("name", option.None, decode.optional(decode.string))
+  decode.success(NestedPayload(
+    greeting: greeting,
+    name: name,
+  ))
 }
 
 pub type HttpPayloadWithUnionInputOutput {
-  HttpPayloadWithUnionInputOutput(nested: option.Option(UnionPayload))
+  HttpPayloadWithUnionInputOutput(
+    nested: option.Option(UnionPayload),
+  )
 }
 
-pub fn encode_http_payload_with_union_input_output_struct(
-  input: HttpPayloadWithUnionInputOutput,
-) -> json.Json {
+pub fn encode_http_payload_with_union_input_output_struct(input: HttpPayloadWithUnionInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.nested {
     option.Some(v) -> [#("nested", encode_union_payload_union(v)), ..pairs]
@@ -1740,15 +1368,11 @@ pub fn encode_http_payload_with_union_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_http_payload_with_union_input_output_struct() -> decode.Decoder(
-  HttpPayloadWithUnionInputOutput,
-) {
-  use nested <- decode.optional_field(
-    "nested",
-    option.None,
-    decode.optional(decode_union_payload_union()),
-  )
-  decode.success(HttpPayloadWithUnionInputOutput(nested: nested))
+pub fn decode_http_payload_with_union_input_output_struct() -> decode.Decoder(HttpPayloadWithUnionInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_union_payload_union()))
+  decode.success(HttpPayloadWithUnionInputOutput(
+    nested: nested,
+  ))
 }
 
 pub type UnionPayload {
@@ -1763,10 +1387,9 @@ pub fn encode_union_payload_union(v: UnionPayload) -> json.Json {
 
 pub fn decode_union_payload_union() -> decode.Decoder(UnionPayload) {
   decode.one_of(
-    decode.field("greeting", decode.string, fn(x) {
-      decode.success(UnionPayloadGreeting(x))
-    }),
-    [],
+    decode.field("greeting", decode.string, fn(x) { decode.success(UnionPayloadGreeting(x)) }),
+    [
+    ],
   )
 }
 
@@ -1777,46 +1400,26 @@ pub type HttpPrefixHeadersInput {
   )
 }
 
-pub fn encode_http_prefix_headers_input_struct(
-  input: HttpPrefixHeadersInput,
-) -> json.Json {
+pub fn encode_http_prefix_headers_input_struct(input: HttpPrefixHeadersInput) -> json.Json {
   let pairs = []
   let pairs = case input.foo {
     option.Some(v) -> [#("foo", json.string(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.foo_map {
-    option.Some(v) -> [
-      #(
-        "fooMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("fooMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_http_prefix_headers_input_struct() -> decode.Decoder(
-  HttpPrefixHeadersInput,
-) {
-  use foo <- decode.optional_field(
-    "foo",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use foo_map <- decode.optional_field(
-    "fooMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.string)),
-  )
-  decode.success(HttpPrefixHeadersInput(foo: foo, foo_map: foo_map))
+pub fn decode_http_prefix_headers_input_struct() -> decode.Decoder(HttpPrefixHeadersInput) {
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use foo_map <- decode.optional_field("fooMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(HttpPrefixHeadersInput(
+    foo: foo,
+    foo_map: foo_map,
+  ))
 }
 
 pub type HttpPrefixHeadersOutput {
@@ -1826,61 +1429,37 @@ pub type HttpPrefixHeadersOutput {
   )
 }
 
-pub fn encode_http_prefix_headers_output_struct(
-  input: HttpPrefixHeadersOutput,
-) -> json.Json {
+pub fn encode_http_prefix_headers_output_struct(input: HttpPrefixHeadersOutput) -> json.Json {
   let pairs = []
   let pairs = case input.foo {
     option.Some(v) -> [#("foo", json.string(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.foo_map {
-    option.Some(v) -> [
-      #(
-        "fooMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("fooMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_http_prefix_headers_output_struct() -> decode.Decoder(
-  HttpPrefixHeadersOutput,
-) {
-  use foo <- decode.optional_field(
-    "foo",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use foo_map <- decode.optional_field(
-    "fooMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.string)),
-  )
-  decode.success(HttpPrefixHeadersOutput(foo: foo, foo_map: foo_map))
+pub fn decode_http_prefix_headers_output_struct() -> decode.Decoder(HttpPrefixHeadersOutput) {
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use foo_map <- decode.optional_field("fooMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(HttpPrefixHeadersOutput(
+    foo: foo,
+    foo_map: foo_map,
+  ))
 }
 
 pub type HttpPrefixHeadersInResponseInput {
   HttpPrefixHeadersInResponseInput
 }
 
-pub fn encode_http_prefix_headers_in_response_input_struct(
-  _v: HttpPrefixHeadersInResponseInput,
-) -> json.Json {
+pub fn encode_http_prefix_headers_in_response_input_struct(_v: HttpPrefixHeadersInResponseInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_http_prefix_headers_in_response_input_struct() -> decode.Decoder(
-  HttpPrefixHeadersInResponseInput,
-) {
+pub fn decode_http_prefix_headers_in_response_input_struct() -> decode.Decoder(HttpPrefixHeadersInResponseInput) {
   decode.success(HttpPrefixHeadersInResponseInput)
 }
 
@@ -1890,76 +1469,42 @@ pub type HttpPrefixHeadersInResponseOutput {
   )
 }
 
-pub fn encode_http_prefix_headers_in_response_output_struct(
-  input: HttpPrefixHeadersInResponseOutput,
-) -> json.Json {
+pub fn encode_http_prefix_headers_in_response_output_struct(input: HttpPrefixHeadersInResponseOutput) -> json.Json {
   let pairs = []
   let pairs = case input.prefix_headers {
-    option.Some(v) -> [
-      #(
-        "prefixHeaders",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("prefixHeaders", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_http_prefix_headers_in_response_output_struct() -> decode.Decoder(
-  HttpPrefixHeadersInResponseOutput,
-) {
-  use prefix_headers <- decode.optional_field(
-    "prefixHeaders",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.string)),
-  )
+pub fn decode_http_prefix_headers_in_response_output_struct() -> decode.Decoder(HttpPrefixHeadersInResponseOutput) {
+  use prefix_headers <- decode.optional_field("prefixHeaders", option.None, decode.optional(decode.dict(decode.string, decode.string)))
   decode.success(HttpPrefixHeadersInResponseOutput(
     prefix_headers: prefix_headers,
   ))
 }
 
 pub type HttpQueryParamsOnlyInput {
-  HttpQueryParamsOnlyInput(query_map: option.Option(dict.Dict(String, String)))
+  HttpQueryParamsOnlyInput(
+    query_map: option.Option(dict.Dict(String, String)),
+  )
 }
 
-pub fn encode_http_query_params_only_input_struct(
-  input: HttpQueryParamsOnlyInput,
-) -> json.Json {
+pub fn encode_http_query_params_only_input_struct(input: HttpQueryParamsOnlyInput) -> json.Json {
   let pairs = []
   let pairs = case input.query_map {
-    option.Some(v) -> [
-      #(
-        "queryMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_http_query_params_only_input_struct() -> decode.Decoder(
-  HttpQueryParamsOnlyInput,
-) {
-  use query_map <- decode.optional_field(
-    "queryMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.string)),
-  )
-  decode.success(HttpQueryParamsOnlyInput(query_map: query_map))
+pub fn decode_http_query_params_only_input_struct() -> decode.Decoder(HttpQueryParamsOnlyInput) {
+  use query_map <- decode.optional_field("queryMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(HttpQueryParamsOnlyInput(
+    query_map: query_map,
+  ))
 }
 
 pub type HttpRequestWithFloatLabelsInput {
@@ -1969,9 +1514,7 @@ pub type HttpRequestWithFloatLabelsInput {
   )
 }
 
-pub fn encode_http_request_with_float_labels_input_struct(
-  input: HttpRequestWithFloatLabelsInput,
-) -> json.Json {
+pub fn encode_http_request_with_float_labels_input_struct(input: HttpRequestWithFloatLabelsInput) -> json.Json {
   let pairs = []
   let pairs = case input.double {
     option.Some(v) -> [#("double", json_float.encode(v)), ..pairs]
@@ -1984,20 +1527,13 @@ pub fn encode_http_request_with_float_labels_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_http_request_with_float_labels_input_struct() -> decode.Decoder(
-  HttpRequestWithFloatLabelsInput,
-) {
-  use double <- decode.optional_field(
-    "double",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use float <- decode.optional_field(
-    "float",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  decode.success(HttpRequestWithFloatLabelsInput(double: double, float: float))
+pub fn decode_http_request_with_float_labels_input_struct() -> decode.Decoder(HttpRequestWithFloatLabelsInput) {
+  use double <- decode.optional_field("double", option.None, decode.optional(json_float.decoder()))
+  use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
+  decode.success(HttpRequestWithFloatLabelsInput(
+    double: double,
+    float: float,
+  ))
 }
 
 pub type HttpRequestWithGreedyLabelInPathInput {
@@ -2007,9 +1543,7 @@ pub type HttpRequestWithGreedyLabelInPathInput {
   )
 }
 
-pub fn encode_http_request_with_greedy_label_in_path_input_struct(
-  input: HttpRequestWithGreedyLabelInPathInput,
-) -> json.Json {
+pub fn encode_http_request_with_greedy_label_in_path_input_struct(input: HttpRequestWithGreedyLabelInPathInput) -> json.Json {
   let pairs = []
   let pairs = case input.baz {
     option.Some(v) -> [#("baz", json.string(v)), ..pairs]
@@ -2022,20 +1556,13 @@ pub fn encode_http_request_with_greedy_label_in_path_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_http_request_with_greedy_label_in_path_input_struct() -> decode.Decoder(
-  HttpRequestWithGreedyLabelInPathInput,
-) {
-  use baz <- decode.optional_field(
-    "baz",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use foo <- decode.optional_field(
-    "foo",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(HttpRequestWithGreedyLabelInPathInput(baz: baz, foo: foo))
+pub fn decode_http_request_with_greedy_label_in_path_input_struct() -> decode.Decoder(HttpRequestWithGreedyLabelInPathInput) {
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(HttpRequestWithGreedyLabelInPathInput(
+    baz: baz,
+    foo: foo,
+  ))
 }
 
 pub type HttpRequestWithLabelsInput {
@@ -2051,9 +1578,7 @@ pub type HttpRequestWithLabelsInput {
   )
 }
 
-pub fn encode_http_request_with_labels_input_struct(
-  input: HttpRequestWithLabelsInput,
-) -> json.Json {
+pub fn encode_http_request_with_labels_input_struct(input: HttpRequestWithLabelsInput) -> json.Json {
   let pairs = []
   let pairs = case input.boolean {
     option.Some(v) -> [#("boolean", json.bool(v)), ..pairs]
@@ -2090,49 +1615,15 @@ pub fn encode_http_request_with_labels_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_http_request_with_labels_input_struct() -> decode.Decoder(
-  HttpRequestWithLabelsInput,
-) {
-  use boolean <- decode.optional_field(
-    "boolean",
-    option.None,
-    decode.optional(decode.bool),
-  )
-  use double <- decode.optional_field(
-    "double",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use float <- decode.optional_field(
-    "float",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use integer <- decode.optional_field(
-    "integer",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use long <- decode.optional_field(
-    "long",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use short <- decode.optional_field(
-    "short",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use string <- decode.optional_field(
-    "string",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
+pub fn decode_http_request_with_labels_input_struct() -> decode.Decoder(HttpRequestWithLabelsInput) {
+  use boolean <- decode.optional_field("boolean", option.None, decode.optional(decode.bool))
+  use double <- decode.optional_field("double", option.None, decode.optional(json_float.decoder()))
+  use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
+  use integer <- decode.optional_field("integer", option.None, decode.optional(decode.int))
+  use long <- decode.optional_field("long", option.None, decode.optional(decode.int))
+  use short <- decode.optional_field("short", option.None, decode.optional(decode.int))
+  use string <- decode.optional_field("string", option.None, decode.optional(decode.string))
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
   decode.success(HttpRequestWithLabelsInput(
     boolean: boolean,
     double: double,
@@ -2157,9 +1648,7 @@ pub type HttpRequestWithLabelsAndTimestampFormatInput {
   )
 }
 
-pub fn encode_http_request_with_labels_and_timestamp_format_input_struct(
-  input: HttpRequestWithLabelsAndTimestampFormatInput,
-) -> json.Json {
+pub fn encode_http_request_with_labels_and_timestamp_format_input_struct(input: HttpRequestWithLabelsAndTimestampFormatInput) -> json.Json {
   let pairs = []
   let pairs = case input.default_format {
     option.Some(v) -> [#("defaultFormat", json.int(v)), ..pairs]
@@ -2192,44 +1681,14 @@ pub fn encode_http_request_with_labels_and_timestamp_format_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_http_request_with_labels_and_timestamp_format_input_struct() -> decode.Decoder(
-  HttpRequestWithLabelsAndTimestampFormatInput,
-) {
-  use default_format <- decode.optional_field(
-    "defaultFormat",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use member_date_time <- decode.optional_field(
-    "memberDateTime",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use member_epoch_seconds <- decode.optional_field(
-    "memberEpochSeconds",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use member_http_date <- decode.optional_field(
-    "memberHttpDate",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use target_date_time <- decode.optional_field(
-    "targetDateTime",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use target_epoch_seconds <- decode.optional_field(
-    "targetEpochSeconds",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use target_http_date <- decode.optional_field(
-    "targetHttpDate",
-    option.None,
-    decode.optional(decode.int),
-  )
+pub fn decode_http_request_with_labels_and_timestamp_format_input_struct() -> decode.Decoder(HttpRequestWithLabelsAndTimestampFormatInput) {
+  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(decode.int))
+  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(decode.int))
+  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(decode.int))
+  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(decode.int))
+  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(decode.int))
+  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(decode.int))
+  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(decode.int))
   decode.success(HttpRequestWithLabelsAndTimestampFormatInput(
     default_format: default_format,
     member_date_time: member_date_time,
@@ -2242,12 +1701,12 @@ pub fn decode_http_request_with_labels_and_timestamp_format_input_struct() -> de
 }
 
 pub type HttpRequestWithRegexLiteralInput {
-  HttpRequestWithRegexLiteralInput(str: option.Option(String))
+  HttpRequestWithRegexLiteralInput(
+    str: option.Option(String),
+  )
 }
 
-pub fn encode_http_request_with_regex_literal_input_struct(
-  input: HttpRequestWithRegexLiteralInput,
-) -> json.Json {
+pub fn encode_http_request_with_regex_literal_input_struct(input: HttpRequestWithRegexLiteralInput) -> json.Json {
   let pairs = []
   let pairs = case input.str {
     option.Some(v) -> [#("str", json.string(v)), ..pairs]
@@ -2256,24 +1715,20 @@ pub fn encode_http_request_with_regex_literal_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_http_request_with_regex_literal_input_struct() -> decode.Decoder(
-  HttpRequestWithRegexLiteralInput,
-) {
-  use str <- decode.optional_field(
-    "str",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(HttpRequestWithRegexLiteralInput(str: str))
+pub fn decode_http_request_with_regex_literal_input_struct() -> decode.Decoder(HttpRequestWithRegexLiteralInput) {
+  use str <- decode.optional_field("str", option.None, decode.optional(decode.string))
+  decode.success(HttpRequestWithRegexLiteralInput(
+    str: str,
+  ))
 }
 
 pub type HttpResponseCodeOutput {
-  HttpResponseCodeOutput(status: option.Option(Int))
+  HttpResponseCodeOutput(
+    status: option.Option(Int),
+  )
 }
 
-pub fn encode_http_response_code_output_struct(
-  input: HttpResponseCodeOutput,
-) -> json.Json {
+pub fn encode_http_response_code_output_struct(input: HttpResponseCodeOutput) -> json.Json {
   let pairs = []
   let pairs = case input.status {
     option.Some(v) -> [#("Status", json.int(v)), ..pairs]
@@ -2282,24 +1737,20 @@ pub fn encode_http_response_code_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_http_response_code_output_struct() -> decode.Decoder(
-  HttpResponseCodeOutput,
-) {
-  use status <- decode.optional_field(
-    "Status",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(HttpResponseCodeOutput(status: status))
+pub fn decode_http_response_code_output_struct() -> decode.Decoder(HttpResponseCodeOutput) {
+  use status <- decode.optional_field("Status", option.None, decode.optional(decode.int))
+  decode.success(HttpResponseCodeOutput(
+    status: status,
+  ))
 }
 
 pub type StringPayloadInput {
-  StringPayloadInput(payload: option.Option(String))
+  StringPayloadInput(
+    payload: option.Option(String),
+  )
 }
 
-pub fn encode_string_payload_input_struct(
-  input: StringPayloadInput,
-) -> json.Json {
+pub fn encode_string_payload_input_struct(input: StringPayloadInput) -> json.Json {
   let pairs = []
   let pairs = case input.payload {
     option.Some(v) -> [#("payload", json.string(v)), ..pairs]
@@ -2308,24 +1759,20 @@ pub fn encode_string_payload_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_string_payload_input_struct() -> decode.Decoder(
-  StringPayloadInput,
-) {
-  use payload <- decode.optional_field(
-    "payload",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(StringPayloadInput(payload: payload))
+pub fn decode_string_payload_input_struct() -> decode.Decoder(StringPayloadInput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
+  decode.success(StringPayloadInput(
+    payload: payload,
+  ))
 }
 
 pub type IgnoreQueryParamsInResponseOutput {
-  IgnoreQueryParamsInResponseOutput(baz: option.Option(String))
+  IgnoreQueryParamsInResponseOutput(
+    baz: option.Option(String),
+  )
 }
 
-pub fn encode_ignore_query_params_in_response_output_struct(
-  input: IgnoreQueryParamsInResponseOutput,
-) -> json.Json {
+pub fn encode_ignore_query_params_in_response_output_struct(input: IgnoreQueryParamsInResponseOutput) -> json.Json {
   let pairs = []
   let pairs = case input.baz {
     option.Some(v) -> [#("baz", json.string(v)), ..pairs]
@@ -2334,15 +1781,11 @@ pub fn encode_ignore_query_params_in_response_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_ignore_query_params_in_response_output_struct() -> decode.Decoder(
-  IgnoreQueryParamsInResponseOutput,
-) {
-  use baz <- decode.optional_field(
-    "baz",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(IgnoreQueryParamsInResponseOutput(baz: baz))
+pub fn decode_ignore_query_params_in_response_output_struct() -> decode.Decoder(IgnoreQueryParamsInResponseOutput) {
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.string))
+  decode.success(IgnoreQueryParamsInResponseOutput(
+    baz: baz,
+  ))
 }
 
 pub type InputAndOutputWithHeadersIO {
@@ -2368,15 +1811,10 @@ pub type InputAndOutputWithHeadersIO {
   )
 }
 
-pub fn encode_input_and_output_with_headers_io_struct(
-  input: InputAndOutputWithHeadersIO,
-) -> json.Json {
+pub fn encode_input_and_output_with_headers_io_struct(input: InputAndOutputWithHeadersIO) -> json.Json {
   let pairs = []
   let pairs = case input.header_boolean_list {
-    option.Some(v) -> [
-      #("headerBooleanList", fn(xs) { json.array(xs, json.bool) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("headerBooleanList", fn(xs) { json.array(xs, json.bool) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.header_byte {
@@ -2392,10 +1830,7 @@ pub fn encode_input_and_output_with_headers_io_struct(
     option.None -> pairs
   }
   let pairs = case input.header_enum_list {
-    option.Some(v) -> [
-      #("headerEnumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("headerEnumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.header_false_bool {
@@ -2411,27 +1846,15 @@ pub fn encode_input_and_output_with_headers_io_struct(
     option.None -> pairs
   }
   let pairs = case input.header_integer_enum {
-    option.Some(v) -> [
-      #("headerIntegerEnum", encode_integer_enum_int_enum(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("headerIntegerEnum", encode_integer_enum_int_enum(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.header_integer_enum_list {
-    option.Some(v) -> [
-      #(
-        "headerIntegerEnumList",
-        fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("headerIntegerEnumList", fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.header_integer_list {
-    option.Some(v) -> [
-      #("headerIntegerList", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("headerIntegerList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.header_long {
@@ -2447,24 +1870,15 @@ pub fn encode_input_and_output_with_headers_io_struct(
     option.None -> pairs
   }
   let pairs = case input.header_string_list {
-    option.Some(v) -> [
-      #("headerStringList", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("headerStringList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.header_string_set {
-    option.Some(v) -> [
-      #("headerStringSet", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("headerStringSet", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.header_timestamp_list {
-    option.Some(v) -> [
-      #("headerTimestampList", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("headerTimestampList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.header_true_bool {
@@ -2474,99 +1888,25 @@ pub fn encode_input_and_output_with_headers_io_struct(
   json.object(pairs)
 }
 
-pub fn decode_input_and_output_with_headers_io_struct() -> decode.Decoder(
-  InputAndOutputWithHeadersIO,
-) {
-  use header_boolean_list <- decode.optional_field(
-    "headerBooleanList",
-    option.None,
-    decode.optional(decode.list(decode.bool)),
-  )
-  use header_byte <- decode.optional_field(
-    "headerByte",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use header_double <- decode.optional_field(
-    "headerDouble",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use header_enum <- decode.optional_field(
-    "headerEnum",
-    option.None,
-    decode.optional(decode_foo_enum_enum()),
-  )
-  use header_enum_list <- decode.optional_field(
-    "headerEnumList",
-    option.None,
-    decode.optional(decode.list(decode_foo_enum_enum())),
-  )
-  use header_false_bool <- decode.optional_field(
-    "headerFalseBool",
-    option.None,
-    decode.optional(decode.bool),
-  )
-  use header_float <- decode.optional_field(
-    "headerFloat",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use header_integer <- decode.optional_field(
-    "headerInteger",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use header_integer_enum <- decode.optional_field(
-    "headerIntegerEnum",
-    option.None,
-    decode.optional(decode_integer_enum_int_enum()),
-  )
-  use header_integer_enum_list <- decode.optional_field(
-    "headerIntegerEnumList",
-    option.None,
-    decode.optional(decode.list(decode_integer_enum_int_enum())),
-  )
-  use header_integer_list <- decode.optional_field(
-    "headerIntegerList",
-    option.None,
-    decode.optional(decode.list(decode.int)),
-  )
-  use header_long <- decode.optional_field(
-    "headerLong",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use header_short <- decode.optional_field(
-    "headerShort",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use header_string <- decode.optional_field(
-    "headerString",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use header_string_list <- decode.optional_field(
-    "headerStringList",
-    option.None,
-    decode.optional(decode.list(decode.string)),
-  )
-  use header_string_set <- decode.optional_field(
-    "headerStringSet",
-    option.None,
-    decode.optional(decode.list(decode.string)),
-  )
-  use header_timestamp_list <- decode.optional_field(
-    "headerTimestampList",
-    option.None,
-    decode.optional(decode.list(decode.int)),
-  )
-  use header_true_bool <- decode.optional_field(
-    "headerTrueBool",
-    option.None,
-    decode.optional(decode.bool),
-  )
+pub fn decode_input_and_output_with_headers_io_struct() -> decode.Decoder(InputAndOutputWithHeadersIO) {
+  use header_boolean_list <- decode.optional_field("headerBooleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use header_byte <- decode.optional_field("headerByte", option.None, decode.optional(decode.int))
+  use header_double <- decode.optional_field("headerDouble", option.None, decode.optional(json_float.decoder()))
+  use header_enum <- decode.optional_field("headerEnum", option.None, decode.optional(decode_foo_enum_enum()))
+  use header_enum_list <- decode.optional_field("headerEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use header_false_bool <- decode.optional_field("headerFalseBool", option.None, decode.optional(decode.bool))
+  use header_float <- decode.optional_field("headerFloat", option.None, decode.optional(json_float.decoder()))
+  use header_integer <- decode.optional_field("headerInteger", option.None, decode.optional(decode.int))
+  use header_integer_enum <- decode.optional_field("headerIntegerEnum", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use header_integer_enum_list <- decode.optional_field("headerIntegerEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use header_integer_list <- decode.optional_field("headerIntegerList", option.None, decode.optional(decode.list(decode.int)))
+  use header_long <- decode.optional_field("headerLong", option.None, decode.optional(decode.int))
+  use header_short <- decode.optional_field("headerShort", option.None, decode.optional(decode.int))
+  use header_string <- decode.optional_field("headerString", option.None, decode.optional(decode.string))
+  use header_string_list <- decode.optional_field("headerStringList", option.None, decode.optional(decode.list(decode.string)))
+  use header_string_set <- decode.optional_field("headerStringSet", option.None, decode.optional(decode.list(decode.string)))
+  use header_timestamp_list <- decode.optional_field("headerTimestampList", option.None, decode.optional(decode.list(decode.int)))
+  use header_true_bool <- decode.optional_field("headerTrueBool", option.None, decode.optional(decode.bool))
   decode.success(InputAndOutputWithHeadersIO(
     header_boolean_list: header_boolean_list,
     header_byte: header_byte,
@@ -2590,7 +1930,9 @@ pub fn decode_input_and_output_with_headers_io_struct() -> decode.Decoder(
 }
 
 pub type InputStreamInput {
-  InputStreamInput(stream: option.Option(EventStream))
+  InputStreamInput(
+    stream: option.Option(EventStream),
+  )
 }
 
 pub fn encode_input_stream_input_struct(input: InputStreamInput) -> json.Json {
@@ -2603,12 +1945,10 @@ pub fn encode_input_stream_input_struct(input: InputStreamInput) -> json.Json {
 }
 
 pub fn decode_input_stream_input_struct() -> decode.Decoder(InputStreamInput) {
-  use stream <- decode.optional_field(
-    "stream",
-    option.None,
-    decode.optional(decode_event_stream_union()),
-  )
-  decode.success(InputStreamInput(stream: stream))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(InputStreamInput(
+    stream: stream,
+  ))
 }
 
 pub type InputStreamWithInitialRequestInput {
@@ -2618,9 +1958,7 @@ pub type InputStreamWithInitialRequestInput {
   )
 }
 
-pub fn encode_input_stream_with_initial_request_input_struct(
-  input: InputStreamWithInitialRequestInput,
-) -> json.Json {
+pub fn encode_input_stream_with_initial_request_input_struct(input: InputStreamWithInitialRequestInput) -> json.Json {
   let pairs = []
   let pairs = case input.initial_request_member {
     option.Some(v) -> [#("initialRequestMember", json.string(v)), ..pairs]
@@ -2633,19 +1971,9 @@ pub fn encode_input_stream_with_initial_request_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_input_stream_with_initial_request_input_struct() -> decode.Decoder(
-  InputStreamWithInitialRequestInput,
-) {
-  use initial_request_member <- decode.optional_field(
-    "initialRequestMember",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use stream <- decode.optional_field(
-    "stream",
-    option.None,
-    decode.optional(decode_event_stream_union()),
-  )
+pub fn decode_input_stream_with_initial_request_input_struct() -> decode.Decoder(InputStreamWithInitialRequestInput) {
+  use initial_request_member <- decode.optional_field("initialRequestMember", option.None, decode.optional(decode.string))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
   decode.success(InputStreamWithInitialRequestInput(
     initial_request_member: initial_request_member,
     stream: stream,
@@ -2653,36 +1981,25 @@ pub fn decode_input_stream_with_initial_request_input_struct() -> decode.Decoder
 }
 
 pub type JsonBlobsInputOutput {
-  JsonBlobsInputOutput(data: option.Option(BitArray))
+  JsonBlobsInputOutput(
+    data: option.Option(BitArray),
+  )
 }
 
-pub fn encode_json_blobs_input_output_struct(
-  input: JsonBlobsInputOutput,
-) -> json.Json {
+pub fn encode_json_blobs_input_output_struct(input: JsonBlobsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.data {
-    option.Some(v) -> [
-      #("data", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("data", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_json_blobs_input_output_struct() -> decode.Decoder(
-  JsonBlobsInputOutput,
-) {
-  use data <- decode.optional_field(
-    "data",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  decode.success(JsonBlobsInputOutput(data: data))
+pub fn decode_json_blobs_input_output_struct() -> decode.Decoder(JsonBlobsInputOutput) {
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(JsonBlobsInputOutput(
+    data: data,
+  ))
 }
 
 pub type JsonEnumsInputOutput {
@@ -2696,9 +2013,7 @@ pub type JsonEnumsInputOutput {
   )
 }
 
-pub fn encode_json_enums_input_output_struct(
-  input: JsonEnumsInputOutput,
-) -> json.Json {
+pub fn encode_json_enums_input_output_struct(input: JsonEnumsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.foo_enum1 {
     option.Some(v) -> [#("fooEnum1", encode_foo_enum_enum(v)), ..pairs]
@@ -2713,70 +2028,27 @@ pub fn encode_json_enums_input_output_struct(
     option.None -> pairs
   }
   let pairs = case input.foo_enum_list {
-    option.Some(v) -> [
-      #("fooEnumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("fooEnumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.foo_enum_map {
-    option.Some(v) -> [
-      #(
-        "fooEnumMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, encode_foo_enum_enum(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("fooEnumMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_foo_enum_enum(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.foo_enum_set {
-    option.Some(v) -> [
-      #("fooEnumSet", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("fooEnumSet", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_json_enums_input_output_struct() -> decode.Decoder(
-  JsonEnumsInputOutput,
-) {
-  use foo_enum1 <- decode.optional_field(
-    "fooEnum1",
-    option.None,
-    decode.optional(decode_foo_enum_enum()),
-  )
-  use foo_enum2 <- decode.optional_field(
-    "fooEnum2",
-    option.None,
-    decode.optional(decode_foo_enum_enum()),
-  )
-  use foo_enum3 <- decode.optional_field(
-    "fooEnum3",
-    option.None,
-    decode.optional(decode_foo_enum_enum()),
-  )
-  use foo_enum_list <- decode.optional_field(
-    "fooEnumList",
-    option.None,
-    decode.optional(decode.list(decode_foo_enum_enum())),
-  )
-  use foo_enum_map <- decode.optional_field(
-    "fooEnumMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode_foo_enum_enum())),
-  )
-  use foo_enum_set <- decode.optional_field(
-    "fooEnumSet",
-    option.None,
-    decode.optional(decode.list(decode_foo_enum_enum())),
-  )
+pub fn decode_json_enums_input_output_struct() -> decode.Decoder(JsonEnumsInputOutput) {
+  use foo_enum1 <- decode.optional_field("fooEnum1", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum2 <- decode.optional_field("fooEnum2", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum3 <- decode.optional_field("fooEnum3", option.None, decode.optional(decode_foo_enum_enum()))
+  use foo_enum_list <- decode.optional_field("fooEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use foo_enum_map <- decode.optional_field("fooEnumMap", option.None, decode.optional(decode.dict(decode.string, decode_foo_enum_enum())))
+  use foo_enum_set <- decode.optional_field("fooEnumSet", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
   decode.success(JsonEnumsInputOutput(
     foo_enum1: foo_enum1,
     foo_enum2: foo_enum2,
@@ -2798,104 +2070,42 @@ pub type JsonIntEnumsInputOutput {
   )
 }
 
-pub fn encode_json_int_enums_input_output_struct(
-  input: JsonIntEnumsInputOutput,
-) -> json.Json {
+pub fn encode_json_int_enums_input_output_struct(input: JsonIntEnumsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.integer_enum1 {
-    option.Some(v) -> [
-      #("integerEnum1", encode_integer_enum_int_enum(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerEnum1", encode_integer_enum_int_enum(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer_enum2 {
-    option.Some(v) -> [
-      #("integerEnum2", encode_integer_enum_int_enum(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerEnum2", encode_integer_enum_int_enum(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer_enum3 {
-    option.Some(v) -> [
-      #("integerEnum3", encode_integer_enum_int_enum(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerEnum3", encode_integer_enum_int_enum(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer_enum_list {
-    option.Some(v) -> [
-      #(
-        "integerEnumList",
-        fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerEnumList", fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer_enum_map {
-    option.Some(v) -> [
-      #(
-        "integerEnumMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) {
-              #(pair.0, encode_integer_enum_int_enum(pair.1))
-            }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerEnumMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_integer_enum_int_enum(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer_enum_set {
-    option.Some(v) -> [
-      #(
-        "integerEnumSet",
-        fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerEnumSet", fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_json_int_enums_input_output_struct() -> decode.Decoder(
-  JsonIntEnumsInputOutput,
-) {
-  use integer_enum1 <- decode.optional_field(
-    "integerEnum1",
-    option.None,
-    decode.optional(decode_integer_enum_int_enum()),
-  )
-  use integer_enum2 <- decode.optional_field(
-    "integerEnum2",
-    option.None,
-    decode.optional(decode_integer_enum_int_enum()),
-  )
-  use integer_enum3 <- decode.optional_field(
-    "integerEnum3",
-    option.None,
-    decode.optional(decode_integer_enum_int_enum()),
-  )
-  use integer_enum_list <- decode.optional_field(
-    "integerEnumList",
-    option.None,
-    decode.optional(decode.list(decode_integer_enum_int_enum())),
-  )
-  use integer_enum_map <- decode.optional_field(
-    "integerEnumMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode_integer_enum_int_enum())),
-  )
-  use integer_enum_set <- decode.optional_field(
-    "integerEnumSet",
-    option.None,
-    decode.optional(decode.list(decode_integer_enum_int_enum())),
-  )
+pub fn decode_json_int_enums_input_output_struct() -> decode.Decoder(JsonIntEnumsInputOutput) {
+  use integer_enum1 <- decode.optional_field("integerEnum1", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use integer_enum2 <- decode.optional_field("integerEnum2", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use integer_enum3 <- decode.optional_field("integerEnum3", option.None, decode.optional(decode_integer_enum_int_enum()))
+  use integer_enum_list <- decode.optional_field("integerEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use integer_enum_map <- decode.optional_field("integerEnumMap", option.None, decode.optional(decode.dict(decode.string, decode_integer_enum_int_enum())))
+  use integer_enum_set <- decode.optional_field("integerEnumSet", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
   decode.success(JsonIntEnumsInputOutput(
     integer_enum1: integer_enum1,
     integer_enum2: integer_enum2,
@@ -2920,133 +2130,57 @@ pub type JsonListsInputOutput {
   )
 }
 
-pub fn encode_json_lists_input_output_struct(
-  input: JsonListsInputOutput,
-) -> json.Json {
+pub fn encode_json_lists_input_output_struct(input: JsonListsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.boolean_list {
-    option.Some(v) -> [
-      #("booleanList", fn(xs) { json.array(xs, json.bool) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("booleanList", fn(xs) { json.array(xs, json.bool) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.enum_list {
-    option.Some(v) -> [
-      #("enumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("enumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.int_enum_list {
-    option.Some(v) -> [
-      #(
-        "intEnumList",
-        fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("intEnumList", fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer_list {
-    option.Some(v) -> [
-      #("integerList", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.nested_string_list {
-    option.Some(v) -> [
-      #(
-        "nestedStringList",
-        fn(xs) { json.array(xs, fn(xs) { json.array(xs, json.string) }) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("nestedStringList", fn(xs) { json.array(xs, fn(xs) { json.array(xs, json.string) }) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.string_list {
-    option.Some(v) -> [
-      #("stringList", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("stringList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.string_set {
-    option.Some(v) -> [
-      #("stringSet", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("stringSet", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.structure_list {
-    option.Some(v) -> [
-      #(
-        "structureList",
-        fn(xs) { json.array(xs, encode_structure_list_member_struct) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("structureList", fn(xs) { json.array(xs, encode_structure_list_member_struct) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.timestamp_list {
-    option.Some(v) -> [
-      #("timestampList", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("timestampList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_json_lists_input_output_struct() -> decode.Decoder(
-  JsonListsInputOutput,
-) {
-  use boolean_list <- decode.optional_field(
-    "booleanList",
-    option.None,
-    decode.optional(decode.list(decode.bool)),
-  )
-  use enum_list <- decode.optional_field(
-    "enumList",
-    option.None,
-    decode.optional(decode.list(decode_foo_enum_enum())),
-  )
-  use int_enum_list <- decode.optional_field(
-    "intEnumList",
-    option.None,
-    decode.optional(decode.list(decode_integer_enum_int_enum())),
-  )
-  use integer_list <- decode.optional_field(
-    "integerList",
-    option.None,
-    decode.optional(decode.list(decode.int)),
-  )
-  use nested_string_list <- decode.optional_field(
-    "nestedStringList",
-    option.None,
-    decode.optional(decode.list(decode.list(decode.string))),
-  )
-  use string_list <- decode.optional_field(
-    "stringList",
-    option.None,
-    decode.optional(decode.list(decode.string)),
-  )
-  use string_set <- decode.optional_field(
-    "stringSet",
-    option.None,
-    decode.optional(decode.list(decode.string)),
-  )
-  use structure_list <- decode.optional_field(
-    "structureList",
-    option.None,
-    decode.optional(decode.list(decode_structure_list_member_struct())),
-  )
-  use timestamp_list <- decode.optional_field(
-    "timestampList",
-    option.None,
-    decode.optional(decode.list(decode.int)),
-  )
+pub fn decode_json_lists_input_output_struct() -> decode.Decoder(JsonListsInputOutput) {
+  use boolean_list <- decode.optional_field("booleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use enum_list <- decode.optional_field("enumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use int_enum_list <- decode.optional_field("intEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use integer_list <- decode.optional_field("integerList", option.None, decode.optional(decode.list(decode.int)))
+  use nested_string_list <- decode.optional_field("nestedStringList", option.None, decode.optional(decode.list(decode.list(decode.string))))
+  use string_list <- decode.optional_field("stringList", option.None, decode.optional(decode.list(decode.string)))
+  use string_set <- decode.optional_field("stringSet", option.None, decode.optional(decode.list(decode.string)))
+  use structure_list <- decode.optional_field("structureList", option.None, decode.optional(decode.list(decode_structure_list_member_struct())))
+  use timestamp_list <- decode.optional_field("timestampList", option.None, decode.optional(decode.list(decode.int)))
   decode.success(JsonListsInputOutput(
     boolean_list: boolean_list,
     enum_list: enum_list,
@@ -3061,12 +2195,13 @@ pub fn decode_json_lists_input_output_struct() -> decode.Decoder(
 }
 
 pub type StructureListMember {
-  StructureListMember(a: option.Option(String), b: option.Option(String))
+  StructureListMember(
+    a: option.Option(String),
+    b: option.Option(String),
+  )
 }
 
-pub fn encode_structure_list_member_struct(
-  input: StructureListMember,
-) -> json.Json {
+pub fn encode_structure_list_member_struct(input: StructureListMember) -> json.Json {
   let pairs = []
   let pairs = case input.a {
     option.Some(v) -> [#("a", json.string(v)), ..pairs]
@@ -3079,20 +2214,13 @@ pub fn encode_structure_list_member_struct(
   json.object(pairs)
 }
 
-pub fn decode_structure_list_member_struct() -> decode.Decoder(
-  StructureListMember,
-) {
-  use a <- decode.optional_field(
-    "a",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use b <- decode.optional_field(
-    "b",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(StructureListMember(a: a, b: b))
+pub fn decode_structure_list_member_struct() -> decode.Decoder(StructureListMember) {
+  use a <- decode.optional_field("a", option.None, decode.optional(decode.string))
+  use b <- decode.optional_field("b", option.None, decode.optional(decode.string))
+  decode.success(StructureListMember(
+    a: a,
+    b: b,
+  ))
 }
 
 pub type JsonMapsInputOutput {
@@ -3105,120 +2233,37 @@ pub type JsonMapsInputOutput {
   )
 }
 
-pub fn encode_json_maps_input_output_struct(
-  input: JsonMapsInputOutput,
-) -> json.Json {
+pub fn encode_json_maps_input_output_struct(input: JsonMapsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.dense_boolean_map {
-    option.Some(v) -> [
-      #(
-        "denseBooleanMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.bool(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("denseBooleanMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.bool(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.dense_number_map {
-    option.Some(v) -> [
-      #(
-        "denseNumberMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.int(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("denseNumberMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.int(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.dense_set_map {
-    option.Some(v) -> [
-      #(
-        "denseSetMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) {
-              #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1))
-            }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("denseSetMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.dense_string_map {
-    option.Some(v) -> [
-      #(
-        "denseStringMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("denseStringMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.dense_struct_map {
-    option.Some(v) -> [
-      #(
-        "denseStructMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) {
-              #(pair.0, encode_greeting_struct_struct(pair.1))
-            }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("denseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_greeting_struct_struct(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_json_maps_input_output_struct() -> decode.Decoder(
-  JsonMapsInputOutput,
-) {
-  use dense_boolean_map <- decode.optional_field(
-    "denseBooleanMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.bool)),
-  )
-  use dense_number_map <- decode.optional_field(
-    "denseNumberMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.int)),
-  )
-  use dense_set_map <- decode.optional_field(
-    "denseSetMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.list(decode.string))),
-  )
-  use dense_string_map <- decode.optional_field(
-    "denseStringMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.string)),
-  )
-  use dense_struct_map <- decode.optional_field(
-    "denseStructMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())),
-  )
+pub fn decode_json_maps_input_output_struct() -> decode.Decoder(JsonMapsInputOutput) {
+  use dense_boolean_map <- decode.optional_field("denseBooleanMap", option.None, decode.optional(decode.dict(decode.string, decode.bool)))
+  use dense_number_map <- decode.optional_field("denseNumberMap", option.None, decode.optional(decode.dict(decode.string, decode.int)))
+  use dense_set_map <- decode.optional_field("denseSetMap", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
+  use dense_string_map <- decode.optional_field("denseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use dense_struct_map <- decode.optional_field("denseStructMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())))
   decode.success(JsonMapsInputOutput(
     dense_boolean_map: dense_boolean_map,
     dense_number_map: dense_number_map,
@@ -3229,7 +2274,9 @@ pub fn decode_json_maps_input_output_struct() -> decode.Decoder(
 }
 
 pub type GreetingStruct {
-  GreetingStruct(hi: option.Option(String))
+  GreetingStruct(
+    hi: option.Option(String),
+  )
 }
 
 pub fn encode_greeting_struct_struct(input: GreetingStruct) -> json.Json {
@@ -3242,12 +2289,10 @@ pub fn encode_greeting_struct_struct(input: GreetingStruct) -> json.Json {
 }
 
 pub fn decode_greeting_struct_struct() -> decode.Decoder(GreetingStruct) {
-  use hi <- decode.optional_field(
-    "hi",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(GreetingStruct(hi: hi))
+  use hi <- decode.optional_field("hi", option.None, decode.optional(decode.string))
+  decode.success(GreetingStruct(
+    hi: hi,
+  ))
 }
 
 pub type JsonTimestampsInputOutput {
@@ -3262,9 +2307,7 @@ pub type JsonTimestampsInputOutput {
   )
 }
 
-pub fn encode_json_timestamps_input_output_struct(
-  input: JsonTimestampsInputOutput,
-) -> json.Json {
+pub fn encode_json_timestamps_input_output_struct(input: JsonTimestampsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.date_time {
     option.Some(v) -> [#("dateTime", json.int(v)), ..pairs]
@@ -3297,44 +2340,14 @@ pub fn encode_json_timestamps_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_json_timestamps_input_output_struct() -> decode.Decoder(
-  JsonTimestampsInputOutput,
-) {
-  use date_time <- decode.optional_field(
-    "dateTime",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use date_time_on_target <- decode.optional_field(
-    "dateTimeOnTarget",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use epoch_seconds <- decode.optional_field(
-    "epochSeconds",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use epoch_seconds_on_target <- decode.optional_field(
-    "epochSecondsOnTarget",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use http_date <- decode.optional_field(
-    "httpDate",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use http_date_on_target <- decode.optional_field(
-    "httpDateOnTarget",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use normal <- decode.optional_field(
-    "normal",
-    option.None,
-    decode.optional(decode.int),
-  )
+pub fn decode_json_timestamps_input_output_struct() -> decode.Decoder(JsonTimestampsInputOutput) {
+  use date_time <- decode.optional_field("dateTime", option.None, decode.optional(decode.int))
+  use date_time_on_target <- decode.optional_field("dateTimeOnTarget", option.None, decode.optional(decode.int))
+  use epoch_seconds <- decode.optional_field("epochSeconds", option.None, decode.optional(decode.int))
+  use epoch_seconds_on_target <- decode.optional_field("epochSecondsOnTarget", option.None, decode.optional(decode.int))
+  use http_date <- decode.optional_field("httpDate", option.None, decode.optional(decode.int))
+  use http_date_on_target <- decode.optional_field("httpDateOnTarget", option.None, decode.optional(decode.int))
+  use normal <- decode.optional_field("normal", option.None, decode.optional(decode.int))
   decode.success(JsonTimestampsInputOutput(
     date_time: date_time,
     date_time_on_target: date_time_on_target,
@@ -3347,7 +2360,9 @@ pub fn decode_json_timestamps_input_output_struct() -> decode.Decoder(
 }
 
 pub type UnionInputOutput {
-  UnionInputOutput(contents: option.Option(MyUnion))
+  UnionInputOutput(
+    contents: option.Option(MyUnion),
+  )
 }
 
 pub fn encode_union_input_output_struct(input: UnionInputOutput) -> json.Json {
@@ -3360,12 +2375,10 @@ pub fn encode_union_input_output_struct(input: UnionInputOutput) -> json.Json {
 }
 
 pub fn decode_union_input_output_struct() -> decode.Decoder(UnionInputOutput) {
-  use contents <- decode.optional_field(
-    "contents",
-    option.None,
-    decode.optional(decode_my_union_union()),
-  )
-  decode.success(UnionInputOutput(contents: contents))
+  use contents <- decode.optional_field("contents", option.None, decode.optional(decode_my_union_union()))
+  decode.success(UnionInputOutput(
+    contents: contents,
+  ))
 }
 
 pub type MyUnion {
@@ -3383,90 +2396,43 @@ pub type MyUnion {
 
 pub fn encode_my_union_union(v: MyUnion) -> json.Json {
   case v {
-    MyUnionBlobValue(x) ->
-      json.object([
-        #(
-          "blobValue",
-          fn(b) { json.string(bit_array.base64_encode(b, True)) }(x),
-        ),
-      ])
+    MyUnionBlobValue(x) -> json.object([#("blobValue", fn(b) { json.string(bit_array.base64_encode(b, True)) }(x))])
     MyUnionBooleanValue(x) -> json.object([#("booleanValue", json.bool(x))])
-    MyUnionEnumValue(x) ->
-      json.object([#("enumValue", encode_foo_enum_enum(x))])
-    MyUnionListValue(x) ->
-      json.object([#("listValue", fn(xs) { json.array(xs, json.string) }(x))])
-    MyUnionMapValue(x) ->
-      json.object([
-        #(
-          "mapValue",
-          fn(d) {
-            json.object(
-              dict.to_list(d)
-              |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-            )
-          }(x),
-        ),
-      ])
+    MyUnionEnumValue(x) -> json.object([#("enumValue", encode_foo_enum_enum(x))])
+    MyUnionListValue(x) -> json.object([#("listValue", fn(xs) { json.array(xs, json.string) }(x))])
+    MyUnionMapValue(x) -> json.object([#("mapValue", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(x))])
     MyUnionNumberValue(x) -> json.object([#("numberValue", json.int(x))])
-    MyUnionRenamedStructureValue(x) ->
-      json.object([#("renamedStructureValue", encode_greeting_struct_struct(x))])
+    MyUnionRenamedStructureValue(x) -> json.object([#("renamedStructureValue", encode_greeting_struct_struct(x))])
     MyUnionStringValue(x) -> json.object([#("stringValue", json.string(x))])
-    MyUnionStructureValue(x) ->
-      json.object([#("structureValue", encode_greeting_struct_struct(x))])
+    MyUnionStructureValue(x) -> json.object([#("structureValue", encode_greeting_struct_struct(x))])
     MyUnionTimestampValue(x) -> json.object([#("timestampValue", json.int(x))])
   }
 }
 
 pub fn decode_my_union_union() -> decode.Decoder(MyUnion) {
   decode.one_of(
-    decode.field(
-      "blobValue",
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-      fn(x) { decode.success(MyUnionBlobValue(x)) },
-    ),
+    decode.field("blobValue", decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) }), fn(x) { decode.success(MyUnionBlobValue(x)) }),
     [
-      decode.field("booleanValue", decode.bool, fn(x) {
-        decode.success(MyUnionBooleanValue(x))
-      }),
-      decode.field("enumValue", decode_foo_enum_enum(), fn(x) {
-        decode.success(MyUnionEnumValue(x))
-      }),
-      decode.field("listValue", decode.list(decode.string), fn(x) {
-        decode.success(MyUnionListValue(x))
-      }),
-      decode.field("mapValue", decode.dict(decode.string, decode.string), fn(x) {
-        decode.success(MyUnionMapValue(x))
-      }),
-      decode.field("numberValue", decode.int, fn(x) {
-        decode.success(MyUnionNumberValue(x))
-      }),
-      decode.field(
-        "renamedStructureValue",
-        decode_greeting_struct_struct(),
-        fn(x) { decode.success(MyUnionRenamedStructureValue(x)) },
-      ),
-      decode.field("stringValue", decode.string, fn(x) {
-        decode.success(MyUnionStringValue(x))
-      }),
-      decode.field("structureValue", decode_greeting_struct_struct(), fn(x) {
-        decode.success(MyUnionStructureValue(x))
-      }),
-      decode.field("timestampValue", decode.int, fn(x) {
-        decode.success(MyUnionTimestampValue(x))
-      }),
+      decode.field("booleanValue", decode.bool, fn(x) { decode.success(MyUnionBooleanValue(x)) }),
+      decode.field("enumValue", decode_foo_enum_enum(), fn(x) { decode.success(MyUnionEnumValue(x)) }),
+      decode.field("listValue", decode.list(decode.string), fn(x) { decode.success(MyUnionListValue(x)) }),
+      decode.field("mapValue", decode.dict(decode.string, decode.string), fn(x) { decode.success(MyUnionMapValue(x)) }),
+      decode.field("numberValue", decode.int, fn(x) { decode.success(MyUnionNumberValue(x)) }),
+      decode.field("renamedStructureValue", decode_greeting_struct_struct(), fn(x) { decode.success(MyUnionRenamedStructureValue(x)) }),
+      decode.field("stringValue", decode.string, fn(x) { decode.success(MyUnionStringValue(x)) }),
+      decode.field("structureValue", decode_greeting_struct_struct(), fn(x) { decode.success(MyUnionStructureValue(x)) }),
+      decode.field("timestampValue", decode.int, fn(x) { decode.success(MyUnionTimestampValue(x)) }),
     ],
   )
 }
 
 pub type MalformedAcceptWithGenericStringOutput {
-  MalformedAcceptWithGenericStringOutput(payload: option.Option(String))
+  MalformedAcceptWithGenericStringOutput(
+    payload: option.Option(String),
+  )
 }
 
-pub fn encode_malformed_accept_with_generic_string_output_struct(
-  input: MalformedAcceptWithGenericStringOutput,
-) -> json.Json {
+pub fn encode_malformed_accept_with_generic_string_output_struct(input: MalformedAcceptWithGenericStringOutput) -> json.Json {
   let pairs = []
   let pairs = case input.payload {
     option.Some(v) -> [#("payload", json.string(v)), ..pairs]
@@ -3475,81 +2441,55 @@ pub fn encode_malformed_accept_with_generic_string_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_accept_with_generic_string_output_struct() -> decode.Decoder(
-  MalformedAcceptWithGenericStringOutput,
-) {
-  use payload <- decode.optional_field(
-    "payload",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(MalformedAcceptWithGenericStringOutput(payload: payload))
+pub fn decode_malformed_accept_with_generic_string_output_struct() -> decode.Decoder(MalformedAcceptWithGenericStringOutput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
+  decode.success(MalformedAcceptWithGenericStringOutput(
+    payload: payload,
+  ))
 }
 
 pub type MalformedAcceptWithPayloadOutput {
-  MalformedAcceptWithPayloadOutput(payload: option.Option(BitArray))
+  MalformedAcceptWithPayloadOutput(
+    payload: option.Option(BitArray),
+  )
 }
 
-pub fn encode_malformed_accept_with_payload_output_struct(
-  input: MalformedAcceptWithPayloadOutput,
-) -> json.Json {
+pub fn encode_malformed_accept_with_payload_output_struct(input: MalformedAcceptWithPayloadOutput) -> json.Json {
   let pairs = []
   let pairs = case input.payload {
-    option.Some(v) -> [
-      #("payload", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("payload", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_malformed_accept_with_payload_output_struct() -> decode.Decoder(
-  MalformedAcceptWithPayloadOutput,
-) {
-  use payload <- decode.optional_field(
-    "payload",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  decode.success(MalformedAcceptWithPayloadOutput(payload: payload))
+pub fn decode_malformed_accept_with_payload_output_struct() -> decode.Decoder(MalformedAcceptWithPayloadOutput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(MalformedAcceptWithPayloadOutput(
+    payload: payload,
+  ))
 }
 
 pub type MalformedBlobInput {
-  MalformedBlobInput(blob: option.Option(BitArray))
+  MalformedBlobInput(
+    blob: option.Option(BitArray),
+  )
 }
 
-pub fn encode_malformed_blob_input_struct(
-  input: MalformedBlobInput,
-) -> json.Json {
+pub fn encode_malformed_blob_input_struct(input: MalformedBlobInput) -> json.Json {
   let pairs = []
   let pairs = case input.blob {
-    option.Some(v) -> [
-      #("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_malformed_blob_input_struct() -> decode.Decoder(
-  MalformedBlobInput,
-) {
-  use blob <- decode.optional_field(
-    "blob",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  decode.success(MalformedBlobInput(blob: blob))
+pub fn decode_malformed_blob_input_struct() -> decode.Decoder(MalformedBlobInput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(MalformedBlobInput(
+    blob: blob,
+  ))
 }
 
 pub type MalformedBooleanInput {
@@ -3561,9 +2501,7 @@ pub type MalformedBooleanInput {
   )
 }
 
-pub fn encode_malformed_boolean_input_struct(
-  input: MalformedBooleanInput,
-) -> json.Json {
+pub fn encode_malformed_boolean_input_struct(input: MalformedBooleanInput) -> json.Json {
   let pairs = []
   let pairs = case input.boolean_in_body {
     option.Some(v) -> [#("booleanInBody", json.bool(v)), ..pairs]
@@ -3584,29 +2522,11 @@ pub fn encode_malformed_boolean_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_boolean_input_struct() -> decode.Decoder(
-  MalformedBooleanInput,
-) {
-  use boolean_in_body <- decode.optional_field(
-    "booleanInBody",
-    option.None,
-    decode.optional(decode.bool),
-  )
-  use boolean_in_header <- decode.optional_field(
-    "booleanInHeader",
-    option.None,
-    decode.optional(decode.bool),
-  )
-  use boolean_in_path <- decode.optional_field(
-    "booleanInPath",
-    option.None,
-    decode.optional(decode.bool),
-  )
-  use boolean_in_query <- decode.optional_field(
-    "booleanInQuery",
-    option.None,
-    decode.optional(decode.bool),
-  )
+pub fn decode_malformed_boolean_input_struct() -> decode.Decoder(MalformedBooleanInput) {
+  use boolean_in_body <- decode.optional_field("booleanInBody", option.None, decode.optional(decode.bool))
+  use boolean_in_header <- decode.optional_field("booleanInHeader", option.None, decode.optional(decode.bool))
+  use boolean_in_path <- decode.optional_field("booleanInPath", option.None, decode.optional(decode.bool))
+  use boolean_in_query <- decode.optional_field("booleanInQuery", option.None, decode.optional(decode.bool))
   decode.success(MalformedBooleanInput(
     boolean_in_body: boolean_in_body,
     boolean_in_header: boolean_in_header,
@@ -3624,9 +2544,7 @@ pub type MalformedByteInput {
   )
 }
 
-pub fn encode_malformed_byte_input_struct(
-  input: MalformedByteInput,
-) -> json.Json {
+pub fn encode_malformed_byte_input_struct(input: MalformedByteInput) -> json.Json {
   let pairs = []
   let pairs = case input.byte_in_body {
     option.Some(v) -> [#("byteInBody", json.int(v)), ..pairs]
@@ -3647,29 +2565,11 @@ pub fn encode_malformed_byte_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_byte_input_struct() -> decode.Decoder(
-  MalformedByteInput,
-) {
-  use byte_in_body <- decode.optional_field(
-    "byteInBody",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use byte_in_header <- decode.optional_field(
-    "byteInHeader",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use byte_in_path <- decode.optional_field(
-    "byteInPath",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use byte_in_query <- decode.optional_field(
-    "byteInQuery",
-    option.None,
-    decode.optional(decode.int),
-  )
+pub fn decode_malformed_byte_input_struct() -> decode.Decoder(MalformedByteInput) {
+  use byte_in_body <- decode.optional_field("byteInBody", option.None, decode.optional(decode.int))
+  use byte_in_header <- decode.optional_field("byteInHeader", option.None, decode.optional(decode.int))
+  use byte_in_path <- decode.optional_field("byteInPath", option.None, decode.optional(decode.int))
+  use byte_in_query <- decode.optional_field("byteInQuery", option.None, decode.optional(decode.int))
   decode.success(MalformedByteInput(
     byte_in_body: byte_in_body,
     byte_in_header: byte_in_header,
@@ -3679,12 +2579,12 @@ pub fn decode_malformed_byte_input_struct() -> decode.Decoder(
 }
 
 pub type MalformedContentTypeWithGenericStringInput {
-  MalformedContentTypeWithGenericStringInput(payload: option.Option(String))
+  MalformedContentTypeWithGenericStringInput(
+    payload: option.Option(String),
+  )
 }
 
-pub fn encode_malformed_content_type_with_generic_string_input_struct(
-  input: MalformedContentTypeWithGenericStringInput,
-) -> json.Json {
+pub fn encode_malformed_content_type_with_generic_string_input_struct(input: MalformedContentTypeWithGenericStringInput) -> json.Json {
   let pairs = []
   let pairs = case input.payload {
     option.Some(v) -> [#("payload", json.string(v)), ..pairs]
@@ -3693,24 +2593,20 @@ pub fn encode_malformed_content_type_with_generic_string_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_content_type_with_generic_string_input_struct() -> decode.Decoder(
-  MalformedContentTypeWithGenericStringInput,
-) {
-  use payload <- decode.optional_field(
-    "payload",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(MalformedContentTypeWithGenericStringInput(payload: payload))
+pub fn decode_malformed_content_type_with_generic_string_input_struct() -> decode.Decoder(MalformedContentTypeWithGenericStringInput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.string))
+  decode.success(MalformedContentTypeWithGenericStringInput(
+    payload: payload,
+  ))
 }
 
 pub type MalformedContentTypeWithoutBodyEmptyInputInput {
-  MalformedContentTypeWithoutBodyEmptyInputInput(header: option.Option(String))
+  MalformedContentTypeWithoutBodyEmptyInputInput(
+    header: option.Option(String),
+  )
 }
 
-pub fn encode_malformed_content_type_without_body_empty_input_input_struct(
-  input: MalformedContentTypeWithoutBodyEmptyInputInput,
-) -> json.Json {
+pub fn encode_malformed_content_type_without_body_empty_input_input_struct(input: MalformedContentTypeWithoutBodyEmptyInputInput) -> json.Json {
   let pairs = []
   let pairs = case input.header {
     option.Some(v) -> [#("header", json.string(v)), ..pairs]
@@ -3719,48 +2615,33 @@ pub fn encode_malformed_content_type_without_body_empty_input_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_content_type_without_body_empty_input_input_struct() -> decode.Decoder(
-  MalformedContentTypeWithoutBodyEmptyInputInput,
-) {
-  use header <- decode.optional_field(
-    "header",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(MalformedContentTypeWithoutBodyEmptyInputInput(header: header))
+pub fn decode_malformed_content_type_without_body_empty_input_input_struct() -> decode.Decoder(MalformedContentTypeWithoutBodyEmptyInputInput) {
+  use header <- decode.optional_field("header", option.None, decode.optional(decode.string))
+  decode.success(MalformedContentTypeWithoutBodyEmptyInputInput(
+    header: header,
+  ))
 }
 
 pub type MalformedContentTypeWithPayloadInput {
-  MalformedContentTypeWithPayloadInput(payload: option.Option(BitArray))
+  MalformedContentTypeWithPayloadInput(
+    payload: option.Option(BitArray),
+  )
 }
 
-pub fn encode_malformed_content_type_with_payload_input_struct(
-  input: MalformedContentTypeWithPayloadInput,
-) -> json.Json {
+pub fn encode_malformed_content_type_with_payload_input_struct(input: MalformedContentTypeWithPayloadInput) -> json.Json {
   let pairs = []
   let pairs = case input.payload {
-    option.Some(v) -> [
-      #("payload", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("payload", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_malformed_content_type_with_payload_input_struct() -> decode.Decoder(
-  MalformedContentTypeWithPayloadInput,
-) {
-  use payload <- decode.optional_field(
-    "payload",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  decode.success(MalformedContentTypeWithPayloadInput(payload: payload))
+pub fn decode_malformed_content_type_with_payload_input_struct() -> decode.Decoder(MalformedContentTypeWithPayloadInput) {
+  use payload <- decode.optional_field("payload", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  decode.success(MalformedContentTypeWithPayloadInput(
+    payload: payload,
+  ))
 }
 
 pub type MalformedDoubleInput {
@@ -3772,9 +2653,7 @@ pub type MalformedDoubleInput {
   )
 }
 
-pub fn encode_malformed_double_input_struct(
-  input: MalformedDoubleInput,
-) -> json.Json {
+pub fn encode_malformed_double_input_struct(input: MalformedDoubleInput) -> json.Json {
   let pairs = []
   let pairs = case input.double_in_body {
     option.Some(v) -> [#("doubleInBody", json_float.encode(v)), ..pairs]
@@ -3795,29 +2674,11 @@ pub fn encode_malformed_double_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_double_input_struct() -> decode.Decoder(
-  MalformedDoubleInput,
-) {
-  use double_in_body <- decode.optional_field(
-    "doubleInBody",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use double_in_header <- decode.optional_field(
-    "doubleInHeader",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use double_in_path <- decode.optional_field(
-    "doubleInPath",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use double_in_query <- decode.optional_field(
-    "doubleInQuery",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
+pub fn decode_malformed_double_input_struct() -> decode.Decoder(MalformedDoubleInput) {
+  use double_in_body <- decode.optional_field("doubleInBody", option.None, decode.optional(json_float.decoder()))
+  use double_in_header <- decode.optional_field("doubleInHeader", option.None, decode.optional(json_float.decoder()))
+  use double_in_path <- decode.optional_field("doubleInPath", option.None, decode.optional(json_float.decoder()))
+  use double_in_query <- decode.optional_field("doubleInQuery", option.None, decode.optional(json_float.decoder()))
   decode.success(MalformedDoubleInput(
     double_in_body: double_in_body,
     double_in_header: double_in_header,
@@ -3835,9 +2696,7 @@ pub type MalformedFloatInput {
   )
 }
 
-pub fn encode_malformed_float_input_struct(
-  input: MalformedFloatInput,
-) -> json.Json {
+pub fn encode_malformed_float_input_struct(input: MalformedFloatInput) -> json.Json {
   let pairs = []
   let pairs = case input.float_in_body {
     option.Some(v) -> [#("floatInBody", json_float.encode(v)), ..pairs]
@@ -3858,29 +2717,11 @@ pub fn encode_malformed_float_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_float_input_struct() -> decode.Decoder(
-  MalformedFloatInput,
-) {
-  use float_in_body <- decode.optional_field(
-    "floatInBody",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use float_in_header <- decode.optional_field(
-    "floatInHeader",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use float_in_path <- decode.optional_field(
-    "floatInPath",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use float_in_query <- decode.optional_field(
-    "floatInQuery",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
+pub fn decode_malformed_float_input_struct() -> decode.Decoder(MalformedFloatInput) {
+  use float_in_body <- decode.optional_field("floatInBody", option.None, decode.optional(json_float.decoder()))
+  use float_in_header <- decode.optional_field("floatInHeader", option.None, decode.optional(json_float.decoder()))
+  use float_in_path <- decode.optional_field("floatInPath", option.None, decode.optional(json_float.decoder()))
+  use float_in_query <- decode.optional_field("floatInQuery", option.None, decode.optional(json_float.decoder()))
   decode.success(MalformedFloatInput(
     float_in_body: float_in_body,
     float_in_header: float_in_header,
@@ -3898,9 +2739,7 @@ pub type MalformedIntegerInput {
   )
 }
 
-pub fn encode_malformed_integer_input_struct(
-  input: MalformedIntegerInput,
-) -> json.Json {
+pub fn encode_malformed_integer_input_struct(input: MalformedIntegerInput) -> json.Json {
   let pairs = []
   let pairs = case input.integer_in_body {
     option.Some(v) -> [#("integerInBody", json.int(v)), ..pairs]
@@ -3921,29 +2760,11 @@ pub fn encode_malformed_integer_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_integer_input_struct() -> decode.Decoder(
-  MalformedIntegerInput,
-) {
-  use integer_in_body <- decode.optional_field(
-    "integerInBody",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use integer_in_header <- decode.optional_field(
-    "integerInHeader",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use integer_in_path <- decode.optional_field(
-    "integerInPath",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use integer_in_query <- decode.optional_field(
-    "integerInQuery",
-    option.None,
-    decode.optional(decode.int),
-  )
+pub fn decode_malformed_integer_input_struct() -> decode.Decoder(MalformedIntegerInput) {
+  use integer_in_body <- decode.optional_field("integerInBody", option.None, decode.optional(decode.int))
+  use integer_in_header <- decode.optional_field("integerInHeader", option.None, decode.optional(decode.int))
+  use integer_in_path <- decode.optional_field("integerInPath", option.None, decode.optional(decode.int))
+  use integer_in_query <- decode.optional_field("integerInQuery", option.None, decode.optional(decode.int))
   decode.success(MalformedIntegerInput(
     integer_in_body: integer_in_body,
     integer_in_header: integer_in_header,
@@ -3953,32 +2774,25 @@ pub fn decode_malformed_integer_input_struct() -> decode.Decoder(
 }
 
 pub type MalformedListInput {
-  MalformedListInput(body_list: option.Option(List(String)))
+  MalformedListInput(
+    body_list: option.Option(List(String)),
+  )
 }
 
-pub fn encode_malformed_list_input_struct(
-  input: MalformedListInput,
-) -> json.Json {
+pub fn encode_malformed_list_input_struct(input: MalformedListInput) -> json.Json {
   let pairs = []
   let pairs = case input.body_list {
-    option.Some(v) -> [
-      #("bodyList", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("bodyList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_malformed_list_input_struct() -> decode.Decoder(
-  MalformedListInput,
-) {
-  use body_list <- decode.optional_field(
-    "bodyList",
-    option.None,
-    decode.optional(decode.list(decode.string)),
-  )
-  decode.success(MalformedListInput(body_list: body_list))
+pub fn decode_malformed_list_input_struct() -> decode.Decoder(MalformedListInput) {
+  use body_list <- decode.optional_field("bodyList", option.None, decode.optional(decode.list(decode.string)))
+  decode.success(MalformedListInput(
+    body_list: body_list,
+  ))
 }
 
 pub type MalformedLongInput {
@@ -3990,9 +2804,7 @@ pub type MalformedLongInput {
   )
 }
 
-pub fn encode_malformed_long_input_struct(
-  input: MalformedLongInput,
-) -> json.Json {
+pub fn encode_malformed_long_input_struct(input: MalformedLongInput) -> json.Json {
   let pairs = []
   let pairs = case input.long_in_body {
     option.Some(v) -> [#("longInBody", json.int(v)), ..pairs]
@@ -4013,29 +2825,11 @@ pub fn encode_malformed_long_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_long_input_struct() -> decode.Decoder(
-  MalformedLongInput,
-) {
-  use long_in_body <- decode.optional_field(
-    "longInBody",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use long_in_header <- decode.optional_field(
-    "longInHeader",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use long_in_path <- decode.optional_field(
-    "longInPath",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use long_in_query <- decode.optional_field(
-    "longInQuery",
-    option.None,
-    decode.optional(decode.int),
-  )
+pub fn decode_malformed_long_input_struct() -> decode.Decoder(MalformedLongInput) {
+  use long_in_body <- decode.optional_field("longInBody", option.None, decode.optional(decode.int))
+  use long_in_header <- decode.optional_field("longInHeader", option.None, decode.optional(decode.int))
+  use long_in_path <- decode.optional_field("longInPath", option.None, decode.optional(decode.int))
+  use long_in_query <- decode.optional_field("longInQuery", option.None, decode.optional(decode.int))
   decode.success(MalformedLongInput(
     long_in_body: long_in_body,
     long_in_header: long_in_header,
@@ -4045,38 +2839,25 @@ pub fn decode_malformed_long_input_struct() -> decode.Decoder(
 }
 
 pub type MalformedMapInput {
-  MalformedMapInput(body_map: option.Option(dict.Dict(String, String)))
+  MalformedMapInput(
+    body_map: option.Option(dict.Dict(String, String)),
+  )
 }
 
-pub fn encode_malformed_map_input_struct(
-  input: MalformedMapInput,
-) -> json.Json {
+pub fn encode_malformed_map_input_struct(input: MalformedMapInput) -> json.Json {
   let pairs = []
   let pairs = case input.body_map {
-    option.Some(v) -> [
-      #(
-        "bodyMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("bodyMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_malformed_map_input_struct() -> decode.Decoder(MalformedMapInput) {
-  use body_map <- decode.optional_field(
-    "bodyMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.string)),
-  )
-  decode.success(MalformedMapInput(body_map: body_map))
+  use body_map <- decode.optional_field("bodyMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  decode.success(MalformedMapInput(
+    body_map: body_map,
+  ))
 }
 
 pub type MalformedRequestBodyInput {
@@ -4086,9 +2867,7 @@ pub type MalformedRequestBodyInput {
   )
 }
 
-pub fn encode_malformed_request_body_input_struct(
-  input: MalformedRequestBodyInput,
-) -> json.Json {
+pub fn encode_malformed_request_body_input_struct(input: MalformedRequestBodyInput) -> json.Json {
   let pairs = []
   let pairs = case input.float {
     option.Some(v) -> [#("float", json_float.encode(v)), ..pairs]
@@ -4101,20 +2880,13 @@ pub fn encode_malformed_request_body_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_request_body_input_struct() -> decode.Decoder(
-  MalformedRequestBodyInput,
-) {
-  use float <- decode.optional_field(
-    "float",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use int <- decode.optional_field(
-    "int",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedRequestBodyInput(float: float, int: int))
+pub fn decode_malformed_request_body_input_struct() -> decode.Decoder(MalformedRequestBodyInput) {
+  use float <- decode.optional_field("float", option.None, decode.optional(json_float.decoder()))
+  use int <- decode.optional_field("int", option.None, decode.optional(decode.int))
+  decode.success(MalformedRequestBodyInput(
+    float: float,
+    int: int,
+  ))
 }
 
 pub type MalformedShortInput {
@@ -4126,9 +2898,7 @@ pub type MalformedShortInput {
   )
 }
 
-pub fn encode_malformed_short_input_struct(
-  input: MalformedShortInput,
-) -> json.Json {
+pub fn encode_malformed_short_input_struct(input: MalformedShortInput) -> json.Json {
   let pairs = []
   let pairs = case input.short_in_body {
     option.Some(v) -> [#("shortInBody", json.int(v)), ..pairs]
@@ -4149,29 +2919,11 @@ pub fn encode_malformed_short_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_short_input_struct() -> decode.Decoder(
-  MalformedShortInput,
-) {
-  use short_in_body <- decode.optional_field(
-    "shortInBody",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use short_in_header <- decode.optional_field(
-    "shortInHeader",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use short_in_path <- decode.optional_field(
-    "shortInPath",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use short_in_query <- decode.optional_field(
-    "shortInQuery",
-    option.None,
-    decode.optional(decode.int),
-  )
+pub fn decode_malformed_short_input_struct() -> decode.Decoder(MalformedShortInput) {
+  use short_in_body <- decode.optional_field("shortInBody", option.None, decode.optional(decode.int))
+  use short_in_header <- decode.optional_field("shortInHeader", option.None, decode.optional(decode.int))
+  use short_in_path <- decode.optional_field("shortInPath", option.None, decode.optional(decode.int))
+  use short_in_query <- decode.optional_field("shortInQuery", option.None, decode.optional(decode.int))
   decode.success(MalformedShortInput(
     short_in_body: short_in_body,
     short_in_header: short_in_header,
@@ -4181,12 +2933,12 @@ pub fn decode_malformed_short_input_struct() -> decode.Decoder(
 }
 
 pub type MalformedStringInput {
-  MalformedStringInput(blob: option.Option(String))
+  MalformedStringInput(
+    blob: option.Option(String),
+  )
 }
 
-pub fn encode_malformed_string_input_struct(
-  input: MalformedStringInput,
-) -> json.Json {
+pub fn encode_malformed_string_input_struct(input: MalformedStringInput) -> json.Json {
   let pairs = []
   let pairs = case input.blob {
     option.Some(v) -> [#("blob", json.string(v)), ..pairs]
@@ -4195,24 +2947,20 @@ pub fn encode_malformed_string_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_string_input_struct() -> decode.Decoder(
-  MalformedStringInput,
-) {
-  use blob <- decode.optional_field(
-    "blob",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(MalformedStringInput(blob: blob))
+pub fn decode_malformed_string_input_struct() -> decode.Decoder(MalformedStringInput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.string))
+  decode.success(MalformedStringInput(
+    blob: blob,
+  ))
 }
 
 pub type MalformedTimestampBodyDateTimeInput {
-  MalformedTimestampBodyDateTimeInput(timestamp: option.Option(Int))
+  MalformedTimestampBodyDateTimeInput(
+    timestamp: option.Option(Int),
+  )
 }
 
-pub fn encode_malformed_timestamp_body_date_time_input_struct(
-  input: MalformedTimestampBodyDateTimeInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_body_date_time_input_struct(input: MalformedTimestampBodyDateTimeInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -4221,24 +2969,20 @@ pub fn encode_malformed_timestamp_body_date_time_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_timestamp_body_date_time_input_struct() -> decode.Decoder(
-  MalformedTimestampBodyDateTimeInput,
-) {
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedTimestampBodyDateTimeInput(timestamp: timestamp))
+pub fn decode_malformed_timestamp_body_date_time_input_struct() -> decode.Decoder(MalformedTimestampBodyDateTimeInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  decode.success(MalformedTimestampBodyDateTimeInput(
+    timestamp: timestamp,
+  ))
 }
 
 pub type MalformedTimestampBodyDefaultInput {
-  MalformedTimestampBodyDefaultInput(timestamp: option.Option(Int))
+  MalformedTimestampBodyDefaultInput(
+    timestamp: option.Option(Int),
+  )
 }
 
-pub fn encode_malformed_timestamp_body_default_input_struct(
-  input: MalformedTimestampBodyDefaultInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_body_default_input_struct(input: MalformedTimestampBodyDefaultInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -4247,24 +2991,20 @@ pub fn encode_malformed_timestamp_body_default_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_timestamp_body_default_input_struct() -> decode.Decoder(
-  MalformedTimestampBodyDefaultInput,
-) {
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedTimestampBodyDefaultInput(timestamp: timestamp))
+pub fn decode_malformed_timestamp_body_default_input_struct() -> decode.Decoder(MalformedTimestampBodyDefaultInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  decode.success(MalformedTimestampBodyDefaultInput(
+    timestamp: timestamp,
+  ))
 }
 
 pub type MalformedTimestampBodyHttpDateInput {
-  MalformedTimestampBodyHttpDateInput(timestamp: option.Option(Int))
+  MalformedTimestampBodyHttpDateInput(
+    timestamp: option.Option(Int),
+  )
 }
 
-pub fn encode_malformed_timestamp_body_http_date_input_struct(
-  input: MalformedTimestampBodyHttpDateInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_body_http_date_input_struct(input: MalformedTimestampBodyHttpDateInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -4273,24 +3013,20 @@ pub fn encode_malformed_timestamp_body_http_date_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_timestamp_body_http_date_input_struct() -> decode.Decoder(
-  MalformedTimestampBodyHttpDateInput,
-) {
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedTimestampBodyHttpDateInput(timestamp: timestamp))
+pub fn decode_malformed_timestamp_body_http_date_input_struct() -> decode.Decoder(MalformedTimestampBodyHttpDateInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  decode.success(MalformedTimestampBodyHttpDateInput(
+    timestamp: timestamp,
+  ))
 }
 
 pub type MalformedTimestampHeaderDateTimeInput {
-  MalformedTimestampHeaderDateTimeInput(timestamp: option.Option(Int))
+  MalformedTimestampHeaderDateTimeInput(
+    timestamp: option.Option(Int),
+  )
 }
 
-pub fn encode_malformed_timestamp_header_date_time_input_struct(
-  input: MalformedTimestampHeaderDateTimeInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_header_date_time_input_struct(input: MalformedTimestampHeaderDateTimeInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -4299,24 +3035,20 @@ pub fn encode_malformed_timestamp_header_date_time_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_timestamp_header_date_time_input_struct() -> decode.Decoder(
-  MalformedTimestampHeaderDateTimeInput,
-) {
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedTimestampHeaderDateTimeInput(timestamp: timestamp))
+pub fn decode_malformed_timestamp_header_date_time_input_struct() -> decode.Decoder(MalformedTimestampHeaderDateTimeInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  decode.success(MalformedTimestampHeaderDateTimeInput(
+    timestamp: timestamp,
+  ))
 }
 
 pub type MalformedTimestampHeaderDefaultInput {
-  MalformedTimestampHeaderDefaultInput(timestamp: option.Option(Int))
+  MalformedTimestampHeaderDefaultInput(
+    timestamp: option.Option(Int),
+  )
 }
 
-pub fn encode_malformed_timestamp_header_default_input_struct(
-  input: MalformedTimestampHeaderDefaultInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_header_default_input_struct(input: MalformedTimestampHeaderDefaultInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -4325,24 +3057,20 @@ pub fn encode_malformed_timestamp_header_default_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_timestamp_header_default_input_struct() -> decode.Decoder(
-  MalformedTimestampHeaderDefaultInput,
-) {
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedTimestampHeaderDefaultInput(timestamp: timestamp))
+pub fn decode_malformed_timestamp_header_default_input_struct() -> decode.Decoder(MalformedTimestampHeaderDefaultInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  decode.success(MalformedTimestampHeaderDefaultInput(
+    timestamp: timestamp,
+  ))
 }
 
 pub type MalformedTimestampHeaderEpochInput {
-  MalformedTimestampHeaderEpochInput(timestamp: option.Option(Int))
+  MalformedTimestampHeaderEpochInput(
+    timestamp: option.Option(Int),
+  )
 }
 
-pub fn encode_malformed_timestamp_header_epoch_input_struct(
-  input: MalformedTimestampHeaderEpochInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_header_epoch_input_struct(input: MalformedTimestampHeaderEpochInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -4351,24 +3079,20 @@ pub fn encode_malformed_timestamp_header_epoch_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_timestamp_header_epoch_input_struct() -> decode.Decoder(
-  MalformedTimestampHeaderEpochInput,
-) {
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedTimestampHeaderEpochInput(timestamp: timestamp))
+pub fn decode_malformed_timestamp_header_epoch_input_struct() -> decode.Decoder(MalformedTimestampHeaderEpochInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  decode.success(MalformedTimestampHeaderEpochInput(
+    timestamp: timestamp,
+  ))
 }
 
 pub type MalformedTimestampPathDefaultInput {
-  MalformedTimestampPathDefaultInput(timestamp: option.Option(Int))
+  MalformedTimestampPathDefaultInput(
+    timestamp: option.Option(Int),
+  )
 }
 
-pub fn encode_malformed_timestamp_path_default_input_struct(
-  input: MalformedTimestampPathDefaultInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_path_default_input_struct(input: MalformedTimestampPathDefaultInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -4377,24 +3101,20 @@ pub fn encode_malformed_timestamp_path_default_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_timestamp_path_default_input_struct() -> decode.Decoder(
-  MalformedTimestampPathDefaultInput,
-) {
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedTimestampPathDefaultInput(timestamp: timestamp))
+pub fn decode_malformed_timestamp_path_default_input_struct() -> decode.Decoder(MalformedTimestampPathDefaultInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  decode.success(MalformedTimestampPathDefaultInput(
+    timestamp: timestamp,
+  ))
 }
 
 pub type MalformedTimestampPathEpochInput {
-  MalformedTimestampPathEpochInput(timestamp: option.Option(Int))
+  MalformedTimestampPathEpochInput(
+    timestamp: option.Option(Int),
+  )
 }
 
-pub fn encode_malformed_timestamp_path_epoch_input_struct(
-  input: MalformedTimestampPathEpochInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_path_epoch_input_struct(input: MalformedTimestampPathEpochInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -4403,24 +3123,20 @@ pub fn encode_malformed_timestamp_path_epoch_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_timestamp_path_epoch_input_struct() -> decode.Decoder(
-  MalformedTimestampPathEpochInput,
-) {
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedTimestampPathEpochInput(timestamp: timestamp))
+pub fn decode_malformed_timestamp_path_epoch_input_struct() -> decode.Decoder(MalformedTimestampPathEpochInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  decode.success(MalformedTimestampPathEpochInput(
+    timestamp: timestamp,
+  ))
 }
 
 pub type MalformedTimestampPathHttpDateInput {
-  MalformedTimestampPathHttpDateInput(timestamp: option.Option(Int))
+  MalformedTimestampPathHttpDateInput(
+    timestamp: option.Option(Int),
+  )
 }
 
-pub fn encode_malformed_timestamp_path_http_date_input_struct(
-  input: MalformedTimestampPathHttpDateInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_path_http_date_input_struct(input: MalformedTimestampPathHttpDateInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -4429,24 +3145,20 @@ pub fn encode_malformed_timestamp_path_http_date_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_timestamp_path_http_date_input_struct() -> decode.Decoder(
-  MalformedTimestampPathHttpDateInput,
-) {
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedTimestampPathHttpDateInput(timestamp: timestamp))
+pub fn decode_malformed_timestamp_path_http_date_input_struct() -> decode.Decoder(MalformedTimestampPathHttpDateInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  decode.success(MalformedTimestampPathHttpDateInput(
+    timestamp: timestamp,
+  ))
 }
 
 pub type MalformedTimestampQueryDefaultInput {
-  MalformedTimestampQueryDefaultInput(timestamp: option.Option(Int))
+  MalformedTimestampQueryDefaultInput(
+    timestamp: option.Option(Int),
+  )
 }
 
-pub fn encode_malformed_timestamp_query_default_input_struct(
-  input: MalformedTimestampQueryDefaultInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_query_default_input_struct(input: MalformedTimestampQueryDefaultInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -4455,24 +3167,20 @@ pub fn encode_malformed_timestamp_query_default_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_timestamp_query_default_input_struct() -> decode.Decoder(
-  MalformedTimestampQueryDefaultInput,
-) {
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedTimestampQueryDefaultInput(timestamp: timestamp))
+pub fn decode_malformed_timestamp_query_default_input_struct() -> decode.Decoder(MalformedTimestampQueryDefaultInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  decode.success(MalformedTimestampQueryDefaultInput(
+    timestamp: timestamp,
+  ))
 }
 
 pub type MalformedTimestampQueryEpochInput {
-  MalformedTimestampQueryEpochInput(timestamp: option.Option(Int))
+  MalformedTimestampQueryEpochInput(
+    timestamp: option.Option(Int),
+  )
 }
 
-pub fn encode_malformed_timestamp_query_epoch_input_struct(
-  input: MalformedTimestampQueryEpochInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_query_epoch_input_struct(input: MalformedTimestampQueryEpochInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -4481,24 +3189,20 @@ pub fn encode_malformed_timestamp_query_epoch_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_timestamp_query_epoch_input_struct() -> decode.Decoder(
-  MalformedTimestampQueryEpochInput,
-) {
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedTimestampQueryEpochInput(timestamp: timestamp))
+pub fn decode_malformed_timestamp_query_epoch_input_struct() -> decode.Decoder(MalformedTimestampQueryEpochInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  decode.success(MalformedTimestampQueryEpochInput(
+    timestamp: timestamp,
+  ))
 }
 
 pub type MalformedTimestampQueryHttpDateInput {
-  MalformedTimestampQueryHttpDateInput(timestamp: option.Option(Int))
+  MalformedTimestampQueryHttpDateInput(
+    timestamp: option.Option(Int),
+  )
 }
 
-pub fn encode_malformed_timestamp_query_http_date_input_struct(
-  input: MalformedTimestampQueryHttpDateInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_query_http_date_input_struct(input: MalformedTimestampQueryHttpDateInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -4507,24 +3211,20 @@ pub fn encode_malformed_timestamp_query_http_date_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_timestamp_query_http_date_input_struct() -> decode.Decoder(
-  MalformedTimestampQueryHttpDateInput,
-) {
-  use timestamp <- decode.optional_field(
-    "timestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(MalformedTimestampQueryHttpDateInput(timestamp: timestamp))
+pub fn decode_malformed_timestamp_query_http_date_input_struct() -> decode.Decoder(MalformedTimestampQueryHttpDateInput) {
+  use timestamp <- decode.optional_field("timestamp", option.None, decode.optional(decode.int))
+  decode.success(MalformedTimestampQueryHttpDateInput(
+    timestamp: timestamp,
+  ))
 }
 
 pub type MalformedUnionInput {
-  MalformedUnionInput(union: option.Option(SimpleUnion))
+  MalformedUnionInput(
+    union: option.Option(SimpleUnion),
+  )
 }
 
-pub fn encode_malformed_union_input_struct(
-  input: MalformedUnionInput,
-) -> json.Json {
+pub fn encode_malformed_union_input_struct(input: MalformedUnionInput) -> json.Json {
   let pairs = []
   let pairs = case input.union {
     option.Some(v) -> [#("union", encode_simple_union_union(v)), ..pairs]
@@ -4533,15 +3233,11 @@ pub fn encode_malformed_union_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_malformed_union_input_struct() -> decode.Decoder(
-  MalformedUnionInput,
-) {
-  use union <- decode.optional_field(
-    "union",
-    option.None,
-    decode.optional(decode_simple_union_union()),
-  )
-  decode.success(MalformedUnionInput(union: union))
+pub fn decode_malformed_union_input_struct() -> decode.Decoder(MalformedUnionInput) {
+  use union <- decode.optional_field("union", option.None, decode.optional(decode_simple_union_union()))
+  decode.success(MalformedUnionInput(
+    union: union,
+  ))
 }
 
 pub type SimpleUnion {
@@ -4560,20 +3256,18 @@ pub fn decode_simple_union_union() -> decode.Decoder(SimpleUnion) {
   decode.one_of(
     decode.field("int", decode.int, fn(x) { decode.success(SimpleUnionInt(x)) }),
     [
-      decode.field("string", decode.string, fn(x) {
-        decode.success(SimpleUnionString(x))
-      }),
+      decode.field("string", decode.string, fn(x) { decode.success(SimpleUnionString(x)) }),
     ],
   )
 }
 
 pub type MediaTypeHeaderInput {
-  MediaTypeHeaderInput(json: option.Option(String))
+  MediaTypeHeaderInput(
+    json: option.Option(String),
+  )
 }
 
-pub fn encode_media_type_header_input_struct(
-  input: MediaTypeHeaderInput,
-) -> json.Json {
+pub fn encode_media_type_header_input_struct(input: MediaTypeHeaderInput) -> json.Json {
   let pairs = []
   let pairs = case input.json {
     option.Some(v) -> [#("json", json.string(v)), ..pairs]
@@ -4582,24 +3276,20 @@ pub fn encode_media_type_header_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_media_type_header_input_struct() -> decode.Decoder(
-  MediaTypeHeaderInput,
-) {
-  use json <- decode.optional_field(
-    "json",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(MediaTypeHeaderInput(json: json))
+pub fn decode_media_type_header_input_struct() -> decode.Decoder(MediaTypeHeaderInput) {
+  use json <- decode.optional_field("json", option.None, decode.optional(decode.string))
+  decode.success(MediaTypeHeaderInput(
+    json: json,
+  ))
 }
 
 pub type MediaTypeHeaderOutput {
-  MediaTypeHeaderOutput(json: option.Option(String))
+  MediaTypeHeaderOutput(
+    json: option.Option(String),
+  )
 }
 
-pub fn encode_media_type_header_output_struct(
-  input: MediaTypeHeaderOutput,
-) -> json.Json {
+pub fn encode_media_type_header_output_struct(input: MediaTypeHeaderOutput) -> json.Json {
   let pairs = []
   let pairs = case input.json {
     option.Some(v) -> [#("json", json.string(v)), ..pairs]
@@ -4608,30 +3298,22 @@ pub fn encode_media_type_header_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_media_type_header_output_struct() -> decode.Decoder(
-  MediaTypeHeaderOutput,
-) {
-  use json <- decode.optional_field(
-    "json",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(MediaTypeHeaderOutput(json: json))
+pub fn decode_media_type_header_output_struct() -> decode.Decoder(MediaTypeHeaderOutput) {
+  use json <- decode.optional_field("json", option.None, decode.optional(decode.string))
+  decode.success(MediaTypeHeaderOutput(
+    json: json,
+  ))
 }
 
 pub type NoInputAndOutputOutput {
   NoInputAndOutputOutput
 }
 
-pub fn encode_no_input_and_output_output_struct(
-  _v: NoInputAndOutputOutput,
-) -> json.Json {
+pub fn encode_no_input_and_output_output_struct(_v: NoInputAndOutputOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_no_input_and_output_output_struct() -> decode.Decoder(
-  NoInputAndOutputOutput,
-) {
+pub fn decode_no_input_and_output_output_struct() -> decode.Decoder(NoInputAndOutputOutput) {
   decode.success(NoInputAndOutputOutput)
 }
 
@@ -4643,9 +3325,7 @@ pub type NullAndEmptyHeadersIO {
   )
 }
 
-pub fn encode_null_and_empty_headers_io_struct(
-  input: NullAndEmptyHeadersIO,
-) -> json.Json {
+pub fn encode_null_and_empty_headers_io_struct(input: NullAndEmptyHeadersIO) -> json.Json {
   let pairs = []
   let pairs = case input.a {
     option.Some(v) -> [#("a", json.string(v)), ..pairs]
@@ -4656,34 +3336,21 @@ pub fn encode_null_and_empty_headers_io_struct(
     option.None -> pairs
   }
   let pairs = case input.c {
-    option.Some(v) -> [
-      #("c", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("c", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_null_and_empty_headers_io_struct() -> decode.Decoder(
-  NullAndEmptyHeadersIO,
-) {
-  use a <- decode.optional_field(
-    "a",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use b <- decode.optional_field(
-    "b",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use c <- decode.optional_field(
-    "c",
-    option.None,
-    decode.optional(decode.list(decode.string)),
-  )
-  decode.success(NullAndEmptyHeadersIO(a: a, b: b, c: c))
+pub fn decode_null_and_empty_headers_io_struct() -> decode.Decoder(NullAndEmptyHeadersIO) {
+  use a <- decode.optional_field("a", option.None, decode.optional(decode.string))
+  use b <- decode.optional_field("b", option.None, decode.optional(decode.string))
+  use c <- decode.optional_field("c", option.None, decode.optional(decode.list(decode.string)))
+  decode.success(NullAndEmptyHeadersIO(
+    a: a,
+    b: b,
+    c: c,
+  ))
 }
 
 pub type OmitsNullSerializesEmptyStringInput {
@@ -4693,9 +3360,7 @@ pub type OmitsNullSerializesEmptyStringInput {
   )
 }
 
-pub fn encode_omits_null_serializes_empty_string_input_struct(
-  input: OmitsNullSerializesEmptyStringInput,
-) -> json.Json {
+pub fn encode_omits_null_serializes_empty_string_input_struct(input: OmitsNullSerializesEmptyStringInput) -> json.Json {
   let pairs = []
   let pairs = case input.empty_string {
     option.Some(v) -> [#("emptyString", json.string(v)), ..pairs]
@@ -4708,19 +3373,9 @@ pub fn encode_omits_null_serializes_empty_string_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_omits_null_serializes_empty_string_input_struct() -> decode.Decoder(
-  OmitsNullSerializesEmptyStringInput,
-) {
-  use empty_string <- decode.optional_field(
-    "emptyString",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use null_value <- decode.optional_field(
-    "nullValue",
-    option.None,
-    decode.optional(decode.string),
-  )
+pub fn decode_omits_null_serializes_empty_string_input_struct() -> decode.Decoder(OmitsNullSerializesEmptyStringInput) {
+  use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
+  use null_value <- decode.optional_field("nullValue", option.None, decode.optional(decode.string))
   decode.success(OmitsNullSerializesEmptyStringInput(
     empty_string: empty_string,
     null_value: null_value,
@@ -4739,103 +3394,47 @@ pub type OmitsSerializingEmptyListsInput {
   )
 }
 
-pub fn encode_omits_serializing_empty_lists_input_struct(
-  input: OmitsSerializingEmptyListsInput,
-) -> json.Json {
+pub fn encode_omits_serializing_empty_lists_input_struct(input: OmitsSerializingEmptyListsInput) -> json.Json {
   let pairs = []
   let pairs = case input.query_boolean_list {
-    option.Some(v) -> [
-      #("queryBooleanList", fn(xs) { json.array(xs, json.bool) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryBooleanList", fn(xs) { json.array(xs, json.bool) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_double_list {
-    option.Some(v) -> [
-      #("queryDoubleList", fn(xs) { json.array(xs, json_float.encode) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryDoubleList", fn(xs) { json.array(xs, json_float.encode) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_enum_list {
-    option.Some(v) -> [
-      #("queryEnumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryEnumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_integer_enum_list {
-    option.Some(v) -> [
-      #(
-        "queryIntegerEnumList",
-        fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryIntegerEnumList", fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_integer_list {
-    option.Some(v) -> [
-      #("queryIntegerList", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryIntegerList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_string_list {
-    option.Some(v) -> [
-      #("queryStringList", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryStringList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.query_timestamp_list {
-    option.Some(v) -> [
-      #("queryTimestampList", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("queryTimestampList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_omits_serializing_empty_lists_input_struct() -> decode.Decoder(
-  OmitsSerializingEmptyListsInput,
-) {
-  use query_boolean_list <- decode.optional_field(
-    "queryBooleanList",
-    option.None,
-    decode.optional(decode.list(decode.bool)),
-  )
-  use query_double_list <- decode.optional_field(
-    "queryDoubleList",
-    option.None,
-    decode.optional(decode.list(json_float.decoder())),
-  )
-  use query_enum_list <- decode.optional_field(
-    "queryEnumList",
-    option.None,
-    decode.optional(decode.list(decode_foo_enum_enum())),
-  )
-  use query_integer_enum_list <- decode.optional_field(
-    "queryIntegerEnumList",
-    option.None,
-    decode.optional(decode.list(decode_integer_enum_int_enum())),
-  )
-  use query_integer_list <- decode.optional_field(
-    "queryIntegerList",
-    option.None,
-    decode.optional(decode.list(decode.int)),
-  )
-  use query_string_list <- decode.optional_field(
-    "queryStringList",
-    option.None,
-    decode.optional(decode.list(decode.string)),
-  )
-  use query_timestamp_list <- decode.optional_field(
-    "queryTimestampList",
-    option.None,
-    decode.optional(decode.list(decode.int)),
-  )
+pub fn decode_omits_serializing_empty_lists_input_struct() -> decode.Decoder(OmitsSerializingEmptyListsInput) {
+  use query_boolean_list <- decode.optional_field("queryBooleanList", option.None, decode.optional(decode.list(decode.bool)))
+  use query_double_list <- decode.optional_field("queryDoubleList", option.None, decode.optional(decode.list(json_float.decoder())))
+  use query_enum_list <- decode.optional_field("queryEnumList", option.None, decode.optional(decode.list(decode_foo_enum_enum())))
+  use query_integer_enum_list <- decode.optional_field("queryIntegerEnumList", option.None, decode.optional(decode.list(decode_integer_enum_int_enum())))
+  use query_integer_list <- decode.optional_field("queryIntegerList", option.None, decode.optional(decode.list(decode.int)))
+  use query_string_list <- decode.optional_field("queryStringList", option.None, decode.optional(decode.list(decode.string)))
+  use query_timestamp_list <- decode.optional_field("queryTimestampList", option.None, decode.optional(decode.list(decode.int)))
   decode.success(OmitsSerializingEmptyListsInput(
     query_boolean_list: query_boolean_list,
     query_double_list: query_double_list,
@@ -4856,15 +3455,10 @@ pub type OperationWithDefaultsInput {
   )
 }
 
-pub fn encode_operation_with_defaults_input_struct(
-  input: OperationWithDefaultsInput,
-) -> json.Json {
+pub fn encode_operation_with_defaults_input_struct(input: OperationWithDefaultsInput) -> json.Json {
   let pairs = []
   let pairs = case input.client_optional_defaults {
-    option.Some(v) -> [
-      #("clientOptionalDefaults", encode_client_optional_defaults_struct(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("clientOptionalDefaults", encode_client_optional_defaults_struct(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.defaults {
@@ -4882,29 +3476,11 @@ pub fn encode_operation_with_defaults_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_operation_with_defaults_input_struct() -> decode.Decoder(
-  OperationWithDefaultsInput,
-) {
-  use client_optional_defaults <- decode.optional_field(
-    "clientOptionalDefaults",
-    option.None,
-    decode.optional(decode_client_optional_defaults_struct()),
-  )
-  use defaults <- decode.optional_field(
-    "defaults",
-    option.None,
-    decode.optional(decode_defaults_struct()),
-  )
-  use other_top_level_default <- decode.optional_field(
-    "otherTopLevelDefault",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use top_level_default <- decode.optional_field(
-    "topLevelDefault",
-    option.None,
-    decode.optional(decode.string),
-  )
+pub fn decode_operation_with_defaults_input_struct() -> decode.Decoder(OperationWithDefaultsInput) {
+  use client_optional_defaults <- decode.optional_field("clientOptionalDefaults", option.None, decode.optional(decode_client_optional_defaults_struct()))
+  use defaults <- decode.optional_field("defaults", option.None, decode.optional(decode_defaults_struct()))
+  use other_top_level_default <- decode.optional_field("otherTopLevelDefault", option.None, decode.optional(decode.int))
+  use top_level_default <- decode.optional_field("topLevelDefault", option.None, decode.optional(decode.string))
   decode.success(OperationWithDefaultsInput(
     client_optional_defaults: client_optional_defaults,
     defaults: defaults,
@@ -4914,12 +3490,12 @@ pub fn decode_operation_with_defaults_input_struct() -> decode.Decoder(
 }
 
 pub type ClientOptionalDefaults {
-  ClientOptionalDefaults(member: option.Option(Int))
+  ClientOptionalDefaults(
+    member: option.Option(Int),
+  )
 }
 
-pub fn encode_client_optional_defaults_struct(
-  input: ClientOptionalDefaults,
-) -> json.Json {
+pub fn encode_client_optional_defaults_struct(input: ClientOptionalDefaults) -> json.Json {
   let pairs = []
   let pairs = case input.member {
     option.Some(v) -> [#("member", json.int(v)), ..pairs]
@@ -4928,15 +3504,11 @@ pub fn encode_client_optional_defaults_struct(
   json.object(pairs)
 }
 
-pub fn decode_client_optional_defaults_struct() -> decode.Decoder(
-  ClientOptionalDefaults,
-) {
-  use member <- decode.optional_field(
-    "member",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(ClientOptionalDefaults(member: member))
+pub fn decode_client_optional_defaults_struct() -> decode.Decoder(ClientOptionalDefaults) {
+  use member <- decode.optional_field("member", option.None, decode.optional(decode.int))
+  decode.success(ClientOptionalDefaults(
+    member: member,
+  ))
 }
 
 pub type Defaults {
@@ -4975,13 +3547,7 @@ pub type Defaults {
 pub fn encode_defaults_struct(input: Defaults) -> json.Json {
   let pairs = []
   let pairs = case input.default_blob {
-    option.Some(v) -> [
-      #(
-        "defaultBlob",
-        fn(b) { json.string(bit_array.base64_encode(b, True)) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("defaultBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.default_boolean {
@@ -5021,10 +3587,7 @@ pub fn encode_defaults_struct(input: Defaults) -> json.Json {
     option.None -> pairs
   }
   let pairs = case input.default_int_enum {
-    option.Some(v) -> [
-      #("defaultIntEnum", encode_test_int_enum_int_enum(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("defaultIntEnum", encode_test_int_enum_int_enum(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.default_integer {
@@ -5032,10 +3595,7 @@ pub fn encode_defaults_struct(input: Defaults) -> json.Json {
     option.None -> pairs
   }
   let pairs = case input.default_list {
-    option.Some(v) -> [
-      #("defaultList", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("defaultList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.default_long {
@@ -5043,18 +3603,7 @@ pub fn encode_defaults_struct(input: Defaults) -> json.Json {
     option.None -> pairs
   }
   let pairs = case input.default_map {
-    option.Some(v) -> [
-      #(
-        "defaultMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("defaultMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.default_null_document {
@@ -5074,10 +3623,7 @@ pub fn encode_defaults_struct(input: Defaults) -> json.Json {
     option.None -> pairs
   }
   let pairs = case input.empty_blob {
-    option.Some(v) -> [
-      #("emptyBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("emptyBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.empty_string {
@@ -5116,154 +3662,34 @@ pub fn encode_defaults_struct(input: Defaults) -> json.Json {
 }
 
 pub fn decode_defaults_struct() -> decode.Decoder(Defaults) {
-  use default_blob <- decode.optional_field(
-    "defaultBlob",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  use default_boolean <- decode.optional_field(
-    "defaultBoolean",
-    option.None,
-    decode.optional(decode.bool),
-  )
-  use default_byte <- decode.optional_field(
-    "defaultByte",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use default_document_boolean <- decode.optional_field(
-    "defaultDocumentBoolean",
-    option.None,
-    decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })),
-  )
-  use default_document_list <- decode.optional_field(
-    "defaultDocumentList",
-    option.None,
-    decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })),
-  )
-  use default_document_map <- decode.optional_field(
-    "defaultDocumentMap",
-    option.None,
-    decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })),
-  )
-  use default_document_string <- decode.optional_field(
-    "defaultDocumentString",
-    option.None,
-    decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })),
-  )
-  use default_double <- decode.optional_field(
-    "defaultDouble",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use default_enum <- decode.optional_field(
-    "defaultEnum",
-    option.None,
-    decode.optional(decode_test_enum_enum()),
-  )
-  use default_float <- decode.optional_field(
-    "defaultFloat",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use default_int_enum <- decode.optional_field(
-    "defaultIntEnum",
-    option.None,
-    decode.optional(decode_test_int_enum_int_enum()),
-  )
-  use default_integer <- decode.optional_field(
-    "defaultInteger",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use default_list <- decode.optional_field(
-    "defaultList",
-    option.None,
-    decode.optional(decode.list(decode.string)),
-  )
-  use default_long <- decode.optional_field(
-    "defaultLong",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use default_map <- decode.optional_field(
-    "defaultMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.string)),
-  )
-  use default_null_document <- decode.optional_field(
-    "defaultNullDocument",
-    option.None,
-    decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })),
-  )
-  use default_short <- decode.optional_field(
-    "defaultShort",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use default_string <- decode.optional_field(
-    "defaultString",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use default_timestamp <- decode.optional_field(
-    "defaultTimestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use empty_blob <- decode.optional_field(
-    "emptyBlob",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  use empty_string <- decode.optional_field(
-    "emptyString",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use false_boolean <- decode.optional_field(
-    "falseBoolean",
-    option.None,
-    decode.optional(decode.bool),
-  )
-  use zero_byte <- decode.optional_field(
-    "zeroByte",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use zero_double <- decode.optional_field(
-    "zeroDouble",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use zero_float <- decode.optional_field(
-    "zeroFloat",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use zero_integer <- decode.optional_field(
-    "zeroInteger",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use zero_long <- decode.optional_field(
-    "zeroLong",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use zero_short <- decode.optional_field(
-    "zeroShort",
-    option.None,
-    decode.optional(decode.int),
-  )
+  use default_blob <- decode.optional_field("defaultBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use default_boolean <- decode.optional_field("defaultBoolean", option.None, decode.optional(decode.bool))
+  use default_byte <- decode.optional_field("defaultByte", option.None, decode.optional(decode.int))
+  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_double <- decode.optional_field("defaultDouble", option.None, decode.optional(json_float.decoder()))
+  use default_enum <- decode.optional_field("defaultEnum", option.None, decode.optional(decode_test_enum_enum()))
+  use default_float <- decode.optional_field("defaultFloat", option.None, decode.optional(json_float.decoder()))
+  use default_int_enum <- decode.optional_field("defaultIntEnum", option.None, decode.optional(decode_test_int_enum_int_enum()))
+  use default_integer <- decode.optional_field("defaultInteger", option.None, decode.optional(decode.int))
+  use default_list <- decode.optional_field("defaultList", option.None, decode.optional(decode.list(decode.string)))
+  use default_long <- decode.optional_field("defaultLong", option.None, decode.optional(decode.int))
+  use default_map <- decode.optional_field("defaultMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_short <- decode.optional_field("defaultShort", option.None, decode.optional(decode.int))
+  use default_string <- decode.optional_field("defaultString", option.None, decode.optional(decode.string))
+  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(decode.int))
+  use empty_blob <- decode.optional_field("emptyBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
+  use false_boolean <- decode.optional_field("falseBoolean", option.None, decode.optional(decode.bool))
+  use zero_byte <- decode.optional_field("zeroByte", option.None, decode.optional(decode.int))
+  use zero_double <- decode.optional_field("zeroDouble", option.None, decode.optional(json_float.decoder()))
+  use zero_float <- decode.optional_field("zeroFloat", option.None, decode.optional(json_float.decoder()))
+  use zero_integer <- decode.optional_field("zeroInteger", option.None, decode.optional(decode.int))
+  use zero_long <- decode.optional_field("zeroLong", option.None, decode.optional(decode.int))
+  use zero_short <- decode.optional_field("zeroShort", option.None, decode.optional(decode.int))
   decode.success(Defaults(
     default_blob: default_blob,
     default_boolean: default_boolean,
@@ -5376,18 +3802,10 @@ pub type OperationWithDefaultsOutput {
   )
 }
 
-pub fn encode_operation_with_defaults_output_struct(
-  input: OperationWithDefaultsOutput,
-) -> json.Json {
+pub fn encode_operation_with_defaults_output_struct(input: OperationWithDefaultsOutput) -> json.Json {
   let pairs = []
   let pairs = case input.default_blob {
-    option.Some(v) -> [
-      #(
-        "defaultBlob",
-        fn(b) { json.string(bit_array.base64_encode(b, True)) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("defaultBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.default_boolean {
@@ -5427,10 +3845,7 @@ pub fn encode_operation_with_defaults_output_struct(
     option.None -> pairs
   }
   let pairs = case input.default_int_enum {
-    option.Some(v) -> [
-      #("defaultIntEnum", encode_test_int_enum_int_enum(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("defaultIntEnum", encode_test_int_enum_int_enum(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.default_integer {
@@ -5438,10 +3853,7 @@ pub fn encode_operation_with_defaults_output_struct(
     option.None -> pairs
   }
   let pairs = case input.default_list {
-    option.Some(v) -> [
-      #("defaultList", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("defaultList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.default_long {
@@ -5449,18 +3861,7 @@ pub fn encode_operation_with_defaults_output_struct(
     option.None -> pairs
   }
   let pairs = case input.default_map {
-    option.Some(v) -> [
-      #(
-        "defaultMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("defaultMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.default_null_document {
@@ -5480,10 +3881,7 @@ pub fn encode_operation_with_defaults_output_struct(
     option.None -> pairs
   }
   let pairs = case input.empty_blob {
-    option.Some(v) -> [
-      #("emptyBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("emptyBlob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.empty_string {
@@ -5521,157 +3919,35 @@ pub fn encode_operation_with_defaults_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_operation_with_defaults_output_struct() -> decode.Decoder(
-  OperationWithDefaultsOutput,
-) {
-  use default_blob <- decode.optional_field(
-    "defaultBlob",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  use default_boolean <- decode.optional_field(
-    "defaultBoolean",
-    option.None,
-    decode.optional(decode.bool),
-  )
-  use default_byte <- decode.optional_field(
-    "defaultByte",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use default_document_boolean <- decode.optional_field(
-    "defaultDocumentBoolean",
-    option.None,
-    decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })),
-  )
-  use default_document_list <- decode.optional_field(
-    "defaultDocumentList",
-    option.None,
-    decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })),
-  )
-  use default_document_map <- decode.optional_field(
-    "defaultDocumentMap",
-    option.None,
-    decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })),
-  )
-  use default_document_string <- decode.optional_field(
-    "defaultDocumentString",
-    option.None,
-    decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })),
-  )
-  use default_double <- decode.optional_field(
-    "defaultDouble",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use default_enum <- decode.optional_field(
-    "defaultEnum",
-    option.None,
-    decode.optional(decode_test_enum_enum()),
-  )
-  use default_float <- decode.optional_field(
-    "defaultFloat",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use default_int_enum <- decode.optional_field(
-    "defaultIntEnum",
-    option.None,
-    decode.optional(decode_test_int_enum_int_enum()),
-  )
-  use default_integer <- decode.optional_field(
-    "defaultInteger",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use default_list <- decode.optional_field(
-    "defaultList",
-    option.None,
-    decode.optional(decode.list(decode.string)),
-  )
-  use default_long <- decode.optional_field(
-    "defaultLong",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use default_map <- decode.optional_field(
-    "defaultMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.string)),
-  )
-  use default_null_document <- decode.optional_field(
-    "defaultNullDocument",
-    option.None,
-    decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })),
-  )
-  use default_short <- decode.optional_field(
-    "defaultShort",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use default_string <- decode.optional_field(
-    "defaultString",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use default_timestamp <- decode.optional_field(
-    "defaultTimestamp",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use empty_blob <- decode.optional_field(
-    "emptyBlob",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  use empty_string <- decode.optional_field(
-    "emptyString",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use false_boolean <- decode.optional_field(
-    "falseBoolean",
-    option.None,
-    decode.optional(decode.bool),
-  )
-  use zero_byte <- decode.optional_field(
-    "zeroByte",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use zero_double <- decode.optional_field(
-    "zeroDouble",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use zero_float <- decode.optional_field(
-    "zeroFloat",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use zero_integer <- decode.optional_field(
-    "zeroInteger",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use zero_long <- decode.optional_field(
-    "zeroLong",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use zero_short <- decode.optional_field(
-    "zeroShort",
-    option.None,
-    decode.optional(decode.int),
-  )
+pub fn decode_operation_with_defaults_output_struct() -> decode.Decoder(OperationWithDefaultsOutput) {
+  use default_blob <- decode.optional_field("defaultBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use default_boolean <- decode.optional_field("defaultBoolean", option.None, decode.optional(decode.bool))
+  use default_byte <- decode.optional_field("defaultByte", option.None, decode.optional(decode.int))
+  use default_document_boolean <- decode.optional_field("defaultDocumentBoolean", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_document_list <- decode.optional_field("defaultDocumentList", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_document_map <- decode.optional_field("defaultDocumentMap", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_document_string <- decode.optional_field("defaultDocumentString", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_double <- decode.optional_field("defaultDouble", option.None, decode.optional(json_float.decoder()))
+  use default_enum <- decode.optional_field("defaultEnum", option.None, decode.optional(decode_test_enum_enum()))
+  use default_float <- decode.optional_field("defaultFloat", option.None, decode.optional(json_float.decoder()))
+  use default_int_enum <- decode.optional_field("defaultIntEnum", option.None, decode.optional(decode_test_int_enum_int_enum()))
+  use default_integer <- decode.optional_field("defaultInteger", option.None, decode.optional(decode.int))
+  use default_list <- decode.optional_field("defaultList", option.None, decode.optional(decode.list(decode.string)))
+  use default_long <- decode.optional_field("defaultLong", option.None, decode.optional(decode.int))
+  use default_map <- decode.optional_field("defaultMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use default_null_document <- decode.optional_field("defaultNullDocument", option.None, decode.optional(decode.dynamic |> decode.map(fn(_) { json.null() })))
+  use default_short <- decode.optional_field("defaultShort", option.None, decode.optional(decode.int))
+  use default_string <- decode.optional_field("defaultString", option.None, decode.optional(decode.string))
+  use default_timestamp <- decode.optional_field("defaultTimestamp", option.None, decode.optional(decode.int))
+  use empty_blob <- decode.optional_field("emptyBlob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use empty_string <- decode.optional_field("emptyString", option.None, decode.optional(decode.string))
+  use false_boolean <- decode.optional_field("falseBoolean", option.None, decode.optional(decode.bool))
+  use zero_byte <- decode.optional_field("zeroByte", option.None, decode.optional(decode.int))
+  use zero_double <- decode.optional_field("zeroDouble", option.None, decode.optional(json_float.decoder()))
+  use zero_float <- decode.optional_field("zeroFloat", option.None, decode.optional(json_float.decoder()))
+  use zero_integer <- decode.optional_field("zeroInteger", option.None, decode.optional(decode.int))
+  use zero_long <- decode.optional_field("zeroLong", option.None, decode.optional(decode.int))
+  use zero_short <- decode.optional_field("zeroShort", option.None, decode.optional(decode.int))
   decode.success(OperationWithDefaultsOutput(
     default_blob: default_blob,
     default_boolean: default_boolean,
@@ -5705,12 +3981,12 @@ pub fn decode_operation_with_defaults_output_struct() -> decode.Decoder(
 }
 
 pub type OperationWithNestedStructureInput {
-  OperationWithNestedStructureInput(top_level: option.Option(TopLevel))
+  OperationWithNestedStructureInput(
+    top_level: option.Option(TopLevel),
+  )
 }
 
-pub fn encode_operation_with_nested_structure_input_struct(
-  input: OperationWithNestedStructureInput,
-) -> json.Json {
+pub fn encode_operation_with_nested_structure_input_struct(input: OperationWithNestedStructureInput) -> json.Json {
   let pairs = []
   let pairs = case input.top_level {
     option.Some(v) -> [#("topLevel", encode_top_level_struct(v)), ..pairs]
@@ -5719,15 +3995,11 @@ pub fn encode_operation_with_nested_structure_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_operation_with_nested_structure_input_struct() -> decode.Decoder(
-  OperationWithNestedStructureInput,
-) {
-  use top_level <- decode.optional_field(
-    "topLevel",
-    option.None,
-    decode.optional(decode_top_level_struct()),
-  )
-  decode.success(OperationWithNestedStructureInput(top_level: top_level))
+pub fn decode_operation_with_nested_structure_input_struct() -> decode.Decoder(OperationWithNestedStructureInput) {
+  use top_level <- decode.optional_field("topLevel", option.None, decode.optional(decode_top_level_struct()))
+  decode.success(OperationWithNestedStructureInput(
+    top_level: top_level,
+  ))
 }
 
 pub type TopLevel {
@@ -5745,46 +4017,20 @@ pub fn encode_top_level_struct(input: TopLevel) -> json.Json {
     option.None -> pairs
   }
   let pairs = case input.dialog_list {
-    option.Some(v) -> [
-      #("dialogList", fn(xs) { json.array(xs, encode_dialog_struct) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("dialogList", fn(xs) { json.array(xs, encode_dialog_struct) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.dialog_map {
-    option.Some(v) -> [
-      #(
-        "dialogMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, encode_dialog_struct(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("dialogMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_dialog_struct(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
 pub fn decode_top_level_struct() -> decode.Decoder(TopLevel) {
-  use dialog <- decode.optional_field(
-    "dialog",
-    option.None,
-    decode.optional(decode_dialog_struct()),
-  )
-  use dialog_list <- decode.optional_field(
-    "dialogList",
-    option.None,
-    decode.optional(decode.list(decode_dialog_struct())),
-  )
-  use dialog_map <- decode.optional_field(
-    "dialogMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode_dialog_struct())),
-  )
+  use dialog <- decode.optional_field("dialog", option.None, decode.optional(decode_dialog_struct()))
+  use dialog_list <- decode.optional_field("dialogList", option.None, decode.optional(decode.list(decode_dialog_struct())))
+  use dialog_map <- decode.optional_field("dialogMap", option.None, decode.optional(decode.dict(decode.string, decode_dialog_struct())))
   decode.success(TopLevel(
     dialog: dialog,
     dialog_list: dialog_list,
@@ -5818,21 +4064,9 @@ pub fn encode_dialog_struct(input: Dialog) -> json.Json {
 }
 
 pub fn decode_dialog_struct() -> decode.Decoder(Dialog) {
-  use farewell <- decode.optional_field(
-    "farewell",
-    option.None,
-    decode.optional(decode_farewell_struct()),
-  )
-  use greeting <- decode.optional_field(
-    "greeting",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use language <- decode.optional_field(
-    "language",
-    option.None,
-    decode.optional(decode.string),
-  )
+  use farewell <- decode.optional_field("farewell", option.None, decode.optional(decode_farewell_struct()))
+  use greeting <- decode.optional_field("greeting", option.None, decode.optional(decode.string))
+  use language <- decode.optional_field("language", option.None, decode.optional(decode.string))
   decode.success(Dialog(
     farewell: farewell,
     greeting: greeting,
@@ -5841,7 +4075,9 @@ pub fn decode_dialog_struct() -> decode.Decoder(Dialog) {
 }
 
 pub type Farewell {
-  Farewell(phrase: option.Option(String))
+  Farewell(
+    phrase: option.Option(String),
+  )
 }
 
 pub fn encode_farewell_struct(input: Farewell) -> json.Json {
@@ -5854,12 +4090,10 @@ pub fn encode_farewell_struct(input: Farewell) -> json.Json {
 }
 
 pub fn decode_farewell_struct() -> decode.Decoder(Farewell) {
-  use phrase <- decode.optional_field(
-    "phrase",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(Farewell(phrase: phrase))
+  use phrase <- decode.optional_field("phrase", option.None, decode.optional(decode.string))
+  decode.success(Farewell(
+    phrase: phrase,
+  ))
 }
 
 pub type OperationWithNestedStructureOutput {
@@ -5870,57 +4104,27 @@ pub type OperationWithNestedStructureOutput {
   )
 }
 
-pub fn encode_operation_with_nested_structure_output_struct(
-  input: OperationWithNestedStructureOutput,
-) -> json.Json {
+pub fn encode_operation_with_nested_structure_output_struct(input: OperationWithNestedStructureOutput) -> json.Json {
   let pairs = []
   let pairs = case input.dialog {
     option.Some(v) -> [#("dialog", encode_dialog_struct(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.dialog_list {
-    option.Some(v) -> [
-      #("dialogList", fn(xs) { json.array(xs, encode_dialog_struct) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("dialogList", fn(xs) { json.array(xs, encode_dialog_struct) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.dialog_map {
-    option.Some(v) -> [
-      #(
-        "dialogMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, encode_dialog_struct(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("dialogMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_dialog_struct(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_operation_with_nested_structure_output_struct() -> decode.Decoder(
-  OperationWithNestedStructureOutput,
-) {
-  use dialog <- decode.optional_field(
-    "dialog",
-    option.None,
-    decode.optional(decode_dialog_struct()),
-  )
-  use dialog_list <- decode.optional_field(
-    "dialogList",
-    option.None,
-    decode.optional(decode.list(decode_dialog_struct())),
-  )
-  use dialog_map <- decode.optional_field(
-    "dialogMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode_dialog_struct())),
-  )
+pub fn decode_operation_with_nested_structure_output_struct() -> decode.Decoder(OperationWithNestedStructureOutput) {
+  use dialog <- decode.optional_field("dialog", option.None, decode.optional(decode_dialog_struct()))
+  use dialog_list <- decode.optional_field("dialogList", option.None, decode.optional(decode.list(decode_dialog_struct())))
+  use dialog_map <- decode.optional_field("dialogMap", option.None, decode.optional(decode.dict(decode.string, decode_dialog_struct())))
   decode.success(OperationWithNestedStructureOutput(
     dialog: dialog,
     dialog_list: dialog_list,
@@ -5929,12 +4133,12 @@ pub fn decode_operation_with_nested_structure_output_struct() -> decode.Decoder(
 }
 
 pub type OutputStreamOutput {
-  OutputStreamOutput(stream: option.Option(EventStream))
+  OutputStreamOutput(
+    stream: option.Option(EventStream),
+  )
 }
 
-pub fn encode_output_stream_output_struct(
-  input: OutputStreamOutput,
-) -> json.Json {
+pub fn encode_output_stream_output_struct(input: OutputStreamOutput) -> json.Json {
   let pairs = []
   let pairs = case input.stream {
     option.Some(v) -> [#("stream", encode_event_stream_union(v)), ..pairs]
@@ -5943,15 +4147,11 @@ pub fn encode_output_stream_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_output_stream_output_struct() -> decode.Decoder(
-  OutputStreamOutput,
-) {
-  use stream <- decode.optional_field(
-    "stream",
-    option.None,
-    decode.optional(decode_event_stream_union()),
-  )
-  decode.success(OutputStreamOutput(stream: stream))
+pub fn decode_output_stream_output_struct() -> decode.Decoder(OutputStreamOutput) {
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
+  decode.success(OutputStreamOutput(
+    stream: stream,
+  ))
 }
 
 pub type OutputStreamWithInitialResponseOutput {
@@ -5961,9 +4161,7 @@ pub type OutputStreamWithInitialResponseOutput {
   )
 }
 
-pub fn encode_output_stream_with_initial_response_output_struct(
-  input: OutputStreamWithInitialResponseOutput,
-) -> json.Json {
+pub fn encode_output_stream_with_initial_response_output_struct(input: OutputStreamWithInitialResponseOutput) -> json.Json {
   let pairs = []
   let pairs = case input.initial_response_member {
     option.Some(v) -> [#("initialResponseMember", json.string(v)), ..pairs]
@@ -5976,19 +4174,9 @@ pub fn encode_output_stream_with_initial_response_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_output_stream_with_initial_response_output_struct() -> decode.Decoder(
-  OutputStreamWithInitialResponseOutput,
-) {
-  use initial_response_member <- decode.optional_field(
-    "initialResponseMember",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use stream <- decode.optional_field(
-    "stream",
-    option.None,
-    decode.optional(decode_event_stream_union()),
-  )
+pub fn decode_output_stream_with_initial_response_output_struct() -> decode.Decoder(OutputStreamWithInitialResponseOutput) {
+  use initial_response_member <- decode.optional_field("initialResponseMember", option.None, decode.optional(decode.string))
+  use stream <- decode.optional_field("stream", option.None, decode.optional(decode_event_stream_union()))
   decode.success(OutputStreamWithInitialResponseOutput(
     initial_response_member: initial_response_member,
     stream: stream,
@@ -5996,12 +4184,12 @@ pub fn decode_output_stream_with_initial_response_output_struct() -> decode.Deco
 }
 
 pub type PostPlayerActionInput {
-  PostPlayerActionInput(action: option.Option(PlayerAction))
+  PostPlayerActionInput(
+    action: option.Option(PlayerAction),
+  )
 }
 
-pub fn encode_post_player_action_input_struct(
-  input: PostPlayerActionInput,
-) -> json.Json {
+pub fn encode_post_player_action_input_struct(input: PostPlayerActionInput) -> json.Json {
   let pairs = []
   let pairs = case input.action {
     option.Some(v) -> [#("action", encode_player_action_union(v)), ..pairs]
@@ -6010,15 +4198,11 @@ pub fn encode_post_player_action_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_post_player_action_input_struct() -> decode.Decoder(
-  PostPlayerActionInput,
-) {
-  use action <- decode.optional_field(
-    "action",
-    option.None,
-    decode.optional(decode_player_action_union()),
-  )
-  decode.success(PostPlayerActionInput(action: action))
+pub fn decode_post_player_action_input_struct() -> decode.Decoder(PostPlayerActionInput) {
+  use action <- decode.optional_field("action", option.None, decode.optional(decode_player_action_union()))
+  decode.success(PostPlayerActionInput(
+    action: action,
+  ))
 }
 
 pub type PlayerAction {
@@ -6027,27 +4211,25 @@ pub type PlayerAction {
 
 pub fn encode_player_action_union(v: PlayerAction) -> json.Json {
   case v {
-    PlayerActionQuit(x) ->
-      json.object([#("quit", fn(_) { json.object([]) }(x))])
+    PlayerActionQuit(x) -> json.object([#("quit", fn(_) { json.object([]) }(x))])
   }
 }
 
 pub fn decode_player_action_union() -> decode.Decoder(PlayerAction) {
   decode.one_of(
-    decode.field("quit", decode.success(Nil), fn(x) {
-      decode.success(PlayerActionQuit(x))
-    }),
-    [],
+    decode.field("quit", decode.success(Nil), fn(x) { decode.success(PlayerActionQuit(x)) }),
+    [
+    ],
   )
 }
 
 pub type PostPlayerActionOutput {
-  PostPlayerActionOutput(action: option.Option(PlayerAction))
+  PostPlayerActionOutput(
+    action: option.Option(PlayerAction),
+  )
 }
 
-pub fn encode_post_player_action_output_struct(
-  input: PostPlayerActionOutput,
-) -> json.Json {
+pub fn encode_post_player_action_output_struct(input: PostPlayerActionOutput) -> json.Json {
   let pairs = []
   let pairs = case input.action {
     option.Some(v) -> [#("action", encode_player_action_union(v)), ..pairs]
@@ -6056,44 +4238,33 @@ pub fn encode_post_player_action_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_post_player_action_output_struct() -> decode.Decoder(
-  PostPlayerActionOutput,
-) {
-  use action <- decode.optional_field(
-    "action",
-    option.None,
-    decode.optional(decode_player_action_union()),
-  )
-  decode.success(PostPlayerActionOutput(action: action))
+pub fn decode_post_player_action_output_struct() -> decode.Decoder(PostPlayerActionOutput) {
+  use action <- decode.optional_field("action", option.None, decode.optional(decode_player_action_union()))
+  decode.success(PostPlayerActionOutput(
+    action: action,
+  ))
 }
 
 pub type PostUnionWithJsonNameInput {
-  PostUnionWithJsonNameInput(value: option.Option(UnionWithJsonName))
+  PostUnionWithJsonNameInput(
+    value: option.Option(UnionWithJsonName),
+  )
 }
 
-pub fn encode_post_union_with_json_name_input_struct(
-  input: PostUnionWithJsonNameInput,
-) -> json.Json {
+pub fn encode_post_union_with_json_name_input_struct(input: PostUnionWithJsonNameInput) -> json.Json {
   let pairs = []
   let pairs = case input.value {
-    option.Some(v) -> [
-      #("value", encode_union_with_json_name_union(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("value", encode_union_with_json_name_union(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_post_union_with_json_name_input_struct() -> decode.Decoder(
-  PostUnionWithJsonNameInput,
-) {
-  use value <- decode.optional_field(
-    "value",
-    option.None,
-    decode.optional(decode_union_with_json_name_union()),
-  )
-  decode.success(PostUnionWithJsonNameInput(value: value))
+pub fn decode_post_union_with_json_name_input_struct() -> decode.Decoder(PostUnionWithJsonNameInput) {
+  use value <- decode.optional_field("value", option.None, decode.optional(decode_union_with_json_name_union()))
+  decode.success(PostUnionWithJsonNameInput(
+    value: value,
+  ))
 }
 
 pub type UnionWithJsonName {
@@ -6112,47 +4283,34 @@ pub fn encode_union_with_json_name_union(v: UnionWithJsonName) -> json.Json {
 
 pub fn decode_union_with_json_name_union() -> decode.Decoder(UnionWithJsonName) {
   decode.one_of(
-    decode.field("bar", decode.string, fn(x) {
-      decode.success(UnionWithJsonNameBar(x))
-    }),
+    decode.field("bar", decode.string, fn(x) { decode.success(UnionWithJsonNameBar(x)) }),
     [
-      decode.field("baz", decode.string, fn(x) {
-        decode.success(UnionWithJsonNameBaz(x))
-      }),
-      decode.field("foo", decode.string, fn(x) {
-        decode.success(UnionWithJsonNameFoo(x))
-      }),
+      decode.field("baz", decode.string, fn(x) { decode.success(UnionWithJsonNameBaz(x)) }),
+      decode.field("foo", decode.string, fn(x) { decode.success(UnionWithJsonNameFoo(x)) }),
     ],
   )
 }
 
 pub type PostUnionWithJsonNameOutput {
-  PostUnionWithJsonNameOutput(value: option.Option(UnionWithJsonName))
+  PostUnionWithJsonNameOutput(
+    value: option.Option(UnionWithJsonName),
+  )
 }
 
-pub fn encode_post_union_with_json_name_output_struct(
-  input: PostUnionWithJsonNameOutput,
-) -> json.Json {
+pub fn encode_post_union_with_json_name_output_struct(input: PostUnionWithJsonNameOutput) -> json.Json {
   let pairs = []
   let pairs = case input.value {
-    option.Some(v) -> [
-      #("value", encode_union_with_json_name_union(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("value", encode_union_with_json_name_union(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_post_union_with_json_name_output_struct() -> decode.Decoder(
-  PostUnionWithJsonNameOutput,
-) {
-  use value <- decode.optional_field(
-    "value",
-    option.None,
-    decode.optional(decode_union_with_json_name_union()),
-  )
-  decode.success(PostUnionWithJsonNameOutput(value: value))
+pub fn decode_post_union_with_json_name_output_struct() -> decode.Decoder(PostUnionWithJsonNameOutput) {
+  use value <- decode.optional_field("value", option.None, decode.optional(decode_union_with_json_name_union()))
+  decode.success(PostUnionWithJsonNameOutput(
+    value: value,
+  ))
 }
 
 pub type PutWithContentEncodingInput {
@@ -6162,9 +4320,7 @@ pub type PutWithContentEncodingInput {
   )
 }
 
-pub fn encode_put_with_content_encoding_input_struct(
-  input: PutWithContentEncodingInput,
-) -> json.Json {
+pub fn encode_put_with_content_encoding_input_struct(input: PutWithContentEncodingInput) -> json.Json {
   let pairs = []
   let pairs = case input.data {
     option.Some(v) -> [#("data", json.string(v)), ..pairs]
@@ -6177,29 +4333,22 @@ pub fn encode_put_with_content_encoding_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_put_with_content_encoding_input_struct() -> decode.Decoder(
-  PutWithContentEncodingInput,
-) {
-  use data <- decode.optional_field(
-    "data",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use encoding <- decode.optional_field(
-    "encoding",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(PutWithContentEncodingInput(data: data, encoding: encoding))
+pub fn decode_put_with_content_encoding_input_struct() -> decode.Decoder(PutWithContentEncodingInput) {
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.string))
+  use encoding <- decode.optional_field("encoding", option.None, decode.optional(decode.string))
+  decode.success(PutWithContentEncodingInput(
+    data: data,
+    encoding: encoding,
+  ))
 }
 
 pub type QueryIdempotencyTokenAutoFillInput {
-  QueryIdempotencyTokenAutoFillInput(token: option.Option(String))
+  QueryIdempotencyTokenAutoFillInput(
+    token: option.Option(String),
+  )
 }
 
-pub fn encode_query_idempotency_token_auto_fill_input_struct(
-  input: QueryIdempotencyTokenAutoFillInput,
-) -> json.Json {
+pub fn encode_query_idempotency_token_auto_fill_input_struct(input: QueryIdempotencyTokenAutoFillInput) -> json.Json {
   let pairs = []
   let pairs = case input.token {
     option.Some(v) -> [#("token", json.string(v)), ..pairs]
@@ -6208,15 +4357,11 @@ pub fn encode_query_idempotency_token_auto_fill_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_query_idempotency_token_auto_fill_input_struct() -> decode.Decoder(
-  QueryIdempotencyTokenAutoFillInput,
-) {
-  use token <- decode.optional_field(
-    "token",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(QueryIdempotencyTokenAutoFillInput(token: token))
+pub fn decode_query_idempotency_token_auto_fill_input_struct() -> decode.Decoder(QueryIdempotencyTokenAutoFillInput) {
+  use token <- decode.optional_field("token", option.None, decode.optional(decode.string))
+  decode.success(QueryIdempotencyTokenAutoFillInput(
+    token: token,
+  ))
 }
 
 pub type QueryParamsAsStringListMapInput {
@@ -6226,25 +4371,10 @@ pub type QueryParamsAsStringListMapInput {
   )
 }
 
-pub fn encode_query_params_as_string_list_map_input_struct(
-  input: QueryParamsAsStringListMapInput,
-) -> json.Json {
+pub fn encode_query_params_as_string_list_map_input_struct(input: QueryParamsAsStringListMapInput) -> json.Json {
   let pairs = []
   let pairs = case input.foo {
-    option.Some(v) -> [
-      #(
-        "foo",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) {
-              #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1))
-            }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("foo", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.qux {
@@ -6254,20 +4384,13 @@ pub fn encode_query_params_as_string_list_map_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_query_params_as_string_list_map_input_struct() -> decode.Decoder(
-  QueryParamsAsStringListMapInput,
-) {
-  use foo <- decode.optional_field(
-    "foo",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.list(decode.string))),
-  )
-  use qux <- decode.optional_field(
-    "qux",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(QueryParamsAsStringListMapInput(foo: foo, qux: qux))
+pub fn decode_query_params_as_string_list_map_input_struct() -> decode.Decoder(QueryParamsAsStringListMapInput) {
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
+  use qux <- decode.optional_field("qux", option.None, decode.optional(decode.string))
+  decode.success(QueryParamsAsStringListMapInput(
+    foo: foo,
+    qux: qux,
+  ))
 }
 
 pub type QueryPrecedenceInput {
@@ -6277,23 +4400,10 @@ pub type QueryPrecedenceInput {
   )
 }
 
-pub fn encode_query_precedence_input_struct(
-  input: QueryPrecedenceInput,
-) -> json.Json {
+pub fn encode_query_precedence_input_struct(input: QueryPrecedenceInput) -> json.Json {
   let pairs = []
   let pairs = case input.baz {
-    option.Some(v) -> [
-      #(
-        "baz",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("baz", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.foo {
@@ -6303,20 +4413,13 @@ pub fn encode_query_precedence_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_query_precedence_input_struct() -> decode.Decoder(
-  QueryPrecedenceInput,
-) {
-  use baz <- decode.optional_field(
-    "baz",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.string)),
-  )
-  use foo <- decode.optional_field(
-    "foo",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(QueryPrecedenceInput(baz: baz, foo: foo))
+pub fn decode_query_precedence_input_struct() -> decode.Decoder(QueryPrecedenceInput) {
+  use baz <- decode.optional_field("baz", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(QueryPrecedenceInput(
+    baz: baz,
+    foo: foo,
+  ))
 }
 
 pub type RecursiveShapesInputOutput {
@@ -6325,29 +4428,20 @@ pub type RecursiveShapesInputOutput {
   )
 }
 
-pub fn encode_recursive_shapes_input_output_struct(
-  input: RecursiveShapesInputOutput,
-) -> json.Json {
+pub fn encode_recursive_shapes_input_output_struct(input: RecursiveShapesInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.nested {
-    option.Some(v) -> [
-      #("nested", encode_recursive_shapes_input_output_nested1_struct(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("nested", encode_recursive_shapes_input_output_nested1_struct(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_recursive_shapes_input_output_struct() -> decode.Decoder(
-  RecursiveShapesInputOutput,
-) {
-  use nested <- decode.optional_field(
-    "nested",
-    option.None,
-    decode.optional(decode_recursive_shapes_input_output_nested1_struct()),
-  )
-  decode.success(RecursiveShapesInputOutput(nested: nested))
+pub fn decode_recursive_shapes_input_output_struct() -> decode.Decoder(RecursiveShapesInputOutput) {
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct()))
+  decode.success(RecursiveShapesInputOutput(
+    nested: nested,
+  ))
 }
 
 pub type RecursiveShapesInputOutputNested1 {
@@ -6357,38 +4451,26 @@ pub type RecursiveShapesInputOutputNested1 {
   )
 }
 
-pub fn encode_recursive_shapes_input_output_nested1_struct(
-  input: RecursiveShapesInputOutputNested1,
-) -> json.Json {
+pub fn encode_recursive_shapes_input_output_nested1_struct(input: RecursiveShapesInputOutputNested1) -> json.Json {
   let pairs = []
   let pairs = case input.foo {
     option.Some(v) -> [#("foo", json.string(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.nested {
-    option.Some(v) -> [
-      #("nested", encode_recursive_shapes_input_output_nested2_struct(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("nested", encode_recursive_shapes_input_output_nested2_struct(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_recursive_shapes_input_output_nested1_struct() -> decode.Decoder(
-  RecursiveShapesInputOutputNested1,
-) {
-  use foo <- decode.optional_field(
-    "foo",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use nested <- decode.optional_field(
-    "nested",
-    option.None,
-    decode.optional(decode_recursive_shapes_input_output_nested2_struct()),
-  )
-  decode.success(RecursiveShapesInputOutputNested1(foo: foo, nested: nested))
+pub fn decode_recursive_shapes_input_output_nested1_struct() -> decode.Decoder(RecursiveShapesInputOutputNested1) {
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use nested <- decode.optional_field("nested", option.None, decode.optional(decode_recursive_shapes_input_output_nested2_struct()))
+  decode.success(RecursiveShapesInputOutputNested1(
+    foo: foo,
+    nested: nested,
+  ))
 }
 
 pub type RecursiveShapesInputOutputNested2 {
@@ -6398,40 +4480,22 @@ pub type RecursiveShapesInputOutputNested2 {
   )
 }
 
-pub fn encode_recursive_shapes_input_output_nested2_struct(
-  input: RecursiveShapesInputOutputNested2,
-) -> json.Json {
+pub fn encode_recursive_shapes_input_output_nested2_struct(input: RecursiveShapesInputOutputNested2) -> json.Json {
   let pairs = []
   let pairs = case input.bar {
     option.Some(v) -> [#("bar", json.string(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.recursive_member {
-    option.Some(v) -> [
-      #(
-        "recursiveMember",
-        encode_recursive_shapes_input_output_nested1_struct(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("recursiveMember", encode_recursive_shapes_input_output_nested1_struct(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_recursive_shapes_input_output_nested2_struct() -> decode.Decoder(
-  RecursiveShapesInputOutputNested2,
-) {
-  use bar <- decode.optional_field(
-    "bar",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use recursive_member <- decode.optional_field(
-    "recursiveMember",
-    option.None,
-    decode.optional(decode_recursive_shapes_input_output_nested1_struct()),
-  )
+pub fn decode_recursive_shapes_input_output_nested2_struct() -> decode.Decoder(RecursiveShapesInputOutputNested2) {
+  use bar <- decode.optional_field("bar", option.None, decode.optional(decode.string))
+  use recursive_member <- decode.optional_field("recursiveMember", option.None, decode.optional(decode_recursive_shapes_input_output_nested1_struct()))
   decode.success(RecursiveShapesInputOutputNested2(
     bar: bar,
     recursive_member: recursive_member,
@@ -6442,25 +4506,21 @@ pub type ResponseCodeHttpFallbackInputOutput {
   ResponseCodeHttpFallbackInputOutput
 }
 
-pub fn encode_response_code_http_fallback_input_output_struct(
-  _v: ResponseCodeHttpFallbackInputOutput,
-) -> json.Json {
+pub fn encode_response_code_http_fallback_input_output_struct(_v: ResponseCodeHttpFallbackInputOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_response_code_http_fallback_input_output_struct() -> decode.Decoder(
-  ResponseCodeHttpFallbackInputOutput,
-) {
+pub fn decode_response_code_http_fallback_input_output_struct() -> decode.Decoder(ResponseCodeHttpFallbackInputOutput) {
   decode.success(ResponseCodeHttpFallbackInputOutput)
 }
 
 pub type ResponseCodeRequiredOutput {
-  ResponseCodeRequiredOutput(response_code: option.Option(Int))
+  ResponseCodeRequiredOutput(
+    response_code: option.Option(Int),
+  )
 }
 
-pub fn encode_response_code_required_output_struct(
-  input: ResponseCodeRequiredOutput,
-) -> json.Json {
+pub fn encode_response_code_required_output_struct(input: ResponseCodeRequiredOutput) -> json.Json {
   let pairs = []
   let pairs = case input.response_code {
     option.Some(v) -> [#("responseCode", json.int(v)), ..pairs]
@@ -6469,15 +4529,11 @@ pub fn encode_response_code_required_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_response_code_required_output_struct() -> decode.Decoder(
-  ResponseCodeRequiredOutput,
-) {
-  use response_code <- decode.optional_field(
-    "responseCode",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(ResponseCodeRequiredOutput(response_code: response_code))
+pub fn decode_response_code_required_output_struct() -> decode.Decoder(ResponseCodeRequiredOutput) {
+  use response_code <- decode.optional_field("responseCode", option.None, decode.optional(decode.int))
+  decode.success(ResponseCodeRequiredOutput(
+    response_code: response_code,
+  ))
 }
 
 pub type SimpleScalarPropertiesInputOutput {
@@ -6495,9 +4551,7 @@ pub type SimpleScalarPropertiesInputOutput {
   )
 }
 
-pub fn encode_simple_scalar_properties_input_output_struct(
-  input: SimpleScalarPropertiesInputOutput,
-) -> json.Json {
+pub fn encode_simple_scalar_properties_input_output_struct(input: SimpleScalarPropertiesInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.byte_value {
     option.Some(v) -> [#("byteValue", json.int(v)), ..pairs]
@@ -6542,59 +4596,17 @@ pub fn encode_simple_scalar_properties_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_simple_scalar_properties_input_output_struct() -> decode.Decoder(
-  SimpleScalarPropertiesInputOutput,
-) {
-  use byte_value <- decode.optional_field(
-    "byteValue",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use double_value <- decode.optional_field(
-    "doubleValue",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use false_boolean_value <- decode.optional_field(
-    "falseBooleanValue",
-    option.None,
-    decode.optional(decode.bool),
-  )
-  use float_value <- decode.optional_field(
-    "floatValue",
-    option.None,
-    decode.optional(json_float.decoder()),
-  )
-  use foo <- decode.optional_field(
-    "foo",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use integer_value <- decode.optional_field(
-    "integerValue",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use long_value <- decode.optional_field(
-    "longValue",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use short_value <- decode.optional_field(
-    "shortValue",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use string_value <- decode.optional_field(
-    "stringValue",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use true_boolean_value <- decode.optional_field(
-    "trueBooleanValue",
-    option.None,
-    decode.optional(decode.bool),
-  )
+pub fn decode_simple_scalar_properties_input_output_struct() -> decode.Decoder(SimpleScalarPropertiesInputOutput) {
+  use byte_value <- decode.optional_field("byteValue", option.None, decode.optional(decode.int))
+  use double_value <- decode.optional_field("doubleValue", option.None, decode.optional(json_float.decoder()))
+  use false_boolean_value <- decode.optional_field("falseBooleanValue", option.None, decode.optional(decode.bool))
+  use float_value <- decode.optional_field("floatValue", option.None, decode.optional(json_float.decoder()))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  use integer_value <- decode.optional_field("integerValue", option.None, decode.optional(decode.int))
+  use long_value <- decode.optional_field("longValue", option.None, decode.optional(decode.int))
+  use short_value <- decode.optional_field("shortValue", option.None, decode.optional(decode.int))
+  use string_value <- decode.optional_field("stringValue", option.None, decode.optional(decode.string))
+  use true_boolean_value <- decode.optional_field("trueBooleanValue", option.None, decode.optional(decode.bool))
   decode.success(SimpleScalarPropertiesInputOutput(
     byte_value: byte_value,
     double_value: double_value,
@@ -6616,40 +4628,22 @@ pub type SparseJsonListsInputOutput {
   )
 }
 
-pub fn encode_sparse_json_lists_input_output_struct(
-  input: SparseJsonListsInputOutput,
-) -> json.Json {
+pub fn encode_sparse_json_lists_input_output_struct(input: SparseJsonListsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.sparse_short_list {
-    option.Some(v) -> [
-      #("sparseShortList", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseShortList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_string_list {
-    option.Some(v) -> [
-      #("sparseStringList", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseStringList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_sparse_json_lists_input_output_struct() -> decode.Decoder(
-  SparseJsonListsInputOutput,
-) {
-  use sparse_short_list <- decode.optional_field(
-    "sparseShortList",
-    option.None,
-    decode.optional(decode.list(decode.int)),
-  )
-  use sparse_string_list <- decode.optional_field(
-    "sparseStringList",
-    option.None,
-    decode.optional(decode.list(decode.string)),
-  )
+pub fn decode_sparse_json_lists_input_output_struct() -> decode.Decoder(SparseJsonListsInputOutput) {
+  use sparse_short_list <- decode.optional_field("sparseShortList", option.None, decode.optional(decode.list(decode.int)))
+  use sparse_string_list <- decode.optional_field("sparseStringList", option.None, decode.optional(decode.list(decode.string)))
   decode.success(SparseJsonListsInputOutput(
     sparse_short_list: sparse_short_list,
     sparse_string_list: sparse_string_list,
@@ -6666,120 +4660,37 @@ pub type SparseJsonMapsInputOutput {
   )
 }
 
-pub fn encode_sparse_json_maps_input_output_struct(
-  input: SparseJsonMapsInputOutput,
-) -> json.Json {
+pub fn encode_sparse_json_maps_input_output_struct(input: SparseJsonMapsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.sparse_boolean_map {
-    option.Some(v) -> [
-      #(
-        "sparseBooleanMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.bool(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseBooleanMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.bool(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_number_map {
-    option.Some(v) -> [
-      #(
-        "sparseNumberMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.int(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseNumberMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.int(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_set_map {
-    option.Some(v) -> [
-      #(
-        "sparseSetMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) {
-              #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1))
-            }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseSetMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_string_map {
-    option.Some(v) -> [
-      #(
-        "sparseStringMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseStringMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_struct_map {
-    option.Some(v) -> [
-      #(
-        "sparseStructMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) {
-              #(pair.0, encode_greeting_struct_struct(pair.1))
-            }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_greeting_struct_struct(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_sparse_json_maps_input_output_struct() -> decode.Decoder(
-  SparseJsonMapsInputOutput,
-) {
-  use sparse_boolean_map <- decode.optional_field(
-    "sparseBooleanMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.bool)),
-  )
-  use sparse_number_map <- decode.optional_field(
-    "sparseNumberMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.int)),
-  )
-  use sparse_set_map <- decode.optional_field(
-    "sparseSetMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.list(decode.string))),
-  )
-  use sparse_string_map <- decode.optional_field(
-    "sparseStringMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode.string)),
-  )
-  use sparse_struct_map <- decode.optional_field(
-    "sparseStructMap",
-    option.None,
-    decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())),
-  )
+pub fn decode_sparse_json_maps_input_output_struct() -> decode.Decoder(SparseJsonMapsInputOutput) {
+  use sparse_boolean_map <- decode.optional_field("sparseBooleanMap", option.None, decode.optional(decode.dict(decode.string, decode.bool)))
+  use sparse_number_map <- decode.optional_field("sparseNumberMap", option.None, decode.optional(decode.dict(decode.string, decode.int)))
+  use sparse_set_map <- decode.optional_field("sparseSetMap", option.None, decode.optional(decode.dict(decode.string, decode.list(decode.string))))
+  use sparse_string_map <- decode.optional_field("sparseStringMap", option.None, decode.optional(decode.dict(decode.string, decode.string)))
+  use sparse_struct_map <- decode.optional_field("sparseStructMap", option.None, decode.optional(decode.dict(decode.string, decode_greeting_struct_struct())))
   decode.success(SparseJsonMapsInputOutput(
     sparse_boolean_map: sparse_boolean_map,
     sparse_number_map: sparse_number_map,
@@ -6796,15 +4707,10 @@ pub type StreamingTraitsInputOutput {
   )
 }
 
-pub fn encode_streaming_traits_input_output_struct(
-  input: StreamingTraitsInputOutput,
-) -> json.Json {
+pub fn encode_streaming_traits_input_output_struct(input: StreamingTraitsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.blob {
-    option.Some(v) -> [
-      #("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.foo {
@@ -6814,24 +4720,13 @@ pub fn encode_streaming_traits_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_streaming_traits_input_output_struct() -> decode.Decoder(
-  StreamingTraitsInputOutput,
-) {
-  use blob <- decode.optional_field(
-    "blob",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  use foo <- decode.optional_field(
-    "foo",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(StreamingTraitsInputOutput(blob: blob, foo: foo))
+pub fn decode_streaming_traits_input_output_struct() -> decode.Decoder(StreamingTraitsInputOutput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(StreamingTraitsInputOutput(
+    blob: blob,
+    foo: foo,
+  ))
 }
 
 pub type StreamingTraitsRequireLengthInput {
@@ -6841,15 +4736,10 @@ pub type StreamingTraitsRequireLengthInput {
   )
 }
 
-pub fn encode_streaming_traits_require_length_input_struct(
-  input: StreamingTraitsRequireLengthInput,
-) -> json.Json {
+pub fn encode_streaming_traits_require_length_input_struct(input: StreamingTraitsRequireLengthInput) -> json.Json {
   let pairs = []
   let pairs = case input.blob {
-    option.Some(v) -> [
-      #("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.foo {
@@ -6859,24 +4749,13 @@ pub fn encode_streaming_traits_require_length_input_struct(
   json.object(pairs)
 }
 
-pub fn decode_streaming_traits_require_length_input_struct() -> decode.Decoder(
-  StreamingTraitsRequireLengthInput,
-) {
-  use blob <- decode.optional_field(
-    "blob",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  use foo <- decode.optional_field(
-    "foo",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(StreamingTraitsRequireLengthInput(blob: blob, foo: foo))
+pub fn decode_streaming_traits_require_length_input_struct() -> decode.Decoder(StreamingTraitsRequireLengthInput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(StreamingTraitsRequireLengthInput(
+    blob: blob,
+    foo: foo,
+  ))
 }
 
 pub type StreamingTraitsWithMediaTypeInputOutput {
@@ -6886,15 +4765,10 @@ pub type StreamingTraitsWithMediaTypeInputOutput {
   )
 }
 
-pub fn encode_streaming_traits_with_media_type_input_output_struct(
-  input: StreamingTraitsWithMediaTypeInputOutput,
-) -> json.Json {
+pub fn encode_streaming_traits_with_media_type_input_output_struct(input: StreamingTraitsWithMediaTypeInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.blob {
-    option.Some(v) -> [
-      #("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.foo {
@@ -6904,24 +4778,13 @@ pub fn encode_streaming_traits_with_media_type_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_streaming_traits_with_media_type_input_output_struct() -> decode.Decoder(
-  StreamingTraitsWithMediaTypeInputOutput,
-) {
-  use blob <- decode.optional_field(
-    "blob",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
-  use foo <- decode.optional_field(
-    "foo",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(StreamingTraitsWithMediaTypeInputOutput(blob: blob, foo: foo))
+pub fn decode_streaming_traits_with_media_type_input_output_struct() -> decode.Decoder(StreamingTraitsWithMediaTypeInputOutput) {
+  use blob <- decode.optional_field("blob", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
+  use foo <- decode.optional_field("foo", option.None, decode.optional(decode.string))
+  decode.success(StreamingTraitsWithMediaTypeInputOutput(
+    blob: blob,
+    foo: foo,
+  ))
 }
 
 pub type TestBodyStructureInputOutput {
@@ -6931,9 +4794,7 @@ pub type TestBodyStructureInputOutput {
   )
 }
 
-pub fn encode_test_body_structure_input_output_struct(
-  input: TestBodyStructureInputOutput,
-) -> json.Json {
+pub fn encode_test_body_structure_input_output_struct(input: TestBodyStructureInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.test_config {
     option.Some(v) -> [#("testConfig", encode_test_config_struct(v)), ..pairs]
@@ -6946,19 +4807,9 @@ pub fn encode_test_body_structure_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_test_body_structure_input_output_struct() -> decode.Decoder(
-  TestBodyStructureInputOutput,
-) {
-  use test_config <- decode.optional_field(
-    "testConfig",
-    option.None,
-    decode.optional(decode_test_config_struct()),
-  )
-  use test_id <- decode.optional_field(
-    "testId",
-    option.None,
-    decode.optional(decode.string),
-  )
+pub fn decode_test_body_structure_input_output_struct() -> decode.Decoder(TestBodyStructureInputOutput) {
+  use test_config <- decode.optional_field("testConfig", option.None, decode.optional(decode_test_config_struct()))
+  use test_id <- decode.optional_field("testId", option.None, decode.optional(decode.string))
   decode.success(TestBodyStructureInputOutput(
     test_config: test_config,
     test_id: test_id,
@@ -6966,7 +4817,9 @@ pub fn decode_test_body_structure_input_output_struct() -> decode.Decoder(
 }
 
 pub type TestConfig {
-  TestConfig(timeout: option.Option(Int))
+  TestConfig(
+    timeout: option.Option(Int),
+  )
 }
 
 pub fn encode_test_config_struct(input: TestConfig) -> json.Json {
@@ -6979,21 +4832,19 @@ pub fn encode_test_config_struct(input: TestConfig) -> json.Json {
 }
 
 pub fn decode_test_config_struct() -> decode.Decoder(TestConfig) {
-  use timeout <- decode.optional_field(
-    "timeout",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(TestConfig(timeout: timeout))
+  use timeout <- decode.optional_field("timeout", option.None, decode.optional(decode.int))
+  decode.success(TestConfig(
+    timeout: timeout,
+  ))
 }
 
 pub type TestNoPayloadInputOutput {
-  TestNoPayloadInputOutput(test_id: option.Option(String))
+  TestNoPayloadInputOutput(
+    test_id: option.Option(String),
+  )
 }
 
-pub fn encode_test_no_payload_input_output_struct(
-  input: TestNoPayloadInputOutput,
-) -> json.Json {
+pub fn encode_test_no_payload_input_output_struct(input: TestNoPayloadInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.test_id {
     option.Some(v) -> [#("testId", json.string(v)), ..pairs]
@@ -7002,15 +4853,11 @@ pub fn encode_test_no_payload_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_test_no_payload_input_output_struct() -> decode.Decoder(
-  TestNoPayloadInputOutput,
-) {
-  use test_id <- decode.optional_field(
-    "testId",
-    option.None,
-    decode.optional(decode.string),
-  )
-  decode.success(TestNoPayloadInputOutput(test_id: test_id))
+pub fn decode_test_no_payload_input_output_struct() -> decode.Decoder(TestNoPayloadInputOutput) {
+  use test_id <- decode.optional_field("testId", option.None, decode.optional(decode.string))
+  decode.success(TestNoPayloadInputOutput(
+    test_id: test_id,
+  ))
 }
 
 pub type TestPayloadBlobInputOutput {
@@ -7020,41 +4867,22 @@ pub type TestPayloadBlobInputOutput {
   )
 }
 
-pub fn encode_test_payload_blob_input_output_struct(
-  input: TestPayloadBlobInputOutput,
-) -> json.Json {
+pub fn encode_test_payload_blob_input_output_struct(input: TestPayloadBlobInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.content_type {
     option.Some(v) -> [#("contentType", json.string(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.data {
-    option.Some(v) -> [
-      #("data", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("data", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
 }
 
-pub fn decode_test_payload_blob_input_output_struct() -> decode.Decoder(
-  TestPayloadBlobInputOutput,
-) {
-  use content_type <- decode.optional_field(
-    "contentType",
-    option.None,
-    decode.optional(decode.string),
-  )
-  use data <- decode.optional_field(
-    "data",
-    option.None,
-    decode.optional(
-      decode.then(decode.string, fn(s) {
-        decode.success(bit_array.from_string(s))
-      }),
-    ),
-  )
+pub fn decode_test_payload_blob_input_output_struct() -> decode.Decoder(TestPayloadBlobInputOutput) {
+  use content_type <- decode.optional_field("contentType", option.None, decode.optional(decode.string))
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })))
   decode.success(TestPayloadBlobInputOutput(
     content_type: content_type,
     data: data,
@@ -7068,15 +4896,10 @@ pub type TestPayloadStructureInputOutput {
   )
 }
 
-pub fn encode_test_payload_structure_input_output_struct(
-  input: TestPayloadStructureInputOutput,
-) -> json.Json {
+pub fn encode_test_payload_structure_input_output_struct(input: TestPayloadStructureInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.payload_config {
-    option.Some(v) -> [
-      #("payloadConfig", encode_payload_config_struct(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("payloadConfig", encode_payload_config_struct(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.test_id {
@@ -7086,19 +4909,9 @@ pub fn encode_test_payload_structure_input_output_struct(
   json.object(pairs)
 }
 
-pub fn decode_test_payload_structure_input_output_struct() -> decode.Decoder(
-  TestPayloadStructureInputOutput,
-) {
-  use payload_config <- decode.optional_field(
-    "payloadConfig",
-    option.None,
-    decode.optional(decode_payload_config_struct()),
-  )
-  use test_id <- decode.optional_field(
-    "testId",
-    option.None,
-    decode.optional(decode.string),
-  )
+pub fn decode_test_payload_structure_input_output_struct() -> decode.Decoder(TestPayloadStructureInputOutput) {
+  use payload_config <- decode.optional_field("payloadConfig", option.None, decode.optional(decode_payload_config_struct()))
+  use test_id <- decode.optional_field("testId", option.None, decode.optional(decode.string))
   decode.success(TestPayloadStructureInputOutput(
     payload_config: payload_config,
     test_id: test_id,
@@ -7106,7 +4919,9 @@ pub fn decode_test_payload_structure_input_output_struct() -> decode.Decoder(
 }
 
 pub type PayloadConfig {
-  PayloadConfig(data: option.Option(Int))
+  PayloadConfig(
+    data: option.Option(Int),
+  )
 }
 
 pub fn encode_payload_config_struct(input: PayloadConfig) -> json.Json {
@@ -7119,12 +4934,10 @@ pub fn encode_payload_config_struct(input: PayloadConfig) -> json.Json {
 }
 
 pub fn decode_payload_config_struct() -> decode.Decoder(PayloadConfig) {
-  use data <- decode.optional_field(
-    "data",
-    option.None,
-    decode.optional(decode.int),
-  )
-  decode.success(PayloadConfig(data: data))
+  use data <- decode.optional_field("data", option.None, decode.optional(decode.int))
+  decode.success(PayloadConfig(
+    data: data,
+  ))
 }
 
 pub type TimestampFormatHeadersIO {
@@ -7139,9 +4952,7 @@ pub type TimestampFormatHeadersIO {
   )
 }
 
-pub fn encode_timestamp_format_headers_io_struct(
-  input: TimestampFormatHeadersIO,
-) -> json.Json {
+pub fn encode_timestamp_format_headers_io_struct(input: TimestampFormatHeadersIO) -> json.Json {
   let pairs = []
   let pairs = case input.default_format {
     option.Some(v) -> [#("defaultFormat", json.int(v)), ..pairs]
@@ -7174,44 +4985,14 @@ pub fn encode_timestamp_format_headers_io_struct(
   json.object(pairs)
 }
 
-pub fn decode_timestamp_format_headers_io_struct() -> decode.Decoder(
-  TimestampFormatHeadersIO,
-) {
-  use default_format <- decode.optional_field(
-    "defaultFormat",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use member_date_time <- decode.optional_field(
-    "memberDateTime",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use member_epoch_seconds <- decode.optional_field(
-    "memberEpochSeconds",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use member_http_date <- decode.optional_field(
-    "memberHttpDate",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use target_date_time <- decode.optional_field(
-    "targetDateTime",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use target_epoch_seconds <- decode.optional_field(
-    "targetEpochSeconds",
-    option.None,
-    decode.optional(decode.int),
-  )
-  use target_http_date <- decode.optional_field(
-    "targetHttpDate",
-    option.None,
-    decode.optional(decode.int),
-  )
+pub fn decode_timestamp_format_headers_io_struct() -> decode.Decoder(TimestampFormatHeadersIO) {
+  use default_format <- decode.optional_field("defaultFormat", option.None, decode.optional(decode.int))
+  use member_date_time <- decode.optional_field("memberDateTime", option.None, decode.optional(decode.int))
+  use member_epoch_seconds <- decode.optional_field("memberEpochSeconds", option.None, decode.optional(decode.int))
+  use member_http_date <- decode.optional_field("memberHttpDate", option.None, decode.optional(decode.int))
+  use target_date_time <- decode.optional_field("targetDateTime", option.None, decode.optional(decode.int))
+  use target_epoch_seconds <- decode.optional_field("targetEpochSeconds", option.None, decode.optional(decode.int))
+  use target_http_date <- decode.optional_field("targetHttpDate", option.None, decode.optional(decode.int))
   decode.success(TimestampFormatHeadersIO(
     default_format: default_format,
     member_date_time: member_date_time,
@@ -7223,49 +5004,38 @@ pub fn decode_timestamp_format_headers_io_struct() -> decode.Decoder(
   ))
 }
 
+
 pub type AllQueryStringTypesOutput {
   AllQueryStringTypesOutput
 }
 
-pub fn encode_all_query_string_types_output_struct(
-  _v: AllQueryStringTypesOutput,
-) -> json.Json {
+pub fn encode_all_query_string_types_output_struct(_v: AllQueryStringTypesOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_all_query_string_types_output_struct() -> decode.Decoder(
-  AllQueryStringTypesOutput,
-) {
+pub fn decode_all_query_string_types_output_struct() -> decode.Decoder(AllQueryStringTypesOutput) {
   decode.success(AllQueryStringTypesOutput)
 }
 
-pub fn encode_all_query_string_types_input(
-  input: AllQueryStringTypesInput,
-) -> String {
+pub fn encode_all_query_string_types_input(input: AllQueryStringTypesInput) -> String {
   json.to_string(encode_all_query_string_types_input_struct(input))
 }
 
-pub fn decode_all_query_string_types_input(
-  body: String,
-) -> Result(AllQueryStringTypesInput, String) {
+pub fn decode_all_query_string_types_input(body: String) -> Result(AllQueryStringTypesInput, String) {
   case json.parse(body, decode_all_query_string_types_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_all_query_string_types_output(
-  body: String,
-) -> Result(AllQueryStringTypesOutput, String) {
+pub fn decode_all_query_string_types_output(body: String) -> Result(AllQueryStringTypesOutput, String) {
   case json.parse(body, decode_all_query_string_types_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_all_query_string_types_body(
-  _input: AllQueryStringTypesInput,
-) -> json.Json {
+pub fn encode_all_query_string_types_body(_input: AllQueryStringTypesInput) -> json.Json {
   json.object([])
 }
 
@@ -7279,7 +5049,10 @@ pub fn build_all_query_string_types_request(
     option.None -> query
   }
   let query = case input.query_boolean_list {
-    option.Some(v) -> rest.add_query(query, "BooleanList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "BooleanList", rest.bool_to_query(v))
+    })
     option.None -> query
   }
   let query = case input.query_byte {
@@ -7287,40 +5060,29 @@ pub fn build_all_query_string_types_request(
     option.None -> query
   }
   let query = case input.query_double {
-    option.Some(v) ->
-      rest.add_query(query, "Double", case v {
-        json_float.FloatValue(f) -> rest.float_to_query(f)
-        json_float.NaN -> "NaN"
-        json_float.PosInfinity -> "Infinity"
-        json_float.NegInfinity -> "-Infinity"
-      })
+    option.Some(v) -> rest.add_query(query, "Double", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" })
     option.None -> query
   }
   let query = case input.query_double_list {
-    option.Some(v) -> rest.add_query(query, "DoubleList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "DoubleList", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" })
+    })
     option.None -> query
   }
   let query = case input.query_enum {
-    option.Some(v) ->
-      rest.add_query(
-        query,
-        "Enum",
-        rest.enum_wire_value(encode_foo_enum_enum(v)),
-      )
+    option.Some(v) -> rest.add_query(query, "Enum", rest.enum_wire_value(encode_foo_enum_enum(v)))
     option.None -> query
   }
   let query = case input.query_enum_list {
-    option.Some(v) -> rest.add_query(query, "EnumList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "EnumList", rest.enum_wire_value(encode_foo_enum_enum(v)))
+    })
     option.None -> query
   }
   let query = case input.query_float {
-    option.Some(v) ->
-      rest.add_query(query, "Float", case v {
-        json_float.FloatValue(f) -> rest.float_to_query(f)
-        json_float.NaN -> "NaN"
-        json_float.PosInfinity -> "Infinity"
-        json_float.NegInfinity -> "-Infinity"
-      })
+    option.Some(v) -> rest.add_query(query, "Float", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" })
     option.None -> query
   }
   let query = case input.query_integer {
@@ -7328,26 +5090,28 @@ pub fn build_all_query_string_types_request(
     option.None -> query
   }
   let query = case input.query_integer_enum {
-    option.Some(v) ->
-      rest.add_query(
-        query,
-        "IntegerEnum",
-        rest.int_to_query(case encode_integer_enum_int_enum(v) {
-          _ -> 0
-        }),
-      )
+    option.Some(v) -> rest.add_query(query, "IntegerEnum", rest.int_to_query(case encode_integer_enum_int_enum(v) { _ -> 0 }))
     option.None -> query
   }
   let query = case input.query_integer_enum_list {
-    option.Some(v) -> rest.add_query(query, "IntegerEnumList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "IntegerEnumList", rest.int_to_query(case encode_integer_enum_int_enum(v) { _ -> 0 }))
+    })
     option.None -> query
   }
   let query = case input.query_integer_list {
-    option.Some(v) -> rest.add_query(query, "IntegerList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "IntegerList", rest.int_to_query(v))
+    })
     option.None -> query
   }
   let query = case input.query_integer_set {
-    option.Some(v) -> rest.add_query(query, "IntegerSet", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "IntegerSet", rest.int_to_query(v))
+    })
     option.None -> query
   }
   let query = case input.query_long {
@@ -7363,20 +5127,28 @@ pub fn build_all_query_string_types_request(
     option.None -> query
   }
   let query = case input.query_string_list {
-    option.Some(v) -> rest.add_query(query, "StringList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "StringList", v)
+    })
     option.None -> query
   }
   let query = case input.query_string_set {
-    option.Some(v) -> rest.add_query(query, "StringSet", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "StringSet", v)
+    })
     option.None -> query
   }
   let query = case input.query_timestamp {
-    option.Some(v) ->
-      rest.add_query(query, "Timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.add_query(query, "Timestamp", rest.timestamp_to_header(v))
     option.None -> query
   }
   let query = case input.query_timestamp_list {
-    option.Some(v) -> rest.add_query(query, "TimestampList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "TimestampList", rest.timestamp_to_header(v))
+    })
     option.None -> query
   }
   let query = case input.query_params_map_of_string_list {
@@ -7390,6 +5162,10 @@ pub fn build_all_query_string_types_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -7400,62 +5176,46 @@ pub fn parse_all_query_string_types_response(
   body: BitArray,
 ) -> Result(AllQueryStringTypesOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_all_query_string_types_output("{}")
-        _ -> decode_all_query_string_types_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_all_query_string_types_output("{}")
+      _ -> decode_all_query_string_types_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type ConstantAndVariableQueryStringOutput {
   ConstantAndVariableQueryStringOutput
 }
 
-pub fn encode_constant_and_variable_query_string_output_struct(
-  _v: ConstantAndVariableQueryStringOutput,
-) -> json.Json {
+pub fn encode_constant_and_variable_query_string_output_struct(_v: ConstantAndVariableQueryStringOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_constant_and_variable_query_string_output_struct() -> decode.Decoder(
-  ConstantAndVariableQueryStringOutput,
-) {
+pub fn decode_constant_and_variable_query_string_output_struct() -> decode.Decoder(ConstantAndVariableQueryStringOutput) {
   decode.success(ConstantAndVariableQueryStringOutput)
 }
 
-pub fn encode_constant_and_variable_query_string_input(
-  input: ConstantAndVariableQueryStringInput,
-) -> String {
+pub fn encode_constant_and_variable_query_string_input(input: ConstantAndVariableQueryStringInput) -> String {
   json.to_string(encode_constant_and_variable_query_string_input_struct(input))
 }
 
-pub fn decode_constant_and_variable_query_string_input(
-  body: String,
-) -> Result(ConstantAndVariableQueryStringInput, String) {
-  case
-    json.parse(body, decode_constant_and_variable_query_string_input_struct())
-  {
+pub fn decode_constant_and_variable_query_string_input(body: String) -> Result(ConstantAndVariableQueryStringInput, String) {
+  case json.parse(body, decode_constant_and_variable_query_string_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_constant_and_variable_query_string_output(
-  body: String,
-) -> Result(ConstantAndVariableQueryStringOutput, String) {
-  case
-    json.parse(body, decode_constant_and_variable_query_string_output_struct())
-  {
+pub fn decode_constant_and_variable_query_string_output(body: String) -> Result(ConstantAndVariableQueryStringOutput, String) {
+  case json.parse(body, decode_constant_and_variable_query_string_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_constant_and_variable_query_string_body(
-  _input: ConstantAndVariableQueryStringInput,
-) -> json.Json {
+pub fn encode_constant_and_variable_query_string_body(_input: ConstantAndVariableQueryStringInput) -> json.Json {
   json.object([])
 }
 
@@ -7479,6 +5239,10 @@ pub fn build_constant_and_variable_query_string_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -7489,58 +5253,46 @@ pub fn parse_constant_and_variable_query_string_response(
   body: BitArray,
 ) -> Result(ConstantAndVariableQueryStringOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_constant_and_variable_query_string_output("{}")
-        _ -> decode_constant_and_variable_query_string_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_constant_and_variable_query_string_output("{}")
+      _ -> decode_constant_and_variable_query_string_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type ConstantQueryStringOutput {
   ConstantQueryStringOutput
 }
 
-pub fn encode_constant_query_string_output_struct(
-  _v: ConstantQueryStringOutput,
-) -> json.Json {
+pub fn encode_constant_query_string_output_struct(_v: ConstantQueryStringOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_constant_query_string_output_struct() -> decode.Decoder(
-  ConstantQueryStringOutput,
-) {
+pub fn decode_constant_query_string_output_struct() -> decode.Decoder(ConstantQueryStringOutput) {
   decode.success(ConstantQueryStringOutput)
 }
 
-pub fn encode_constant_query_string_input(
-  input: ConstantQueryStringInput,
-) -> String {
+pub fn encode_constant_query_string_input(input: ConstantQueryStringInput) -> String {
   json.to_string(encode_constant_query_string_input_struct(input))
 }
 
-pub fn decode_constant_query_string_input(
-  body: String,
-) -> Result(ConstantQueryStringInput, String) {
+pub fn decode_constant_query_string_input(body: String) -> Result(ConstantQueryStringInput, String) {
   case json.parse(body, decode_constant_query_string_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_constant_query_string_output(
-  body: String,
-) -> Result(ConstantQueryStringOutput, String) {
+pub fn decode_constant_query_string_output(body: String) -> Result(ConstantQueryStringOutput, String) {
   case json.parse(body, decode_constant_query_string_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_constant_query_string_body(
-  _input: ConstantQueryStringInput,
-) -> json.Json {
+pub fn encode_constant_query_string_body(_input: ConstantQueryStringInput) -> json.Json {
   json.object([])
 }
 
@@ -7560,6 +5312,10 @@ pub fn build_constant_query_string_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -7570,42 +5326,34 @@ pub fn parse_constant_query_string_response(
   body: BitArray,
 ) -> Result(ConstantQueryStringOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_constant_query_string_output("{}")
-        _ -> decode_constant_query_string_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_constant_query_string_output("{}")
+      _ -> decode_constant_query_string_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_content_type_parameters_input(
-  input: ContentTypeParametersInput,
-) -> String {
+
+pub fn encode_content_type_parameters_input(input: ContentTypeParametersInput) -> String {
   json.to_string(encode_content_type_parameters_input_struct(input))
 }
 
-pub fn decode_content_type_parameters_input(
-  body: String,
-) -> Result(ContentTypeParametersInput, String) {
+pub fn decode_content_type_parameters_input(body: String) -> Result(ContentTypeParametersInput, String) {
   case json.parse(body, decode_content_type_parameters_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_content_type_parameters_output(
-  body: String,
-) -> Result(ContentTypeParametersOutput, String) {
+pub fn decode_content_type_parameters_output(body: String) -> Result(ContentTypeParametersOutput, String) {
   case json.parse(body, decode_content_type_parameters_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_content_type_parameters_body(
-  input: ContentTypeParametersInput,
-) -> json.Json {
+pub fn encode_content_type_parameters_body(input: ContentTypeParametersInput) -> json.Json {
   let pairs = []
   let pairs = case input.value {
     option.Some(v) -> [#("value", json.int(v)), ..pairs]
@@ -7627,6 +5375,10 @@ pub fn build_content_type_parameters_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -7637,28 +5389,24 @@ pub fn parse_content_type_parameters_response(
   body: BitArray,
 ) -> Result(ContentTypeParametersOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_content_type_parameters_output("{}")
-        _ -> decode_content_type_parameters_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_content_type_parameters_output("{}")
+      _ -> decode_content_type_parameters_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type DatetimeOffsetsInput {
   DatetimeOffsetsInput
 }
 
-pub fn encode_datetime_offsets_input_struct(
-  _v: DatetimeOffsetsInput,
-) -> json.Json {
+pub fn encode_datetime_offsets_input_struct(_v: DatetimeOffsetsInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_datetime_offsets_input_struct() -> decode.Decoder(
-  DatetimeOffsetsInput,
-) {
+pub fn decode_datetime_offsets_input_struct() -> decode.Decoder(DatetimeOffsetsInput) {
   decode.success(DatetimeOffsetsInput)
 }
 
@@ -7666,18 +5414,14 @@ pub fn encode_datetime_offsets_input(input: DatetimeOffsetsInput) -> String {
   json.to_string(encode_datetime_offsets_input_struct(input))
 }
 
-pub fn decode_datetime_offsets_input(
-  body: String,
-) -> Result(DatetimeOffsetsInput, String) {
+pub fn decode_datetime_offsets_input(body: String) -> Result(DatetimeOffsetsInput, String) {
   case json.parse(body, decode_datetime_offsets_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_datetime_offsets_output(
-  body: String,
-) -> Result(DatetimeOffsetsOutput, String) {
+pub fn decode_datetime_offsets_output(body: String) -> Result(DatetimeOffsetsOutput, String) {
   case json.parse(body, decode_datetime_offsets_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -7700,6 +5444,10 @@ pub fn build_datetime_offsets_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -7710,31 +5458,27 @@ pub fn parse_datetime_offsets_response(
   body: BitArray,
 ) -> Result(DatetimeOffsetsOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_datetime_offsets_output("{}")
-        _ -> decode_datetime_offsets_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_datetime_offsets_output("{}")
+      _ -> decode_datetime_offsets_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub fn encode_document_type_input(input: DocumentTypeInputOutput) -> String {
   json.to_string(encode_document_type_input_output_struct(input))
 }
 
-pub fn decode_document_type_input(
-  body: String,
-) -> Result(DocumentTypeInputOutput, String) {
+pub fn decode_document_type_input(body: String) -> Result(DocumentTypeInputOutput, String) {
   case json.parse(body, decode_document_type_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_document_type_output(
-  body: String,
-) -> Result(DocumentTypeInputOutput, String) {
+pub fn decode_document_type_output(body: String) -> Result(DocumentTypeInputOutput, String) {
   case json.parse(body, decode_document_type_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -7767,6 +5511,10 @@ pub fn build_document_type_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -7777,60 +5525,37 @@ pub fn parse_document_type_response(
   body: BitArray,
 ) -> Result(DocumentTypeInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_document_type_output("{}")
-        _ -> decode_document_type_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_document_type_output("{}")
+      _ -> decode_document_type_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_document_type_as_map_value_input(
-  input: DocumentTypeAsMapValueInputOutput,
-) -> String {
+
+pub fn encode_document_type_as_map_value_input(input: DocumentTypeAsMapValueInputOutput) -> String {
   json.to_string(encode_document_type_as_map_value_input_output_struct(input))
 }
 
-pub fn decode_document_type_as_map_value_input(
-  body: String,
-) -> Result(DocumentTypeAsMapValueInputOutput, String) {
-  case
-    json.parse(body, decode_document_type_as_map_value_input_output_struct())
-  {
+pub fn decode_document_type_as_map_value_input(body: String) -> Result(DocumentTypeAsMapValueInputOutput, String) {
+  case json.parse(body, decode_document_type_as_map_value_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_document_type_as_map_value_output(
-  body: String,
-) -> Result(DocumentTypeAsMapValueInputOutput, String) {
-  case
-    json.parse(body, decode_document_type_as_map_value_input_output_struct())
-  {
+pub fn decode_document_type_as_map_value_output(body: String) -> Result(DocumentTypeAsMapValueInputOutput, String) {
+  case json.parse(body, decode_document_type_as_map_value_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_document_type_as_map_value_body(
-  input: DocumentTypeAsMapValueInputOutput,
-) -> json.Json {
+pub fn encode_document_type_as_map_value_body(input: DocumentTypeAsMapValueInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.doc_valued_map {
-    option.Some(v) -> [
-      #(
-        "docValuedMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, fn(j) { j }(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("docValuedMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(j) { j }(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -7849,6 +5574,10 @@ pub fn build_document_type_as_map_value_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -7859,42 +5588,34 @@ pub fn parse_document_type_as_map_value_response(
   body: BitArray,
 ) -> Result(DocumentTypeAsMapValueInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_document_type_as_map_value_output("{}")
-        _ -> decode_document_type_as_map_value_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_document_type_as_map_value_output("{}")
+      _ -> decode_document_type_as_map_value_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_document_type_as_payload_input(
-  input: DocumentTypeAsPayloadInputOutput,
-) -> String {
+
+pub fn encode_document_type_as_payload_input(input: DocumentTypeAsPayloadInputOutput) -> String {
   json.to_string(encode_document_type_as_payload_input_output_struct(input))
 }
 
-pub fn decode_document_type_as_payload_input(
-  body: String,
-) -> Result(DocumentTypeAsPayloadInputOutput, String) {
+pub fn decode_document_type_as_payload_input(body: String) -> Result(DocumentTypeAsPayloadInputOutput, String) {
   case json.parse(body, decode_document_type_as_payload_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_document_type_as_payload_output(
-  body: String,
-) -> Result(DocumentTypeAsPayloadInputOutput, String) {
+pub fn decode_document_type_as_payload_output(body: String) -> Result(DocumentTypeAsPayloadInputOutput, String) {
   case json.parse(body, decode_document_type_as_payload_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_document_type_as_payload_body(
-  _input: DocumentTypeAsPayloadInputOutput,
-) -> json.Json {
+pub fn encode_document_type_as_payload_body(_input: DocumentTypeAsPayloadInputOutput) -> json.Json {
   json.object([])
 }
 
@@ -7913,6 +5634,10 @@ pub fn build_document_type_as_payload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -7923,31 +5648,27 @@ pub fn parse_document_type_as_payload_response(
   body: BitArray,
 ) -> Result(DocumentTypeAsPayloadInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_document_type_as_payload_output("{}")
-        _ -> decode_document_type_as_payload_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_document_type_as_payload_output("{}")
+      _ -> decode_document_type_as_payload_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub fn encode_duplex_stream_input(input: DuplexStreamInput) -> String {
   json.to_string(encode_duplex_stream_input_struct(input))
 }
 
-pub fn decode_duplex_stream_input(
-  body: String,
-) -> Result(DuplexStreamInput, String) {
+pub fn decode_duplex_stream_input(body: String) -> Result(DuplexStreamInput, String) {
   case json.parse(body, decode_duplex_stream_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_duplex_stream_output(
-  body: String,
-) -> Result(DuplexStreamOutput, String) {
+pub fn decode_duplex_stream_output(body: String) -> Result(DuplexStreamOutput, String) {
   case json.parse(body, decode_duplex_stream_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -7965,14 +5686,17 @@ pub fn build_duplex_stream_request(
   let query = ""
   let headers = dict.new()
   let body = case input.stream {
-    option.Some(v) ->
-      bit_array.from_string(json.to_string(encode_event_stream_union(v)))
+    option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
     option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -7984,46 +5708,34 @@ pub fn parse_duplex_stream_response(
   body: BitArray,
 ) -> Result(DuplexStreamOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_duplex_stream_output("{}")
-        _ -> decode_duplex_stream_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_duplex_stream_output("{}")
+      _ -> decode_duplex_stream_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_duplex_stream_with_distinct_streams_input(
-  input: DuplexStreamWithDistinctStreamsInput,
-) -> String {
+
+pub fn encode_duplex_stream_with_distinct_streams_input(input: DuplexStreamWithDistinctStreamsInput) -> String {
   json.to_string(encode_duplex_stream_with_distinct_streams_input_struct(input))
 }
 
-pub fn decode_duplex_stream_with_distinct_streams_input(
-  body: String,
-) -> Result(DuplexStreamWithDistinctStreamsInput, String) {
-  case
-    json.parse(body, decode_duplex_stream_with_distinct_streams_input_struct())
-  {
+pub fn decode_duplex_stream_with_distinct_streams_input(body: String) -> Result(DuplexStreamWithDistinctStreamsInput, String) {
+  case json.parse(body, decode_duplex_stream_with_distinct_streams_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_duplex_stream_with_distinct_streams_output(
-  body: String,
-) -> Result(DuplexStreamWithDistinctStreamsOutput, String) {
-  case
-    json.parse(body, decode_duplex_stream_with_distinct_streams_output_struct())
-  {
+pub fn decode_duplex_stream_with_distinct_streams_output(body: String) -> Result(DuplexStreamWithDistinctStreamsOutput, String) {
+  case json.parse(body, decode_duplex_stream_with_distinct_streams_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_duplex_stream_with_distinct_streams_body(
-  _input: DuplexStreamWithDistinctStreamsInput,
-) -> json.Json {
+pub fn encode_duplex_stream_with_distinct_streams_body(_input: DuplexStreamWithDistinctStreamsInput) -> json.Json {
   json.object([])
 }
 
@@ -8034,14 +5746,17 @@ pub fn build_duplex_stream_with_distinct_streams_request(
   let query = ""
   let headers = dict.new()
   let body = case input.stream {
-    option.Some(v) ->
-      bit_array.from_string(json.to_string(encode_event_stream_union(v)))
+    option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
     option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -8053,46 +5768,34 @@ pub fn parse_duplex_stream_with_distinct_streams_response(
   body: BitArray,
 ) -> Result(DuplexStreamWithDistinctStreamsOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_duplex_stream_with_distinct_streams_output("{}")
-        _ -> decode_duplex_stream_with_distinct_streams_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_duplex_stream_with_distinct_streams_output("{}")
+      _ -> decode_duplex_stream_with_distinct_streams_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_duplex_stream_with_initial_messages_input(
-  input: DuplexStreamWithInitialMessagesInput,
-) -> String {
+
+pub fn encode_duplex_stream_with_initial_messages_input(input: DuplexStreamWithInitialMessagesInput) -> String {
   json.to_string(encode_duplex_stream_with_initial_messages_input_struct(input))
 }
 
-pub fn decode_duplex_stream_with_initial_messages_input(
-  body: String,
-) -> Result(DuplexStreamWithInitialMessagesInput, String) {
-  case
-    json.parse(body, decode_duplex_stream_with_initial_messages_input_struct())
-  {
+pub fn decode_duplex_stream_with_initial_messages_input(body: String) -> Result(DuplexStreamWithInitialMessagesInput, String) {
+  case json.parse(body, decode_duplex_stream_with_initial_messages_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_duplex_stream_with_initial_messages_output(
-  body: String,
-) -> Result(DuplexStreamWithInitialMessagesOutput, String) {
-  case
-    json.parse(body, decode_duplex_stream_with_initial_messages_output_struct())
-  {
+pub fn decode_duplex_stream_with_initial_messages_output(body: String) -> Result(DuplexStreamWithInitialMessagesOutput, String) {
+  case json.parse(body, decode_duplex_stream_with_initial_messages_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_duplex_stream_with_initial_messages_body(
-  _input: DuplexStreamWithInitialMessagesInput,
-) -> json.Json {
+pub fn encode_duplex_stream_with_initial_messages_body(_input: DuplexStreamWithInitialMessagesInput) -> json.Json {
   json.object([])
 }
 
@@ -8103,19 +5806,21 @@ pub fn build_duplex_stream_with_initial_messages_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.initial_request_member {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "initial-request-member", v)
+    option.Some(v) -> rest.maybe_set_header(headers, "initial-request-member", v)
     option.None -> headers
   }
   let body = case input.stream {
-    option.Some(v) ->
-      bit_array.from_string(json.to_string(encode_event_stream_union(v)))
+    option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
     option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -8127,42 +5832,34 @@ pub fn parse_duplex_stream_with_initial_messages_response(
   body: BitArray,
 ) -> Result(DuplexStreamWithInitialMessagesOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_duplex_stream_with_initial_messages_output("{}")
-        _ -> decode_duplex_stream_with_initial_messages_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_duplex_stream_with_initial_messages_output("{}")
+      _ -> decode_duplex_stream_with_initial_messages_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_empty_input_and_empty_output_input(
-  input: EmptyInputAndEmptyOutputInput,
-) -> String {
+
+pub fn encode_empty_input_and_empty_output_input(input: EmptyInputAndEmptyOutputInput) -> String {
   json.to_string(encode_empty_input_and_empty_output_input_struct(input))
 }
 
-pub fn decode_empty_input_and_empty_output_input(
-  body: String,
-) -> Result(EmptyInputAndEmptyOutputInput, String) {
+pub fn decode_empty_input_and_empty_output_input(body: String) -> Result(EmptyInputAndEmptyOutputInput, String) {
   case json.parse(body, decode_empty_input_and_empty_output_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_empty_input_and_empty_output_output(
-  body: String,
-) -> Result(EmptyInputAndEmptyOutputOutput, String) {
+pub fn decode_empty_input_and_empty_output_output(body: String) -> Result(EmptyInputAndEmptyOutputOutput, String) {
   case json.parse(body, decode_empty_input_and_empty_output_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_empty_input_and_empty_output_body(
-  _input: EmptyInputAndEmptyOutputInput,
-) -> json.Json {
+pub fn encode_empty_input_and_empty_output_body(_input: EmptyInputAndEmptyOutputInput) -> json.Json {
   json.object([])
 }
 
@@ -8178,6 +5875,10 @@ pub fn build_empty_input_and_empty_output_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -8188,28 +5889,24 @@ pub fn parse_empty_input_and_empty_output_response(
   body: BitArray,
 ) -> Result(EmptyInputAndEmptyOutputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_empty_input_and_empty_output_output("{}")
-        _ -> decode_empty_input_and_empty_output_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_empty_input_and_empty_output_output("{}")
+      _ -> decode_empty_input_and_empty_output_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type EndpointOperationInput {
   EndpointOperationInput
 }
 
-pub fn encode_endpoint_operation_input_struct(
-  _v: EndpointOperationInput,
-) -> json.Json {
+pub fn encode_endpoint_operation_input_struct(_v: EndpointOperationInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_endpoint_operation_input_struct() -> decode.Decoder(
-  EndpointOperationInput,
-) {
+pub fn decode_endpoint_operation_input_struct() -> decode.Decoder(EndpointOperationInput) {
   decode.success(EndpointOperationInput)
 }
 
@@ -8217,45 +5914,33 @@ pub type EndpointOperationOutput {
   EndpointOperationOutput
 }
 
-pub fn encode_endpoint_operation_output_struct(
-  _v: EndpointOperationOutput,
-) -> json.Json {
+pub fn encode_endpoint_operation_output_struct(_v: EndpointOperationOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_endpoint_operation_output_struct() -> decode.Decoder(
-  EndpointOperationOutput,
-) {
+pub fn decode_endpoint_operation_output_struct() -> decode.Decoder(EndpointOperationOutput) {
   decode.success(EndpointOperationOutput)
 }
 
-pub fn encode_endpoint_operation_input(
-  input: EndpointOperationInput,
-) -> String {
+pub fn encode_endpoint_operation_input(input: EndpointOperationInput) -> String {
   json.to_string(encode_endpoint_operation_input_struct(input))
 }
 
-pub fn decode_endpoint_operation_input(
-  body: String,
-) -> Result(EndpointOperationInput, String) {
+pub fn decode_endpoint_operation_input(body: String) -> Result(EndpointOperationInput, String) {
   case json.parse(body, decode_endpoint_operation_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_endpoint_operation_output(
-  body: String,
-) -> Result(EndpointOperationOutput, String) {
+pub fn decode_endpoint_operation_output(body: String) -> Result(EndpointOperationOutput, String) {
   case json.parse(body, decode_endpoint_operation_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_endpoint_operation_body(
-  _input: EndpointOperationInput,
-) -> json.Json {
+pub fn encode_endpoint_operation_body(_input: EndpointOperationInput) -> json.Json {
   json.object([])
 }
 
@@ -8271,6 +5956,10 @@ pub fn build_endpoint_operation_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -8281,60 +5970,46 @@ pub fn parse_endpoint_operation_response(
   body: BitArray,
 ) -> Result(EndpointOperationOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_endpoint_operation_output("{}")
-        _ -> decode_endpoint_operation_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_endpoint_operation_output("{}")
+      _ -> decode_endpoint_operation_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type EndpointWithHostLabelOperationOutput {
   EndpointWithHostLabelOperationOutput
 }
 
-pub fn encode_endpoint_with_host_label_operation_output_struct(
-  _v: EndpointWithHostLabelOperationOutput,
-) -> json.Json {
+pub fn encode_endpoint_with_host_label_operation_output_struct(_v: EndpointWithHostLabelOperationOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_endpoint_with_host_label_operation_output_struct() -> decode.Decoder(
-  EndpointWithHostLabelOperationOutput,
-) {
+pub fn decode_endpoint_with_host_label_operation_output_struct() -> decode.Decoder(EndpointWithHostLabelOperationOutput) {
   decode.success(EndpointWithHostLabelOperationOutput)
 }
 
-pub fn encode_endpoint_with_host_label_operation_input(
-  input: HostLabelInput,
-) -> String {
+pub fn encode_endpoint_with_host_label_operation_input(input: HostLabelInput) -> String {
   json.to_string(encode_host_label_input_struct(input))
 }
 
-pub fn decode_endpoint_with_host_label_operation_input(
-  body: String,
-) -> Result(HostLabelInput, String) {
+pub fn decode_endpoint_with_host_label_operation_input(body: String) -> Result(HostLabelInput, String) {
   case json.parse(body, decode_host_label_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_endpoint_with_host_label_operation_output(
-  body: String,
-) -> Result(EndpointWithHostLabelOperationOutput, String) {
-  case
-    json.parse(body, decode_endpoint_with_host_label_operation_output_struct())
-  {
+pub fn decode_endpoint_with_host_label_operation_output(body: String) -> Result(EndpointWithHostLabelOperationOutput, String) {
+  case json.parse(body, decode_endpoint_with_host_label_operation_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_endpoint_with_host_label_operation_body(
-  input: HostLabelInput,
-) -> json.Json {
+pub fn encode_endpoint_with_host_label_operation_body(input: HostLabelInput) -> json.Json {
   let pairs = []
   let pairs = case input.label {
     option.Some(v) -> [#("label", json.string(v)), ..pairs]
@@ -8356,6 +6031,10 @@ pub fn build_endpoint_with_host_label_operation_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -8366,58 +6045,46 @@ pub fn parse_endpoint_with_host_label_operation_response(
   body: BitArray,
 ) -> Result(EndpointWithHostLabelOperationOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_endpoint_with_host_label_operation_output("{}")
-        _ -> decode_endpoint_with_host_label_operation_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_endpoint_with_host_label_operation_output("{}")
+      _ -> decode_endpoint_with_host_label_operation_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type FractionalSecondsInput {
   FractionalSecondsInput
 }
 
-pub fn encode_fractional_seconds_input_struct(
-  _v: FractionalSecondsInput,
-) -> json.Json {
+pub fn encode_fractional_seconds_input_struct(_v: FractionalSecondsInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_fractional_seconds_input_struct() -> decode.Decoder(
-  FractionalSecondsInput,
-) {
+pub fn decode_fractional_seconds_input_struct() -> decode.Decoder(FractionalSecondsInput) {
   decode.success(FractionalSecondsInput)
 }
 
-pub fn encode_fractional_seconds_input(
-  input: FractionalSecondsInput,
-) -> String {
+pub fn encode_fractional_seconds_input(input: FractionalSecondsInput) -> String {
   json.to_string(encode_fractional_seconds_input_struct(input))
 }
 
-pub fn decode_fractional_seconds_input(
-  body: String,
-) -> Result(FractionalSecondsInput, String) {
+pub fn decode_fractional_seconds_input(body: String) -> Result(FractionalSecondsInput, String) {
   case json.parse(body, decode_fractional_seconds_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_fractional_seconds_output(
-  body: String,
-) -> Result(FractionalSecondsOutput, String) {
+pub fn decode_fractional_seconds_output(body: String) -> Result(FractionalSecondsOutput, String) {
   case json.parse(body, decode_fractional_seconds_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_fractional_seconds_body(
-  _input: FractionalSecondsInput,
-) -> json.Json {
+pub fn encode_fractional_seconds_body(_input: FractionalSecondsInput) -> json.Json {
   json.object([])
 }
 
@@ -8433,6 +6100,10 @@ pub fn build_fractional_seconds_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -8443,58 +6114,46 @@ pub fn parse_fractional_seconds_response(
   body: BitArray,
 ) -> Result(FractionalSecondsOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_fractional_seconds_output("{}")
-        _ -> decode_fractional_seconds_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_fractional_seconds_output("{}")
+      _ -> decode_fractional_seconds_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type GreetingWithErrorsInput {
   GreetingWithErrorsInput
 }
 
-pub fn encode_greeting_with_errors_input_struct(
-  _v: GreetingWithErrorsInput,
-) -> json.Json {
+pub fn encode_greeting_with_errors_input_struct(_v: GreetingWithErrorsInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_greeting_with_errors_input_struct() -> decode.Decoder(
-  GreetingWithErrorsInput,
-) {
+pub fn decode_greeting_with_errors_input_struct() -> decode.Decoder(GreetingWithErrorsInput) {
   decode.success(GreetingWithErrorsInput)
 }
 
-pub fn encode_greeting_with_errors_input(
-  input: GreetingWithErrorsInput,
-) -> String {
+pub fn encode_greeting_with_errors_input(input: GreetingWithErrorsInput) -> String {
   json.to_string(encode_greeting_with_errors_input_struct(input))
 }
 
-pub fn decode_greeting_with_errors_input(
-  body: String,
-) -> Result(GreetingWithErrorsInput, String) {
+pub fn decode_greeting_with_errors_input(body: String) -> Result(GreetingWithErrorsInput, String) {
   case json.parse(body, decode_greeting_with_errors_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_greeting_with_errors_output(
-  body: String,
-) -> Result(GreetingWithErrorsOutput, String) {
+pub fn decode_greeting_with_errors_output(body: String) -> Result(GreetingWithErrorsOutput, String) {
   case json.parse(body, decode_greeting_with_errors_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_greeting_with_errors_body(
-  _input: GreetingWithErrorsInput,
-) -> json.Json {
+pub fn encode_greeting_with_errors_body(_input: GreetingWithErrorsInput) -> json.Json {
   json.object([])
 }
 
@@ -8510,6 +6169,10 @@ pub fn build_greeting_with_errors_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -8520,28 +6183,24 @@ pub fn parse_greeting_with_errors_response(
   body: BitArray,
 ) -> Result(GreetingWithErrorsOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_greeting_with_errors_output("{}")
-        _ -> decode_greeting_with_errors_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_greeting_with_errors_output("{}")
+      _ -> decode_greeting_with_errors_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type HostWithPathOperationInput {
   HostWithPathOperationInput
 }
 
-pub fn encode_host_with_path_operation_input_struct(
-  _v: HostWithPathOperationInput,
-) -> json.Json {
+pub fn encode_host_with_path_operation_input_struct(_v: HostWithPathOperationInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_host_with_path_operation_input_struct() -> decode.Decoder(
-  HostWithPathOperationInput,
-) {
+pub fn decode_host_with_path_operation_input_struct() -> decode.Decoder(HostWithPathOperationInput) {
   decode.success(HostWithPathOperationInput)
 }
 
@@ -8549,45 +6208,33 @@ pub type HostWithPathOperationOutput {
   HostWithPathOperationOutput
 }
 
-pub fn encode_host_with_path_operation_output_struct(
-  _v: HostWithPathOperationOutput,
-) -> json.Json {
+pub fn encode_host_with_path_operation_output_struct(_v: HostWithPathOperationOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_host_with_path_operation_output_struct() -> decode.Decoder(
-  HostWithPathOperationOutput,
-) {
+pub fn decode_host_with_path_operation_output_struct() -> decode.Decoder(HostWithPathOperationOutput) {
   decode.success(HostWithPathOperationOutput)
 }
 
-pub fn encode_host_with_path_operation_input(
-  input: HostWithPathOperationInput,
-) -> String {
+pub fn encode_host_with_path_operation_input(input: HostWithPathOperationInput) -> String {
   json.to_string(encode_host_with_path_operation_input_struct(input))
 }
 
-pub fn decode_host_with_path_operation_input(
-  body: String,
-) -> Result(HostWithPathOperationInput, String) {
+pub fn decode_host_with_path_operation_input(body: String) -> Result(HostWithPathOperationInput, String) {
   case json.parse(body, decode_host_with_path_operation_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_host_with_path_operation_output(
-  body: String,
-) -> Result(HostWithPathOperationOutput, String) {
+pub fn decode_host_with_path_operation_output(body: String) -> Result(HostWithPathOperationOutput, String) {
   case json.parse(body, decode_host_with_path_operation_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_host_with_path_operation_body(
-  _input: HostWithPathOperationInput,
-) -> json.Json {
+pub fn encode_host_with_path_operation_body(_input: HostWithPathOperationInput) -> json.Json {
   json.object([])
 }
 
@@ -8603,6 +6250,10 @@ pub fn build_host_with_path_operation_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -8613,42 +6264,34 @@ pub fn parse_host_with_path_operation_response(
   body: BitArray,
 ) -> Result(HostWithPathOperationOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_host_with_path_operation_output("{}")
-        _ -> decode_host_with_path_operation_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_host_with_path_operation_output("{}")
+      _ -> decode_host_with_path_operation_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_http_empty_prefix_headers_input(
-  input: HttpEmptyPrefixHeadersInput,
-) -> String {
+
+pub fn encode_http_empty_prefix_headers_input(input: HttpEmptyPrefixHeadersInput) -> String {
   json.to_string(encode_http_empty_prefix_headers_input_struct(input))
 }
 
-pub fn decode_http_empty_prefix_headers_input(
-  body: String,
-) -> Result(HttpEmptyPrefixHeadersInput, String) {
+pub fn decode_http_empty_prefix_headers_input(body: String) -> Result(HttpEmptyPrefixHeadersInput, String) {
   case json.parse(body, decode_http_empty_prefix_headers_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_empty_prefix_headers_output(
-  body: String,
-) -> Result(HttpEmptyPrefixHeadersOutput, String) {
+pub fn decode_http_empty_prefix_headers_output(body: String) -> Result(HttpEmptyPrefixHeadersOutput, String) {
   case json.parse(body, decode_http_empty_prefix_headers_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_empty_prefix_headers_body(
-  _input: HttpEmptyPrefixHeadersInput,
-) -> json.Json {
+pub fn encode_http_empty_prefix_headers_body(_input: HttpEmptyPrefixHeadersInput) -> json.Json {
   json.object([])
 }
 
@@ -8672,6 +6315,10 @@ pub fn build_http_empty_prefix_headers_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -8682,31 +6329,27 @@ pub fn parse_http_empty_prefix_headers_response(
   body: BitArray,
 ) -> Result(HttpEmptyPrefixHeadersOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_empty_prefix_headers_output("{}")
-        _ -> decode_http_empty_prefix_headers_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_empty_prefix_headers_output("{}")
+      _ -> decode_http_empty_prefix_headers_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub fn encode_http_enum_payload_input(input: EnumPayloadInput) -> String {
   json.to_string(encode_enum_payload_input_struct(input))
 }
 
-pub fn decode_http_enum_payload_input(
-  body: String,
-) -> Result(EnumPayloadInput, String) {
+pub fn decode_http_enum_payload_input(body: String) -> Result(EnumPayloadInput, String) {
   case json.parse(body, decode_enum_payload_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_enum_payload_output(
-  body: String,
-) -> Result(EnumPayloadInput, String) {
+pub fn decode_http_enum_payload_output(body: String) -> Result(EnumPayloadInput, String) {
   case json.parse(body, decode_enum_payload_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -8724,14 +6367,17 @@ pub fn build_http_enum_payload_request(
   let query = ""
   let headers = dict.new()
   let body = case input.payload {
-    option.Some(v) ->
-      bit_array.from_string(json.to_string(encode_string_enum_enum(v)))
+    option.Some(v) -> bit_array.from_string(json.to_string(encode_string_enum_enum(v)))
     option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -8743,42 +6389,34 @@ pub fn parse_http_enum_payload_response(
   body: BitArray,
 ) -> Result(EnumPayloadInput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_enum_payload_output("{}")
-        _ -> decode_http_enum_payload_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_enum_payload_output("{}")
+      _ -> decode_http_enum_payload_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_http_payload_traits_input(
-  input: HttpPayloadTraitsInputOutput,
-) -> String {
+
+pub fn encode_http_payload_traits_input(input: HttpPayloadTraitsInputOutput) -> String {
   json.to_string(encode_http_payload_traits_input_output_struct(input))
 }
 
-pub fn decode_http_payload_traits_input(
-  body: String,
-) -> Result(HttpPayloadTraitsInputOutput, String) {
+pub fn decode_http_payload_traits_input(body: String) -> Result(HttpPayloadTraitsInputOutput, String) {
   case json.parse(body, decode_http_payload_traits_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_payload_traits_output(
-  body: String,
-) -> Result(HttpPayloadTraitsInputOutput, String) {
+pub fn decode_http_payload_traits_output(body: String) -> Result(HttpPayloadTraitsInputOutput, String) {
   case json.parse(body, decode_http_payload_traits_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_payload_traits_body(
-  _input: HttpPayloadTraitsInputOutput,
-) -> json.Json {
+pub fn encode_http_payload_traits_body(_input: HttpPayloadTraitsInputOutput) -> json.Json {
   json.object([])
 }
 
@@ -8801,6 +6439,10 @@ pub fn build_http_payload_traits_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -8811,54 +6453,34 @@ pub fn parse_http_payload_traits_response(
   body: BitArray,
 ) -> Result(HttpPayloadTraitsInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_payload_traits_output("{}")
-        _ -> decode_http_payload_traits_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_payload_traits_output("{}")
+      _ -> decode_http_payload_traits_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_http_payload_traits_with_media_type_input(
-  input: HttpPayloadTraitsWithMediaTypeInputOutput,
-) -> String {
-  json.to_string(encode_http_payload_traits_with_media_type_input_output_struct(
-    input,
-  ))
+
+pub fn encode_http_payload_traits_with_media_type_input(input: HttpPayloadTraitsWithMediaTypeInputOutput) -> String {
+  json.to_string(encode_http_payload_traits_with_media_type_input_output_struct(input))
 }
 
-pub fn decode_http_payload_traits_with_media_type_input(
-  body: String,
-) -> Result(HttpPayloadTraitsWithMediaTypeInputOutput, String) {
-  case
-    json.parse(
-      body,
-      decode_http_payload_traits_with_media_type_input_output_struct(),
-    )
-  {
+pub fn decode_http_payload_traits_with_media_type_input(body: String) -> Result(HttpPayloadTraitsWithMediaTypeInputOutput, String) {
+  case json.parse(body, decode_http_payload_traits_with_media_type_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_payload_traits_with_media_type_output(
-  body: String,
-) -> Result(HttpPayloadTraitsWithMediaTypeInputOutput, String) {
-  case
-    json.parse(
-      body,
-      decode_http_payload_traits_with_media_type_input_output_struct(),
-    )
-  {
+pub fn decode_http_payload_traits_with_media_type_output(body: String) -> Result(HttpPayloadTraitsWithMediaTypeInputOutput, String) {
+  case json.parse(body, decode_http_payload_traits_with_media_type_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_payload_traits_with_media_type_body(
-  _input: HttpPayloadTraitsWithMediaTypeInputOutput,
-) -> json.Json {
+pub fn encode_http_payload_traits_with_media_type_body(_input: HttpPayloadTraitsWithMediaTypeInputOutput) -> json.Json {
   json.object([])
 }
 
@@ -8881,6 +6503,10 @@ pub fn build_http_payload_traits_with_media_type_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -8891,46 +6517,34 @@ pub fn parse_http_payload_traits_with_media_type_response(
   body: BitArray,
 ) -> Result(HttpPayloadTraitsWithMediaTypeInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_payload_traits_with_media_type_output("{}")
-        _ -> decode_http_payload_traits_with_media_type_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_payload_traits_with_media_type_output("{}")
+      _ -> decode_http_payload_traits_with_media_type_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_http_payload_with_structure_input(
-  input: HttpPayloadWithStructureInputOutput,
-) -> String {
+
+pub fn encode_http_payload_with_structure_input(input: HttpPayloadWithStructureInputOutput) -> String {
   json.to_string(encode_http_payload_with_structure_input_output_struct(input))
 }
 
-pub fn decode_http_payload_with_structure_input(
-  body: String,
-) -> Result(HttpPayloadWithStructureInputOutput, String) {
-  case
-    json.parse(body, decode_http_payload_with_structure_input_output_struct())
-  {
+pub fn decode_http_payload_with_structure_input(body: String) -> Result(HttpPayloadWithStructureInputOutput, String) {
+  case json.parse(body, decode_http_payload_with_structure_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_payload_with_structure_output(
-  body: String,
-) -> Result(HttpPayloadWithStructureInputOutput, String) {
-  case
-    json.parse(body, decode_http_payload_with_structure_input_output_struct())
-  {
+pub fn decode_http_payload_with_structure_output(body: String) -> Result(HttpPayloadWithStructureInputOutput, String) {
+  case json.parse(body, decode_http_payload_with_structure_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_payload_with_structure_body(
-  _input: HttpPayloadWithStructureInputOutput,
-) -> json.Json {
+pub fn encode_http_payload_with_structure_body(_input: HttpPayloadWithStructureInputOutput) -> json.Json {
   json.object([])
 }
 
@@ -8941,14 +6555,17 @@ pub fn build_http_payload_with_structure_request(
   let query = ""
   let headers = dict.new()
   let body = case input.nested {
-    option.Some(v) ->
-      bit_array.from_string(json.to_string(encode_nested_payload_struct(v)))
+    option.Some(v) -> bit_array.from_string(json.to_string(encode_nested_payload_struct(v)))
     option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -8960,42 +6577,34 @@ pub fn parse_http_payload_with_structure_response(
   body: BitArray,
 ) -> Result(HttpPayloadWithStructureInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_payload_with_structure_output("{}")
-        _ -> decode_http_payload_with_structure_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_payload_with_structure_output("{}")
+      _ -> decode_http_payload_with_structure_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_http_payload_with_union_input(
-  input: HttpPayloadWithUnionInputOutput,
-) -> String {
+
+pub fn encode_http_payload_with_union_input(input: HttpPayloadWithUnionInputOutput) -> String {
   json.to_string(encode_http_payload_with_union_input_output_struct(input))
 }
 
-pub fn decode_http_payload_with_union_input(
-  body: String,
-) -> Result(HttpPayloadWithUnionInputOutput, String) {
+pub fn decode_http_payload_with_union_input(body: String) -> Result(HttpPayloadWithUnionInputOutput, String) {
   case json.parse(body, decode_http_payload_with_union_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_payload_with_union_output(
-  body: String,
-) -> Result(HttpPayloadWithUnionInputOutput, String) {
+pub fn decode_http_payload_with_union_output(body: String) -> Result(HttpPayloadWithUnionInputOutput, String) {
   case json.parse(body, decode_http_payload_with_union_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_payload_with_union_body(
-  _input: HttpPayloadWithUnionInputOutput,
-) -> json.Json {
+pub fn encode_http_payload_with_union_body(_input: HttpPayloadWithUnionInputOutput) -> json.Json {
   json.object([])
 }
 
@@ -9006,14 +6615,17 @@ pub fn build_http_payload_with_union_request(
   let query = ""
   let headers = dict.new()
   let body = case input.nested {
-    option.Some(v) ->
-      bit_array.from_string(json.to_string(encode_union_payload_union(v)))
+    option.Some(v) -> bit_array.from_string(json.to_string(encode_union_payload_union(v)))
     option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
@@ -9025,42 +6637,34 @@ pub fn parse_http_payload_with_union_response(
   body: BitArray,
 ) -> Result(HttpPayloadWithUnionInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_payload_with_union_output("{}")
-        _ -> decode_http_payload_with_union_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_payload_with_union_output("{}")
+      _ -> decode_http_payload_with_union_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_http_prefix_headers_input(
-  input: HttpPrefixHeadersInput,
-) -> String {
+
+pub fn encode_http_prefix_headers_input(input: HttpPrefixHeadersInput) -> String {
   json.to_string(encode_http_prefix_headers_input_struct(input))
 }
 
-pub fn decode_http_prefix_headers_input(
-  body: String,
-) -> Result(HttpPrefixHeadersInput, String) {
+pub fn decode_http_prefix_headers_input(body: String) -> Result(HttpPrefixHeadersInput, String) {
   case json.parse(body, decode_http_prefix_headers_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_prefix_headers_output(
-  body: String,
-) -> Result(HttpPrefixHeadersOutput, String) {
+pub fn decode_http_prefix_headers_output(body: String) -> Result(HttpPrefixHeadersOutput, String) {
   case json.parse(body, decode_http_prefix_headers_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_prefix_headers_body(
-  _input: HttpPrefixHeadersInput,
-) -> json.Json {
+pub fn encode_http_prefix_headers_body(_input: HttpPrefixHeadersInput) -> json.Json {
   json.object([])
 }
 
@@ -9084,6 +6688,10 @@ pub fn build_http_prefix_headers_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -9094,44 +6702,34 @@ pub fn parse_http_prefix_headers_response(
   body: BitArray,
 ) -> Result(HttpPrefixHeadersOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_prefix_headers_output("{}")
-        _ -> decode_http_prefix_headers_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_prefix_headers_output("{}")
+      _ -> decode_http_prefix_headers_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_http_prefix_headers_in_response_input(
-  input: HttpPrefixHeadersInResponseInput,
-) -> String {
+
+pub fn encode_http_prefix_headers_in_response_input(input: HttpPrefixHeadersInResponseInput) -> String {
   json.to_string(encode_http_prefix_headers_in_response_input_struct(input))
 }
 
-pub fn decode_http_prefix_headers_in_response_input(
-  body: String,
-) -> Result(HttpPrefixHeadersInResponseInput, String) {
+pub fn decode_http_prefix_headers_in_response_input(body: String) -> Result(HttpPrefixHeadersInResponseInput, String) {
   case json.parse(body, decode_http_prefix_headers_in_response_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_prefix_headers_in_response_output(
-  body: String,
-) -> Result(HttpPrefixHeadersInResponseOutput, String) {
-  case
-    json.parse(body, decode_http_prefix_headers_in_response_output_struct())
-  {
+pub fn decode_http_prefix_headers_in_response_output(body: String) -> Result(HttpPrefixHeadersInResponseOutput, String) {
+  case json.parse(body, decode_http_prefix_headers_in_response_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_prefix_headers_in_response_body(
-  _input: HttpPrefixHeadersInResponseInput,
-) -> json.Json {
+pub fn encode_http_prefix_headers_in_response_body(_input: HttpPrefixHeadersInResponseInput) -> json.Json {
   json.object([])
 }
 
@@ -9147,6 +6745,10 @@ pub fn build_http_prefix_headers_in_response_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -9157,60 +6759,46 @@ pub fn parse_http_prefix_headers_in_response_response(
   body: BitArray,
 ) -> Result(HttpPrefixHeadersInResponseOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_prefix_headers_in_response_output("{}")
-        _ -> decode_http_prefix_headers_in_response_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_prefix_headers_in_response_output("{}")
+      _ -> decode_http_prefix_headers_in_response_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type HttpQueryParamsOnlyOperationOutput {
   HttpQueryParamsOnlyOperationOutput
 }
 
-pub fn encode_http_query_params_only_operation_output_struct(
-  _v: HttpQueryParamsOnlyOperationOutput,
-) -> json.Json {
+pub fn encode_http_query_params_only_operation_output_struct(_v: HttpQueryParamsOnlyOperationOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_http_query_params_only_operation_output_struct() -> decode.Decoder(
-  HttpQueryParamsOnlyOperationOutput,
-) {
+pub fn decode_http_query_params_only_operation_output_struct() -> decode.Decoder(HttpQueryParamsOnlyOperationOutput) {
   decode.success(HttpQueryParamsOnlyOperationOutput)
 }
 
-pub fn encode_http_query_params_only_operation_input(
-  input: HttpQueryParamsOnlyInput,
-) -> String {
+pub fn encode_http_query_params_only_operation_input(input: HttpQueryParamsOnlyInput) -> String {
   json.to_string(encode_http_query_params_only_input_struct(input))
 }
 
-pub fn decode_http_query_params_only_operation_input(
-  body: String,
-) -> Result(HttpQueryParamsOnlyInput, String) {
+pub fn decode_http_query_params_only_operation_input(body: String) -> Result(HttpQueryParamsOnlyInput, String) {
   case json.parse(body, decode_http_query_params_only_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_query_params_only_operation_output(
-  body: String,
-) -> Result(HttpQueryParamsOnlyOperationOutput, String) {
-  case
-    json.parse(body, decode_http_query_params_only_operation_output_struct())
-  {
+pub fn decode_http_query_params_only_operation_output(body: String) -> Result(HttpQueryParamsOnlyOperationOutput, String) {
+  case json.parse(body, decode_http_query_params_only_operation_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_query_params_only_operation_body(
-  _input: HttpQueryParamsOnlyInput,
-) -> json.Json {
+pub fn encode_http_query_params_only_operation_body(_input: HttpQueryParamsOnlyInput) -> json.Json {
   json.object([])
 }
 
@@ -9230,6 +6818,10 @@ pub fn build_http_query_params_only_operation_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -9240,58 +6832,46 @@ pub fn parse_http_query_params_only_operation_response(
   body: BitArray,
 ) -> Result(HttpQueryParamsOnlyOperationOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_query_params_only_operation_output("{}")
-        _ -> decode_http_query_params_only_operation_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_query_params_only_operation_output("{}")
+      _ -> decode_http_query_params_only_operation_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type HttpRequestWithFloatLabelsOutput {
   HttpRequestWithFloatLabelsOutput
 }
 
-pub fn encode_http_request_with_float_labels_output_struct(
-  _v: HttpRequestWithFloatLabelsOutput,
-) -> json.Json {
+pub fn encode_http_request_with_float_labels_output_struct(_v: HttpRequestWithFloatLabelsOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_http_request_with_float_labels_output_struct() -> decode.Decoder(
-  HttpRequestWithFloatLabelsOutput,
-) {
+pub fn decode_http_request_with_float_labels_output_struct() -> decode.Decoder(HttpRequestWithFloatLabelsOutput) {
   decode.success(HttpRequestWithFloatLabelsOutput)
 }
 
-pub fn encode_http_request_with_float_labels_input(
-  input: HttpRequestWithFloatLabelsInput,
-) -> String {
+pub fn encode_http_request_with_float_labels_input(input: HttpRequestWithFloatLabelsInput) -> String {
   json.to_string(encode_http_request_with_float_labels_input_struct(input))
 }
 
-pub fn decode_http_request_with_float_labels_input(
-  body: String,
-) -> Result(HttpRequestWithFloatLabelsInput, String) {
+pub fn decode_http_request_with_float_labels_input(body: String) -> Result(HttpRequestWithFloatLabelsInput, String) {
   case json.parse(body, decode_http_request_with_float_labels_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_request_with_float_labels_output(
-  body: String,
-) -> Result(HttpRequestWithFloatLabelsOutput, String) {
+pub fn decode_http_request_with_float_labels_output(body: String) -> Result(HttpRequestWithFloatLabelsOutput, String) {
   case json.parse(body, decode_http_request_with_float_labels_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_request_with_float_labels_body(
-  _input: HttpRequestWithFloatLabelsInput,
-) -> json.Json {
+pub fn encode_http_request_with_float_labels_body(_input: HttpRequestWithFloatLabelsInput) -> json.Json {
   json.object([])
 }
 
@@ -9300,33 +6880,11 @@ pub fn build_http_request_with_float_labels_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/FloatHttpLabels/{float}/{double}"
   let path = case input.double {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "double",
-        case v {
-          json_float.FloatValue(f) -> rest.float_to_query(f)
-          json_float.NaN -> "NaN"
-          json_float.PosInfinity -> "Infinity"
-          json_float.NegInfinity -> "-Infinity"
-        },
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "double", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" }, False)
     option.None -> path
   }
   let path = case input.float {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "float",
-        case v {
-          json_float.FloatValue(f) -> rest.float_to_query(f)
-          json_float.NaN -> "NaN"
-          json_float.PosInfinity -> "Infinity"
-          json_float.NegInfinity -> "-Infinity"
-        },
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "float", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" }, False)
     option.None -> path
   }
   let query = ""
@@ -9336,6 +6894,10 @@ pub fn build_http_request_with_float_labels_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -9347,70 +6909,46 @@ pub fn parse_http_request_with_float_labels_response(
   body: BitArray,
 ) -> Result(HttpRequestWithFloatLabelsOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_request_with_float_labels_output("{}")
-        _ -> decode_http_request_with_float_labels_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_request_with_float_labels_output("{}")
+      _ -> decode_http_request_with_float_labels_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type HttpRequestWithGreedyLabelInPathOutput {
   HttpRequestWithGreedyLabelInPathOutput
 }
 
-pub fn encode_http_request_with_greedy_label_in_path_output_struct(
-  _v: HttpRequestWithGreedyLabelInPathOutput,
-) -> json.Json {
+pub fn encode_http_request_with_greedy_label_in_path_output_struct(_v: HttpRequestWithGreedyLabelInPathOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_http_request_with_greedy_label_in_path_output_struct() -> decode.Decoder(
-  HttpRequestWithGreedyLabelInPathOutput,
-) {
+pub fn decode_http_request_with_greedy_label_in_path_output_struct() -> decode.Decoder(HttpRequestWithGreedyLabelInPathOutput) {
   decode.success(HttpRequestWithGreedyLabelInPathOutput)
 }
 
-pub fn encode_http_request_with_greedy_label_in_path_input(
-  input: HttpRequestWithGreedyLabelInPathInput,
-) -> String {
-  json.to_string(encode_http_request_with_greedy_label_in_path_input_struct(
-    input,
-  ))
+pub fn encode_http_request_with_greedy_label_in_path_input(input: HttpRequestWithGreedyLabelInPathInput) -> String {
+  json.to_string(encode_http_request_with_greedy_label_in_path_input_struct(input))
 }
 
-pub fn decode_http_request_with_greedy_label_in_path_input(
-  body: String,
-) -> Result(HttpRequestWithGreedyLabelInPathInput, String) {
-  case
-    json.parse(
-      body,
-      decode_http_request_with_greedy_label_in_path_input_struct(),
-    )
-  {
+pub fn decode_http_request_with_greedy_label_in_path_input(body: String) -> Result(HttpRequestWithGreedyLabelInPathInput, String) {
+  case json.parse(body, decode_http_request_with_greedy_label_in_path_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_request_with_greedy_label_in_path_output(
-  body: String,
-) -> Result(HttpRequestWithGreedyLabelInPathOutput, String) {
-  case
-    json.parse(
-      body,
-      decode_http_request_with_greedy_label_in_path_output_struct(),
-    )
-  {
+pub fn decode_http_request_with_greedy_label_in_path_output(body: String) -> Result(HttpRequestWithGreedyLabelInPathOutput, String) {
+  case json.parse(body, decode_http_request_with_greedy_label_in_path_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_request_with_greedy_label_in_path_body(
-  _input: HttpRequestWithGreedyLabelInPathInput,
-) -> json.Json {
+pub fn encode_http_request_with_greedy_label_in_path_body(_input: HttpRequestWithGreedyLabelInPathInput) -> json.Json {
   json.object([])
 }
 
@@ -9434,6 +6972,10 @@ pub fn build_http_request_with_greedy_label_in_path_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -9444,114 +6986,75 @@ pub fn parse_http_request_with_greedy_label_in_path_response(
   body: BitArray,
 ) -> Result(HttpRequestWithGreedyLabelInPathOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_request_with_greedy_label_in_path_output("{}")
-        _ -> decode_http_request_with_greedy_label_in_path_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_request_with_greedy_label_in_path_output("{}")
+      _ -> decode_http_request_with_greedy_label_in_path_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type HttpRequestWithLabelsOutput {
   HttpRequestWithLabelsOutput
 }
 
-pub fn encode_http_request_with_labels_output_struct(
-  _v: HttpRequestWithLabelsOutput,
-) -> json.Json {
+pub fn encode_http_request_with_labels_output_struct(_v: HttpRequestWithLabelsOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_http_request_with_labels_output_struct() -> decode.Decoder(
-  HttpRequestWithLabelsOutput,
-) {
+pub fn decode_http_request_with_labels_output_struct() -> decode.Decoder(HttpRequestWithLabelsOutput) {
   decode.success(HttpRequestWithLabelsOutput)
 }
 
-pub fn encode_http_request_with_labels_input(
-  input: HttpRequestWithLabelsInput,
-) -> String {
+pub fn encode_http_request_with_labels_input(input: HttpRequestWithLabelsInput) -> String {
   json.to_string(encode_http_request_with_labels_input_struct(input))
 }
 
-pub fn decode_http_request_with_labels_input(
-  body: String,
-) -> Result(HttpRequestWithLabelsInput, String) {
+pub fn decode_http_request_with_labels_input(body: String) -> Result(HttpRequestWithLabelsInput, String) {
   case json.parse(body, decode_http_request_with_labels_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_request_with_labels_output(
-  body: String,
-) -> Result(HttpRequestWithLabelsOutput, String) {
+pub fn decode_http_request_with_labels_output(body: String) -> Result(HttpRequestWithLabelsOutput, String) {
   case json.parse(body, decode_http_request_with_labels_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_request_with_labels_body(
-  _input: HttpRequestWithLabelsInput,
-) -> json.Json {
+pub fn encode_http_request_with_labels_body(_input: HttpRequestWithLabelsInput) -> json.Json {
   json.object([])
 }
 
 pub fn build_http_request_with_labels_request(
   input: HttpRequestWithLabelsInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let path =
-    "/HttpRequestWithLabels/{string}/{short}/{integer}/{long}/{float}/{double}/{boolean}/{timestamp}"
+  let path = "/HttpRequestWithLabels/{string}/{short}/{integer}/{long}/{float}/{double}/{boolean}/{timestamp}"
   let path = case input.boolean {
-    option.Some(v) ->
-      rest.substitute_label(path, "boolean", rest.bool_to_query(v), False)
+    option.Some(v) -> rest.substitute_label(path, "boolean", rest.bool_to_query(v), False)
     option.None -> path
   }
   let path = case input.double {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "double",
-        case v {
-          json_float.FloatValue(f) -> rest.float_to_query(f)
-          json_float.NaN -> "NaN"
-          json_float.PosInfinity -> "Infinity"
-          json_float.NegInfinity -> "-Infinity"
-        },
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "double", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" }, False)
     option.None -> path
   }
   let path = case input.float {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "float",
-        case v {
-          json_float.FloatValue(f) -> rest.float_to_query(f)
-          json_float.NaN -> "NaN"
-          json_float.PosInfinity -> "Infinity"
-          json_float.NegInfinity -> "-Infinity"
-        },
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "float", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" }, False)
     option.None -> path
   }
   let path = case input.integer {
-    option.Some(v) ->
-      rest.substitute_label(path, "integer", rest.int_to_query(v), False)
+    option.Some(v) -> rest.substitute_label(path, "integer", rest.int_to_query(v), False)
     option.None -> path
   }
   let path = case input.long {
-    option.Some(v) ->
-      rest.substitute_label(path, "long", rest.int_to_query(v), False)
+    option.Some(v) -> rest.substitute_label(path, "long", rest.int_to_query(v), False)
     option.None -> path
   }
   let path = case input.short {
-    option.Some(v) ->
-      rest.substitute_label(path, "short", rest.int_to_query(v), False)
+    option.Some(v) -> rest.substitute_label(path, "short", rest.int_to_query(v), False)
     option.None -> path
   }
   let path = case input.string {
@@ -9559,13 +7062,7 @@ pub fn build_http_request_with_labels_request(
     option.None -> path
   }
   let path = case input.timestamp {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "timestamp",
-        rest.timestamp_to_header(v),
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "timestamp", rest.timestamp_to_header(v), False)
     option.None -> path
   }
   let query = ""
@@ -9575,6 +7072,10 @@ pub fn build_http_request_with_labels_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -9586,146 +7087,79 @@ pub fn parse_http_request_with_labels_response(
   body: BitArray,
 ) -> Result(HttpRequestWithLabelsOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_request_with_labels_output("{}")
-        _ -> decode_http_request_with_labels_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_request_with_labels_output("{}")
+      _ -> decode_http_request_with_labels_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type HttpRequestWithLabelsAndTimestampFormatOutput {
   HttpRequestWithLabelsAndTimestampFormatOutput
 }
 
-pub fn encode_http_request_with_labels_and_timestamp_format_output_struct(
-  _v: HttpRequestWithLabelsAndTimestampFormatOutput,
-) -> json.Json {
+pub fn encode_http_request_with_labels_and_timestamp_format_output_struct(_v: HttpRequestWithLabelsAndTimestampFormatOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_http_request_with_labels_and_timestamp_format_output_struct() -> decode.Decoder(
-  HttpRequestWithLabelsAndTimestampFormatOutput,
-) {
+pub fn decode_http_request_with_labels_and_timestamp_format_output_struct() -> decode.Decoder(HttpRequestWithLabelsAndTimestampFormatOutput) {
   decode.success(HttpRequestWithLabelsAndTimestampFormatOutput)
 }
 
-pub fn encode_http_request_with_labels_and_timestamp_format_input(
-  input: HttpRequestWithLabelsAndTimestampFormatInput,
-) -> String {
-  json.to_string(
-    encode_http_request_with_labels_and_timestamp_format_input_struct(input),
-  )
+pub fn encode_http_request_with_labels_and_timestamp_format_input(input: HttpRequestWithLabelsAndTimestampFormatInput) -> String {
+  json.to_string(encode_http_request_with_labels_and_timestamp_format_input_struct(input))
 }
 
-pub fn decode_http_request_with_labels_and_timestamp_format_input(
-  body: String,
-) -> Result(HttpRequestWithLabelsAndTimestampFormatInput, String) {
-  case
-    json.parse(
-      body,
-      decode_http_request_with_labels_and_timestamp_format_input_struct(),
-    )
-  {
+pub fn decode_http_request_with_labels_and_timestamp_format_input(body: String) -> Result(HttpRequestWithLabelsAndTimestampFormatInput, String) {
+  case json.parse(body, decode_http_request_with_labels_and_timestamp_format_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_request_with_labels_and_timestamp_format_output(
-  body: String,
-) -> Result(HttpRequestWithLabelsAndTimestampFormatOutput, String) {
-  case
-    json.parse(
-      body,
-      decode_http_request_with_labels_and_timestamp_format_output_struct(),
-    )
-  {
+pub fn decode_http_request_with_labels_and_timestamp_format_output(body: String) -> Result(HttpRequestWithLabelsAndTimestampFormatOutput, String) {
+  case json.parse(body, decode_http_request_with_labels_and_timestamp_format_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_request_with_labels_and_timestamp_format_body(
-  _input: HttpRequestWithLabelsAndTimestampFormatInput,
-) -> json.Json {
+pub fn encode_http_request_with_labels_and_timestamp_format_body(_input: HttpRequestWithLabelsAndTimestampFormatInput) -> json.Json {
   json.object([])
 }
 
 pub fn build_http_request_with_labels_and_timestamp_format_request(
   input: HttpRequestWithLabelsAndTimestampFormatInput,
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let path =
-    "/HttpRequestWithLabelsAndTimestampFormat/{memberEpochSeconds}/{memberHttpDate}/{memberDateTime}/{defaultFormat}/{targetEpochSeconds}/{targetHttpDate}/{targetDateTime}"
+  let path = "/HttpRequestWithLabelsAndTimestampFormat/{memberEpochSeconds}/{memberHttpDate}/{memberDateTime}/{defaultFormat}/{targetEpochSeconds}/{targetHttpDate}/{targetDateTime}"
   let path = case input.default_format {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "defaultFormat",
-        rest.timestamp_to_header(v),
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "defaultFormat", rest.timestamp_to_header(v), False)
     option.None -> path
   }
   let path = case input.member_date_time {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "memberDateTime",
-        rest.timestamp_to_header(v),
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "memberDateTime", rest.timestamp_to_header(v), False)
     option.None -> path
   }
   let path = case input.member_epoch_seconds {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "memberEpochSeconds",
-        rest.timestamp_to_header(v),
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "memberEpochSeconds", rest.timestamp_to_header(v), False)
     option.None -> path
   }
   let path = case input.member_http_date {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "memberHttpDate",
-        rest.timestamp_to_header(v),
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "memberHttpDate", rest.timestamp_to_header(v), False)
     option.None -> path
   }
   let path = case input.target_date_time {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "targetDateTime",
-        rest.timestamp_to_header(v),
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "targetDateTime", rest.timestamp_to_header(v), False)
     option.None -> path
   }
   let path = case input.target_epoch_seconds {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "targetEpochSeconds",
-        rest.timestamp_to_header(v),
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "targetEpochSeconds", rest.timestamp_to_header(v), False)
     option.None -> path
   }
   let path = case input.target_http_date {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "targetHttpDate",
-        rest.timestamp_to_header(v),
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "targetHttpDate", rest.timestamp_to_header(v), False)
     option.None -> path
   }
   let query = ""
@@ -9735,6 +7169,10 @@ pub fn build_http_request_with_labels_and_timestamp_format_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -9746,60 +7184,46 @@ pub fn parse_http_request_with_labels_and_timestamp_format_response(
   body: BitArray,
 ) -> Result(HttpRequestWithLabelsAndTimestampFormatOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_request_with_labels_and_timestamp_format_output("{}")
-        _ -> decode_http_request_with_labels_and_timestamp_format_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_request_with_labels_and_timestamp_format_output("{}")
+      _ -> decode_http_request_with_labels_and_timestamp_format_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type HttpRequestWithRegexLiteralOutput {
   HttpRequestWithRegexLiteralOutput
 }
 
-pub fn encode_http_request_with_regex_literal_output_struct(
-  _v: HttpRequestWithRegexLiteralOutput,
-) -> json.Json {
+pub fn encode_http_request_with_regex_literal_output_struct(_v: HttpRequestWithRegexLiteralOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_http_request_with_regex_literal_output_struct() -> decode.Decoder(
-  HttpRequestWithRegexLiteralOutput,
-) {
+pub fn decode_http_request_with_regex_literal_output_struct() -> decode.Decoder(HttpRequestWithRegexLiteralOutput) {
   decode.success(HttpRequestWithRegexLiteralOutput)
 }
 
-pub fn encode_http_request_with_regex_literal_input(
-  input: HttpRequestWithRegexLiteralInput,
-) -> String {
+pub fn encode_http_request_with_regex_literal_input(input: HttpRequestWithRegexLiteralInput) -> String {
   json.to_string(encode_http_request_with_regex_literal_input_struct(input))
 }
 
-pub fn decode_http_request_with_regex_literal_input(
-  body: String,
-) -> Result(HttpRequestWithRegexLiteralInput, String) {
+pub fn decode_http_request_with_regex_literal_input(body: String) -> Result(HttpRequestWithRegexLiteralInput, String) {
   case json.parse(body, decode_http_request_with_regex_literal_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_request_with_regex_literal_output(
-  body: String,
-) -> Result(HttpRequestWithRegexLiteralOutput, String) {
-  case
-    json.parse(body, decode_http_request_with_regex_literal_output_struct())
-  {
+pub fn decode_http_request_with_regex_literal_output(body: String) -> Result(HttpRequestWithRegexLiteralOutput, String) {
+  case json.parse(body, decode_http_request_with_regex_literal_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_request_with_regex_literal_body(
-  _input: HttpRequestWithRegexLiteralInput,
-) -> json.Json {
+pub fn encode_http_request_with_regex_literal_body(_input: HttpRequestWithRegexLiteralInput) -> json.Json {
   json.object([])
 }
 
@@ -9819,6 +7243,10 @@ pub fn build_http_request_with_regex_literal_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -9829,28 +7257,24 @@ pub fn parse_http_request_with_regex_literal_response(
   body: BitArray,
 ) -> Result(HttpRequestWithRegexLiteralOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_request_with_regex_literal_output("{}")
-        _ -> decode_http_request_with_regex_literal_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_request_with_regex_literal_output("{}")
+      _ -> decode_http_request_with_regex_literal_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type HttpResponseCodeInput {
   HttpResponseCodeInput
 }
 
-pub fn encode_http_response_code_input_struct(
-  _v: HttpResponseCodeInput,
-) -> json.Json {
+pub fn encode_http_response_code_input_struct(_v: HttpResponseCodeInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_http_response_code_input_struct() -> decode.Decoder(
-  HttpResponseCodeInput,
-) {
+pub fn decode_http_response_code_input_struct() -> decode.Decoder(HttpResponseCodeInput) {
   decode.success(HttpResponseCodeInput)
 }
 
@@ -9858,27 +7282,21 @@ pub fn encode_http_response_code_input(input: HttpResponseCodeInput) -> String {
   json.to_string(encode_http_response_code_input_struct(input))
 }
 
-pub fn decode_http_response_code_input(
-  body: String,
-) -> Result(HttpResponseCodeInput, String) {
+pub fn decode_http_response_code_input(body: String) -> Result(HttpResponseCodeInput, String) {
   case json.parse(body, decode_http_response_code_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_response_code_output(
-  body: String,
-) -> Result(HttpResponseCodeOutput, String) {
+pub fn decode_http_response_code_output(body: String) -> Result(HttpResponseCodeOutput, String) {
   case json.parse(body, decode_http_response_code_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_response_code_body(
-  _input: HttpResponseCodeInput,
-) -> json.Json {
+pub fn encode_http_response_code_body(_input: HttpResponseCodeInput) -> json.Json {
   json.object([])
 }
 
@@ -9894,6 +7312,10 @@ pub fn build_http_response_code_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -9904,40 +7326,34 @@ pub fn parse_http_response_code_response(
   body: BitArray,
 ) -> Result(HttpResponseCodeOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_response_code_output("{}")
-        _ -> decode_http_response_code_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_response_code_output("{}")
+      _ -> decode_http_response_code_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub fn encode_http_string_payload_input(input: StringPayloadInput) -> String {
   json.to_string(encode_string_payload_input_struct(input))
 }
 
-pub fn decode_http_string_payload_input(
-  body: String,
-) -> Result(StringPayloadInput, String) {
+pub fn decode_http_string_payload_input(body: String) -> Result(StringPayloadInput, String) {
   case json.parse(body, decode_string_payload_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_http_string_payload_output(
-  body: String,
-) -> Result(StringPayloadInput, String) {
+pub fn decode_http_string_payload_output(body: String) -> Result(StringPayloadInput, String) {
   case json.parse(body, decode_string_payload_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_http_string_payload_body(
-  _input: StringPayloadInput,
-) -> json.Json {
+pub fn encode_http_string_payload_body(_input: StringPayloadInput) -> json.Json {
   json.object([])
 }
 
@@ -9956,6 +7372,10 @@ pub fn build_http_string_payload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -9966,60 +7386,46 @@ pub fn parse_http_string_payload_response(
   body: BitArray,
 ) -> Result(StringPayloadInput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_http_string_payload_output("{}")
-        _ -> decode_http_string_payload_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_http_string_payload_output("{}")
+      _ -> decode_http_string_payload_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type IgnoreQueryParamsInResponseInput {
   IgnoreQueryParamsInResponseInput
 }
 
-pub fn encode_ignore_query_params_in_response_input_struct(
-  _v: IgnoreQueryParamsInResponseInput,
-) -> json.Json {
+pub fn encode_ignore_query_params_in_response_input_struct(_v: IgnoreQueryParamsInResponseInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_ignore_query_params_in_response_input_struct() -> decode.Decoder(
-  IgnoreQueryParamsInResponseInput,
-) {
+pub fn decode_ignore_query_params_in_response_input_struct() -> decode.Decoder(IgnoreQueryParamsInResponseInput) {
   decode.success(IgnoreQueryParamsInResponseInput)
 }
 
-pub fn encode_ignore_query_params_in_response_input(
-  input: IgnoreQueryParamsInResponseInput,
-) -> String {
+pub fn encode_ignore_query_params_in_response_input(input: IgnoreQueryParamsInResponseInput) -> String {
   json.to_string(encode_ignore_query_params_in_response_input_struct(input))
 }
 
-pub fn decode_ignore_query_params_in_response_input(
-  body: String,
-) -> Result(IgnoreQueryParamsInResponseInput, String) {
+pub fn decode_ignore_query_params_in_response_input(body: String) -> Result(IgnoreQueryParamsInResponseInput, String) {
   case json.parse(body, decode_ignore_query_params_in_response_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_ignore_query_params_in_response_output(
-  body: String,
-) -> Result(IgnoreQueryParamsInResponseOutput, String) {
-  case
-    json.parse(body, decode_ignore_query_params_in_response_output_struct())
-  {
+pub fn decode_ignore_query_params_in_response_output(body: String) -> Result(IgnoreQueryParamsInResponseOutput, String) {
+  case json.parse(body, decode_ignore_query_params_in_response_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_ignore_query_params_in_response_body(
-  _input: IgnoreQueryParamsInResponseInput,
-) -> json.Json {
+pub fn encode_ignore_query_params_in_response_body(_input: IgnoreQueryParamsInResponseInput) -> json.Json {
   json.object([])
 }
 
@@ -10035,6 +7441,10 @@ pub fn build_ignore_query_params_in_response_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -10045,42 +7455,34 @@ pub fn parse_ignore_query_params_in_response_response(
   body: BitArray,
 ) -> Result(IgnoreQueryParamsInResponseOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_ignore_query_params_in_response_output("{}")
-        _ -> decode_ignore_query_params_in_response_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_ignore_query_params_in_response_output("{}")
+      _ -> decode_ignore_query_params_in_response_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_input_and_output_with_headers_input(
-  input: InputAndOutputWithHeadersIO,
-) -> String {
+
+pub fn encode_input_and_output_with_headers_input(input: InputAndOutputWithHeadersIO) -> String {
   json.to_string(encode_input_and_output_with_headers_io_struct(input))
 }
 
-pub fn decode_input_and_output_with_headers_input(
-  body: String,
-) -> Result(InputAndOutputWithHeadersIO, String) {
+pub fn decode_input_and_output_with_headers_input(body: String) -> Result(InputAndOutputWithHeadersIO, String) {
   case json.parse(body, decode_input_and_output_with_headers_io_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_input_and_output_with_headers_output(
-  body: String,
-) -> Result(InputAndOutputWithHeadersIO, String) {
+pub fn decode_input_and_output_with_headers_output(body: String) -> Result(InputAndOutputWithHeadersIO, String) {
   case json.parse(body, decode_input_and_output_with_headers_io_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_input_and_output_with_headers_body(
-  _input: InputAndOutputWithHeadersIO,
-) -> json.Json {
+pub fn encode_input_and_output_with_headers_body(_input: InputAndOutputWithHeadersIO) -> json.Json {
   json.object([])
 }
 
@@ -10091,84 +7493,55 @@ pub fn build_input_and_output_with_headers_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.header_boolean_list {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-BooleanList", "")
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-BooleanList", list.map(xs, fn(item) { let v = item rest.bool_to_query(v) }))
     option.None -> headers
   }
   let headers = case input.header_byte {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "X-Byte", rest.int_to_query(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Byte", rest.int_to_query(v))
     option.None -> headers
   }
   let headers = case input.header_double {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "X-Double", case v {
-        json_float.FloatValue(f) -> rest.float_to_query(f)
-        json_float.NaN -> "NaN"
-        json_float.PosInfinity -> "Infinity"
-        json_float.NegInfinity -> "-Infinity"
-      })
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Double", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" })
     option.None -> headers
   }
   let headers = case input.header_enum {
-    option.Some(v) ->
-      rest.maybe_set_header(
-        headers,
-        "X-Enum",
-        rest.enum_wire_value(encode_foo_enum_enum(v)),
-      )
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Enum", rest.enum_wire_value(encode_foo_enum_enum(v)))
     option.None -> headers
   }
   let headers = case input.header_enum_list {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-EnumList", "")
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-EnumList", list.map(xs, fn(item) { let v = item rest.enum_wire_value(encode_foo_enum_enum(v)) }))
     option.None -> headers
   }
   let headers = case input.header_false_bool {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "X-Boolean2", rest.bool_to_query(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Boolean2", rest.bool_to_query(v))
     option.None -> headers
   }
   let headers = case input.header_float {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "X-Float", case v {
-        json_float.FloatValue(f) -> rest.float_to_query(f)
-        json_float.NaN -> "NaN"
-        json_float.PosInfinity -> "Infinity"
-        json_float.NegInfinity -> "-Infinity"
-      })
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Float", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" })
     option.None -> headers
   }
   let headers = case input.header_integer {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "X-Integer", rest.int_to_query(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Integer", rest.int_to_query(v))
     option.None -> headers
   }
   let headers = case input.header_integer_enum {
-    option.Some(v) ->
-      rest.maybe_set_header(
-        headers,
-        "X-IntegerEnum",
-        rest.int_to_query(case encode_integer_enum_int_enum(v) {
-          _ -> 0
-        }),
-      )
+    option.Some(v) -> rest.maybe_set_header(headers, "X-IntegerEnum", rest.int_to_query(case encode_integer_enum_int_enum(v) { _ -> 0 }))
     option.None -> headers
   }
   let headers = case input.header_integer_enum_list {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-IntegerEnumList", "")
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-IntegerEnumList", list.map(xs, fn(item) { let v = item rest.int_to_query(case encode_integer_enum_int_enum(v) { _ -> 0 }) }))
     option.None -> headers
   }
   let headers = case input.header_integer_list {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-IntegerList", "")
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-IntegerList", list.map(xs, fn(item) { let v = item rest.int_to_query(v) }))
     option.None -> headers
   }
   let headers = case input.header_long {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "X-Long", rest.int_to_query(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Long", rest.int_to_query(v))
     option.None -> headers
   }
   let headers = case input.header_short {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "X-Short", rest.int_to_query(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Short", rest.int_to_query(v))
     option.None -> headers
   }
   let headers = case input.header_string {
@@ -10176,20 +7549,19 @@ pub fn build_input_and_output_with_headers_request(
     option.None -> headers
   }
   let headers = case input.header_string_list {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-StringList", "")
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-StringList", list.map(xs, fn(item) { let v = item v }))
     option.None -> headers
   }
   let headers = case input.header_string_set {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-StringSet", "")
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-StringSet", list.map(xs, fn(item) { let v = item v }))
     option.None -> headers
   }
   let headers = case input.header_timestamp_list {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-TimestampList", "")
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-TimestampList", list.map(xs, fn(item) { let v = item rest.timestamp_to_header(v) }))
     option.None -> headers
   }
   let headers = case input.header_true_bool {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "X-Boolean1", rest.bool_to_query(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "X-Boolean1", rest.bool_to_query(v))
     option.None -> headers
   }
   let body = <<>>
@@ -10197,6 +7569,10 @@ pub fn build_input_and_output_with_headers_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -10208,14 +7584,14 @@ pub fn parse_input_and_output_with_headers_response(
   body: BitArray,
 ) -> Result(InputAndOutputWithHeadersIO, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_input_and_output_with_headers_output("{}")
-        _ -> decode_input_and_output_with_headers_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_input_and_output_with_headers_output("{}")
+      _ -> decode_input_and_output_with_headers_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type InputStreamOutput {
   InputStreamOutput
@@ -10233,18 +7609,14 @@ pub fn encode_input_stream_input(input: InputStreamInput) -> String {
   json.to_string(encode_input_stream_input_struct(input))
 }
 
-pub fn decode_input_stream_input(
-  body: String,
-) -> Result(InputStreamInput, String) {
+pub fn decode_input_stream_input(body: String) -> Result(InputStreamInput, String) {
   case json.parse(body, decode_input_stream_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_input_stream_output(
-  body: String,
-) -> Result(InputStreamOutput, String) {
+pub fn decode_input_stream_output(body: String) -> Result(InputStreamOutput, String) {
   case json.parse(body, decode_input_stream_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -10262,14 +7634,17 @@ pub fn build_input_stream_request(
   let query = ""
   let headers = dict.new()
   let body = case input.stream {
-    option.Some(v) ->
-      bit_array.from_string(json.to_string(encode_event_stream_union(v)))
+    option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
     option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -10281,62 +7656,46 @@ pub fn parse_input_stream_response(
   body: BitArray,
 ) -> Result(InputStreamOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_input_stream_output("{}")
-        _ -> decode_input_stream_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_input_stream_output("{}")
+      _ -> decode_input_stream_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type InputStreamWithInitialRequestOutput {
   InputStreamWithInitialRequestOutput
 }
 
-pub fn encode_input_stream_with_initial_request_output_struct(
-  _v: InputStreamWithInitialRequestOutput,
-) -> json.Json {
+pub fn encode_input_stream_with_initial_request_output_struct(_v: InputStreamWithInitialRequestOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_input_stream_with_initial_request_output_struct() -> decode.Decoder(
-  InputStreamWithInitialRequestOutput,
-) {
+pub fn decode_input_stream_with_initial_request_output_struct() -> decode.Decoder(InputStreamWithInitialRequestOutput) {
   decode.success(InputStreamWithInitialRequestOutput)
 }
 
-pub fn encode_input_stream_with_initial_request_input(
-  input: InputStreamWithInitialRequestInput,
-) -> String {
+pub fn encode_input_stream_with_initial_request_input(input: InputStreamWithInitialRequestInput) -> String {
   json.to_string(encode_input_stream_with_initial_request_input_struct(input))
 }
 
-pub fn decode_input_stream_with_initial_request_input(
-  body: String,
-) -> Result(InputStreamWithInitialRequestInput, String) {
-  case
-    json.parse(body, decode_input_stream_with_initial_request_input_struct())
-  {
+pub fn decode_input_stream_with_initial_request_input(body: String) -> Result(InputStreamWithInitialRequestInput, String) {
+  case json.parse(body, decode_input_stream_with_initial_request_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_input_stream_with_initial_request_output(
-  body: String,
-) -> Result(InputStreamWithInitialRequestOutput, String) {
-  case
-    json.parse(body, decode_input_stream_with_initial_request_output_struct())
-  {
+pub fn decode_input_stream_with_initial_request_output(body: String) -> Result(InputStreamWithInitialRequestOutput, String) {
+  case json.parse(body, decode_input_stream_with_initial_request_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_input_stream_with_initial_request_body(
-  _input: InputStreamWithInitialRequestInput,
-) -> json.Json {
+pub fn encode_input_stream_with_initial_request_body(_input: InputStreamWithInitialRequestInput) -> json.Json {
   json.object([])
 }
 
@@ -10347,19 +7706,21 @@ pub fn build_input_stream_with_initial_request_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.initial_request_member {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "initial-request-member", v)
+    option.Some(v) -> rest.maybe_set_header(headers, "initial-request-member", v)
     option.None -> headers
   }
   let body = case input.stream {
-    option.Some(v) ->
-      bit_array.from_string(json.to_string(encode_event_stream_union(v)))
+    option.Some(v) -> bit_array.from_string(json.to_string(encode_event_stream_union(v)))
     option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -10371,31 +7732,27 @@ pub fn parse_input_stream_with_initial_request_response(
   body: BitArray,
 ) -> Result(InputStreamWithInitialRequestOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_input_stream_with_initial_request_output("{}")
-        _ -> decode_input_stream_with_initial_request_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_input_stream_with_initial_request_output("{}")
+      _ -> decode_input_stream_with_initial_request_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub fn encode_json_blobs_input(input: JsonBlobsInputOutput) -> String {
   json.to_string(encode_json_blobs_input_output_struct(input))
 }
 
-pub fn decode_json_blobs_input(
-  body: String,
-) -> Result(JsonBlobsInputOutput, String) {
+pub fn decode_json_blobs_input(body: String) -> Result(JsonBlobsInputOutput, String) {
   case json.parse(body, decode_json_blobs_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_json_blobs_output(
-  body: String,
-) -> Result(JsonBlobsInputOutput, String) {
+pub fn decode_json_blobs_output(body: String) -> Result(JsonBlobsInputOutput, String) {
   case json.parse(body, decode_json_blobs_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -10405,10 +7762,7 @@ pub fn decode_json_blobs_output(
 pub fn encode_json_blobs_body(input: JsonBlobsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.data {
-    option.Some(v) -> [
-      #("data", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("data", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -10427,6 +7781,10 @@ pub fn build_json_blobs_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -10437,31 +7795,27 @@ pub fn parse_json_blobs_response(
   body: BitArray,
 ) -> Result(JsonBlobsInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_json_blobs_output("{}")
-        _ -> decode_json_blobs_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_json_blobs_output("{}")
+      _ -> decode_json_blobs_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub fn encode_json_enums_input(input: JsonEnumsInputOutput) -> String {
   json.to_string(encode_json_enums_input_output_struct(input))
 }
 
-pub fn decode_json_enums_input(
-  body: String,
-) -> Result(JsonEnumsInputOutput, String) {
+pub fn decode_json_enums_input(body: String) -> Result(JsonEnumsInputOutput, String) {
   case json.parse(body, decode_json_enums_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_json_enums_output(
-  body: String,
-) -> Result(JsonEnumsInputOutput, String) {
+pub fn decode_json_enums_output(body: String) -> Result(JsonEnumsInputOutput, String) {
   case json.parse(body, decode_json_enums_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -10483,32 +7837,15 @@ pub fn encode_json_enums_body(input: JsonEnumsInputOutput) -> json.Json {
     option.None -> pairs
   }
   let pairs = case input.foo_enum_list {
-    option.Some(v) -> [
-      #("fooEnumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("fooEnumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.foo_enum_map {
-    option.Some(v) -> [
-      #(
-        "fooEnumMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, encode_foo_enum_enum(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("fooEnumMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_foo_enum_enum(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.foo_enum_set {
-    option.Some(v) -> [
-      #("fooEnumSet", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("fooEnumSet", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -10527,6 +7864,10 @@ pub fn build_json_enums_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -10537,31 +7878,27 @@ pub fn parse_json_enums_response(
   body: BitArray,
 ) -> Result(JsonEnumsInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_json_enums_output("{}")
-        _ -> decode_json_enums_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_json_enums_output("{}")
+      _ -> decode_json_enums_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub fn encode_json_int_enums_input(input: JsonIntEnumsInputOutput) -> String {
   json.to_string(encode_json_int_enums_input_output_struct(input))
 }
 
-pub fn decode_json_int_enums_input(
-  body: String,
-) -> Result(JsonIntEnumsInputOutput, String) {
+pub fn decode_json_int_enums_input(body: String) -> Result(JsonIntEnumsInputOutput, String) {
   case json.parse(body, decode_json_int_enums_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_json_int_enums_output(
-  body: String,
-) -> Result(JsonIntEnumsInputOutput, String) {
+pub fn decode_json_int_enums_output(body: String) -> Result(JsonIntEnumsInputOutput, String) {
   case json.parse(body, decode_json_int_enums_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -10571,61 +7908,27 @@ pub fn decode_json_int_enums_output(
 pub fn encode_json_int_enums_body(input: JsonIntEnumsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.integer_enum1 {
-    option.Some(v) -> [
-      #("integerEnum1", encode_integer_enum_int_enum(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerEnum1", encode_integer_enum_int_enum(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer_enum2 {
-    option.Some(v) -> [
-      #("integerEnum2", encode_integer_enum_int_enum(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerEnum2", encode_integer_enum_int_enum(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer_enum3 {
-    option.Some(v) -> [
-      #("integerEnum3", encode_integer_enum_int_enum(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerEnum3", encode_integer_enum_int_enum(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer_enum_list {
-    option.Some(v) -> [
-      #(
-        "integerEnumList",
-        fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerEnumList", fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer_enum_map {
-    option.Some(v) -> [
-      #(
-        "integerEnumMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) {
-              #(pair.0, encode_integer_enum_int_enum(pair.1))
-            }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerEnumMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_integer_enum_int_enum(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer_enum_set {
-    option.Some(v) -> [
-      #(
-        "integerEnumSet",
-        fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerEnumSet", fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -10644,6 +7947,10 @@ pub fn build_json_int_enums_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -10654,31 +7961,27 @@ pub fn parse_json_int_enums_response(
   body: BitArray,
 ) -> Result(JsonIntEnumsInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_json_int_enums_output("{}")
-        _ -> decode_json_int_enums_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_json_int_enums_output("{}")
+      _ -> decode_json_int_enums_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub fn encode_json_lists_input(input: JsonListsInputOutput) -> String {
   json.to_string(encode_json_lists_input_output_struct(input))
 }
 
-pub fn decode_json_lists_input(
-  body: String,
-) -> Result(JsonListsInputOutput, String) {
+pub fn decode_json_lists_input(body: String) -> Result(JsonListsInputOutput, String) {
   case json.parse(body, decode_json_lists_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_json_lists_output(
-  body: String,
-) -> Result(JsonListsInputOutput, String) {
+pub fn decode_json_lists_output(body: String) -> Result(JsonListsInputOutput, String) {
   case json.parse(body, decode_json_lists_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -10688,75 +7991,39 @@ pub fn decode_json_lists_output(
 pub fn encode_json_lists_body(input: JsonListsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.boolean_list {
-    option.Some(v) -> [
-      #("booleanList", fn(xs) { json.array(xs, json.bool) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("booleanList", fn(xs) { json.array(xs, json.bool) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.enum_list {
-    option.Some(v) -> [
-      #("enumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("enumList", fn(xs) { json.array(xs, encode_foo_enum_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.int_enum_list {
-    option.Some(v) -> [
-      #(
-        "intEnumList",
-        fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("intEnumList", fn(xs) { json.array(xs, encode_integer_enum_int_enum) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.integer_list {
-    option.Some(v) -> [
-      #("integerList", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("integerList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.nested_string_list {
-    option.Some(v) -> [
-      #(
-        "nestedStringList",
-        fn(xs) { json.array(xs, fn(xs) { json.array(xs, json.string) }) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("nestedStringList", fn(xs) { json.array(xs, fn(xs) { json.array(xs, json.string) }) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.string_list {
-    option.Some(v) -> [
-      #("stringList", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("stringList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.string_set {
-    option.Some(v) -> [
-      #("stringSet", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("stringSet", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.structure_list {
-    option.Some(v) -> [
-      #(
-        "structureList",
-        fn(xs) { json.array(xs, encode_structure_list_member_struct) }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("structureList", fn(xs) { json.array(xs, encode_structure_list_member_struct) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.timestamp_list {
-    option.Some(v) -> [
-      #("timestampList", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("timestampList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -10775,6 +8042,10 @@ pub fn build_json_lists_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -10785,31 +8056,27 @@ pub fn parse_json_lists_response(
   body: BitArray,
 ) -> Result(JsonListsInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_json_lists_output("{}")
-        _ -> decode_json_lists_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_json_lists_output("{}")
+      _ -> decode_json_lists_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub fn encode_json_maps_input(input: JsonMapsInputOutput) -> String {
   json.to_string(encode_json_maps_input_output_struct(input))
 }
 
-pub fn decode_json_maps_input(
-  body: String,
-) -> Result(JsonMapsInputOutput, String) {
+pub fn decode_json_maps_input(body: String) -> Result(JsonMapsInputOutput, String) {
   case json.parse(body, decode_json_maps_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_json_maps_output(
-  body: String,
-) -> Result(JsonMapsInputOutput, String) {
+pub fn decode_json_maps_output(body: String) -> Result(JsonMapsInputOutput, String) {
   case json.parse(body, decode_json_maps_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -10819,82 +8086,23 @@ pub fn decode_json_maps_output(
 pub fn encode_json_maps_body(input: JsonMapsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.dense_boolean_map {
-    option.Some(v) -> [
-      #(
-        "denseBooleanMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.bool(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("denseBooleanMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.bool(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.dense_number_map {
-    option.Some(v) -> [
-      #(
-        "denseNumberMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.int(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("denseNumberMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.int(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.dense_set_map {
-    option.Some(v) -> [
-      #(
-        "denseSetMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) {
-              #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1))
-            }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("denseSetMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.dense_string_map {
-    option.Some(v) -> [
-      #(
-        "denseStringMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("denseStringMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.dense_struct_map {
-    option.Some(v) -> [
-      #(
-        "denseStructMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) {
-              #(pair.0, encode_greeting_struct_struct(pair.1))
-            }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("denseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_greeting_struct_struct(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -10913,6 +8121,10 @@ pub fn build_json_maps_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -10923,42 +8135,34 @@ pub fn parse_json_maps_response(
   body: BitArray,
 ) -> Result(JsonMapsInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_json_maps_output("{}")
-        _ -> decode_json_maps_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_json_maps_output("{}")
+      _ -> decode_json_maps_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_json_timestamps_input(
-  input: JsonTimestampsInputOutput,
-) -> String {
+
+pub fn encode_json_timestamps_input(input: JsonTimestampsInputOutput) -> String {
   json.to_string(encode_json_timestamps_input_output_struct(input))
 }
 
-pub fn decode_json_timestamps_input(
-  body: String,
-) -> Result(JsonTimestampsInputOutput, String) {
+pub fn decode_json_timestamps_input(body: String) -> Result(JsonTimestampsInputOutput, String) {
   case json.parse(body, decode_json_timestamps_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_json_timestamps_output(
-  body: String,
-) -> Result(JsonTimestampsInputOutput, String) {
+pub fn decode_json_timestamps_output(body: String) -> Result(JsonTimestampsInputOutput, String) {
   case json.parse(body, decode_json_timestamps_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_json_timestamps_body(
-  input: JsonTimestampsInputOutput,
-) -> json.Json {
+pub fn encode_json_timestamps_body(input: JsonTimestampsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.date_time {
     option.Some(v) -> [#("dateTime", json.int(v)), ..pairs]
@@ -11004,6 +8208,10 @@ pub fn build_json_timestamps_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -11014,31 +8222,27 @@ pub fn parse_json_timestamps_response(
   body: BitArray,
 ) -> Result(JsonTimestampsInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_json_timestamps_output("{}")
-        _ -> decode_json_timestamps_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_json_timestamps_output("{}")
+      _ -> decode_json_timestamps_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub fn encode_json_unions_input(input: UnionInputOutput) -> String {
   json.to_string(encode_union_input_output_struct(input))
 }
 
-pub fn decode_json_unions_input(
-  body: String,
-) -> Result(UnionInputOutput, String) {
+pub fn decode_json_unions_input(body: String) -> Result(UnionInputOutput, String) {
   case json.parse(body, decode_union_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_json_unions_output(
-  body: String,
-) -> Result(UnionInputOutput, String) {
+pub fn decode_json_unions_output(body: String) -> Result(UnionInputOutput, String) {
   case json.parse(body, decode_union_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -11067,6 +8271,10 @@ pub fn build_json_unions_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -11077,58 +8285,46 @@ pub fn parse_json_unions_response(
   body: BitArray,
 ) -> Result(UnionInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_json_unions_output("{}")
-        _ -> decode_json_unions_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_json_unions_output("{}")
+      _ -> decode_json_unions_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedAcceptWithBodyInput {
   MalformedAcceptWithBodyInput
 }
 
-pub fn encode_malformed_accept_with_body_input_struct(
-  _v: MalformedAcceptWithBodyInput,
-) -> json.Json {
+pub fn encode_malformed_accept_with_body_input_struct(_v: MalformedAcceptWithBodyInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_accept_with_body_input_struct() -> decode.Decoder(
-  MalformedAcceptWithBodyInput,
-) {
+pub fn decode_malformed_accept_with_body_input_struct() -> decode.Decoder(MalformedAcceptWithBodyInput) {
   decode.success(MalformedAcceptWithBodyInput)
 }
 
-pub fn encode_malformed_accept_with_body_input(
-  input: MalformedAcceptWithBodyInput,
-) -> String {
+pub fn encode_malformed_accept_with_body_input(input: MalformedAcceptWithBodyInput) -> String {
   json.to_string(encode_malformed_accept_with_body_input_struct(input))
 }
 
-pub fn decode_malformed_accept_with_body_input(
-  body: String,
-) -> Result(MalformedAcceptWithBodyInput, String) {
+pub fn decode_malformed_accept_with_body_input(body: String) -> Result(MalformedAcceptWithBodyInput, String) {
   case json.parse(body, decode_malformed_accept_with_body_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_accept_with_body_output(
-  body: String,
-) -> Result(GreetingStruct, String) {
+pub fn decode_malformed_accept_with_body_output(body: String) -> Result(GreetingStruct, String) {
   case json.parse(body, decode_greeting_struct_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_accept_with_body_body(
-  _input: MalformedAcceptWithBodyInput,
-) -> json.Json {
+pub fn encode_malformed_accept_with_body_body(_input: MalformedAcceptWithBodyInput) -> json.Json {
   json.object([])
 }
 
@@ -11144,6 +8340,10 @@ pub fn build_malformed_accept_with_body_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -11154,65 +8354,46 @@ pub fn parse_malformed_accept_with_body_response(
   body: BitArray,
 ) -> Result(GreetingStruct, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_accept_with_body_output("{}")
-        _ -> decode_malformed_accept_with_body_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_accept_with_body_output("{}")
+      _ -> decode_malformed_accept_with_body_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedAcceptWithGenericStringInput {
   MalformedAcceptWithGenericStringInput
 }
 
-pub fn encode_malformed_accept_with_generic_string_input_struct(
-  _v: MalformedAcceptWithGenericStringInput,
-) -> json.Json {
+pub fn encode_malformed_accept_with_generic_string_input_struct(_v: MalformedAcceptWithGenericStringInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_accept_with_generic_string_input_struct() -> decode.Decoder(
-  MalformedAcceptWithGenericStringInput,
-) {
+pub fn decode_malformed_accept_with_generic_string_input_struct() -> decode.Decoder(MalformedAcceptWithGenericStringInput) {
   decode.success(MalformedAcceptWithGenericStringInput)
 }
 
-pub fn encode_malformed_accept_with_generic_string_input(
-  input: MalformedAcceptWithGenericStringInput,
-) -> String {
+pub fn encode_malformed_accept_with_generic_string_input(input: MalformedAcceptWithGenericStringInput) -> String {
   json.to_string(encode_malformed_accept_with_generic_string_input_struct(input))
 }
 
-pub fn decode_malformed_accept_with_generic_string_input(
-  body: String,
-) -> Result(MalformedAcceptWithGenericStringInput, String) {
-  case
-    json.parse(body, decode_malformed_accept_with_generic_string_input_struct())
-  {
+pub fn decode_malformed_accept_with_generic_string_input(body: String) -> Result(MalformedAcceptWithGenericStringInput, String) {
+  case json.parse(body, decode_malformed_accept_with_generic_string_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_accept_with_generic_string_output(
-  body: String,
-) -> Result(MalformedAcceptWithGenericStringOutput, String) {
-  case
-    json.parse(
-      body,
-      decode_malformed_accept_with_generic_string_output_struct(),
-    )
-  {
+pub fn decode_malformed_accept_with_generic_string_output(body: String) -> Result(MalformedAcceptWithGenericStringOutput, String) {
+  case json.parse(body, decode_malformed_accept_with_generic_string_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_accept_with_generic_string_body(
-  _input: MalformedAcceptWithGenericStringInput,
-) -> json.Json {
+pub fn encode_malformed_accept_with_generic_string_body(_input: MalformedAcceptWithGenericStringInput) -> json.Json {
   json.object([])
 }
 
@@ -11228,6 +8409,10 @@ pub fn build_malformed_accept_with_generic_string_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -11238,58 +8423,46 @@ pub fn parse_malformed_accept_with_generic_string_response(
   body: BitArray,
 ) -> Result(MalformedAcceptWithGenericStringOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_accept_with_generic_string_output("{}")
-        _ -> decode_malformed_accept_with_generic_string_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_accept_with_generic_string_output("{}")
+      _ -> decode_malformed_accept_with_generic_string_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedAcceptWithPayloadInput {
   MalformedAcceptWithPayloadInput
 }
 
-pub fn encode_malformed_accept_with_payload_input_struct(
-  _v: MalformedAcceptWithPayloadInput,
-) -> json.Json {
+pub fn encode_malformed_accept_with_payload_input_struct(_v: MalformedAcceptWithPayloadInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_accept_with_payload_input_struct() -> decode.Decoder(
-  MalformedAcceptWithPayloadInput,
-) {
+pub fn decode_malformed_accept_with_payload_input_struct() -> decode.Decoder(MalformedAcceptWithPayloadInput) {
   decode.success(MalformedAcceptWithPayloadInput)
 }
 
-pub fn encode_malformed_accept_with_payload_input(
-  input: MalformedAcceptWithPayloadInput,
-) -> String {
+pub fn encode_malformed_accept_with_payload_input(input: MalformedAcceptWithPayloadInput) -> String {
   json.to_string(encode_malformed_accept_with_payload_input_struct(input))
 }
 
-pub fn decode_malformed_accept_with_payload_input(
-  body: String,
-) -> Result(MalformedAcceptWithPayloadInput, String) {
+pub fn decode_malformed_accept_with_payload_input(body: String) -> Result(MalformedAcceptWithPayloadInput, String) {
   case json.parse(body, decode_malformed_accept_with_payload_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_accept_with_payload_output(
-  body: String,
-) -> Result(MalformedAcceptWithPayloadOutput, String) {
+pub fn decode_malformed_accept_with_payload_output(body: String) -> Result(MalformedAcceptWithPayloadOutput, String) {
   case json.parse(body, decode_malformed_accept_with_payload_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_accept_with_payload_body(
-  _input: MalformedAcceptWithPayloadInput,
-) -> json.Json {
+pub fn encode_malformed_accept_with_payload_body(_input: MalformedAcceptWithPayloadInput) -> json.Json {
   json.object([])
 }
 
@@ -11305,6 +8478,10 @@ pub fn build_malformed_accept_with_payload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -11315,28 +8492,24 @@ pub fn parse_malformed_accept_with_payload_response(
   body: BitArray,
 ) -> Result(MalformedAcceptWithPayloadOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_accept_with_payload_output("{}")
-        _ -> decode_malformed_accept_with_payload_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_accept_with_payload_output("{}")
+      _ -> decode_malformed_accept_with_payload_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedBlobOutput {
   MalformedBlobOutput
 }
 
-pub fn encode_malformed_blob_output_struct(
-  _v: MalformedBlobOutput,
-) -> json.Json {
+pub fn encode_malformed_blob_output_struct(_v: MalformedBlobOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_blob_output_struct() -> decode.Decoder(
-  MalformedBlobOutput,
-) {
+pub fn decode_malformed_blob_output_struct() -> decode.Decoder(MalformedBlobOutput) {
   decode.success(MalformedBlobOutput)
 }
 
@@ -11344,18 +8517,14 @@ pub fn encode_malformed_blob_input(input: MalformedBlobInput) -> String {
   json.to_string(encode_malformed_blob_input_struct(input))
 }
 
-pub fn decode_malformed_blob_input(
-  body: String,
-) -> Result(MalformedBlobInput, String) {
+pub fn decode_malformed_blob_input(body: String) -> Result(MalformedBlobInput, String) {
   case json.parse(body, decode_malformed_blob_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_blob_output(
-  body: String,
-) -> Result(MalformedBlobOutput, String) {
+pub fn decode_malformed_blob_output(body: String) -> Result(MalformedBlobOutput, String) {
   case json.parse(body, decode_malformed_blob_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -11365,10 +8534,7 @@ pub fn decode_malformed_blob_output(
 pub fn encode_malformed_blob_body(input: MalformedBlobInput) -> json.Json {
   let pairs = []
   let pairs = case input.blob {
-    option.Some(v) -> [
-      #("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("blob", fn(b) { json.string(bit_array.base64_encode(b, True)) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -11387,6 +8553,10 @@ pub fn build_malformed_blob_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -11397,28 +8567,24 @@ pub fn parse_malformed_blob_response(
   body: BitArray,
 ) -> Result(MalformedBlobOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_blob_output("{}")
-        _ -> decode_malformed_blob_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_blob_output("{}")
+      _ -> decode_malformed_blob_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedBooleanOutput {
   MalformedBooleanOutput
 }
 
-pub fn encode_malformed_boolean_output_struct(
-  _v: MalformedBooleanOutput,
-) -> json.Json {
+pub fn encode_malformed_boolean_output_struct(_v: MalformedBooleanOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_boolean_output_struct() -> decode.Decoder(
-  MalformedBooleanOutput,
-) {
+pub fn decode_malformed_boolean_output_struct() -> decode.Decoder(MalformedBooleanOutput) {
   decode.success(MalformedBooleanOutput)
 }
 
@@ -11426,27 +8592,21 @@ pub fn encode_malformed_boolean_input(input: MalformedBooleanInput) -> String {
   json.to_string(encode_malformed_boolean_input_struct(input))
 }
 
-pub fn decode_malformed_boolean_input(
-  body: String,
-) -> Result(MalformedBooleanInput, String) {
+pub fn decode_malformed_boolean_input(body: String) -> Result(MalformedBooleanInput, String) {
   case json.parse(body, decode_malformed_boolean_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_boolean_output(
-  body: String,
-) -> Result(MalformedBooleanOutput, String) {
+pub fn decode_malformed_boolean_output(body: String) -> Result(MalformedBooleanOutput, String) {
   case json.parse(body, decode_malformed_boolean_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_boolean_body(
-  input: MalformedBooleanInput,
-) -> json.Json {
+pub fn encode_malformed_boolean_body(input: MalformedBooleanInput) -> json.Json {
   let pairs = []
   let pairs = case input.boolean_in_body {
     option.Some(v) -> [#("booleanInBody", json.bool(v)), ..pairs]
@@ -11460,20 +8620,17 @@ pub fn build_malformed_boolean_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedBoolean/{booleanInPath}"
   let path = case input.boolean_in_path {
-    option.Some(v) ->
-      rest.substitute_label(path, "booleanInPath", rest.bool_to_query(v), False)
+    option.Some(v) -> rest.substitute_label(path, "booleanInPath", rest.bool_to_query(v), False)
     option.None -> path
   }
   let query = ""
   let query = case input.boolean_in_query {
-    option.Some(v) ->
-      rest.add_query(query, "booleanInQuery", rest.bool_to_query(v))
+    option.Some(v) -> rest.add_query(query, "booleanInQuery", rest.bool_to_query(v))
     option.None -> query
   }
   let headers = dict.new()
   let headers = case input.boolean_in_header {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "booleanInHeader", rest.bool_to_query(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "booleanInHeader", rest.bool_to_query(v))
     option.None -> headers
   }
   let body_json = encode_malformed_boolean_body(input)
@@ -11482,6 +8639,10 @@ pub fn build_malformed_boolean_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -11493,28 +8654,24 @@ pub fn parse_malformed_boolean_response(
   body: BitArray,
 ) -> Result(MalformedBooleanOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_boolean_output("{}")
-        _ -> decode_malformed_boolean_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_boolean_output("{}")
+      _ -> decode_malformed_boolean_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedByteOutput {
   MalformedByteOutput
 }
 
-pub fn encode_malformed_byte_output_struct(
-  _v: MalformedByteOutput,
-) -> json.Json {
+pub fn encode_malformed_byte_output_struct(_v: MalformedByteOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_byte_output_struct() -> decode.Decoder(
-  MalformedByteOutput,
-) {
+pub fn decode_malformed_byte_output_struct() -> decode.Decoder(MalformedByteOutput) {
   decode.success(MalformedByteOutput)
 }
 
@@ -11522,18 +8679,14 @@ pub fn encode_malformed_byte_input(input: MalformedByteInput) -> String {
   json.to_string(encode_malformed_byte_input_struct(input))
 }
 
-pub fn decode_malformed_byte_input(
-  body: String,
-) -> Result(MalformedByteInput, String) {
+pub fn decode_malformed_byte_input(body: String) -> Result(MalformedByteInput, String) {
   case json.parse(body, decode_malformed_byte_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_byte_output(
-  body: String,
-) -> Result(MalformedByteOutput, String) {
+pub fn decode_malformed_byte_output(body: String) -> Result(MalformedByteOutput, String) {
   case json.parse(body, decode_malformed_byte_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -11554,8 +8707,7 @@ pub fn build_malformed_byte_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedByte/{byteInPath}"
   let path = case input.byte_in_path {
-    option.Some(v) ->
-      rest.substitute_label(path, "byteInPath", rest.int_to_query(v), False)
+    option.Some(v) -> rest.substitute_label(path, "byteInPath", rest.int_to_query(v), False)
     option.None -> path
   }
   let query = ""
@@ -11565,8 +8717,7 @@ pub fn build_malformed_byte_request(
   }
   let headers = dict.new()
   let headers = case input.byte_in_header {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "byteInHeader", rest.int_to_query(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "byteInHeader", rest.int_to_query(v))
     option.None -> headers
   }
   let body_json = encode_malformed_byte_body(input)
@@ -11575,6 +8726,10 @@ pub fn build_malformed_byte_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -11586,60 +8741,46 @@ pub fn parse_malformed_byte_response(
   body: BitArray,
 ) -> Result(MalformedByteOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_byte_output("{}")
-        _ -> decode_malformed_byte_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_byte_output("{}")
+      _ -> decode_malformed_byte_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedContentTypeWithBodyOutput {
   MalformedContentTypeWithBodyOutput
 }
 
-pub fn encode_malformed_content_type_with_body_output_struct(
-  _v: MalformedContentTypeWithBodyOutput,
-) -> json.Json {
+pub fn encode_malformed_content_type_with_body_output_struct(_v: MalformedContentTypeWithBodyOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_content_type_with_body_output_struct() -> decode.Decoder(
-  MalformedContentTypeWithBodyOutput,
-) {
+pub fn decode_malformed_content_type_with_body_output_struct() -> decode.Decoder(MalformedContentTypeWithBodyOutput) {
   decode.success(MalformedContentTypeWithBodyOutput)
 }
 
-pub fn encode_malformed_content_type_with_body_input(
-  input: GreetingStruct,
-) -> String {
+pub fn encode_malformed_content_type_with_body_input(input: GreetingStruct) -> String {
   json.to_string(encode_greeting_struct_struct(input))
 }
 
-pub fn decode_malformed_content_type_with_body_input(
-  body: String,
-) -> Result(GreetingStruct, String) {
+pub fn decode_malformed_content_type_with_body_input(body: String) -> Result(GreetingStruct, String) {
   case json.parse(body, decode_greeting_struct_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_content_type_with_body_output(
-  body: String,
-) -> Result(MalformedContentTypeWithBodyOutput, String) {
-  case
-    json.parse(body, decode_malformed_content_type_with_body_output_struct())
-  {
+pub fn decode_malformed_content_type_with_body_output(body: String) -> Result(MalformedContentTypeWithBodyOutput, String) {
+  case json.parse(body, decode_malformed_content_type_with_body_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_content_type_with_body_body(
-  input: GreetingStruct,
-) -> json.Json {
+pub fn encode_malformed_content_type_with_body_body(input: GreetingStruct) -> json.Json {
   let pairs = []
   let pairs = case input.hi {
     option.Some(v) -> [#("hi", json.string(v)), ..pairs]
@@ -11661,6 +8802,10 @@ pub fn build_malformed_content_type_with_body_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -11671,70 +8816,46 @@ pub fn parse_malformed_content_type_with_body_response(
   body: BitArray,
 ) -> Result(MalformedContentTypeWithBodyOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_content_type_with_body_output("{}")
-        _ -> decode_malformed_content_type_with_body_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_content_type_with_body_output("{}")
+      _ -> decode_malformed_content_type_with_body_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedContentTypeWithGenericStringOutput {
   MalformedContentTypeWithGenericStringOutput
 }
 
-pub fn encode_malformed_content_type_with_generic_string_output_struct(
-  _v: MalformedContentTypeWithGenericStringOutput,
-) -> json.Json {
+pub fn encode_malformed_content_type_with_generic_string_output_struct(_v: MalformedContentTypeWithGenericStringOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_content_type_with_generic_string_output_struct() -> decode.Decoder(
-  MalformedContentTypeWithGenericStringOutput,
-) {
+pub fn decode_malformed_content_type_with_generic_string_output_struct() -> decode.Decoder(MalformedContentTypeWithGenericStringOutput) {
   decode.success(MalformedContentTypeWithGenericStringOutput)
 }
 
-pub fn encode_malformed_content_type_with_generic_string_input(
-  input: MalformedContentTypeWithGenericStringInput,
-) -> String {
-  json.to_string(encode_malformed_content_type_with_generic_string_input_struct(
-    input,
-  ))
+pub fn encode_malformed_content_type_with_generic_string_input(input: MalformedContentTypeWithGenericStringInput) -> String {
+  json.to_string(encode_malformed_content_type_with_generic_string_input_struct(input))
 }
 
-pub fn decode_malformed_content_type_with_generic_string_input(
-  body: String,
-) -> Result(MalformedContentTypeWithGenericStringInput, String) {
-  case
-    json.parse(
-      body,
-      decode_malformed_content_type_with_generic_string_input_struct(),
-    )
-  {
+pub fn decode_malformed_content_type_with_generic_string_input(body: String) -> Result(MalformedContentTypeWithGenericStringInput, String) {
+  case json.parse(body, decode_malformed_content_type_with_generic_string_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_content_type_with_generic_string_output(
-  body: String,
-) -> Result(MalformedContentTypeWithGenericStringOutput, String) {
-  case
-    json.parse(
-      body,
-      decode_malformed_content_type_with_generic_string_output_struct(),
-    )
-  {
+pub fn decode_malformed_content_type_with_generic_string_output(body: String) -> Result(MalformedContentTypeWithGenericStringOutput, String) {
+  case json.parse(body, decode_malformed_content_type_with_generic_string_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_content_type_with_generic_string_body(
-  _input: MalformedContentTypeWithGenericStringInput,
-) -> json.Json {
+pub fn encode_malformed_content_type_with_generic_string_body(_input: MalformedContentTypeWithGenericStringInput) -> json.Json {
   json.object([])
 }
 
@@ -11753,6 +8874,10 @@ pub fn build_malformed_content_type_with_generic_string_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -11763,28 +8888,24 @@ pub fn parse_malformed_content_type_with_generic_string_response(
   body: BitArray,
 ) -> Result(MalformedContentTypeWithGenericStringOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_content_type_with_generic_string_output("{}")
-        _ -> decode_malformed_content_type_with_generic_string_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_content_type_with_generic_string_output("{}")
+      _ -> decode_malformed_content_type_with_generic_string_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedContentTypeWithoutBodyInput {
   MalformedContentTypeWithoutBodyInput
 }
 
-pub fn encode_malformed_content_type_without_body_input_struct(
-  _v: MalformedContentTypeWithoutBodyInput,
-) -> json.Json {
+pub fn encode_malformed_content_type_without_body_input_struct(_v: MalformedContentTypeWithoutBodyInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_content_type_without_body_input_struct() -> decode.Decoder(
-  MalformedContentTypeWithoutBodyInput,
-) {
+pub fn decode_malformed_content_type_without_body_input_struct() -> decode.Decoder(MalformedContentTypeWithoutBodyInput) {
   decode.success(MalformedContentTypeWithoutBodyInput)
 }
 
@@ -11792,49 +8913,33 @@ pub type MalformedContentTypeWithoutBodyOutput {
   MalformedContentTypeWithoutBodyOutput
 }
 
-pub fn encode_malformed_content_type_without_body_output_struct(
-  _v: MalformedContentTypeWithoutBodyOutput,
-) -> json.Json {
+pub fn encode_malformed_content_type_without_body_output_struct(_v: MalformedContentTypeWithoutBodyOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_content_type_without_body_output_struct() -> decode.Decoder(
-  MalformedContentTypeWithoutBodyOutput,
-) {
+pub fn decode_malformed_content_type_without_body_output_struct() -> decode.Decoder(MalformedContentTypeWithoutBodyOutput) {
   decode.success(MalformedContentTypeWithoutBodyOutput)
 }
 
-pub fn encode_malformed_content_type_without_body_input(
-  input: MalformedContentTypeWithoutBodyInput,
-) -> String {
+pub fn encode_malformed_content_type_without_body_input(input: MalformedContentTypeWithoutBodyInput) -> String {
   json.to_string(encode_malformed_content_type_without_body_input_struct(input))
 }
 
-pub fn decode_malformed_content_type_without_body_input(
-  body: String,
-) -> Result(MalformedContentTypeWithoutBodyInput, String) {
-  case
-    json.parse(body, decode_malformed_content_type_without_body_input_struct())
-  {
+pub fn decode_malformed_content_type_without_body_input(body: String) -> Result(MalformedContentTypeWithoutBodyInput, String) {
+  case json.parse(body, decode_malformed_content_type_without_body_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_content_type_without_body_output(
-  body: String,
-) -> Result(MalformedContentTypeWithoutBodyOutput, String) {
-  case
-    json.parse(body, decode_malformed_content_type_without_body_output_struct())
-  {
+pub fn decode_malformed_content_type_without_body_output(body: String) -> Result(MalformedContentTypeWithoutBodyOutput, String) {
+  case json.parse(body, decode_malformed_content_type_without_body_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_content_type_without_body_body(
-  _input: MalformedContentTypeWithoutBodyInput,
-) -> json.Json {
+pub fn encode_malformed_content_type_without_body_body(_input: MalformedContentTypeWithoutBodyInput) -> json.Json {
   json.object([])
 }
 
@@ -11850,6 +8955,10 @@ pub fn build_malformed_content_type_without_body_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -11860,70 +8969,46 @@ pub fn parse_malformed_content_type_without_body_response(
   body: BitArray,
 ) -> Result(MalformedContentTypeWithoutBodyOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_content_type_without_body_output("{}")
-        _ -> decode_malformed_content_type_without_body_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_content_type_without_body_output("{}")
+      _ -> decode_malformed_content_type_without_body_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedContentTypeWithoutBodyEmptyInputOutput {
   MalformedContentTypeWithoutBodyEmptyInputOutput
 }
 
-pub fn encode_malformed_content_type_without_body_empty_input_output_struct(
-  _v: MalformedContentTypeWithoutBodyEmptyInputOutput,
-) -> json.Json {
+pub fn encode_malformed_content_type_without_body_empty_input_output_struct(_v: MalformedContentTypeWithoutBodyEmptyInputOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_content_type_without_body_empty_input_output_struct() -> decode.Decoder(
-  MalformedContentTypeWithoutBodyEmptyInputOutput,
-) {
+pub fn decode_malformed_content_type_without_body_empty_input_output_struct() -> decode.Decoder(MalformedContentTypeWithoutBodyEmptyInputOutput) {
   decode.success(MalformedContentTypeWithoutBodyEmptyInputOutput)
 }
 
-pub fn encode_malformed_content_type_without_body_empty_input_input(
-  input: MalformedContentTypeWithoutBodyEmptyInputInput,
-) -> String {
-  json.to_string(
-    encode_malformed_content_type_without_body_empty_input_input_struct(input),
-  )
+pub fn encode_malformed_content_type_without_body_empty_input_input(input: MalformedContentTypeWithoutBodyEmptyInputInput) -> String {
+  json.to_string(encode_malformed_content_type_without_body_empty_input_input_struct(input))
 }
 
-pub fn decode_malformed_content_type_without_body_empty_input_input(
-  body: String,
-) -> Result(MalformedContentTypeWithoutBodyEmptyInputInput, String) {
-  case
-    json.parse(
-      body,
-      decode_malformed_content_type_without_body_empty_input_input_struct(),
-    )
-  {
+pub fn decode_malformed_content_type_without_body_empty_input_input(body: String) -> Result(MalformedContentTypeWithoutBodyEmptyInputInput, String) {
+  case json.parse(body, decode_malformed_content_type_without_body_empty_input_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_content_type_without_body_empty_input_output(
-  body: String,
-) -> Result(MalformedContentTypeWithoutBodyEmptyInputOutput, String) {
-  case
-    json.parse(
-      body,
-      decode_malformed_content_type_without_body_empty_input_output_struct(),
-    )
-  {
+pub fn decode_malformed_content_type_without_body_empty_input_output(body: String) -> Result(MalformedContentTypeWithoutBodyEmptyInputOutput, String) {
+  case json.parse(body, decode_malformed_content_type_without_body_empty_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_content_type_without_body_empty_input_body(
-  _input: MalformedContentTypeWithoutBodyEmptyInputInput,
-) -> json.Json {
+pub fn encode_malformed_content_type_without_body_empty_input_body(_input: MalformedContentTypeWithoutBodyEmptyInputInput) -> json.Json {
   json.object([])
 }
 
@@ -11943,6 +9028,10 @@ pub fn build_malformed_content_type_without_body_empty_input_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -11953,63 +9042,46 @@ pub fn parse_malformed_content_type_without_body_empty_input_response(
   body: BitArray,
 ) -> Result(MalformedContentTypeWithoutBodyEmptyInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" ->
-          decode_malformed_content_type_without_body_empty_input_output("{}")
-        _ -> decode_malformed_content_type_without_body_empty_input_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_content_type_without_body_empty_input_output("{}")
+      _ -> decode_malformed_content_type_without_body_empty_input_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedContentTypeWithPayloadOutput {
   MalformedContentTypeWithPayloadOutput
 }
 
-pub fn encode_malformed_content_type_with_payload_output_struct(
-  _v: MalformedContentTypeWithPayloadOutput,
-) -> json.Json {
+pub fn encode_malformed_content_type_with_payload_output_struct(_v: MalformedContentTypeWithPayloadOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_content_type_with_payload_output_struct() -> decode.Decoder(
-  MalformedContentTypeWithPayloadOutput,
-) {
+pub fn decode_malformed_content_type_with_payload_output_struct() -> decode.Decoder(MalformedContentTypeWithPayloadOutput) {
   decode.success(MalformedContentTypeWithPayloadOutput)
 }
 
-pub fn encode_malformed_content_type_with_payload_input(
-  input: MalformedContentTypeWithPayloadInput,
-) -> String {
+pub fn encode_malformed_content_type_with_payload_input(input: MalformedContentTypeWithPayloadInput) -> String {
   json.to_string(encode_malformed_content_type_with_payload_input_struct(input))
 }
 
-pub fn decode_malformed_content_type_with_payload_input(
-  body: String,
-) -> Result(MalformedContentTypeWithPayloadInput, String) {
-  case
-    json.parse(body, decode_malformed_content_type_with_payload_input_struct())
-  {
+pub fn decode_malformed_content_type_with_payload_input(body: String) -> Result(MalformedContentTypeWithPayloadInput, String) {
+  case json.parse(body, decode_malformed_content_type_with_payload_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_content_type_with_payload_output(
-  body: String,
-) -> Result(MalformedContentTypeWithPayloadOutput, String) {
-  case
-    json.parse(body, decode_malformed_content_type_with_payload_output_struct())
-  {
+pub fn decode_malformed_content_type_with_payload_output(body: String) -> Result(MalformedContentTypeWithPayloadOutput, String) {
+  case json.parse(body, decode_malformed_content_type_with_payload_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_content_type_with_payload_body(
-  _input: MalformedContentTypeWithPayloadInput,
-) -> json.Json {
+pub fn encode_malformed_content_type_with_payload_body(_input: MalformedContentTypeWithPayloadInput) -> json.Json {
   json.object([])
 }
 
@@ -12028,6 +9100,10 @@ pub fn build_malformed_content_type_with_payload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -12038,28 +9114,24 @@ pub fn parse_malformed_content_type_with_payload_response(
   body: BitArray,
 ) -> Result(MalformedContentTypeWithPayloadOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_content_type_with_payload_output("{}")
-        _ -> decode_malformed_content_type_with_payload_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_content_type_with_payload_output("{}")
+      _ -> decode_malformed_content_type_with_payload_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedDoubleOutput {
   MalformedDoubleOutput
 }
 
-pub fn encode_malformed_double_output_struct(
-  _v: MalformedDoubleOutput,
-) -> json.Json {
+pub fn encode_malformed_double_output_struct(_v: MalformedDoubleOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_double_output_struct() -> decode.Decoder(
-  MalformedDoubleOutput,
-) {
+pub fn decode_malformed_double_output_struct() -> decode.Decoder(MalformedDoubleOutput) {
   decode.success(MalformedDoubleOutput)
 }
 
@@ -12067,18 +9139,14 @@ pub fn encode_malformed_double_input(input: MalformedDoubleInput) -> String {
   json.to_string(encode_malformed_double_input_struct(input))
 }
 
-pub fn decode_malformed_double_input(
-  body: String,
-) -> Result(MalformedDoubleInput, String) {
+pub fn decode_malformed_double_input(body: String) -> Result(MalformedDoubleInput, String) {
   case json.parse(body, decode_malformed_double_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_double_output(
-  body: String,
-) -> Result(MalformedDoubleOutput, String) {
+pub fn decode_malformed_double_output(body: String) -> Result(MalformedDoubleOutput, String) {
   case json.parse(body, decode_malformed_double_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -12099,40 +9167,17 @@ pub fn build_malformed_double_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedDouble/{doubleInPath}"
   let path = case input.double_in_path {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "doubleInPath",
-        case v {
-          json_float.FloatValue(f) -> rest.float_to_query(f)
-          json_float.NaN -> "NaN"
-          json_float.PosInfinity -> "Infinity"
-          json_float.NegInfinity -> "-Infinity"
-        },
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "doubleInPath", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" }, False)
     option.None -> path
   }
   let query = ""
   let query = case input.double_in_query {
-    option.Some(v) ->
-      rest.add_query(query, "doubleInQuery", case v {
-        json_float.FloatValue(f) -> rest.float_to_query(f)
-        json_float.NaN -> "NaN"
-        json_float.PosInfinity -> "Infinity"
-        json_float.NegInfinity -> "-Infinity"
-      })
+    option.Some(v) -> rest.add_query(query, "doubleInQuery", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" })
     option.None -> query
   }
   let headers = dict.new()
   let headers = case input.double_in_header {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "doubleInHeader", case v {
-        json_float.FloatValue(f) -> rest.float_to_query(f)
-        json_float.NaN -> "NaN"
-        json_float.PosInfinity -> "Infinity"
-        json_float.NegInfinity -> "-Infinity"
-      })
+    option.Some(v) -> rest.maybe_set_header(headers, "doubleInHeader", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" })
     option.None -> headers
   }
   let body_json = encode_malformed_double_body(input)
@@ -12141,6 +9186,10 @@ pub fn build_malformed_double_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -12152,28 +9201,24 @@ pub fn parse_malformed_double_response(
   body: BitArray,
 ) -> Result(MalformedDoubleOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_double_output("{}")
-        _ -> decode_malformed_double_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_double_output("{}")
+      _ -> decode_malformed_double_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedFloatOutput {
   MalformedFloatOutput
 }
 
-pub fn encode_malformed_float_output_struct(
-  _v: MalformedFloatOutput,
-) -> json.Json {
+pub fn encode_malformed_float_output_struct(_v: MalformedFloatOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_float_output_struct() -> decode.Decoder(
-  MalformedFloatOutput,
-) {
+pub fn decode_malformed_float_output_struct() -> decode.Decoder(MalformedFloatOutput) {
   decode.success(MalformedFloatOutput)
 }
 
@@ -12181,18 +9226,14 @@ pub fn encode_malformed_float_input(input: MalformedFloatInput) -> String {
   json.to_string(encode_malformed_float_input_struct(input))
 }
 
-pub fn decode_malformed_float_input(
-  body: String,
-) -> Result(MalformedFloatInput, String) {
+pub fn decode_malformed_float_input(body: String) -> Result(MalformedFloatInput, String) {
   case json.parse(body, decode_malformed_float_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_float_output(
-  body: String,
-) -> Result(MalformedFloatOutput, String) {
+pub fn decode_malformed_float_output(body: String) -> Result(MalformedFloatOutput, String) {
   case json.parse(body, decode_malformed_float_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -12213,40 +9254,17 @@ pub fn build_malformed_float_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedFloat/{floatInPath}"
   let path = case input.float_in_path {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "floatInPath",
-        case v {
-          json_float.FloatValue(f) -> rest.float_to_query(f)
-          json_float.NaN -> "NaN"
-          json_float.PosInfinity -> "Infinity"
-          json_float.NegInfinity -> "-Infinity"
-        },
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "floatInPath", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" }, False)
     option.None -> path
   }
   let query = ""
   let query = case input.float_in_query {
-    option.Some(v) ->
-      rest.add_query(query, "floatInQuery", case v {
-        json_float.FloatValue(f) -> rest.float_to_query(f)
-        json_float.NaN -> "NaN"
-        json_float.PosInfinity -> "Infinity"
-        json_float.NegInfinity -> "-Infinity"
-      })
+    option.Some(v) -> rest.add_query(query, "floatInQuery", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" })
     option.None -> query
   }
   let headers = dict.new()
   let headers = case input.float_in_header {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "floatInHeader", case v {
-        json_float.FloatValue(f) -> rest.float_to_query(f)
-        json_float.NaN -> "NaN"
-        json_float.PosInfinity -> "Infinity"
-        json_float.NegInfinity -> "-Infinity"
-      })
+    option.Some(v) -> rest.maybe_set_header(headers, "floatInHeader", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" })
     option.None -> headers
   }
   let body_json = encode_malformed_float_body(input)
@@ -12255,6 +9273,10 @@ pub fn build_malformed_float_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -12266,28 +9288,24 @@ pub fn parse_malformed_float_response(
   body: BitArray,
 ) -> Result(MalformedFloatOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_float_output("{}")
-        _ -> decode_malformed_float_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_float_output("{}")
+      _ -> decode_malformed_float_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedIntegerOutput {
   MalformedIntegerOutput
 }
 
-pub fn encode_malformed_integer_output_struct(
-  _v: MalformedIntegerOutput,
-) -> json.Json {
+pub fn encode_malformed_integer_output_struct(_v: MalformedIntegerOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_integer_output_struct() -> decode.Decoder(
-  MalformedIntegerOutput,
-) {
+pub fn decode_malformed_integer_output_struct() -> decode.Decoder(MalformedIntegerOutput) {
   decode.success(MalformedIntegerOutput)
 }
 
@@ -12295,27 +9313,21 @@ pub fn encode_malformed_integer_input(input: MalformedIntegerInput) -> String {
   json.to_string(encode_malformed_integer_input_struct(input))
 }
 
-pub fn decode_malformed_integer_input(
-  body: String,
-) -> Result(MalformedIntegerInput, String) {
+pub fn decode_malformed_integer_input(body: String) -> Result(MalformedIntegerInput, String) {
   case json.parse(body, decode_malformed_integer_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_integer_output(
-  body: String,
-) -> Result(MalformedIntegerOutput, String) {
+pub fn decode_malformed_integer_output(body: String) -> Result(MalformedIntegerOutput, String) {
   case json.parse(body, decode_malformed_integer_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_integer_body(
-  input: MalformedIntegerInput,
-) -> json.Json {
+pub fn encode_malformed_integer_body(input: MalformedIntegerInput) -> json.Json {
   let pairs = []
   let pairs = case input.integer_in_body {
     option.Some(v) -> [#("integerInBody", json.int(v)), ..pairs]
@@ -12329,20 +9341,17 @@ pub fn build_malformed_integer_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedInteger/{integerInPath}"
   let path = case input.integer_in_path {
-    option.Some(v) ->
-      rest.substitute_label(path, "integerInPath", rest.int_to_query(v), False)
+    option.Some(v) -> rest.substitute_label(path, "integerInPath", rest.int_to_query(v), False)
     option.None -> path
   }
   let query = ""
   let query = case input.integer_in_query {
-    option.Some(v) ->
-      rest.add_query(query, "integerInQuery", rest.int_to_query(v))
+    option.Some(v) -> rest.add_query(query, "integerInQuery", rest.int_to_query(v))
     option.None -> query
   }
   let headers = dict.new()
   let headers = case input.integer_in_header {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "integerInHeader", rest.int_to_query(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "integerInHeader", rest.int_to_query(v))
     option.None -> headers
   }
   let body_json = encode_malformed_integer_body(input)
@@ -12351,6 +9360,10 @@ pub fn build_malformed_integer_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -12362,28 +9375,24 @@ pub fn parse_malformed_integer_response(
   body: BitArray,
 ) -> Result(MalformedIntegerOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_integer_output("{}")
-        _ -> decode_malformed_integer_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_integer_output("{}")
+      _ -> decode_malformed_integer_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedListOutput {
   MalformedListOutput
 }
 
-pub fn encode_malformed_list_output_struct(
-  _v: MalformedListOutput,
-) -> json.Json {
+pub fn encode_malformed_list_output_struct(_v: MalformedListOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_list_output_struct() -> decode.Decoder(
-  MalformedListOutput,
-) {
+pub fn decode_malformed_list_output_struct() -> decode.Decoder(MalformedListOutput) {
   decode.success(MalformedListOutput)
 }
 
@@ -12391,18 +9400,14 @@ pub fn encode_malformed_list_input(input: MalformedListInput) -> String {
   json.to_string(encode_malformed_list_input_struct(input))
 }
 
-pub fn decode_malformed_list_input(
-  body: String,
-) -> Result(MalformedListInput, String) {
+pub fn decode_malformed_list_input(body: String) -> Result(MalformedListInput, String) {
   case json.parse(body, decode_malformed_list_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_list_output(
-  body: String,
-) -> Result(MalformedListOutput, String) {
+pub fn decode_malformed_list_output(body: String) -> Result(MalformedListOutput, String) {
   case json.parse(body, decode_malformed_list_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -12412,10 +9417,7 @@ pub fn decode_malformed_list_output(
 pub fn encode_malformed_list_body(input: MalformedListInput) -> json.Json {
   let pairs = []
   let pairs = case input.body_list {
-    option.Some(v) -> [
-      #("bodyList", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("bodyList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -12434,6 +9436,10 @@ pub fn build_malformed_list_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -12444,28 +9450,24 @@ pub fn parse_malformed_list_response(
   body: BitArray,
 ) -> Result(MalformedListOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_list_output("{}")
-        _ -> decode_malformed_list_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_list_output("{}")
+      _ -> decode_malformed_list_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedLongOutput {
   MalformedLongOutput
 }
 
-pub fn encode_malformed_long_output_struct(
-  _v: MalformedLongOutput,
-) -> json.Json {
+pub fn encode_malformed_long_output_struct(_v: MalformedLongOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_long_output_struct() -> decode.Decoder(
-  MalformedLongOutput,
-) {
+pub fn decode_malformed_long_output_struct() -> decode.Decoder(MalformedLongOutput) {
   decode.success(MalformedLongOutput)
 }
 
@@ -12473,18 +9475,14 @@ pub fn encode_malformed_long_input(input: MalformedLongInput) -> String {
   json.to_string(encode_malformed_long_input_struct(input))
 }
 
-pub fn decode_malformed_long_input(
-  body: String,
-) -> Result(MalformedLongInput, String) {
+pub fn decode_malformed_long_input(body: String) -> Result(MalformedLongInput, String) {
   case json.parse(body, decode_malformed_long_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_long_output(
-  body: String,
-) -> Result(MalformedLongOutput, String) {
+pub fn decode_malformed_long_output(body: String) -> Result(MalformedLongOutput, String) {
   case json.parse(body, decode_malformed_long_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -12505,8 +9503,7 @@ pub fn build_malformed_long_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedLong/{longInPath}"
   let path = case input.long_in_path {
-    option.Some(v) ->
-      rest.substitute_label(path, "longInPath", rest.int_to_query(v), False)
+    option.Some(v) -> rest.substitute_label(path, "longInPath", rest.int_to_query(v), False)
     option.None -> path
   }
   let query = ""
@@ -12516,8 +9513,7 @@ pub fn build_malformed_long_request(
   }
   let headers = dict.new()
   let headers = case input.long_in_header {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "longInHeader", rest.int_to_query(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "longInHeader", rest.int_to_query(v))
     option.None -> headers
   }
   let body_json = encode_malformed_long_body(input)
@@ -12526,6 +9522,10 @@ pub fn build_malformed_long_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -12537,14 +9537,14 @@ pub fn parse_malformed_long_response(
   body: BitArray,
 ) -> Result(MalformedLongOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_long_output("{}")
-        _ -> decode_malformed_long_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_long_output("{}")
+      _ -> decode_malformed_long_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedMapOutput {
   MalformedMapOutput
@@ -12554,9 +9554,7 @@ pub fn encode_malformed_map_output_struct(_v: MalformedMapOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_map_output_struct() -> decode.Decoder(
-  MalformedMapOutput,
-) {
+pub fn decode_malformed_map_output_struct() -> decode.Decoder(MalformedMapOutput) {
   decode.success(MalformedMapOutput)
 }
 
@@ -12564,18 +9562,14 @@ pub fn encode_malformed_map_input(input: MalformedMapInput) -> String {
   json.to_string(encode_malformed_map_input_struct(input))
 }
 
-pub fn decode_malformed_map_input(
-  body: String,
-) -> Result(MalformedMapInput, String) {
+pub fn decode_malformed_map_input(body: String) -> Result(MalformedMapInput, String) {
   case json.parse(body, decode_malformed_map_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_map_output(
-  body: String,
-) -> Result(MalformedMapOutput, String) {
+pub fn decode_malformed_map_output(body: String) -> Result(MalformedMapOutput, String) {
   case json.parse(body, decode_malformed_map_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -12585,18 +9579,7 @@ pub fn decode_malformed_map_output(
 pub fn encode_malformed_map_body(input: MalformedMapInput) -> json.Json {
   let pairs = []
   let pairs = case input.body_map {
-    option.Some(v) -> [
-      #(
-        "bodyMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("bodyMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -12615,6 +9598,10 @@ pub fn build_malformed_map_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -12625,58 +9612,46 @@ pub fn parse_malformed_map_response(
   body: BitArray,
 ) -> Result(MalformedMapOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_map_output("{}")
-        _ -> decode_malformed_map_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_map_output("{}")
+      _ -> decode_malformed_map_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedRequestBodyOutput {
   MalformedRequestBodyOutput
 }
 
-pub fn encode_malformed_request_body_output_struct(
-  _v: MalformedRequestBodyOutput,
-) -> json.Json {
+pub fn encode_malformed_request_body_output_struct(_v: MalformedRequestBodyOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_request_body_output_struct() -> decode.Decoder(
-  MalformedRequestBodyOutput,
-) {
+pub fn decode_malformed_request_body_output_struct() -> decode.Decoder(MalformedRequestBodyOutput) {
   decode.success(MalformedRequestBodyOutput)
 }
 
-pub fn encode_malformed_request_body_input(
-  input: MalformedRequestBodyInput,
-) -> String {
+pub fn encode_malformed_request_body_input(input: MalformedRequestBodyInput) -> String {
   json.to_string(encode_malformed_request_body_input_struct(input))
 }
 
-pub fn decode_malformed_request_body_input(
-  body: String,
-) -> Result(MalformedRequestBodyInput, String) {
+pub fn decode_malformed_request_body_input(body: String) -> Result(MalformedRequestBodyInput, String) {
   case json.parse(body, decode_malformed_request_body_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_request_body_output(
-  body: String,
-) -> Result(MalformedRequestBodyOutput, String) {
+pub fn decode_malformed_request_body_output(body: String) -> Result(MalformedRequestBodyOutput, String) {
   case json.parse(body, decode_malformed_request_body_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_request_body_body(
-  input: MalformedRequestBodyInput,
-) -> json.Json {
+pub fn encode_malformed_request_body_body(input: MalformedRequestBodyInput) -> json.Json {
   let pairs = []
   let pairs = case input.float {
     option.Some(v) -> [#("float", json_float.encode(v)), ..pairs]
@@ -12702,6 +9677,10 @@ pub fn build_malformed_request_body_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -12712,28 +9691,24 @@ pub fn parse_malformed_request_body_response(
   body: BitArray,
 ) -> Result(MalformedRequestBodyOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_request_body_output("{}")
-        _ -> decode_malformed_request_body_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_request_body_output("{}")
+      _ -> decode_malformed_request_body_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedShortOutput {
   MalformedShortOutput
 }
 
-pub fn encode_malformed_short_output_struct(
-  _v: MalformedShortOutput,
-) -> json.Json {
+pub fn encode_malformed_short_output_struct(_v: MalformedShortOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_short_output_struct() -> decode.Decoder(
-  MalformedShortOutput,
-) {
+pub fn decode_malformed_short_output_struct() -> decode.Decoder(MalformedShortOutput) {
   decode.success(MalformedShortOutput)
 }
 
@@ -12741,18 +9716,14 @@ pub fn encode_malformed_short_input(input: MalformedShortInput) -> String {
   json.to_string(encode_malformed_short_input_struct(input))
 }
 
-pub fn decode_malformed_short_input(
-  body: String,
-) -> Result(MalformedShortInput, String) {
+pub fn decode_malformed_short_input(body: String) -> Result(MalformedShortInput, String) {
   case json.parse(body, decode_malformed_short_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_short_output(
-  body: String,
-) -> Result(MalformedShortOutput, String) {
+pub fn decode_malformed_short_output(body: String) -> Result(MalformedShortOutput, String) {
   case json.parse(body, decode_malformed_short_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -12773,20 +9744,17 @@ pub fn build_malformed_short_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedShort/{shortInPath}"
   let path = case input.short_in_path {
-    option.Some(v) ->
-      rest.substitute_label(path, "shortInPath", rest.int_to_query(v), False)
+    option.Some(v) -> rest.substitute_label(path, "shortInPath", rest.int_to_query(v), False)
     option.None -> path
   }
   let query = ""
   let query = case input.short_in_query {
-    option.Some(v) ->
-      rest.add_query(query, "shortInQuery", rest.int_to_query(v))
+    option.Some(v) -> rest.add_query(query, "shortInQuery", rest.int_to_query(v))
     option.None -> query
   }
   let headers = dict.new()
   let headers = case input.short_in_header {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "shortInHeader", rest.int_to_query(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "shortInHeader", rest.int_to_query(v))
     option.None -> headers
   }
   let body_json = encode_malformed_short_body(input)
@@ -12795,6 +9763,10 @@ pub fn build_malformed_short_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -12806,28 +9778,24 @@ pub fn parse_malformed_short_response(
   body: BitArray,
 ) -> Result(MalformedShortOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_short_output("{}")
-        _ -> decode_malformed_short_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_short_output("{}")
+      _ -> decode_malformed_short_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedStringOutput {
   MalformedStringOutput
 }
 
-pub fn encode_malformed_string_output_struct(
-  _v: MalformedStringOutput,
-) -> json.Json {
+pub fn encode_malformed_string_output_struct(_v: MalformedStringOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_string_output_struct() -> decode.Decoder(
-  MalformedStringOutput,
-) {
+pub fn decode_malformed_string_output_struct() -> decode.Decoder(MalformedStringOutput) {
   decode.success(MalformedStringOutput)
 }
 
@@ -12835,18 +9803,14 @@ pub fn encode_malformed_string_input(input: MalformedStringInput) -> String {
   json.to_string(encode_malformed_string_input_struct(input))
 }
 
-pub fn decode_malformed_string_input(
-  body: String,
-) -> Result(MalformedStringInput, String) {
+pub fn decode_malformed_string_input(body: String) -> Result(MalformedStringInput, String) {
   case json.parse(body, decode_malformed_string_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_string_output(
-  body: String,
-) -> Result(MalformedStringOutput, String) {
+pub fn decode_malformed_string_output(body: String) -> Result(MalformedStringOutput, String) {
   case json.parse(body, decode_malformed_string_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -12864,8 +9828,7 @@ pub fn build_malformed_string_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.blob {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "amz-media-typed-header", v)
+    option.Some(v) -> rest.maybe_set_header(headers, "amz-media-typed-header", v)
     option.None -> headers
   }
   let body = <<>>
@@ -12873,6 +9836,10 @@ pub fn build_malformed_string_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -12884,62 +9851,46 @@ pub fn parse_malformed_string_response(
   body: BitArray,
 ) -> Result(MalformedStringOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_string_output("{}")
-        _ -> decode_malformed_string_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_string_output("{}")
+      _ -> decode_malformed_string_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedTimestampBodyDateTimeOutput {
   MalformedTimestampBodyDateTimeOutput
 }
 
-pub fn encode_malformed_timestamp_body_date_time_output_struct(
-  _v: MalformedTimestampBodyDateTimeOutput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_body_date_time_output_struct(_v: MalformedTimestampBodyDateTimeOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_timestamp_body_date_time_output_struct() -> decode.Decoder(
-  MalformedTimestampBodyDateTimeOutput,
-) {
+pub fn decode_malformed_timestamp_body_date_time_output_struct() -> decode.Decoder(MalformedTimestampBodyDateTimeOutput) {
   decode.success(MalformedTimestampBodyDateTimeOutput)
 }
 
-pub fn encode_malformed_timestamp_body_date_time_input(
-  input: MalformedTimestampBodyDateTimeInput,
-) -> String {
+pub fn encode_malformed_timestamp_body_date_time_input(input: MalformedTimestampBodyDateTimeInput) -> String {
   json.to_string(encode_malformed_timestamp_body_date_time_input_struct(input))
 }
 
-pub fn decode_malformed_timestamp_body_date_time_input(
-  body: String,
-) -> Result(MalformedTimestampBodyDateTimeInput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_body_date_time_input_struct())
-  {
+pub fn decode_malformed_timestamp_body_date_time_input(body: String) -> Result(MalformedTimestampBodyDateTimeInput, String) {
+  case json.parse(body, decode_malformed_timestamp_body_date_time_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_timestamp_body_date_time_output(
-  body: String,
-) -> Result(MalformedTimestampBodyDateTimeOutput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_body_date_time_output_struct())
-  {
+pub fn decode_malformed_timestamp_body_date_time_output(body: String) -> Result(MalformedTimestampBodyDateTimeOutput, String) {
+  case json.parse(body, decode_malformed_timestamp_body_date_time_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_timestamp_body_date_time_body(
-  input: MalformedTimestampBodyDateTimeInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_body_date_time_body(input: MalformedTimestampBodyDateTimeInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -12961,6 +9912,10 @@ pub fn build_malformed_timestamp_body_date_time_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -12971,62 +9926,46 @@ pub fn parse_malformed_timestamp_body_date_time_response(
   body: BitArray,
 ) -> Result(MalformedTimestampBodyDateTimeOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_timestamp_body_date_time_output("{}")
-        _ -> decode_malformed_timestamp_body_date_time_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_timestamp_body_date_time_output("{}")
+      _ -> decode_malformed_timestamp_body_date_time_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedTimestampBodyDefaultOutput {
   MalformedTimestampBodyDefaultOutput
 }
 
-pub fn encode_malformed_timestamp_body_default_output_struct(
-  _v: MalformedTimestampBodyDefaultOutput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_body_default_output_struct(_v: MalformedTimestampBodyDefaultOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_timestamp_body_default_output_struct() -> decode.Decoder(
-  MalformedTimestampBodyDefaultOutput,
-) {
+pub fn decode_malformed_timestamp_body_default_output_struct() -> decode.Decoder(MalformedTimestampBodyDefaultOutput) {
   decode.success(MalformedTimestampBodyDefaultOutput)
 }
 
-pub fn encode_malformed_timestamp_body_default_input(
-  input: MalformedTimestampBodyDefaultInput,
-) -> String {
+pub fn encode_malformed_timestamp_body_default_input(input: MalformedTimestampBodyDefaultInput) -> String {
   json.to_string(encode_malformed_timestamp_body_default_input_struct(input))
 }
 
-pub fn decode_malformed_timestamp_body_default_input(
-  body: String,
-) -> Result(MalformedTimestampBodyDefaultInput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_body_default_input_struct())
-  {
+pub fn decode_malformed_timestamp_body_default_input(body: String) -> Result(MalformedTimestampBodyDefaultInput, String) {
+  case json.parse(body, decode_malformed_timestamp_body_default_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_timestamp_body_default_output(
-  body: String,
-) -> Result(MalformedTimestampBodyDefaultOutput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_body_default_output_struct())
-  {
+pub fn decode_malformed_timestamp_body_default_output(body: String) -> Result(MalformedTimestampBodyDefaultOutput, String) {
+  case json.parse(body, decode_malformed_timestamp_body_default_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_timestamp_body_default_body(
-  input: MalformedTimestampBodyDefaultInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_body_default_body(input: MalformedTimestampBodyDefaultInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -13048,6 +9987,10 @@ pub fn build_malformed_timestamp_body_default_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -13058,62 +10001,46 @@ pub fn parse_malformed_timestamp_body_default_response(
   body: BitArray,
 ) -> Result(MalformedTimestampBodyDefaultOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_timestamp_body_default_output("{}")
-        _ -> decode_malformed_timestamp_body_default_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_timestamp_body_default_output("{}")
+      _ -> decode_malformed_timestamp_body_default_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedTimestampBodyHttpDateOutput {
   MalformedTimestampBodyHttpDateOutput
 }
 
-pub fn encode_malformed_timestamp_body_http_date_output_struct(
-  _v: MalformedTimestampBodyHttpDateOutput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_body_http_date_output_struct(_v: MalformedTimestampBodyHttpDateOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_timestamp_body_http_date_output_struct() -> decode.Decoder(
-  MalformedTimestampBodyHttpDateOutput,
-) {
+pub fn decode_malformed_timestamp_body_http_date_output_struct() -> decode.Decoder(MalformedTimestampBodyHttpDateOutput) {
   decode.success(MalformedTimestampBodyHttpDateOutput)
 }
 
-pub fn encode_malformed_timestamp_body_http_date_input(
-  input: MalformedTimestampBodyHttpDateInput,
-) -> String {
+pub fn encode_malformed_timestamp_body_http_date_input(input: MalformedTimestampBodyHttpDateInput) -> String {
   json.to_string(encode_malformed_timestamp_body_http_date_input_struct(input))
 }
 
-pub fn decode_malformed_timestamp_body_http_date_input(
-  body: String,
-) -> Result(MalformedTimestampBodyHttpDateInput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_body_http_date_input_struct())
-  {
+pub fn decode_malformed_timestamp_body_http_date_input(body: String) -> Result(MalformedTimestampBodyHttpDateInput, String) {
+  case json.parse(body, decode_malformed_timestamp_body_http_date_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_timestamp_body_http_date_output(
-  body: String,
-) -> Result(MalformedTimestampBodyHttpDateOutput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_body_http_date_output_struct())
-  {
+pub fn decode_malformed_timestamp_body_http_date_output(body: String) -> Result(MalformedTimestampBodyHttpDateOutput, String) {
+  case json.parse(body, decode_malformed_timestamp_body_http_date_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_timestamp_body_http_date_body(
-  input: MalformedTimestampBodyHttpDateInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_body_http_date_body(input: MalformedTimestampBodyHttpDateInput) -> json.Json {
   let pairs = []
   let pairs = case input.timestamp {
     option.Some(v) -> [#("timestamp", json.int(v)), ..pairs]
@@ -13135,6 +10062,10 @@ pub fn build_malformed_timestamp_body_http_date_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -13145,65 +10076,46 @@ pub fn parse_malformed_timestamp_body_http_date_response(
   body: BitArray,
 ) -> Result(MalformedTimestampBodyHttpDateOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_timestamp_body_http_date_output("{}")
-        _ -> decode_malformed_timestamp_body_http_date_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_timestamp_body_http_date_output("{}")
+      _ -> decode_malformed_timestamp_body_http_date_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedTimestampHeaderDateTimeOutput {
   MalformedTimestampHeaderDateTimeOutput
 }
 
-pub fn encode_malformed_timestamp_header_date_time_output_struct(
-  _v: MalformedTimestampHeaderDateTimeOutput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_header_date_time_output_struct(_v: MalformedTimestampHeaderDateTimeOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_timestamp_header_date_time_output_struct() -> decode.Decoder(
-  MalformedTimestampHeaderDateTimeOutput,
-) {
+pub fn decode_malformed_timestamp_header_date_time_output_struct() -> decode.Decoder(MalformedTimestampHeaderDateTimeOutput) {
   decode.success(MalformedTimestampHeaderDateTimeOutput)
 }
 
-pub fn encode_malformed_timestamp_header_date_time_input(
-  input: MalformedTimestampHeaderDateTimeInput,
-) -> String {
+pub fn encode_malformed_timestamp_header_date_time_input(input: MalformedTimestampHeaderDateTimeInput) -> String {
   json.to_string(encode_malformed_timestamp_header_date_time_input_struct(input))
 }
 
-pub fn decode_malformed_timestamp_header_date_time_input(
-  body: String,
-) -> Result(MalformedTimestampHeaderDateTimeInput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_header_date_time_input_struct())
-  {
+pub fn decode_malformed_timestamp_header_date_time_input(body: String) -> Result(MalformedTimestampHeaderDateTimeInput, String) {
+  case json.parse(body, decode_malformed_timestamp_header_date_time_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_timestamp_header_date_time_output(
-  body: String,
-) -> Result(MalformedTimestampHeaderDateTimeOutput, String) {
-  case
-    json.parse(
-      body,
-      decode_malformed_timestamp_header_date_time_output_struct(),
-    )
-  {
+pub fn decode_malformed_timestamp_header_date_time_output(body: String) -> Result(MalformedTimestampHeaderDateTimeOutput, String) {
+  case json.parse(body, decode_malformed_timestamp_header_date_time_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_timestamp_header_date_time_body(
-  _input: MalformedTimestampHeaderDateTimeInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_header_date_time_body(_input: MalformedTimestampHeaderDateTimeInput) -> json.Json {
   json.object([])
 }
 
@@ -13214,8 +10126,7 @@ pub fn build_malformed_timestamp_header_date_time_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.timestamp {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "timestamp", rest.timestamp_to_header(v))
     option.None -> headers
   }
   let body = <<>>
@@ -13223,6 +10134,10 @@ pub fn build_malformed_timestamp_header_date_time_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -13234,62 +10149,46 @@ pub fn parse_malformed_timestamp_header_date_time_response(
   body: BitArray,
 ) -> Result(MalformedTimestampHeaderDateTimeOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_timestamp_header_date_time_output("{}")
-        _ -> decode_malformed_timestamp_header_date_time_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_timestamp_header_date_time_output("{}")
+      _ -> decode_malformed_timestamp_header_date_time_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedTimestampHeaderDefaultOutput {
   MalformedTimestampHeaderDefaultOutput
 }
 
-pub fn encode_malformed_timestamp_header_default_output_struct(
-  _v: MalformedTimestampHeaderDefaultOutput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_header_default_output_struct(_v: MalformedTimestampHeaderDefaultOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_timestamp_header_default_output_struct() -> decode.Decoder(
-  MalformedTimestampHeaderDefaultOutput,
-) {
+pub fn decode_malformed_timestamp_header_default_output_struct() -> decode.Decoder(MalformedTimestampHeaderDefaultOutput) {
   decode.success(MalformedTimestampHeaderDefaultOutput)
 }
 
-pub fn encode_malformed_timestamp_header_default_input(
-  input: MalformedTimestampHeaderDefaultInput,
-) -> String {
+pub fn encode_malformed_timestamp_header_default_input(input: MalformedTimestampHeaderDefaultInput) -> String {
   json.to_string(encode_malformed_timestamp_header_default_input_struct(input))
 }
 
-pub fn decode_malformed_timestamp_header_default_input(
-  body: String,
-) -> Result(MalformedTimestampHeaderDefaultInput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_header_default_input_struct())
-  {
+pub fn decode_malformed_timestamp_header_default_input(body: String) -> Result(MalformedTimestampHeaderDefaultInput, String) {
+  case json.parse(body, decode_malformed_timestamp_header_default_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_timestamp_header_default_output(
-  body: String,
-) -> Result(MalformedTimestampHeaderDefaultOutput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_header_default_output_struct())
-  {
+pub fn decode_malformed_timestamp_header_default_output(body: String) -> Result(MalformedTimestampHeaderDefaultOutput, String) {
+  case json.parse(body, decode_malformed_timestamp_header_default_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_timestamp_header_default_body(
-  _input: MalformedTimestampHeaderDefaultInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_header_default_body(_input: MalformedTimestampHeaderDefaultInput) -> json.Json {
   json.object([])
 }
 
@@ -13300,8 +10199,7 @@ pub fn build_malformed_timestamp_header_default_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.timestamp {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "timestamp", rest.timestamp_to_header(v))
     option.None -> headers
   }
   let body = <<>>
@@ -13309,6 +10207,10 @@ pub fn build_malformed_timestamp_header_default_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -13320,62 +10222,46 @@ pub fn parse_malformed_timestamp_header_default_response(
   body: BitArray,
 ) -> Result(MalformedTimestampHeaderDefaultOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_timestamp_header_default_output("{}")
-        _ -> decode_malformed_timestamp_header_default_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_timestamp_header_default_output("{}")
+      _ -> decode_malformed_timestamp_header_default_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedTimestampHeaderEpochOutput {
   MalformedTimestampHeaderEpochOutput
 }
 
-pub fn encode_malformed_timestamp_header_epoch_output_struct(
-  _v: MalformedTimestampHeaderEpochOutput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_header_epoch_output_struct(_v: MalformedTimestampHeaderEpochOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_timestamp_header_epoch_output_struct() -> decode.Decoder(
-  MalformedTimestampHeaderEpochOutput,
-) {
+pub fn decode_malformed_timestamp_header_epoch_output_struct() -> decode.Decoder(MalformedTimestampHeaderEpochOutput) {
   decode.success(MalformedTimestampHeaderEpochOutput)
 }
 
-pub fn encode_malformed_timestamp_header_epoch_input(
-  input: MalformedTimestampHeaderEpochInput,
-) -> String {
+pub fn encode_malformed_timestamp_header_epoch_input(input: MalformedTimestampHeaderEpochInput) -> String {
   json.to_string(encode_malformed_timestamp_header_epoch_input_struct(input))
 }
 
-pub fn decode_malformed_timestamp_header_epoch_input(
-  body: String,
-) -> Result(MalformedTimestampHeaderEpochInput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_header_epoch_input_struct())
-  {
+pub fn decode_malformed_timestamp_header_epoch_input(body: String) -> Result(MalformedTimestampHeaderEpochInput, String) {
+  case json.parse(body, decode_malformed_timestamp_header_epoch_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_timestamp_header_epoch_output(
-  body: String,
-) -> Result(MalformedTimestampHeaderEpochOutput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_header_epoch_output_struct())
-  {
+pub fn decode_malformed_timestamp_header_epoch_output(body: String) -> Result(MalformedTimestampHeaderEpochOutput, String) {
+  case json.parse(body, decode_malformed_timestamp_header_epoch_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_timestamp_header_epoch_body(
-  _input: MalformedTimestampHeaderEpochInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_header_epoch_body(_input: MalformedTimestampHeaderEpochInput) -> json.Json {
   json.object([])
 }
 
@@ -13386,8 +10272,7 @@ pub fn build_malformed_timestamp_header_epoch_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.timestamp {
-    option.Some(v) ->
-      rest.maybe_set_header(headers, "timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.maybe_set_header(headers, "timestamp", rest.timestamp_to_header(v))
     option.None -> headers
   }
   let body = <<>>
@@ -13395,6 +10280,10 @@ pub fn build_malformed_timestamp_header_epoch_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -13406,62 +10295,46 @@ pub fn parse_malformed_timestamp_header_epoch_response(
   body: BitArray,
 ) -> Result(MalformedTimestampHeaderEpochOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_timestamp_header_epoch_output("{}")
-        _ -> decode_malformed_timestamp_header_epoch_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_timestamp_header_epoch_output("{}")
+      _ -> decode_malformed_timestamp_header_epoch_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedTimestampPathDefaultOutput {
   MalformedTimestampPathDefaultOutput
 }
 
-pub fn encode_malformed_timestamp_path_default_output_struct(
-  _v: MalformedTimestampPathDefaultOutput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_path_default_output_struct(_v: MalformedTimestampPathDefaultOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_timestamp_path_default_output_struct() -> decode.Decoder(
-  MalformedTimestampPathDefaultOutput,
-) {
+pub fn decode_malformed_timestamp_path_default_output_struct() -> decode.Decoder(MalformedTimestampPathDefaultOutput) {
   decode.success(MalformedTimestampPathDefaultOutput)
 }
 
-pub fn encode_malformed_timestamp_path_default_input(
-  input: MalformedTimestampPathDefaultInput,
-) -> String {
+pub fn encode_malformed_timestamp_path_default_input(input: MalformedTimestampPathDefaultInput) -> String {
   json.to_string(encode_malformed_timestamp_path_default_input_struct(input))
 }
 
-pub fn decode_malformed_timestamp_path_default_input(
-  body: String,
-) -> Result(MalformedTimestampPathDefaultInput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_path_default_input_struct())
-  {
+pub fn decode_malformed_timestamp_path_default_input(body: String) -> Result(MalformedTimestampPathDefaultInput, String) {
+  case json.parse(body, decode_malformed_timestamp_path_default_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_timestamp_path_default_output(
-  body: String,
-) -> Result(MalformedTimestampPathDefaultOutput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_path_default_output_struct())
-  {
+pub fn decode_malformed_timestamp_path_default_output(body: String) -> Result(MalformedTimestampPathDefaultOutput, String) {
+  case json.parse(body, decode_malformed_timestamp_path_default_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_timestamp_path_default_body(
-  _input: MalformedTimestampPathDefaultInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_path_default_body(_input: MalformedTimestampPathDefaultInput) -> json.Json {
   json.object([])
 }
 
@@ -13470,13 +10343,7 @@ pub fn build_malformed_timestamp_path_default_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedTimestampPathDefault/{timestamp}"
   let path = case input.timestamp {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "timestamp",
-        rest.timestamp_to_header(v),
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "timestamp", rest.timestamp_to_header(v), False)
     option.None -> path
   }
   let query = ""
@@ -13486,6 +10353,10 @@ pub fn build_malformed_timestamp_path_default_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -13497,58 +10368,46 @@ pub fn parse_malformed_timestamp_path_default_response(
   body: BitArray,
 ) -> Result(MalformedTimestampPathDefaultOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_timestamp_path_default_output("{}")
-        _ -> decode_malformed_timestamp_path_default_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_timestamp_path_default_output("{}")
+      _ -> decode_malformed_timestamp_path_default_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedTimestampPathEpochOutput {
   MalformedTimestampPathEpochOutput
 }
 
-pub fn encode_malformed_timestamp_path_epoch_output_struct(
-  _v: MalformedTimestampPathEpochOutput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_path_epoch_output_struct(_v: MalformedTimestampPathEpochOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_timestamp_path_epoch_output_struct() -> decode.Decoder(
-  MalformedTimestampPathEpochOutput,
-) {
+pub fn decode_malformed_timestamp_path_epoch_output_struct() -> decode.Decoder(MalformedTimestampPathEpochOutput) {
   decode.success(MalformedTimestampPathEpochOutput)
 }
 
-pub fn encode_malformed_timestamp_path_epoch_input(
-  input: MalformedTimestampPathEpochInput,
-) -> String {
+pub fn encode_malformed_timestamp_path_epoch_input(input: MalformedTimestampPathEpochInput) -> String {
   json.to_string(encode_malformed_timestamp_path_epoch_input_struct(input))
 }
 
-pub fn decode_malformed_timestamp_path_epoch_input(
-  body: String,
-) -> Result(MalformedTimestampPathEpochInput, String) {
+pub fn decode_malformed_timestamp_path_epoch_input(body: String) -> Result(MalformedTimestampPathEpochInput, String) {
   case json.parse(body, decode_malformed_timestamp_path_epoch_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_timestamp_path_epoch_output(
-  body: String,
-) -> Result(MalformedTimestampPathEpochOutput, String) {
+pub fn decode_malformed_timestamp_path_epoch_output(body: String) -> Result(MalformedTimestampPathEpochOutput, String) {
   case json.parse(body, decode_malformed_timestamp_path_epoch_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_timestamp_path_epoch_body(
-  _input: MalformedTimestampPathEpochInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_path_epoch_body(_input: MalformedTimestampPathEpochInput) -> json.Json {
   json.object([])
 }
 
@@ -13557,13 +10416,7 @@ pub fn build_malformed_timestamp_path_epoch_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedTimestampPathEpoch/{timestamp}"
   let path = case input.timestamp {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "timestamp",
-        rest.timestamp_to_header(v),
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "timestamp", rest.timestamp_to_header(v), False)
     option.None -> path
   }
   let query = ""
@@ -13573,6 +10426,10 @@ pub fn build_malformed_timestamp_path_epoch_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -13584,62 +10441,46 @@ pub fn parse_malformed_timestamp_path_epoch_response(
   body: BitArray,
 ) -> Result(MalformedTimestampPathEpochOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_timestamp_path_epoch_output("{}")
-        _ -> decode_malformed_timestamp_path_epoch_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_timestamp_path_epoch_output("{}")
+      _ -> decode_malformed_timestamp_path_epoch_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedTimestampPathHttpDateOutput {
   MalformedTimestampPathHttpDateOutput
 }
 
-pub fn encode_malformed_timestamp_path_http_date_output_struct(
-  _v: MalformedTimestampPathHttpDateOutput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_path_http_date_output_struct(_v: MalformedTimestampPathHttpDateOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_timestamp_path_http_date_output_struct() -> decode.Decoder(
-  MalformedTimestampPathHttpDateOutput,
-) {
+pub fn decode_malformed_timestamp_path_http_date_output_struct() -> decode.Decoder(MalformedTimestampPathHttpDateOutput) {
   decode.success(MalformedTimestampPathHttpDateOutput)
 }
 
-pub fn encode_malformed_timestamp_path_http_date_input(
-  input: MalformedTimestampPathHttpDateInput,
-) -> String {
+pub fn encode_malformed_timestamp_path_http_date_input(input: MalformedTimestampPathHttpDateInput) -> String {
   json.to_string(encode_malformed_timestamp_path_http_date_input_struct(input))
 }
 
-pub fn decode_malformed_timestamp_path_http_date_input(
-  body: String,
-) -> Result(MalformedTimestampPathHttpDateInput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_path_http_date_input_struct())
-  {
+pub fn decode_malformed_timestamp_path_http_date_input(body: String) -> Result(MalformedTimestampPathHttpDateInput, String) {
+  case json.parse(body, decode_malformed_timestamp_path_http_date_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_timestamp_path_http_date_output(
-  body: String,
-) -> Result(MalformedTimestampPathHttpDateOutput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_path_http_date_output_struct())
-  {
+pub fn decode_malformed_timestamp_path_http_date_output(body: String) -> Result(MalformedTimestampPathHttpDateOutput, String) {
+  case json.parse(body, decode_malformed_timestamp_path_http_date_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_timestamp_path_http_date_body(
-  _input: MalformedTimestampPathHttpDateInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_path_http_date_body(_input: MalformedTimestampPathHttpDateInput) -> json.Json {
   json.object([])
 }
 
@@ -13648,13 +10489,7 @@ pub fn build_malformed_timestamp_path_http_date_request(
 ) -> #(String, String, dict.Dict(String, String), BitArray) {
   let path = "/MalformedTimestampPathHttpDate/{timestamp}"
   let path = case input.timestamp {
-    option.Some(v) ->
-      rest.substitute_label(
-        path,
-        "timestamp",
-        rest.timestamp_to_header(v),
-        False,
-      )
+    option.Some(v) -> rest.substitute_label(path, "timestamp", rest.timestamp_to_header(v), False)
     option.None -> path
   }
   let query = ""
@@ -13664,6 +10499,10 @@ pub fn build_malformed_timestamp_path_http_date_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -13675,62 +10514,46 @@ pub fn parse_malformed_timestamp_path_http_date_response(
   body: BitArray,
 ) -> Result(MalformedTimestampPathHttpDateOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_timestamp_path_http_date_output("{}")
-        _ -> decode_malformed_timestamp_path_http_date_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_timestamp_path_http_date_output("{}")
+      _ -> decode_malformed_timestamp_path_http_date_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedTimestampQueryDefaultOutput {
   MalformedTimestampQueryDefaultOutput
 }
 
-pub fn encode_malformed_timestamp_query_default_output_struct(
-  _v: MalformedTimestampQueryDefaultOutput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_query_default_output_struct(_v: MalformedTimestampQueryDefaultOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_timestamp_query_default_output_struct() -> decode.Decoder(
-  MalformedTimestampQueryDefaultOutput,
-) {
+pub fn decode_malformed_timestamp_query_default_output_struct() -> decode.Decoder(MalformedTimestampQueryDefaultOutput) {
   decode.success(MalformedTimestampQueryDefaultOutput)
 }
 
-pub fn encode_malformed_timestamp_query_default_input(
-  input: MalformedTimestampQueryDefaultInput,
-) -> String {
+pub fn encode_malformed_timestamp_query_default_input(input: MalformedTimestampQueryDefaultInput) -> String {
   json.to_string(encode_malformed_timestamp_query_default_input_struct(input))
 }
 
-pub fn decode_malformed_timestamp_query_default_input(
-  body: String,
-) -> Result(MalformedTimestampQueryDefaultInput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_query_default_input_struct())
-  {
+pub fn decode_malformed_timestamp_query_default_input(body: String) -> Result(MalformedTimestampQueryDefaultInput, String) {
+  case json.parse(body, decode_malformed_timestamp_query_default_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_timestamp_query_default_output(
-  body: String,
-) -> Result(MalformedTimestampQueryDefaultOutput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_query_default_output_struct())
-  {
+pub fn decode_malformed_timestamp_query_default_output(body: String) -> Result(MalformedTimestampQueryDefaultOutput, String) {
+  case json.parse(body, decode_malformed_timestamp_query_default_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_timestamp_query_default_body(
-  _input: MalformedTimestampQueryDefaultInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_query_default_body(_input: MalformedTimestampQueryDefaultInput) -> json.Json {
   json.object([])
 }
 
@@ -13740,8 +10563,7 @@ pub fn build_malformed_timestamp_query_default_request(
   let path = "/MalformedTimestampQueryDefault"
   let query = ""
   let query = case input.timestamp {
-    option.Some(v) ->
-      rest.add_query(query, "timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.add_query(query, "timestamp", rest.timestamp_to_header(v))
     option.None -> query
   }
   let headers = dict.new()
@@ -13750,6 +10572,10 @@ pub fn build_malformed_timestamp_query_default_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -13761,60 +10587,46 @@ pub fn parse_malformed_timestamp_query_default_response(
   body: BitArray,
 ) -> Result(MalformedTimestampQueryDefaultOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_timestamp_query_default_output("{}")
-        _ -> decode_malformed_timestamp_query_default_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_timestamp_query_default_output("{}")
+      _ -> decode_malformed_timestamp_query_default_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedTimestampQueryEpochOutput {
   MalformedTimestampQueryEpochOutput
 }
 
-pub fn encode_malformed_timestamp_query_epoch_output_struct(
-  _v: MalformedTimestampQueryEpochOutput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_query_epoch_output_struct(_v: MalformedTimestampQueryEpochOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_timestamp_query_epoch_output_struct() -> decode.Decoder(
-  MalformedTimestampQueryEpochOutput,
-) {
+pub fn decode_malformed_timestamp_query_epoch_output_struct() -> decode.Decoder(MalformedTimestampQueryEpochOutput) {
   decode.success(MalformedTimestampQueryEpochOutput)
 }
 
-pub fn encode_malformed_timestamp_query_epoch_input(
-  input: MalformedTimestampQueryEpochInput,
-) -> String {
+pub fn encode_malformed_timestamp_query_epoch_input(input: MalformedTimestampQueryEpochInput) -> String {
   json.to_string(encode_malformed_timestamp_query_epoch_input_struct(input))
 }
 
-pub fn decode_malformed_timestamp_query_epoch_input(
-  body: String,
-) -> Result(MalformedTimestampQueryEpochInput, String) {
+pub fn decode_malformed_timestamp_query_epoch_input(body: String) -> Result(MalformedTimestampQueryEpochInput, String) {
   case json.parse(body, decode_malformed_timestamp_query_epoch_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_timestamp_query_epoch_output(
-  body: String,
-) -> Result(MalformedTimestampQueryEpochOutput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_query_epoch_output_struct())
-  {
+pub fn decode_malformed_timestamp_query_epoch_output(body: String) -> Result(MalformedTimestampQueryEpochOutput, String) {
+  case json.parse(body, decode_malformed_timestamp_query_epoch_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_timestamp_query_epoch_body(
-  _input: MalformedTimestampQueryEpochInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_query_epoch_body(_input: MalformedTimestampQueryEpochInput) -> json.Json {
   json.object([])
 }
 
@@ -13824,8 +10636,7 @@ pub fn build_malformed_timestamp_query_epoch_request(
   let path = "/MalformedTimestampQueryEpoch"
   let query = ""
   let query = case input.timestamp {
-    option.Some(v) ->
-      rest.add_query(query, "timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.add_query(query, "timestamp", rest.timestamp_to_header(v))
     option.None -> query
   }
   let headers = dict.new()
@@ -13834,6 +10645,10 @@ pub fn build_malformed_timestamp_query_epoch_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -13845,62 +10660,46 @@ pub fn parse_malformed_timestamp_query_epoch_response(
   body: BitArray,
 ) -> Result(MalformedTimestampQueryEpochOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_timestamp_query_epoch_output("{}")
-        _ -> decode_malformed_timestamp_query_epoch_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_timestamp_query_epoch_output("{}")
+      _ -> decode_malformed_timestamp_query_epoch_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedTimestampQueryHttpDateOutput {
   MalformedTimestampQueryHttpDateOutput
 }
 
-pub fn encode_malformed_timestamp_query_http_date_output_struct(
-  _v: MalformedTimestampQueryHttpDateOutput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_query_http_date_output_struct(_v: MalformedTimestampQueryHttpDateOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_timestamp_query_http_date_output_struct() -> decode.Decoder(
-  MalformedTimestampQueryHttpDateOutput,
-) {
+pub fn decode_malformed_timestamp_query_http_date_output_struct() -> decode.Decoder(MalformedTimestampQueryHttpDateOutput) {
   decode.success(MalformedTimestampQueryHttpDateOutput)
 }
 
-pub fn encode_malformed_timestamp_query_http_date_input(
-  input: MalformedTimestampQueryHttpDateInput,
-) -> String {
+pub fn encode_malformed_timestamp_query_http_date_input(input: MalformedTimestampQueryHttpDateInput) -> String {
   json.to_string(encode_malformed_timestamp_query_http_date_input_struct(input))
 }
 
-pub fn decode_malformed_timestamp_query_http_date_input(
-  body: String,
-) -> Result(MalformedTimestampQueryHttpDateInput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_query_http_date_input_struct())
-  {
+pub fn decode_malformed_timestamp_query_http_date_input(body: String) -> Result(MalformedTimestampQueryHttpDateInput, String) {
+  case json.parse(body, decode_malformed_timestamp_query_http_date_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_timestamp_query_http_date_output(
-  body: String,
-) -> Result(MalformedTimestampQueryHttpDateOutput, String) {
-  case
-    json.parse(body, decode_malformed_timestamp_query_http_date_output_struct())
-  {
+pub fn decode_malformed_timestamp_query_http_date_output(body: String) -> Result(MalformedTimestampQueryHttpDateOutput, String) {
+  case json.parse(body, decode_malformed_timestamp_query_http_date_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_malformed_timestamp_query_http_date_body(
-  _input: MalformedTimestampQueryHttpDateInput,
-) -> json.Json {
+pub fn encode_malformed_timestamp_query_http_date_body(_input: MalformedTimestampQueryHttpDateInput) -> json.Json {
   json.object([])
 }
 
@@ -13910,8 +10709,7 @@ pub fn build_malformed_timestamp_query_http_date_request(
   let path = "/MalformedTimestampQueryHttpDate"
   let query = ""
   let query = case input.timestamp {
-    option.Some(v) ->
-      rest.add_query(query, "timestamp", rest.timestamp_to_header(v))
+    option.Some(v) -> rest.add_query(query, "timestamp", rest.timestamp_to_header(v))
     option.None -> query
   }
   let headers = dict.new()
@@ -13920,6 +10718,10 @@ pub fn build_malformed_timestamp_query_http_date_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -13931,28 +10733,24 @@ pub fn parse_malformed_timestamp_query_http_date_response(
   body: BitArray,
 ) -> Result(MalformedTimestampQueryHttpDateOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_timestamp_query_http_date_output("{}")
-        _ -> decode_malformed_timestamp_query_http_date_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_timestamp_query_http_date_output("{}")
+      _ -> decode_malformed_timestamp_query_http_date_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type MalformedUnionOutput {
   MalformedUnionOutput
 }
 
-pub fn encode_malformed_union_output_struct(
-  _v: MalformedUnionOutput,
-) -> json.Json {
+pub fn encode_malformed_union_output_struct(_v: MalformedUnionOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_malformed_union_output_struct() -> decode.Decoder(
-  MalformedUnionOutput,
-) {
+pub fn decode_malformed_union_output_struct() -> decode.Decoder(MalformedUnionOutput) {
   decode.success(MalformedUnionOutput)
 }
 
@@ -13960,18 +10758,14 @@ pub fn encode_malformed_union_input(input: MalformedUnionInput) -> String {
   json.to_string(encode_malformed_union_input_struct(input))
 }
 
-pub fn decode_malformed_union_input(
-  body: String,
-) -> Result(MalformedUnionInput, String) {
+pub fn decode_malformed_union_input(body: String) -> Result(MalformedUnionInput, String) {
   case json.parse(body, decode_malformed_union_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_malformed_union_output(
-  body: String,
-) -> Result(MalformedUnionOutput, String) {
+pub fn decode_malformed_union_output(body: String) -> Result(MalformedUnionOutput, String) {
   case json.parse(body, decode_malformed_union_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -14000,6 +10794,10 @@ pub fn build_malformed_union_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -14010,40 +10808,34 @@ pub fn parse_malformed_union_response(
   body: BitArray,
 ) -> Result(MalformedUnionOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_malformed_union_output("{}")
-        _ -> decode_malformed_union_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_malformed_union_output("{}")
+      _ -> decode_malformed_union_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub fn encode_media_type_header_input(input: MediaTypeHeaderInput) -> String {
   json.to_string(encode_media_type_header_input_struct(input))
 }
 
-pub fn decode_media_type_header_input(
-  body: String,
-) -> Result(MediaTypeHeaderInput, String) {
+pub fn decode_media_type_header_input(body: String) -> Result(MediaTypeHeaderInput, String) {
   case json.parse(body, decode_media_type_header_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_media_type_header_output(
-  body: String,
-) -> Result(MediaTypeHeaderOutput, String) {
+pub fn decode_media_type_header_output(body: String) -> Result(MediaTypeHeaderOutput, String) {
   case json.parse(body, decode_media_type_header_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_media_type_header_body(
-  _input: MediaTypeHeaderInput,
-) -> json.Json {
+pub fn encode_media_type_header_body(_input: MediaTypeHeaderInput) -> json.Json {
   json.object([])
 }
 
@@ -14063,6 +10855,10 @@ pub fn build_media_type_header_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -14073,28 +10869,24 @@ pub fn parse_media_type_header_response(
   body: BitArray,
 ) -> Result(MediaTypeHeaderOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_media_type_header_output("{}")
-        _ -> decode_media_type_header_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_media_type_header_output("{}")
+      _ -> decode_media_type_header_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type NoInputAndNoOutputInput {
   NoInputAndNoOutputInput
 }
 
-pub fn encode_no_input_and_no_output_input_struct(
-  _v: NoInputAndNoOutputInput,
-) -> json.Json {
+pub fn encode_no_input_and_no_output_input_struct(_v: NoInputAndNoOutputInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_no_input_and_no_output_input_struct() -> decode.Decoder(
-  NoInputAndNoOutputInput,
-) {
+pub fn decode_no_input_and_no_output_input_struct() -> decode.Decoder(NoInputAndNoOutputInput) {
   decode.success(NoInputAndNoOutputInput)
 }
 
@@ -14102,45 +10894,33 @@ pub type NoInputAndNoOutputOutput {
   NoInputAndNoOutputOutput
 }
 
-pub fn encode_no_input_and_no_output_output_struct(
-  _v: NoInputAndNoOutputOutput,
-) -> json.Json {
+pub fn encode_no_input_and_no_output_output_struct(_v: NoInputAndNoOutputOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_no_input_and_no_output_output_struct() -> decode.Decoder(
-  NoInputAndNoOutputOutput,
-) {
+pub fn decode_no_input_and_no_output_output_struct() -> decode.Decoder(NoInputAndNoOutputOutput) {
   decode.success(NoInputAndNoOutputOutput)
 }
 
-pub fn encode_no_input_and_no_output_input(
-  input: NoInputAndNoOutputInput,
-) -> String {
+pub fn encode_no_input_and_no_output_input(input: NoInputAndNoOutputInput) -> String {
   json.to_string(encode_no_input_and_no_output_input_struct(input))
 }
 
-pub fn decode_no_input_and_no_output_input(
-  body: String,
-) -> Result(NoInputAndNoOutputInput, String) {
+pub fn decode_no_input_and_no_output_input(body: String) -> Result(NoInputAndNoOutputInput, String) {
   case json.parse(body, decode_no_input_and_no_output_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_no_input_and_no_output_output(
-  body: String,
-) -> Result(NoInputAndNoOutputOutput, String) {
+pub fn decode_no_input_and_no_output_output(body: String) -> Result(NoInputAndNoOutputOutput, String) {
   case json.parse(body, decode_no_input_and_no_output_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_no_input_and_no_output_body(
-  _input: NoInputAndNoOutputInput,
-) -> json.Json {
+pub fn encode_no_input_and_no_output_body(_input: NoInputAndNoOutputInput) -> json.Json {
   json.object([])
 }
 
@@ -14156,6 +10936,10 @@ pub fn build_no_input_and_no_output_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -14166,58 +10950,46 @@ pub fn parse_no_input_and_no_output_response(
   body: BitArray,
 ) -> Result(NoInputAndNoOutputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_no_input_and_no_output_output("{}")
-        _ -> decode_no_input_and_no_output_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_no_input_and_no_output_output("{}")
+      _ -> decode_no_input_and_no_output_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type NoInputAndOutputInput {
   NoInputAndOutputInput
 }
 
-pub fn encode_no_input_and_output_input_struct(
-  _v: NoInputAndOutputInput,
-) -> json.Json {
+pub fn encode_no_input_and_output_input_struct(_v: NoInputAndOutputInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_no_input_and_output_input_struct() -> decode.Decoder(
-  NoInputAndOutputInput,
-) {
+pub fn decode_no_input_and_output_input_struct() -> decode.Decoder(NoInputAndOutputInput) {
   decode.success(NoInputAndOutputInput)
 }
 
-pub fn encode_no_input_and_output_input(
-  input: NoInputAndOutputInput,
-) -> String {
+pub fn encode_no_input_and_output_input(input: NoInputAndOutputInput) -> String {
   json.to_string(encode_no_input_and_output_input_struct(input))
 }
 
-pub fn decode_no_input_and_output_input(
-  body: String,
-) -> Result(NoInputAndOutputInput, String) {
+pub fn decode_no_input_and_output_input(body: String) -> Result(NoInputAndOutputInput, String) {
   case json.parse(body, decode_no_input_and_output_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_no_input_and_output_output(
-  body: String,
-) -> Result(NoInputAndOutputOutput, String) {
+pub fn decode_no_input_and_output_output(body: String) -> Result(NoInputAndOutputOutput, String) {
   case json.parse(body, decode_no_input_and_output_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_no_input_and_output_body(
-  _input: NoInputAndOutputInput,
-) -> json.Json {
+pub fn encode_no_input_and_output_body(_input: NoInputAndOutputInput) -> json.Json {
   json.object([])
 }
 
@@ -14233,6 +11005,10 @@ pub fn build_no_input_and_output_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -14243,42 +11019,34 @@ pub fn parse_no_input_and_output_response(
   body: BitArray,
 ) -> Result(NoInputAndOutputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_no_input_and_output_output("{}")
-        _ -> decode_no_input_and_output_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_no_input_and_output_output("{}")
+      _ -> decode_no_input_and_output_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_null_and_empty_headers_client_input(
-  input: NullAndEmptyHeadersIO,
-) -> String {
+
+pub fn encode_null_and_empty_headers_client_input(input: NullAndEmptyHeadersIO) -> String {
   json.to_string(encode_null_and_empty_headers_io_struct(input))
 }
 
-pub fn decode_null_and_empty_headers_client_input(
-  body: String,
-) -> Result(NullAndEmptyHeadersIO, String) {
+pub fn decode_null_and_empty_headers_client_input(body: String) -> Result(NullAndEmptyHeadersIO, String) {
   case json.parse(body, decode_null_and_empty_headers_io_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_null_and_empty_headers_client_output(
-  body: String,
-) -> Result(NullAndEmptyHeadersIO, String) {
+pub fn decode_null_and_empty_headers_client_output(body: String) -> Result(NullAndEmptyHeadersIO, String) {
   case json.parse(body, decode_null_and_empty_headers_io_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_null_and_empty_headers_client_body(
-  _input: NullAndEmptyHeadersIO,
-) -> json.Json {
+pub fn encode_null_and_empty_headers_client_body(_input: NullAndEmptyHeadersIO) -> json.Json {
   json.object([])
 }
 
@@ -14297,7 +11065,7 @@ pub fn build_null_and_empty_headers_client_request(
     option.None -> headers
   }
   let headers = case input.c {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-C", "")
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-C", list.map(xs, fn(item) { let v = item v }))
     option.None -> headers
   }
   let body = <<>>
@@ -14305,6 +11073,10 @@ pub fn build_null_and_empty_headers_client_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -14316,42 +11088,34 @@ pub fn parse_null_and_empty_headers_client_response(
   body: BitArray,
 ) -> Result(NullAndEmptyHeadersIO, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_null_and_empty_headers_client_output("{}")
-        _ -> decode_null_and_empty_headers_client_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_null_and_empty_headers_client_output("{}")
+      _ -> decode_null_and_empty_headers_client_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_null_and_empty_headers_server_input(
-  input: NullAndEmptyHeadersIO,
-) -> String {
+
+pub fn encode_null_and_empty_headers_server_input(input: NullAndEmptyHeadersIO) -> String {
   json.to_string(encode_null_and_empty_headers_io_struct(input))
 }
 
-pub fn decode_null_and_empty_headers_server_input(
-  body: String,
-) -> Result(NullAndEmptyHeadersIO, String) {
+pub fn decode_null_and_empty_headers_server_input(body: String) -> Result(NullAndEmptyHeadersIO, String) {
   case json.parse(body, decode_null_and_empty_headers_io_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_null_and_empty_headers_server_output(
-  body: String,
-) -> Result(NullAndEmptyHeadersIO, String) {
+pub fn decode_null_and_empty_headers_server_output(body: String) -> Result(NullAndEmptyHeadersIO, String) {
   case json.parse(body, decode_null_and_empty_headers_io_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_null_and_empty_headers_server_body(
-  _input: NullAndEmptyHeadersIO,
-) -> json.Json {
+pub fn encode_null_and_empty_headers_server_body(_input: NullAndEmptyHeadersIO) -> json.Json {
   json.object([])
 }
 
@@ -14370,7 +11134,7 @@ pub fn build_null_and_empty_headers_server_request(
     option.None -> headers
   }
   let headers = case input.c {
-    option.Some(v) -> rest.maybe_set_header(headers, "X-C", "")
+    option.Some(xs) -> rest.maybe_set_list_header(headers, "X-C", list.map(xs, fn(item) { let v = item v }))
     option.None -> headers
   }
   let body = <<>>
@@ -14378,6 +11142,10 @@ pub fn build_null_and_empty_headers_server_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
@@ -14389,62 +11157,46 @@ pub fn parse_null_and_empty_headers_server_response(
   body: BitArray,
 ) -> Result(NullAndEmptyHeadersIO, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_null_and_empty_headers_server_output("{}")
-        _ -> decode_null_and_empty_headers_server_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_null_and_empty_headers_server_output("{}")
+      _ -> decode_null_and_empty_headers_server_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type OmitsNullSerializesEmptyStringOutput {
   OmitsNullSerializesEmptyStringOutput
 }
 
-pub fn encode_omits_null_serializes_empty_string_output_struct(
-  _v: OmitsNullSerializesEmptyStringOutput,
-) -> json.Json {
+pub fn encode_omits_null_serializes_empty_string_output_struct(_v: OmitsNullSerializesEmptyStringOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_omits_null_serializes_empty_string_output_struct() -> decode.Decoder(
-  OmitsNullSerializesEmptyStringOutput,
-) {
+pub fn decode_omits_null_serializes_empty_string_output_struct() -> decode.Decoder(OmitsNullSerializesEmptyStringOutput) {
   decode.success(OmitsNullSerializesEmptyStringOutput)
 }
 
-pub fn encode_omits_null_serializes_empty_string_input(
-  input: OmitsNullSerializesEmptyStringInput,
-) -> String {
+pub fn encode_omits_null_serializes_empty_string_input(input: OmitsNullSerializesEmptyStringInput) -> String {
   json.to_string(encode_omits_null_serializes_empty_string_input_struct(input))
 }
 
-pub fn decode_omits_null_serializes_empty_string_input(
-  body: String,
-) -> Result(OmitsNullSerializesEmptyStringInput, String) {
-  case
-    json.parse(body, decode_omits_null_serializes_empty_string_input_struct())
-  {
+pub fn decode_omits_null_serializes_empty_string_input(body: String) -> Result(OmitsNullSerializesEmptyStringInput, String) {
+  case json.parse(body, decode_omits_null_serializes_empty_string_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_omits_null_serializes_empty_string_output(
-  body: String,
-) -> Result(OmitsNullSerializesEmptyStringOutput, String) {
-  case
-    json.parse(body, decode_omits_null_serializes_empty_string_output_struct())
-  {
+pub fn decode_omits_null_serializes_empty_string_output(body: String) -> Result(OmitsNullSerializesEmptyStringOutput, String) {
+  case json.parse(body, decode_omits_null_serializes_empty_string_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_omits_null_serializes_empty_string_body(
-  _input: OmitsNullSerializesEmptyStringInput,
-) -> json.Json {
+pub fn encode_omits_null_serializes_empty_string_body(_input: OmitsNullSerializesEmptyStringInput) -> json.Json {
   json.object([])
 }
 
@@ -14468,6 +11220,10 @@ pub fn build_omits_null_serializes_empty_string_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -14478,58 +11234,46 @@ pub fn parse_omits_null_serializes_empty_string_response(
   body: BitArray,
 ) -> Result(OmitsNullSerializesEmptyStringOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_omits_null_serializes_empty_string_output("{}")
-        _ -> decode_omits_null_serializes_empty_string_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_omits_null_serializes_empty_string_output("{}")
+      _ -> decode_omits_null_serializes_empty_string_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type OmitsSerializingEmptyListsOutput {
   OmitsSerializingEmptyListsOutput
 }
 
-pub fn encode_omits_serializing_empty_lists_output_struct(
-  _v: OmitsSerializingEmptyListsOutput,
-) -> json.Json {
+pub fn encode_omits_serializing_empty_lists_output_struct(_v: OmitsSerializingEmptyListsOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_omits_serializing_empty_lists_output_struct() -> decode.Decoder(
-  OmitsSerializingEmptyListsOutput,
-) {
+pub fn decode_omits_serializing_empty_lists_output_struct() -> decode.Decoder(OmitsSerializingEmptyListsOutput) {
   decode.success(OmitsSerializingEmptyListsOutput)
 }
 
-pub fn encode_omits_serializing_empty_lists_input(
-  input: OmitsSerializingEmptyListsInput,
-) -> String {
+pub fn encode_omits_serializing_empty_lists_input(input: OmitsSerializingEmptyListsInput) -> String {
   json.to_string(encode_omits_serializing_empty_lists_input_struct(input))
 }
 
-pub fn decode_omits_serializing_empty_lists_input(
-  body: String,
-) -> Result(OmitsSerializingEmptyListsInput, String) {
+pub fn decode_omits_serializing_empty_lists_input(body: String) -> Result(OmitsSerializingEmptyListsInput, String) {
   case json.parse(body, decode_omits_serializing_empty_lists_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_omits_serializing_empty_lists_output(
-  body: String,
-) -> Result(OmitsSerializingEmptyListsOutput, String) {
+pub fn decode_omits_serializing_empty_lists_output(body: String) -> Result(OmitsSerializingEmptyListsOutput, String) {
   case json.parse(body, decode_omits_serializing_empty_lists_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_omits_serializing_empty_lists_body(
-  _input: OmitsSerializingEmptyListsInput,
-) -> json.Json {
+pub fn encode_omits_serializing_empty_lists_body(_input: OmitsSerializingEmptyListsInput) -> json.Json {
   json.object([])
 }
 
@@ -14539,31 +11283,52 @@ pub fn build_omits_serializing_empty_lists_request(
   let path = "/OmitsSerializingEmptyLists"
   let query = ""
   let query = case input.query_boolean_list {
-    option.Some(v) -> rest.add_query(query, "BooleanList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "BooleanList", rest.bool_to_query(v))
+    })
     option.None -> query
   }
   let query = case input.query_double_list {
-    option.Some(v) -> rest.add_query(query, "DoubleList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "DoubleList", case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> "NaN" json_float.PosInfinity -> "Infinity" json_float.NegInfinity -> "-Infinity" })
+    })
     option.None -> query
   }
   let query = case input.query_enum_list {
-    option.Some(v) -> rest.add_query(query, "EnumList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "EnumList", rest.enum_wire_value(encode_foo_enum_enum(v)))
+    })
     option.None -> query
   }
   let query = case input.query_integer_enum_list {
-    option.Some(v) -> rest.add_query(query, "IntegerEnumList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "IntegerEnumList", rest.int_to_query(case encode_integer_enum_int_enum(v) { _ -> 0 }))
+    })
     option.None -> query
   }
   let query = case input.query_integer_list {
-    option.Some(v) -> rest.add_query(query, "IntegerList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "IntegerList", rest.int_to_query(v))
+    })
     option.None -> query
   }
   let query = case input.query_string_list {
-    option.Some(v) -> rest.add_query(query, "StringList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "StringList", v)
+    })
     option.None -> query
   }
   let query = case input.query_timestamp_list {
-    option.Some(v) -> rest.add_query(query, "TimestampList", "")
+    option.Some(xs) -> list.fold(xs, query, fn(q, item) {
+      let v = item
+      rest.add_query(q, "TimestampList", rest.timestamp_to_header(v))
+    })
     option.None -> query
   }
   let headers = dict.new()
@@ -14572,6 +11337,10 @@ pub fn build_omits_serializing_empty_lists_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -14583,48 +11352,37 @@ pub fn parse_omits_serializing_empty_lists_response(
   body: BitArray,
 ) -> Result(OmitsSerializingEmptyListsOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_omits_serializing_empty_lists_output("{}")
-        _ -> decode_omits_serializing_empty_lists_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_omits_serializing_empty_lists_output("{}")
+      _ -> decode_omits_serializing_empty_lists_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_operation_with_defaults_input(
-  input: OperationWithDefaultsInput,
-) -> String {
+
+pub fn encode_operation_with_defaults_input(input: OperationWithDefaultsInput) -> String {
   json.to_string(encode_operation_with_defaults_input_struct(input))
 }
 
-pub fn decode_operation_with_defaults_input(
-  body: String,
-) -> Result(OperationWithDefaultsInput, String) {
+pub fn decode_operation_with_defaults_input(body: String) -> Result(OperationWithDefaultsInput, String) {
   case json.parse(body, decode_operation_with_defaults_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_operation_with_defaults_output(
-  body: String,
-) -> Result(OperationWithDefaultsOutput, String) {
+pub fn decode_operation_with_defaults_output(body: String) -> Result(OperationWithDefaultsOutput, String) {
   case json.parse(body, decode_operation_with_defaults_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_operation_with_defaults_body(
-  input: OperationWithDefaultsInput,
-) -> json.Json {
+pub fn encode_operation_with_defaults_body(input: OperationWithDefaultsInput) -> json.Json {
   let pairs = []
   let pairs = case input.client_optional_defaults {
-    option.Some(v) -> [
-      #("clientOptionalDefaults", encode_client_optional_defaults_struct(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("clientOptionalDefaults", encode_client_optional_defaults_struct(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.defaults {
@@ -14655,6 +11413,10 @@ pub fn build_operation_with_defaults_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -14665,44 +11427,34 @@ pub fn parse_operation_with_defaults_response(
   body: BitArray,
 ) -> Result(OperationWithDefaultsOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_operation_with_defaults_output("{}")
-        _ -> decode_operation_with_defaults_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_operation_with_defaults_output("{}")
+      _ -> decode_operation_with_defaults_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_operation_with_nested_structure_input(
-  input: OperationWithNestedStructureInput,
-) -> String {
+
+pub fn encode_operation_with_nested_structure_input(input: OperationWithNestedStructureInput) -> String {
   json.to_string(encode_operation_with_nested_structure_input_struct(input))
 }
 
-pub fn decode_operation_with_nested_structure_input(
-  body: String,
-) -> Result(OperationWithNestedStructureInput, String) {
+pub fn decode_operation_with_nested_structure_input(body: String) -> Result(OperationWithNestedStructureInput, String) {
   case json.parse(body, decode_operation_with_nested_structure_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_operation_with_nested_structure_output(
-  body: String,
-) -> Result(OperationWithNestedStructureOutput, String) {
-  case
-    json.parse(body, decode_operation_with_nested_structure_output_struct())
-  {
+pub fn decode_operation_with_nested_structure_output(body: String) -> Result(OperationWithNestedStructureOutput, String) {
+  case json.parse(body, decode_operation_with_nested_structure_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_operation_with_nested_structure_body(
-  input: OperationWithNestedStructureInput,
-) -> json.Json {
+pub fn encode_operation_with_nested_structure_body(input: OperationWithNestedStructureInput) -> json.Json {
   let pairs = []
   let pairs = case input.top_level {
     option.Some(v) -> [#("topLevel", encode_top_level_struct(v)), ..pairs]
@@ -14724,6 +11476,10 @@ pub fn build_operation_with_nested_structure_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -14734,14 +11490,14 @@ pub fn parse_operation_with_nested_structure_response(
   body: BitArray,
 ) -> Result(OperationWithNestedStructureOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_operation_with_nested_structure_output("{}")
-        _ -> decode_operation_with_nested_structure_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_operation_with_nested_structure_output("{}")
+      _ -> decode_operation_with_nested_structure_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type OutputStreamInput {
   OutputStreamInput
@@ -14759,18 +11515,14 @@ pub fn encode_output_stream_input(input: OutputStreamInput) -> String {
   json.to_string(encode_output_stream_input_struct(input))
 }
 
-pub fn decode_output_stream_input(
-  body: String,
-) -> Result(OutputStreamInput, String) {
+pub fn decode_output_stream_input(body: String) -> Result(OutputStreamInput, String) {
   case json.parse(body, decode_output_stream_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_output_stream_output(
-  body: String,
-) -> Result(OutputStreamOutput, String) {
+pub fn decode_output_stream_output(body: String) -> Result(OutputStreamOutput, String) {
   case json.parse(body, decode_output_stream_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -14793,6 +11545,10 @@ pub fn build_output_stream_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -14803,62 +11559,46 @@ pub fn parse_output_stream_response(
   body: BitArray,
 ) -> Result(OutputStreamOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_output_stream_output("{}")
-        _ -> decode_output_stream_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_output_stream_output("{}")
+      _ -> decode_output_stream_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type OutputStreamWithInitialResponseInput {
   OutputStreamWithInitialResponseInput
 }
 
-pub fn encode_output_stream_with_initial_response_input_struct(
-  _v: OutputStreamWithInitialResponseInput,
-) -> json.Json {
+pub fn encode_output_stream_with_initial_response_input_struct(_v: OutputStreamWithInitialResponseInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_output_stream_with_initial_response_input_struct() -> decode.Decoder(
-  OutputStreamWithInitialResponseInput,
-) {
+pub fn decode_output_stream_with_initial_response_input_struct() -> decode.Decoder(OutputStreamWithInitialResponseInput) {
   decode.success(OutputStreamWithInitialResponseInput)
 }
 
-pub fn encode_output_stream_with_initial_response_input(
-  input: OutputStreamWithInitialResponseInput,
-) -> String {
+pub fn encode_output_stream_with_initial_response_input(input: OutputStreamWithInitialResponseInput) -> String {
   json.to_string(encode_output_stream_with_initial_response_input_struct(input))
 }
 
-pub fn decode_output_stream_with_initial_response_input(
-  body: String,
-) -> Result(OutputStreamWithInitialResponseInput, String) {
-  case
-    json.parse(body, decode_output_stream_with_initial_response_input_struct())
-  {
+pub fn decode_output_stream_with_initial_response_input(body: String) -> Result(OutputStreamWithInitialResponseInput, String) {
+  case json.parse(body, decode_output_stream_with_initial_response_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_output_stream_with_initial_response_output(
-  body: String,
-) -> Result(OutputStreamWithInitialResponseOutput, String) {
-  case
-    json.parse(body, decode_output_stream_with_initial_response_output_struct())
-  {
+pub fn decode_output_stream_with_initial_response_output(body: String) -> Result(OutputStreamWithInitialResponseOutput, String) {
+  case json.parse(body, decode_output_stream_with_initial_response_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_output_stream_with_initial_response_body(
-  _input: OutputStreamWithInitialResponseInput,
-) -> json.Json {
+pub fn encode_output_stream_with_initial_response_body(_input: OutputStreamWithInitialResponseInput) -> json.Json {
   json.object([])
 }
 
@@ -14874,6 +11614,10 @@ pub fn build_output_stream_with_initial_response_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -14884,40 +11628,34 @@ pub fn parse_output_stream_with_initial_response_response(
   body: BitArray,
 ) -> Result(OutputStreamWithInitialResponseOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_output_stream_with_initial_response_output("{}")
-        _ -> decode_output_stream_with_initial_response_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_output_stream_with_initial_response_output("{}")
+      _ -> decode_output_stream_with_initial_response_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub fn encode_post_player_action_input(input: PostPlayerActionInput) -> String {
   json.to_string(encode_post_player_action_input_struct(input))
 }
 
-pub fn decode_post_player_action_input(
-  body: String,
-) -> Result(PostPlayerActionInput, String) {
+pub fn decode_post_player_action_input(body: String) -> Result(PostPlayerActionInput, String) {
   case json.parse(body, decode_post_player_action_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_post_player_action_output(
-  body: String,
-) -> Result(PostPlayerActionOutput, String) {
+pub fn decode_post_player_action_output(body: String) -> Result(PostPlayerActionOutput, String) {
   case json.parse(body, decode_post_player_action_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_post_player_action_body(
-  input: PostPlayerActionInput,
-) -> json.Json {
+pub fn encode_post_player_action_body(input: PostPlayerActionInput) -> json.Json {
   let pairs = []
   let pairs = case input.action {
     option.Some(v) -> [#("action", encode_player_action_union(v)), ..pairs]
@@ -14939,6 +11677,10 @@ pub fn build_post_player_action_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -14949,48 +11691,37 @@ pub fn parse_post_player_action_response(
   body: BitArray,
 ) -> Result(PostPlayerActionOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_post_player_action_output("{}")
-        _ -> decode_post_player_action_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_post_player_action_output("{}")
+      _ -> decode_post_player_action_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_post_union_with_json_name_input(
-  input: PostUnionWithJsonNameInput,
-) -> String {
+
+pub fn encode_post_union_with_json_name_input(input: PostUnionWithJsonNameInput) -> String {
   json.to_string(encode_post_union_with_json_name_input_struct(input))
 }
 
-pub fn decode_post_union_with_json_name_input(
-  body: String,
-) -> Result(PostUnionWithJsonNameInput, String) {
+pub fn decode_post_union_with_json_name_input(body: String) -> Result(PostUnionWithJsonNameInput, String) {
   case json.parse(body, decode_post_union_with_json_name_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_post_union_with_json_name_output(
-  body: String,
-) -> Result(PostUnionWithJsonNameOutput, String) {
+pub fn decode_post_union_with_json_name_output(body: String) -> Result(PostUnionWithJsonNameOutput, String) {
   case json.parse(body, decode_post_union_with_json_name_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_post_union_with_json_name_body(
-  input: PostUnionWithJsonNameInput,
-) -> json.Json {
+pub fn encode_post_union_with_json_name_body(input: PostUnionWithJsonNameInput) -> json.Json {
   let pairs = []
   let pairs = case input.value {
-    option.Some(v) -> [
-      #("value", encode_union_with_json_name_union(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("value", encode_union_with_json_name_union(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -15009,6 +11740,10 @@ pub fn build_post_union_with_json_name_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -15019,58 +11754,46 @@ pub fn parse_post_union_with_json_name_response(
   body: BitArray,
 ) -> Result(PostUnionWithJsonNameOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_post_union_with_json_name_output("{}")
-        _ -> decode_post_union_with_json_name_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_post_union_with_json_name_output("{}")
+      _ -> decode_post_union_with_json_name_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type PutWithContentEncodingOutput {
   PutWithContentEncodingOutput
 }
 
-pub fn encode_put_with_content_encoding_output_struct(
-  _v: PutWithContentEncodingOutput,
-) -> json.Json {
+pub fn encode_put_with_content_encoding_output_struct(_v: PutWithContentEncodingOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_put_with_content_encoding_output_struct() -> decode.Decoder(
-  PutWithContentEncodingOutput,
-) {
+pub fn decode_put_with_content_encoding_output_struct() -> decode.Decoder(PutWithContentEncodingOutput) {
   decode.success(PutWithContentEncodingOutput)
 }
 
-pub fn encode_put_with_content_encoding_input(
-  input: PutWithContentEncodingInput,
-) -> String {
+pub fn encode_put_with_content_encoding_input(input: PutWithContentEncodingInput) -> String {
   json.to_string(encode_put_with_content_encoding_input_struct(input))
 }
 
-pub fn decode_put_with_content_encoding_input(
-  body: String,
-) -> Result(PutWithContentEncodingInput, String) {
+pub fn decode_put_with_content_encoding_input(body: String) -> Result(PutWithContentEncodingInput, String) {
   case json.parse(body, decode_put_with_content_encoding_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_put_with_content_encoding_output(
-  body: String,
-) -> Result(PutWithContentEncodingOutput, String) {
+pub fn decode_put_with_content_encoding_output(body: String) -> Result(PutWithContentEncodingOutput, String) {
   case json.parse(body, decode_put_with_content_encoding_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_put_with_content_encoding_body(
-  input: PutWithContentEncodingInput,
-) -> json.Json {
+pub fn encode_put_with_content_encoding_body(input: PutWithContentEncodingInput) -> json.Json {
   let pairs = []
   let pairs = case input.data {
     option.Some(v) -> [#("data", json.string(v)), ..pairs]
@@ -15096,6 +11819,10 @@ pub fn build_put_with_content_encoding_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -15106,62 +11833,46 @@ pub fn parse_put_with_content_encoding_response(
   body: BitArray,
 ) -> Result(PutWithContentEncodingOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_put_with_content_encoding_output("{}")
-        _ -> decode_put_with_content_encoding_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_put_with_content_encoding_output("{}")
+      _ -> decode_put_with_content_encoding_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type QueryIdempotencyTokenAutoFillOutput {
   QueryIdempotencyTokenAutoFillOutput
 }
 
-pub fn encode_query_idempotency_token_auto_fill_output_struct(
-  _v: QueryIdempotencyTokenAutoFillOutput,
-) -> json.Json {
+pub fn encode_query_idempotency_token_auto_fill_output_struct(_v: QueryIdempotencyTokenAutoFillOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_query_idempotency_token_auto_fill_output_struct() -> decode.Decoder(
-  QueryIdempotencyTokenAutoFillOutput,
-) {
+pub fn decode_query_idempotency_token_auto_fill_output_struct() -> decode.Decoder(QueryIdempotencyTokenAutoFillOutput) {
   decode.success(QueryIdempotencyTokenAutoFillOutput)
 }
 
-pub fn encode_query_idempotency_token_auto_fill_input(
-  input: QueryIdempotencyTokenAutoFillInput,
-) -> String {
+pub fn encode_query_idempotency_token_auto_fill_input(input: QueryIdempotencyTokenAutoFillInput) -> String {
   json.to_string(encode_query_idempotency_token_auto_fill_input_struct(input))
 }
 
-pub fn decode_query_idempotency_token_auto_fill_input(
-  body: String,
-) -> Result(QueryIdempotencyTokenAutoFillInput, String) {
-  case
-    json.parse(body, decode_query_idempotency_token_auto_fill_input_struct())
-  {
+pub fn decode_query_idempotency_token_auto_fill_input(body: String) -> Result(QueryIdempotencyTokenAutoFillInput, String) {
+  case json.parse(body, decode_query_idempotency_token_auto_fill_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_query_idempotency_token_auto_fill_output(
-  body: String,
-) -> Result(QueryIdempotencyTokenAutoFillOutput, String) {
-  case
-    json.parse(body, decode_query_idempotency_token_auto_fill_output_struct())
-  {
+pub fn decode_query_idempotency_token_auto_fill_output(body: String) -> Result(QueryIdempotencyTokenAutoFillOutput, String) {
+  case json.parse(body, decode_query_idempotency_token_auto_fill_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_query_idempotency_token_auto_fill_body(
-  _input: QueryIdempotencyTokenAutoFillInput,
-) -> json.Json {
+pub fn encode_query_idempotency_token_auto_fill_body(_input: QueryIdempotencyTokenAutoFillInput) -> json.Json {
   json.object([])
 }
 
@@ -15181,6 +11892,10 @@ pub fn build_query_idempotency_token_auto_fill_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -15191,60 +11906,46 @@ pub fn parse_query_idempotency_token_auto_fill_response(
   body: BitArray,
 ) -> Result(QueryIdempotencyTokenAutoFillOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_query_idempotency_token_auto_fill_output("{}")
-        _ -> decode_query_idempotency_token_auto_fill_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_query_idempotency_token_auto_fill_output("{}")
+      _ -> decode_query_idempotency_token_auto_fill_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type QueryParamsAsStringListMapOutput {
   QueryParamsAsStringListMapOutput
 }
 
-pub fn encode_query_params_as_string_list_map_output_struct(
-  _v: QueryParamsAsStringListMapOutput,
-) -> json.Json {
+pub fn encode_query_params_as_string_list_map_output_struct(_v: QueryParamsAsStringListMapOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_query_params_as_string_list_map_output_struct() -> decode.Decoder(
-  QueryParamsAsStringListMapOutput,
-) {
+pub fn decode_query_params_as_string_list_map_output_struct() -> decode.Decoder(QueryParamsAsStringListMapOutput) {
   decode.success(QueryParamsAsStringListMapOutput)
 }
 
-pub fn encode_query_params_as_string_list_map_input(
-  input: QueryParamsAsStringListMapInput,
-) -> String {
+pub fn encode_query_params_as_string_list_map_input(input: QueryParamsAsStringListMapInput) -> String {
   json.to_string(encode_query_params_as_string_list_map_input_struct(input))
 }
 
-pub fn decode_query_params_as_string_list_map_input(
-  body: String,
-) -> Result(QueryParamsAsStringListMapInput, String) {
+pub fn decode_query_params_as_string_list_map_input(body: String) -> Result(QueryParamsAsStringListMapInput, String) {
   case json.parse(body, decode_query_params_as_string_list_map_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_query_params_as_string_list_map_output(
-  body: String,
-) -> Result(QueryParamsAsStringListMapOutput, String) {
-  case
-    json.parse(body, decode_query_params_as_string_list_map_output_struct())
-  {
+pub fn decode_query_params_as_string_list_map_output(body: String) -> Result(QueryParamsAsStringListMapOutput, String) {
+  case json.parse(body, decode_query_params_as_string_list_map_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_query_params_as_string_list_map_body(
-  _input: QueryParamsAsStringListMapInput,
-) -> json.Json {
+pub fn encode_query_params_as_string_list_map_body(_input: QueryParamsAsStringListMapInput) -> json.Json {
   json.object([])
 }
 
@@ -15268,6 +11969,10 @@ pub fn build_query_params_as_string_list_map_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -15278,28 +11983,24 @@ pub fn parse_query_params_as_string_list_map_response(
   body: BitArray,
 ) -> Result(QueryParamsAsStringListMapOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_query_params_as_string_list_map_output("{}")
-        _ -> decode_query_params_as_string_list_map_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_query_params_as_string_list_map_output("{}")
+      _ -> decode_query_params_as_string_list_map_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type QueryPrecedenceOutput {
   QueryPrecedenceOutput
 }
 
-pub fn encode_query_precedence_output_struct(
-  _v: QueryPrecedenceOutput,
-) -> json.Json {
+pub fn encode_query_precedence_output_struct(_v: QueryPrecedenceOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_query_precedence_output_struct() -> decode.Decoder(
-  QueryPrecedenceOutput,
-) {
+pub fn decode_query_precedence_output_struct() -> decode.Decoder(QueryPrecedenceOutput) {
   decode.success(QueryPrecedenceOutput)
 }
 
@@ -15307,18 +12008,14 @@ pub fn encode_query_precedence_input(input: QueryPrecedenceInput) -> String {
   json.to_string(encode_query_precedence_input_struct(input))
 }
 
-pub fn decode_query_precedence_input(
-  body: String,
-) -> Result(QueryPrecedenceInput, String) {
+pub fn decode_query_precedence_input(body: String) -> Result(QueryPrecedenceInput, String) {
   case json.parse(body, decode_query_precedence_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_query_precedence_output(
-  body: String,
-) -> Result(QueryPrecedenceOutput, String) {
+pub fn decode_query_precedence_output(body: String) -> Result(QueryPrecedenceOutput, String) {
   case json.parse(body, decode_query_precedence_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
@@ -15349,6 +12046,10 @@ pub fn build_query_precedence_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -15359,48 +12060,37 @@ pub fn parse_query_precedence_response(
   body: BitArray,
 ) -> Result(QueryPrecedenceOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_query_precedence_output("{}")
-        _ -> decode_query_precedence_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_query_precedence_output("{}")
+      _ -> decode_query_precedence_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_recursive_shapes_input(
-  input: RecursiveShapesInputOutput,
-) -> String {
+
+pub fn encode_recursive_shapes_input(input: RecursiveShapesInputOutput) -> String {
   json.to_string(encode_recursive_shapes_input_output_struct(input))
 }
 
-pub fn decode_recursive_shapes_input(
-  body: String,
-) -> Result(RecursiveShapesInputOutput, String) {
+pub fn decode_recursive_shapes_input(body: String) -> Result(RecursiveShapesInputOutput, String) {
   case json.parse(body, decode_recursive_shapes_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_recursive_shapes_output(
-  body: String,
-) -> Result(RecursiveShapesInputOutput, String) {
+pub fn decode_recursive_shapes_output(body: String) -> Result(RecursiveShapesInputOutput, String) {
   case json.parse(body, decode_recursive_shapes_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_recursive_shapes_body(
-  input: RecursiveShapesInputOutput,
-) -> json.Json {
+pub fn encode_recursive_shapes_body(input: RecursiveShapesInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.nested {
-    option.Some(v) -> [
-      #("nested", encode_recursive_shapes_input_output_nested1_struct(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("nested", encode_recursive_shapes_input_output_nested1_struct(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -15419,6 +12109,10 @@ pub fn build_recursive_shapes_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -15429,46 +12123,34 @@ pub fn parse_recursive_shapes_response(
   body: BitArray,
 ) -> Result(RecursiveShapesInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_recursive_shapes_output("{}")
-        _ -> decode_recursive_shapes_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_recursive_shapes_output("{}")
+      _ -> decode_recursive_shapes_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_response_code_http_fallback_input(
-  input: ResponseCodeHttpFallbackInputOutput,
-) -> String {
+
+pub fn encode_response_code_http_fallback_input(input: ResponseCodeHttpFallbackInputOutput) -> String {
   json.to_string(encode_response_code_http_fallback_input_output_struct(input))
 }
 
-pub fn decode_response_code_http_fallback_input(
-  body: String,
-) -> Result(ResponseCodeHttpFallbackInputOutput, String) {
-  case
-    json.parse(body, decode_response_code_http_fallback_input_output_struct())
-  {
+pub fn decode_response_code_http_fallback_input(body: String) -> Result(ResponseCodeHttpFallbackInputOutput, String) {
+  case json.parse(body, decode_response_code_http_fallback_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_response_code_http_fallback_output(
-  body: String,
-) -> Result(ResponseCodeHttpFallbackInputOutput, String) {
-  case
-    json.parse(body, decode_response_code_http_fallback_input_output_struct())
-  {
+pub fn decode_response_code_http_fallback_output(body: String) -> Result(ResponseCodeHttpFallbackInputOutput, String) {
+  case json.parse(body, decode_response_code_http_fallback_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_response_code_http_fallback_body(
-  _input: ResponseCodeHttpFallbackInputOutput,
-) -> json.Json {
+pub fn encode_response_code_http_fallback_body(_input: ResponseCodeHttpFallbackInputOutput) -> json.Json {
   json.object([])
 }
 
@@ -15484,6 +12166,10 @@ pub fn build_response_code_http_fallback_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -15494,58 +12180,46 @@ pub fn parse_response_code_http_fallback_response(
   body: BitArray,
 ) -> Result(ResponseCodeHttpFallbackInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_response_code_http_fallback_output("{}")
-        _ -> decode_response_code_http_fallback_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_response_code_http_fallback_output("{}")
+      _ -> decode_response_code_http_fallback_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type ResponseCodeRequiredInput {
   ResponseCodeRequiredInput
 }
 
-pub fn encode_response_code_required_input_struct(
-  _v: ResponseCodeRequiredInput,
-) -> json.Json {
+pub fn encode_response_code_required_input_struct(_v: ResponseCodeRequiredInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_response_code_required_input_struct() -> decode.Decoder(
-  ResponseCodeRequiredInput,
-) {
+pub fn decode_response_code_required_input_struct() -> decode.Decoder(ResponseCodeRequiredInput) {
   decode.success(ResponseCodeRequiredInput)
 }
 
-pub fn encode_response_code_required_input(
-  input: ResponseCodeRequiredInput,
-) -> String {
+pub fn encode_response_code_required_input(input: ResponseCodeRequiredInput) -> String {
   json.to_string(encode_response_code_required_input_struct(input))
 }
 
-pub fn decode_response_code_required_input(
-  body: String,
-) -> Result(ResponseCodeRequiredInput, String) {
+pub fn decode_response_code_required_input(body: String) -> Result(ResponseCodeRequiredInput, String) {
   case json.parse(body, decode_response_code_required_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_response_code_required_output(
-  body: String,
-) -> Result(ResponseCodeRequiredOutput, String) {
+pub fn decode_response_code_required_output(body: String) -> Result(ResponseCodeRequiredOutput, String) {
   case json.parse(body, decode_response_code_required_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_response_code_required_body(
-  _input: ResponseCodeRequiredInput,
-) -> json.Json {
+pub fn encode_response_code_required_body(_input: ResponseCodeRequiredInput) -> json.Json {
   json.object([])
 }
 
@@ -15561,6 +12235,10 @@ pub fn build_response_code_required_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -15571,42 +12249,34 @@ pub fn parse_response_code_required_response(
   body: BitArray,
 ) -> Result(ResponseCodeRequiredOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_response_code_required_output("{}")
-        _ -> decode_response_code_required_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_response_code_required_output("{}")
+      _ -> decode_response_code_required_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_simple_scalar_properties_input(
-  input: SimpleScalarPropertiesInputOutput,
-) -> String {
+
+pub fn encode_simple_scalar_properties_input(input: SimpleScalarPropertiesInputOutput) -> String {
   json.to_string(encode_simple_scalar_properties_input_output_struct(input))
 }
 
-pub fn decode_simple_scalar_properties_input(
-  body: String,
-) -> Result(SimpleScalarPropertiesInputOutput, String) {
+pub fn decode_simple_scalar_properties_input(body: String) -> Result(SimpleScalarPropertiesInputOutput, String) {
   case json.parse(body, decode_simple_scalar_properties_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_simple_scalar_properties_output(
-  body: String,
-) -> Result(SimpleScalarPropertiesInputOutput, String) {
+pub fn decode_simple_scalar_properties_output(body: String) -> Result(SimpleScalarPropertiesInputOutput, String) {
   case json.parse(body, decode_simple_scalar_properties_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_simple_scalar_properties_body(
-  input: SimpleScalarPropertiesInputOutput,
-) -> json.Json {
+pub fn encode_simple_scalar_properties_body(input: SimpleScalarPropertiesInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.byte_value {
     option.Some(v) -> [#("byteValue", json.int(v)), ..pairs]
@@ -15664,6 +12334,10 @@ pub fn build_simple_scalar_properties_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -15674,55 +12348,41 @@ pub fn parse_simple_scalar_properties_response(
   body: BitArray,
 ) -> Result(SimpleScalarPropertiesInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_simple_scalar_properties_output("{}")
-        _ -> decode_simple_scalar_properties_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_simple_scalar_properties_output("{}")
+      _ -> decode_simple_scalar_properties_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_sparse_json_lists_input(
-  input: SparseJsonListsInputOutput,
-) -> String {
+
+pub fn encode_sparse_json_lists_input(input: SparseJsonListsInputOutput) -> String {
   json.to_string(encode_sparse_json_lists_input_output_struct(input))
 }
 
-pub fn decode_sparse_json_lists_input(
-  body: String,
-) -> Result(SparseJsonListsInputOutput, String) {
+pub fn decode_sparse_json_lists_input(body: String) -> Result(SparseJsonListsInputOutput, String) {
   case json.parse(body, decode_sparse_json_lists_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_sparse_json_lists_output(
-  body: String,
-) -> Result(SparseJsonListsInputOutput, String) {
+pub fn decode_sparse_json_lists_output(body: String) -> Result(SparseJsonListsInputOutput, String) {
   case json.parse(body, decode_sparse_json_lists_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_sparse_json_lists_body(
-  input: SparseJsonListsInputOutput,
-) -> json.Json {
+pub fn encode_sparse_json_lists_body(input: SparseJsonListsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.sparse_short_list {
-    option.Some(v) -> [
-      #("sparseShortList", fn(xs) { json.array(xs, json.int) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseShortList", fn(xs) { json.array(xs, json.int) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_string_list {
-    option.Some(v) -> [
-      #("sparseStringList", fn(xs) { json.array(xs, json.string) }(v)),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseStringList", fn(xs) { json.array(xs, json.string) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -15741,6 +12401,10 @@ pub fn build_sparse_json_lists_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("PUT", path, headers, body)
 }
@@ -15751,120 +12415,53 @@ pub fn parse_sparse_json_lists_response(
   body: BitArray,
 ) -> Result(SparseJsonListsInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_sparse_json_lists_output("{}")
-        _ -> decode_sparse_json_lists_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_sparse_json_lists_output("{}")
+      _ -> decode_sparse_json_lists_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_sparse_json_maps_input(
-  input: SparseJsonMapsInputOutput,
-) -> String {
+
+pub fn encode_sparse_json_maps_input(input: SparseJsonMapsInputOutput) -> String {
   json.to_string(encode_sparse_json_maps_input_output_struct(input))
 }
 
-pub fn decode_sparse_json_maps_input(
-  body: String,
-) -> Result(SparseJsonMapsInputOutput, String) {
+pub fn decode_sparse_json_maps_input(body: String) -> Result(SparseJsonMapsInputOutput, String) {
   case json.parse(body, decode_sparse_json_maps_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_sparse_json_maps_output(
-  body: String,
-) -> Result(SparseJsonMapsInputOutput, String) {
+pub fn decode_sparse_json_maps_output(body: String) -> Result(SparseJsonMapsInputOutput, String) {
   case json.parse(body, decode_sparse_json_maps_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_sparse_json_maps_body(
-  input: SparseJsonMapsInputOutput,
-) -> json.Json {
+pub fn encode_sparse_json_maps_body(input: SparseJsonMapsInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.sparse_boolean_map {
-    option.Some(v) -> [
-      #(
-        "sparseBooleanMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.bool(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseBooleanMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.bool(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_number_map {
-    option.Some(v) -> [
-      #(
-        "sparseNumberMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.int(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseNumberMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.int(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_set_map {
-    option.Some(v) -> [
-      #(
-        "sparseSetMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) {
-              #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1))
-            }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseSetMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, fn(xs) { json.array(xs, json.string) }(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_string_map {
-    option.Some(v) -> [
-      #(
-        "sparseStringMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseStringMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, json.string(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   let pairs = case input.sparse_struct_map {
-    option.Some(v) -> [
-      #(
-        "sparseStructMap",
-        fn(d) {
-          json.object(
-            dict.to_list(d)
-            |> list.map(fn(pair) {
-              #(pair.0, encode_greeting_struct_struct(pair.1))
-            }),
-          )
-        }(v),
-      ),
-      ..pairs
-    ]
+    option.Some(v) -> [#("sparseStructMap", fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, encode_greeting_struct_struct(pair.1)) })) }(v)), ..pairs]
     option.None -> pairs
   }
   json.object(pairs)
@@ -15883,6 +12480,10 @@ pub fn build_sparse_json_maps_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -15893,42 +12494,34 @@ pub fn parse_sparse_json_maps_response(
   body: BitArray,
 ) -> Result(SparseJsonMapsInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_sparse_json_maps_output("{}")
-        _ -> decode_sparse_json_maps_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_sparse_json_maps_output("{}")
+      _ -> decode_sparse_json_maps_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_streaming_traits_input(
-  input: StreamingTraitsInputOutput,
-) -> String {
+
+pub fn encode_streaming_traits_input(input: StreamingTraitsInputOutput) -> String {
   json.to_string(encode_streaming_traits_input_output_struct(input))
 }
 
-pub fn decode_streaming_traits_input(
-  body: String,
-) -> Result(StreamingTraitsInputOutput, String) {
+pub fn decode_streaming_traits_input(body: String) -> Result(StreamingTraitsInputOutput, String) {
   case json.parse(body, decode_streaming_traits_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_streaming_traits_output(
-  body: String,
-) -> Result(StreamingTraitsInputOutput, String) {
+pub fn decode_streaming_traits_output(body: String) -> Result(StreamingTraitsInputOutput, String) {
   case json.parse(body, decode_streaming_traits_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_streaming_traits_body(
-  _input: StreamingTraitsInputOutput,
-) -> json.Json {
+pub fn encode_streaming_traits_body(_input: StreamingTraitsInputOutput) -> json.Json {
   json.object([])
 }
 
@@ -15951,6 +12544,10 @@ pub fn build_streaming_traits_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -15961,60 +12558,46 @@ pub fn parse_streaming_traits_response(
   body: BitArray,
 ) -> Result(StreamingTraitsInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_streaming_traits_output("{}")
-        _ -> decode_streaming_traits_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_streaming_traits_output("{}")
+      _ -> decode_streaming_traits_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type StreamingTraitsRequireLengthOutput {
   StreamingTraitsRequireLengthOutput
 }
 
-pub fn encode_streaming_traits_require_length_output_struct(
-  _v: StreamingTraitsRequireLengthOutput,
-) -> json.Json {
+pub fn encode_streaming_traits_require_length_output_struct(_v: StreamingTraitsRequireLengthOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_streaming_traits_require_length_output_struct() -> decode.Decoder(
-  StreamingTraitsRequireLengthOutput,
-) {
+pub fn decode_streaming_traits_require_length_output_struct() -> decode.Decoder(StreamingTraitsRequireLengthOutput) {
   decode.success(StreamingTraitsRequireLengthOutput)
 }
 
-pub fn encode_streaming_traits_require_length_input(
-  input: StreamingTraitsRequireLengthInput,
-) -> String {
+pub fn encode_streaming_traits_require_length_input(input: StreamingTraitsRequireLengthInput) -> String {
   json.to_string(encode_streaming_traits_require_length_input_struct(input))
 }
 
-pub fn decode_streaming_traits_require_length_input(
-  body: String,
-) -> Result(StreamingTraitsRequireLengthInput, String) {
+pub fn decode_streaming_traits_require_length_input(body: String) -> Result(StreamingTraitsRequireLengthInput, String) {
   case json.parse(body, decode_streaming_traits_require_length_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_streaming_traits_require_length_output(
-  body: String,
-) -> Result(StreamingTraitsRequireLengthOutput, String) {
-  case
-    json.parse(body, decode_streaming_traits_require_length_output_struct())
-  {
+pub fn decode_streaming_traits_require_length_output(body: String) -> Result(StreamingTraitsRequireLengthOutput, String) {
+  case json.parse(body, decode_streaming_traits_require_length_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_streaming_traits_require_length_body(
-  _input: StreamingTraitsRequireLengthInput,
-) -> json.Json {
+pub fn encode_streaming_traits_require_length_body(_input: StreamingTraitsRequireLengthInput) -> json.Json {
   json.object([])
 }
 
@@ -16037,6 +12620,10 @@ pub fn build_streaming_traits_require_length_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -16047,54 +12634,34 @@ pub fn parse_streaming_traits_require_length_response(
   body: BitArray,
 ) -> Result(StreamingTraitsRequireLengthOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_streaming_traits_require_length_output("{}")
-        _ -> decode_streaming_traits_require_length_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_streaming_traits_require_length_output("{}")
+      _ -> decode_streaming_traits_require_length_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_streaming_traits_with_media_type_input(
-  input: StreamingTraitsWithMediaTypeInputOutput,
-) -> String {
-  json.to_string(encode_streaming_traits_with_media_type_input_output_struct(
-    input,
-  ))
+
+pub fn encode_streaming_traits_with_media_type_input(input: StreamingTraitsWithMediaTypeInputOutput) -> String {
+  json.to_string(encode_streaming_traits_with_media_type_input_output_struct(input))
 }
 
-pub fn decode_streaming_traits_with_media_type_input(
-  body: String,
-) -> Result(StreamingTraitsWithMediaTypeInputOutput, String) {
-  case
-    json.parse(
-      body,
-      decode_streaming_traits_with_media_type_input_output_struct(),
-    )
-  {
+pub fn decode_streaming_traits_with_media_type_input(body: String) -> Result(StreamingTraitsWithMediaTypeInputOutput, String) {
+  case json.parse(body, decode_streaming_traits_with_media_type_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_streaming_traits_with_media_type_output(
-  body: String,
-) -> Result(StreamingTraitsWithMediaTypeInputOutput, String) {
-  case
-    json.parse(
-      body,
-      decode_streaming_traits_with_media_type_input_output_struct(),
-    )
-  {
+pub fn decode_streaming_traits_with_media_type_output(body: String) -> Result(StreamingTraitsWithMediaTypeInputOutput, String) {
+  case json.parse(body, decode_streaming_traits_with_media_type_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_streaming_traits_with_media_type_body(
-  _input: StreamingTraitsWithMediaTypeInputOutput,
-) -> json.Json {
+pub fn encode_streaming_traits_with_media_type_body(_input: StreamingTraitsWithMediaTypeInputOutput) -> json.Json {
   json.object([])
 }
 
@@ -16117,6 +12684,10 @@ pub fn build_streaming_traits_with_media_type_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -16127,42 +12698,34 @@ pub fn parse_streaming_traits_with_media_type_response(
   body: BitArray,
 ) -> Result(StreamingTraitsWithMediaTypeInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_streaming_traits_with_media_type_output("{}")
-        _ -> decode_streaming_traits_with_media_type_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_streaming_traits_with_media_type_output("{}")
+      _ -> decode_streaming_traits_with_media_type_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_test_body_structure_input(
-  input: TestBodyStructureInputOutput,
-) -> String {
+
+pub fn encode_test_body_structure_input(input: TestBodyStructureInputOutput) -> String {
   json.to_string(encode_test_body_structure_input_output_struct(input))
 }
 
-pub fn decode_test_body_structure_input(
-  body: String,
-) -> Result(TestBodyStructureInputOutput, String) {
+pub fn decode_test_body_structure_input(body: String) -> Result(TestBodyStructureInputOutput, String) {
   case json.parse(body, decode_test_body_structure_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_test_body_structure_output(
-  body: String,
-) -> Result(TestBodyStructureInputOutput, String) {
+pub fn decode_test_body_structure_output(body: String) -> Result(TestBodyStructureInputOutput, String) {
   case json.parse(body, decode_test_body_structure_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_test_body_structure_body(
-  input: TestBodyStructureInputOutput,
-) -> json.Json {
+pub fn encode_test_body_structure_body(input: TestBodyStructureInputOutput) -> json.Json {
   let pairs = []
   let pairs = case input.test_config {
     option.Some(v) -> [#("testConfig", encode_test_config_struct(v)), ..pairs]
@@ -16188,6 +12751,10 @@ pub fn build_test_body_structure_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -16198,58 +12765,46 @@ pub fn parse_test_body_structure_response(
   body: BitArray,
 ) -> Result(TestBodyStructureInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_test_body_structure_output("{}")
-        _ -> decode_test_body_structure_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_test_body_structure_output("{}")
+      _ -> decode_test_body_structure_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type TestGetNoInputNoPayloadInput {
   TestGetNoInputNoPayloadInput
 }
 
-pub fn encode_test_get_no_input_no_payload_input_struct(
-  _v: TestGetNoInputNoPayloadInput,
-) -> json.Json {
+pub fn encode_test_get_no_input_no_payload_input_struct(_v: TestGetNoInputNoPayloadInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_test_get_no_input_no_payload_input_struct() -> decode.Decoder(
-  TestGetNoInputNoPayloadInput,
-) {
+pub fn decode_test_get_no_input_no_payload_input_struct() -> decode.Decoder(TestGetNoInputNoPayloadInput) {
   decode.success(TestGetNoInputNoPayloadInput)
 }
 
-pub fn encode_test_get_no_input_no_payload_input(
-  input: TestGetNoInputNoPayloadInput,
-) -> String {
+pub fn encode_test_get_no_input_no_payload_input(input: TestGetNoInputNoPayloadInput) -> String {
   json.to_string(encode_test_get_no_input_no_payload_input_struct(input))
 }
 
-pub fn decode_test_get_no_input_no_payload_input(
-  body: String,
-) -> Result(TestGetNoInputNoPayloadInput, String) {
+pub fn decode_test_get_no_input_no_payload_input(body: String) -> Result(TestGetNoInputNoPayloadInput, String) {
   case json.parse(body, decode_test_get_no_input_no_payload_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_test_get_no_input_no_payload_output(
-  body: String,
-) -> Result(TestNoPayloadInputOutput, String) {
+pub fn decode_test_get_no_input_no_payload_output(body: String) -> Result(TestNoPayloadInputOutput, String) {
   case json.parse(body, decode_test_no_payload_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_test_get_no_input_no_payload_body(
-  _input: TestGetNoInputNoPayloadInput,
-) -> json.Json {
+pub fn encode_test_get_no_input_no_payload_body(_input: TestGetNoInputNoPayloadInput) -> json.Json {
   json.object([])
 }
 
@@ -16265,6 +12820,10 @@ pub fn build_test_get_no_input_no_payload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -16275,42 +12834,34 @@ pub fn parse_test_get_no_input_no_payload_response(
   body: BitArray,
 ) -> Result(TestNoPayloadInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_test_get_no_input_no_payload_output("{}")
-        _ -> decode_test_get_no_input_no_payload_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_test_get_no_input_no_payload_output("{}")
+      _ -> decode_test_get_no_input_no_payload_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_test_get_no_payload_input(
-  input: TestNoPayloadInputOutput,
-) -> String {
+
+pub fn encode_test_get_no_payload_input(input: TestNoPayloadInputOutput) -> String {
   json.to_string(encode_test_no_payload_input_output_struct(input))
 }
 
-pub fn decode_test_get_no_payload_input(
-  body: String,
-) -> Result(TestNoPayloadInputOutput, String) {
+pub fn decode_test_get_no_payload_input(body: String) -> Result(TestNoPayloadInputOutput, String) {
   case json.parse(body, decode_test_no_payload_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_test_get_no_payload_output(
-  body: String,
-) -> Result(TestNoPayloadInputOutput, String) {
+pub fn decode_test_get_no_payload_output(body: String) -> Result(TestNoPayloadInputOutput, String) {
   case json.parse(body, decode_test_no_payload_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_test_get_no_payload_body(
-  _input: TestNoPayloadInputOutput,
-) -> json.Json {
+pub fn encode_test_get_no_payload_body(_input: TestNoPayloadInputOutput) -> json.Json {
   json.object([])
 }
 
@@ -16330,6 +12881,10 @@ pub fn build_test_get_no_payload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("GET", path, headers, body)
 }
@@ -16340,42 +12895,34 @@ pub fn parse_test_get_no_payload_response(
   body: BitArray,
 ) -> Result(TestNoPayloadInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_test_get_no_payload_output("{}")
-        _ -> decode_test_get_no_payload_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_test_get_no_payload_output("{}")
+      _ -> decode_test_get_no_payload_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_test_payload_blob_input(
-  input: TestPayloadBlobInputOutput,
-) -> String {
+
+pub fn encode_test_payload_blob_input(input: TestPayloadBlobInputOutput) -> String {
   json.to_string(encode_test_payload_blob_input_output_struct(input))
 }
 
-pub fn decode_test_payload_blob_input(
-  body: String,
-) -> Result(TestPayloadBlobInputOutput, String) {
+pub fn decode_test_payload_blob_input(body: String) -> Result(TestPayloadBlobInputOutput, String) {
   case json.parse(body, decode_test_payload_blob_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_test_payload_blob_output(
-  body: String,
-) -> Result(TestPayloadBlobInputOutput, String) {
+pub fn decode_test_payload_blob_output(body: String) -> Result(TestPayloadBlobInputOutput, String) {
   case json.parse(body, decode_test_payload_blob_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_test_payload_blob_body(
-  _input: TestPayloadBlobInputOutput,
-) -> json.Json {
+pub fn encode_test_payload_blob_body(_input: TestPayloadBlobInputOutput) -> json.Json {
   json.object([])
 }
 
@@ -16398,6 +12945,10 @@ pub fn build_test_payload_blob_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -16408,42 +12959,34 @@ pub fn parse_test_payload_blob_response(
   body: BitArray,
 ) -> Result(TestPayloadBlobInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_test_payload_blob_output("{}")
-        _ -> decode_test_payload_blob_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_test_payload_blob_output("{}")
+      _ -> decode_test_payload_blob_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_test_payload_structure_input(
-  input: TestPayloadStructureInputOutput,
-) -> String {
+
+pub fn encode_test_payload_structure_input(input: TestPayloadStructureInputOutput) -> String {
   json.to_string(encode_test_payload_structure_input_output_struct(input))
 }
 
-pub fn decode_test_payload_structure_input(
-  body: String,
-) -> Result(TestPayloadStructureInputOutput, String) {
+pub fn decode_test_payload_structure_input(body: String) -> Result(TestPayloadStructureInputOutput, String) {
   case json.parse(body, decode_test_payload_structure_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_test_payload_structure_output(
-  body: String,
-) -> Result(TestPayloadStructureInputOutput, String) {
+pub fn decode_test_payload_structure_output(body: String) -> Result(TestPayloadStructureInputOutput, String) {
   case json.parse(body, decode_test_payload_structure_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_test_payload_structure_body(
-  _input: TestPayloadStructureInputOutput,
-) -> json.Json {
+pub fn encode_test_payload_structure_body(_input: TestPayloadStructureInputOutput) -> json.Json {
   json.object([])
 }
 
@@ -16458,14 +13001,17 @@ pub fn build_test_payload_structure_request(
     option.None -> headers
   }
   let body = case input.payload_config {
-    option.Some(v) ->
-      bit_array.from_string(json.to_string(encode_payload_config_struct(v)))
+    option.Some(v) -> bit_array.from_string(json.to_string(encode_payload_config_struct(v)))
     option.None -> <<>>
   }
   let content_type = "application/json"
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -16477,58 +13023,46 @@ pub fn parse_test_payload_structure_response(
   body: BitArray,
 ) -> Result(TestPayloadStructureInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_test_payload_structure_output("{}")
-        _ -> decode_test_payload_structure_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_test_payload_structure_output("{}")
+      _ -> decode_test_payload_structure_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type TestPostNoInputNoPayloadInput {
   TestPostNoInputNoPayloadInput
 }
 
-pub fn encode_test_post_no_input_no_payload_input_struct(
-  _v: TestPostNoInputNoPayloadInput,
-) -> json.Json {
+pub fn encode_test_post_no_input_no_payload_input_struct(_v: TestPostNoInputNoPayloadInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_test_post_no_input_no_payload_input_struct() -> decode.Decoder(
-  TestPostNoInputNoPayloadInput,
-) {
+pub fn decode_test_post_no_input_no_payload_input_struct() -> decode.Decoder(TestPostNoInputNoPayloadInput) {
   decode.success(TestPostNoInputNoPayloadInput)
 }
 
-pub fn encode_test_post_no_input_no_payload_input(
-  input: TestPostNoInputNoPayloadInput,
-) -> String {
+pub fn encode_test_post_no_input_no_payload_input(input: TestPostNoInputNoPayloadInput) -> String {
   json.to_string(encode_test_post_no_input_no_payload_input_struct(input))
 }
 
-pub fn decode_test_post_no_input_no_payload_input(
-  body: String,
-) -> Result(TestPostNoInputNoPayloadInput, String) {
+pub fn decode_test_post_no_input_no_payload_input(body: String) -> Result(TestPostNoInputNoPayloadInput, String) {
   case json.parse(body, decode_test_post_no_input_no_payload_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_test_post_no_input_no_payload_output(
-  body: String,
-) -> Result(TestNoPayloadInputOutput, String) {
+pub fn decode_test_post_no_input_no_payload_output(body: String) -> Result(TestNoPayloadInputOutput, String) {
   case json.parse(body, decode_test_no_payload_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_test_post_no_input_no_payload_body(
-  _input: TestPostNoInputNoPayloadInput,
-) -> json.Json {
+pub fn encode_test_post_no_input_no_payload_body(_input: TestPostNoInputNoPayloadInput) -> json.Json {
   json.object([])
 }
 
@@ -16544,6 +13078,10 @@ pub fn build_test_post_no_input_no_payload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -16554,42 +13092,34 @@ pub fn parse_test_post_no_input_no_payload_response(
   body: BitArray,
 ) -> Result(TestNoPayloadInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_test_post_no_input_no_payload_output("{}")
-        _ -> decode_test_post_no_input_no_payload_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_test_post_no_input_no_payload_output("{}")
+      _ -> decode_test_post_no_input_no_payload_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_test_post_no_payload_input(
-  input: TestNoPayloadInputOutput,
-) -> String {
+
+pub fn encode_test_post_no_payload_input(input: TestNoPayloadInputOutput) -> String {
   json.to_string(encode_test_no_payload_input_output_struct(input))
 }
 
-pub fn decode_test_post_no_payload_input(
-  body: String,
-) -> Result(TestNoPayloadInputOutput, String) {
+pub fn decode_test_post_no_payload_input(body: String) -> Result(TestNoPayloadInputOutput, String) {
   case json.parse(body, decode_test_no_payload_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_test_post_no_payload_output(
-  body: String,
-) -> Result(TestNoPayloadInputOutput, String) {
+pub fn decode_test_post_no_payload_output(body: String) -> Result(TestNoPayloadInputOutput, String) {
   case json.parse(body, decode_test_no_payload_input_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_test_post_no_payload_body(
-  _input: TestNoPayloadInputOutput,
-) -> json.Json {
+pub fn encode_test_post_no_payload_body(_input: TestNoPayloadInputOutput) -> json.Json {
   json.object([])
 }
 
@@ -16609,6 +13139,10 @@ pub fn build_test_post_no_payload_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -16619,42 +13153,34 @@ pub fn parse_test_post_no_payload_response(
   body: BitArray,
 ) -> Result(TestNoPayloadInputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_test_post_no_payload_output("{}")
-        _ -> decode_test_post_no_payload_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_test_post_no_payload_output("{}")
+      _ -> decode_test_post_no_payload_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn encode_timestamp_format_headers_input(
-  input: TimestampFormatHeadersIO,
-) -> String {
+
+pub fn encode_timestamp_format_headers_input(input: TimestampFormatHeadersIO) -> String {
   json.to_string(encode_timestamp_format_headers_io_struct(input))
 }
 
-pub fn decode_timestamp_format_headers_input(
-  body: String,
-) -> Result(TimestampFormatHeadersIO, String) {
+pub fn decode_timestamp_format_headers_input(body: String) -> Result(TimestampFormatHeadersIO, String) {
   case json.parse(body, decode_timestamp_format_headers_io_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_timestamp_format_headers_output(
-  body: String,
-) -> Result(TimestampFormatHeadersIO, String) {
+pub fn decode_timestamp_format_headers_output(body: String) -> Result(TimestampFormatHeadersIO, String) {
   case json.parse(body, decode_timestamp_format_headers_io_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_timestamp_format_headers_body(
-  _input: TimestampFormatHeadersIO,
-) -> json.Json {
+pub fn encode_timestamp_format_headers_body(_input: TimestampFormatHeadersIO) -> json.Json {
   json.object([])
 }
 
@@ -16665,66 +13191,31 @@ pub fn build_timestamp_format_headers_request(
   let query = ""
   let headers = dict.new()
   let headers = case input.default_format {
-    option.Some(v) ->
-      rest.maybe_set_header(
-        headers,
-        "X-defaultFormat",
-        rest.timestamp_to_header(v),
-      )
+    option.Some(v) -> rest.maybe_set_header(headers, "X-defaultFormat", rest.timestamp_to_header(v))
     option.None -> headers
   }
   let headers = case input.member_date_time {
-    option.Some(v) ->
-      rest.maybe_set_header(
-        headers,
-        "X-memberDateTime",
-        rest.timestamp_to_header(v),
-      )
+    option.Some(v) -> rest.maybe_set_header(headers, "X-memberDateTime", rest.timestamp_to_header(v))
     option.None -> headers
   }
   let headers = case input.member_epoch_seconds {
-    option.Some(v) ->
-      rest.maybe_set_header(
-        headers,
-        "X-memberEpochSeconds",
-        rest.timestamp_to_header(v),
-      )
+    option.Some(v) -> rest.maybe_set_header(headers, "X-memberEpochSeconds", rest.timestamp_to_header(v))
     option.None -> headers
   }
   let headers = case input.member_http_date {
-    option.Some(v) ->
-      rest.maybe_set_header(
-        headers,
-        "X-memberHttpDate",
-        rest.timestamp_to_header(v),
-      )
+    option.Some(v) -> rest.maybe_set_header(headers, "X-memberHttpDate", rest.timestamp_to_header(v))
     option.None -> headers
   }
   let headers = case input.target_date_time {
-    option.Some(v) ->
-      rest.maybe_set_header(
-        headers,
-        "X-targetDateTime",
-        rest.timestamp_to_header(v),
-      )
+    option.Some(v) -> rest.maybe_set_header(headers, "X-targetDateTime", rest.timestamp_to_header(v))
     option.None -> headers
   }
   let headers = case input.target_epoch_seconds {
-    option.Some(v) ->
-      rest.maybe_set_header(
-        headers,
-        "X-targetEpochSeconds",
-        rest.timestamp_to_header(v),
-      )
+    option.Some(v) -> rest.maybe_set_header(headers, "X-targetEpochSeconds", rest.timestamp_to_header(v))
     option.None -> headers
   }
   let headers = case input.target_http_date {
-    option.Some(v) ->
-      rest.maybe_set_header(
-        headers,
-        "X-targetHttpDate",
-        rest.timestamp_to_header(v),
-      )
+    option.Some(v) -> rest.maybe_set_header(headers, "X-targetHttpDate", rest.timestamp_to_header(v))
     option.None -> headers
   }
   let body = <<>>
@@ -16732,6 +13223,10 @@ pub fn build_timestamp_format_headers_request(
   let headers = case content_type {
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
+  }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
   }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
@@ -16743,28 +13238,24 @@ pub fn parse_timestamp_format_headers_response(
   body: BitArray,
 ) -> Result(TimestampFormatHeadersIO, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_timestamp_format_headers_output("{}")
-        _ -> decode_timestamp_format_headers_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_timestamp_format_headers_output("{}")
+      _ -> decode_timestamp_format_headers_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
+
 
 pub type UnitInputAndOutputInput {
   UnitInputAndOutputInput
 }
 
-pub fn encode_unit_input_and_output_input_struct(
-  _v: UnitInputAndOutputInput,
-) -> json.Json {
+pub fn encode_unit_input_and_output_input_struct(_v: UnitInputAndOutputInput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_unit_input_and_output_input_struct() -> decode.Decoder(
-  UnitInputAndOutputInput,
-) {
+pub fn decode_unit_input_and_output_input_struct() -> decode.Decoder(UnitInputAndOutputInput) {
   decode.success(UnitInputAndOutputInput)
 }
 
@@ -16772,45 +13263,33 @@ pub type UnitInputAndOutputOutput {
   UnitInputAndOutputOutput
 }
 
-pub fn encode_unit_input_and_output_output_struct(
-  _v: UnitInputAndOutputOutput,
-) -> json.Json {
+pub fn encode_unit_input_and_output_output_struct(_v: UnitInputAndOutputOutput) -> json.Json {
   json.object([])
 }
 
-pub fn decode_unit_input_and_output_output_struct() -> decode.Decoder(
-  UnitInputAndOutputOutput,
-) {
+pub fn decode_unit_input_and_output_output_struct() -> decode.Decoder(UnitInputAndOutputOutput) {
   decode.success(UnitInputAndOutputOutput)
 }
 
-pub fn encode_unit_input_and_output_input(
-  input: UnitInputAndOutputInput,
-) -> String {
+pub fn encode_unit_input_and_output_input(input: UnitInputAndOutputInput) -> String {
   json.to_string(encode_unit_input_and_output_input_struct(input))
 }
 
-pub fn decode_unit_input_and_output_input(
-  body: String,
-) -> Result(UnitInputAndOutputInput, String) {
+pub fn decode_unit_input_and_output_input(body: String) -> Result(UnitInputAndOutputInput, String) {
   case json.parse(body, decode_unit_input_and_output_input_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn decode_unit_input_and_output_output(
-  body: String,
-) -> Result(UnitInputAndOutputOutput, String) {
+pub fn decode_unit_input_and_output_output(body: String) -> Result(UnitInputAndOutputOutput, String) {
   case json.parse(body, decode_unit_input_and_output_output_struct()) {
     Ok(v) -> Ok(v)
     Error(_) -> Error("decode failed")
   }
 }
 
-pub fn encode_unit_input_and_output_body(
-  _input: UnitInputAndOutputInput,
-) -> json.Json {
+pub fn encode_unit_input_and_output_body(_input: UnitInputAndOutputInput) -> json.Json {
   json.object([])
 }
 
@@ -16826,6 +13305,10 @@ pub fn build_unit_input_and_output_request(
     "" -> headers
     _ -> dict.insert(headers, "Content-Type", content_type)
   }
+  let headers = case content_type {
+    "" -> headers
+    _ -> dict.insert(headers, "Content-Length", int.to_string(bit_array.byte_size(body)))
+  }
   let path = rest.build_path(path, query)
   #("POST", path, headers, body)
 }
@@ -16836,1255 +13319,2973 @@ pub fn parse_unit_input_and_output_response(
   body: BitArray,
 ) -> Result(UnitInputAndOutputOutput, String) {
   case bit_array.to_string(body) {
-    Ok(text) ->
-      case text {
-        "" -> decode_unit_input_and_output_output("{}")
-        _ -> decode_unit_input_and_output_output(text)
-      }
+    Ok(text) -> case text {
+      "" -> decode_unit_input_and_output_output("{}")
+      _ -> decode_unit_input_and_output_output(text)
+    }
     Error(_) -> Error("non-utf8 body")
   }
 }
 
-pub fn all_query_string_types(
-  client: Client,
-  input: AllQueryStringTypesInput,
-) -> Result(AllQueryStringTypesOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_all_query_string_types_request(input),
-    parse_all_query_string_types_response,
-  )
-}
-
-pub fn constant_and_variable_query_string(
-  client: Client,
-  input: ConstantAndVariableQueryStringInput,
-) -> Result(ConstantAndVariableQueryStringOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_constant_and_variable_query_string_request(input),
-    parse_constant_and_variable_query_string_response,
-  )
-}
-
-pub fn constant_query_string(
-  client: Client,
-  input: ConstantQueryStringInput,
-) -> Result(ConstantQueryStringOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_constant_query_string_request(input),
-    parse_constant_query_string_response,
-  )
-}
-
-pub fn content_type_parameters(
-  client: Client,
-  input: ContentTypeParametersInput,
-) -> Result(ContentTypeParametersOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_content_type_parameters_request(input),
-    parse_content_type_parameters_response,
-  )
-}
-
-pub fn datetime_offsets(
-  client: Client,
-  input: DatetimeOffsetsInput,
-) -> Result(DatetimeOffsetsOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_datetime_offsets_request(input),
-    parse_datetime_offsets_response,
-  )
-}
-
-pub fn document_type(
-  client: Client,
-  input: DocumentTypeInputOutput,
-) -> Result(DocumentTypeInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_document_type_request(input),
-    parse_document_type_response,
-  )
-}
-
-pub fn document_type_as_map_value(
-  client: Client,
-  input: DocumentTypeAsMapValueInputOutput,
-) -> Result(DocumentTypeAsMapValueInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_document_type_as_map_value_request(input),
-    parse_document_type_as_map_value_response,
-  )
-}
-
-pub fn document_type_as_payload(
-  client: Client,
-  input: DocumentTypeAsPayloadInputOutput,
-) -> Result(DocumentTypeAsPayloadInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_document_type_as_payload_request(input),
-    parse_document_type_as_payload_response,
-  )
-}
-
-pub fn duplex_stream(
-  client: Client,
-  input: DuplexStreamInput,
-) -> Result(DuplexStreamOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_duplex_stream_request(input),
-    parse_duplex_stream_response,
-  )
-}
-
-pub fn duplex_stream_with_distinct_streams(
-  client: Client,
-  input: DuplexStreamWithDistinctStreamsInput,
-) -> Result(DuplexStreamWithDistinctStreamsOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_duplex_stream_with_distinct_streams_request(input),
-    parse_duplex_stream_with_distinct_streams_response,
-  )
-}
-
-pub fn duplex_stream_with_initial_messages(
-  client: Client,
-  input: DuplexStreamWithInitialMessagesInput,
-) -> Result(DuplexStreamWithInitialMessagesOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_duplex_stream_with_initial_messages_request(input),
-    parse_duplex_stream_with_initial_messages_response,
-  )
-}
-
-pub fn empty_input_and_empty_output(
-  client: Client,
-  input: EmptyInputAndEmptyOutputInput,
-) -> Result(EmptyInputAndEmptyOutputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_empty_input_and_empty_output_request(input),
-    parse_empty_input_and_empty_output_response,
-  )
-}
-
-pub fn endpoint_operation(
-  client: Client,
-  input: EndpointOperationInput,
-) -> Result(EndpointOperationOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_endpoint_operation_request(input),
-    parse_endpoint_operation_response,
-  )
-}
-
-pub fn endpoint_with_host_label_operation(
-  client: Client,
-  input: HostLabelInput,
-) -> Result(EndpointWithHostLabelOperationOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_endpoint_with_host_label_operation_request(input),
-    parse_endpoint_with_host_label_operation_response,
-  )
-}
-
-pub fn fractional_seconds(
-  client: Client,
-  input: FractionalSecondsInput,
-) -> Result(FractionalSecondsOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_fractional_seconds_request(input),
-    parse_fractional_seconds_response,
-  )
-}
-
-pub fn greeting_with_errors(
-  client: Client,
-  input: GreetingWithErrorsInput,
-) -> Result(GreetingWithErrorsOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_greeting_with_errors_request(input),
-    parse_greeting_with_errors_response,
-  )
-}
-
-pub fn host_with_path_operation(
-  client: Client,
-  input: HostWithPathOperationInput,
-) -> Result(HostWithPathOperationOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_host_with_path_operation_request(input),
-    parse_host_with_path_operation_response,
-  )
-}
-
-pub fn http_empty_prefix_headers(
-  client: Client,
-  input: HttpEmptyPrefixHeadersInput,
-) -> Result(HttpEmptyPrefixHeadersOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_empty_prefix_headers_request(input),
-    parse_http_empty_prefix_headers_response,
-  )
-}
-
-pub fn http_enum_payload(
-  client: Client,
-  input: EnumPayloadInput,
-) -> Result(EnumPayloadInput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_enum_payload_request(input),
-    parse_http_enum_payload_response,
-  )
-}
-
-pub fn http_payload_traits(
-  client: Client,
-  input: HttpPayloadTraitsInputOutput,
-) -> Result(HttpPayloadTraitsInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_payload_traits_request(input),
-    parse_http_payload_traits_response,
-  )
-}
-
-pub fn http_payload_traits_with_media_type(
-  client: Client,
-  input: HttpPayloadTraitsWithMediaTypeInputOutput,
-) -> Result(
-  HttpPayloadTraitsWithMediaTypeInputOutput,
-  awsjson_client.ClientError,
-) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_payload_traits_with_media_type_request(input),
-    parse_http_payload_traits_with_media_type_response,
-  )
-}
-
-pub fn http_payload_with_structure(
-  client: Client,
-  input: HttpPayloadWithStructureInputOutput,
-) -> Result(HttpPayloadWithStructureInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_payload_with_structure_request(input),
-    parse_http_payload_with_structure_response,
-  )
-}
-
-pub fn http_payload_with_union(
-  client: Client,
-  input: HttpPayloadWithUnionInputOutput,
-) -> Result(HttpPayloadWithUnionInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_payload_with_union_request(input),
-    parse_http_payload_with_union_response,
-  )
-}
-
-pub fn http_prefix_headers(
-  client: Client,
-  input: HttpPrefixHeadersInput,
-) -> Result(HttpPrefixHeadersOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_prefix_headers_request(input),
-    parse_http_prefix_headers_response,
-  )
-}
-
-pub fn http_prefix_headers_in_response(
-  client: Client,
-  input: HttpPrefixHeadersInResponseInput,
-) -> Result(HttpPrefixHeadersInResponseOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_prefix_headers_in_response_request(input),
-    parse_http_prefix_headers_in_response_response,
-  )
-}
-
-pub fn http_query_params_only_operation(
-  client: Client,
-  input: HttpQueryParamsOnlyInput,
-) -> Result(HttpQueryParamsOnlyOperationOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_query_params_only_operation_request(input),
-    parse_http_query_params_only_operation_response,
-  )
-}
-
-pub fn http_request_with_float_labels(
-  client: Client,
-  input: HttpRequestWithFloatLabelsInput,
-) -> Result(HttpRequestWithFloatLabelsOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_request_with_float_labels_request(input),
-    parse_http_request_with_float_labels_response,
-  )
-}
-
-pub fn http_request_with_greedy_label_in_path(
-  client: Client,
-  input: HttpRequestWithGreedyLabelInPathInput,
-) -> Result(HttpRequestWithGreedyLabelInPathOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_request_with_greedy_label_in_path_request(input),
-    parse_http_request_with_greedy_label_in_path_response,
-  )
-}
-
-pub fn http_request_with_labels(
-  client: Client,
-  input: HttpRequestWithLabelsInput,
-) -> Result(HttpRequestWithLabelsOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_request_with_labels_request(input),
-    parse_http_request_with_labels_response,
-  )
-}
-
-pub fn http_request_with_labels_and_timestamp_format(
-  client: Client,
-  input: HttpRequestWithLabelsAndTimestampFormatInput,
-) -> Result(
-  HttpRequestWithLabelsAndTimestampFormatOutput,
-  awsjson_client.ClientError,
-) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_request_with_labels_and_timestamp_format_request(input),
-    parse_http_request_with_labels_and_timestamp_format_response,
-  )
-}
-
-pub fn http_request_with_regex_literal(
-  client: Client,
-  input: HttpRequestWithRegexLiteralInput,
-) -> Result(HttpRequestWithRegexLiteralOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_request_with_regex_literal_request(input),
-    parse_http_request_with_regex_literal_response,
-  )
-}
-
-pub fn http_response_code(
-  client: Client,
-  input: HttpResponseCodeInput,
-) -> Result(HttpResponseCodeOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_response_code_request(input),
-    parse_http_response_code_response,
-  )
-}
-
-pub fn http_string_payload(
-  client: Client,
-  input: StringPayloadInput,
-) -> Result(StringPayloadInput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_http_string_payload_request(input),
-    parse_http_string_payload_response,
-  )
-}
-
-pub fn ignore_query_params_in_response(
-  client: Client,
-  input: IgnoreQueryParamsInResponseInput,
-) -> Result(IgnoreQueryParamsInResponseOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_ignore_query_params_in_response_request(input),
-    parse_ignore_query_params_in_response_response,
-  )
-}
-
-pub fn input_and_output_with_headers(
-  client: Client,
-  input: InputAndOutputWithHeadersIO,
-) -> Result(InputAndOutputWithHeadersIO, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_input_and_output_with_headers_request(input),
-    parse_input_and_output_with_headers_response,
-  )
-}
-
-pub fn input_stream(
-  client: Client,
-  input: InputStreamInput,
-) -> Result(InputStreamOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_input_stream_request(input),
-    parse_input_stream_response,
-  )
-}
-
-pub fn input_stream_with_initial_request(
-  client: Client,
-  input: InputStreamWithInitialRequestInput,
-) -> Result(InputStreamWithInitialRequestOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_input_stream_with_initial_request_request(input),
-    parse_input_stream_with_initial_request_response,
-  )
-}
-
-pub fn json_blobs(
-  client: Client,
-  input: JsonBlobsInputOutput,
-) -> Result(JsonBlobsInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_json_blobs_request(input),
-    parse_json_blobs_response,
-  )
-}
-
-pub fn json_enums(
-  client: Client,
-  input: JsonEnumsInputOutput,
-) -> Result(JsonEnumsInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_json_enums_request(input),
-    parse_json_enums_response,
-  )
-}
-
-pub fn json_int_enums(
-  client: Client,
-  input: JsonIntEnumsInputOutput,
-) -> Result(JsonIntEnumsInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_json_int_enums_request(input),
-    parse_json_int_enums_response,
-  )
-}
-
-pub fn json_lists(
-  client: Client,
-  input: JsonListsInputOutput,
-) -> Result(JsonListsInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_json_lists_request(input),
-    parse_json_lists_response,
-  )
-}
-
-pub fn json_maps(
-  client: Client,
-  input: JsonMapsInputOutput,
-) -> Result(JsonMapsInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_json_maps_request(input),
-    parse_json_maps_response,
-  )
-}
-
-pub fn json_timestamps(
-  client: Client,
-  input: JsonTimestampsInputOutput,
-) -> Result(JsonTimestampsInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_json_timestamps_request(input),
-    parse_json_timestamps_response,
-  )
-}
-
-pub fn json_unions(
-  client: Client,
-  input: UnionInputOutput,
-) -> Result(UnionInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_json_unions_request(input),
-    parse_json_unions_response,
-  )
-}
-
-pub fn malformed_accept_with_body(
-  client: Client,
-  input: MalformedAcceptWithBodyInput,
-) -> Result(GreetingStruct, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_accept_with_body_request(input),
-    parse_malformed_accept_with_body_response,
-  )
-}
-
-pub fn malformed_accept_with_generic_string(
-  client: Client,
-  input: MalformedAcceptWithGenericStringInput,
-) -> Result(MalformedAcceptWithGenericStringOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_accept_with_generic_string_request(input),
-    parse_malformed_accept_with_generic_string_response,
-  )
-}
-
-pub fn malformed_accept_with_payload(
-  client: Client,
-  input: MalformedAcceptWithPayloadInput,
-) -> Result(MalformedAcceptWithPayloadOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_accept_with_payload_request(input),
-    parse_malformed_accept_with_payload_response,
-  )
-}
-
-pub fn malformed_blob(
-  client: Client,
-  input: MalformedBlobInput,
-) -> Result(MalformedBlobOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_blob_request(input),
-    parse_malformed_blob_response,
-  )
-}
-
-pub fn malformed_boolean(
-  client: Client,
-  input: MalformedBooleanInput,
-) -> Result(MalformedBooleanOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_boolean_request(input),
-    parse_malformed_boolean_response,
-  )
-}
-
-pub fn malformed_byte(
-  client: Client,
-  input: MalformedByteInput,
-) -> Result(MalformedByteOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_byte_request(input),
-    parse_malformed_byte_response,
-  )
-}
-
-pub fn malformed_content_type_with_body(
-  client: Client,
-  input: GreetingStruct,
-) -> Result(MalformedContentTypeWithBodyOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_content_type_with_body_request(input),
-    parse_malformed_content_type_with_body_response,
-  )
-}
-
-pub fn malformed_content_type_with_generic_string(
-  client: Client,
-  input: MalformedContentTypeWithGenericStringInput,
-) -> Result(
-  MalformedContentTypeWithGenericStringOutput,
-  awsjson_client.ClientError,
-) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_content_type_with_generic_string_request(input),
-    parse_malformed_content_type_with_generic_string_response,
-  )
-}
-
-pub fn malformed_content_type_without_body(
-  client: Client,
-  input: MalformedContentTypeWithoutBodyInput,
-) -> Result(MalformedContentTypeWithoutBodyOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_content_type_without_body_request(input),
-    parse_malformed_content_type_without_body_response,
-  )
-}
-
-pub fn malformed_content_type_without_body_empty_input(
-  client: Client,
-  input: MalformedContentTypeWithoutBodyEmptyInputInput,
-) -> Result(
-  MalformedContentTypeWithoutBodyEmptyInputOutput,
-  awsjson_client.ClientError,
-) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_content_type_without_body_empty_input_request(input),
-    parse_malformed_content_type_without_body_empty_input_response,
-  )
-}
-
-pub fn malformed_content_type_with_payload(
-  client: Client,
-  input: MalformedContentTypeWithPayloadInput,
-) -> Result(MalformedContentTypeWithPayloadOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_content_type_with_payload_request(input),
-    parse_malformed_content_type_with_payload_response,
-  )
-}
-
-pub fn malformed_double(
-  client: Client,
-  input: MalformedDoubleInput,
-) -> Result(MalformedDoubleOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_double_request(input),
-    parse_malformed_double_response,
-  )
-}
-
-pub fn malformed_float(
-  client: Client,
-  input: MalformedFloatInput,
-) -> Result(MalformedFloatOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_float_request(input),
-    parse_malformed_float_response,
-  )
-}
-
-pub fn malformed_integer(
-  client: Client,
-  input: MalformedIntegerInput,
-) -> Result(MalformedIntegerOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_integer_request(input),
-    parse_malformed_integer_response,
-  )
-}
-
-pub fn malformed_list(
-  client: Client,
-  input: MalformedListInput,
-) -> Result(MalformedListOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_list_request(input),
-    parse_malformed_list_response,
-  )
-}
-
-pub fn malformed_long(
-  client: Client,
-  input: MalformedLongInput,
-) -> Result(MalformedLongOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_long_request(input),
-    parse_malformed_long_response,
-  )
-}
-
-pub fn malformed_map(
-  client: Client,
-  input: MalformedMapInput,
-) -> Result(MalformedMapOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_map_request(input),
-    parse_malformed_map_response,
-  )
-}
-
-pub fn malformed_request_body(
-  client: Client,
-  input: MalformedRequestBodyInput,
-) -> Result(MalformedRequestBodyOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_request_body_request(input),
-    parse_malformed_request_body_response,
-  )
-}
-
-pub fn malformed_short(
-  client: Client,
-  input: MalformedShortInput,
-) -> Result(MalformedShortOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_short_request(input),
-    parse_malformed_short_response,
-  )
-}
-
-pub fn malformed_string(
-  client: Client,
-  input: MalformedStringInput,
-) -> Result(MalformedStringOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_string_request(input),
-    parse_malformed_string_response,
-  )
-}
-
-pub fn malformed_timestamp_body_date_time(
-  client: Client,
-  input: MalformedTimestampBodyDateTimeInput,
-) -> Result(MalformedTimestampBodyDateTimeOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_timestamp_body_date_time_request(input),
-    parse_malformed_timestamp_body_date_time_response,
-  )
-}
-
-pub fn malformed_timestamp_body_default(
-  client: Client,
-  input: MalformedTimestampBodyDefaultInput,
-) -> Result(MalformedTimestampBodyDefaultOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_timestamp_body_default_request(input),
-    parse_malformed_timestamp_body_default_response,
-  )
-}
-
-pub fn malformed_timestamp_body_http_date(
-  client: Client,
-  input: MalformedTimestampBodyHttpDateInput,
-) -> Result(MalformedTimestampBodyHttpDateOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_timestamp_body_http_date_request(input),
-    parse_malformed_timestamp_body_http_date_response,
-  )
-}
-
-pub fn malformed_timestamp_header_date_time(
-  client: Client,
-  input: MalformedTimestampHeaderDateTimeInput,
-) -> Result(MalformedTimestampHeaderDateTimeOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_timestamp_header_date_time_request(input),
-    parse_malformed_timestamp_header_date_time_response,
-  )
-}
-
-pub fn malformed_timestamp_header_default(
-  client: Client,
-  input: MalformedTimestampHeaderDefaultInput,
-) -> Result(MalformedTimestampHeaderDefaultOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_timestamp_header_default_request(input),
-    parse_malformed_timestamp_header_default_response,
-  )
-}
-
-pub fn malformed_timestamp_header_epoch(
-  client: Client,
-  input: MalformedTimestampHeaderEpochInput,
-) -> Result(MalformedTimestampHeaderEpochOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_timestamp_header_epoch_request(input),
-    parse_malformed_timestamp_header_epoch_response,
-  )
-}
-
-pub fn malformed_timestamp_path_default(
-  client: Client,
-  input: MalformedTimestampPathDefaultInput,
-) -> Result(MalformedTimestampPathDefaultOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_timestamp_path_default_request(input),
-    parse_malformed_timestamp_path_default_response,
-  )
-}
-
-pub fn malformed_timestamp_path_epoch(
-  client: Client,
-  input: MalformedTimestampPathEpochInput,
-) -> Result(MalformedTimestampPathEpochOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_timestamp_path_epoch_request(input),
-    parse_malformed_timestamp_path_epoch_response,
-  )
-}
-
-pub fn malformed_timestamp_path_http_date(
-  client: Client,
-  input: MalformedTimestampPathHttpDateInput,
-) -> Result(MalformedTimestampPathHttpDateOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_timestamp_path_http_date_request(input),
-    parse_malformed_timestamp_path_http_date_response,
-  )
-}
-
-pub fn malformed_timestamp_query_default(
-  client: Client,
-  input: MalformedTimestampQueryDefaultInput,
-) -> Result(MalformedTimestampQueryDefaultOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_timestamp_query_default_request(input),
-    parse_malformed_timestamp_query_default_response,
-  )
-}
-
-pub fn malformed_timestamp_query_epoch(
-  client: Client,
-  input: MalformedTimestampQueryEpochInput,
-) -> Result(MalformedTimestampQueryEpochOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_timestamp_query_epoch_request(input),
-    parse_malformed_timestamp_query_epoch_response,
-  )
-}
-
-pub fn malformed_timestamp_query_http_date(
-  client: Client,
-  input: MalformedTimestampQueryHttpDateInput,
-) -> Result(MalformedTimestampQueryHttpDateOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_timestamp_query_http_date_request(input),
-    parse_malformed_timestamp_query_http_date_response,
-  )
-}
-
-pub fn malformed_union(
-  client: Client,
-  input: MalformedUnionInput,
-) -> Result(MalformedUnionOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_malformed_union_request(input),
-    parse_malformed_union_response,
-  )
-}
-
-pub fn media_type_header(
-  client: Client,
-  input: MediaTypeHeaderInput,
-) -> Result(MediaTypeHeaderOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_media_type_header_request(input),
-    parse_media_type_header_response,
-  )
-}
-
-pub fn no_input_and_no_output(
-  client: Client,
-  input: NoInputAndNoOutputInput,
-) -> Result(NoInputAndNoOutputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_no_input_and_no_output_request(input),
-    parse_no_input_and_no_output_response,
-  )
-}
-
-pub fn no_input_and_output(
-  client: Client,
-  input: NoInputAndOutputInput,
-) -> Result(NoInputAndOutputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_no_input_and_output_request(input),
-    parse_no_input_and_output_response,
-  )
-}
-
-pub fn null_and_empty_headers_client(
-  client: Client,
-  input: NullAndEmptyHeadersIO,
-) -> Result(NullAndEmptyHeadersIO, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_null_and_empty_headers_client_request(input),
-    parse_null_and_empty_headers_client_response,
-  )
-}
-
-pub fn null_and_empty_headers_server(
-  client: Client,
-  input: NullAndEmptyHeadersIO,
-) -> Result(NullAndEmptyHeadersIO, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_null_and_empty_headers_server_request(input),
-    parse_null_and_empty_headers_server_response,
-  )
-}
-
-pub fn omits_null_serializes_empty_string(
-  client: Client,
-  input: OmitsNullSerializesEmptyStringInput,
-) -> Result(OmitsNullSerializesEmptyStringOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_omits_null_serializes_empty_string_request(input),
-    parse_omits_null_serializes_empty_string_response,
-  )
-}
-
-pub fn omits_serializing_empty_lists(
-  client: Client,
-  input: OmitsSerializingEmptyListsInput,
-) -> Result(OmitsSerializingEmptyListsOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_omits_serializing_empty_lists_request(input),
-    parse_omits_serializing_empty_lists_response,
-  )
-}
-
-pub fn operation_with_defaults(
-  client: Client,
-  input: OperationWithDefaultsInput,
-) -> Result(OperationWithDefaultsOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_operation_with_defaults_request(input),
-    parse_operation_with_defaults_response,
-  )
-}
-
-pub fn operation_with_nested_structure(
-  client: Client,
-  input: OperationWithNestedStructureInput,
-) -> Result(OperationWithNestedStructureOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_operation_with_nested_structure_request(input),
-    parse_operation_with_nested_structure_response,
-  )
-}
-
-pub fn output_stream(
-  client: Client,
-  input: OutputStreamInput,
-) -> Result(OutputStreamOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_output_stream_request(input),
-    parse_output_stream_response,
-  )
-}
-
-pub fn output_stream_with_initial_response(
-  client: Client,
-  input: OutputStreamWithInitialResponseInput,
-) -> Result(OutputStreamWithInitialResponseOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_output_stream_with_initial_response_request(input),
-    parse_output_stream_with_initial_response_response,
-  )
-}
-
-pub fn post_player_action(
-  client: Client,
-  input: PostPlayerActionInput,
-) -> Result(PostPlayerActionOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_post_player_action_request(input),
-    parse_post_player_action_response,
-  )
-}
-
-pub fn post_union_with_json_name(
-  client: Client,
-  input: PostUnionWithJsonNameInput,
-) -> Result(PostUnionWithJsonNameOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_post_union_with_json_name_request(input),
-    parse_post_union_with_json_name_response,
-  )
-}
-
-pub fn put_with_content_encoding(
-  client: Client,
-  input: PutWithContentEncodingInput,
-) -> Result(PutWithContentEncodingOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_put_with_content_encoding_request(input),
-    parse_put_with_content_encoding_response,
-  )
-}
-
-pub fn query_idempotency_token_auto_fill(
-  client: Client,
-  input: QueryIdempotencyTokenAutoFillInput,
-) -> Result(QueryIdempotencyTokenAutoFillOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_query_idempotency_token_auto_fill_request(input),
-    parse_query_idempotency_token_auto_fill_response,
-  )
-}
-
-pub fn query_params_as_string_list_map(
-  client: Client,
-  input: QueryParamsAsStringListMapInput,
-) -> Result(QueryParamsAsStringListMapOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_query_params_as_string_list_map_request(input),
-    parse_query_params_as_string_list_map_response,
-  )
-}
-
-pub fn query_precedence(
-  client: Client,
-  input: QueryPrecedenceInput,
-) -> Result(QueryPrecedenceOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_query_precedence_request(input),
-    parse_query_precedence_response,
-  )
-}
-
-pub fn recursive_shapes(
-  client: Client,
-  input: RecursiveShapesInputOutput,
-) -> Result(RecursiveShapesInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_recursive_shapes_request(input),
-    parse_recursive_shapes_response,
-  )
-}
-
-pub fn response_code_http_fallback(
-  client: Client,
-  input: ResponseCodeHttpFallbackInputOutput,
-) -> Result(ResponseCodeHttpFallbackInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_response_code_http_fallback_request(input),
-    parse_response_code_http_fallback_response,
-  )
-}
-
-pub fn response_code_required(
-  client: Client,
-  input: ResponseCodeRequiredInput,
-) -> Result(ResponseCodeRequiredOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_response_code_required_request(input),
-    parse_response_code_required_response,
-  )
-}
-
-pub fn simple_scalar_properties(
-  client: Client,
-  input: SimpleScalarPropertiesInputOutput,
-) -> Result(SimpleScalarPropertiesInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_simple_scalar_properties_request(input),
-    parse_simple_scalar_properties_response,
-  )
-}
-
-pub fn sparse_json_lists(
-  client: Client,
-  input: SparseJsonListsInputOutput,
-) -> Result(SparseJsonListsInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_sparse_json_lists_request(input),
-    parse_sparse_json_lists_response,
-  )
-}
-
-pub fn sparse_json_maps(
-  client: Client,
-  input: SparseJsonMapsInputOutput,
-) -> Result(SparseJsonMapsInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_sparse_json_maps_request(input),
-    parse_sparse_json_maps_response,
-  )
-}
-
-pub fn streaming_traits(
-  client: Client,
-  input: StreamingTraitsInputOutput,
-) -> Result(StreamingTraitsInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_streaming_traits_request(input),
-    parse_streaming_traits_response,
-  )
-}
-
-pub fn streaming_traits_require_length(
-  client: Client,
-  input: StreamingTraitsRequireLengthInput,
-) -> Result(StreamingTraitsRequireLengthOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_streaming_traits_require_length_request(input),
-    parse_streaming_traits_require_length_response,
-  )
-}
-
-pub fn streaming_traits_with_media_type(
-  client: Client,
-  input: StreamingTraitsWithMediaTypeInputOutput,
-) -> Result(StreamingTraitsWithMediaTypeInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_streaming_traits_with_media_type_request(input),
-    parse_streaming_traits_with_media_type_response,
-  )
-}
-
-pub fn test_body_structure(
-  client: Client,
-  input: TestBodyStructureInputOutput,
-) -> Result(TestBodyStructureInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_test_body_structure_request(input),
-    parse_test_body_structure_response,
-  )
-}
-
-pub fn test_get_no_input_no_payload(
-  client: Client,
-  input: TestGetNoInputNoPayloadInput,
-) -> Result(TestNoPayloadInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_test_get_no_input_no_payload_request(input),
-    parse_test_get_no_input_no_payload_response,
-  )
-}
-
-pub fn test_get_no_payload(
-  client: Client,
-  input: TestNoPayloadInputOutput,
-) -> Result(TestNoPayloadInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_test_get_no_payload_request(input),
-    parse_test_get_no_payload_response,
-  )
-}
-
-pub fn test_payload_blob(
-  client: Client,
-  input: TestPayloadBlobInputOutput,
-) -> Result(TestPayloadBlobInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_test_payload_blob_request(input),
-    parse_test_payload_blob_response,
-  )
-}
-
-pub fn test_payload_structure(
-  client: Client,
-  input: TestPayloadStructureInputOutput,
-) -> Result(TestPayloadStructureInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_test_payload_structure_request(input),
-    parse_test_payload_structure_response,
-  )
-}
-
-pub fn test_post_no_input_no_payload(
-  client: Client,
-  input: TestPostNoInputNoPayloadInput,
-) -> Result(TestNoPayloadInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_test_post_no_input_no_payload_request(input),
-    parse_test_post_no_input_no_payload_response,
-  )
-}
-
-pub fn test_post_no_payload(
-  client: Client,
-  input: TestNoPayloadInputOutput,
-) -> Result(TestNoPayloadInputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_test_post_no_payload_request(input),
-    parse_test_post_no_payload_response,
-  )
-}
-
-pub fn timestamp_format_headers(
-  client: Client,
-  input: TimestampFormatHeadersIO,
-) -> Result(TimestampFormatHeadersIO, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_timestamp_format_headers_request(input),
-    parse_timestamp_format_headers_response,
-  )
-}
-
-pub fn unit_input_and_output(
-  client: Client,
-  input: UnitInputAndOutputInput,
-) -> Result(UnitInputAndOutputOutput, awsjson_client.ClientError) {
-  awsjson_client.invoke(
-    client.config,
-    build_unit_input_and_output_request(input),
-    parse_unit_input_and_output_response,
-  )
+pub type AllQueryStringTypesError {
+  AllQueryStringTypesErrorTransport(reason: String)
+  AllQueryStringTypesErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_all_query_string_types_error(err: awsjson_client.ClientError) -> AllQueryStringTypesError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> AllQueryStringTypesErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> AllQueryStringTypesErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> AllQueryStringTypesErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> AllQueryStringTypesErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> AllQueryStringTypesErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type ConstantAndVariableQueryStringError {
+  ConstantAndVariableQueryStringErrorTransport(reason: String)
+  ConstantAndVariableQueryStringErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_constant_and_variable_query_string_error(err: awsjson_client.ClientError) -> ConstantAndVariableQueryStringError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> ConstantAndVariableQueryStringErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> ConstantAndVariableQueryStringErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> ConstantAndVariableQueryStringErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> ConstantAndVariableQueryStringErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> ConstantAndVariableQueryStringErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type ConstantQueryStringError {
+  ConstantQueryStringErrorTransport(reason: String)
+  ConstantQueryStringErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_constant_query_string_error(err: awsjson_client.ClientError) -> ConstantQueryStringError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> ConstantQueryStringErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> ConstantQueryStringErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> ConstantQueryStringErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> ConstantQueryStringErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> ConstantQueryStringErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type ContentTypeParametersError {
+  ContentTypeParametersErrorTransport(reason: String)
+  ContentTypeParametersErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_content_type_parameters_error(err: awsjson_client.ClientError) -> ContentTypeParametersError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> ContentTypeParametersErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> ContentTypeParametersErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> ContentTypeParametersErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> ContentTypeParametersErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> ContentTypeParametersErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type DatetimeOffsetsError {
+  DatetimeOffsetsErrorTransport(reason: String)
+  DatetimeOffsetsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_datetime_offsets_error(err: awsjson_client.ClientError) -> DatetimeOffsetsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> DatetimeOffsetsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> DatetimeOffsetsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> DatetimeOffsetsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> DatetimeOffsetsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> DatetimeOffsetsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type DocumentTypeError {
+  DocumentTypeErrorTransport(reason: String)
+  DocumentTypeErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_document_type_error(err: awsjson_client.ClientError) -> DocumentTypeError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> DocumentTypeErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> DocumentTypeErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> DocumentTypeErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> DocumentTypeErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> DocumentTypeErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type DocumentTypeAsMapValueError {
+  DocumentTypeAsMapValueErrorTransport(reason: String)
+  DocumentTypeAsMapValueErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_document_type_as_map_value_error(err: awsjson_client.ClientError) -> DocumentTypeAsMapValueError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> DocumentTypeAsMapValueErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> DocumentTypeAsMapValueErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> DocumentTypeAsMapValueErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> DocumentTypeAsMapValueErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> DocumentTypeAsMapValueErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type DocumentTypeAsPayloadError {
+  DocumentTypeAsPayloadErrorTransport(reason: String)
+  DocumentTypeAsPayloadErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_document_type_as_payload_error(err: awsjson_client.ClientError) -> DocumentTypeAsPayloadError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> DocumentTypeAsPayloadErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> DocumentTypeAsPayloadErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> DocumentTypeAsPayloadErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> DocumentTypeAsPayloadErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> DocumentTypeAsPayloadErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type DuplexStreamError {
+  DuplexStreamErrorTransport(reason: String)
+  DuplexStreamErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_duplex_stream_error(err: awsjson_client.ClientError) -> DuplexStreamError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> DuplexStreamErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> DuplexStreamErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> DuplexStreamErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> DuplexStreamErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> DuplexStreamErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type DuplexStreamWithDistinctStreamsError {
+  DuplexStreamWithDistinctStreamsErrorTransport(reason: String)
+  DuplexStreamWithDistinctStreamsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_duplex_stream_with_distinct_streams_error(err: awsjson_client.ClientError) -> DuplexStreamWithDistinctStreamsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> DuplexStreamWithDistinctStreamsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> DuplexStreamWithDistinctStreamsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> DuplexStreamWithDistinctStreamsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> DuplexStreamWithDistinctStreamsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> DuplexStreamWithDistinctStreamsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type DuplexStreamWithInitialMessagesError {
+  DuplexStreamWithInitialMessagesErrorServiceUnavailableError(value: ServiceUnavailableError)
+  DuplexStreamWithInitialMessagesErrorTransport(reason: String)
+  DuplexStreamWithInitialMessagesErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_duplex_stream_with_initial_messages_error(err: awsjson_client.ClientError) -> DuplexStreamWithInitialMessagesError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+        case awsjson_client.error_type_matches(et, "ServiceUnavailableError") {
+          True -> case bit_array.to_string(b) {
+            Ok(text) -> case json.parse(text, decode_service_unavailable_error_struct()) {
+              Ok(v) -> DuplexStreamWithInitialMessagesErrorServiceUnavailableError(value: v)
+              Error(_) -> DuplexStreamWithInitialMessagesErrorUnknown(error_type: et, status: s, body: text)
+            }
+            Error(_) -> DuplexStreamWithInitialMessagesErrorUnknown(error_type: et, status: s, body: "")
+          }
+          False -> case bit_array.to_string(b) {
+          Ok(text) -> DuplexStreamWithInitialMessagesErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> DuplexStreamWithInitialMessagesErrorUnknown(error_type: et, status: s, body: "")
+        }
+        }
+    }
+    awsjson_client.TransportError(_) -> DuplexStreamWithInitialMessagesErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> DuplexStreamWithInitialMessagesErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> DuplexStreamWithInitialMessagesErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type EmptyInputAndEmptyOutputError {
+  EmptyInputAndEmptyOutputErrorTransport(reason: String)
+  EmptyInputAndEmptyOutputErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_empty_input_and_empty_output_error(err: awsjson_client.ClientError) -> EmptyInputAndEmptyOutputError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> EmptyInputAndEmptyOutputErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> EmptyInputAndEmptyOutputErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> EmptyInputAndEmptyOutputErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> EmptyInputAndEmptyOutputErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> EmptyInputAndEmptyOutputErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type EndpointOperationError {
+  EndpointOperationErrorTransport(reason: String)
+  EndpointOperationErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_endpoint_operation_error(err: awsjson_client.ClientError) -> EndpointOperationError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> EndpointOperationErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> EndpointOperationErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> EndpointOperationErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> EndpointOperationErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> EndpointOperationErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type EndpointWithHostLabelOperationError {
+  EndpointWithHostLabelOperationErrorTransport(reason: String)
+  EndpointWithHostLabelOperationErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_endpoint_with_host_label_operation_error(err: awsjson_client.ClientError) -> EndpointWithHostLabelOperationError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> EndpointWithHostLabelOperationErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> EndpointWithHostLabelOperationErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> EndpointWithHostLabelOperationErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> EndpointWithHostLabelOperationErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> EndpointWithHostLabelOperationErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type FractionalSecondsError {
+  FractionalSecondsErrorTransport(reason: String)
+  FractionalSecondsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_fractional_seconds_error(err: awsjson_client.ClientError) -> FractionalSecondsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> FractionalSecondsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> FractionalSecondsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> FractionalSecondsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> FractionalSecondsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> FractionalSecondsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type GreetingWithErrorsError {
+  GreetingWithErrorsErrorComplexError(value: ComplexError)
+  GreetingWithErrorsErrorFooError(value: FooError)
+  GreetingWithErrorsErrorInvalidGreeting(value: InvalidGreeting)
+  GreetingWithErrorsErrorTransport(reason: String)
+  GreetingWithErrorsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_greeting_with_errors_error(err: awsjson_client.ClientError) -> GreetingWithErrorsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+        case awsjson_client.error_type_matches(et, "ComplexError") {
+          True -> case bit_array.to_string(b) {
+            Ok(text) -> case json.parse(text, decode_complex_error_struct()) {
+              Ok(v) -> GreetingWithErrorsErrorComplexError(value: v)
+              Error(_) -> GreetingWithErrorsErrorUnknown(error_type: et, status: s, body: text)
+            }
+            Error(_) -> GreetingWithErrorsErrorUnknown(error_type: et, status: s, body: "")
+          }
+          False ->         case awsjson_client.error_type_matches(et, "FooError") {
+          True -> case bit_array.to_string(b) {
+            Ok(text) -> case json.parse(text, decode_foo_error_struct()) {
+              Ok(v) -> GreetingWithErrorsErrorFooError(value: v)
+              Error(_) -> GreetingWithErrorsErrorUnknown(error_type: et, status: s, body: text)
+            }
+            Error(_) -> GreetingWithErrorsErrorUnknown(error_type: et, status: s, body: "")
+          }
+          False ->         case awsjson_client.error_type_matches(et, "InvalidGreeting") {
+          True -> case bit_array.to_string(b) {
+            Ok(text) -> case json.parse(text, decode_invalid_greeting_struct()) {
+              Ok(v) -> GreetingWithErrorsErrorInvalidGreeting(value: v)
+              Error(_) -> GreetingWithErrorsErrorUnknown(error_type: et, status: s, body: text)
+            }
+            Error(_) -> GreetingWithErrorsErrorUnknown(error_type: et, status: s, body: "")
+          }
+          False -> case bit_array.to_string(b) {
+          Ok(text) -> GreetingWithErrorsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> GreetingWithErrorsErrorUnknown(error_type: et, status: s, body: "")
+        }
+        }
+        }
+        }
+    }
+    awsjson_client.TransportError(_) -> GreetingWithErrorsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> GreetingWithErrorsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> GreetingWithErrorsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HostWithPathOperationError {
+  HostWithPathOperationErrorTransport(reason: String)
+  HostWithPathOperationErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_host_with_path_operation_error(err: awsjson_client.ClientError) -> HostWithPathOperationError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HostWithPathOperationErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HostWithPathOperationErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HostWithPathOperationErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HostWithPathOperationErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HostWithPathOperationErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpEmptyPrefixHeadersError {
+  HttpEmptyPrefixHeadersErrorTransport(reason: String)
+  HttpEmptyPrefixHeadersErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_empty_prefix_headers_error(err: awsjson_client.ClientError) -> HttpEmptyPrefixHeadersError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpEmptyPrefixHeadersErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpEmptyPrefixHeadersErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpEmptyPrefixHeadersErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpEmptyPrefixHeadersErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpEmptyPrefixHeadersErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpEnumPayloadError {
+  HttpEnumPayloadErrorTransport(reason: String)
+  HttpEnumPayloadErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_enum_payload_error(err: awsjson_client.ClientError) -> HttpEnumPayloadError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpEnumPayloadErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpEnumPayloadErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpEnumPayloadErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpEnumPayloadErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpEnumPayloadErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpPayloadTraitsError {
+  HttpPayloadTraitsErrorTransport(reason: String)
+  HttpPayloadTraitsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_payload_traits_error(err: awsjson_client.ClientError) -> HttpPayloadTraitsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpPayloadTraitsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpPayloadTraitsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpPayloadTraitsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpPayloadTraitsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpPayloadTraitsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpPayloadTraitsWithMediaTypeError {
+  HttpPayloadTraitsWithMediaTypeErrorTransport(reason: String)
+  HttpPayloadTraitsWithMediaTypeErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_payload_traits_with_media_type_error(err: awsjson_client.ClientError) -> HttpPayloadTraitsWithMediaTypeError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpPayloadTraitsWithMediaTypeErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpPayloadTraitsWithMediaTypeErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpPayloadTraitsWithMediaTypeErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpPayloadTraitsWithMediaTypeErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpPayloadTraitsWithMediaTypeErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpPayloadWithStructureError {
+  HttpPayloadWithStructureErrorTransport(reason: String)
+  HttpPayloadWithStructureErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_payload_with_structure_error(err: awsjson_client.ClientError) -> HttpPayloadWithStructureError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpPayloadWithStructureErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpPayloadWithStructureErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpPayloadWithStructureErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpPayloadWithStructureErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpPayloadWithStructureErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpPayloadWithUnionError {
+  HttpPayloadWithUnionErrorTransport(reason: String)
+  HttpPayloadWithUnionErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_payload_with_union_error(err: awsjson_client.ClientError) -> HttpPayloadWithUnionError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpPayloadWithUnionErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpPayloadWithUnionErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpPayloadWithUnionErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpPayloadWithUnionErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpPayloadWithUnionErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpPrefixHeadersError {
+  HttpPrefixHeadersErrorTransport(reason: String)
+  HttpPrefixHeadersErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_prefix_headers_error(err: awsjson_client.ClientError) -> HttpPrefixHeadersError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpPrefixHeadersErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpPrefixHeadersErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpPrefixHeadersErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpPrefixHeadersErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpPrefixHeadersErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpPrefixHeadersInResponseError {
+  HttpPrefixHeadersInResponseErrorTransport(reason: String)
+  HttpPrefixHeadersInResponseErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_prefix_headers_in_response_error(err: awsjson_client.ClientError) -> HttpPrefixHeadersInResponseError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpPrefixHeadersInResponseErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpPrefixHeadersInResponseErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpPrefixHeadersInResponseErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpPrefixHeadersInResponseErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpPrefixHeadersInResponseErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpQueryParamsOnlyOperationError {
+  HttpQueryParamsOnlyOperationErrorTransport(reason: String)
+  HttpQueryParamsOnlyOperationErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_query_params_only_operation_error(err: awsjson_client.ClientError) -> HttpQueryParamsOnlyOperationError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpQueryParamsOnlyOperationErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpQueryParamsOnlyOperationErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpQueryParamsOnlyOperationErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpQueryParamsOnlyOperationErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpQueryParamsOnlyOperationErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpRequestWithFloatLabelsError {
+  HttpRequestWithFloatLabelsErrorTransport(reason: String)
+  HttpRequestWithFloatLabelsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_request_with_float_labels_error(err: awsjson_client.ClientError) -> HttpRequestWithFloatLabelsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpRequestWithFloatLabelsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpRequestWithFloatLabelsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpRequestWithFloatLabelsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpRequestWithFloatLabelsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpRequestWithFloatLabelsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpRequestWithGreedyLabelInPathError {
+  HttpRequestWithGreedyLabelInPathErrorTransport(reason: String)
+  HttpRequestWithGreedyLabelInPathErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_request_with_greedy_label_in_path_error(err: awsjson_client.ClientError) -> HttpRequestWithGreedyLabelInPathError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpRequestWithGreedyLabelInPathErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpRequestWithGreedyLabelInPathErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpRequestWithGreedyLabelInPathErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpRequestWithGreedyLabelInPathErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpRequestWithGreedyLabelInPathErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpRequestWithLabelsError {
+  HttpRequestWithLabelsErrorTransport(reason: String)
+  HttpRequestWithLabelsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_request_with_labels_error(err: awsjson_client.ClientError) -> HttpRequestWithLabelsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpRequestWithLabelsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpRequestWithLabelsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpRequestWithLabelsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpRequestWithLabelsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpRequestWithLabelsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpRequestWithLabelsAndTimestampFormatError {
+  HttpRequestWithLabelsAndTimestampFormatErrorTransport(reason: String)
+  HttpRequestWithLabelsAndTimestampFormatErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_request_with_labels_and_timestamp_format_error(err: awsjson_client.ClientError) -> HttpRequestWithLabelsAndTimestampFormatError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpRequestWithLabelsAndTimestampFormatErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpRequestWithLabelsAndTimestampFormatErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpRequestWithLabelsAndTimestampFormatErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpRequestWithLabelsAndTimestampFormatErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpRequestWithLabelsAndTimestampFormatErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpRequestWithRegexLiteralError {
+  HttpRequestWithRegexLiteralErrorTransport(reason: String)
+  HttpRequestWithRegexLiteralErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_request_with_regex_literal_error(err: awsjson_client.ClientError) -> HttpRequestWithRegexLiteralError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpRequestWithRegexLiteralErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpRequestWithRegexLiteralErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpRequestWithRegexLiteralErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpRequestWithRegexLiteralErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpRequestWithRegexLiteralErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpResponseCodeError {
+  HttpResponseCodeErrorTransport(reason: String)
+  HttpResponseCodeErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_response_code_error(err: awsjson_client.ClientError) -> HttpResponseCodeError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpResponseCodeErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpResponseCodeErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpResponseCodeErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpResponseCodeErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpResponseCodeErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type HttpStringPayloadError {
+  HttpStringPayloadErrorTransport(reason: String)
+  HttpStringPayloadErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_http_string_payload_error(err: awsjson_client.ClientError) -> HttpStringPayloadError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> HttpStringPayloadErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> HttpStringPayloadErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> HttpStringPayloadErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> HttpStringPayloadErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> HttpStringPayloadErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type IgnoreQueryParamsInResponseError {
+  IgnoreQueryParamsInResponseErrorTransport(reason: String)
+  IgnoreQueryParamsInResponseErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_ignore_query_params_in_response_error(err: awsjson_client.ClientError) -> IgnoreQueryParamsInResponseError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> IgnoreQueryParamsInResponseErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> IgnoreQueryParamsInResponseErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> IgnoreQueryParamsInResponseErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> IgnoreQueryParamsInResponseErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> IgnoreQueryParamsInResponseErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type InputAndOutputWithHeadersError {
+  InputAndOutputWithHeadersErrorTransport(reason: String)
+  InputAndOutputWithHeadersErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_input_and_output_with_headers_error(err: awsjson_client.ClientError) -> InputAndOutputWithHeadersError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> InputAndOutputWithHeadersErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> InputAndOutputWithHeadersErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> InputAndOutputWithHeadersErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> InputAndOutputWithHeadersErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> InputAndOutputWithHeadersErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type InputStreamError {
+  InputStreamErrorTransport(reason: String)
+  InputStreamErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_input_stream_error(err: awsjson_client.ClientError) -> InputStreamError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> InputStreamErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> InputStreamErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> InputStreamErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> InputStreamErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> InputStreamErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type InputStreamWithInitialRequestError {
+  InputStreamWithInitialRequestErrorTransport(reason: String)
+  InputStreamWithInitialRequestErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_input_stream_with_initial_request_error(err: awsjson_client.ClientError) -> InputStreamWithInitialRequestError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> InputStreamWithInitialRequestErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> InputStreamWithInitialRequestErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> InputStreamWithInitialRequestErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> InputStreamWithInitialRequestErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> InputStreamWithInitialRequestErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type JsonBlobsError {
+  JsonBlobsErrorTransport(reason: String)
+  JsonBlobsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_json_blobs_error(err: awsjson_client.ClientError) -> JsonBlobsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> JsonBlobsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> JsonBlobsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> JsonBlobsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> JsonBlobsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> JsonBlobsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type JsonEnumsError {
+  JsonEnumsErrorTransport(reason: String)
+  JsonEnumsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_json_enums_error(err: awsjson_client.ClientError) -> JsonEnumsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> JsonEnumsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> JsonEnumsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> JsonEnumsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> JsonEnumsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> JsonEnumsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type JsonIntEnumsError {
+  JsonIntEnumsErrorTransport(reason: String)
+  JsonIntEnumsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_json_int_enums_error(err: awsjson_client.ClientError) -> JsonIntEnumsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> JsonIntEnumsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> JsonIntEnumsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> JsonIntEnumsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> JsonIntEnumsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> JsonIntEnumsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type JsonListsError {
+  JsonListsErrorTransport(reason: String)
+  JsonListsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_json_lists_error(err: awsjson_client.ClientError) -> JsonListsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> JsonListsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> JsonListsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> JsonListsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> JsonListsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> JsonListsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type JsonMapsError {
+  JsonMapsErrorTransport(reason: String)
+  JsonMapsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_json_maps_error(err: awsjson_client.ClientError) -> JsonMapsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> JsonMapsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> JsonMapsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> JsonMapsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> JsonMapsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> JsonMapsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type JsonTimestampsError {
+  JsonTimestampsErrorTransport(reason: String)
+  JsonTimestampsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_json_timestamps_error(err: awsjson_client.ClientError) -> JsonTimestampsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> JsonTimestampsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> JsonTimestampsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> JsonTimestampsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> JsonTimestampsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> JsonTimestampsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type JsonUnionsError {
+  JsonUnionsErrorTransport(reason: String)
+  JsonUnionsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_json_unions_error(err: awsjson_client.ClientError) -> JsonUnionsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> JsonUnionsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> JsonUnionsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> JsonUnionsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> JsonUnionsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> JsonUnionsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedAcceptWithBodyError {
+  MalformedAcceptWithBodyErrorTransport(reason: String)
+  MalformedAcceptWithBodyErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_accept_with_body_error(err: awsjson_client.ClientError) -> MalformedAcceptWithBodyError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedAcceptWithBodyErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedAcceptWithBodyErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedAcceptWithBodyErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedAcceptWithBodyErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedAcceptWithBodyErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedAcceptWithGenericStringError {
+  MalformedAcceptWithGenericStringErrorTransport(reason: String)
+  MalformedAcceptWithGenericStringErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_accept_with_generic_string_error(err: awsjson_client.ClientError) -> MalformedAcceptWithGenericStringError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedAcceptWithGenericStringErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedAcceptWithGenericStringErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedAcceptWithGenericStringErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedAcceptWithGenericStringErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedAcceptWithGenericStringErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedAcceptWithPayloadError {
+  MalformedAcceptWithPayloadErrorTransport(reason: String)
+  MalformedAcceptWithPayloadErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_accept_with_payload_error(err: awsjson_client.ClientError) -> MalformedAcceptWithPayloadError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedAcceptWithPayloadErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedAcceptWithPayloadErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedAcceptWithPayloadErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedAcceptWithPayloadErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedAcceptWithPayloadErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedBlobError {
+  MalformedBlobErrorTransport(reason: String)
+  MalformedBlobErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_blob_error(err: awsjson_client.ClientError) -> MalformedBlobError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedBlobErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedBlobErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedBlobErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedBlobErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedBlobErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedBooleanError {
+  MalformedBooleanErrorTransport(reason: String)
+  MalformedBooleanErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_boolean_error(err: awsjson_client.ClientError) -> MalformedBooleanError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedBooleanErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedBooleanErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedBooleanErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedBooleanErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedBooleanErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedByteError {
+  MalformedByteErrorTransport(reason: String)
+  MalformedByteErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_byte_error(err: awsjson_client.ClientError) -> MalformedByteError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedByteErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedByteErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedByteErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedByteErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedByteErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedContentTypeWithBodyError {
+  MalformedContentTypeWithBodyErrorTransport(reason: String)
+  MalformedContentTypeWithBodyErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_content_type_with_body_error(err: awsjson_client.ClientError) -> MalformedContentTypeWithBodyError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedContentTypeWithBodyErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedContentTypeWithBodyErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedContentTypeWithBodyErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedContentTypeWithBodyErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedContentTypeWithBodyErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedContentTypeWithGenericStringError {
+  MalformedContentTypeWithGenericStringErrorTransport(reason: String)
+  MalformedContentTypeWithGenericStringErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_content_type_with_generic_string_error(err: awsjson_client.ClientError) -> MalformedContentTypeWithGenericStringError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedContentTypeWithGenericStringErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedContentTypeWithGenericStringErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedContentTypeWithGenericStringErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedContentTypeWithGenericStringErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedContentTypeWithGenericStringErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedContentTypeWithoutBodyError {
+  MalformedContentTypeWithoutBodyErrorTransport(reason: String)
+  MalformedContentTypeWithoutBodyErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_content_type_without_body_error(err: awsjson_client.ClientError) -> MalformedContentTypeWithoutBodyError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedContentTypeWithoutBodyErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedContentTypeWithoutBodyErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedContentTypeWithoutBodyErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedContentTypeWithoutBodyErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedContentTypeWithoutBodyErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedContentTypeWithoutBodyEmptyInputError {
+  MalformedContentTypeWithoutBodyEmptyInputErrorTransport(reason: String)
+  MalformedContentTypeWithoutBodyEmptyInputErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_content_type_without_body_empty_input_error(err: awsjson_client.ClientError) -> MalformedContentTypeWithoutBodyEmptyInputError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedContentTypeWithoutBodyEmptyInputErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedContentTypeWithoutBodyEmptyInputErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedContentTypeWithoutBodyEmptyInputErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedContentTypeWithoutBodyEmptyInputErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedContentTypeWithoutBodyEmptyInputErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedContentTypeWithPayloadError {
+  MalformedContentTypeWithPayloadErrorTransport(reason: String)
+  MalformedContentTypeWithPayloadErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_content_type_with_payload_error(err: awsjson_client.ClientError) -> MalformedContentTypeWithPayloadError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedContentTypeWithPayloadErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedContentTypeWithPayloadErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedContentTypeWithPayloadErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedContentTypeWithPayloadErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedContentTypeWithPayloadErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedDoubleError {
+  MalformedDoubleErrorTransport(reason: String)
+  MalformedDoubleErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_double_error(err: awsjson_client.ClientError) -> MalformedDoubleError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedDoubleErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedDoubleErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedDoubleErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedDoubleErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedDoubleErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedFloatError {
+  MalformedFloatErrorTransport(reason: String)
+  MalformedFloatErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_float_error(err: awsjson_client.ClientError) -> MalformedFloatError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedFloatErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedFloatErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedFloatErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedFloatErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedFloatErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedIntegerError {
+  MalformedIntegerErrorTransport(reason: String)
+  MalformedIntegerErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_integer_error(err: awsjson_client.ClientError) -> MalformedIntegerError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedIntegerErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedIntegerErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedIntegerErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedIntegerErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedIntegerErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedListError {
+  MalformedListErrorTransport(reason: String)
+  MalformedListErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_list_error(err: awsjson_client.ClientError) -> MalformedListError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedListErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedListErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedListErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedListErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedListErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedLongError {
+  MalformedLongErrorTransport(reason: String)
+  MalformedLongErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_long_error(err: awsjson_client.ClientError) -> MalformedLongError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedLongErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedLongErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedLongErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedLongErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedLongErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedMapError {
+  MalformedMapErrorTransport(reason: String)
+  MalformedMapErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_map_error(err: awsjson_client.ClientError) -> MalformedMapError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedMapErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedMapErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedMapErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedMapErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedMapErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedRequestBodyError {
+  MalformedRequestBodyErrorTransport(reason: String)
+  MalformedRequestBodyErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_request_body_error(err: awsjson_client.ClientError) -> MalformedRequestBodyError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedRequestBodyErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedRequestBodyErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedRequestBodyErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedRequestBodyErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedRequestBodyErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedShortError {
+  MalformedShortErrorTransport(reason: String)
+  MalformedShortErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_short_error(err: awsjson_client.ClientError) -> MalformedShortError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedShortErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedShortErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedShortErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedShortErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedShortErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedStringError {
+  MalformedStringErrorTransport(reason: String)
+  MalformedStringErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_string_error(err: awsjson_client.ClientError) -> MalformedStringError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedStringErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedStringErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedStringErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedStringErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedStringErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedTimestampBodyDateTimeError {
+  MalformedTimestampBodyDateTimeErrorTransport(reason: String)
+  MalformedTimestampBodyDateTimeErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_timestamp_body_date_time_error(err: awsjson_client.ClientError) -> MalformedTimestampBodyDateTimeError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedTimestampBodyDateTimeErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedTimestampBodyDateTimeErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedTimestampBodyDateTimeErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedTimestampBodyDateTimeErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedTimestampBodyDateTimeErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedTimestampBodyDefaultError {
+  MalformedTimestampBodyDefaultErrorTransport(reason: String)
+  MalformedTimestampBodyDefaultErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_timestamp_body_default_error(err: awsjson_client.ClientError) -> MalformedTimestampBodyDefaultError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedTimestampBodyDefaultErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedTimestampBodyDefaultErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedTimestampBodyDefaultErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedTimestampBodyDefaultErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedTimestampBodyDefaultErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedTimestampBodyHttpDateError {
+  MalformedTimestampBodyHttpDateErrorTransport(reason: String)
+  MalformedTimestampBodyHttpDateErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_timestamp_body_http_date_error(err: awsjson_client.ClientError) -> MalformedTimestampBodyHttpDateError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedTimestampBodyHttpDateErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedTimestampBodyHttpDateErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedTimestampBodyHttpDateErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedTimestampBodyHttpDateErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedTimestampBodyHttpDateErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedTimestampHeaderDateTimeError {
+  MalformedTimestampHeaderDateTimeErrorTransport(reason: String)
+  MalformedTimestampHeaderDateTimeErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_timestamp_header_date_time_error(err: awsjson_client.ClientError) -> MalformedTimestampHeaderDateTimeError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedTimestampHeaderDateTimeErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedTimestampHeaderDateTimeErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedTimestampHeaderDateTimeErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedTimestampHeaderDateTimeErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedTimestampHeaderDateTimeErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedTimestampHeaderDefaultError {
+  MalformedTimestampHeaderDefaultErrorTransport(reason: String)
+  MalformedTimestampHeaderDefaultErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_timestamp_header_default_error(err: awsjson_client.ClientError) -> MalformedTimestampHeaderDefaultError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedTimestampHeaderDefaultErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedTimestampHeaderDefaultErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedTimestampHeaderDefaultErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedTimestampHeaderDefaultErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedTimestampHeaderDefaultErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedTimestampHeaderEpochError {
+  MalformedTimestampHeaderEpochErrorTransport(reason: String)
+  MalformedTimestampHeaderEpochErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_timestamp_header_epoch_error(err: awsjson_client.ClientError) -> MalformedTimestampHeaderEpochError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedTimestampHeaderEpochErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedTimestampHeaderEpochErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedTimestampHeaderEpochErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedTimestampHeaderEpochErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedTimestampHeaderEpochErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedTimestampPathDefaultError {
+  MalformedTimestampPathDefaultErrorTransport(reason: String)
+  MalformedTimestampPathDefaultErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_timestamp_path_default_error(err: awsjson_client.ClientError) -> MalformedTimestampPathDefaultError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedTimestampPathDefaultErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedTimestampPathDefaultErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedTimestampPathDefaultErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedTimestampPathDefaultErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedTimestampPathDefaultErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedTimestampPathEpochError {
+  MalformedTimestampPathEpochErrorTransport(reason: String)
+  MalformedTimestampPathEpochErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_timestamp_path_epoch_error(err: awsjson_client.ClientError) -> MalformedTimestampPathEpochError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedTimestampPathEpochErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedTimestampPathEpochErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedTimestampPathEpochErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedTimestampPathEpochErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedTimestampPathEpochErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedTimestampPathHttpDateError {
+  MalformedTimestampPathHttpDateErrorTransport(reason: String)
+  MalformedTimestampPathHttpDateErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_timestamp_path_http_date_error(err: awsjson_client.ClientError) -> MalformedTimestampPathHttpDateError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedTimestampPathHttpDateErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedTimestampPathHttpDateErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedTimestampPathHttpDateErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedTimestampPathHttpDateErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedTimestampPathHttpDateErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedTimestampQueryDefaultError {
+  MalformedTimestampQueryDefaultErrorTransport(reason: String)
+  MalformedTimestampQueryDefaultErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_timestamp_query_default_error(err: awsjson_client.ClientError) -> MalformedTimestampQueryDefaultError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedTimestampQueryDefaultErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedTimestampQueryDefaultErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedTimestampQueryDefaultErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedTimestampQueryDefaultErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedTimestampQueryDefaultErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedTimestampQueryEpochError {
+  MalformedTimestampQueryEpochErrorTransport(reason: String)
+  MalformedTimestampQueryEpochErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_timestamp_query_epoch_error(err: awsjson_client.ClientError) -> MalformedTimestampQueryEpochError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedTimestampQueryEpochErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedTimestampQueryEpochErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedTimestampQueryEpochErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedTimestampQueryEpochErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedTimestampQueryEpochErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedTimestampQueryHttpDateError {
+  MalformedTimestampQueryHttpDateErrorTransport(reason: String)
+  MalformedTimestampQueryHttpDateErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_timestamp_query_http_date_error(err: awsjson_client.ClientError) -> MalformedTimestampQueryHttpDateError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedTimestampQueryHttpDateErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedTimestampQueryHttpDateErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedTimestampQueryHttpDateErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedTimestampQueryHttpDateErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedTimestampQueryHttpDateErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MalformedUnionError {
+  MalformedUnionErrorTransport(reason: String)
+  MalformedUnionErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_malformed_union_error(err: awsjson_client.ClientError) -> MalformedUnionError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MalformedUnionErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MalformedUnionErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MalformedUnionErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MalformedUnionErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MalformedUnionErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type MediaTypeHeaderError {
+  MediaTypeHeaderErrorTransport(reason: String)
+  MediaTypeHeaderErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_media_type_header_error(err: awsjson_client.ClientError) -> MediaTypeHeaderError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> MediaTypeHeaderErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> MediaTypeHeaderErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> MediaTypeHeaderErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> MediaTypeHeaderErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> MediaTypeHeaderErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type NoInputAndNoOutputError {
+  NoInputAndNoOutputErrorTransport(reason: String)
+  NoInputAndNoOutputErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_no_input_and_no_output_error(err: awsjson_client.ClientError) -> NoInputAndNoOutputError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> NoInputAndNoOutputErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> NoInputAndNoOutputErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> NoInputAndNoOutputErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> NoInputAndNoOutputErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> NoInputAndNoOutputErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type NoInputAndOutputError {
+  NoInputAndOutputErrorTransport(reason: String)
+  NoInputAndOutputErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_no_input_and_output_error(err: awsjson_client.ClientError) -> NoInputAndOutputError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> NoInputAndOutputErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> NoInputAndOutputErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> NoInputAndOutputErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> NoInputAndOutputErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> NoInputAndOutputErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type NullAndEmptyHeadersClientError {
+  NullAndEmptyHeadersClientErrorTransport(reason: String)
+  NullAndEmptyHeadersClientErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_null_and_empty_headers_client_error(err: awsjson_client.ClientError) -> NullAndEmptyHeadersClientError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> NullAndEmptyHeadersClientErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> NullAndEmptyHeadersClientErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> NullAndEmptyHeadersClientErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> NullAndEmptyHeadersClientErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> NullAndEmptyHeadersClientErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type NullAndEmptyHeadersServerError {
+  NullAndEmptyHeadersServerErrorTransport(reason: String)
+  NullAndEmptyHeadersServerErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_null_and_empty_headers_server_error(err: awsjson_client.ClientError) -> NullAndEmptyHeadersServerError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> NullAndEmptyHeadersServerErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> NullAndEmptyHeadersServerErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> NullAndEmptyHeadersServerErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> NullAndEmptyHeadersServerErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> NullAndEmptyHeadersServerErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type OmitsNullSerializesEmptyStringError {
+  OmitsNullSerializesEmptyStringErrorTransport(reason: String)
+  OmitsNullSerializesEmptyStringErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_omits_null_serializes_empty_string_error(err: awsjson_client.ClientError) -> OmitsNullSerializesEmptyStringError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> OmitsNullSerializesEmptyStringErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> OmitsNullSerializesEmptyStringErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> OmitsNullSerializesEmptyStringErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> OmitsNullSerializesEmptyStringErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> OmitsNullSerializesEmptyStringErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type OmitsSerializingEmptyListsError {
+  OmitsSerializingEmptyListsErrorTransport(reason: String)
+  OmitsSerializingEmptyListsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_omits_serializing_empty_lists_error(err: awsjson_client.ClientError) -> OmitsSerializingEmptyListsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> OmitsSerializingEmptyListsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> OmitsSerializingEmptyListsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> OmitsSerializingEmptyListsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> OmitsSerializingEmptyListsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> OmitsSerializingEmptyListsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type OperationWithDefaultsError {
+  OperationWithDefaultsErrorTransport(reason: String)
+  OperationWithDefaultsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_operation_with_defaults_error(err: awsjson_client.ClientError) -> OperationWithDefaultsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> OperationWithDefaultsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> OperationWithDefaultsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> OperationWithDefaultsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> OperationWithDefaultsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> OperationWithDefaultsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type OperationWithNestedStructureError {
+  OperationWithNestedStructureErrorTransport(reason: String)
+  OperationWithNestedStructureErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_operation_with_nested_structure_error(err: awsjson_client.ClientError) -> OperationWithNestedStructureError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> OperationWithNestedStructureErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> OperationWithNestedStructureErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> OperationWithNestedStructureErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> OperationWithNestedStructureErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> OperationWithNestedStructureErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type OutputStreamError {
+  OutputStreamErrorServiceUnavailableError(value: ServiceUnavailableError)
+  OutputStreamErrorTransport(reason: String)
+  OutputStreamErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_output_stream_error(err: awsjson_client.ClientError) -> OutputStreamError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+        case awsjson_client.error_type_matches(et, "ServiceUnavailableError") {
+          True -> case bit_array.to_string(b) {
+            Ok(text) -> case json.parse(text, decode_service_unavailable_error_struct()) {
+              Ok(v) -> OutputStreamErrorServiceUnavailableError(value: v)
+              Error(_) -> OutputStreamErrorUnknown(error_type: et, status: s, body: text)
+            }
+            Error(_) -> OutputStreamErrorUnknown(error_type: et, status: s, body: "")
+          }
+          False -> case bit_array.to_string(b) {
+          Ok(text) -> OutputStreamErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> OutputStreamErrorUnknown(error_type: et, status: s, body: "")
+        }
+        }
+    }
+    awsjson_client.TransportError(_) -> OutputStreamErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> OutputStreamErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> OutputStreamErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type OutputStreamWithInitialResponseError {
+  OutputStreamWithInitialResponseErrorTransport(reason: String)
+  OutputStreamWithInitialResponseErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_output_stream_with_initial_response_error(err: awsjson_client.ClientError) -> OutputStreamWithInitialResponseError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> OutputStreamWithInitialResponseErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> OutputStreamWithInitialResponseErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> OutputStreamWithInitialResponseErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> OutputStreamWithInitialResponseErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> OutputStreamWithInitialResponseErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type PostPlayerActionError {
+  PostPlayerActionErrorTransport(reason: String)
+  PostPlayerActionErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_post_player_action_error(err: awsjson_client.ClientError) -> PostPlayerActionError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> PostPlayerActionErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> PostPlayerActionErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> PostPlayerActionErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> PostPlayerActionErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> PostPlayerActionErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type PostUnionWithJsonNameError {
+  PostUnionWithJsonNameErrorTransport(reason: String)
+  PostUnionWithJsonNameErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_post_union_with_json_name_error(err: awsjson_client.ClientError) -> PostUnionWithJsonNameError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> PostUnionWithJsonNameErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> PostUnionWithJsonNameErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> PostUnionWithJsonNameErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> PostUnionWithJsonNameErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> PostUnionWithJsonNameErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type PutWithContentEncodingError {
+  PutWithContentEncodingErrorTransport(reason: String)
+  PutWithContentEncodingErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_put_with_content_encoding_error(err: awsjson_client.ClientError) -> PutWithContentEncodingError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> PutWithContentEncodingErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> PutWithContentEncodingErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> PutWithContentEncodingErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> PutWithContentEncodingErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> PutWithContentEncodingErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type QueryIdempotencyTokenAutoFillError {
+  QueryIdempotencyTokenAutoFillErrorTransport(reason: String)
+  QueryIdempotencyTokenAutoFillErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_query_idempotency_token_auto_fill_error(err: awsjson_client.ClientError) -> QueryIdempotencyTokenAutoFillError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> QueryIdempotencyTokenAutoFillErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> QueryIdempotencyTokenAutoFillErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> QueryIdempotencyTokenAutoFillErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> QueryIdempotencyTokenAutoFillErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> QueryIdempotencyTokenAutoFillErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type QueryParamsAsStringListMapError {
+  QueryParamsAsStringListMapErrorTransport(reason: String)
+  QueryParamsAsStringListMapErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_query_params_as_string_list_map_error(err: awsjson_client.ClientError) -> QueryParamsAsStringListMapError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> QueryParamsAsStringListMapErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> QueryParamsAsStringListMapErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> QueryParamsAsStringListMapErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> QueryParamsAsStringListMapErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> QueryParamsAsStringListMapErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type QueryPrecedenceError {
+  QueryPrecedenceErrorTransport(reason: String)
+  QueryPrecedenceErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_query_precedence_error(err: awsjson_client.ClientError) -> QueryPrecedenceError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> QueryPrecedenceErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> QueryPrecedenceErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> QueryPrecedenceErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> QueryPrecedenceErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> QueryPrecedenceErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type RecursiveShapesError {
+  RecursiveShapesErrorTransport(reason: String)
+  RecursiveShapesErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_recursive_shapes_error(err: awsjson_client.ClientError) -> RecursiveShapesError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> RecursiveShapesErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> RecursiveShapesErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> RecursiveShapesErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> RecursiveShapesErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> RecursiveShapesErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type ResponseCodeHttpFallbackError {
+  ResponseCodeHttpFallbackErrorTransport(reason: String)
+  ResponseCodeHttpFallbackErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_response_code_http_fallback_error(err: awsjson_client.ClientError) -> ResponseCodeHttpFallbackError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> ResponseCodeHttpFallbackErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> ResponseCodeHttpFallbackErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> ResponseCodeHttpFallbackErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> ResponseCodeHttpFallbackErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> ResponseCodeHttpFallbackErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type ResponseCodeRequiredError {
+  ResponseCodeRequiredErrorTransport(reason: String)
+  ResponseCodeRequiredErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_response_code_required_error(err: awsjson_client.ClientError) -> ResponseCodeRequiredError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> ResponseCodeRequiredErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> ResponseCodeRequiredErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> ResponseCodeRequiredErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> ResponseCodeRequiredErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> ResponseCodeRequiredErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type SimpleScalarPropertiesError {
+  SimpleScalarPropertiesErrorTransport(reason: String)
+  SimpleScalarPropertiesErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_simple_scalar_properties_error(err: awsjson_client.ClientError) -> SimpleScalarPropertiesError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> SimpleScalarPropertiesErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> SimpleScalarPropertiesErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> SimpleScalarPropertiesErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> SimpleScalarPropertiesErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> SimpleScalarPropertiesErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type SparseJsonListsError {
+  SparseJsonListsErrorTransport(reason: String)
+  SparseJsonListsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_sparse_json_lists_error(err: awsjson_client.ClientError) -> SparseJsonListsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> SparseJsonListsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> SparseJsonListsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> SparseJsonListsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> SparseJsonListsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> SparseJsonListsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type SparseJsonMapsError {
+  SparseJsonMapsErrorTransport(reason: String)
+  SparseJsonMapsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_sparse_json_maps_error(err: awsjson_client.ClientError) -> SparseJsonMapsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> SparseJsonMapsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> SparseJsonMapsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> SparseJsonMapsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> SparseJsonMapsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> SparseJsonMapsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type StreamingTraitsError {
+  StreamingTraitsErrorTransport(reason: String)
+  StreamingTraitsErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_streaming_traits_error(err: awsjson_client.ClientError) -> StreamingTraitsError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> StreamingTraitsErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> StreamingTraitsErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> StreamingTraitsErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> StreamingTraitsErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> StreamingTraitsErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type StreamingTraitsRequireLengthError {
+  StreamingTraitsRequireLengthErrorTransport(reason: String)
+  StreamingTraitsRequireLengthErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_streaming_traits_require_length_error(err: awsjson_client.ClientError) -> StreamingTraitsRequireLengthError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> StreamingTraitsRequireLengthErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> StreamingTraitsRequireLengthErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> StreamingTraitsRequireLengthErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> StreamingTraitsRequireLengthErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> StreamingTraitsRequireLengthErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type StreamingTraitsWithMediaTypeError {
+  StreamingTraitsWithMediaTypeErrorTransport(reason: String)
+  StreamingTraitsWithMediaTypeErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_streaming_traits_with_media_type_error(err: awsjson_client.ClientError) -> StreamingTraitsWithMediaTypeError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> StreamingTraitsWithMediaTypeErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> StreamingTraitsWithMediaTypeErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> StreamingTraitsWithMediaTypeErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> StreamingTraitsWithMediaTypeErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> StreamingTraitsWithMediaTypeErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type TestBodyStructureError {
+  TestBodyStructureErrorTransport(reason: String)
+  TestBodyStructureErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_test_body_structure_error(err: awsjson_client.ClientError) -> TestBodyStructureError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> TestBodyStructureErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> TestBodyStructureErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> TestBodyStructureErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> TestBodyStructureErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> TestBodyStructureErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type TestGetNoInputNoPayloadError {
+  TestGetNoInputNoPayloadErrorTransport(reason: String)
+  TestGetNoInputNoPayloadErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_test_get_no_input_no_payload_error(err: awsjson_client.ClientError) -> TestGetNoInputNoPayloadError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> TestGetNoInputNoPayloadErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> TestGetNoInputNoPayloadErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> TestGetNoInputNoPayloadErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> TestGetNoInputNoPayloadErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> TestGetNoInputNoPayloadErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type TestGetNoPayloadError {
+  TestGetNoPayloadErrorTransport(reason: String)
+  TestGetNoPayloadErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_test_get_no_payload_error(err: awsjson_client.ClientError) -> TestGetNoPayloadError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> TestGetNoPayloadErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> TestGetNoPayloadErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> TestGetNoPayloadErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> TestGetNoPayloadErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> TestGetNoPayloadErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type TestPayloadBlobError {
+  TestPayloadBlobErrorTransport(reason: String)
+  TestPayloadBlobErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_test_payload_blob_error(err: awsjson_client.ClientError) -> TestPayloadBlobError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> TestPayloadBlobErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> TestPayloadBlobErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> TestPayloadBlobErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> TestPayloadBlobErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> TestPayloadBlobErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type TestPayloadStructureError {
+  TestPayloadStructureErrorTransport(reason: String)
+  TestPayloadStructureErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_test_payload_structure_error(err: awsjson_client.ClientError) -> TestPayloadStructureError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> TestPayloadStructureErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> TestPayloadStructureErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> TestPayloadStructureErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> TestPayloadStructureErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> TestPayloadStructureErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type TestPostNoInputNoPayloadError {
+  TestPostNoInputNoPayloadErrorTransport(reason: String)
+  TestPostNoInputNoPayloadErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_test_post_no_input_no_payload_error(err: awsjson_client.ClientError) -> TestPostNoInputNoPayloadError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> TestPostNoInputNoPayloadErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> TestPostNoInputNoPayloadErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> TestPostNoInputNoPayloadErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> TestPostNoInputNoPayloadErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> TestPostNoInputNoPayloadErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type TestPostNoPayloadError {
+  TestPostNoPayloadErrorTransport(reason: String)
+  TestPostNoPayloadErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_test_post_no_payload_error(err: awsjson_client.ClientError) -> TestPostNoPayloadError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> TestPostNoPayloadErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> TestPostNoPayloadErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> TestPostNoPayloadErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> TestPostNoPayloadErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> TestPostNoPayloadErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type TimestampFormatHeadersError {
+  TimestampFormatHeadersErrorTransport(reason: String)
+  TimestampFormatHeadersErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_timestamp_format_headers_error(err: awsjson_client.ClientError) -> TimestampFormatHeadersError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> TimestampFormatHeadersErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> TimestampFormatHeadersErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> TimestampFormatHeadersErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> TimestampFormatHeadersErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> TimestampFormatHeadersErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub type UnitInputAndOutputError {
+  UnitInputAndOutputErrorTransport(reason: String)
+  UnitInputAndOutputErrorUnknown(error_type: String, status: Int, body: String)
+}
+
+fn translate_unit_input_and_output_error(err: awsjson_client.ClientError) -> UnitInputAndOutputError {
+  case err {
+    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {
+case bit_array.to_string(b) {
+          Ok(text) -> UnitInputAndOutputErrorUnknown(error_type: et, status: s, body: text)
+          Error(_) -> UnitInputAndOutputErrorUnknown(error_type: et, status: s, body: "")
+        }
+    }
+    awsjson_client.TransportError(_) -> UnitInputAndOutputErrorTransport(reason: "transport error")
+    awsjson_client.CredentialsError(_) -> UnitInputAndOutputErrorTransport(reason: "credentials error")
+    awsjson_client.DecodeError(reason: r) -> UnitInputAndOutputErrorTransport(reason: "decode: " <> r)
+  }
+}
+
+pub fn all_query_string_types(client: Client, input: AllQueryStringTypesInput) -> Result(AllQueryStringTypesOutput, AllQueryStringTypesError) {
+  case awsjson_client.invoke(client.config, build_all_query_string_types_request(input), parse_all_query_string_types_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_all_query_string_types_error(err))
+  }
+}
+
+pub fn constant_and_variable_query_string(client: Client, input: ConstantAndVariableQueryStringInput) -> Result(ConstantAndVariableQueryStringOutput, ConstantAndVariableQueryStringError) {
+  case awsjson_client.invoke(client.config, build_constant_and_variable_query_string_request(input), parse_constant_and_variable_query_string_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_constant_and_variable_query_string_error(err))
+  }
+}
+
+pub fn constant_query_string(client: Client, input: ConstantQueryStringInput) -> Result(ConstantQueryStringOutput, ConstantQueryStringError) {
+  case awsjson_client.invoke(client.config, build_constant_query_string_request(input), parse_constant_query_string_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_constant_query_string_error(err))
+  }
+}
+
+pub fn content_type_parameters(client: Client, input: ContentTypeParametersInput) -> Result(ContentTypeParametersOutput, ContentTypeParametersError) {
+  case awsjson_client.invoke(client.config, build_content_type_parameters_request(input), parse_content_type_parameters_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_content_type_parameters_error(err))
+  }
+}
+
+pub fn datetime_offsets(client: Client, input: DatetimeOffsetsInput) -> Result(DatetimeOffsetsOutput, DatetimeOffsetsError) {
+  case awsjson_client.invoke(client.config, build_datetime_offsets_request(input), parse_datetime_offsets_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_datetime_offsets_error(err))
+  }
+}
+
+pub fn document_type(client: Client, input: DocumentTypeInputOutput) -> Result(DocumentTypeInputOutput, DocumentTypeError) {
+  case awsjson_client.invoke(client.config, build_document_type_request(input), parse_document_type_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_document_type_error(err))
+  }
+}
+
+pub fn document_type_as_map_value(client: Client, input: DocumentTypeAsMapValueInputOutput) -> Result(DocumentTypeAsMapValueInputOutput, DocumentTypeAsMapValueError) {
+  case awsjson_client.invoke(client.config, build_document_type_as_map_value_request(input), parse_document_type_as_map_value_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_document_type_as_map_value_error(err))
+  }
+}
+
+pub fn document_type_as_payload(client: Client, input: DocumentTypeAsPayloadInputOutput) -> Result(DocumentTypeAsPayloadInputOutput, DocumentTypeAsPayloadError) {
+  case awsjson_client.invoke(client.config, build_document_type_as_payload_request(input), parse_document_type_as_payload_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_document_type_as_payload_error(err))
+  }
+}
+
+pub fn duplex_stream(client: Client, input: DuplexStreamInput) -> Result(DuplexStreamOutput, DuplexStreamError) {
+  case awsjson_client.invoke(client.config, build_duplex_stream_request(input), parse_duplex_stream_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_duplex_stream_error(err))
+  }
+}
+
+pub fn duplex_stream_with_distinct_streams(client: Client, input: DuplexStreamWithDistinctStreamsInput) -> Result(DuplexStreamWithDistinctStreamsOutput, DuplexStreamWithDistinctStreamsError) {
+  case awsjson_client.invoke(client.config, build_duplex_stream_with_distinct_streams_request(input), parse_duplex_stream_with_distinct_streams_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_duplex_stream_with_distinct_streams_error(err))
+  }
+}
+
+pub fn duplex_stream_with_initial_messages(client: Client, input: DuplexStreamWithInitialMessagesInput) -> Result(DuplexStreamWithInitialMessagesOutput, DuplexStreamWithInitialMessagesError) {
+  case awsjson_client.invoke(client.config, build_duplex_stream_with_initial_messages_request(input), parse_duplex_stream_with_initial_messages_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_duplex_stream_with_initial_messages_error(err))
+  }
+}
+
+pub fn empty_input_and_empty_output(client: Client, input: EmptyInputAndEmptyOutputInput) -> Result(EmptyInputAndEmptyOutputOutput, EmptyInputAndEmptyOutputError) {
+  case awsjson_client.invoke(client.config, build_empty_input_and_empty_output_request(input), parse_empty_input_and_empty_output_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_empty_input_and_empty_output_error(err))
+  }
+}
+
+pub fn endpoint_operation(client: Client, input: EndpointOperationInput) -> Result(EndpointOperationOutput, EndpointOperationError) {
+  case awsjson_client.invoke(client.config, build_endpoint_operation_request(input), parse_endpoint_operation_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_endpoint_operation_error(err))
+  }
+}
+
+pub fn endpoint_with_host_label_operation(client: Client, input: HostLabelInput) -> Result(EndpointWithHostLabelOperationOutput, EndpointWithHostLabelOperationError) {
+  case awsjson_client.invoke(client.config, build_endpoint_with_host_label_operation_request(input), parse_endpoint_with_host_label_operation_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_endpoint_with_host_label_operation_error(err))
+  }
+}
+
+pub fn fractional_seconds(client: Client, input: FractionalSecondsInput) -> Result(FractionalSecondsOutput, FractionalSecondsError) {
+  case awsjson_client.invoke(client.config, build_fractional_seconds_request(input), parse_fractional_seconds_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_fractional_seconds_error(err))
+  }
+}
+
+pub fn greeting_with_errors(client: Client, input: GreetingWithErrorsInput) -> Result(GreetingWithErrorsOutput, GreetingWithErrorsError) {
+  case awsjson_client.invoke(client.config, build_greeting_with_errors_request(input), parse_greeting_with_errors_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_greeting_with_errors_error(err))
+  }
+}
+
+pub fn host_with_path_operation(client: Client, input: HostWithPathOperationInput) -> Result(HostWithPathOperationOutput, HostWithPathOperationError) {
+  case awsjson_client.invoke(client.config, build_host_with_path_operation_request(input), parse_host_with_path_operation_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_host_with_path_operation_error(err))
+  }
+}
+
+pub fn http_empty_prefix_headers(client: Client, input: HttpEmptyPrefixHeadersInput) -> Result(HttpEmptyPrefixHeadersOutput, HttpEmptyPrefixHeadersError) {
+  case awsjson_client.invoke(client.config, build_http_empty_prefix_headers_request(input), parse_http_empty_prefix_headers_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_empty_prefix_headers_error(err))
+  }
+}
+
+pub fn http_enum_payload(client: Client, input: EnumPayloadInput) -> Result(EnumPayloadInput, HttpEnumPayloadError) {
+  case awsjson_client.invoke(client.config, build_http_enum_payload_request(input), parse_http_enum_payload_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_enum_payload_error(err))
+  }
+}
+
+pub fn http_payload_traits(client: Client, input: HttpPayloadTraitsInputOutput) -> Result(HttpPayloadTraitsInputOutput, HttpPayloadTraitsError) {
+  case awsjson_client.invoke(client.config, build_http_payload_traits_request(input), parse_http_payload_traits_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_payload_traits_error(err))
+  }
+}
+
+pub fn http_payload_traits_with_media_type(client: Client, input: HttpPayloadTraitsWithMediaTypeInputOutput) -> Result(HttpPayloadTraitsWithMediaTypeInputOutput, HttpPayloadTraitsWithMediaTypeError) {
+  case awsjson_client.invoke(client.config, build_http_payload_traits_with_media_type_request(input), parse_http_payload_traits_with_media_type_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_payload_traits_with_media_type_error(err))
+  }
+}
+
+pub fn http_payload_with_structure(client: Client, input: HttpPayloadWithStructureInputOutput) -> Result(HttpPayloadWithStructureInputOutput, HttpPayloadWithStructureError) {
+  case awsjson_client.invoke(client.config, build_http_payload_with_structure_request(input), parse_http_payload_with_structure_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_payload_with_structure_error(err))
+  }
+}
+
+pub fn http_payload_with_union(client: Client, input: HttpPayloadWithUnionInputOutput) -> Result(HttpPayloadWithUnionInputOutput, HttpPayloadWithUnionError) {
+  case awsjson_client.invoke(client.config, build_http_payload_with_union_request(input), parse_http_payload_with_union_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_payload_with_union_error(err))
+  }
+}
+
+pub fn http_prefix_headers(client: Client, input: HttpPrefixHeadersInput) -> Result(HttpPrefixHeadersOutput, HttpPrefixHeadersError) {
+  case awsjson_client.invoke(client.config, build_http_prefix_headers_request(input), parse_http_prefix_headers_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_prefix_headers_error(err))
+  }
+}
+
+pub fn http_prefix_headers_in_response(client: Client, input: HttpPrefixHeadersInResponseInput) -> Result(HttpPrefixHeadersInResponseOutput, HttpPrefixHeadersInResponseError) {
+  case awsjson_client.invoke(client.config, build_http_prefix_headers_in_response_request(input), parse_http_prefix_headers_in_response_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_prefix_headers_in_response_error(err))
+  }
+}
+
+pub fn http_query_params_only_operation(client: Client, input: HttpQueryParamsOnlyInput) -> Result(HttpQueryParamsOnlyOperationOutput, HttpQueryParamsOnlyOperationError) {
+  case awsjson_client.invoke(client.config, build_http_query_params_only_operation_request(input), parse_http_query_params_only_operation_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_query_params_only_operation_error(err))
+  }
+}
+
+pub fn http_request_with_float_labels(client: Client, input: HttpRequestWithFloatLabelsInput) -> Result(HttpRequestWithFloatLabelsOutput, HttpRequestWithFloatLabelsError) {
+  case awsjson_client.invoke(client.config, build_http_request_with_float_labels_request(input), parse_http_request_with_float_labels_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_request_with_float_labels_error(err))
+  }
+}
+
+pub fn http_request_with_greedy_label_in_path(client: Client, input: HttpRequestWithGreedyLabelInPathInput) -> Result(HttpRequestWithGreedyLabelInPathOutput, HttpRequestWithGreedyLabelInPathError) {
+  case awsjson_client.invoke(client.config, build_http_request_with_greedy_label_in_path_request(input), parse_http_request_with_greedy_label_in_path_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_request_with_greedy_label_in_path_error(err))
+  }
+}
+
+pub fn http_request_with_labels(client: Client, input: HttpRequestWithLabelsInput) -> Result(HttpRequestWithLabelsOutput, HttpRequestWithLabelsError) {
+  case awsjson_client.invoke(client.config, build_http_request_with_labels_request(input), parse_http_request_with_labels_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_request_with_labels_error(err))
+  }
+}
+
+pub fn http_request_with_labels_and_timestamp_format(client: Client, input: HttpRequestWithLabelsAndTimestampFormatInput) -> Result(HttpRequestWithLabelsAndTimestampFormatOutput, HttpRequestWithLabelsAndTimestampFormatError) {
+  case awsjson_client.invoke(client.config, build_http_request_with_labels_and_timestamp_format_request(input), parse_http_request_with_labels_and_timestamp_format_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_request_with_labels_and_timestamp_format_error(err))
+  }
+}
+
+pub fn http_request_with_regex_literal(client: Client, input: HttpRequestWithRegexLiteralInput) -> Result(HttpRequestWithRegexLiteralOutput, HttpRequestWithRegexLiteralError) {
+  case awsjson_client.invoke(client.config, build_http_request_with_regex_literal_request(input), parse_http_request_with_regex_literal_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_request_with_regex_literal_error(err))
+  }
+}
+
+pub fn http_response_code(client: Client, input: HttpResponseCodeInput) -> Result(HttpResponseCodeOutput, HttpResponseCodeError) {
+  case awsjson_client.invoke(client.config, build_http_response_code_request(input), parse_http_response_code_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_response_code_error(err))
+  }
+}
+
+pub fn http_string_payload(client: Client, input: StringPayloadInput) -> Result(StringPayloadInput, HttpStringPayloadError) {
+  case awsjson_client.invoke(client.config, build_http_string_payload_request(input), parse_http_string_payload_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_http_string_payload_error(err))
+  }
+}
+
+pub fn ignore_query_params_in_response(client: Client, input: IgnoreQueryParamsInResponseInput) -> Result(IgnoreQueryParamsInResponseOutput, IgnoreQueryParamsInResponseError) {
+  case awsjson_client.invoke(client.config, build_ignore_query_params_in_response_request(input), parse_ignore_query_params_in_response_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_ignore_query_params_in_response_error(err))
+  }
+}
+
+pub fn input_and_output_with_headers(client: Client, input: InputAndOutputWithHeadersIO) -> Result(InputAndOutputWithHeadersIO, InputAndOutputWithHeadersError) {
+  case awsjson_client.invoke(client.config, build_input_and_output_with_headers_request(input), parse_input_and_output_with_headers_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_input_and_output_with_headers_error(err))
+  }
+}
+
+pub fn input_stream(client: Client, input: InputStreamInput) -> Result(InputStreamOutput, InputStreamError) {
+  case awsjson_client.invoke(client.config, build_input_stream_request(input), parse_input_stream_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_input_stream_error(err))
+  }
+}
+
+pub fn input_stream_with_initial_request(client: Client, input: InputStreamWithInitialRequestInput) -> Result(InputStreamWithInitialRequestOutput, InputStreamWithInitialRequestError) {
+  case awsjson_client.invoke(client.config, build_input_stream_with_initial_request_request(input), parse_input_stream_with_initial_request_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_input_stream_with_initial_request_error(err))
+  }
+}
+
+pub fn json_blobs(client: Client, input: JsonBlobsInputOutput) -> Result(JsonBlobsInputOutput, JsonBlobsError) {
+  case awsjson_client.invoke(client.config, build_json_blobs_request(input), parse_json_blobs_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_json_blobs_error(err))
+  }
+}
+
+pub fn json_enums(client: Client, input: JsonEnumsInputOutput) -> Result(JsonEnumsInputOutput, JsonEnumsError) {
+  case awsjson_client.invoke(client.config, build_json_enums_request(input), parse_json_enums_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_json_enums_error(err))
+  }
+}
+
+pub fn json_int_enums(client: Client, input: JsonIntEnumsInputOutput) -> Result(JsonIntEnumsInputOutput, JsonIntEnumsError) {
+  case awsjson_client.invoke(client.config, build_json_int_enums_request(input), parse_json_int_enums_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_json_int_enums_error(err))
+  }
+}
+
+pub fn json_lists(client: Client, input: JsonListsInputOutput) -> Result(JsonListsInputOutput, JsonListsError) {
+  case awsjson_client.invoke(client.config, build_json_lists_request(input), parse_json_lists_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_json_lists_error(err))
+  }
+}
+
+pub fn json_maps(client: Client, input: JsonMapsInputOutput) -> Result(JsonMapsInputOutput, JsonMapsError) {
+  case awsjson_client.invoke(client.config, build_json_maps_request(input), parse_json_maps_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_json_maps_error(err))
+  }
+}
+
+pub fn json_timestamps(client: Client, input: JsonTimestampsInputOutput) -> Result(JsonTimestampsInputOutput, JsonTimestampsError) {
+  case awsjson_client.invoke(client.config, build_json_timestamps_request(input), parse_json_timestamps_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_json_timestamps_error(err))
+  }
+}
+
+pub fn json_unions(client: Client, input: UnionInputOutput) -> Result(UnionInputOutput, JsonUnionsError) {
+  case awsjson_client.invoke(client.config, build_json_unions_request(input), parse_json_unions_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_json_unions_error(err))
+  }
+}
+
+pub fn malformed_accept_with_body(client: Client, input: MalformedAcceptWithBodyInput) -> Result(GreetingStruct, MalformedAcceptWithBodyError) {
+  case awsjson_client.invoke(client.config, build_malformed_accept_with_body_request(input), parse_malformed_accept_with_body_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_accept_with_body_error(err))
+  }
+}
+
+pub fn malformed_accept_with_generic_string(client: Client, input: MalformedAcceptWithGenericStringInput) -> Result(MalformedAcceptWithGenericStringOutput, MalformedAcceptWithGenericStringError) {
+  case awsjson_client.invoke(client.config, build_malformed_accept_with_generic_string_request(input), parse_malformed_accept_with_generic_string_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_accept_with_generic_string_error(err))
+  }
+}
+
+pub fn malformed_accept_with_payload(client: Client, input: MalformedAcceptWithPayloadInput) -> Result(MalformedAcceptWithPayloadOutput, MalformedAcceptWithPayloadError) {
+  case awsjson_client.invoke(client.config, build_malformed_accept_with_payload_request(input), parse_malformed_accept_with_payload_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_accept_with_payload_error(err))
+  }
+}
+
+pub fn malformed_blob(client: Client, input: MalformedBlobInput) -> Result(MalformedBlobOutput, MalformedBlobError) {
+  case awsjson_client.invoke(client.config, build_malformed_blob_request(input), parse_malformed_blob_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_blob_error(err))
+  }
+}
+
+pub fn malformed_boolean(client: Client, input: MalformedBooleanInput) -> Result(MalformedBooleanOutput, MalformedBooleanError) {
+  case awsjson_client.invoke(client.config, build_malformed_boolean_request(input), parse_malformed_boolean_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_boolean_error(err))
+  }
+}
+
+pub fn malformed_byte(client: Client, input: MalformedByteInput) -> Result(MalformedByteOutput, MalformedByteError) {
+  case awsjson_client.invoke(client.config, build_malformed_byte_request(input), parse_malformed_byte_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_byte_error(err))
+  }
+}
+
+pub fn malformed_content_type_with_body(client: Client, input: GreetingStruct) -> Result(MalformedContentTypeWithBodyOutput, MalformedContentTypeWithBodyError) {
+  case awsjson_client.invoke(client.config, build_malformed_content_type_with_body_request(input), parse_malformed_content_type_with_body_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_content_type_with_body_error(err))
+  }
+}
+
+pub fn malformed_content_type_with_generic_string(client: Client, input: MalformedContentTypeWithGenericStringInput) -> Result(MalformedContentTypeWithGenericStringOutput, MalformedContentTypeWithGenericStringError) {
+  case awsjson_client.invoke(client.config, build_malformed_content_type_with_generic_string_request(input), parse_malformed_content_type_with_generic_string_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_content_type_with_generic_string_error(err))
+  }
+}
+
+pub fn malformed_content_type_without_body(client: Client, input: MalformedContentTypeWithoutBodyInput) -> Result(MalformedContentTypeWithoutBodyOutput, MalformedContentTypeWithoutBodyError) {
+  case awsjson_client.invoke(client.config, build_malformed_content_type_without_body_request(input), parse_malformed_content_type_without_body_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_content_type_without_body_error(err))
+  }
+}
+
+pub fn malformed_content_type_without_body_empty_input(client: Client, input: MalformedContentTypeWithoutBodyEmptyInputInput) -> Result(MalformedContentTypeWithoutBodyEmptyInputOutput, MalformedContentTypeWithoutBodyEmptyInputError) {
+  case awsjson_client.invoke(client.config, build_malformed_content_type_without_body_empty_input_request(input), parse_malformed_content_type_without_body_empty_input_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_content_type_without_body_empty_input_error(err))
+  }
+}
+
+pub fn malformed_content_type_with_payload(client: Client, input: MalformedContentTypeWithPayloadInput) -> Result(MalformedContentTypeWithPayloadOutput, MalformedContentTypeWithPayloadError) {
+  case awsjson_client.invoke(client.config, build_malformed_content_type_with_payload_request(input), parse_malformed_content_type_with_payload_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_content_type_with_payload_error(err))
+  }
+}
+
+pub fn malformed_double(client: Client, input: MalformedDoubleInput) -> Result(MalformedDoubleOutput, MalformedDoubleError) {
+  case awsjson_client.invoke(client.config, build_malformed_double_request(input), parse_malformed_double_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_double_error(err))
+  }
+}
+
+pub fn malformed_float(client: Client, input: MalformedFloatInput) -> Result(MalformedFloatOutput, MalformedFloatError) {
+  case awsjson_client.invoke(client.config, build_malformed_float_request(input), parse_malformed_float_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_float_error(err))
+  }
+}
+
+pub fn malformed_integer(client: Client, input: MalformedIntegerInput) -> Result(MalformedIntegerOutput, MalformedIntegerError) {
+  case awsjson_client.invoke(client.config, build_malformed_integer_request(input), parse_malformed_integer_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_integer_error(err))
+  }
+}
+
+pub fn malformed_list(client: Client, input: MalformedListInput) -> Result(MalformedListOutput, MalformedListError) {
+  case awsjson_client.invoke(client.config, build_malformed_list_request(input), parse_malformed_list_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_list_error(err))
+  }
+}
+
+pub fn malformed_long(client: Client, input: MalformedLongInput) -> Result(MalformedLongOutput, MalformedLongError) {
+  case awsjson_client.invoke(client.config, build_malformed_long_request(input), parse_malformed_long_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_long_error(err))
+  }
+}
+
+pub fn malformed_map(client: Client, input: MalformedMapInput) -> Result(MalformedMapOutput, MalformedMapError) {
+  case awsjson_client.invoke(client.config, build_malformed_map_request(input), parse_malformed_map_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_map_error(err))
+  }
+}
+
+pub fn malformed_request_body(client: Client, input: MalformedRequestBodyInput) -> Result(MalformedRequestBodyOutput, MalformedRequestBodyError) {
+  case awsjson_client.invoke(client.config, build_malformed_request_body_request(input), parse_malformed_request_body_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_request_body_error(err))
+  }
+}
+
+pub fn malformed_short(client: Client, input: MalformedShortInput) -> Result(MalformedShortOutput, MalformedShortError) {
+  case awsjson_client.invoke(client.config, build_malformed_short_request(input), parse_malformed_short_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_short_error(err))
+  }
+}
+
+pub fn malformed_string(client: Client, input: MalformedStringInput) -> Result(MalformedStringOutput, MalformedStringError) {
+  case awsjson_client.invoke(client.config, build_malformed_string_request(input), parse_malformed_string_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_string_error(err))
+  }
+}
+
+pub fn malformed_timestamp_body_date_time(client: Client, input: MalformedTimestampBodyDateTimeInput) -> Result(MalformedTimestampBodyDateTimeOutput, MalformedTimestampBodyDateTimeError) {
+  case awsjson_client.invoke(client.config, build_malformed_timestamp_body_date_time_request(input), parse_malformed_timestamp_body_date_time_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_timestamp_body_date_time_error(err))
+  }
+}
+
+pub fn malformed_timestamp_body_default(client: Client, input: MalformedTimestampBodyDefaultInput) -> Result(MalformedTimestampBodyDefaultOutput, MalformedTimestampBodyDefaultError) {
+  case awsjson_client.invoke(client.config, build_malformed_timestamp_body_default_request(input), parse_malformed_timestamp_body_default_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_timestamp_body_default_error(err))
+  }
+}
+
+pub fn malformed_timestamp_body_http_date(client: Client, input: MalformedTimestampBodyHttpDateInput) -> Result(MalformedTimestampBodyHttpDateOutput, MalformedTimestampBodyHttpDateError) {
+  case awsjson_client.invoke(client.config, build_malformed_timestamp_body_http_date_request(input), parse_malformed_timestamp_body_http_date_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_timestamp_body_http_date_error(err))
+  }
+}
+
+pub fn malformed_timestamp_header_date_time(client: Client, input: MalformedTimestampHeaderDateTimeInput) -> Result(MalformedTimestampHeaderDateTimeOutput, MalformedTimestampHeaderDateTimeError) {
+  case awsjson_client.invoke(client.config, build_malformed_timestamp_header_date_time_request(input), parse_malformed_timestamp_header_date_time_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_timestamp_header_date_time_error(err))
+  }
+}
+
+pub fn malformed_timestamp_header_default(client: Client, input: MalformedTimestampHeaderDefaultInput) -> Result(MalformedTimestampHeaderDefaultOutput, MalformedTimestampHeaderDefaultError) {
+  case awsjson_client.invoke(client.config, build_malformed_timestamp_header_default_request(input), parse_malformed_timestamp_header_default_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_timestamp_header_default_error(err))
+  }
+}
+
+pub fn malformed_timestamp_header_epoch(client: Client, input: MalformedTimestampHeaderEpochInput) -> Result(MalformedTimestampHeaderEpochOutput, MalformedTimestampHeaderEpochError) {
+  case awsjson_client.invoke(client.config, build_malformed_timestamp_header_epoch_request(input), parse_malformed_timestamp_header_epoch_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_timestamp_header_epoch_error(err))
+  }
+}
+
+pub fn malformed_timestamp_path_default(client: Client, input: MalformedTimestampPathDefaultInput) -> Result(MalformedTimestampPathDefaultOutput, MalformedTimestampPathDefaultError) {
+  case awsjson_client.invoke(client.config, build_malformed_timestamp_path_default_request(input), parse_malformed_timestamp_path_default_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_timestamp_path_default_error(err))
+  }
+}
+
+pub fn malformed_timestamp_path_epoch(client: Client, input: MalformedTimestampPathEpochInput) -> Result(MalformedTimestampPathEpochOutput, MalformedTimestampPathEpochError) {
+  case awsjson_client.invoke(client.config, build_malformed_timestamp_path_epoch_request(input), parse_malformed_timestamp_path_epoch_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_timestamp_path_epoch_error(err))
+  }
+}
+
+pub fn malformed_timestamp_path_http_date(client: Client, input: MalformedTimestampPathHttpDateInput) -> Result(MalformedTimestampPathHttpDateOutput, MalformedTimestampPathHttpDateError) {
+  case awsjson_client.invoke(client.config, build_malformed_timestamp_path_http_date_request(input), parse_malformed_timestamp_path_http_date_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_timestamp_path_http_date_error(err))
+  }
+}
+
+pub fn malformed_timestamp_query_default(client: Client, input: MalformedTimestampQueryDefaultInput) -> Result(MalformedTimestampQueryDefaultOutput, MalformedTimestampQueryDefaultError) {
+  case awsjson_client.invoke(client.config, build_malformed_timestamp_query_default_request(input), parse_malformed_timestamp_query_default_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_timestamp_query_default_error(err))
+  }
+}
+
+pub fn malformed_timestamp_query_epoch(client: Client, input: MalformedTimestampQueryEpochInput) -> Result(MalformedTimestampQueryEpochOutput, MalformedTimestampQueryEpochError) {
+  case awsjson_client.invoke(client.config, build_malformed_timestamp_query_epoch_request(input), parse_malformed_timestamp_query_epoch_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_timestamp_query_epoch_error(err))
+  }
+}
+
+pub fn malformed_timestamp_query_http_date(client: Client, input: MalformedTimestampQueryHttpDateInput) -> Result(MalformedTimestampQueryHttpDateOutput, MalformedTimestampQueryHttpDateError) {
+  case awsjson_client.invoke(client.config, build_malformed_timestamp_query_http_date_request(input), parse_malformed_timestamp_query_http_date_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_timestamp_query_http_date_error(err))
+  }
+}
+
+pub fn malformed_union(client: Client, input: MalformedUnionInput) -> Result(MalformedUnionOutput, MalformedUnionError) {
+  case awsjson_client.invoke(client.config, build_malformed_union_request(input), parse_malformed_union_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_malformed_union_error(err))
+  }
+}
+
+pub fn media_type_header(client: Client, input: MediaTypeHeaderInput) -> Result(MediaTypeHeaderOutput, MediaTypeHeaderError) {
+  case awsjson_client.invoke(client.config, build_media_type_header_request(input), parse_media_type_header_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_media_type_header_error(err))
+  }
+}
+
+pub fn no_input_and_no_output(client: Client, input: NoInputAndNoOutputInput) -> Result(NoInputAndNoOutputOutput, NoInputAndNoOutputError) {
+  case awsjson_client.invoke(client.config, build_no_input_and_no_output_request(input), parse_no_input_and_no_output_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_no_input_and_no_output_error(err))
+  }
+}
+
+pub fn no_input_and_output(client: Client, input: NoInputAndOutputInput) -> Result(NoInputAndOutputOutput, NoInputAndOutputError) {
+  case awsjson_client.invoke(client.config, build_no_input_and_output_request(input), parse_no_input_and_output_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_no_input_and_output_error(err))
+  }
+}
+
+pub fn null_and_empty_headers_client(client: Client, input: NullAndEmptyHeadersIO) -> Result(NullAndEmptyHeadersIO, NullAndEmptyHeadersClientError) {
+  case awsjson_client.invoke(client.config, build_null_and_empty_headers_client_request(input), parse_null_and_empty_headers_client_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_null_and_empty_headers_client_error(err))
+  }
+}
+
+pub fn null_and_empty_headers_server(client: Client, input: NullAndEmptyHeadersIO) -> Result(NullAndEmptyHeadersIO, NullAndEmptyHeadersServerError) {
+  case awsjson_client.invoke(client.config, build_null_and_empty_headers_server_request(input), parse_null_and_empty_headers_server_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_null_and_empty_headers_server_error(err))
+  }
+}
+
+pub fn omits_null_serializes_empty_string(client: Client, input: OmitsNullSerializesEmptyStringInput) -> Result(OmitsNullSerializesEmptyStringOutput, OmitsNullSerializesEmptyStringError) {
+  case awsjson_client.invoke(client.config, build_omits_null_serializes_empty_string_request(input), parse_omits_null_serializes_empty_string_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_omits_null_serializes_empty_string_error(err))
+  }
+}
+
+pub fn omits_serializing_empty_lists(client: Client, input: OmitsSerializingEmptyListsInput) -> Result(OmitsSerializingEmptyListsOutput, OmitsSerializingEmptyListsError) {
+  case awsjson_client.invoke(client.config, build_omits_serializing_empty_lists_request(input), parse_omits_serializing_empty_lists_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_omits_serializing_empty_lists_error(err))
+  }
+}
+
+pub fn operation_with_defaults(client: Client, input: OperationWithDefaultsInput) -> Result(OperationWithDefaultsOutput, OperationWithDefaultsError) {
+  case awsjson_client.invoke(client.config, build_operation_with_defaults_request(input), parse_operation_with_defaults_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_operation_with_defaults_error(err))
+  }
+}
+
+pub fn operation_with_nested_structure(client: Client, input: OperationWithNestedStructureInput) -> Result(OperationWithNestedStructureOutput, OperationWithNestedStructureError) {
+  case awsjson_client.invoke(client.config, build_operation_with_nested_structure_request(input), parse_operation_with_nested_structure_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_operation_with_nested_structure_error(err))
+  }
+}
+
+pub fn output_stream(client: Client, input: OutputStreamInput) -> Result(OutputStreamOutput, OutputStreamError) {
+  case awsjson_client.invoke(client.config, build_output_stream_request(input), parse_output_stream_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_output_stream_error(err))
+  }
+}
+
+pub fn output_stream_with_initial_response(client: Client, input: OutputStreamWithInitialResponseInput) -> Result(OutputStreamWithInitialResponseOutput, OutputStreamWithInitialResponseError) {
+  case awsjson_client.invoke(client.config, build_output_stream_with_initial_response_request(input), parse_output_stream_with_initial_response_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_output_stream_with_initial_response_error(err))
+  }
+}
+
+pub fn post_player_action(client: Client, input: PostPlayerActionInput) -> Result(PostPlayerActionOutput, PostPlayerActionError) {
+  case awsjson_client.invoke(client.config, build_post_player_action_request(input), parse_post_player_action_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_post_player_action_error(err))
+  }
+}
+
+pub fn post_union_with_json_name(client: Client, input: PostUnionWithJsonNameInput) -> Result(PostUnionWithJsonNameOutput, PostUnionWithJsonNameError) {
+  case awsjson_client.invoke(client.config, build_post_union_with_json_name_request(input), parse_post_union_with_json_name_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_post_union_with_json_name_error(err))
+  }
+}
+
+pub fn put_with_content_encoding(client: Client, input: PutWithContentEncodingInput) -> Result(PutWithContentEncodingOutput, PutWithContentEncodingError) {
+  case awsjson_client.invoke(client.config, build_put_with_content_encoding_request(input), parse_put_with_content_encoding_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_put_with_content_encoding_error(err))
+  }
+}
+
+pub fn query_idempotency_token_auto_fill(client: Client, input: QueryIdempotencyTokenAutoFillInput) -> Result(QueryIdempotencyTokenAutoFillOutput, QueryIdempotencyTokenAutoFillError) {
+  case awsjson_client.invoke(client.config, build_query_idempotency_token_auto_fill_request(input), parse_query_idempotency_token_auto_fill_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_query_idempotency_token_auto_fill_error(err))
+  }
+}
+
+pub fn query_params_as_string_list_map(client: Client, input: QueryParamsAsStringListMapInput) -> Result(QueryParamsAsStringListMapOutput, QueryParamsAsStringListMapError) {
+  case awsjson_client.invoke(client.config, build_query_params_as_string_list_map_request(input), parse_query_params_as_string_list_map_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_query_params_as_string_list_map_error(err))
+  }
+}
+
+pub fn query_precedence(client: Client, input: QueryPrecedenceInput) -> Result(QueryPrecedenceOutput, QueryPrecedenceError) {
+  case awsjson_client.invoke(client.config, build_query_precedence_request(input), parse_query_precedence_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_query_precedence_error(err))
+  }
+}
+
+pub fn recursive_shapes(client: Client, input: RecursiveShapesInputOutput) -> Result(RecursiveShapesInputOutput, RecursiveShapesError) {
+  case awsjson_client.invoke(client.config, build_recursive_shapes_request(input), parse_recursive_shapes_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_recursive_shapes_error(err))
+  }
+}
+
+pub fn response_code_http_fallback(client: Client, input: ResponseCodeHttpFallbackInputOutput) -> Result(ResponseCodeHttpFallbackInputOutput, ResponseCodeHttpFallbackError) {
+  case awsjson_client.invoke(client.config, build_response_code_http_fallback_request(input), parse_response_code_http_fallback_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_response_code_http_fallback_error(err))
+  }
+}
+
+pub fn response_code_required(client: Client, input: ResponseCodeRequiredInput) -> Result(ResponseCodeRequiredOutput, ResponseCodeRequiredError) {
+  case awsjson_client.invoke(client.config, build_response_code_required_request(input), parse_response_code_required_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_response_code_required_error(err))
+  }
+}
+
+pub fn simple_scalar_properties(client: Client, input: SimpleScalarPropertiesInputOutput) -> Result(SimpleScalarPropertiesInputOutput, SimpleScalarPropertiesError) {
+  case awsjson_client.invoke(client.config, build_simple_scalar_properties_request(input), parse_simple_scalar_properties_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_simple_scalar_properties_error(err))
+  }
+}
+
+pub fn sparse_json_lists(client: Client, input: SparseJsonListsInputOutput) -> Result(SparseJsonListsInputOutput, SparseJsonListsError) {
+  case awsjson_client.invoke(client.config, build_sparse_json_lists_request(input), parse_sparse_json_lists_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_sparse_json_lists_error(err))
+  }
+}
+
+pub fn sparse_json_maps(client: Client, input: SparseJsonMapsInputOutput) -> Result(SparseJsonMapsInputOutput, SparseJsonMapsError) {
+  case awsjson_client.invoke(client.config, build_sparse_json_maps_request(input), parse_sparse_json_maps_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_sparse_json_maps_error(err))
+  }
+}
+
+pub fn streaming_traits(client: Client, input: StreamingTraitsInputOutput) -> Result(StreamingTraitsInputOutput, StreamingTraitsError) {
+  case awsjson_client.invoke(client.config, build_streaming_traits_request(input), parse_streaming_traits_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_streaming_traits_error(err))
+  }
+}
+
+pub fn streaming_traits_require_length(client: Client, input: StreamingTraitsRequireLengthInput) -> Result(StreamingTraitsRequireLengthOutput, StreamingTraitsRequireLengthError) {
+  case awsjson_client.invoke(client.config, build_streaming_traits_require_length_request(input), parse_streaming_traits_require_length_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_streaming_traits_require_length_error(err))
+  }
+}
+
+pub fn streaming_traits_with_media_type(client: Client, input: StreamingTraitsWithMediaTypeInputOutput) -> Result(StreamingTraitsWithMediaTypeInputOutput, StreamingTraitsWithMediaTypeError) {
+  case awsjson_client.invoke(client.config, build_streaming_traits_with_media_type_request(input), parse_streaming_traits_with_media_type_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_streaming_traits_with_media_type_error(err))
+  }
+}
+
+pub fn test_body_structure(client: Client, input: TestBodyStructureInputOutput) -> Result(TestBodyStructureInputOutput, TestBodyStructureError) {
+  case awsjson_client.invoke(client.config, build_test_body_structure_request(input), parse_test_body_structure_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_test_body_structure_error(err))
+  }
+}
+
+pub fn test_get_no_input_no_payload(client: Client, input: TestGetNoInputNoPayloadInput) -> Result(TestNoPayloadInputOutput, TestGetNoInputNoPayloadError) {
+  case awsjson_client.invoke(client.config, build_test_get_no_input_no_payload_request(input), parse_test_get_no_input_no_payload_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_test_get_no_input_no_payload_error(err))
+  }
+}
+
+pub fn test_get_no_payload(client: Client, input: TestNoPayloadInputOutput) -> Result(TestNoPayloadInputOutput, TestGetNoPayloadError) {
+  case awsjson_client.invoke(client.config, build_test_get_no_payload_request(input), parse_test_get_no_payload_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_test_get_no_payload_error(err))
+  }
+}
+
+pub fn test_payload_blob(client: Client, input: TestPayloadBlobInputOutput) -> Result(TestPayloadBlobInputOutput, TestPayloadBlobError) {
+  case awsjson_client.invoke(client.config, build_test_payload_blob_request(input), parse_test_payload_blob_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_test_payload_blob_error(err))
+  }
+}
+
+pub fn test_payload_structure(client: Client, input: TestPayloadStructureInputOutput) -> Result(TestPayloadStructureInputOutput, TestPayloadStructureError) {
+  case awsjson_client.invoke(client.config, build_test_payload_structure_request(input), parse_test_payload_structure_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_test_payload_structure_error(err))
+  }
+}
+
+pub fn test_post_no_input_no_payload(client: Client, input: TestPostNoInputNoPayloadInput) -> Result(TestNoPayloadInputOutput, TestPostNoInputNoPayloadError) {
+  case awsjson_client.invoke(client.config, build_test_post_no_input_no_payload_request(input), parse_test_post_no_input_no_payload_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_test_post_no_input_no_payload_error(err))
+  }
+}
+
+pub fn test_post_no_payload(client: Client, input: TestNoPayloadInputOutput) -> Result(TestNoPayloadInputOutput, TestPostNoPayloadError) {
+  case awsjson_client.invoke(client.config, build_test_post_no_payload_request(input), parse_test_post_no_payload_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_test_post_no_payload_error(err))
+  }
+}
+
+pub fn timestamp_format_headers(client: Client, input: TimestampFormatHeadersIO) -> Result(TimestampFormatHeadersIO, TimestampFormatHeadersError) {
+  case awsjson_client.invoke(client.config, build_timestamp_format_headers_request(input), parse_timestamp_format_headers_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_timestamp_format_headers_error(err))
+  }
+}
+
+pub fn unit_input_and_output(client: Client, input: UnitInputAndOutputInput) -> Result(UnitInputAndOutputOutput, UnitInputAndOutputError) {
+  case awsjson_client.invoke(client.config, build_unit_input_and_output_request(input), parse_unit_input_and_output_response) {
+    Ok(out) -> Ok(out)
+    Error(err) -> Error(translate_unit_input_and_output_error(err))
+  }
 }
+

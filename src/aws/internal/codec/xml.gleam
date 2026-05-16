@@ -76,7 +76,7 @@ pub fn bool_text(b: Bool) -> String {
 @external(erlang, "erlang", "integer_to_binary")
 pub fn int_text(n: Int) -> String
 
-@external(erlang, "erlang", "float_to_binary")
+@external(erlang, "aws_ffi", "float_short")
 pub fn float_text(f: Float) -> String
 
 /// Base64-encode a blob value for XML body inclusion. S3 uses base64
