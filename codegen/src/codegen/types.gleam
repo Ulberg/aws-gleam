@@ -89,7 +89,38 @@ pub type MemberDef {
     snake_name: String,
     target: Resolved,
     required: Bool,
+    /// HTTP binding the member carries. Used by rest-protocol emitters
+    /// to route the field to the URI / query / headers instead of the
+    /// body. Defaults to `Body` for members without an http-binding
+    /// trait — they're serialised into the JSON / XML body alongside
+    /// other body members.
+    binding: HttpBinding,
   )
+}
+
+pub type HttpBinding {
+  Body
+  /// `@httpLabel` — substitutes into the operation's URI template
+  /// `{name}` placeholders. The URI placeholder name comes from the
+  /// member's JSON name; the trait itself has no payload.
+  Label
+  /// `@httpQuery(name)` — emitted as `?<query_name>=<value>` in the
+  /// request URL.
+  Query(query_name: String)
+  /// `@httpHeader(name)` — emitted as an HTTP request header.
+  Header(header_name: String)
+  /// `@httpPayload` — the body of the request IS this member's
+  /// serialised value (no surrounding JSON / XML wrapper).
+  Payload
+  /// `@httpPrefixHeaders(prefix)` — the member must be a Map shape;
+  /// each entry becomes a header `<prefix><key>: <value>`.
+  PrefixHeaders(prefix: String)
+  /// `@httpQueryParams` — member is a Map shape; entries become query
+  /// string pairs.
+  QueryParams
+  /// `@httpResponseCode` — output-only, indicates that the HTTP
+  /// status code feeds this member.
+  ResponseCode
 }
 
 /// Resolve a Smithy target shape ID to a `Resolved`. Recursive shape
@@ -236,8 +267,62 @@ fn extract_members(
       snake_name: stringutils.pascal_to_snake(name),
       target: resolve(model, target),
       required: dict.has_key(mem.traits, ShapeId("smithy.api#required")),
+      binding: binding_of(mem.traits),
     )
   })
+}
+
+fn binding_of(traits: Dict(ShapeId, option.Option(trait.Trait))) -> HttpBinding {
+  case dict.has_key(traits, ShapeId("smithy.api#httpLabel")) {
+    True -> Label
+    False ->
+      case maybe_string_trait(traits, "smithy.api#httpQuery") {
+        Ok(name) -> Query(query_name: name)
+        Error(_) ->
+          case maybe_string_trait(traits, "smithy.api#httpHeader") {
+            Ok(name) -> Header(header_name: name)
+            Error(_) ->
+              case dict.has_key(traits, ShapeId("smithy.api#httpPayload")) {
+                True -> Payload
+                False ->
+                  case
+                    maybe_string_trait(traits, "smithy.api#httpPrefixHeaders")
+                  {
+                    Ok(prefix) -> PrefixHeaders(prefix: prefix)
+                    Error(_) ->
+                      case
+                        dict.has_key(
+                          traits,
+                          ShapeId("smithy.api#httpQueryParams"),
+                        )
+                      {
+                        True -> QueryParams
+                        False ->
+                          case
+                            dict.has_key(
+                              traits,
+                              ShapeId("smithy.api#httpResponseCode"),
+                            )
+                          {
+                            True -> ResponseCode
+                            False -> Body
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  }
+}
+
+fn maybe_string_trait(
+  traits: Dict(ShapeId, option.Option(trait.Trait)),
+  trait_id: String,
+) -> Result(String, Nil) {
+  case dict.get(traits, ShapeId(trait_id)) {
+    Ok(option.Some(trait.String(s))) -> Ok(s)
+    _ -> Error(Nil)
+  }
 }
 
 /// Whether a `Resolved` is supported by the emitter today. Struct /
