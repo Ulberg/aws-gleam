@@ -789,7 +789,7 @@ fn emit_int_enum_codec(
       <> "    "
       <> v.gleam_ctor
       <> " -> json.int("
-      <> int_to_string(v.wire_value)
+      <> stringutils.int_to_string(v.wire_value)
       <> ")\n"
     })
     <> "  }\n}\n\n"
@@ -806,7 +806,7 @@ fn emit_int_enum_codec(
     <> list.fold(variants, "", fn(acc, v) {
       acc
       <> "      "
-      <> int_to_string(v.wire_value)
+      <> stringutils.int_to_string(v.wire_value)
       <> " -> decode.success("
       <> v.gleam_ctor
       <> ")\n"
@@ -893,7 +893,7 @@ fn emit_union_codec(
       acc
       <> "    "
       <> name
-      <> pascalize_member(m.member_name)
+      <> stringutils.pascalize_member(m.member_name)
       <> "(x) -> json.object([#(\""
       <> m.member_name
       <> "\", "
@@ -963,7 +963,7 @@ fn emit_union_branch(union_name: String, m: MemberDef) -> String {
   <> types.json_decoder(m.target)
   <> ", fn(x) { decode.success("
   <> union_name
-  <> pascalize_member(m.member_name)
+  <> stringutils.pascalize_member(m.member_name)
   <> "(x)) })"
 }
 
@@ -974,7 +974,7 @@ fn emit_union_branch_params(union_name: String, m: MemberDef) -> String {
   <> types.json_decoder_params(m.target)
   <> ", fn(x) { decode.success("
   <> union_name
-  <> pascalize_member(m.member_name)
+  <> stringutils.pascalize_member(m.member_name)
   <> "(x)) })"
 }
 
@@ -1087,39 +1087,6 @@ fn derive_module_name(service_id: String) -> String {
   stringutils.pascal_to_snake(local)
 }
 
-fn pascalize_member(s: String) -> String {
-  case string.to_graphemes(s) {
-    [first, ..rest] -> string.uppercase(first) <> string.concat(rest)
-    [] -> s
-  }
-}
-
-fn int_to_string(n: Int) -> String {
-  case n {
-    0 -> "0"
-    _ -> int_str(n, "")
-  }
-}
-
-fn int_str(n: Int, acc: String) -> String {
-  case n {
-    0 -> acc
-    _ -> {
-      let d = n - { n / 10 } * 10
-      let c = case d {
-        0 -> "0"
-        1 -> "1"
-        2 -> "2"
-        3 -> "3"
-        4 -> "4"
-        5 -> "5"
-        6 -> "6"
-        7 -> "7"
-        8 -> "8"
-        9 -> "9"
-        _ -> "?"
-      }
-      int_str(n / 10, c <> acc)
-    }
-  }
-}
+// `stringutils.pascalize_member`, `stringutils.int_to_string` live in
+// `codegen/src/internal/stringutils.gleam` — see Pass 4 in
+// plan.md for the de-duplication.

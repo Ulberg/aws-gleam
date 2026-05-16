@@ -28,7 +28,30 @@ jobs:
         with:
           submodules: false
 
+      # Sparse submodules pull ~185 MB across vendor/aws-sdk-rust and
+      # vendor/smithy. Cache both the working trees and the parent
+      # repo's .git/modules/vendor (which holds the actual git data
+      # the submodule .git pointers reference). Key by the pinned
+      # SHAs from the parent tree so a `git submodule update --remote`
+      # bump busts the cache automatically.
+      - name: Compute submodule cache key
+        id: subs-key
+        run: |
+          key=$(git ls-tree HEAD vendor | awk '{print $3}' | sort | sha256sum | cut -c1-16)
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Cache vendor submodules
+        id: cache-submodules
+        uses: actions/cache@v4
+        with:
+          path: |
+            .git/modules/vendor
+            vendor/aws-sdk-rust
+            vendor/smithy
+          key: vendor-submodules-${{ steps.subs-key.outputs.key }}
+
       - name: Initialise sparse submodules
+        if: steps.cache-submodules.outputs.cache-hit != 'true'
         run: scripts/init-submodules.sh
 
       - name: Install OTP and Gleam
@@ -50,20 +73,22 @@ jobs:
 
       # ./scripts/build-protocol-test-asts.sh shells out to the Smithy
       # CLI under .tools/. Cache the unpacked CLI by version so we
-      # don't re-fetch ~50 MB every CI run.
+      # don't re-fetch ~50 MB every CI run. The CLI version must be
+      # >= the Maven deps declared in .tools/smithy-build.json, or
+      # the CLI refuses to load them.
       - name: Cache Smithy CLI
         id: cache-smithy
         uses: actions/cache@v4
         with:
           path: .tools/smithy-cli-linux-x86_64
-          key: smithy-cli-linux-x86_64-1.61.0
+          key: smithy-cli-linux-x86_64-1.70.0
 
       - name: Download Smithy CLI
         if: steps.cache-smithy.outputs.cache-hit != 'true'
         run: |
           mkdir -p .tools
           curl -sSL -o .tools/smithy.zip \
-            https://github.com/smithy-lang/smithy/releases/download/1.61.0/smithy-cli-linux-x86_64.zip
+            https://github.com/smithy-lang/smithy/releases/download/1.70.0/smithy-cli-linux-x86_64.zip
           unzip -q .tools/smithy.zip -d .tools/
           rm .tools/smithy.zip
           test -x .tools/smithy-cli-linux-x86_64/bin/smithy

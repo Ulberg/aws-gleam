@@ -5,6 +5,49 @@
 import gleam/list
 import gleam/string
 
+/// `Foo` → `Foo`, `foo` → `Foo` — uppercases the first grapheme,
+/// leaves the rest. Used by the union variant constructor name
+/// builders.
+pub fn pascalize_member(s: String) -> String {
+  case string.to_graphemes(s) {
+    [first, ..rest] -> string.uppercase(first) <> string.concat(rest)
+    [] -> s
+  }
+}
+
+/// Manual `Int → String` so the codegen modules don't need to
+/// import `gleam/int`. Tail-recursive: `int_to_string(123)` →
+/// `int_str(123, "")` → `int_str(12, "3")` → … → `"123"`.
+pub fn int_to_string(n: Int) -> String {
+  case n {
+    0 -> "0"
+    _ -> int_str(n, "")
+  }
+}
+
+fn int_str(n: Int, acc: String) -> String {
+  case n {
+    0 -> acc
+    _ -> {
+      let d = n - { n / 10 } * 10
+      let c = case d {
+        0 -> "0"
+        1 -> "1"
+        2 -> "2"
+        3 -> "3"
+        4 -> "4"
+        5 -> "5"
+        6 -> "6"
+        7 -> "7"
+        8 -> "8"
+        9 -> "9"
+        _ -> "?"
+      }
+      int_str(n / 10, c <> acc)
+    }
+  }
+}
+
 /// `MyHTTPRequest` → `my_http_request`. Inserts an underscore between a
 /// lowercase/digit boundary and the next uppercase, and between a run of
 /// uppercase letters and a final upper-then-lower (e.g. `HTTPRequest` →
