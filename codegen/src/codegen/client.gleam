@@ -107,3 +107,41 @@ pub fn items(endpoint_prefix: String, signing_name: String) -> List(Code) {
 pub fn render(endpoint_prefix: String, signing_name: String) -> String {
   code.render(Module(items(endpoint_prefix, signing_name))) <> "\n"
 }
+
+/// Build the AST node for the per-op `pub fn <snake>(client, input)
+/// -> Result(<Out>, <Op>Error)` invoker. Identical across the three
+/// protocol emitters; lifted here so they share the implementation
+/// instead of each carrying a copy.
+pub fn invoke_fn(
+  snake: String,
+  op_local: String,
+  in_type: String,
+  out_type: String,
+) -> Code {
+  let err_type = op_local <> "Error"
+  Fn(
+    public: True,
+    name: snake,
+    params: [
+      Param(name: "client", type_: "Client"),
+      Param(name: "input", type_: in_type),
+    ],
+    return: CodeSome("Result(" <> out_type <> ", " <> err_type <> ")"),
+    body: code.Case(
+      scrutinee: Call(Ident("runtime.invoke"), [
+        Ident("client.config"),
+        Call(Ident("build_" <> snake <> "_request"), [Ident("input")]),
+        Ident("parse_" <> snake <> "_response"),
+      ]),
+      branches: [
+        code.Branch(pattern: "Ok(out)", body: Call(Ident("Ok"), [Ident("out")])),
+        code.Branch(
+          pattern: "Error(err)",
+          body: Call(Ident("Error"), [
+            Call(Ident("translate_" <> snake <> "_error"), [Ident("err")]),
+          ]),
+        ),
+      ],
+    ),
+  )
+}

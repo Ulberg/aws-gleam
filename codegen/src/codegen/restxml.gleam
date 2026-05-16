@@ -218,28 +218,15 @@ fn emit_client(metadata: Metadata) -> String {
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
-  "pub fn "
-  <> spec.snake
-  <> "(client: Client, input: "
-  <> spec.in_info.type_name
-  <> ") -> Result("
-  <> spec.out_info.type_name
-  <> ", "
-  <> spec.local
-  <> "Error) {
-  case runtime.invoke(client.config, build_"
-  <> spec.snake
-  <> "_request(input), parse_"
-  <> spec.snake
-  <> "_response) {
-    Ok(out) -> Ok(out)
-    Error(err) -> Error(translate_"
-  <> spec.snake
-  <> "_error(err))
-  }
-}
-
-"
+  code.render(code.Module(items: [
+    client.invoke_fn(
+      spec.snake,
+      spec.local,
+      spec.in_info.type_name,
+      spec.out_info.type_name,
+    ),
+    code.Blank,
+  ]))
 }
 
 /// restXml typed-error enum + translator. restXml errors come back

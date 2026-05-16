@@ -225,45 +225,26 @@ fn emit_client(metadata: Metadata) -> String {
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
-  "/// Invoke "
-  <> spec.local
-  <> ". Signs the request with SigV4 and dispatches via the configured
-/// HTTP transport. Service errors come back as typed `"
-  <> spec.local
-  <> "Error`
-/// variants; transport, decode, and credentials failures all collapse
-/// into the generic `"
-  <> spec.local
-  <> "ErrorTransport` variant.
-pub fn "
-  <> spec.snake
-  <> "(
-  client: Client,
-  input: "
-  <> spec.in_info.type_name
-  <> ",
-) -> Result("
-  <> spec.out_info.type_name
-  <> ", "
-  <> spec.local
-  <> "Error) {
-  case runtime.invoke(
-    client.config,
-    build_"
-  <> spec.snake
-  <> "_request(input),
-    parse_"
-  <> spec.snake
-  <> "_response,
-  ) {
-    Ok(out) -> Ok(out)
-    Error(err) -> Error(translate_"
-  <> spec.snake
-  <> "_error(err))
-  }
-}
-
-"
+  let err_type = spec.local <> "Error"
+  code.render(code.Module(items: [
+    code.DocComment([
+      "Invoke "
+        <> spec.local
+        <> ". Signs the request with SigV4 and dispatches via the configured",
+      "HTTP transport. Service errors come back as typed `"
+        <> err_type
+        <> "`",
+      "variants; transport, decode, and credentials failures all collapse",
+      "into the generic `" <> err_type <> "Transport` variant.",
+    ]),
+    client.invoke_fn(
+      spec.snake,
+      spec.local,
+      spec.in_info.type_name,
+      spec.out_info.type_name,
+    ),
+    code.Blank,
+  ]))
 }
 
 fn resolve_or_unit(model: Model, id: String) -> Resolved {
@@ -371,6 +352,11 @@ fn walk_for_structs(
   acc: Set(String),
   r: Resolved,
 ) -> Set(String) {
+  // Track both structs and unions in `acc` so a self-referential
+  // union (DynamoDB's `AttributeValue` references
+  // `List<AttributeValue>`) terminates the recursion. Set is
+  // checked by local name; we prefix unions with `u:` to keep
+  // the namespaces separate from struct names.
   case r {
     RStruct(local_name: name, full_id: id, ..) ->
       case set.contains(acc, name) {
@@ -383,9 +369,18 @@ fn walk_for_structs(
           })
         }
       }
-    RUnion(full_id: id, ..) -> {
-      let members = types.resolve_members(model, id)
-      list.fold(members, acc, fn(a, m) { walk_for_structs(model, a, m.target) })
+    RUnion(local_name: name, full_id: id, ..) -> {
+      let key = "u:" <> name
+      case set.contains(acc, key) {
+        True -> acc
+        False -> {
+          let acc = set.insert(acc, key)
+          let members = types.resolve_members(model, id)
+          list.fold(members, acc, fn(a, m) {
+            walk_for_structs(model, a, m.target)
+          })
+        }
+      }
     }
     RList(element: e, ..) -> walk_for_structs(model, acc, e)
     RMap(value: v, ..) -> walk_for_structs(model, acc, v)
