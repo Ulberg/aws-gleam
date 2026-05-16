@@ -19,7 +19,7 @@ pub fn items(endpoint_prefix: String, signing_name: String) -> List(Code) {
   [
     TypeDef(public: True, is_opaque: True, name: "Client", variants: [
       Variant(name: "Client", fields: [
-        Param(name: "config", type_: "awsjson_client.ClientConfig"),
+        Param(name: "config", type_: "runtime.ClientConfig"),
       ]),
     ]),
     Blank,
@@ -34,7 +34,7 @@ pub fn items(endpoint_prefix: String, signing_name: String) -> List(Code) {
       params: [LabelledParam(label: "region", name: "region", type_: "String")],
       return: CodeSome("Client"),
       body: Call(Ident("Client"), [
-        Call(Ident("awsjson_client.default_config"), [
+        Call(Ident("runtime.default_config"), [
           Ident("region"),
           StrLit(endpoint_prefix),
           StrLit(signing_name),
@@ -55,7 +55,7 @@ pub fn items(endpoint_prefix: String, signing_name: String) -> List(Code) {
       ],
       return: CodeSome("Client"),
       body: Call(Ident("Client"), [
-        Call(Ident("awsjson_client.with_credentials_provider"), [
+        Call(Ident("runtime.with_credentials_provider"), [
           Ident("client.config"),
           Ident("provider"),
         ]),
@@ -74,7 +74,7 @@ pub fn items(endpoint_prefix: String, signing_name: String) -> List(Code) {
       ],
       return: CodeSome("Client"),
       body: Call(Ident("Client"), [
-        Call(Ident("awsjson_client.with_endpoint_url"), [
+        Call(Ident("runtime.with_endpoint_url"), [
           Ident("client.config"),
           Ident("url"),
         ]),
@@ -93,7 +93,7 @@ pub fn items(endpoint_prefix: String, signing_name: String) -> List(Code) {
       ],
       return: CodeSome("Client"),
       body: Call(Ident("Client"), [
-        Call(Ident("awsjson_client.with_http_send"), [
+        Call(Ident("runtime.with_http_send"), [
           Ident("client.config"),
           Ident("send"),
         ]),

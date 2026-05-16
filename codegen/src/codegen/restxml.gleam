@@ -228,7 +228,7 @@ fn emit_invoke(spec: OpSpec) -> String {
   <> ", "
   <> spec.local
   <> "Error) {
-  case awsjson_client.invoke(client.config, build_"
+  case runtime.invoke(client.config, build_"
   <> spec.snake
   <> "_request(input), parse_"
   <> spec.snake
@@ -245,7 +245,7 @@ fn emit_invoke(spec: OpSpec) -> String {
 
 /// restXml typed-error enum + translator. restXml errors come back
 /// as an XML body shaped like `<Error><Code>...</Code>...</Error>`.
-/// The `awsjson_client` runtime still extracts an error_type from
+/// The shared `runtime` module still extracts an error_type from
 /// the X-Amzn-Errortype header (when present) or — for S3 — from a
 /// JSON `code` field that's not actually there. Until the runtime's
 /// error_type extractor learns to read the XML `<Code>` element,
@@ -279,7 +279,7 @@ fn emit_error_translator(spec: OpSpec) -> String {
     list.fold(spec.error_ids, "", fn(acc, err_id) {
       let local = strip_namespace(err_id)
       acc
-      <> "        case awsjson_client.error_type_matches(et, \""
+      <> "        case runtime.error_type_matches(et, \""
       <> local
       <> "\") {\n          True -> case bit_array.to_string(b) {\n            Ok(text) -> "
       <> name
@@ -297,17 +297,17 @@ fn emit_error_translator(spec: OpSpec) -> String {
     list.fold(spec.error_ids, "", fn(acc, _) { acc <> "\n        }" })
   "fn translate_"
   <> snake
-  <> "_error(err: awsjson_client.ClientError) -> "
+  <> "_error(err: runtime.ClientError) -> "
   <> name
-  <> " {\n  case err {\n    awsjson_client.ServiceError(status: s, error_type: et, body: b) -> {\n"
+  <> " {\n  case err {\n    runtime.ServiceError(status: s, error_type: et, body: b) -> {\n"
   <> matches
   <> fallback
   <> chain_end
-  <> "\n    }\n    awsjson_client.TransportError(_) -> "
+  <> "\n    }\n    runtime.TransportError(_) -> "
   <> name
-  <> "Transport(reason: \"transport error\")\n    awsjson_client.CredentialsError(_) -> "
+  <> "Transport(reason: \"transport error\")\n    runtime.CredentialsError(_) -> "
   <> name
-  <> "Transport(reason: \"credentials error\")\n    awsjson_client.DecodeError(reason: r) -> "
+  <> "Transport(reason: \"credentials error\")\n    runtime.DecodeError(reason: r) -> "
   <> name
   <> "Transport(reason: \"decode: \" <> r)\n  }\n}\n\n"
 }
@@ -1542,7 +1542,7 @@ fn file_header(service_id: String) -> String {
 //// DO NOT EDIT. Re-generate via the codegen subproject.
 
 import aws/credentials
-import aws/internal/client/awsjson as awsjson_client
+import aws/internal/client/runtime as runtime
 import aws/internal/codec/json_document
 import aws/internal/codec/json_float
 import aws/internal/codec/json_timestamp
