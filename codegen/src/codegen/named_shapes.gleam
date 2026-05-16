@@ -19,29 +19,21 @@ import gleam/string
 pub fn record_def(name: String, members: List(MemberDef)) -> Code {
   case members {
     [] ->
-      TypeDef(
-        public: True,
-        is_opaque: False,
-        name: name,
-        variants: [UnitVariant(name: name)],
-      )
+      TypeDef(public: True, is_opaque: False, name: name, variants: [
+        UnitVariant(name: name),
+      ])
     _ ->
-      TypeDef(
-        public: True,
-        is_opaque: False,
-        name: name,
-        variants: [
-          Variant(
-            name: name,
-            fields: list.map(members, fn(m) {
-              Param(
-                name: m.snake_name,
-                type_: "option.Option(" <> types.gleam_type(m.target) <> ")",
-              )
-            }),
-          ),
-        ],
-      )
+      TypeDef(public: True, is_opaque: False, name: name, variants: [
+        Variant(
+          name: name,
+          fields: list.map(members, fn(m) {
+            Param(
+              name: m.snake_name,
+              type_: "option.Option(" <> types.gleam_type(m.target) <> ")",
+            )
+          }),
+        ),
+      ])
   }
 }
 
@@ -52,12 +44,9 @@ pub fn record_def(name: String, members: List(MemberDef)) -> Code {
 pub fn enum_def(name: String, variants: List(EnumVariant)) -> Code {
   case variants {
     [] ->
-      TypeDef(
-        public: True,
-        is_opaque: False,
-        name: name,
-        variants: [UnitVariant(name: name <> "Unknown")],
-      )
+      TypeDef(public: True, is_opaque: False, name: name, variants: [
+        UnitVariant(name: name <> "Unknown"),
+      ])
     _ ->
       TypeDef(
         public: True,
@@ -73,12 +62,9 @@ pub fn enum_def(name: String, variants: List(EnumVariant)) -> Code {
 pub fn int_enum_def(name: String, variants: List(IntEnumVariant)) -> Code {
   case variants {
     [] ->
-      TypeDef(
-        public: True,
-        is_opaque: False,
-        name: name,
-        variants: [UnitVariant(name: name <> "Unknown")],
-      )
+      TypeDef(public: True, is_opaque: False, name: name, variants: [
+        UnitVariant(name: name <> "Unknown"),
+      ])
     _ ->
       TypeDef(
         public: True,
@@ -97,12 +83,9 @@ pub fn int_enum_def(name: String, variants: List(IntEnumVariant)) -> Code {
 pub fn union_def(name: String, members: List(MemberDef)) -> Code {
   case members {
     [] ->
-      TypeDef(
-        public: True,
-        is_opaque: False,
-        name: name,
-        variants: [UnitVariant(name: name <> "Empty")],
-      )
+      TypeDef(public: True, is_opaque: False, name: name, variants: [
+        UnitVariant(name: name <> "Empty"),
+      ])
     _ ->
       TypeDef(
         public: True,

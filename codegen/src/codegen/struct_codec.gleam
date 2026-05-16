@@ -7,7 +7,7 @@
 //// from "stringly-typed" to "type-checked structure".
 
 import codegen/code.{
-  type Code, Block, Call, Case, CodeNone, CodeSome, Fn, Ident, ListLit, Let,
+  type Code, Block, Call, Case, CodeNone, CodeSome, Fn, Ident, Let, ListLit,
   Param, StrLit, Tuple, Use,
 }
 import codegen/types.{type MemberDef}
@@ -22,15 +22,7 @@ pub fn encoder(
   fn_name: String,
   type_name: String,
   members: List(MemberDef),
-  /// `True` ⇒ skip `@default` population (operation-input encoder
-  /// per the AWS-Smithy protocols spec). Nested struct encoders use
-  /// `False` so defaults populate as expected.
   top_level: Bool,
-  /// `True` ⇒ wire keys are Smithy member names (`m.member_name`),
-  /// used by the awsJson1_0 / awsJson1_1 protocols which do NOT
-  /// honour `@jsonName`. `False` ⇒ wire keys are `m.json_name`
-  /// (`@jsonName` override, or member name when absent), used by
-  /// restJson1 and the JSON triple in the restXml emitter.
   member_keyed: Bool,
 ) -> Code {
   case members {
@@ -53,6 +45,14 @@ pub fn encoder(
   }
 }
 
+/// `True` ⇒ skip `@default` population (operation-input encoder
+/// per the AWS-Smithy protocols spec). Nested struct encoders use
+/// `False` so defaults populate as expected.
+/// `True` ⇒ wire keys are Smithy member names (`m.member_name`),
+/// used by the awsJson1_0 / awsJson1_1 protocols which do NOT
+/// honour `@jsonName`. `False` ⇒ wire keys are `m.json_name`
+/// (`@jsonName` override, or member name when absent), used by
+/// restJson1 and the JSON triple in the restXml emitter.
 fn encoder_body(
   members: List(MemberDef),
   top_level: Bool,
@@ -71,10 +71,7 @@ fn encoder_body(
           items: [
             Tuple(items: [
               wire,
-              Call(
-                Ident(member_encoder_expr(m)),
-                [Ident("v")],
-              ),
+              Call(Ident(member_encoder_expr(m)), [Ident("v")]),
             ]),
           ],
           tail: CodeSome(Ident("pairs")),
@@ -91,13 +88,10 @@ fn encoder_body(
       }
       Let(
         name: "pairs",
-        value: Case(
-          scrutinee: Ident("input." <> m.snake_name),
-          branches: [
-            code.Branch(pattern: "option.Some(v)", body: some_branch),
-            code.Branch(pattern: "option.None", body: none_branch),
-          ],
-        ),
+        value: Case(scrutinee: Ident("input." <> m.snake_name), branches: [
+          code.Branch(pattern: "option.Some(v)", body: some_branch),
+          code.Branch(pattern: "option.None", body: none_branch),
+        ]),
       )
     })
   let tail = Call(Ident("json.object"), [Ident("pairs")])
@@ -115,13 +109,7 @@ pub fn decoder(
   fn_name: String,
   type_name: String,
   members: List(MemberDef),
-  /// `True` ⇒ keys come from Smithy member names (`m.member_name`).
-  /// `False` ⇒ keys come from `m.json_name` (`@jsonName` override
-  /// or member name when absent).
   member_keyed: Bool,
-  /// `True` ⇒ nested struct/union refs call the dispatcher's
-  /// `_struct_params` / `_union_params` decoders. `False` ⇒ nested
-  /// refs call the wire decoders `_struct` / `_union`.
   params_nested: Bool,
 ) -> Code {
   case members {
@@ -149,6 +137,12 @@ pub fn decoder(
   }
 }
 
+/// `True` ⇒ keys come from Smithy member names (`m.member_name`).
+/// `False` ⇒ keys come from `m.json_name` (`@jsonName` override
+/// or member name when absent).
+/// `True` ⇒ nested struct/union refs call the dispatcher's
+/// `_struct_params` / `_union_params` decoders. `False` ⇒ nested
+/// refs call the wire decoders `_struct` / `_union`.
 fn decoder_body(
   type_name: String,
   members: List(MemberDef),

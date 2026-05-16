@@ -29,28 +29,30 @@ echo "→ extracting endpoint fixtures from vendor models"
 
 cd "$REPO/codegen"
 
-mkdir -p ../src/aws/services/protocoltests
+mkdir -p ../src/aws/services/protocoltests ../test/protocol_tests
 
 echo "→ regenerating service clients"
 $CODEGEN awsJson1_0 ../vendor/aws-sdk-rust/aws-models/dynamodb.json ../src/aws/services/dynamodb.gleam >/dev/null
 $CODEGEN restXml ../vendor/aws-sdk-rust/aws-models/s3.json ../src/aws/services/s3.gleam >/dev/null
 
-echo "→ regenerating protocol-test client modules"
-$CODEGEN awsJson1_0 ../test/fixtures/protocol-tests/awsJson1_0.json ../src/aws/services/protocoltests/json10.gleam >/dev/null
-$CODEGEN awsJson1_1 ../test/fixtures/protocol-tests/awsJson1_1.json ../src/aws/services/protocoltests/json11.gleam >/dev/null
-$CODEGEN restJson1  ../test/fixtures/protocol-tests/restJson1.json  ../src/aws/services/protocoltests/restjson1.gleam >/dev/null
-$CODEGEN restXml    ../test/fixtures/protocol-tests/restXml.json    ../src/aws/services/protocoltests/restxml.gleam >/dev/null
-$CODEGEN awsQuery   ../test/fixtures/protocol-tests/awsQuery.json   ../src/aws/services/protocoltests/awsquery.gleam >/dev/null
-$CODEGEN ec2Query   ../test/fixtures/protocol-tests/ec2Query.json   ../src/aws/services/protocoltests/ec2query.gleam >/dev/null
+echo "→ regenerating protocol-test client modules + dispatchers"
+$CODEGEN awsJson1_0 ../test/fixtures/protocol-tests/awsJson1_0.json ../src/aws/services/protocoltests/json10.gleam --dispatcher-out ../test/protocol_tests/awsjson10_dispatchers.gleam >/dev/null
+$CODEGEN awsJson1_1 ../test/fixtures/protocol-tests/awsJson1_1.json ../src/aws/services/protocoltests/json11.gleam --dispatcher-out ../test/protocol_tests/awsjson11_dispatchers.gleam >/dev/null
+$CODEGEN restJson1  ../test/fixtures/protocol-tests/restJson1.json  ../src/aws/services/protocoltests/restjson1.gleam --dispatcher-out ../test/protocol_tests/restjson1_dispatchers.gleam >/dev/null
+$CODEGEN restXml    ../test/fixtures/protocol-tests/restXml.json    ../src/aws/services/protocoltests/restxml.gleam   --dispatcher-out ../test/protocol_tests/restxml_dispatchers.gleam >/dev/null
+$CODEGEN awsQuery   ../test/fixtures/protocol-tests/awsQuery.json   ../src/aws/services/protocoltests/awsquery.gleam  --dispatcher-out ../test/protocol_tests/awsquery_dispatchers.gleam >/dev/null
+$CODEGEN ec2Query   ../test/fixtures/protocol-tests/ec2Query.json   ../src/aws/services/protocoltests/ec2query.gleam  --dispatcher-out ../test/protocol_tests/ec2query_dispatchers.gleam >/dev/null
 
 cd "$REPO"
 
-echo "→ regenerating dispatcher glue"
-python3 scripts/emit-dispatchers.py --protocol awsjson10  --service-module aws/services/protocoltests/json10     --namespace 'aws.protocoltests.json10'  >/dev/null
-python3 scripts/emit-dispatchers.py --protocol awsjson11  --service-module aws/services/protocoltests/json11     --namespace 'aws.protocoltests.json'    >/dev/null
-python3 scripts/emit-dispatchers.py --protocol restjson1  --service-module aws/services/protocoltests/restjson1  --namespace 'aws.protocoltests.restjson' >/dev/null
-python3 scripts/emit-dispatchers.py --protocol restxml    --service-module aws/services/protocoltests/restxml    --namespace 'aws.protocoltests.restxml' >/dev/null
-python3 scripts/emit-dispatchers.py --protocol awsquery   --service-module aws/services/protocoltests/awsquery   --namespace 'aws.protocoltests.query'   >/dev/null
-python3 scripts/emit-dispatchers.py --protocol ec2query   --service-module aws/services/protocoltests/ec2query   --namespace 'aws.protocoltests.ec2'     >/dev/null
+# `gleam format` to match the project's check-formatting CI step.
+# The emitter doesn't try to mimic the formatter's wrapping; we let
+# the formatter own that pass.
+echo "→ formatting generated modules"
+gleam format \
+  src/aws/services/dynamodb.gleam \
+  src/aws/services/s3.gleam \
+  src/aws/services/protocoltests \
+  test/protocol_tests >/dev/null
 
 echo "done."

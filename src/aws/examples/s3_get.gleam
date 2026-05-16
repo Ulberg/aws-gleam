@@ -60,11 +60,6 @@ fn describe(err: s3.ListBucketsError) -> String {
   case err {
     s3.ListBucketsErrorTransport(reason: r) -> "transport: " <> r
     s3.ListBucketsErrorUnknown(error_type: t, status: s, body: b) ->
-      "service: HTTP "
-      <> int.to_string(s)
-      <> " ("
-      <> t
-      <> ")\n  body: "
-      <> b
+      "service: HTTP " <> int.to_string(s) <> " (" <> t <> ")\n  body: " <> b
   }
 }

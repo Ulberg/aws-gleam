@@ -188,7 +188,14 @@ fn do_render(c: Code, indent: Int) -> String {
         CodeNone -> ""
       }
       let header =
-        pad(indent) <> keyword <> n <> "(" <> params_str <> ")" <> ret_str <> " {"
+        pad(indent)
+        <> keyword
+        <> n
+        <> "("
+        <> params_str
+        <> ")"
+        <> ret_str
+        <> " {"
       let body_str = do_render(b, indent + 1)
       header <> "\n" <> body_str <> "\n" <> pad(indent) <> "}"
     }
@@ -221,17 +228,13 @@ fn do_render(c: Code, indent: Int) -> String {
       |> list.map(fn(x) { do_render(x, indent) })
       |> string.join("\n")
 
-    Call(head: h, args: as_) ->
-      pad(indent) <> render_call(h, as_, indent)
+    Call(head: h, args: as_) -> pad(indent) <> render_call(h, as_, indent)
 
-    Concat(parts: ps) ->
-      pad(indent) <> render_concat(ps, indent)
+    Concat(parts: ps) -> pad(indent) <> render_concat(ps, indent)
 
-    Tuple(items: xs) ->
-      pad(indent) <> render_tuple(xs, indent)
+    Tuple(items: xs) -> pad(indent) <> render_tuple(xs, indent)
 
-    ListLit(items: xs, tail: t) ->
-      pad(indent) <> render_list(xs, t, indent)
+    ListLit(items: xs, tail: t) -> pad(indent) <> render_list(xs, t, indent)
 
     Ident(name: n) -> pad(indent) <> n
 
@@ -271,11 +274,7 @@ fn do_render_expr(c: Code, indent: Int) -> String {
       // Larger constructs in expression position fall back to the
       // statement renderer — Gleam allows blocks as expressions when
       // delimited.
-      "{\n"
-      <> do_render(c, indent + 1)
-      <> "\n"
-      <> pad(indent)
-      <> "}"
+      "{\n" <> do_render(c, indent + 1) <> "\n" <> pad(indent) <> "}"
   }
 }
 
@@ -318,8 +317,7 @@ fn render_params(ps: List(Param)) -> String {
   |> list.map(fn(p) {
     case p {
       Param(name: n, type_: t) -> n <> ": " <> t
-      LabelledParam(label: l, name: n, type_: t) ->
-        l <> " " <> n <> ": " <> t
+      LabelledParam(label: l, name: n, type_: t) -> l <> " " <> n <> ": " <> t
     }
   })
   |> string.join(", ")
@@ -340,7 +338,8 @@ fn render_variant(v: Variant) -> String {
         |> string.join(", ")
       n <> "(" <> fields_str <> ")"
     }
-    PositionalVariant(name: n, types: ts) -> n <> "(" <> string.join(ts, ", ") <> ")"
+    PositionalVariant(name: n, types: ts) ->
+      n <> "(" <> string.join(ts, ", ") <> ")"
   }
 }
 

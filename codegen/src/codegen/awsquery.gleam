@@ -6,6 +6,7 @@
 ////   Action=<OperationName>&Version=<service.version>
 //// method = POST, uri = "/", content-type = application/x-www-form-urlencoded.
 
+import codegen/dispatcher
 import gleam/dict
 import gleam/list
 import gleam/option.{None, Some}
@@ -25,6 +26,11 @@ pub type EmitResult {
     module_name: String,
     source: String,
     operations_emitted: List(String),
+    /// One per emitted operation; the CLI uses it to render the
+    /// matching `<protocol>_dispatchers.gleam` for protocol-test
+    /// targets. Populated unconditionally — production-service
+    /// emissions just drop it.
+    dispatcher_specs: List(dispatcher.DispatcherSpec),
   )
 }
 
@@ -57,10 +63,26 @@ pub fn emit_service(
         header
         <> "\n"
         <> list.fold(emitted_ops, "", fn(acc, e) { acc <> e.code })
+      // The awsQuery / ec2Query emitter today only handles
+      // empty-input operations and never emits a `decode_<op>_input`
+      // helper, so dispatchers built from these specs go through
+      // the singleton-input path.
+      let dispatcher_specs =
+        list.map(emitted_ops, fn(e) {
+          let local = strip_namespace(e.operation_id)
+          let snake = stringutils.pascal_to_snake(local)
+          dispatcher.DispatcherSpec(
+            op_id: e.operation_id,
+            snake: snake,
+            input_type: local <> "Input",
+            has_typed_input: False,
+          )
+        })
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
         operations_emitted: list.map(emitted_ops, fn(e) { e.operation_id }),
+        dispatcher_specs: dispatcher_specs,
       ))
     }
     Ok(_) -> Error("not a service: " <> service_id)

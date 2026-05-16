@@ -162,9 +162,7 @@ pub fn add_prefix_headers(
   prefix: String,
   entries: Dict(String, String),
 ) -> Dict(String, String) {
-  dict.fold(entries, headers, fn(acc, k, v) {
-    dict.insert(acc, prefix <> k, v)
-  })
+  dict.fold(entries, headers, fn(acc, k, v) { dict.insert(acc, prefix <> k, v) })
 }
 
 /// Iterate `@httpQueryParams` map members (Map<String, String>).

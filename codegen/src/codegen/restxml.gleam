@@ -26,6 +26,7 @@
 
 import codegen/client
 import codegen/code
+import codegen/dispatcher
 import codegen/named_shapes
 import codegen/struct_codec
 import codegen/types.{
@@ -50,6 +51,11 @@ pub type EmitResult {
     module_name: String,
     source: String,
     operations_emitted: List(String),
+    /// One per emitted operation; the CLI uses it to render the
+    /// matching `<protocol>_dispatchers.gleam` for protocol-test
+    /// targets. Populated unconditionally — production-service
+    /// emissions just drop it.
+    dispatcher_specs: List(dispatcher.DispatcherSpec),
   )
 }
 
@@ -101,8 +107,7 @@ pub fn emit_service(
 
       let named_shapes = collect_named_shapes(model, resolved_ops)
       let is_dispatcher = is_dispatcher_target(service_id)
-      let union_reachable =
-        compute_union_reachable_structs(model, named_shapes)
+      let union_reachable = compute_union_reachable_structs(model, named_shapes)
       let preamble =
         emit_named_shapes(model, named_shapes, is_dispatcher, union_reachable)
 
@@ -142,9 +147,19 @@ pub fn emit_service(
         <> list.fold(op_blocks, "", fn(acc, code) { acc <> code })
         <> list.fold(error_blocks, "", fn(acc, code) { acc <> code })
         <> list.fold(invoke_blocks, "", fn(acc, code) { acc <> code })
+      let dispatcher_specs =
+        list.map(op_specs, fn(s) {
+          dispatcher.DispatcherSpec(
+            op_id: s.op_id,
+            snake: s.snake,
+            input_type: s.in_info.type_name,
+            has_typed_input: is_dispatcher,
+          )
+        })
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
+        dispatcher_specs: dispatcher_specs,
         operations_emitted: list.map(resolved_ops, fn(t) {
           let #(op_id, _, _, _, _) = t
           op_id
@@ -502,11 +517,10 @@ fn emit_operation(
   // test-case params into a typed input via the member-keyed
   // `_struct_params` decoder. Real services bypass this entirely,
   // so both are gated on `is_dispatcher`.
-  let synth_in_record =
-    case in_info.synthesise {
-      True -> emit_record_def(in_info.type_name, [])
-      False -> ""
-    }
+  let synth_in_record = case in_info.synthesise {
+    True -> emit_record_def(in_info.type_name, [])
+    False -> ""
+  }
   let synth_in_decoder = case in_info.synthesise, is_dispatcher {
     True, True ->
       code.render(struct_codec.decoder(
@@ -928,7 +942,8 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> String {
       <> inner_decoder
       <> ")"
     }
-    RMap(key: _, value: _, ..) -> emit_unsupported_decoder(types.gleam_type(target))
+    RMap(key: _, value: _, ..) ->
+      emit_unsupported_decoder(types.gleam_type(target))
     RDocument -> emit_unsupported_decoder(types.gleam_type(target))
     RUnit -> emit_unsupported_decoder(types.gleam_type(target))
     Unsupported(..) -> emit_unsupported_decoder(types.gleam_type(target))
@@ -1050,7 +1065,8 @@ fn xml_value_expr(target: Resolved, member_name: String) -> String {
       <> "\", list.map(v, fn(item) { let v = item "
       <> xml_inner_expr_for_list_element(target)
       <> " }))"
-    RMap(value: _v, key: _k, ..) -> "xml.empty_element(\"" <> member_name <> "\")"
+    RMap(value: _v, key: _k, ..) ->
+      "xml.empty_element(\"" <> member_name <> "\")"
     RDocument -> "xml.element(\"" <> member_name <> "\", \"\")"
     RUnit -> "xml.empty_element(\"" <> member_name <> "\")"
     Unsupported(..) -> "\"\""
@@ -1313,8 +1329,11 @@ fn emit_query_setup(
     // `add_query_params`, Map<String, List<String>> uses
     // `add_query_params_list`. Anything else: skip.
     let helper = case m.target {
-      RMap(key: _, value: RList(element: RPrim(primitive: types.PString), ..), ..) ->
-        Ok("rest.add_query_params_list")
+      RMap(
+        key: _,
+        value: RList(element: RPrim(primitive: types.PString), ..),
+        ..,
+      ) -> Ok("rest.add_query_params_list")
       RMap(key: _, value: RPrim(primitive: types.PString), ..) ->
         Ok("rest.add_query_params")
       _ -> Error(Nil)
@@ -1429,9 +1448,7 @@ fn value_to_string_with_format(
     REnum(local_name: _, ..) ->
       "rest.enum_wire_value(" <> types.json_encoder(target) <> "(v))"
     RIntEnum(local_name: n, ..) ->
-      "rest.int_to_query("
-      <> stringutils.pascal_to_snake(n)
-      <> "_int_value(v))"
+      "rest.int_to_query(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))"
     RTimestamp ->
       case timestamp_format {
         Some("epoch-seconds") -> "rest.int_to_query(v)"

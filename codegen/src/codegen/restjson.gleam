@@ -14,6 +14,7 @@
 
 import codegen/client
 import codegen/code
+import codegen/dispatcher
 import codegen/named_shapes
 import codegen/struct_codec
 import codegen/types.{
@@ -38,6 +39,11 @@ pub type EmitResult {
     module_name: String,
     source: String,
     operations_emitted: List(String),
+    /// One per emitted operation; the CLI uses it to render the
+    /// matching `<protocol>_dispatchers.gleam` for protocol-test
+    /// targets. Populated unconditionally — production-service
+    /// emissions just drop it.
+    dispatcher_specs: List(dispatcher.DispatcherSpec),
   )
 }
 
@@ -146,6 +152,19 @@ pub fn emit_service(
         <> list.fold(op_blocks, "", fn(acc, code) { acc <> code })
         <> list.fold(error_blocks, "", fn(acc, code) { acc <> code })
         <> list.fold(invoke_blocks, "", fn(acc, code) { acc <> code })
+      let dispatcher_specs =
+        list.map(op_specs, fn(s) {
+          dispatcher.DispatcherSpec(
+            op_id: s.op_id,
+            snake: s.snake,
+            input_type: s.in_info.type_name,
+            // restjson emits `decode_<op>_input` unconditionally
+            // today; if a real-service restJson1 target ever
+            // appears, plumb `is_dispatcher_target` through here
+            // the same way the awsjson emitter does.
+            has_typed_input: True,
+          )
+        })
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
@@ -153,6 +172,7 @@ pub fn emit_service(
           let #(op_id, _, _, _, _) = t
           op_id
         }),
+        dispatcher_specs: dispatcher_specs,
       ))
     }
     Ok(_) -> Error("not a service: " <> service_id)
@@ -305,12 +325,7 @@ type HttpTrait {
   /// e.g. `["gzip"]`. When non-empty the SDK appends each encoding to
   /// the request's `Content-Encoding` header (Smithy
   /// `SDKAppliedContentEncoding` protocol test).
-  HttpTrait(
-    method: String,
-    uri: String,
-    code: Int,
-    compression: List(String),
-  )
+  HttpTrait(method: String, uri: String, code: Int, compression: List(String))
 }
 
 fn resolve_or_unit(model: Model, id: String) -> Resolved {
@@ -1036,8 +1051,11 @@ fn emit_query_setup(
     // `add_query_params`, Map<String, List<String>> uses
     // `add_query_params_list`. Anything else: skip.
     let helper = case m.target {
-      RMap(key: _, value: RList(element: RPrim(primitive: types.PString), ..), ..) ->
-        Ok("rest.add_query_params_list")
+      RMap(
+        key: _,
+        value: RList(element: RPrim(primitive: types.PString), ..),
+        ..,
+      ) -> Ok("rest.add_query_params_list")
       RMap(key: _, value: RPrim(primitive: types.PString), ..) ->
         Ok("rest.add_query_params")
       _ -> Error(Nil)
@@ -1088,8 +1106,7 @@ fn emit_header_setup(
         // types (numbers, http-date timestamps, enums) use the raw
         // wire form. Smithy's @httpHeader spec only quotes strings.
         let render = case e {
-          RPrim(primitive: types.PString) ->
-            "rest.quote_list_string_entry(v)"
+          RPrim(primitive: types.PString) -> "rest.quote_list_string_entry(v)"
           _ -> value_to_string_full(e, m.timestamp_format, "http-date")
         }
         acc
@@ -1108,7 +1125,8 @@ fn emit_header_setup(
         let render = case m.target, m.media_type {
           RPrim(primitive: types.PString), option.Some(_) ->
             "bit_array.base64_encode(bit_array.from_string(v), True)"
-          _, _ -> value_to_string_full(m.target, m.timestamp_format, "http-date")
+          _, _ ->
+            value_to_string_full(m.target, m.timestamp_format, "http-date")
         }
         acc
         <> "  let headers = case input."
@@ -1210,9 +1228,7 @@ fn value_to_string_full(
     REnum(local_name: _, ..) ->
       "rest.enum_wire_value(" <> types.json_encoder(target) <> "(v))"
     RIntEnum(local_name: n, ..) ->
-      "rest.int_to_query("
-      <> stringutils.pascal_to_snake(n)
-      <> "_int_value(v))"
+      "rest.int_to_query(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))"
     RTimestamp -> {
       let fmt = case timestamp_format {
         option.Some(f) -> f
@@ -1322,8 +1338,7 @@ fn emit_parse_with_payload(
       acc <> "    " <> m.snake_name <> ": " <> value <> ",\n"
     })
   let payload_decode = case payload.target {
-    types.RBlob ->
-      "let payload = option.Some(body)"
+    types.RBlob -> "let payload = option.Some(body)"
     RPrim(primitive: types.PString) ->
       "use payload <- result.try(case bit_array.to_string(body) {\n      Ok(s) -> Ok(option.Some(s))\n      Error(_) -> Error(\"non-utf8 payload\")\n    })"
     RStruct(local_name: name, ..) -> {
@@ -1340,8 +1355,7 @@ fn emit_parse_with_payload(
       <> decoder
       <> "()) {\n        Ok(v) -> Ok(option.Some(v))\n        Error(_) -> Error(\"decode failed\")\n      }\n    })"
     }
-    _ ->
-      "let payload = option.None"
+    _ -> "let payload = option.None"
   }
   "pub fn parse_"
   <> snake

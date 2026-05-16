@@ -17,16 +17,11 @@ import codegen/code.{
 /// `code.render(code.Module(items))` at the emit site.
 pub fn items(endpoint_prefix: String, signing_name: String) -> List(Code) {
   [
-    TypeDef(
-      public: True,
-      is_opaque: True,
-      name: "Client",
-      variants: [
-        Variant(name: "Client", fields: [
-          Param(name: "config", type_: "awsjson_client.ClientConfig"),
-        ]),
-      ],
-    ),
+    TypeDef(public: True, is_opaque: True, name: "Client", variants: [
+      Variant(name: "Client", fields: [
+        Param(name: "config", type_: "awsjson_client.ClientConfig"),
+      ]),
+    ]),
     Blank,
     DocComment([
       "Build a Client for an AWS region. Credentials resolve through",

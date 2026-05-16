@@ -246,16 +246,19 @@ fn assert_query_params(
     "" -> []
     _ -> string.split(got, "&")
   }
-  let names = list.map(entries, fn(e) {
-    case string.split_once(e, "=") {
-      Ok(#(n, _)) -> n
-      Error(_) -> e
-    }
-  })
+  let names =
+    list.map(entries, fn(e) {
+      case string.split_once(e, "=") {
+        Ok(#(n, _)) -> n
+        Error(_) -> e
+      }
+    })
   use _ <- chain(
     case list.find(expected, fn(want) { !list.contains(entries, want) }) {
       Ok(missing) ->
-        Failed(reason: "missing query param: " <> missing <> " (got: " <> got <> ")")
+        Failed(
+          reason: "missing query param: " <> missing <> " (got: " <> got <> ")",
+        )
       Error(_) -> Passed
     },
   )

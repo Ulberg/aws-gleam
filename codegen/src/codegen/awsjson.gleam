@@ -17,6 +17,7 @@
 
 import codegen/client
 import codegen/code
+import codegen/dispatcher
 import codegen/named_shapes
 import codegen/struct_codec
 import codegen/types.{
@@ -51,6 +52,11 @@ pub type EmitResult {
     module_name: String,
     source: String,
     operations_emitted: List(String),
+    /// One per emitted operation; the CLI uses it to render the
+    /// matching `<protocol>_dispatchers.gleam` for protocol-test
+    /// targets. Populated unconditionally — production-service
+    /// emissions just drop it.
+    dispatcher_specs: List(dispatcher.DispatcherSpec),
   )
 }
 
@@ -133,6 +139,15 @@ pub fn emit_service(
         <> preamble
         <> list.fold(op_blocks, "", fn(acc, code) { acc <> code })
         <> list.fold(invoke_blocks, "", fn(acc, code) { acc <> code })
+      let dispatcher_specs =
+        list.map(op_specs, fn(s) {
+          dispatcher.DispatcherSpec(
+            op_id: s.op_id,
+            snake: s.snake,
+            input_type: s.in_info.type_name,
+            has_typed_input: is_dispatcher,
+          )
+        })
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
@@ -140,6 +155,7 @@ pub fn emit_service(
           let #(op_id, _, _, _) = t
           op_id
         }),
+        dispatcher_specs: dispatcher_specs,
       ))
     }
     Ok(_) -> Error("not a service: " <> service_id)
@@ -467,11 +483,10 @@ fn emit_operation_body(
   // live (called via `decode_<op>_output` from `parse_<op>_response`);
   // the matching output encoder is unused — awsJson never serialises
   // outputs — so it's omitted.
-  let synth_in_record =
-    case in_info.synthesise {
-      True -> emit_record_def(in_info.type_name, [])
-      False -> ""
-    }
+  let synth_in_record = case in_info.synthesise {
+    True -> emit_record_def(in_info.type_name, [])
+    False -> ""
+  }
   let synth_in_encoder = case in_info.synthesise {
     True ->
       code.render(struct_codec.encoder(
@@ -496,11 +511,10 @@ fn emit_operation_body(
       <> "\n"
     _, _ -> ""
   }
-  let synth_out_record =
-    case out_info.synthesise {
-      True -> emit_record_def(out_info.type_name, [])
-      False -> ""
-    }
+  let synth_out_record = case out_info.synthesise {
+    True -> emit_record_def(out_info.type_name, [])
+    False -> ""
+  }
   let synth_out_decoder = case out_info.synthesise {
     True ->
       code.render(struct_codec.decoder(

@@ -134,7 +134,10 @@ pub type MemberDef {
   )
 }
 
-fn media_type_of_target(model: Model, target_id: String) -> option.Option(String) {
+fn media_type_of_target(
+  model: Model,
+  target_id: String,
+) -> option.Option(String) {
   case model.lookup(model, target_id) {
     Ok(sh) ->
       case shape_traits(sh) {
@@ -397,10 +400,7 @@ pub fn apply_rename_member(
 /// Look up the disambiguated Gleam name for a shape. Falls back to
 /// the bare local name when the shape isn't in the rename map (e.g.
 /// during the rename-map's own construction).
-pub fn gleam_name_for(
-  rename: Dict(String, String),
-  full_id: String,
-) -> String {
+pub fn gleam_name_for(rename: Dict(String, String), full_id: String) -> String {
   case dict.get(rename, full_id) {
     Ok(name) -> name
     Error(_) -> strip_namespace(full_id)
@@ -471,11 +471,7 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
       let ShapeId(kt) = k.target
       let ShapeId(vt) = v.target
       let sparse = dict.has_key(mt, ShapeId("smithy.api#sparse"))
-      RMap(
-        key: resolve(model, kt),
-        value: resolve(model, vt),
-        sparse: sparse,
-      )
+      RMap(key: resolve(model, kt), value: resolve(model, vt), sparse: sparse)
     }
     shape.Structure(..) ->
       RStruct(
@@ -575,17 +571,20 @@ fn extract_members(
     // Falls back to the target shape's own `@mediaType` (S3 puts the
     // trait on the wrapping `StreamingBlob` shape rather than each op
     // member).
-    let media_type = case dict.get(mem.traits, ShapeId("smithy.api#mediaType")) {
+    let media_type = case
+      dict.get(mem.traits, ShapeId("smithy.api#mediaType"))
+    {
       Ok(option.Some(trait.String(s))) -> option.Some(s)
       _ -> media_type_of_target(model, target)
     }
     // `@timestampFormat` (member overrides target-shape trait if both
     // are set).
-    let timestamp_format =
-      case dict.get(mem.traits, ShapeId("smithy.api#timestampFormat")) {
-        Ok(option.Some(trait.String(s))) -> option.Some(s)
-        _ -> timestamp_format_of_target(model, target)
-      }
+    let timestamp_format = case
+      dict.get(mem.traits, ShapeId("smithy.api#timestampFormat"))
+    {
+      Ok(option.Some(trait.String(s))) -> option.Some(s)
+      _ -> timestamp_format_of_target(model, target)
+    }
     // `@clientOptional` opts a member out of automatic default
     // population. Per the Smithy spec, the wire form leaves the field
     // absent even if the shape declared a `@default`.
@@ -713,7 +712,10 @@ pub fn gleam_type(r: Resolved) -> String {
 /// just the shape. `format` is the resolved member-level format
 /// (member-trait first, then shape-trait, then `None` for protocol
 /// default).
-pub fn json_encoder_member(r: Resolved, format: option.Option(String)) -> String {
+pub fn json_encoder_member(
+  r: Resolved,
+  format: option.Option(String),
+) -> String {
   case r, format {
     RTimestamp, option.Some("date-time") ->
       "fn(v) { json.string(json_timestamp.format_iso8601(v)) }"
@@ -723,7 +725,10 @@ pub fn json_encoder_member(r: Resolved, format: option.Option(String)) -> String
   }
 }
 
-pub fn json_decoder_member(r: Resolved, format: option.Option(String)) -> String {
+pub fn json_decoder_member(
+  r: Resolved,
+  format: option.Option(String),
+) -> String {
   case r, format {
     RTimestamp, _ -> "json_timestamp.decoder()"
     _, _ -> json_decoder(r)
@@ -820,9 +825,7 @@ pub fn json_decoder(r: Resolved) -> String {
     RList(element: e, sparse: False, ..) ->
       "decode.list(" <> json_decoder(e) <> ")"
     RMap(value: v, sparse: True, ..) ->
-      "decode.dict(decode.string, decode.optional("
-      <> json_decoder(v)
-      <> "))"
+      "decode.dict(decode.string, decode.optional(" <> json_decoder(v) <> "))"
     RMap(value: v, sparse: False, ..) ->
       "decode.dict(decode.string, " <> json_decoder(v) <> ")"
     RStruct(local_name: n, ..) ->
