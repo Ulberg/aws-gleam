@@ -758,7 +758,7 @@ fn emit_struct_decoder_params(
       <> fn_name
       <> "() -> decode.Decoder("
       <> type_name
-      <> ") {\n"
+      <> ") {\n  use <- decode.recursive\n"
       <> list.fold(members, "", fn(acc, m) {
         acc
         <> "  use "
@@ -841,7 +841,7 @@ fn emit_struct_decoder(
       <> fn_name
       <> "() -> decode.Decoder("
       <> type_name
-      <> ") {\n"
+      <> ") {\n  use <- decode.recursive\n"
       <> list.fold(members, "", fn(acc, m) {
         acc
         <> "  use "
@@ -894,12 +894,21 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       })
       <> "\n    ],\n  )\n"
   }
+  // Wrap union decoder bodies in `decode.recursive` so self-referential
+  // unions (e.g. Smithy's `XmlUnionShape` with a `unionValue: XmlUnionShape`
+  // member) don't construct their `decode.one_of` branches eagerly and
+  // infinite-loop.
+  let lazy_wrap = case members {
+    [] -> ""
+    _ -> "  use <- decode.recursive\n"
+  }
   let dec =
     "pub fn decode_"
     <> snake
     <> "_union() -> decode.Decoder("
     <> name
     <> ") {\n"
+    <> lazy_wrap
     <> dec_body
     <> "}\n\n"
   let dec_params_body = case members {
@@ -919,6 +928,7 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
     <> "_union_params() -> decode.Decoder("
     <> name
     <> ") {\n"
+    <> lazy_wrap
     <> dec_params_body
     <> "}\n\n"
   enc <> dec <> dec_params

@@ -19,9 +19,26 @@ Requires Gleam and Erlang/OTP.
 
 ```
 gleam deps download
-gleam build
+scripts/init-submodules.sh    # first time only — pins upstream Smithy + AWS models
+./scripts/regen.sh            # generate service clients + protocol-test dispatchers
 gleam test
 ```
+
+### Why regen?
+
+`src/aws/services/*` (the typed service clients — DynamoDB, S3, the
+protocol-test stubs) and `test/protocol_tests/*_dispatchers.gleam`
+(the protocol-test harness glue) are **derived files**. They're
+deterministic functions of:
+
+- `vendor/aws-sdk-rust/aws-models/*.json` (Smithy models, ~100 k LOC each)
+- `test/fixtures/protocol-tests/*.json` (Smithy protocol-test fixtures)
+- The codegen in `codegen/src/codegen/`
+
+…so we keep them OUT of git (~110 k LOC of derived noise) and
+regenerate on demand. CI runs `./scripts/regen.sh` before tests;
+when publishing to Hex we include the generated files in the
+tarball so consumers don't need to run the codegen themselves.
 
 ## Submodules
 

@@ -51,6 +51,12 @@ jobs:
       - name: Download dependencies
         run: gleam deps download
 
+      - name: Regenerate codegen artefacts
+        # `src/aws/services/*` and `test/protocol_tests/*_dispatchers.gleam`
+        # aren't checked in; the codegen produces them deterministically
+        # from the vendored Smithy models + protocol-test fixtures.
+        run: ./scripts/regen.sh
+
       - name: Check formatting
         run: gleam format --check src test
 

@@ -4,8 +4,8 @@
 
 import aws/services/protocoltests/restjson1 as svc
 import protocol_tests/dispatch.{
-  type Dispatcher, type ParsedResponseInput, type Registry, BuiltRequest,
-  Dispatcher, ParsedOutput,
+  type Dispatcher, type ParsedResponseInput, type Registry,
+  BuiltRequest, Dispatcher, ParsedOutput,
 }
 
 pub fn register_all(registry: Registry) -> Registry {
@@ -39,9 +39,7 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(http_request_with_float_labels_dispatcher())
   |> dispatch.register(http_request_with_greedy_label_in_path_dispatcher())
   |> dispatch.register(http_request_with_labels_dispatcher())
-  |> dispatch.register(
-    http_request_with_labels_and_timestamp_format_dispatcher(),
-  )
+  |> dispatch.register(http_request_with_labels_and_timestamp_format_dispatcher())
   |> dispatch.register(http_request_with_regex_literal_dispatcher())
   |> dispatch.register(http_response_code_dispatcher())
   |> dispatch.register(http_string_payload_dispatcher())
@@ -65,9 +63,7 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(malformed_content_type_with_body_dispatcher())
   |> dispatch.register(malformed_content_type_with_generic_string_dispatcher())
   |> dispatch.register(malformed_content_type_without_body_dispatcher())
-  |> dispatch.register(
-    malformed_content_type_without_body_empty_input_dispatcher(),
-  )
+  |> dispatch.register(malformed_content_type_without_body_empty_input_dispatcher())
   |> dispatch.register(malformed_content_type_with_payload_dispatcher())
   |> dispatch.register(malformed_double_dispatcher())
   |> dispatch.register(malformed_float_dispatcher())
@@ -166,9 +162,7 @@ fn constant_and_variable_query_string_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_constant_and_variable_query_string_response,
-    ),
+    parse_response: response_parser(svc.parse_constant_and_variable_query_string_response),
   )
 }
 
@@ -273,9 +267,7 @@ fn document_type_as_map_value_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_document_type_as_map_value_response,
-    ),
+    parse_response: response_parser(svc.parse_document_type_as_map_value_response),
   )
 }
 
@@ -338,9 +330,7 @@ fn duplex_stream_with_distinct_streams_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_duplex_stream_with_distinct_streams_response,
-    ),
+    parse_response: response_parser(svc.parse_duplex_stream_with_distinct_streams_response),
   )
 }
 
@@ -361,9 +351,7 @@ fn duplex_stream_with_initial_messages_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_duplex_stream_with_initial_messages_response,
-    ),
+    parse_response: response_parser(svc.parse_duplex_stream_with_initial_messages_response),
   )
 }
 
@@ -384,9 +372,7 @@ fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_empty_input_and_empty_output_response,
-    ),
+    parse_response: response_parser(svc.parse_empty_input_and_empty_output_response),
   )
 }
 
@@ -428,9 +414,7 @@ fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_endpoint_with_host_label_operation_response,
-    ),
+    parse_response: response_parser(svc.parse_endpoint_with_host_label_operation_response),
   )
 }
 
@@ -514,9 +498,7 @@ fn http_empty_prefix_headers_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_http_empty_prefix_headers_response,
-    ),
+    parse_response: response_parser(svc.parse_http_empty_prefix_headers_response),
   )
 }
 
@@ -579,9 +561,7 @@ fn http_payload_traits_with_media_type_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_http_payload_traits_with_media_type_response,
-    ),
+    parse_response: response_parser(svc.parse_http_payload_traits_with_media_type_response),
   )
 }
 
@@ -602,9 +582,7 @@ fn http_payload_with_structure_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_http_payload_with_structure_response,
-    ),
+    parse_response: response_parser(svc.parse_http_payload_with_structure_response),
   )
 }
 
@@ -667,9 +645,7 @@ fn http_prefix_headers_in_response_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_http_prefix_headers_in_response_response,
-    ),
+    parse_response: response_parser(svc.parse_http_prefix_headers_in_response_response),
   )
 }
 
@@ -690,9 +666,7 @@ fn http_query_params_only_operation_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_http_query_params_only_operation_response,
-    ),
+    parse_response: response_parser(svc.parse_http_query_params_only_operation_response),
   )
 }
 
@@ -713,9 +687,7 @@ fn http_request_with_float_labels_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_http_request_with_float_labels_response,
-    ),
+    parse_response: response_parser(svc.parse_http_request_with_float_labels_response),
   )
 }
 
@@ -736,9 +708,7 @@ fn http_request_with_greedy_label_in_path_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_http_request_with_greedy_label_in_path_response,
-    ),
+    parse_response: response_parser(svc.parse_http_request_with_greedy_label_in_path_response),
   )
 }
 
@@ -774,17 +744,13 @@ fn http_request_with_labels_and_timestamp_format_dispatcher() -> Dispatcher {
       case svc.decode_http_request_with_labels_and_timestamp_format_input(raw) {
         Ok(input) -> {
           let #(method, uri, headers, body) =
-            svc.build_http_request_with_labels_and_timestamp_format_request(
-              input,
-            )
+            svc.build_http_request_with_labels_and_timestamp_format_request(input)
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_http_request_with_labels_and_timestamp_format_response,
-    ),
+    parse_response: response_parser(svc.parse_http_request_with_labels_and_timestamp_format_response),
   )
 }
 
@@ -805,9 +771,7 @@ fn http_request_with_regex_literal_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_http_request_with_regex_literal_response,
-    ),
+    parse_response: response_parser(svc.parse_http_request_with_regex_literal_response),
   )
 }
 
@@ -870,9 +834,7 @@ fn ignore_query_params_in_response_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_ignore_query_params_in_response_response,
-    ),
+    parse_response: response_parser(svc.parse_ignore_query_params_in_response_response),
   )
 }
 
@@ -893,9 +855,7 @@ fn input_and_output_with_headers_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_input_and_output_with_headers_response,
-    ),
+    parse_response: response_parser(svc.parse_input_and_output_with_headers_response),
   )
 }
 
@@ -937,9 +897,7 @@ fn input_stream_with_initial_request_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_input_stream_with_initial_request_response,
-    ),
+    parse_response: response_parser(svc.parse_input_stream_with_initial_request_response),
   )
 }
 
@@ -1037,7 +995,8 @@ fn json_maps_dispatcher() -> Dispatcher {
       }
       case svc.decode_json_maps_input(raw) {
         Ok(input) -> {
-          let #(method, uri, headers, body) = svc.build_json_maps_request(input)
+          let #(method, uri, headers, body) =
+            svc.build_json_maps_request(input)
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
@@ -1106,9 +1065,7 @@ fn malformed_accept_with_body_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_accept_with_body_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_accept_with_body_response),
   )
 }
 
@@ -1129,9 +1086,7 @@ fn malformed_accept_with_generic_string_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_accept_with_generic_string_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_accept_with_generic_string_response),
   )
 }
 
@@ -1152,9 +1107,7 @@ fn malformed_accept_with_payload_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_accept_with_payload_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_accept_with_payload_response),
   )
 }
 
@@ -1238,9 +1191,7 @@ fn malformed_content_type_with_body_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_content_type_with_body_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_content_type_with_body_response),
   )
 }
 
@@ -1261,9 +1212,7 @@ fn malformed_content_type_with_generic_string_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_content_type_with_generic_string_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_content_type_with_generic_string_response),
   )
 }
 
@@ -1284,9 +1233,7 @@ fn malformed_content_type_without_body_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_content_type_without_body_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_content_type_without_body_response),
   )
 }
 
@@ -1298,22 +1245,16 @@ fn malformed_content_type_without_body_empty_input_dispatcher() -> Dispatcher {
         "" -> "{}"
         other -> other
       }
-      case
-        svc.decode_malformed_content_type_without_body_empty_input_input(raw)
-      {
+      case svc.decode_malformed_content_type_without_body_empty_input_input(raw) {
         Ok(input) -> {
           let #(method, uri, headers, body) =
-            svc.build_malformed_content_type_without_body_empty_input_request(
-              input,
-            )
+            svc.build_malformed_content_type_without_body_empty_input_request(input)
           Ok(BuiltRequest(method:, uri:, headers:, body:))
         }
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_content_type_without_body_empty_input_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_content_type_without_body_empty_input_response),
   )
 }
 
@@ -1334,9 +1275,7 @@ fn malformed_content_type_with_payload_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_content_type_with_payload_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_content_type_with_payload_response),
   )
 }
 
@@ -1546,9 +1485,7 @@ fn malformed_timestamp_body_date_time_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_timestamp_body_date_time_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_timestamp_body_date_time_response),
   )
 }
 
@@ -1569,9 +1506,7 @@ fn malformed_timestamp_body_default_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_timestamp_body_default_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_timestamp_body_default_response),
   )
 }
 
@@ -1592,9 +1527,7 @@ fn malformed_timestamp_body_http_date_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_timestamp_body_http_date_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_timestamp_body_http_date_response),
   )
 }
 
@@ -1615,9 +1548,7 @@ fn malformed_timestamp_header_date_time_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_timestamp_header_date_time_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_timestamp_header_date_time_response),
   )
 }
 
@@ -1638,9 +1569,7 @@ fn malformed_timestamp_header_default_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_timestamp_header_default_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_timestamp_header_default_response),
   )
 }
 
@@ -1661,9 +1590,7 @@ fn malformed_timestamp_header_epoch_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_timestamp_header_epoch_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_timestamp_header_epoch_response),
   )
 }
 
@@ -1684,9 +1611,7 @@ fn malformed_timestamp_path_default_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_timestamp_path_default_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_timestamp_path_default_response),
   )
 }
 
@@ -1707,9 +1632,7 @@ fn malformed_timestamp_path_epoch_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_timestamp_path_epoch_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_timestamp_path_epoch_response),
   )
 }
 
@@ -1730,9 +1653,7 @@ fn malformed_timestamp_path_http_date_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_timestamp_path_http_date_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_timestamp_path_http_date_response),
   )
 }
 
@@ -1753,9 +1674,7 @@ fn malformed_timestamp_query_default_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_timestamp_query_default_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_timestamp_query_default_response),
   )
 }
 
@@ -1776,9 +1695,7 @@ fn malformed_timestamp_query_epoch_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_timestamp_query_epoch_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_timestamp_query_epoch_response),
   )
 }
 
@@ -1799,9 +1716,7 @@ fn malformed_timestamp_query_http_date_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_malformed_timestamp_query_http_date_response,
-    ),
+    parse_response: response_parser(svc.parse_malformed_timestamp_query_http_date_response),
   )
 }
 
@@ -1906,9 +1821,7 @@ fn null_and_empty_headers_client_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_null_and_empty_headers_client_response,
-    ),
+    parse_response: response_parser(svc.parse_null_and_empty_headers_client_response),
   )
 }
 
@@ -1929,9 +1842,7 @@ fn null_and_empty_headers_server_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_null_and_empty_headers_server_response,
-    ),
+    parse_response: response_parser(svc.parse_null_and_empty_headers_server_response),
   )
 }
 
@@ -1952,9 +1863,7 @@ fn omits_null_serializes_empty_string_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_omits_null_serializes_empty_string_response,
-    ),
+    parse_response: response_parser(svc.parse_omits_null_serializes_empty_string_response),
   )
 }
 
@@ -1975,9 +1884,7 @@ fn omits_serializing_empty_lists_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_omits_serializing_empty_lists_response,
-    ),
+    parse_response: response_parser(svc.parse_omits_serializing_empty_lists_response),
   )
 }
 
@@ -2019,9 +1926,7 @@ fn operation_with_nested_structure_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_operation_with_nested_structure_response,
-    ),
+    parse_response: response_parser(svc.parse_operation_with_nested_structure_response),
   )
 }
 
@@ -2063,9 +1968,7 @@ fn output_stream_with_initial_response_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_output_stream_with_initial_response_response,
-    ),
+    parse_response: response_parser(svc.parse_output_stream_with_initial_response_response),
   )
 }
 
@@ -2107,9 +2010,7 @@ fn post_union_with_json_name_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_post_union_with_json_name_response,
-    ),
+    parse_response: response_parser(svc.parse_post_union_with_json_name_response),
   )
 }
 
@@ -2130,9 +2031,7 @@ fn put_with_content_encoding_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_put_with_content_encoding_response,
-    ),
+    parse_response: response_parser(svc.parse_put_with_content_encoding_response),
   )
 }
 
@@ -2153,9 +2052,7 @@ fn query_idempotency_token_auto_fill_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_query_idempotency_token_auto_fill_response,
-    ),
+    parse_response: response_parser(svc.parse_query_idempotency_token_auto_fill_response),
   )
 }
 
@@ -2176,9 +2073,7 @@ fn query_params_as_string_list_map_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_query_params_as_string_list_map_response,
-    ),
+    parse_response: response_parser(svc.parse_query_params_as_string_list_map_response),
   )
 }
 
@@ -2241,9 +2136,7 @@ fn response_code_http_fallback_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_response_code_http_fallback_response,
-    ),
+    parse_response: response_parser(svc.parse_response_code_http_fallback_response),
   )
 }
 
@@ -2369,9 +2262,7 @@ fn streaming_traits_require_length_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_streaming_traits_require_length_response,
-    ),
+    parse_response: response_parser(svc.parse_streaming_traits_require_length_response),
   )
 }
 
@@ -2392,9 +2283,7 @@ fn streaming_traits_with_media_type_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_streaming_traits_with_media_type_response,
-    ),
+    parse_response: response_parser(svc.parse_streaming_traits_with_media_type_response),
   )
 }
 
@@ -2436,9 +2325,7 @@ fn test_get_no_input_no_payload_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_test_get_no_input_no_payload_response,
-    ),
+    parse_response: response_parser(svc.parse_test_get_no_input_no_payload_response),
   )
 }
 
@@ -2522,9 +2409,7 @@ fn test_post_no_input_no_payload_dispatcher() -> Dispatcher {
         Error(reason) -> Error(reason)
       }
     },
-    parse_response: response_parser(
-      svc.parse_test_post_no_input_no_payload_response,
-    ),
+    parse_response: response_parser(svc.parse_test_post_no_input_no_payload_response),
   )
 }
 

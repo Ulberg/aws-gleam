@@ -8,3 +8,18 @@ codegen/build
 .tools/smithy-cli-darwin-aarch64/
 .tools/smithy-cli.zip
 .tools/build
+
+# Generated service clients — regenerated from
+# `vendor/aws-sdk-rust/aws-models/*.json` and
+# `test/fixtures/protocol-tests/*.json` via `./scripts/regen.sh`.
+# Kept out of git so the diff stays focused on hand-written code.
+/src/aws/services/
+
+# Generated protocol-test dispatchers — produced by
+# `scripts/emit-dispatchers.py` from the protocol-test JSON.
+/test/protocol_tests/awsjson10_dispatchers.gleam
+/test/protocol_tests/awsjson11_dispatchers.gleam
+/test/protocol_tests/restjson1_dispatchers.gleam
+/test/protocol_tests/restxml_dispatchers.gleam
+/test/protocol_tests/awsquery_dispatchers.gleam
+/test/protocol_tests/ec2query_dispatchers.gleam
