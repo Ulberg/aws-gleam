@@ -100,6 +100,16 @@ pub fn int_field(d: Dict(ShapeId, Trait), name: String, default: Int) -> Int {
   }
 }
 
+/// True iff the operation carries `smithy.api#httpChecksumRequired`.
+/// The rest/awsjson emitters use this to append a `Content-MD5:
+/// base64(md5(body))` step to the generated `build_<op>_request`.
+/// Distinct from the multi-algorithm `aws.protocols#httpChecksum`
+/// trait, which is still emitter-skipped pending a richer checksum
+/// middleware.
+pub fn op_requires_md5(traits: shape.Traits) -> Bool {
+  dict.has_key(traits, ShapeId("smithy.api#httpChecksumRequired"))
+}
+
 /// Extract the `encodings` list from `@requestCompression`. Returns
 /// an empty list when the trait is absent or malformed.
 pub fn request_compression_encodings(traits: shape.Traits) -> List(String) {

@@ -77,13 +77,14 @@ pub fn emit_service(
                       let ShapeId(t) = r.target
                       t
                     })
+                  let requires_md5 = trait_helpers.op_requires_md5(op_traits)
                   case
                     members_have_no_http_bindings(in_r),
                     types.is_supported(in_r),
                     types.is_supported(out_r)
                   {
                     True, True, True ->
-                      Ok(#(target, http, in_r, out_r, err_ids))
+                      Ok(#(target, http, in_r, out_r, err_ids, requires_md5))
                     _, _, _ -> Error(Nil)
                   }
                 }
@@ -101,13 +102,14 @@ pub fn emit_service(
       let rename = types.build_rename_map(model)
       let resolved_ops =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, http, in_r, out_r, err_ids) = t
+          let #(op_id, http, in_r, out_r, err_ids, requires_md5) = t
           #(
             op_id,
             http,
             types.apply_rename(in_r, rename),
             types.apply_rename(out_r, rename),
             err_ids,
+            requires_md5,
           )
         })
       let named_shapes = collect_named_shapes(model, resolved_ops)
@@ -117,7 +119,7 @@ pub fn emit_service(
 
       let op_specs =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, _, in_r, out_r, err_ids) = t
+          let #(op_id, _, in_r, out_r, err_ids, _) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info =
@@ -141,8 +143,8 @@ pub fn emit_service(
 
       let op_blocks =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, http, in_r, out_r, _) = t
-          emit_operation(model, op_id, http, in_r, out_r, rename)
+          let #(op_id, http, in_r, out_r, _, requires_md5) = t
+          emit_operation(model, op_id, http, in_r, out_r, rename, requires_md5)
         })
       let client_block = emit_client(metadata)
       let invoke_blocks = list.map(op_specs, emit_invoke)
@@ -181,7 +183,7 @@ pub fn emit_service(
         module_name: derive_module_name(service_id),
         source: body,
         operations_emitted: list.map(resolved_ops, fn(t) {
-          let #(op_id, _, _, _, _) = t
+          let #(op_id, _, _, _, _, _) = t
           op_id
         }),
         dispatcher_specs: dispatcher_specs,
@@ -369,7 +371,7 @@ fn members_have_no_http_bindings(_r: Resolved) -> Bool {
 
 fn collect_named_shapes(
   model: Model,
-  ops: List(#(String, HttpTrait, Resolved, Resolved, List(String))),
+  ops: List(#(String, HttpTrait, Resolved, Resolved, List(String), Bool)),
 ) -> List(Resolved) {
   // Dedup keyed by `full_id` so two shapes with the same local name in
   // different namespaces both make it into the named-shape list. The
@@ -378,7 +380,7 @@ fn collect_named_shapes(
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_, _, in_r, out_r, err_ids) = t
+      let #(_, _, in_r, out_r, err_ids, _) = t
       let acc = walk(model, acc, in_r)
       let acc = walk(model, acc, out_r)
       list.fold(err_ids, acc, fn(a, err_id) {
@@ -473,6 +475,7 @@ fn emit_operation(
   in_r: Resolved,
   out_r: Resolved,
   rename: dict.Dict(String, String),
+  requires_md5: Bool,
 ) -> String {
   let local = strip_namespace(op_id)
   let pascal = local
@@ -532,7 +535,14 @@ fn emit_operation(
   let body_members = types.categorize_bindings(in_members).body
   let body_encoder = emit_body_encoder(snake, in_info.type_name, body_members)
   let build =
-    emit_build(in_info.type_name, in_info.synthesise, snake, http, in_members)
+    emit_build(
+      in_info.type_name,
+      in_info.synthesise,
+      snake,
+      http,
+      in_members,
+      requires_md5,
+    )
   let parse = emit_parse(out_info, snake)
   string.concat([
     "\n",
@@ -1017,6 +1027,7 @@ fn emit_build(
   snake: String,
   http: HttpTrait,
   members: List(MemberDef),
+  requires_md5: Bool,
 ) -> String {
   rest_request.build_request_module(
     input_type,
@@ -1024,6 +1035,7 @@ fn emit_build(
     snake,
     http,
     members,
+    requires_md5,
     fn(cats: types.BindingCategories) {
       case cats.payload {
         Ok(p) -> emit_payload_body(p)
@@ -1461,9 +1473,15 @@ fn file_header(service_id: String, body: String) -> String {
 }
 
 fn op_uses_unsupported_trait(traits: shape.Traits) -> Bool {
-  dict.has_key(traits, ShapeId("smithy.api#httpChecksumRequired"))
-  || dict.has_key(traits, ShapeId("aws.protocols#httpChecksum"))
+  // `smithy.api#httpChecksumRequired` is no longer in the skip list —
+  // `rest_request.build_request_module` emits a
+  // `rest.with_content_md5_header` call when the trait is present.
+  // `aws.protocols#httpChecksum` still skips: it's the multi-algorithm
+  // request/response validation trait used by S3 Get/PutObject, gated
+  // on a broader checksum middleware that's v0.2.
+  dict.has_key(traits, ShapeId("aws.protocols#httpChecksum"))
 }
+
 
 fn http_trait(traits: shape.Traits) -> Option(HttpTrait) {
   case dict.get(traits, ShapeId("smithy.api#http")) {

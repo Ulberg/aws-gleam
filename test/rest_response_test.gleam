@@ -77,3 +77,46 @@ pub fn float_header_accepts_integer_literals_test() {
   rest.float_header(headers(), "X-Amz-Int-As-Float")
   |> should.equal(Some(2.0))
 }
+
+// ---------- @httpChecksumRequired ----------
+
+pub fn with_content_md5_header_sets_base64_md5_of_body_test() {
+  // The Smithy `@httpChecksumRequired` trait directs the SDK to add
+  // `Content-MD5: base64(md5(body))` to the outgoing request. The
+  // expected pair below mirrors the upstream restJson1
+  // protocol-test corpus (`RestJsonHttpChecksumRequired`) — the
+  // fixture's `body` field is pretty-printed for readability but the
+  // wire-level body our codegen emits is compact, so we hash the
+  // compact form here. The SDK runtime does the same: the JSON body
+  // assembled by `build_<op>_request` has no extraneous whitespace.
+  let body = <<"{\"foo\":\"base64 encoded md5 checksum\"}":utf8>>
+  let starting = dict.from_list([#("Content-Type", "application/json")])
+
+  let with_md5 = rest.with_content_md5_header(starting, body)
+  dict.get(with_md5, "Content-MD5")
+  |> should.equal(Ok("iB0/3YSo7maijL0IGOgA9g=="))
+  // Existing headers are preserved.
+  dict.get(with_md5, "Content-Type")
+  |> should.equal(Ok("application/json"))
+}
+
+pub fn with_content_md5_header_handles_empty_body_test() {
+  // RFC 1321: md5("") = d41d8cd98f00b204e9800998ecf8427e —
+  // base64 = "1B2M2Y8AsgTpgAmY7PhCfg==". The helper must produce
+  // a deterministic header for the empty-body case too.
+  let with_md5 = rest.with_content_md5_header(dict.new(), <<>>)
+  dict.get(with_md5, "Content-MD5")
+  |> should.equal(Ok("1B2M2Y8AsgTpgAmY7PhCfg=="))
+}
+
+pub fn with_content_md5_header_overwrites_existing_value_test() {
+  // If a previous step set Content-MD5 (e.g. caller-supplied), the
+  // checksum helper MUST win — the wire contract says the SDK is
+  // responsible for the value and stale ones lead to 400s.
+  let starting =
+    dict.from_list([#("Content-MD5", "stale=="), #("X-Other", "keep")])
+  let with_md5 = rest.with_content_md5_header(starting, <<>>)
+  dict.get(with_md5, "Content-MD5")
+  |> should.equal(Ok("1B2M2Y8AsgTpgAmY7PhCfg=="))
+  dict.get(with_md5, "X-Other") |> should.equal(Ok("keep"))
+}

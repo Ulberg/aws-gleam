@@ -27,6 +27,7 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(fractional_seconds_dispatcher())
   |> dispatch.register(greeting_with_errors_dispatcher())
   |> dispatch.register(host_with_path_operation_dispatcher())
+  |> dispatch.register(http_checksum_required_dispatcher())
   |> dispatch.register(http_empty_prefix_headers_dispatcher())
   |> dispatch.register(http_enum_payload_dispatcher())
   |> dispatch.register(http_payload_traits_dispatcher())
@@ -494,6 +495,27 @@ fn host_with_path_operation_dispatcher() -> Dispatcher {
       }
     },
     parse_response: response_parser(svc.parse_host_with_path_operation_response),
+  )
+}
+
+fn http_checksum_required_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#HttpChecksumRequired",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_http_checksum_required_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_http_checksum_required_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_http_checksum_required_response),
   )
 }
 

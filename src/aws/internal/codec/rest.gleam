@@ -3,7 +3,9 @@
 //// generated `build_*_request` functions call into for each
 //// `@httpLabel`, `@httpQuery`, `@httpHeader` member.
 
+import aws/internal/crypto
 import aws/internal/uri
+import gleam/bit_array
 import gleam/dict.{type Dict}
 import gleam/float
 import gleam/int
@@ -257,6 +259,29 @@ pub fn float_header(
 ) -> Option(Float) {
   use raw <- option.then(string_header(headers, name))
   parse_float(string.trim(raw))
+}
+
+// ---------- @httpChecksumRequired ----------
+
+/// Set the `Content-MD5` header to `base64(md5(body))`. Used by the
+/// Smithy `smithy.api#httpChecksumRequired` trait — the codegen
+/// emits a call to this helper at the tail of `build_<op>_request`
+/// for any operation that carries the trait.
+///
+/// Always overwrites a previous `Content-MD5` entry: the SDK is
+/// responsible for the canonical value, and a stale caller-supplied
+/// one would surface as a 400 from the service. Other headers pass
+/// through unchanged.
+///
+/// MD5 is not a security primitive here. The wire contract requires
+/// it (S3-control + restJson1 protocol tests fix the exact bytes);
+/// SigV4 covers the actual auth on the request.
+pub fn with_content_md5_header(
+  headers: Dict(String, String),
+  body: BitArray,
+) -> Dict(String, String) {
+  let digest = bit_array.base64_encode(crypto.md5(body), True)
+  dict.insert(headers, "Content-MD5", digest)
 }
 
 fn parse_float(s: String) -> Option(Float) {

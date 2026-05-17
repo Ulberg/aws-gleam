@@ -1,12 +1,13 @@
 -module(aws_ffi).
 -include_lib("xmerl/include/xmerl.hrl").
--export([sha256/1, hmac_sha256/2, hex_encode/1, get_env/1, read_file/1,
-         unix_seconds/0, parse_iso8601/1, run_process/2, sha1_hex/1,
-         aws_timestamp/0, random_float/0, encode_dynamic_to_json/1,
-         float_nan/0, float_infinity/0, float_neg_infinity/0,
-         float_is_nan/1, float_is_infinite/1, json_canonicalize/1,
-         xml_parse/1, float_short/1, format_iso8601/1, parse_http_date/1,
-         format_http_date/1, idempotency_token/0]).
+-export([sha256/1, md5/1, hmac_sha256/2, hex_encode/1, get_env/1,
+         read_file/1, unix_seconds/0, parse_iso8601/1, run_process/2,
+         sha1_hex/1, aws_timestamp/0, random_float/0,
+         encode_dynamic_to_json/1, float_nan/0, float_infinity/0,
+         float_neg_infinity/0, float_is_nan/1, float_is_infinite/1,
+         json_canonicalize/1, xml_parse/1, float_short/1,
+         format_iso8601/1, parse_http_date/1, format_http_date/1,
+         idempotency_token/0]).
 
 %% Shortest round-tripping float string, e.g. `1.1` not `1.10000000…e+00`.
 %% Used by query / header / URI-label / XML formatters; matches AWS's
@@ -84,6 +85,13 @@ format_http_date(Seconds) when is_integer(Seconds) ->
 
 sha256(Data) ->
     crypto:hash(sha256, Data).
+
+%% Raw MD5 digest, used by the `@httpChecksumRequired` body-checksum
+%% helper. MD5 is a degraded primitive for security work but the
+%% AWS wire spec for this trait requires it (Content-MD5 is the
+%% S3-control / restJson1 wire shape); SigV4 covers the actual auth.
+md5(Data) ->
+    crypto:hash(md5, Data).
 
 hmac_sha256(Key, Data) ->
     crypto:mac(hmac, sha256, Key, Data).

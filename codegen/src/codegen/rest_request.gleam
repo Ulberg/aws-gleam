@@ -27,12 +27,20 @@ fn name_concat(parts: List(String)) -> String {
 /// Compose a `pub fn build_<op>_request(input: <Type>) -> #(...)`
 /// module fragment. `body_setup` is the protocol-specific list of
 /// statements that bind `body` and `content_type` from `input`.
+///
+/// `requires_md5` reflects the operation's
+/// `smithy.api#httpChecksumRequired` trait — when set, the emitter
+/// appends a final `let headers = rest.with_content_md5_header(
+/// headers, body)` step after the body is fully assembled, so the
+/// Content-MD5 header is computed from the exact bytes about to be
+/// sent on the wire (not before query / label substitution).
 pub fn build_request_module(
   input_type: String,
   is_unit: Bool,
   snake: String,
   http: HttpTrait,
   members: List(MemberDef),
+  requires_md5: Bool,
   body_setup: fn(BindingCategories) -> List(code.Code),
 ) -> String {
   let cats = types.categorize_bindings(members)
@@ -55,6 +63,21 @@ pub fn build_request_module(
       code.Ident(name: "headers"),
       code.Ident(name: "body"),
     ])
+  let md5_step = case requires_md5 {
+    True -> [
+      code.Let(
+        name: "headers",
+        value: code.Call(
+          head: code.Ident(name: "rest.with_content_md5_header"),
+          args: [
+            code.Ident(name: "headers"),
+            code.Ident(name: "body"),
+          ],
+        ),
+      ),
+    ]
+    False -> []
+  }
   let body_items =
     list.flatten([
       emit_path_setup(http.uri, cats.labels),
@@ -63,6 +86,7 @@ pub fn build_request_module(
       body_setup(cats),
       [content_type_let_block(), content_length_let_block()],
       emit_content_encoding(http.compression),
+      md5_step,
       [path_assign, result_tuple],
     ])
   code.render(
