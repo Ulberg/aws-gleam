@@ -254,12 +254,12 @@ fn emit_error_type(spec: OpSpec) -> String {
 /// plan.md teaches the runtime to read XML error bodies; the table
 /// will populate once that lands.
 fn emit_error_translator(spec: OpSpec) -> String {
-  let name = spec.local <> "Error"
+  let name = name_concat([spec.local, "Error"])
   let snake = spec.snake
   let decoders_fn =
     code.Fn(
       public: False,
-      name: snake <> "_error_decoders",
+      name: name_concat([snake, "_error_decoders"]),
       params: [],
       return: code.CodeNone,
       body: code.ListLit(items: [], tail: code.CodeNone),
@@ -267,7 +267,7 @@ fn emit_error_translator(spec: OpSpec) -> String {
   let translate_fn =
     code.Fn(
       public: False,
-      name: "translate_" <> snake <> "_error",
+      name: name_concat(["translate_", snake, "_error"]),
       params: [code.Param(name: "err", type_: "runtime.ClientError")],
       return: code.CodeSome(name),
       body: code.Call(
@@ -275,18 +275,22 @@ fn emit_error_translator(spec: OpSpec) -> String {
         args: [
           code.Ident(name: "err"),
           code.Call(
-            head: code.Ident(name: snake <> "_error_decoders"),
+            head: code.Ident(name: name_concat([snake, "_error_decoders"])),
             args: [],
           ),
           code.Raw(
-            fragment: "fn(reason) { "
-              <> name
-              <> "Transport(reason: reason) }",
+            fragment: name_concat([
+              "fn(reason) { ",
+              name,
+              "Transport(reason: reason) }",
+            ]),
           ),
           code.Raw(
-            fragment: "fn(et, s, body) { "
-              <> name
-              <> "Unknown(error_type: et, status: s, body: body) }",
+            fragment: name_concat([
+              "fn(et, s, body) { ",
+              name,
+              "Unknown(error_type: et, status: s, body: body) }",
+            ]),
           ),
         ],
       ),
@@ -1628,7 +1632,10 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
           args: [
             code.Call(
               head: code.Ident(
-                name: stringutils.pascal_to_snake(n) <> "_int_value",
+                name: name_concat([
+                  stringutils.pascal_to_snake(n),
+                  "_int_value",
+                ]),
               ),
               args: [code.Ident(name: "v")],
             ),
@@ -1646,9 +1653,11 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
         mem_ns,
         code.Call(
           head: code.Ident(
-            name: "encode_"
-              <> stringutils.pascal_to_snake(name)
-              <> "_xml_inner",
+            name: name_concat([
+              "encode_",
+              stringutils.pascal_to_snake(name),
+              "_xml_inner",
+            ]),
           ),
           args: [code.Ident(name: "v")],
         ),
@@ -1662,9 +1671,11 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
         mem_ns,
         code.Call(
           head: code.Ident(
-            name: "encode_"
-              <> stringutils.pascal_to_snake(n)
-              <> "_union_xml_inner",
+            name: name_concat([
+              "encode_",
+              stringutils.pascal_to_snake(n),
+              "_union_xml_inner",
+            ]),
           ),
           args: [code.Ident(name: "v")],
         ),
@@ -1678,9 +1689,11 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
       let inner = xml_inner_expr_for_list_element(m.target)
       let mapped_v =
         code.Raw(
-          fragment: "list.map(v, fn(item) { let v = item "
-            <> inner
-            <> " })",
+          fragment: name_concat([
+            "list.map(v, fn(item) { let v = item ",
+            inner,
+            " })",
+          ]),
         )
       // For flat lists the member-level namespace is the outer
       // (repeated) element's namespace; if the outer member has
@@ -1745,7 +1758,11 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
       let val_expr = xml_map_value_expr(v)
       let mapped_v =
         code.Raw(
-          fragment: "dict.map_values(v, fn(_, v) { " <> val_expr <> " })",
+          fragment: name_concat([
+            "dict.map_values(v, fn(_, v) { ",
+            val_expr,
+            " })",
+          ]),
         )
       let any_ns = case mem_ns, knp, vnp {
         option.None, option.None, option.None -> False
@@ -1991,15 +2008,16 @@ fn emit_union_codec(
   let enc =
     code.Fn(
       public: True,
-      name: "encode_" <> snake <> "_union",
+      name: name_concat(["encode_", snake, "_union"]),
       params: [code.Param(name: "v", type_: name)],
       return: code.CodeSome("json.Json"),
       body: code.Case(
         scrutinee: code.Ident(name: "v"),
         branches: list.map(members, fn(m) {
-          let ctor = name <> stringutils.pascalize_member(m.member_name)
+          let ctor =
+            name_concat([name, stringutils.pascalize_member(m.member_name)])
           code.Branch(
-            pattern: ctor <> "(x)",
+            pattern: name_concat([ctor, "(x)"]),
             body: code.Call(
               head: code.Ident(name: "json.object"),
               args: [
@@ -2029,15 +2047,16 @@ fn emit_union_codec(
   let xml_inner =
     code.Fn(
       public: True,
-      name: "encode_" <> snake <> "_union_xml_inner",
+      name: name_concat(["encode_", snake, "_union_xml_inner"]),
       params: [code.Param(name: "v", type_: name)],
       return: code.CodeSome("String"),
       body: code.Case(
         scrutinee: code.Ident(name: "v"),
         branches: list.map(members, fn(m) {
-          let ctor = name <> stringutils.pascalize_member(m.member_name)
+          let ctor =
+            name_concat([name, stringutils.pascalize_member(m.member_name)])
           code.Branch(
-            pattern: ctor <> "(x)",
+            pattern: name_concat([ctor, "(x)"]),
             body: code.Call(
               head: code.Ident(name: "xml.element"),
               args: [
@@ -2054,9 +2073,9 @@ fn emit_union_codec(
       code.Blank,
       code.Fn(
         public: True,
-        name: "decode_" <> snake <> "_union_params",
+        name: name_concat(["decode_", snake, "_union_params"]),
         params: [],
-        return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+        return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
         body: union_params_decoder_body(name, members),
       ),
       code.Blank,
