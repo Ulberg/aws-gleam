@@ -12,7 +12,12 @@ import codegen/code.{
 }
 import codegen/types.{type EnumVariant, type IntEnumVariant, type MemberDef}
 import gleam/list
+import gleam/string
 import internal/stringutils
+
+fn name_concat(parts: List(String)) -> String {
+  string.concat(parts)
+}
 
 /// `pub type Name { Name(field: option.Option(T), ...) }`. Body-less
 /// variant for member-less structs falls back to `pub type Name { Name }`.
@@ -29,7 +34,11 @@ pub fn record_def(name: String, members: List(MemberDef)) -> Code {
           fields: list.map(members, fn(m) {
             Param(
               name: m.snake_name,
-              type_: "option.Option(" <> types.gleam_type(m.target) <> ")",
+              type_: name_concat([
+                "option.Option(",
+                types.gleam_type(m.target),
+                ")",
+              ]),
             )
           }),
         ),
@@ -45,7 +54,7 @@ pub fn enum_def(name: String, variants: List(EnumVariant)) -> Code {
   case variants {
     [] ->
       TypeDef(public: True, is_opaque: False, name: name, variants: [
-        UnitVariant(name: name <> "Unknown"),
+        UnitVariant(name: name_concat([name, "Unknown"])),
       ])
     _ ->
       TypeDef(
@@ -63,7 +72,7 @@ pub fn int_enum_def(name: String, variants: List(IntEnumVariant)) -> Code {
   case variants {
     [] ->
       TypeDef(public: True, is_opaque: False, name: name, variants: [
-        UnitVariant(name: name <> "Unknown"),
+        UnitVariant(name: name_concat([name, "Unknown"])),
       ])
     _ ->
       TypeDef(
@@ -84,7 +93,7 @@ pub fn union_def(name: String, members: List(MemberDef)) -> Code {
   case members {
     [] ->
       TypeDef(public: True, is_opaque: False, name: name, variants: [
-        UnitVariant(name: name <> "Empty"),
+        UnitVariant(name: name_concat([name, "Empty"])),
       ])
     _ ->
       TypeDef(
@@ -93,7 +102,10 @@ pub fn union_def(name: String, members: List(MemberDef)) -> Code {
         name: name,
         variants: list.map(members, fn(m) {
           PositionalVariant(
-            name: name <> stringutils.pascalize_member(m.member_name),
+            name: name_concat([
+              name,
+              stringutils.pascalize_member(m.member_name),
+            ]),
             types: [types.gleam_type(m.target)],
           )
         }),

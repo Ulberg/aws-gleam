@@ -1,7 +1,7 @@
 //// AST emitters for the JSON struct encoder + decoder pair the
 //// codegen produces for every named structure shape. Previously the
 //// three per-protocol emitters carried three near-identical copies
-//// of these functions, all built from `"..." <> snake <> "..."`
+//// of these functions, all built from `string.concat(["...", snake, "..."])`
 //// string templates with inline `\"` escapes — this consolidates
 //// them behind `codegen/code` AST nodes so the brittle parts move
 //// from "stringly-typed" to "type-checked structure".
@@ -13,6 +13,11 @@ import codegen/code.{
 import codegen/types.{type MemberDef}
 import gleam/list
 import gleam/option
+import gleam/string
+
+fn name_concat(parts: List(String)) -> String {
+  string.concat(parts)
+}
 
 /// `pub fn <fn_name>(input: <type_name>) -> json.Json { ... }`. Each
 /// member appends to a `pairs` accumulator depending on whether the
@@ -88,10 +93,13 @@ fn encoder_body(
       }
       Let(
         name: "pairs",
-        value: Case(scrutinee: Ident("input." <> m.snake_name), branches: [
-          code.Branch(pattern: "option.Some(v)", body: some_branch),
-          code.Branch(pattern: "option.None", body: none_branch),
-        ]),
+        value: Case(
+          scrutinee: Ident(name_concat(["input.", m.snake_name])),
+          branches: [
+            code.Branch(pattern: "option.Some(v)", body: some_branch),
+            code.Branch(pattern: "option.None", body: none_branch),
+          ],
+        ),
       )
     })
   let tail = Call(Ident("json.object"), [Ident("pairs")])
@@ -118,7 +126,7 @@ pub fn decoder(
         public: True,
         name: fn_name,
         params: [],
-        return: CodeSome("decode.Decoder(" <> type_name <> ")"),
+        return: CodeSome(name_concat(["decode.Decoder(", type_name, ")"])),
         body: Call(Ident("decode.success"), [Ident(type_name)]),
       )
     _ ->
@@ -126,7 +134,7 @@ pub fn decoder(
         public: True,
         name: fn_name,
         params: [],
-        return: CodeSome("decode.Decoder(" <> type_name <> ")"),
+        return: CodeSome(name_concat(["decode.Decoder(", type_name, ")"])),
         body: Block(items: decoder_body(
           type_name,
           members,
@@ -173,7 +181,7 @@ fn decoder_body(
     Call(
       Ident(type_name),
       list.map(members, fn(m) {
-        code.Raw(fragment: m.snake_name <> ": " <> m.snake_name)
+        code.Raw(fragment: name_concat([m.snake_name, ": ", m.snake_name]))
       }),
     )
   let tail = Call(Ident("decode.success"), [constructor])

@@ -52,7 +52,7 @@ pub fn emit_service(
   service_id: String,
 ) -> Result(EmitResult, String) {
   case model.lookup(model, service_id) {
-    Error(_) -> Error("service not found: " <> service_id)
+    Error(_) -> Error(string.concat(["service not found: ", service_id]))
     Ok(shape.Service(operations: refs, traits: svc_traits, ..)) -> {
       let service_local = strip_namespace(service_id)
       let metadata = trait_helpers.service_metadata(svc_traits, service_local)
@@ -182,7 +182,7 @@ pub fn emit_service(
         dispatcher_specs: dispatcher_specs,
       ))
     }
-    Ok(_) -> Error("not a service: " <> service_id)
+    Ok(_) -> Error(string.concat(["not a service: ", service_id]))
   }
 }
 
@@ -2006,7 +2006,7 @@ fn emit_parse_with_payload(
         name_concat(["decode_", stringutils.pascal_to_snake(name), "_enum"])
       code.Raw(
         fragment: string.concat([
-          "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case json.parse(\"\\\"\" <> text <> \"\\\"\", ",
+          "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case json.parse(string.concat([\"\\\"\", text, \"\\\"\"]), ",
           decoder,
           "()) {\n        Ok(v) -> Ok(option.Some(v))\n        Error(_) -> Error(\"decode failed\")\n      }\n    })",
         ]),

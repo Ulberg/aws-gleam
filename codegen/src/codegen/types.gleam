@@ -232,9 +232,10 @@ fn timestamp_format_of_target(
 fn default_to_json_expr(t: trait.Trait) -> String {
   case t {
     trait.Null -> "json.null()"
-    trait.String(s) -> "json.string(\"" <> escape_default_string(s) <> "\")"
-    trait.Int(n) -> "json.int(" <> int_to_dec(n) <> ")"
-    trait.Float(f) -> "json.float(" <> float_to_dec(f) <> ")"
+    trait.String(s) ->
+      name_concat(["json.string(\"", escape_default_string(s), "\")"])
+    trait.Int(n) -> name_concat(["json.int(", int_to_dec(n), ")"])
+    trait.Float(f) -> name_concat(["json.float(", float_to_dec(f), ")"])
     trait.Bool(True) -> "json.bool(True)"
     trait.Bool(False) -> "json.bool(False)"
     trait.List(_) -> "json.preprocessed_array([])"
@@ -273,7 +274,7 @@ fn int_str(n: Int, acc: String) -> String {
         9 -> "9"
         _ -> "?"
       }
-      int_str(n / 10, c <> acc)
+      int_str(n / 10, name_concat([c, acc]))
     }
   }
 }
@@ -354,10 +355,10 @@ pub fn build_rename_map(model: Model) -> Dict(String, String) {
   let by_local =
     dict.fold(model.shapes, dict.new(), fn(acc, sid, _shape) {
       let ShapeId(full_id) = sid
-      case full_id {
-        // Skip the prelude — these are well-known and don't collide.
-        "smithy.api#" <> _ -> acc
-        _ -> {
+      // Skip the prelude — these are well-known and don't collide.
+      case string.starts_with(full_id, "smithy.api#") {
+        True -> acc
+        False -> {
           let local = strip_namespace(full_id)
           let existing =
             dict.get(acc, local)
@@ -374,7 +375,7 @@ pub fn build_rename_map(model: Model) -> Dict(String, String) {
       [single] -> dict.insert(acc, single, local)
       multiple ->
         list.fold(multiple, acc, fn(acc2, full_id) {
-          let unique = local <> namespace_suffix(full_id)
+          let unique = name_concat([local, namespace_suffix(full_id)])
           dict.insert(acc2, full_id, unique)
         })
     }
@@ -439,7 +440,8 @@ fn xml_namespace_of(traits: shape.Traits) -> option.Option(#(String, String)) {
 fn pascalize(s: String) -> String {
   case string.to_graphemes(s) {
     [] -> s
-    [first, ..rest] -> string.uppercase(first) <> string.concat(rest)
+    [first, ..rest] ->
+      name_concat([string.uppercase(first), string.concat(rest)])
   }
 }
 
@@ -565,7 +567,8 @@ pub fn resolve(model: Model, target_id: String) -> Resolved {
 
 fn resolve_user_defined(model: Model, target_id: String) -> Resolved {
   case model.lookup(model, target_id) {
-    Error(_) -> Unsupported(reason: "shape not found: " <> target_id)
+    Error(_) ->
+      Unsupported(reason: string.concat(["shape not found: ", target_id]))
     Ok(s) -> resolve_shape(model, target_id, s)
   }
 }
@@ -860,12 +863,13 @@ pub fn gleam_type(r: Resolved) -> String {
     RPrim(primitive: PBool) -> "Bool"
     REnum(gleam_name: n, ..) | RIntEnum(gleam_name: n, ..) -> n
     RList(element: e, sparse: True, ..) ->
-      "List(option.Option(" <> gleam_type(e) <> "))"
-    RList(element: e, sparse: False, ..) -> "List(" <> gleam_type(e) <> ")"
+      name_concat(["List(option.Option(", gleam_type(e), "))"])
+    RList(element: e, sparse: False, ..) ->
+      name_concat(["List(", gleam_type(e), ")"])
     RMap(key: _k, value: v, sparse: True, ..) ->
-      "dict.Dict(String, option.Option(" <> gleam_type(v) <> "))"
+      name_concat(["dict.Dict(String, option.Option(", gleam_type(v), "))"])
     RMap(key: _k, value: v, sparse: False, ..) ->
-      "dict.Dict(String, " <> gleam_type(v) <> ")"
+      name_concat(["dict.Dict(String, ", gleam_type(v), ")"])
     RStruct(gleam_name: n, ..) | RUnion(gleam_name: n, ..) -> n
     RTimestamp -> "Int"
     RBlob -> "BitArray"
@@ -923,33 +927,46 @@ pub fn json_encoder(r: Resolved) -> String {
     RPrim(primitive: PFloat) -> "json_float.encode"
     RPrim(primitive: PBool) -> "json.bool"
     REnum(local_name: n, ..) ->
-      "encode_" <> stringutils.pascal_to_snake(n) <> "_enum"
+      name_concat(["encode_", stringutils.pascal_to_snake(n), "_enum"])
     RIntEnum(local_name: n, ..) ->
-      "encode_" <> stringutils.pascal_to_snake(n) <> "_int_enum"
+      name_concat(["encode_", stringutils.pascal_to_snake(n), "_int_enum"])
     RList(element: e, sparse: True, ..) ->
-      "fn(xs) { json.array(xs, fn(o) { case o { option.Some(x) -> "
-      <> json_encoder(e)
-      <> "(x) option.None -> json.null() } }) }"
+      name_concat([
+        "fn(xs) { json.array(xs, fn(o) { case o { option.Some(x) -> ",
+        json_encoder(e),
+        "(x) option.None -> json.null() } }) }",
+      ])
     RList(element: e, sparse: False, ..) ->
-      "fn(xs) { json.array(xs, " <> json_encoder(e) <> ") }"
+      name_concat(["fn(xs) { json.array(xs, ", json_encoder(e), ") }"])
     RMap(value: v, sparse: True, ..) ->
-      "fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> "
-      <> json_encoder(v)
-      <> "(x) option.None -> json.null() }) })) }"
+      name_concat([
+        "fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> ",
+        json_encoder(v),
+        "(x) option.None -> json.null() }) })) }",
+      ])
     RMap(value: v, sparse: False, ..) ->
-      "fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, "
-      <> json_encoder(v)
-      <> "(pair.1)) })) }"
+      name_concat([
+        "fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, ",
+        json_encoder(v),
+        "(pair.1)) })) }",
+      ])
     RStruct(local_name: n, ..) ->
-      "encode_" <> stringutils.pascal_to_snake(n) <> "_struct"
+      name_concat(["encode_", stringutils.pascal_to_snake(n), "_struct"])
     RUnion(local_name: n, ..) ->
-      "encode_" <> stringutils.pascal_to_snake(n) <> "_union"
+      name_concat(["encode_", stringutils.pascal_to_snake(n), "_union"])
     RTimestamp -> "json.int"
     RBlob -> "fn(b) { json.string(bit_array.base64_encode(b, True)) }"
     RDocument -> "fn(j) { j }"
     RUnit -> "fn(_) { json.object([]) }"
     Unsupported(..) -> "fn(_) { json.null() }"
   }
+}
+
+/// Build a Gleam identifier name from a list of parts. Same pattern
+/// as the per-protocol emitter helpers — avoids the `<>` operator
+/// throughout the codegen source.
+fn name_concat(parts: List(String)) -> String {
+  string.concat(parts)
 }
 
 /// Same shape as `json_decoder`, but every nested struct/union
@@ -961,19 +978,29 @@ pub fn json_encoder(r: Resolved) -> String {
 pub fn json_decoder_params(r: Resolved) -> String {
   case r {
     RStruct(local_name: n, ..) ->
-      "decode_" <> stringutils.pascal_to_snake(n) <> "_struct_params()"
+      name_concat([
+        "decode_",
+        stringutils.pascal_to_snake(n),
+        "_struct_params()",
+      ])
     RUnion(local_name: n, ..) ->
-      "decode_" <> stringutils.pascal_to_snake(n) <> "_union_params()"
+      name_concat([
+        "decode_",
+        stringutils.pascal_to_snake(n),
+        "_union_params()",
+      ])
     RList(element: e, sparse: True, ..) ->
-      "decode.list(decode.optional(" <> json_decoder_params(e) <> "))"
+      name_concat(["decode.list(decode.optional(", json_decoder_params(e), "))"])
     RList(element: e, sparse: False, ..) ->
-      "decode.list(" <> json_decoder_params(e) <> ")"
+      name_concat(["decode.list(", json_decoder_params(e), ")"])
     RMap(value: v, sparse: True, ..) ->
-      "decode.dict(decode.string, decode.optional("
-      <> json_decoder_params(v)
-      <> "))"
+      name_concat([
+        "decode.dict(decode.string, decode.optional(",
+        json_decoder_params(v),
+        "))",
+      ])
     RMap(value: v, sparse: False, ..) ->
-      "decode.dict(decode.string, " <> json_decoder_params(v) <> ")"
+      name_concat(["decode.dict(decode.string, ", json_decoder_params(v), ")"])
     _ -> json_decoder(r)
   }
 }
@@ -986,21 +1013,25 @@ pub fn json_decoder(r: Resolved) -> String {
     RPrim(primitive: PFloat) -> "json_float.decoder()"
     RPrim(primitive: PBool) -> "decode.bool"
     REnum(local_name: n, ..) ->
-      "decode_" <> stringutils.pascal_to_snake(n) <> "_enum()"
+      name_concat(["decode_", stringutils.pascal_to_snake(n), "_enum()"])
     RIntEnum(local_name: n, ..) ->
-      "decode_" <> stringutils.pascal_to_snake(n) <> "_int_enum()"
+      name_concat(["decode_", stringutils.pascal_to_snake(n), "_int_enum()"])
     RList(element: e, sparse: True, ..) ->
-      "decode.list(decode.optional(" <> json_decoder(e) <> "))"
+      name_concat(["decode.list(decode.optional(", json_decoder(e), "))"])
     RList(element: e, sparse: False, ..) ->
-      "decode.list(" <> json_decoder(e) <> ")"
+      name_concat(["decode.list(", json_decoder(e), ")"])
     RMap(value: v, sparse: True, ..) ->
-      "decode.dict(decode.string, decode.optional(" <> json_decoder(v) <> "))"
+      name_concat([
+        "decode.dict(decode.string, decode.optional(",
+        json_decoder(v),
+        "))",
+      ])
     RMap(value: v, sparse: False, ..) ->
-      "decode.dict(decode.string, " <> json_decoder(v) <> ")"
+      name_concat(["decode.dict(decode.string, ", json_decoder(v), ")"])
     RStruct(local_name: n, ..) ->
-      "decode_" <> stringutils.pascal_to_snake(n) <> "_struct()"
+      name_concat(["decode_", stringutils.pascal_to_snake(n), "_struct()"])
     RUnion(local_name: n, ..) ->
-      "decode_" <> stringutils.pascal_to_snake(n) <> "_union()"
+      name_concat(["decode_", stringutils.pascal_to_snake(n), "_union()"])
     RTimestamp -> "json_timestamp.decoder()"
     RBlob ->
       // Smithy protocol-test params encode blobs as UTF-8 strings, not
@@ -1014,7 +1045,7 @@ pub fn json_decoder(r: Resolved) -> String {
 }
 
 fn variant_constructor(enum_local: String, member_name: String) -> String {
-  enum_local <> pascalize_screaming_snake(member_name)
+  name_concat([enum_local, pascalize_screaming_snake(member_name)])
 }
 
 fn pascalize_screaming_snake(s: String) -> String {
@@ -1025,7 +1056,10 @@ fn pascalize_screaming_snake(s: String) -> String {
       _ ->
         case string.to_graphemes(word) {
           [first, ..rest] ->
-            string.uppercase(first) <> string.lowercase(string.concat(rest))
+            name_concat([
+              string.uppercase(first),
+              string.lowercase(string.concat(rest)),
+            ])
           [] -> word
         }
     }

@@ -41,7 +41,7 @@ pub fn emit_service(
   variant: Variant,
 ) -> Result(EmitResult, String) {
   case model.lookup(model, service_id) {
-    Error(_) -> Error("service not found: " <> service_id)
+    Error(_) -> Error(string.concat(["service not found: ", service_id]))
     Ok(shape.Service(operations: refs, version: ver, ..)) -> {
       let version = case ver {
         Some(v) -> v
@@ -61,9 +61,11 @@ pub fn emit_service(
           }
         })
       let body =
-        header
-        <> "\n"
-        <> list.fold(emitted_ops, "", fn(acc, e) { acc <> e.code })
+        string.concat([
+          header,
+          "\n",
+          string.concat(list.map(emitted_ops, fn(e) { e.code })),
+        ])
       // The awsQuery / ec2Query emitter today only handles
       // empty-input operations and never emits a `decode_<op>_input`
       // helper, so dispatchers built from these specs go through
@@ -75,7 +77,7 @@ pub fn emit_service(
           dispatcher.DispatcherSpec(
             op_id: e.operation_id,
             snake: snake,
-            input_type: local <> "Input",
+            input_type: name_concat([local, "Input"]),
             has_typed_input: False,
           )
         })
@@ -86,7 +88,7 @@ pub fn emit_service(
         dispatcher_specs: dispatcher_specs,
       ))
     }
-    Ok(_) -> Error("not a service: " <> service_id)
+    Ok(_) -> Error(string.concat(["not a service: ", service_id]))
   }
 }
 
@@ -94,13 +96,17 @@ type EmittedOp {
   EmittedOp(operation_id: String, code: String)
 }
 
+fn name_concat(parts: List(String)) -> String {
+  string.concat(parts)
+}
+
 fn emit_empty_operation(op_id: String, version: String) -> EmittedOp {
   let local = strip_namespace(op_id)
   let pascal = local
   let snake = stringutils.pascal_to_snake(local)
-  let input_type = pascal <> "Input"
-  let output_type = pascal <> "Output"
-  let body_literal = "Action=" <> local <> "&Version=" <> version
+  let input_type = name_concat([pascal, "Input"])
+  let output_type = name_concat([pascal, "Output"])
+  let body_literal = name_concat(["Action=", local, "&Version=", version])
   let module =
     code.Module(items: [
       code.Blank,
@@ -143,11 +149,11 @@ fn build_request_fn(snake: String, input_type: String, body_literal: String) -> 
       code.StrLit(value: "POST"),
       code.StrLit(value: "/"),
       code.Ident(name: "headers"),
-      code.Raw(fragment: "<<\"" <> body_literal <> "\">>"),
+      code.Raw(fragment: name_concat(["<<\"", body_literal, "\">>"])),
     ])
   code.Fn(
     public: True,
-    name: "build_" <> snake <> "_request",
+    name: name_concat(["build_", snake, "_request"]),
     params: [code.Param(name: "_input", type_: input_type)],
     return: CodeSome("#(String, String, dict.Dict(String, String), BitArray)"),
     body: code.Block(items: [headers_assign, tuple_expr]),
@@ -158,13 +164,13 @@ fn build_request_fn(snake: String, input_type: String, body_literal: String) -> 
 fn parse_response_fn(snake: String, output_type: String) -> Code {
   code.Fn(
     public: True,
-    name: "parse_" <> snake <> "_response",
+    name: name_concat(["parse_", snake, "_response"]),
     params: [
       code.Param(name: "_code", type_: "Int"),
       code.Param(name: "_headers", type_: "dict.Dict(String, String)"),
       code.Param(name: "_body", type_: "BitArray"),
     ],
-    return: CodeSome("Result(" <> output_type <> ", String)"),
+    return: CodeSome(name_concat(["Result(", output_type, ", String)"])),
     body: code.Call(
       head: code.Ident(name: "Ok"),
       args: [code.Ident(name: output_type)],
@@ -180,7 +186,7 @@ fn file_header(service_id: String, variant: Variant) -> String {
   code.render(
     code.Module(items: [
       code.ModuleDocComment(lines: [
-        "Generated from " <> service_id <> " (" <> proto <> ").",
+        name_concat(["Generated from ", service_id, " (", proto, ")."]),
         "DO NOT EDIT. Re-generate via the codegen subproject.",
       ]),
       code.Blank,
@@ -191,7 +197,7 @@ fn file_header(service_id: String, variant: Variant) -> String {
       ),
     ]),
   )
-  <> "\n"
+  |> fn(s) { string.concat([s, "\n"]) }
 }
 
 fn is_unit_or_empty(model: Model, ref: shape.Reference) -> Bool {

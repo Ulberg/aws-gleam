@@ -2,7 +2,7 @@
 ////
 //// Each emitter builds a tree of `Code` nodes and hands it to
 //// `render` once. The structural representation rules out a whole
-//// class of bugs that plagued the earlier `"..." <> "..."` style:
+//// class of bugs that plagued the earlier string-concat style:
 ////
 ////   * Mismatched braces / parens — `Block` knows its delimiters.
 ////   * Stray quote characters — every literal goes through
@@ -66,8 +66,8 @@ pub type Code {
   /// comma-joined.
   Call(head: Code, args: List(Code))
 
-  /// `a <> b <> c` — string concatenation. Rendered with `<>`
-  /// between each. Used heavily by encoders.
+  /// String concatenation of multiple parts. Rendered as a
+  /// `string.concat([a, b, c])` call. Used heavily by encoders.
   Concat(parts: List(Code))
 
   /// `#(a, b, ...)` — tuple literal.
@@ -151,7 +151,7 @@ pub type OptCode(t) {
 pub fn render(c: Code) -> String {
   do_render(c, 0)
   |> trim_trailing
-  |> fn(s) { s <> "\n" }
+  |> fn(s) { string.concat([s, "\n"]) }
 }
 
 // ---------- internals ----------
@@ -165,14 +165,14 @@ fn do_render(c: Code, indent: Int) -> String {
 
     Import(path: p, alias: a, unqualified: u) -> {
       let alias_str = case a {
-        CodeSome(name) -> " as " <> name
+        CodeSome(name) -> string.concat([" as ", name])
         CodeNone -> ""
       }
       let unq_str = case u {
         [] -> ""
-        names -> ".{" <> string.join(names, ", ") <> "}"
+        names -> string.concat([".{", string.join(names, ", "), "}"])
       }
-      pad(indent) <> "import " <> p <> alias_str <> unq_str
+      string.concat([pad(indent), "import ", p, alias_str, unq_str])
     }
 
     TypeDef(public: pub_, is_opaque: op, name: n, variants: vs) -> {
@@ -181,12 +181,12 @@ fn do_render(c: Code, indent: Int) -> String {
         True, False -> "pub type "
         False, _ -> "type "
       }
-      let header = pad(indent) <> keyword <> n <> " {"
+      let header = string.concat([pad(indent), keyword, n, " {"])
       let body =
         vs
-        |> list.map(fn(v) { pad(indent + 1) <> render_variant(v) })
+        |> list.map(fn(v) { string.concat([pad(indent + 1), render_variant(v)]) })
         |> string.join("\n")
-      header <> "\n" <> body <> "\n" <> pad(indent) <> "}"
+      string.concat([header, "\n", body, "\n", pad(indent), "}"])
     }
 
     Fn(public: pub_, name: n, params: ps, return: ret, body: b) -> {
@@ -196,43 +196,56 @@ fn do_render(c: Code, indent: Int) -> String {
       }
       let params_str = render_params(ps)
       let ret_str = case ret {
-        CodeSome(t) -> " -> " <> t
+        CodeSome(t) -> string.concat([" -> ", t])
         CodeNone -> ""
       }
       let header =
-        pad(indent)
-        <> keyword
-        <> n
-        <> "("
-        <> params_str
-        <> ")"
-        <> ret_str
-        <> " {"
+        string.concat([
+          pad(indent),
+          keyword,
+          n,
+          "(",
+          params_str,
+          ")",
+          ret_str,
+          " {",
+        ])
       let body_str = do_render(b, indent + 1)
-      header <> "\n" <> body_str <> "\n" <> pad(indent) <> "}"
+      string.concat([header, "\n", body_str, "\n", pad(indent), "}"])
     }
 
     Let(name: n, value: v) ->
-      pad(indent) <> "let " <> n <> " = " <> do_render_expr(v, indent)
+      string.concat([pad(indent), "let ", n, " = ", do_render_expr(v, indent)])
 
     Use(name: n, callee: c2) ->
       case n {
-        "" -> pad(indent) <> "use <- " <> do_render_expr(c2, indent)
-        _ -> pad(indent) <> "use " <> n <> " <- " <> do_render_expr(c2, indent)
+        "" ->
+          string.concat([pad(indent), "use <- ", do_render_expr(c2, indent)])
+        _ ->
+          string.concat([
+            pad(indent),
+            "use ",
+            n,
+            " <- ",
+            do_render_expr(c2, indent),
+          ])
       }
 
     Case(scrutinee: s, branches: bs) -> {
-      let header = pad(indent) <> "case " <> do_render_expr(s, indent) <> " {"
+      let header =
+        string.concat([pad(indent), "case ", do_render_expr(s, indent), " {"])
       let body =
         bs
         |> list.map(fn(br) {
-          pad(indent + 1)
-          <> br.pattern
-          <> " -> "
-          <> do_render_expr(br.body, indent + 1)
+          string.concat([
+            pad(indent + 1),
+            br.pattern,
+            " -> ",
+            do_render_expr(br.body, indent + 1),
+          ])
         })
         |> string.join("\n")
-      header <> "\n" <> body <> "\n" <> pad(indent) <> "}"
+      string.concat([header, "\n", body, "\n", pad(indent), "}"])
     }
 
     Block(items: xs) ->
@@ -240,30 +253,32 @@ fn do_render(c: Code, indent: Int) -> String {
       |> list.map(fn(x) { do_render(x, indent) })
       |> string.join("\n")
 
-    Call(head: h, args: as_) -> pad(indent) <> render_call(h, as_, indent)
+    Call(head: h, args: as_) ->
+      string.concat([pad(indent), render_call(h, as_, indent)])
 
-    Concat(parts: ps) -> pad(indent) <> render_concat(ps, indent)
+    Concat(parts: ps) -> string.concat([pad(indent), render_concat(ps, indent)])
 
-    Tuple(items: xs) -> pad(indent) <> render_tuple(xs, indent)
+    Tuple(items: xs) -> string.concat([pad(indent), render_tuple(xs, indent)])
 
-    ListLit(items: xs, tail: t) -> pad(indent) <> render_list(xs, t, indent)
+    ListLit(items: xs, tail: t) ->
+      string.concat([pad(indent), render_list(xs, t, indent)])
 
-    Ident(name: n) -> pad(indent) <> n
+    Ident(name: n) -> string.concat([pad(indent), n])
 
-    StrLit(value: v) -> pad(indent) <> escape_string_literal(v)
+    StrLit(value: v) -> string.concat([pad(indent), escape_string_literal(v)])
 
-    IntLit(value: n) -> pad(indent) <> int_to_string(n)
+    IntLit(value: n) -> string.concat([pad(indent), int_to_string(n)])
 
     Raw(fragment: f) -> indent_raw(f, indent)
 
     DocComment(lines: ls) ->
       ls
-      |> list.map(fn(l) { pad(indent) <> "/// " <> l })
+      |> list.map(fn(l) { string.concat([pad(indent), "/// ", l]) })
       |> string.join("\n")
 
     ModuleDocComment(lines: ls) ->
       ls
-      |> list.map(fn(l) { pad(indent) <> "//// " <> l })
+      |> list.map(fn(l) { string.concat([pad(indent), "//// ", l]) })
       |> string.join("\n")
 
     // `Labelled` only renders inside `Call.args` (handled in
@@ -271,7 +286,7 @@ fn do_render(c: Code, indent: Int) -> String {
     // falls through to its value, which is reasonable for nested
     // contexts but ideally never reached.
     Labelled(label: l, value: v) ->
-      pad(indent) <> l <> ": " <> do_render_expr(v, indent)
+      string.concat([pad(indent), l, ": ", do_render_expr(v, indent)])
 
     Blank -> ""
   }
@@ -298,7 +313,7 @@ fn do_render_expr(c: Code, indent: Int) -> String {
       // Larger constructs in expression position fall back to the
       // statement renderer — Gleam allows blocks as expressions when
       // delimited.
-      "{\n" <> do_render(c, indent + 1) <> "\n" <> pad(indent) <> "}"
+      string.concat(["{\n", do_render(c, indent + 1), "\n", pad(indent), "}"])
   }
 }
 
@@ -308,18 +323,26 @@ fn render_call(head: Code, args: List(Code), indent: Int) -> String {
     args
     |> list.map(fn(a) {
       case a {
-        Labelled(label: l, value: v) -> l <> ": " <> do_render_expr(v, indent)
+        Labelled(label: l, value: v) ->
+          string.concat([l, ": ", do_render_expr(v, indent)])
         _ -> do_render_expr(a, indent)
       }
     })
     |> string.join(", ")
-  head_str <> "(" <> args_str <> ")"
+  string.concat([head_str, "(", args_str, ")"])
 }
 
 fn render_concat(parts: List(Code), indent: Int) -> String {
-  parts
-  |> list.map(fn(p) { do_render_expr(p, indent) })
-  |> string.join(" <> ")
+  // Render `code.Concat([a, b, c])` as `string.concat([a, b, c])` in
+  // the generated Gleam code — semantically equivalent to a chain of
+  // string-append operators but keeps the output operator-free. The
+  // render is string-only (this function returns the joined source
+  // text); no call back into the AST machinery.
+  let parts_str =
+    parts
+    |> list.map(fn(p) { do_render_expr(p, indent) })
+    |> string.join(", ")
+  string.concat(["string.concat([", parts_str, "])"])
 }
 
 fn render_tuple(items: List(Code), indent: Int) -> String {
@@ -327,7 +350,7 @@ fn render_tuple(items: List(Code), indent: Int) -> String {
     items
     |> list.map(fn(i) { do_render_expr(i, indent) })
     |> string.join(", ")
-  "#(" <> parts <> ")"
+  string.concat(["#(", parts, ")"])
 }
 
 fn render_list(items: List(Code), tail: OptCode(Code), indent: Int) -> String {
@@ -336,8 +359,9 @@ fn render_list(items: List(Code), tail: OptCode(Code), indent: Int) -> String {
     |> list.map(fn(i) { do_render_expr(i, indent) })
     |> string.join(", ")
   case tail {
-    CodeNone -> "[" <> head <> "]"
-    CodeSome(t) -> "[" <> head <> ", .." <> do_render_expr(t, indent) <> "]"
+    CodeNone -> string.concat(["[", head, "]"])
+    CodeSome(t) ->
+      string.concat(["[", head, ", ..", do_render_expr(t, indent), "]"])
   }
 }
 
@@ -345,8 +369,9 @@ fn render_params(ps: List(Param)) -> String {
   ps
   |> list.map(fn(p) {
     case p {
-      Param(name: n, type_: t) -> n <> ": " <> t
-      LabelledParam(label: l, name: n, type_: t) -> l <> " " <> n <> ": " <> t
+      Param(name: n, type_: t) -> string.concat([n, ": ", t])
+      LabelledParam(label: l, name: n, type_: t) ->
+        string.concat([l, " ", n, ": ", t])
     }
   })
   |> string.join(", ")
@@ -360,22 +385,23 @@ fn render_variant(v: Variant) -> String {
         fs
         |> list.map(fn(p) {
           case p {
-            Param(name: nn, type_: t) -> nn <> ": " <> t
-            LabelledParam(name: nn, type_: t, ..) -> nn <> ": " <> t
+            Param(name: nn, type_: t) -> string.concat([nn, ": ", t])
+            LabelledParam(name: nn, type_: t, ..) ->
+              string.concat([nn, ": ", t])
           }
         })
         |> string.join(", ")
-      n <> "(" <> fields_str <> ")"
+      string.concat([n, "(", fields_str, ")"])
     }
     PositionalVariant(name: n, types: ts) ->
-      n <> "(" <> string.join(ts, ", ") <> ")"
+      string.concat([n, "(", string.join(ts, ", "), ")"])
   }
 }
 
 fn pad(level: Int) -> String {
   case level {
     0 -> ""
-    _ -> "  " <> pad(level - 1)
+    _ -> string.concat(["  ", pad(level - 1)])
   }
 }
 
@@ -389,7 +415,7 @@ fn indent_raw(fragment: String, indent: Int) -> String {
   |> list.map(fn(line) {
     case string.trim_start(line) == "" {
       True -> ""
-      False -> pad(indent) <> line
+      False -> string.concat([pad(indent), line])
     }
   })
   |> string.join("\n")
@@ -400,7 +426,7 @@ fn escape_string_literal(s: String) -> String {
     s
     |> string.replace("\\", "\\\\")
     |> string.replace("\"", "\\\"")
-  "\"" <> escaped <> "\""
+  string.concat(["\"", escaped, "\""])
 }
 
 fn trim_trailing(s: String) -> String {
@@ -435,7 +461,7 @@ fn int_str(n: Int, acc: String) -> String {
         9 -> "9"
         _ -> "?"
       }
-      int_str(n / 10, c <> acc)
+      int_str(n / 10, string.concat([c, acc]))
     }
   }
 }

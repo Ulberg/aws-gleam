@@ -64,7 +64,7 @@ pub fn emit_service(
   service_id: String,
 ) -> Result(EmitResult, String) {
   case model.lookup(model, service_id) {
-    Error(_) -> Error("service not found: " <> service_id)
+    Error(_) -> Error(string.concat(["service not found: ", service_id]))
     Ok(shape.Service(operations: refs, traits: svc_traits, ..)) -> {
       let service_local = strip_namespace(service_id)
       let metadata = trait_helpers.service_metadata(svc_traits, service_local)
@@ -174,7 +174,7 @@ pub fn emit_service(
         }),
       ))
     }
-    Ok(_) -> Error("not a service: " <> service_id)
+    Ok(_) -> Error(string.concat(["not a service: ", service_id]))
   }
 }
 
@@ -1137,7 +1137,8 @@ fn emit_struct_xml_decoder(
         _ -> False
       }
     })
-  let return = code.CodeSome("Result(" <> type_name <> ", String)")
+  let return =
+    code.CodeSome(name_concat(["Result(", type_name, ", String)"]))
   let #(param_name, body) = case members {
     [] -> #(
       "_elem",
@@ -1248,7 +1249,9 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
     REnum(gleam_name: gn, ..) -> emit_unsupported_decoder(gn)
     RIntEnum(gleam_name: gn, ..) -> emit_unsupported_decoder(gn)
     RStruct(local_name: name, ..) ->
-      optional_child_via("decode_" <> stringutils.pascal_to_snake(name) <> "_xml")
+      optional_child_via(
+        name_concat(["decode_", stringutils.pascal_to_snake(name), "_xml"]),
+      )
     RUnion(gleam_name: gn, ..) -> emit_unsupported_decoder(gn)
     RList(element: e, xml_entry_name: entry, ..) -> {
       let inner_decoder = list_element_decoder(e)
@@ -1316,9 +1319,11 @@ fn emit_unsupported_decoder(gleam_type: String) -> code.Code {
   // Cast the literal `Ok(option.None)` to the right Result type so
   // the use-bound variable infers as `option.Option(<gleam_type>)`.
   code.Raw(
-    fragment: "{ let r: Result(option.Option("
-      <> gleam_type
-      <> "), String) = Ok(option.None)\n    r }",
+    fragment: name_concat([
+      "{ let r: Result(option.Option(",
+      gleam_type,
+      "), String) = Ok(option.None)\n    r }",
+    ]),
   )
 }
 
@@ -1347,7 +1352,7 @@ fn emit_struct_xml_encoder(
     })
   let inner_call =
     code.Call(
-      head: code.Ident(name: "encode_" <> snake <> "_xml_inner"),
+      head: code.Ident(name: name_concat(["encode_", snake, "_xml_inner"])),
       args: [code.Ident(name: "input")],
     )
   let #(body, attrs_emitter) = case attr_members, xml_namespace {
@@ -1384,7 +1389,10 @@ fn emit_struct_xml_encoder(
       return: code.CodeSome("String"),
       body: body,
     )
-  code.render(code.Module(items: [main_fn, code.Blank])) <> attrs_emitter
+  string.concat([
+    code.render(code.Module(items: [main_fn, code.Blank])),
+    attrs_emitter,
+  ])
 }
 
 /// Build the `attrs` argument expression for `xml.element_with_attrs`:
@@ -1399,7 +1407,7 @@ fn struct_xml_attrs_expr(
   let xmlns_attr = xmlns_attr_expr(xml_namespace)
   let attrs_call =
     code.Call(
-      head: code.Ident(name: "encode_" <> snake <> "_xml_attrs"),
+      head: code.Ident(name: name_concat(["encode_", snake, "_xml_attrs"])),
       args: [code.Ident(name: "input")],
     )
   case attr_members, xml_namespace {
@@ -1424,9 +1432,10 @@ fn struct_xml_attrs_expr(
 fn xmlns_attr_expr(ns: option.Option(#(String, String))) -> String {
   case ns {
     option.None -> ""
-    option.Some(#("", uri)) -> "#(\"xmlns\", \"" <> uri <> "\")"
+    option.Some(#("", uri)) ->
+      name_concat(["#(\"xmlns\", \"", uri, "\")"])
     option.Some(#(prefix, uri)) ->
-      "#(\"xmlns:" <> prefix <> "\", \"" <> uri <> "\")"
+      name_concat(["#(\"xmlns:", prefix, "\", \"", uri, "\")"])
   }
 }
 
@@ -1442,7 +1451,7 @@ fn emit_struct_xml_attrs(
       code.Let(
         name: "attrs",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(v)",
@@ -1470,7 +1479,7 @@ fn emit_struct_xml_attrs(
     code.Module(items: [
       code.Fn(
         public: False,
-        name: "encode_" <> snake <> "_xml_attrs",
+        name: name_concat(["encode_", snake, "_xml_attrs"]),
         params: [code.Param(name: "input", type_: type_name)],
         return: code.CodeSome("List(#(String, String))"),
         body: code.Block(items: body_items),
@@ -1488,7 +1497,8 @@ fn attr_value_expr(target: Resolved) -> String {
     RPrim(primitive: types.PFloat) ->
       "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
     RTimestamp -> "json_timestamp.format_iso8601(v)"
-    REnum(..) -> "rest.enum_wire_value(" <> types.json_encoder(target) <> "(v))"
+    REnum(..) ->
+      name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
     _ -> "\"\""
   }
 }
@@ -1524,7 +1534,7 @@ fn emit_struct_xml_inner_encoder(
           code.Let(
             name: "inner",
             value: code.Case(
-              scrutinee: code.Ident(name: "input." <> m.snake_name),
+              scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
               branches: [
                 code.Branch(
                   pattern: "option.Some(v)",
@@ -2152,7 +2162,10 @@ fn union_variant_xml_inner_expr(target: Resolved) -> code.Code {
         args: [
           code.Call(
             head: code.Ident(
-              name: stringutils.pascal_to_snake(n) <> "_int_value",
+              name: name_concat([
+                stringutils.pascal_to_snake(n),
+                "_int_value",
+              ]),
             ),
             args: [code.Ident(name: "x")],
           ),
@@ -2161,14 +2174,22 @@ fn union_variant_xml_inner_expr(target: Resolved) -> code.Code {
     RStruct(local_name: n, ..) ->
       code.Call(
         head: code.Ident(
-          name: "encode_" <> stringutils.pascal_to_snake(n) <> "_xml_inner",
+          name: name_concat([
+            "encode_",
+            stringutils.pascal_to_snake(n),
+            "_xml_inner",
+          ]),
         ),
         args: [code.Ident(name: "x")],
       )
     RUnion(local_name: n, ..) ->
       code.Call(
         head: code.Ident(
-          name: "encode_" <> stringutils.pascal_to_snake(n) <> "_union_xml_inner",
+          name: name_concat([
+            "encode_",
+            stringutils.pascal_to_snake(n),
+            "_union_xml_inner",
+          ]),
         ),
         args: [code.Ident(name: "x")],
       )
@@ -2189,7 +2210,7 @@ fn union_params_decoder_body(
       code.Call(
         head: code.Ident(name: "decode.failure"),
         args: [
-          code.Ident(name: name <> "Empty"),
+          code.Ident(name: name_concat([name, "Empty"])),
           code.StrLit(value: "empty union"),
         ],
       )
@@ -2213,14 +2234,15 @@ fn union_params_decoder_body(
 }
 
 fn emit_union_branch_params(union_name: String, m: MemberDef) -> code.Code {
-  let ctor = union_name <> stringutils.pascalize_member(m.member_name)
+  let ctor =
+    name_concat([union_name, stringutils.pascalize_member(m.member_name)])
   code.Call(
     head: code.Ident(name: "decode.field"),
     args: [
       code.StrLit(value: m.member_name),
       code.Raw(fragment: types.json_decoder_params(m.target)),
       code.Raw(
-        fragment: "fn(x) { decode.success(" <> ctor <> "(x)) }",
+        fragment: name_concat(["fn(x) { decode.success(", ctor, "(x)) }"]),
       ),
     ],
   )
@@ -2461,7 +2483,7 @@ fn emit_content_encoding(encodings: List(String)) -> String {
           args: [code.Ident(name: "headers"), code.StrLit(value: enc)],
         ),
       )
-    acc <> "  " <> code.render(stmt) <> "\n"
+    string.concat([acc, "  ", code.render(stmt), "\n"])
   })
 }
 
@@ -2470,7 +2492,8 @@ fn emit_path_setup(uri_template: String, labels: List(MemberDef)) -> String {
     code.Let(name: "path", value: code.StrLit(value: uri_template))
   let updates =
     list.map(labels, fn(m) {
-      let greedy = string.contains(uri_template, "{" <> m.json_name <> "+}")
+      let greedy =
+        string.contains(uri_template, name_concat(["{", m.json_name, "+}"]))
       let greedy_ident = case greedy {
         True -> code.Ident(name: "True")
         False -> code.Ident(name: "False")
@@ -2478,7 +2501,7 @@ fn emit_path_setup(uri_template: String, labels: List(MemberDef)) -> String {
       code.Let(
         name: "path",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(v)",
@@ -2548,7 +2571,7 @@ fn query_member_let(m: MemberDef) -> code.Code {
       code.Let(
         name: "query",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(v)",
@@ -2582,16 +2605,18 @@ fn query_member_let(m: MemberDef) -> code.Code {
       code.Let(
         name: "query",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(xs)",
               body: code.Raw(
-                fragment: "list.fold(xs, query, fn(q, item) {\n      let v = item\n      rest.add_query(q, \""
-                  <> query_name
-                  <> "\", "
-                  <> value_to_string_with_format(e, m.timestamp_format)
-                  <> ")\n    })",
+                fragment: name_concat([
+                  "list.fold(xs, query, fn(q, item) {\n      let v = item\n      rest.add_query(q, \"",
+                  query_name,
+                  "\", ",
+                  value_to_string_with_format(e, m.timestamp_format),
+                  ")\n    })",
+                ]),
               ),
             ),
             code.Branch(
@@ -2605,7 +2630,7 @@ fn query_member_let(m: MemberDef) -> code.Code {
       code.Let(
         name: "query",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(v)",
@@ -2652,7 +2677,7 @@ fn query_map_member_let(m: MemberDef) -> Result(code.Code, Nil) {
       Ok(code.Let(
         name: "query",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(m)",
@@ -2700,7 +2725,7 @@ fn prefix_header_let(m: MemberDef) -> code.Code {
   code.Let(
     name: "headers",
     value: code.Case(
-      scrutinee: code.Ident(name: "input." <> m.snake_name),
+      scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
       branches: [
         code.Branch(
           pattern: "option.Some(m)",
@@ -2732,7 +2757,7 @@ fn header_member_let(m: MemberDef) -> code.Code {
       code.Let(
         name: "headers",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(xs)",
@@ -2742,9 +2767,11 @@ fn header_member_let(m: MemberDef) -> code.Code {
                   code.Ident(name: "headers"),
                   code.StrLit(value: header_name),
                   code.Raw(
-                    fragment: "list.map(xs, fn(item) { let v = item "
-                      <> value_to_string_for_header(e, m.timestamp_format)
-                      <> " })",
+                    fragment: name_concat([
+                      "list.map(xs, fn(item) { let v = item ",
+                      value_to_string_for_header(e, m.timestamp_format),
+                      " })",
+                    ]),
                   ),
                 ],
               ),
@@ -2760,7 +2787,7 @@ fn header_member_let(m: MemberDef) -> code.Code {
       code.Let(
         name: "headers",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(v)",
@@ -2841,9 +2868,11 @@ fn emit_payload_body(m: MemberDef) -> String {
               code.StrLit(value: name),
               code.Call(
                 head: code.Ident(
-                  name: "encode_"
-                    <> stringutils.pascal_to_snake(name)
-                    <> "_union_xml_inner",
+                  name: name_concat([
+                    "encode_",
+                    stringutils.pascal_to_snake(name),
+                    "_union_xml_inner",
+                  ]),
                 ),
                 args: [code.Ident(name: "v")],
               ),
@@ -2865,7 +2894,11 @@ fn emit_payload_body(m: MemberDef) -> String {
           args: [
             code.Call(
               head: code.Ident(
-                name: "encode_" <> stringutils.pascal_to_snake(name) <> "_xml",
+                name: name_concat([
+                  "encode_",
+                  stringutils.pascal_to_snake(name),
+                  "_xml",
+                ]),
               ),
               args: [code.Ident(name: "v"), code.StrLit(value: wrapper)],
             ),
@@ -2896,7 +2929,7 @@ fn emit_payload_body(m: MemberDef) -> String {
     code.Let(
       name: "body",
       value: code.Case(
-        scrutinee: code.Ident(name: "input." <> m.snake_name),
+        scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
         branches: [
           code.Branch(pattern: "option.Some(v)", body: some_expr),
           code.Branch(
@@ -2946,9 +2979,13 @@ fn value_to_string_for_default(
       "case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
     RPrim(primitive: types.PBool) -> "rest.bool_to_query(v)"
     REnum(local_name: _, ..) ->
-      "rest.enum_wire_value(" <> types.json_encoder(target) <> "(v))"
+      name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
     RIntEnum(local_name: n, ..) ->
-      "rest.int_to_query(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))"
+      name_concat([
+        "rest.int_to_query(",
+        stringutils.pascal_to_snake(n),
+        "_int_value(v))",
+      ])
     RTimestamp -> {
       let chosen = case timestamp_format {
         Some(f) -> f
@@ -2983,9 +3020,11 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
         code.Module(items: [
           code.Fn(
             public: True,
-            name: "parse_" <> snake <> "_response",
+            name: name_concat(["parse_", snake, "_response"]),
             params: parse_response_params("_body"),
-            return: code.CodeSome("Result(" <> output_type <> ", String)"),
+            return: code.CodeSome(
+              name_concat(["Result(", output_type, ", String)"]),
+            ),
             body: code.Call(
               head: code.Ident(name: "Ok"),
               args: [code.Ident(name: output_type)],
@@ -2997,7 +3036,11 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
     Ok(p), False -> emit_parse_with_payload(out_info, snake, p)
     Error(_), False -> {
       let decoder =
-        "decode_" <> stringutils.pascal_to_snake(output_type) <> "_xml"
+        name_concat([
+          "decode_",
+          stringutils.pascal_to_snake(output_type),
+          "_xml",
+        ])
       let inner_text_case =
         code.Case(
           scrutinee: code.Ident(name: "text"),
@@ -3044,9 +3087,11 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
         code.Module(items: [
           code.Fn(
             public: True,
-            name: "parse_" <> snake <> "_response",
+            name: name_concat(["parse_", snake, "_response"]),
             params: parse_response_params("body"),
-            return: code.CodeSome("Result(" <> output_type <> ", String)"),
+            return: code.CodeSome(
+              name_concat(["Result(", output_type, ", String)"]),
+            ),
             body: code.Case(
               scrutinee: code.Call(
                 head: code.Ident(name: "bit_array.to_string"),
@@ -3107,11 +3152,14 @@ fn emit_parse_with_payload(
         fragment: "use payload <- result.try(case bit_array.to_string(body) {\n      Ok(s) -> Ok(option.Some(s))\n      Error(_) -> Error(\"non-utf8 payload\")\n    })",
       )
     RStruct(local_name: name, ..) -> {
-      let decoder = "decode_" <> stringutils.pascal_to_snake(name) <> "_xml"
+      let decoder =
+        name_concat(["decode_", stringutils.pascal_to_snake(name), "_xml"])
       code.Raw(
-        fragment: "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case xml_decode.parse(text) {\n        Ok(root) -> case "
-          <> decoder
-          <> "(root) {\n          Ok(v) -> Ok(option.Some(v))\n          Error(r) -> Error(r)\n        }\n        Error(r) -> Error(r)\n      }\n    })",
+        fragment: name_concat([
+          "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case xml_decode.parse(text) {\n        Ok(root) -> case ",
+          decoder,
+          "(root) {\n          Ok(v) -> Ok(option.Some(v))\n          Error(r) -> Error(r)\n        }\n        Error(r) -> Error(r)\n      }\n    })",
+        ]),
       )
     }
     _ -> code.Let(name: "payload", value: code.Ident(name: "option.None"))
@@ -3138,9 +3186,11 @@ fn emit_parse_with_payload(
     code.Module(items: [
       code.Fn(
         public: True,
-        name: "parse_" <> snake <> "_response",
+        name: name_concat(["parse_", snake, "_response"]),
         params: parse_response_params(body_param),
-        return: code.CodeSome("Result(" <> output_type <> ", String)"),
+        return: code.CodeSome(
+          name_concat(["Result(", output_type, ", String)"]),
+        ),
         body: code.Block(items: [inner]),
       ),
       code.Blank,
@@ -3178,7 +3228,7 @@ fn file_header(service_id: String, body: String) -> String {
   let items =
     [
       code.ModuleDocComment([
-        "Generated from " <> service_id <> " (restXml).",
+        name_concat(["Generated from ", service_id, " (restXml)."]),
         "DO NOT EDIT. Re-generate via the codegen subproject.",
       ]),
       code.Blank,
