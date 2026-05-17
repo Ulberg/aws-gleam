@@ -2227,50 +2227,73 @@ fn emit_build(
     Ok(p) -> emit_payload_body(p)
     Error(_) ->
       case body_members {
-        [] -> "  let body = <<>>\n  let content_type = \"\"\n"
+        [] ->
+          render_let_block([
+            code.Let(name: "body", value: code.Raw(fragment: "<<>>")),
+            code.Let(name: "content_type", value: code.StrLit(value: "")),
+          ])
         _ ->
-          "  let body_xml = encode_"
-          <> snake
-          <> "_body_xml(input)\n  let body = bit_array.from_string(body_xml)\n  let content_type = \"application/xml\"\n"
+          render_let_block([
+            code.Let(
+              name: "body_xml",
+              value: code.Call(
+                head: code.Ident(name: name_concat(["encode_", snake, "_body_xml"])),
+                args: [code.Ident(name: "input")],
+              ),
+            ),
+            code.Let(
+              name: "body",
+              value: code.Call(
+                head: code.Ident(name: "bit_array.from_string"),
+                args: [code.Ident(name: "body_xml")],
+              ),
+            ),
+            code.Let(
+              name: "content_type",
+              value: code.StrLit(value: "application/xml"),
+            ),
+          ])
       }
   }
   let compression_setup = emit_content_encoding(http.compression)
 
   let body_lines =
-    path_setup
-    <> query_setup
-    <> header_setup
-    <> body_setup
-    <> compression_setup
-    <> "  "
-    <> code.render(content_type_let_block())
-    <> "\n  "
-    <> code.render(content_length_let_block())
-    <> "\n  "
-    <> code.render(
-      code.Let(
-        name: "path",
-        value: code.Call(
-          head: code.Ident(name: "rest.build_path"),
-          args: [code.Ident(name: "path"), code.Ident(name: "query")],
+    string.concat([
+      path_setup,
+      query_setup,
+      header_setup,
+      body_setup,
+      compression_setup,
+      "  ",
+      code.render(content_type_let_block()),
+      "\n  ",
+      code.render(content_length_let_block()),
+      "\n  ",
+      code.render(
+        code.Let(
+          name: "path",
+          value: code.Call(
+            head: code.Ident(name: "rest.build_path"),
+            args: [code.Ident(name: "path"), code.Ident(name: "query")],
+          ),
         ),
       ),
-    )
-    <> "\n  "
-    <> code.render(
-      code.Tuple(items: [
-        code.StrLit(value: http.method),
-        code.Ident(name: "path"),
-        code.Ident(name: "headers"),
-        code.Ident(name: "body"),
-      ]),
-    )
-    <> "\n"
+      "\n  ",
+      code.render(
+        code.Tuple(items: [
+          code.StrLit(value: http.method),
+          code.Ident(name: "path"),
+          code.Ident(name: "headers"),
+          code.Ident(name: "body"),
+        ]),
+      ),
+      "\n",
+    ])
   code.render(
     code.Module(items: [
       code.Fn(
         public: True,
-        name: "build_" <> snake <> "_request",
+        name: name_concat(["build_", snake, "_request"]),
         params: [code.Param(name: header_or_input, type_: input_type)],
         return: code.CodeSome(
           "#(String, String, dict.Dict(String, String), BitArray)",
