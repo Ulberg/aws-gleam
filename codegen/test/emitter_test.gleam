@@ -107,6 +107,51 @@ pub fn emitted_modules_expose_canonical_function_names_test() {
   should.be_true(string.contains(r.source, "_response("))
 }
 
+/// Cache lifecycle is wired through three call sites in every
+/// generated service: `new` starts the cache, `with_credentials_provider`
+/// shuts the old one before swapping, and `shutdown` /
+/// `shutdown_sync` release the actor at teardown. Locking the
+/// emitted calls keeps the contract observable from the codegen
+/// tests rather than the consumer-side integration suite alone.
+pub fn emitted_modules_wire_credentials_cache_lifecycle_test() {
+  let m = load(json10_path)
+  let svc = find_service(m, "aws.protocols#awsJson1_0", "JsonRpc10")
+  let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson10)
+  // Construction: cache started on `new`.
+  should.be_true(string.contains(r.source, "credentials_cache.start_default"))
+  // Swap: old cache stopped before the new one starts.
+  should.be_true(string.contains(
+    r.source,
+    "let _ = credentials_cache.shutdown(client.cache)",
+  ))
+  // Teardown: both modes exposed on the typed API.
+  should.be_true(string.contains(r.source, "pub fn shutdown(client: Client)"))
+  should.be_true(string.contains(
+    r.source,
+    "pub fn shutdown_sync(client: Client",
+  ))
+  should.be_true(string.contains(r.source, "credentials_cache.shutdown_sync"))
+}
+
+/// Generated services that have a Smithy endpoint rule set on their
+/// service shape MUST embed the JSON as a const + attach the parsed
+/// rule set to the client config. Lock the shape so a future emitter
+/// refactor can't accidentally drop the endpoint resolution path.
+pub fn emitted_modules_embed_endpoint_rule_set_test() {
+  let m = load(json10_path)
+  let svc = find_service(m, "aws.protocols#awsJson1_0", "JsonRpc10")
+  let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson10)
+  // The protocol-test service doesn't carry a rule set, so the
+  // `const endpoint_rule_set_json` line should be absent — guards
+  // against the emitter spuriously emitting an empty rule set.
+  should.be_false(string.contains(
+    r.source,
+    "const endpoint_rule_set_json: String =",
+  ))
+  // But the runtime-side ClientConfig setter doesn't get called.
+  should.be_false(string.contains(r.source, "runtime.with_endpoint_rule_set"))
+}
+
 /// Module header is the only place we encode the source service shape
 /// id. Lock its presence so emitter refactors can't accidentally drop
 /// provenance.
