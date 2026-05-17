@@ -1313,7 +1313,7 @@ fn emit_content_encoding(encodings: List(String)) -> String {
           args: [code.Ident(name: "headers"), code.StrLit(value: enc)],
         ),
       )
-    acc <> "  " <> code.render(stmt) <> "\n"
+    string.concat([acc, "  ", code.render(stmt), "\n"])
   })
 }
 
@@ -1322,7 +1322,8 @@ fn emit_path_setup(uri_template: String, labels: List(MemberDef)) -> String {
     code.Let(name: "path", value: code.StrLit(value: uri_template))
   let updates =
     list.map(labels, fn(m) {
-      let greedy = string.contains(uri_template, "{" <> m.json_name <> "+}")
+      let greedy =
+        string.contains(uri_template, name_concat(["{", m.json_name, "+}"]))
       let greedy_ident = case greedy {
         True -> code.Ident(name: "True")
         False -> code.Ident(name: "False")
@@ -1361,7 +1362,7 @@ fn emit_path_setup(uri_template: String, labels: List(MemberDef)) -> String {
 /// body fragment, two-space-prefixed and newline-terminated.
 fn render_let_block(stmts: List(code.Code)) -> String {
   list.fold(stmts, "", fn(acc, stmt) {
-    acc <> "  " <> code.render(stmt) <> "\n"
+    string.concat([acc, "  ", code.render(stmt), "\n"])
   })
 }
 
@@ -1424,11 +1425,13 @@ fn query_member_let(m: MemberDef) -> code.Code {
             code.Branch(
               pattern: "option.Some(xs)",
               body: code.Raw(
-                fragment: "list.fold(xs, query, fn(q, item) {\n      let v = item\n      rest.add_query(q, \""
-                  <> query_name
-                  <> "\", "
-                  <> value_to_string_with_format(e, m.timestamp_format)
-                  <> ")\n    })",
+                fragment: string.concat([
+                  "list.fold(xs, query, fn(q, item) {\n      let v = item\n      rest.add_query(q, \"",
+                  query_name,
+                  "\", ",
+                  value_to_string_with_format(e, m.timestamp_format),
+                  ")\n    })",
+                ]),
               ),
             ),
             code.Branch(
@@ -1581,9 +1584,11 @@ fn header_member_let(m: MemberDef) -> code.Code {
                   code.Ident(name: "headers"),
                   code.StrLit(value: header_name),
                   code.Raw(
-                    fragment: "list.map(xs, fn(item) { let v = item "
-                      <> render
-                      <> " })",
+                    fragment: string.concat([
+                      "list.map(xs, fn(item) { let v = item ",
+                      render,
+                      " })",
+                    ]),
                   ),
                 ],
               ),
@@ -1750,9 +1755,13 @@ fn value_to_string_full(
       "case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
     RPrim(primitive: types.PBool) -> "rest.bool_to_query(v)"
     REnum(local_name: _, ..) ->
-      "rest.enum_wire_value(" <> types.json_encoder(target) <> "(v))"
+      name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
     RIntEnum(local_name: n, ..) ->
-      "rest.int_to_query(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))"
+      name_concat([
+        "rest.int_to_query(",
+        stringutils.pascal_to_snake(n),
+        "_int_value(v))",
+      ])
     RTimestamp -> {
       let fmt = case timestamp_format {
         option.Some(f) -> f
@@ -1776,7 +1785,7 @@ fn emit_body_encoder(
   input_type: String,
   body_members: List(MemberDef),
 ) -> String {
-  let fn_name = "encode_" <> snake <> "_body"
+  let fn_name = name_concat(["encode_", snake, "_body"])
   let #(param_name, body) = case body_members {
     [] -> #(
       "_input",
@@ -1871,9 +1880,9 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
         code.Module(items: [
           code.Fn(
             public: True,
-            name: "parse_" <> snake <> "_response",
+            name: name_concat(["parse_", snake, "_response"]),
             params: parse_response_params("_body"),
-            return: code.CodeSome("Result(" <> output_type <> ", String)"),
+            return: code.CodeSome(name_concat(["Result(", output_type, ", String)"])),
             body: code.Call(
               head: code.Ident(name: "Ok"),
               args: [code.Ident(name: output_type)],
@@ -1888,9 +1897,9 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
         code.Module(items: [
           code.Fn(
             public: True,
-            name: "parse_" <> snake <> "_response",
+            name: name_concat(["parse_", snake, "_response"]),
             params: parse_response_params("body"),
-            return: code.CodeSome("Result(" <> output_type <> ", String)"),
+            return: code.CodeSome(name_concat(["Result(", output_type, ", String)"])),
             body: code.Case(
               scrutinee: code.Call(
                 head: code.Ident(name: "bit_array.to_string"),
@@ -1905,14 +1914,14 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
                       code.Branch(
                         pattern: "\"\"",
                         body: code.Call(
-                          head: code.Ident(name: "decode_" <> snake <> "_output"),
+                          head: code.Ident(name: name_concat(["decode_", snake, "_output"])),
                           args: [code.StrLit(value: "{}")],
                         ),
                       ),
                       code.Branch(
                         pattern: "_",
                         body: code.Call(
-                          head: code.Ident(name: "decode_" <> snake <> "_output"),
+                          head: code.Ident(name: name_concat(["decode_", snake, "_output"])),
                           args: [code.Ident(name: "text")],
                         ),
                       ),
@@ -1978,11 +1987,14 @@ fn emit_parse_with_payload(
         ),
       )
     RStruct(local_name: name, ..) -> {
-      let decoder = "decode_" <> stringutils.pascal_to_snake(name) <> "_struct"
+      let decoder =
+        name_concat(["decode_", stringutils.pascal_to_snake(name), "_struct"])
       code.Raw(
-        fragment: "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case json.parse(text, "
-          <> decoder
-          <> "()) {\n        Ok(v) -> Ok(option.Some(v))\n        Error(_) -> Error(\"decode failed\")\n      }\n    })",
+        fragment: string.concat([
+          "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case json.parse(text, ",
+          decoder,
+          "()) {\n        Ok(v) -> Ok(option.Some(v))\n        Error(_) -> Error(\"decode failed\")\n      }\n    })",
+        ]),
       )
     }
     RDocument ->
@@ -1990,11 +2002,14 @@ fn emit_parse_with_payload(
         fragment: "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case json.parse(text, decode.dynamic) {\n        Ok(d) -> Ok(option.Some(json_document.from_dynamic(d)))\n        Error(_) -> Error(\"decode failed\")\n      }\n    })",
       )
     REnum(local_name: name, ..) -> {
-      let decoder = "decode_" <> stringutils.pascal_to_snake(name) <> "_enum"
+      let decoder =
+        name_concat(["decode_", stringutils.pascal_to_snake(name), "_enum"])
       code.Raw(
-        fragment: "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case json.parse(\"\\\"\" <> text <> \"\\\"\", "
-          <> decoder
-          <> "()) {\n        Ok(v) -> Ok(option.Some(v))\n        Error(_) -> Error(\"decode failed\")\n      }\n    })",
+        fragment: string.concat([
+          "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case json.parse(\"\\\"\" <> text <> \"\\\"\", ",
+          decoder,
+          "()) {\n        Ok(v) -> Ok(option.Some(v))\n        Error(_) -> Error(\"decode failed\")\n      }\n    })",
+        ]),
       )
     }
     _ ->
@@ -2025,7 +2040,7 @@ fn emit_parse_with_payload(
     code.Module(items: [
       code.Fn(
         public: True,
-        name: "parse_" <> snake <> "_response",
+        name: name_concat(["parse_", snake, "_response"]),
         params: [
           code.Param(name: "_code", type_: "Int"),
           code.Param(
@@ -2034,7 +2049,9 @@ fn emit_parse_with_payload(
           ),
           code.Param(name: body_param, type_: "BitArray"),
         ],
-        return: code.CodeSome("Result(" <> output_type <> ", String)"),
+        return: code.CodeSome(
+          name_concat(["Result(", output_type, ", String)"]),
+        ),
         body: code.Block(items: [inner]),
       ),
       code.Blank,
@@ -2070,7 +2087,7 @@ fn file_header(service_id: String, body: String) -> String {
   let items =
     [
       code.ModuleDocComment([
-        "Generated from " <> service_id <> " (restJson1).",
+        name_concat(["Generated from ", service_id, " (restJson1)."]),
         "DO NOT EDIT. Re-generate via the codegen subproject.",
       ]),
       code.Blank,
