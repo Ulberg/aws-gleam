@@ -1,0 +1,6 @@
+[submodule "vendor/aws-sdk-rust"]
+	path = vendor/aws-sdk-rust
+	url = https://github.com/awslabs/aws-sdk-rust.git
+[submodule "vendor/smithy"]
+	path = vendor/smithy
+	url = https://github.com/smithy-lang/smithy.git

@@ -23,10 +23,14 @@ pub fn parses_epoch_test() {
   |> should.equal(Ok(0))
 }
 
-pub fn rejects_offset_form_test() {
-  // We don't accept +00:00 offsets — every AWS response uses Z.
-  datetime.parse_iso8601("2023-11-30T15:30:00+00:00")
-  |> should.be_error
+pub fn accepts_offset_form_test() {
+  // Smithy's `DatetimeOffsets` restJson1 protocol test sends `+HH:MM`
+  // / `-HH:MM` zone suffixes; M6.7's ISO-8601 parser folds them into
+  // the returned epoch seconds.
+  let assert Ok(z) = datetime.parse_iso8601("2023-11-30T15:30:00Z")
+  let assert Ok(plus_one) = datetime.parse_iso8601("2023-11-30T16:30:00+01:00")
+  // `2023-11-30T16:30:00+01:00` is the same instant as the Z form.
+  z |> should.equal(plus_one)
 }
 
 pub fn rejects_garbage_test() {
