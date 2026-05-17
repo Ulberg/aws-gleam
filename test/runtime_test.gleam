@@ -375,6 +375,47 @@ pub fn with_endpoint_param_overrides_default_test() {
   |> should.equal(Ok("default-bucket.s3.example.com"))
 }
 
+pub fn with_endpoint_url_threads_endpoint_param_into_rule_set_test() {
+  // When a rule set is attached, calling `with_endpoint_url` must
+  // surface the override through the rule set's standard `Endpoint`
+  // parameter — otherwise the rule set ignores `endpoint_url` and
+  // routes to its computed AWS host (the LocalStack / FIPS / custom-
+  // DNS use case breaks if this contract slips).
+  //
+  // Rule set: branches on `Endpoint` being set; uses `{Endpoint}`
+  // verbatim when present, falls back to a fixed AWS URL otherwise.
+  let rs_json =
+    "
+  {
+    \"version\": \"1.0\",
+    \"parameters\": {
+      \"Region\": {\"type\": \"String\", \"required\": true, \"builtIn\": \"AWS::Region\"},
+      \"Endpoint\": {\"type\": \"String\", \"required\": false, \"builtIn\": \"SDK::Endpoint\"}
+    },
+    \"rules\": [
+      {
+        \"type\": \"endpoint\",
+        \"conditions\": [{\"fn\": \"isSet\", \"argv\": [{\"ref\": \"Endpoint\"}]}],
+        \"endpoint\": {\"url\": \"{Endpoint}\"}
+      },
+      {
+        \"type\": \"endpoint\",
+        \"conditions\": [],
+        \"endpoint\": {\"url\": \"https://ignored.example.com\"}
+      }
+    ]
+  }
+  "
+  let assert Ok(rs) = endpoints.parse_rule_set(rs_json)
+  let config =
+    test_config(host_echo_send(), one_attempt_strategy())
+    |> runtime.with_endpoint_rule_set(rs)
+    |> runtime.with_endpoint_url("https://override.example.com")
+
+  runtime.invoke(config, ddb_request(), echo_host_parse)
+  |> should.equal(Ok("override.example.com"))
+}
+
 pub fn op_params_override_client_level_params_test() {
   // Operation-specific params win over client-level params when both
   // supply the same key.

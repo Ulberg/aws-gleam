@@ -99,8 +99,30 @@ pub fn with_credentials_provider(
   ClientConfig(..config, provider: provider)
 }
 
+/// Override the request endpoint URL. Used for LocalStack, FIPS
+/// endpoints, custom DNS, and pre-signed-URL replay flows.
+///
+/// When a Smithy endpoint rule set is attached (the codegen wires
+/// one on every generated service that declares one), the override
+/// is threaded into the rule set as the standard `Endpoint`
+/// parameter rather than replacing `endpoint_url` outright. AWS
+/// rule sets honour this parameter via an early-branch rule like
+/// `case isSet(Endpoint) -> endpoint { url: "{Endpoint}" }`, so the
+/// override wins consistently across all services that declare an
+/// `Endpoint` rule-set parameter.
+///
+/// The static `endpoint_url` is also updated so services without a
+/// rule set continue to honour the override via the fallback path.
 pub fn with_endpoint_url(config: ClientConfig, url: String) -> ClientConfig {
-  ClientConfig(..config, endpoint_url: url)
+  ClientConfig(
+    ..config,
+    endpoint_url: url,
+    endpoint_params: dict.insert(
+      config.endpoint_params,
+      "Endpoint",
+      endpoints.StringVal(url),
+    ),
+  )
 }
 
 pub fn with_http_send(config: ClientConfig, send: Send) -> ClientConfig {
