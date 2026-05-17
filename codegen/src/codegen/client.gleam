@@ -61,11 +61,16 @@ pub fn items(
       ]),
     ),
   ]
-  let client_call =
+  // All `Client` constructions thread the same two labelled fields:
+  // `config` and `cache`. Local helpers keep the call shape in one
+  // place so adding a third field later is a single-spot edit.
+  let client_with = fn(config_expr: Code, cache_expr: Code) -> Code {
     Call(Ident("Client"), [
-      code.Labelled(label: "config", value: Ident("config")),
-      code.Labelled(label: "cache", value: Ident("cache")),
+      code.Labelled(label: "config", value: config_expr),
+      code.Labelled(label: "cache", value: cache_expr),
     ])
+  }
+  let client_call = client_with(Ident("config"), Ident("cache"))
   let new_body = case endpoint_rule_set_json {
     None ->
       code.Block(items: list.flatten([cache_setup, [client_call]]))
@@ -191,16 +196,13 @@ pub fn items(
             Ident("provider"),
           ]),
         ),
-        Call(Ident("Client"), [
-          code.Labelled(
-            label: "config",
-            value: Call(Ident("runtime.with_credentials_provider"), [
-              Ident("client.config"),
-              Call(Ident("credentials_cache.as_provider"), [Ident("cache")]),
-            ]),
-          ),
-          code.Labelled(label: "cache", value: Ident("cache")),
-        ]),
+        client_with(
+          Call(Ident("runtime.with_credentials_provider"), [
+            Ident("client.config"),
+            Call(Ident("credentials_cache.as_provider"), [Ident("cache")]),
+          ]),
+          Ident("cache"),
+        ),
       ]),
     ),
     Blank,
@@ -215,16 +217,13 @@ pub fn items(
         Param(name: "url", type_: "String"),
       ],
       return: CodeSome("Client"),
-      body: Call(Ident("Client"), [
-        code.Labelled(
-          label: "config",
-          value: Call(Ident("runtime.with_endpoint_url"), [
-            Ident("client.config"),
-            Ident("url"),
-          ]),
-        ),
-        code.Labelled(label: "cache", value: Ident("client.cache")),
-      ]),
+      body: client_with(
+        Call(Ident("runtime.with_endpoint_url"), [
+          Ident("client.config"),
+          Ident("url"),
+        ]),
+        Ident("client.cache"),
+      ),
     ),
     Blank,
     DocComment([
@@ -238,25 +237,22 @@ pub fn items(
         Param(name: "send", type_: "http_send.Send"),
       ],
       return: CodeSome("Client"),
-      body: Call(Ident("Client"), [
-        code.Labelled(
-          label: "config",
-          value: Call(Ident("runtime.with_http_send"), [
-            Ident("client.config"),
-            Ident("send"),
-          ]),
-        ),
-        code.Labelled(label: "cache", value: Ident("client.cache")),
-      ]),
+      body: client_with(
+        Call(Ident("runtime.with_http_send"), [
+          Ident("client.config"),
+          Ident("send"),
+        ]),
+        Ident("client.cache"),
+      ),
     ),
     Blank,
     DocComment([
       "Release the per-Client credentials cache actor. Call this when a",
       "Client value is no longer needed — long-running processes that",
       "build many Clients (tests, scripts, multi-tenant servers) will",
-      "otherwise accumulate one BEAM process per `new` call. The send",
-      "is fire-and-forget; the actor exits the next time it processes",
-      "a message.",
+      "otherwise accumulate one BEAM process per `new` call. Fire-and-",
+      "forget; safe to call multiple times. For tests or graceful",
+      "shutdown that must observe the actor's exit, use `shutdown_sync`.",
     ]),
     Fn(
       public: True,
@@ -264,6 +260,30 @@ pub fn items(
       params: [Param(name: "client", type_: "Client")],
       return: CodeSome("Nil"),
       body: Call(Ident("credentials_cache.shutdown"), [Ident("client.cache")]),
+    ),
+    Blank,
+    DocComment([
+      "Like `shutdown` but blocks until the credentials cache actor has",
+      "actually exited (or `timeout_ms` elapses). `Ok(Nil)` indicates a",
+      "clean exit; `Error(Nil)` indicates the timeout fired and the",
+      "actor was still alive when the caller gave up.",
+    ]),
+    Fn(
+      public: True,
+      name: "shutdown_sync",
+      params: [
+        Param(name: "client", type_: "Client"),
+        LabelledParam(
+          label: "timeout_ms",
+          name: "timeout_ms",
+          type_: "Int",
+        ),
+      ],
+      return: CodeSome("Result(Nil, Nil)"),
+      body: Call(Ident("credentials_cache.shutdown_sync"), [
+        Ident("client.cache"),
+        Ident("timeout_ms"),
+      ]),
     ),
     Blank,
   ]

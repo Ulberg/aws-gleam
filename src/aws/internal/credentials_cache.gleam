@@ -13,7 +13,7 @@
 //// rates AWS SDKs see in practice.
 
 import aws/credentials.{type Credentials, type Provider, type ProviderError}
-import gleam/erlang/process.{type Pid, type Subject}
+import gleam/erlang/process.{type Subject}
 import gleam/option.{type Option, None, Some}
 import gleam/otp/actor
 
@@ -109,22 +109,46 @@ pub fn as_provider(cache: Cache) -> Provider {
   credentials.Provider(name: "Cached", fetch: fn() { get(cache) })
 }
 
-/// Tell the cache actor to exit. Use this when you're done with a
-/// `Client` value — actors are not garbage-collected when their
-/// owning value goes out of scope, so without an explicit shutdown
-/// the process leaks for the lifetime of the BEAM VM. The fire-and-
-/// forget send doesn't wait for the actor to actually exit; callers
-/// that need to synchronise on shutdown should `process.monitor` the
-/// subject first.
+/// Tell the cache actor to exit. Fire-and-forget: the actor returns
+/// `actor.stop()` on its next message dispatch. Calling `shutdown`
+/// twice is safe — Erlang silently drops sends to a dead Pid — but
+/// callers that need to observe the actor actually exiting should
+/// use `shutdown_sync` instead.
+///
+/// Use this on a `Client` value you're done with. Without an explicit
+/// shutdown the cache actor lives for the rest of the BEAM VM's
+/// lifetime.
 pub fn shutdown(cache: Cache) -> Nil {
   process.send(cache.subject, Stop)
 }
 
-/// The OTP `Pid` owning the cache actor. Mostly useful from tests
-/// (`process.is_alive`-style assertions); production code should
-/// stick to `get` / `shutdown` and let the subject hide the Pid.
-pub fn owner_pid(cache: Cache) -> Result(Pid, Nil) {
-  process.subject_owner(cache.subject)
+/// Like `shutdown` but blocks until the actor has actually exited (or
+/// `timeout_ms` elapses). Internally monitors the owning Pid, sends
+/// `Stop`, then receives the `DOWN` message. Use this from tests, or
+/// from production code that must serialise a teardown — e.g.
+/// dropping a `Client` value just before exiting the process and
+/// wanting confirmation no work is still in flight.
+pub fn shutdown_sync(cache: Cache, timeout_ms: Int) -> Result(Nil, Nil) {
+  case process.subject_owner(cache.subject) {
+    Error(_) ->
+      // Subject already has no owning process — treat as a clean
+      // already-shut-down. Idempotent by design.
+      Ok(Nil)
+    Ok(pid) -> {
+      let monitor = process.monitor(pid)
+      process.send(cache.subject, Stop)
+      let selector =
+        process.new_selector()
+        |> process.select_specific_monitor(monitor, fn(_down) { Nil })
+      case process.selector_receive(selector, timeout_ms) {
+        Ok(Nil) -> Ok(Nil)
+        Error(Nil) -> {
+          process.demonitor_process(monitor)
+          Error(Nil)
+        }
+      }
+    }
+  }
 }
 
 fn handle_message(

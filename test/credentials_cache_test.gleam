@@ -227,11 +227,12 @@ pub fn start_default_works_with_real_clock_test() {
   out.source |> should.equal("Static")
 }
 
-pub fn shutdown_stops_the_actor_test() {
+pub fn shutdown_sync_stops_the_actor_test() {
   // The cache spawns an OTP process; without a shutdown path that
-  // process lives until the BEAM exits. Verify shutdown actually
-  // terminates the process by inspecting the owning Pid with
-  // `process.is_alive` before and after.
+  // process lives until the BEAM exits. `shutdown_sync` monitors the
+  // owning Pid, sends `Stop`, and waits for `DOWN` — Ok means the
+  // actor exited cleanly. The 200 ms timeout is generous; if the
+  // scheduler is loaded enough to miss it, that's a real bug.
   let inner =
     credentials.static_provider(Credentials(
       access_key_id: "AKID",
@@ -241,26 +242,40 @@ pub fn shutdown_stops_the_actor_test() {
       source: "ignored",
     ))
   let assert Ok(cache) = credentials_cache.start_default(provider: inner)
-  let assert Ok(pid) = credentials_cache.owner_pid(cache)
-  process.is_alive(pid) |> should.be_true
-
-  credentials_cache.shutdown(cache)
-  // `shutdown` is fire-and-forget — the actor exits on its next
-  // message dispatch. Poll briefly; if it doesn't die within a
-  // reasonable window, the test fails.
-  await_dead(pid, 50) |> should.be_true
+  credentials_cache.shutdown_sync(cache, 200) |> should.equal(Ok(Nil))
 }
 
-fn await_dead(pid: process.Pid, attempts: Int) -> Bool {
-  case attempts {
-    0 -> !process.is_alive(pid)
-    _ ->
-      case process.is_alive(pid) {
-        False -> True
-        True -> {
-          process.sleep(10)
-          await_dead(pid, attempts - 1)
-        }
-      }
-  }
+pub fn shutdown_sync_is_idempotent_test() {
+  // Calling `shutdown_sync` twice should report Ok both times: the
+  // second call sees `subject_owner` return `Error(Nil)` (the actor
+  // is gone) and short-circuits to `Ok(Nil)` rather than waiting
+  // for a monitor signal that will never arrive.
+  let inner =
+    credentials.static_provider(Credentials(
+      access_key_id: "AKID",
+      secret_access_key: "SECRET",
+      session_token: None,
+      expires_at: None,
+      source: "ignored",
+    ))
+  let assert Ok(cache) = credentials_cache.start_default(provider: inner)
+  credentials_cache.shutdown_sync(cache, 200) |> should.equal(Ok(Nil))
+  credentials_cache.shutdown_sync(cache, 200) |> should.equal(Ok(Nil))
+}
+
+pub fn shutdown_fire_and_forget_does_not_block_test() {
+  // Plain `shutdown` returns immediately without waiting for the
+  // actor; subsequent `shutdown_sync` confirms it eventually exited.
+  let inner =
+    credentials.static_provider(Credentials(
+      access_key_id: "AKID",
+      secret_access_key: "SECRET",
+      session_token: None,
+      expires_at: None,
+      source: "ignored",
+    ))
+  let assert Ok(cache) = credentials_cache.start_default(provider: inner)
+  credentials_cache.shutdown(cache)
+  // Sync follow-up should see Ok — actor already exiting or exited.
+  credentials_cache.shutdown_sync(cache, 200) |> should.equal(Ok(Nil))
 }
