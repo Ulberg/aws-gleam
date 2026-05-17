@@ -122,8 +122,10 @@ pub fn emit_service(
           let #(op_id, in_r, out_r, err_ids) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
-          let in_info = resolve_io_type(model, local <> "Input", in_r)
-          let out_info = resolve_io_type(model, local <> "Output", out_r)
+          let in_info =
+            resolve_io_type(model, name_concat([local, "Input"]), in_r)
+          let out_info =
+            resolve_io_type(model, name_concat([local, "Output"]), out_r)
           OpSpec(
             op_id: op_id,
             local: local,
@@ -140,12 +142,18 @@ pub fn emit_service(
       let client_block = emit_client(metadata)
       let invoke_blocks = list.map(op_specs, emit_invoke)
       let body_content =
-        client_block
-        <> preamble
-        <> list.fold(op_blocks, "", fn(acc, code) { acc <> code })
-        <> list.fold(invoke_blocks, "", fn(acc, code) { acc <> code })
+        string.concat([
+          client_block,
+          preamble,
+          string.concat(op_blocks),
+          string.concat(invoke_blocks),
+        ])
       let body =
-        file_header(service_id, protocol, body_content) <> "\n" <> body_content
+        string.concat([
+          file_header(service_id, protocol, body_content),
+          "\n",
+          body_content,
+        ])
       let dispatcher_specs =
         list.map(op_specs, fn(s) {
           dispatcher.DispatcherSpec(
@@ -191,16 +199,26 @@ fn emit_client(metadata: trait_helpers.Metadata) -> String {
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
-  let err_type = spec.local <> "Error"
+  let err_type = name_concat([spec.local, "Error"])
   code.render(
     code.Module(items: [
       code.DocComment([
-        "Invoke "
-          <> spec.local
-          <> ". Signs the request with SigV4 and dispatches via the configured",
-        "HTTP transport. Service errors come back as typed `" <> err_type <> "`",
+        name_concat([
+          "Invoke ",
+          spec.local,
+          ". Signs the request with SigV4 and dispatches via the configured",
+        ]),
+        name_concat([
+          "HTTP transport. Service errors come back as typed `",
+          err_type,
+          "`",
+        ]),
         "variants; transport, decode, and credentials failures all collapse",
-        "into the generic `" <> err_type <> "Transport` variant.",
+        name_concat([
+          "into the generic `",
+          err_type,
+          "Transport` variant.",
+        ]),
       ]),
       client.invoke_fn(
         spec.snake,
@@ -338,7 +356,7 @@ fn walk_for_structs(
         }
       }
     RUnion(local_name: name, full_id: id, ..) -> {
-      let key = "u:" <> name
+      let key = name_concat(["u:", name])
       case set.contains(acc, key) {
         True -> acc
         False -> {
@@ -365,9 +383,13 @@ fn emit_named_shapes(
   list.fold(shapes, "", fn(acc, r) {
     case r {
       REnum(gleam_name: n, variants: vs, ..) ->
-        acc <> emit_enum_def(n, vs) <> emit_enum_codec(n, vs)
+        string.concat([acc, emit_enum_def(n, vs), emit_enum_codec(n, vs)])
       RIntEnum(gleam_name: n, variants: vs, ..) ->
-        acc <> emit_int_enum_def(n, vs) <> emit_int_enum_codec(n, vs)
+        string.concat([
+          acc,
+          emit_int_enum_def(n, vs),
+          emit_int_enum_codec(n, vs),
+        ])
       RStruct(gleam_name: n, full_id: id, local_name: ln, ..) ->
         case ln == "Unit" {
           // The synthetic Unit struct is per-operation, not a top-level
@@ -377,14 +399,20 @@ fn emit_named_shapes(
             let ms = types.resolve_members(model, id)
             let emit_encoder =
               is_dispatcher || set.contains(encoder_reachable, ln)
-            acc
-            <> emit_record_def(n, ms)
-            <> emit_struct_codec(n, ms, is_dispatcher, emit_encoder)
+            string.concat([
+              acc,
+              emit_record_def(n, ms),
+              emit_struct_codec(n, ms, is_dispatcher, emit_encoder),
+            ])
           }
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
         let ms = types.resolve_members(model, id)
-        acc <> emit_union_def(n, ms) <> emit_union_codec(n, ms, is_dispatcher)
+        string.concat([
+          acc,
+          emit_union_def(n, ms),
+          emit_union_codec(n, ms, is_dispatcher),
+        ])
       }
       _ -> acc
     }
@@ -401,13 +429,15 @@ fn emit_operation_with(
 ) -> String {
   let snake = spec.snake
   let local_name = spec.local
-  let target_value = service_target <> "." <> local_name
+  let target_value = name_concat([service_target, ".", local_name])
   let ct = content_type(protocol)
   let in_info = spec.in_info
   let out_info = spec.out_info
-  emit_operation_body(snake, target_value, ct, in_info, out_info, is_dispatcher)
-  <> emit_error_type(spec)
-  <> emit_error_translator(spec)
+  string.concat([
+    emit_operation_body(snake, target_value, ct, in_info, out_info, is_dispatcher),
+    emit_error_type(spec),
+    emit_error_translator(spec),
+  ])
 }
 
 /// Emit the per-operation typed-error sum type. One variant per error
@@ -416,19 +446,19 @@ fn emit_operation_with(
 /// `Unknown(error_type, status, body)` for service errors we don't
 /// have a typed variant for.
 fn emit_error_type(spec: OpSpec) -> String {
-  let name = spec.local <> "Error"
+  let name = name_concat([spec.local, "Error"])
   let typed_variants =
     list.map(spec.error_ids, fn(err_id) {
       let local = strip_namespace(err_id)
-      code.Variant(name: name <> local, fields: [
+      code.Variant(name: name_concat([name, local]), fields: [
         code.Param(name: "value", type_: local),
       ])
     })
   let fallback_variants = [
-    code.Variant(name: name <> "Transport", fields: [
+    code.Variant(name: name_concat([name, "Transport"]), fields: [
       code.Param(name: "reason", type_: "String"),
     ]),
-    code.Variant(name: name <> "Unknown", fields: [
+    code.Variant(name: name_concat([name, "Unknown"]), fields: [
       code.Param(name: "error_type", type_: "String"),
       code.Param(name: "status", type_: "Int"),
       code.Param(name: "body", type_: "String"),
@@ -698,7 +728,7 @@ fn emit_parse_via_decoder(
         public: True,
         name: fn_name,
         params: [code.Param(name: "body", type_: "String")],
-        return: code.CodeSome("Result(" <> type_name <> ", String)"),
+        return: code.CodeSome(name_concat(["Result(", type_name, ", String)"])),
         body: code.Case(
           scrutinee: code.Call(
             head: code.Ident(name: "json.parse"),
@@ -756,22 +786,22 @@ fn resolve_io_type(
 // ---------- type definitions ----------
 
 fn emit_record_def(name: String, members: List(MemberDef)) -> String {
-  code.render(named_shapes.record_def(name, members)) <> "\n"
+  string.concat([code.render(named_shapes.record_def(name, members)), "\n"])
 }
 
 fn emit_enum_def(name: String, variants: List(types.EnumVariant)) -> String {
-  code.render(named_shapes.enum_def(name, variants)) <> "\n"
+  string.concat([code.render(named_shapes.enum_def(name, variants)), "\n"])
 }
 
 fn emit_int_enum_def(
   name: String,
   variants: List(types.IntEnumVariant),
 ) -> String {
-  code.render(named_shapes.int_enum_def(name, variants)) <> "\n"
+  string.concat([code.render(named_shapes.int_enum_def(name, variants)), "\n"])
 }
 
 fn emit_union_def(name: String, members: List(MemberDef)) -> String {
-  code.render(named_shapes.union_def(name, members)) <> "\n"
+  string.concat([code.render(named_shapes.union_def(name, members)), "\n"])
 }
 
 // ---------- encoder helpers ----------
@@ -946,14 +976,14 @@ fn emit_struct_codec(
   let encoders = case emit_encoder {
     True -> [
       struct_codec.encoder(
-        "encode_" <> snake <> "_struct",
+        name_concat(["encode_", snake, "_struct"]),
         name,
         members,
         False,
         True,
       ),
       struct_codec.encoder(
-        "encode_" <> snake <> "_struct_top",
+        name_concat(["encode_", snake, "_struct_top"]),
         name,
         members,
         True,
@@ -964,7 +994,7 @@ fn emit_struct_codec(
   }
   let always = [
     struct_codec.decoder(
-      "decode_" <> snake <> "_struct",
+      name_concat(["decode_", snake, "_struct"]),
       name,
       members,
       True,
@@ -974,7 +1004,7 @@ fn emit_struct_codec(
   let conditional = case is_dispatcher {
     True -> [
       struct_codec.decoder(
-        "decode_" <> snake <> "_struct_params",
+        name_concat(["decode_", snake, "_struct_params"]),
         name,
         members,
         True,
@@ -987,7 +1017,8 @@ fn emit_struct_codec(
   |> list.append(always)
   |> list.append(conditional)
   |> list.map(code.render)
-  |> list.fold("", fn(acc, s) { acc <> s <> "\n" })
+  |> list.map(fn(s) { string.concat([s, "\n"]) })
+  |> string.concat
 }
 
 fn emit_union_codec(
@@ -1319,7 +1350,7 @@ fn file_header(service_id: String, protocol: Protocol, body: String) -> String {
   let items =
     [
       code.ModuleDocComment([
-        "Generated from " <> service_id <> " (" <> proto_str <> ").",
+        name_concat(["Generated from ", service_id, " (", proto_str, ")."]),
         "DO NOT EDIT. Re-generate via the codegen subproject.",
       ]),
       code.Blank,
