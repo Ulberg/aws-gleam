@@ -544,26 +544,30 @@ fn emit_operation_body(
   }
   let synth_in_encoder = case in_info.synthesise {
     True ->
-      code.render(struct_codec.encoder(
-        "encode_" <> snake <> "_input_struct",
-        in_info.type_name,
-        [],
-        False,
-        True,
-      ))
-      <> "\n"
+      string.concat([
+        code.render(struct_codec.encoder(
+          name_concat(["encode_", snake, "_input_struct"]),
+          in_info.type_name,
+          [],
+          False,
+          True,
+        )),
+        "\n",
+      ])
     False -> ""
   }
   let synth_in_decoder = case in_info.synthesise, is_dispatcher {
     True, True ->
-      code.render(struct_codec.decoder(
-        "decode_" <> snake <> "_input_struct",
-        in_info.type_name,
-        [],
-        True,
-        True,
-      ))
-      <> "\n"
+      string.concat([
+        code.render(struct_codec.decoder(
+          name_concat(["decode_", snake, "_input_struct"]),
+          in_info.type_name,
+          [],
+          True,
+          True,
+        )),
+        "\n",
+      ])
     _, _ -> ""
   }
   let synth_out_record = case out_info.synthesise {
@@ -572,54 +576,77 @@ fn emit_operation_body(
   }
   let synth_out_decoder = case out_info.synthesise {
     True ->
-      code.render(struct_codec.decoder(
-        "decode_" <> snake <> "_output_struct",
-        out_info.type_name,
-        [],
-        True,
-        False,
-      ))
-      <> "\n"
+      string.concat([
+        code.render(struct_codec.decoder(
+          name_concat(["decode_", snake, "_output_struct"]),
+          out_info.type_name,
+          [],
+          True,
+          False,
+        )),
+        "\n",
+      ])
     False -> ""
   }
 
   // Encoder/Decoder helper names — point at either the named-shape
   // codec from the preamble, or the synthetic per-op codec above.
   let in_struct_encoder_name = case in_info.synthesise {
-    True -> "encode_" <> snake <> "_input_struct"
+    True -> name_concat(["encode_", snake, "_input_struct"])
     False ->
-      "encode_"
-      <> stringutils.pascal_to_snake(in_info.type_name)
-      <> "_struct_top"
+      name_concat([
+        "encode_",
+        stringutils.pascal_to_snake(in_info.type_name),
+        "_struct_top",
+      ])
   }
   let out_struct_decoder_name = case out_info.synthesise {
-    True -> "decode_" <> snake <> "_output_struct"
+    True -> name_concat(["decode_", snake, "_output_struct"])
     False ->
-      "decode_" <> stringutils.pascal_to_snake(out_info.type_name) <> "_struct"
+      name_concat([
+        "decode_",
+        stringutils.pascal_to_snake(out_info.type_name),
+        "_struct",
+      ])
   }
 
   let in_encoder =
-    "pub fn encode_"
-    <> snake
-    <> "_input(input: "
-    <> in_info.type_name
-    <> ") -> String {\n  json.to_string("
-    <> in_struct_encoder_name
-    <> "(input))\n}\n\n"
+    code.render(
+      code.Module(items: [
+        code.Fn(
+          public: True,
+          name: name_concat(["encode_", snake, "_input"]),
+          params: [code.Param(name: "input", type_: in_info.type_name)],
+          return: code.CodeSome("String"),
+          body: code.Call(
+            head: code.Ident(name: "json.to_string"),
+            args: [
+              code.Call(
+                head: code.Ident(name: in_struct_encoder_name),
+                args: [code.Ident(name: "input")],
+              ),
+            ],
+          ),
+        ),
+        code.Blank,
+      ]),
+    )
 
   // Dispatcher-only: parses the test-case `params` blob (keyed by
   // Smithy member names) into a typed input.
   let in_decoder = case is_dispatcher {
     True ->
       emit_parse_via_decoder(
-        "decode_" <> snake <> "_input",
+        name_concat(["decode_", snake, "_input"]),
         in_info.type_name,
         case in_info.synthesise {
-          True -> "decode_" <> snake <> "_input_struct"
+          True -> name_concat(["decode_", snake, "_input_struct"])
           False ->
-            "decode_"
-            <> stringutils.pascal_to_snake(in_info.type_name)
-            <> "_struct_params"
+            name_concat([
+              "decode_",
+              stringutils.pascal_to_snake(in_info.type_name),
+              "_struct_params",
+            ])
         },
       )
     False -> ""
@@ -627,24 +654,26 @@ fn emit_operation_body(
 
   let out_decoder =
     emit_parse_via_decoder(
-      "decode_" <> snake <> "_output",
+      name_concat(["decode_", snake, "_output"]),
       out_info.type_name,
       out_struct_decoder_name,
     )
 
   let build = emit_build(in_info.type_name, snake, target_value, ct)
   let parse = emit_parse(out_info.type_name, snake)
-  "\n"
-  <> synth_in_record
-  <> synth_in_encoder
-  <> synth_in_decoder
-  <> synth_out_record
-  <> synth_out_decoder
-  <> in_encoder
-  <> in_decoder
-  <> out_decoder
-  <> build
-  <> parse
+  string.concat([
+    "\n",
+    synth_in_record,
+    synth_in_encoder,
+    synth_in_decoder,
+    synth_out_record,
+    synth_out_decoder,
+    in_encoder,
+    in_decoder,
+    out_decoder,
+    build,
+    parse,
+  ])
 }
 
 fn emit_parse_via_decoder(
