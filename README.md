@@ -1,17 +1,80 @@
 # aws
 
-Native Gleam AWS SDK targeting Erlang. Pre-v0.1; not published.
+Native Gleam AWS SDK targeting Erlang. v0.1 in review on `feat/next-steps`;
+not yet published.
 
 The current milestone plan is in [docs/m5-codegen-pivot.md](docs/m5-codegen-pivot.md);
 the original v0.1 runtime plan is in [docs/v0.1-plan.md](docs/v0.1-plan.md)
-(M1–M4 sections still accurate, M5+ superseded).
+(M1–M4 sections still accurate, M5+ superseded). The next steps and
+v0.2 candidates are tracked in [next_steps.md](next_steps.md).
 
 ## Status
 
-M1–M4 merged on `main`: SigV4, credential providers + cache, region
-resolution + endpoint rule-set evaluator, retry middleware. Smoke-tested
-end-to-end against a live S3 bucket. M5+ pivots to Smithy-driven codegen
-pinned to upstream model SHAs.
+The v0.1 plan's gate — *"a Gleam binary that, in Lambda / ECS Fargate /
+EC2 / EKS, resolves credentials + region + endpoint with zero
+configuration and calls DynamoDB `GetItem` and S3 `GetObject`
+end-to-end with typed inputs, outputs, and per-operation error sums"* —
+is met on `feat/next-steps` (PR #7). Highlights:
+
+- SigV4 signing — 38 official AWS test vectors green at every stage.
+- Eight-stage credential chain: env → IRSA → SSO (modern + legacy
+  profile shapes) → shared credentials → `credential_process` →
+  `aws configure export-credentials` → ECS metadata → EC2 IMDSv2.
+  Per-`Client` cache actor (`credentials_cache`) coalesces concurrent
+  fetches; both it and the retry `rate_limiter` expose
+  `shutdown` / `shutdown_sync` lifecycle helpers.
+- Auto-region: `<service>.new_with_auto_region()` walks
+  `AWS_REGION` / `AWS_DEFAULT_REGION` / `~/.aws/config`.
+- Smithy endpoint rule sets bundled at codegen time and evaluated per
+  request. `runtime.invoke_with_endpoint_params` threads
+  operation-specific params (S3 `Bucket` / `Key`).
+- Retry: `retry.standard` (default) + `retry.adaptive(bucket)` —
+  wired into `runtime.invoke`.
+- restXml decoder: `@xmlFlattened` lists + struct-member `@xmlName` +
+  `@httpHeader` / `@httpResponseCode` output bindings + `<Error><Code>`
+  error-type extraction.
+- STS `AssumeRole` provider; the existing `AssumeRoleWithWebIdentity`
+  provider continues to cover IRSA.
+- 626 of 808 Smithy protocol-test corpus cases pass; zero fail.
+
+See [docs/audits/m6.md](docs/audits/m6.md) for the 1:1 parity table
+vs `aws-sdk-rust`.
+
+## Using the SDK
+
+```gleam
+import aws/services/dynamodb
+import gleam/option.{None, Some}
+
+pub fn main() {
+  // Build a client. Credentials resolve through the default chain;
+  // region resolves from AWS_REGION / config when `new_with_auto_region`
+  // is used.
+  let assert Ok(client) = dynamodb.new_with_auto_region()
+
+  let input =
+    dynamodb.GetItemInput(
+      table_name: Some("my-table"),
+      key: Some(...),
+      // ...
+    )
+  case dynamodb.get_item(client, input) {
+    Ok(out) -> ...
+    Error(dynamodb.GetItemErrorResourceNotFoundException(_)) -> ...
+    Error(dynamodb.GetItemErrorTransport(reason: r)) -> ...
+    Error(dynamodb.GetItemErrorUnknown(...)) -> ...
+  }
+
+  // Long-running processes that build many clients should release
+  // the per-client cache actor on teardown to avoid process leaks.
+  dynamodb.shutdown(client)
+}
+```
+
+`s3.new(region:)` / `s3.list_buckets`, etc. follow the same shape — see
+the generated module under `src/aws/services/s3.gleam` after running
+`./scripts/regen.sh`. End-to-end examples ship in
+`src/aws/examples/{dynamodb_list_tables,s3_get}.gleam`.
 
 ## Building
 
