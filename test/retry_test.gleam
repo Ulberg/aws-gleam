@@ -518,3 +518,32 @@ pub fn exponential_backoff_zero_when_rng_is_zero_test() {
   retry.exponential_backoff(strategy, 1) |> should.equal(0)
   retry.exponential_backoff(strategy, 5) |> should.equal(0)
 }
+
+// ---------- bucket lifecycle ----------
+
+pub fn bucket_shutdown_sync_stops_the_actor_test() {
+  // The bucket spawns an OTP process; long-running apps that build
+  // many adaptive strategies (or rebuild on config change) need to
+  // release the actor or the BEAM accumulates one process per
+  // strategy. `shutdown_sync` is the deterministic monitor-based
+  // teardown — mirrors `credentials_cache.shutdown_sync`.
+  let assert Ok(bucket) = rate_limiter.start_default()
+  rate_limiter.shutdown_sync(bucket, 200) |> should.equal(Ok(Nil))
+}
+
+pub fn bucket_shutdown_sync_is_idempotent_test() {
+  // Second call sees the subject's owner gone and short-circuits to
+  // `Ok(Nil)` rather than hanging on a monitor signal that will
+  // never arrive.
+  let assert Ok(bucket) = rate_limiter.start_default()
+  rate_limiter.shutdown_sync(bucket, 200) |> should.equal(Ok(Nil))
+  rate_limiter.shutdown_sync(bucket, 200) |> should.equal(Ok(Nil))
+}
+
+pub fn bucket_shutdown_fire_and_forget_is_observable_via_sync_test() {
+  // Plain `shutdown` returns immediately; the actor exits on its
+  // next dispatch. A follow-up `shutdown_sync` observes the exit.
+  let assert Ok(bucket) = rate_limiter.start_default()
+  rate_limiter.shutdown(bucket)
+  rate_limiter.shutdown_sync(bucket, 200) |> should.equal(Ok(Nil))
+}

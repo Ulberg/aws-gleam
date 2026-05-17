@@ -47,6 +47,9 @@ type Message {
   Release(cost: Int)
   RewardSuccess
   Read(reply: Subject(BucketState))
+  /// Politely ask the actor to exit. Sent by `shutdown` /
+  /// `shutdown_sync`; the actor returns `actor.stop()` next iteration.
+  Stop
 }
 
 pub type BucketState {
@@ -118,8 +121,46 @@ pub fn current(bucket: Bucket) -> BucketState {
   actor.call(bucket.subject, waiting: 1000, sending: Read)
 }
 
+/// Tell the bucket actor to exit. Fire-and-forget: the actor returns
+/// `actor.stop()` on its next dispatch. Safe to call multiple times
+/// (Erlang silently drops sends to a dead Pid). Mirrors
+/// `credentials_cache.shutdown` — the retry middleware's `adaptive`
+/// strategy holds a long-lived bucket actor, and discarding the
+/// strategy without `shutdown` leaves the process alive for the BEAM
+/// VM's lifetime.
+pub fn shutdown(bucket: Bucket) -> Nil {
+  process.send(bucket.subject, Stop)
+}
+
+/// Like `shutdown` but blocks until the bucket actor has actually
+/// exited (or `timeout_ms` elapses). Monitors the owning Pid before
+/// sending `Stop`, then receives the resulting `DOWN`. Returns
+/// `Ok(Nil)` on clean exit, `Error(Nil)` on timeout. Idempotent: a
+/// follow-up call after the actor has already died sees an absent
+/// `subject_owner` and short-circuits to `Ok(Nil)`.
+pub fn shutdown_sync(bucket: Bucket, timeout_ms: Int) -> Result(Nil, Nil) {
+  case process.subject_owner(bucket.subject) {
+    Error(_) -> Ok(Nil)
+    Ok(pid) -> {
+      let monitor = process.monitor(pid)
+      process.send(bucket.subject, Stop)
+      let selector =
+        process.new_selector()
+        |> process.select_specific_monitor(monitor, fn(_down) { Nil })
+      case process.selector_receive(selector, timeout_ms) {
+        Ok(Nil) -> Ok(Nil)
+        Error(Nil) -> {
+          process.demonitor_process(monitor)
+          Error(Nil)
+        }
+      }
+    }
+  }
+}
+
 fn handle(state: State, message: Message) -> actor.Next(State, Message) {
   case message {
+    Stop -> actor.stop()
     TryAcquire(cost: cost, reply: reply) ->
       case state.available >= cost {
         True -> {
