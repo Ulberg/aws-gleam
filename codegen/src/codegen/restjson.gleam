@@ -828,99 +828,130 @@ fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
 fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
   let snake = stringutils.pascal_to_snake(name)
   let enc =
-    "pub fn encode_"
-    <> snake
-    <> "_union(v: "
-    <> name
-    <> ") -> json.Json {\n  case v {\n"
-    <> list.fold(members, "", fn(acc, m) {
-      acc
-      <> "    "
-      <> name
-      <> stringutils.pascalize_member(m.member_name)
-      <> "(x) -> json.object([#(\""
-      <> m.json_name
-      <> "\", "
-      <> types.json_encoder(m.target)
-      <> "(x))])\n"
-    })
-    <> "  }\n}\n\n"
-  let dec_body = case members {
-    [] -> "  decode.failure(" <> name <> "Empty, \"empty union\")\n"
-    [first, ..rest] ->
-      "  decode.one_of(\n    "
-      <> emit_union_branch(name, first)
-      <> ",\n    ["
-      <> list.fold(rest, "", fn(acc, m) {
-        acc <> "\n      " <> emit_union_branch(name, m) <> ","
-      })
-      <> "\n    ],\n  )\n"
-  }
-  // Wrap union decoder bodies in `decode.recursive` so self-
-  // referential unions don't construct branches eagerly and infinite-
-  // loop. Smithy's `XmlUnionShape.unionValue: XmlUnionShape` cycle is
-  // the canonical example.
-  let lazy_wrap = case members {
-    [] -> ""
-    _ -> "  use <- decode.recursive\n"
-  }
+    code.Fn(
+      public: True,
+      name: "encode_" <> snake <> "_union",
+      params: [code.Param(name: "v", type_: name)],
+      return: code.CodeSome("json.Json"),
+      body: code.Case(
+        scrutinee: code.Ident(name: "v"),
+        branches: list.map(members, fn(m) {
+          let ctor = name <> stringutils.pascalize_member(m.member_name)
+          code.Branch(
+            pattern: ctor <> "(x)",
+            body: code.Call(
+              head: code.Ident(name: "json.object"),
+              args: [
+                code.ListLit(
+                  items: [
+                    code.Tuple(items: [
+                      code.StrLit(value: m.json_name),
+                      code.Call(
+                        head: code.Ident(name: types.json_encoder(m.target)),
+                        args: [code.Ident(name: "x")],
+                      ),
+                    ]),
+                  ],
+                  tail: code.CodeNone,
+                ),
+              ],
+            ),
+          )
+        }),
+      ),
+    )
   let dec =
-    "pub fn decode_"
-    <> snake
-    <> "_union() -> decode.Decoder("
-    <> name
-    <> ") {\n"
-    <> lazy_wrap
-    <> dec_body
-    <> "}\n\n"
+    code.Fn(
+      public: True,
+      name: "decode_" <> snake <> "_union",
+      params: [],
+      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      body: union_decoder_body(name, members, emit_union_branch),
+    )
   // Parallel decoder keyed by member names — used by the protocol-test
   // dispatchers. Unions in `params` have variant tags identified by
   // Smithy member names (lowercase `foo`), while the wire form uses
   // `@jsonName` overrides (uppercase `FOO`).
-  let dec_params_body = case members {
-    [] -> "  decode.failure(" <> name <> "Empty, \"empty union\")\n"
-    [first, ..rest] ->
-      "  decode.one_of(\n    "
-      <> emit_union_branch_params(name, first)
-      <> ",\n    ["
-      <> list.fold(rest, "", fn(acc, m) {
-        acc <> "\n      " <> emit_union_branch_params(name, m) <> ","
-      })
-      <> "\n    ],\n  )\n"
-  }
   let dec_params =
-    "pub fn decode_"
-    <> snake
-    <> "_union_params() -> decode.Decoder("
-    <> name
-    <> ") {\n"
-    <> lazy_wrap
-    <> dec_params_body
-    <> "}\n\n"
-  enc <> dec <> dec_params
+    code.Fn(
+      public: True,
+      name: "decode_" <> snake <> "_union_params",
+      params: [],
+      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      body: union_decoder_body(name, members, emit_union_branch_params),
+    )
+  code.render(
+    code.Module(items: [
+      enc,
+      code.Blank,
+      dec,
+      code.Blank,
+      dec_params,
+      code.Blank,
+    ]),
+  )
 }
 
-fn emit_union_branch(union_name: String, m: MemberDef) -> String {
-  "decode.field(\""
-  <> m.json_name
-  <> "\", "
-  <> types.json_decoder(m.target)
-  <> ", fn(x) { decode.success("
-  <> union_name
-  <> stringutils.pascalize_member(m.member_name)
-  <> "(x)) })"
+/// Build the body of a `decode_<U>_union*` function — a
+/// `decode.one_of` over the branch decoders, or an unconditional
+/// failure when the union has no variants. Wrapped in
+/// `decode.recursive` since unions can self-reference (Smithy's
+/// `XmlUnionShape.unionValue: XmlUnionShape` cycle).
+fn union_decoder_body(
+  name: String,
+  members: List(MemberDef),
+  branch_fn: fn(String, MemberDef) -> code.Code,
+) -> code.Code {
+  case members {
+    [] ->
+      code.Call(
+        head: code.Ident(name: "decode.failure"),
+        args: [
+          code.Ident(name: name <> "Empty"),
+          code.StrLit(value: "empty union"),
+        ],
+      )
+    [first, ..rest] ->
+      code.Block(items: [
+        code.Use(name: "", callee: code.Ident(name: "decode.recursive")),
+        code.Call(
+          head: code.Ident(name: "decode.one_of"),
+          args: [
+            branch_fn(name, first),
+            code.ListLit(
+              items: list.map(rest, fn(m) { branch_fn(name, m) }),
+              tail: code.CodeNone,
+            ),
+          ],
+        ),
+      ])
+  }
 }
 
-fn emit_union_branch_params(union_name: String, m: MemberDef) -> String {
-  "decode.field(\""
-  <> m.member_name
-  <> "\", "
-  <> types.json_decoder_params(m.target)
-  <> ", fn(x) { decode.success("
-  <> union_name
-  <> stringutils.pascalize_member(m.member_name)
-  <> "(x)) })"
+fn emit_union_branch(union_name: String, m: MemberDef) -> code.Code {
+  let ctor = union_name <> stringutils.pascalize_member(m.member_name)
+  code.Call(
+    head: code.Ident(name: "decode.field"),
+    args: [
+      code.StrLit(value: m.json_name),
+      code.Raw(fragment: types.json_decoder(m.target)),
+      code.Raw(fragment: "fn(x) { decode.success(" <> ctor <> "(x)) }"),
+    ],
+  )
 }
+
+fn emit_union_branch_params(union_name: String, m: MemberDef) -> code.Code {
+  let ctor = union_name <> stringutils.pascalize_member(m.member_name)
+  code.Call(
+    head: code.Ident(name: "decode.field"),
+    args: [
+      code.StrLit(value: m.member_name),
+      code.Raw(fragment: types.json_decoder_params(m.target)),
+      code.Raw(fragment: "fn(x) { decode.success(" <> ctor <> "(x)) }"),
+    ],
+  )
+}
+
 
 /// Emit the per-op `build_<op>_request`. Partitions members by HTTP
 /// binding and emits routing for each:
