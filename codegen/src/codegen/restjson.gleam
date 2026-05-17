@@ -1059,30 +1059,156 @@ fn emit_build(
     Ok(p) -> emit_payload_body(p)
     Error(_) ->
       case body_members {
-        [] -> "  let body = <<>>\n  let content_type = \"\"\n"
+        [] ->
+          render_let_block([
+            code.Let(
+              name: "body",
+              value: code.Raw(fragment: "<<>>"),
+            ),
+            code.Let(
+              name: "content_type",
+              value: code.StrLit(value: ""),
+            ),
+          ])
         _ ->
-          "  let body_json = encode_"
-          <> snake
-          <> "_body(input)\n  let body = bit_array.from_string(json.to_string(body_json))\n  let content_type = \"application/json\"\n"
+          render_let_block([
+            code.Let(
+              name: "body_json",
+              value: code.Call(
+                head: code.Ident(name: name_concat(["encode_", snake, "_body"])),
+                args: [code.Ident(name: "input")],
+              ),
+            ),
+            code.Let(
+              name: "body",
+              value: code.Call(
+                head: code.Ident(name: "bit_array.from_string"),
+                args: [
+                  code.Call(
+                    head: code.Ident(name: "json.to_string"),
+                    args: [code.Ident(name: "body_json")],
+                  ),
+                ],
+              ),
+            ),
+            code.Let(
+              name: "content_type",
+              value: code.StrLit(value: "application/json"),
+            ),
+          ])
       }
   }
+  let body_lines =
+    string.concat([
+      path_setup,
+      query_setup,
+      header_setup,
+      body_setup,
+      "  ",
+      code.render(content_type_let_block()),
+      "\n  ",
+      code.render(content_length_let_block()),
+      "\n",
+      emit_content_encoding(http.compression),
+      "  ",
+      code.render(
+        code.Let(
+          name: "path",
+          value: code.Call(
+            head: code.Ident(name: "rest.build_path"),
+            args: [code.Ident(name: "path"), code.Ident(name: "query")],
+          ),
+        ),
+      ),
+      "\n  ",
+      code.render(
+        code.Tuple(items: [
+          code.StrLit(value: http.method),
+          code.Ident(name: "path"),
+          code.Ident(name: "headers"),
+          code.Ident(name: "body"),
+        ]),
+      ),
+      "\n",
+    ])
+  code.render(
+    code.Module(items: [
+      code.Fn(
+        public: True,
+        name: name_concat(["build_", snake, "_request"]),
+        params: [code.Param(name: header_or_input, type_: input_type)],
+        return: code.CodeSome(
+          "#(String, String, dict.Dict(String, String), BitArray)",
+        ),
+        body: code.Raw(fragment: body_lines),
+      ),
+      code.Blank,
+    ]),
+  )
+}
 
-  "pub fn build_"
-  <> snake
-  <> "_request(\n  "
-  <> header_or_input
-  <> ": "
-  <> input_type
-  <> ",\n) -> #(String, String, dict.Dict(String, String), BitArray) {\n"
-  <> path_setup
-  <> query_setup
-  <> header_setup
-  <> body_setup
-  <> "  let headers = case content_type, dict.has_key(headers, \"Content-Type\") {\n    \"\", _ -> headers\n    _, True -> headers\n    _, False -> dict.insert(headers, \"Content-Type\", content_type)\n  }\n  let headers = case content_type {\n    \"\" -> headers\n    _ -> dict.insert(headers, \"Content-Length\", int.to_string(bit_array.byte_size(body)))\n  }\n"
-  <> emit_content_encoding(http.compression)
-  <> "  let path = rest.build_path(path, query)\n  #(\""
-  <> http.method
-  <> "\", path, headers, body)\n}\n\n"
+/// Build a Gleam identifier name from a list of parts. Used in
+/// place of the `<>` operator throughout codegen so the Gleam
+/// source of the emitters doesn't itself use string concat to
+/// shape the generated identifiers.
+fn name_concat(parts: List(String)) -> String {
+  string.concat(parts)
+}
+
+/// `Content-Type` header gate — fixed across protocols. Lifted
+/// to a helper so emit_build can stay focused on the per-op
+/// pieces.
+fn content_type_let_block() -> code.Code {
+  code.Let(
+    name: "headers",
+    value: code.Case(
+      scrutinee: code.Raw(
+        fragment: "content_type, dict.has_key(headers, \"Content-Type\")",
+      ),
+      branches: [
+        code.Branch(pattern: "\"\", _", body: code.Ident(name: "headers")),
+        code.Branch(pattern: "_, True", body: code.Ident(name: "headers")),
+        code.Branch(
+          pattern: "_, False",
+          body: code.Call(
+            head: code.Ident(name: "dict.insert"),
+            args: [
+              code.Ident(name: "headers"),
+              code.StrLit(value: "Content-Type"),
+              code.Ident(name: "content_type"),
+            ],
+          ),
+        ),
+      ],
+    ),
+  )
+}
+
+/// `Content-Length` header — only set when a body is present
+/// (empty content_type ⇒ no body).
+fn content_length_let_block() -> code.Code {
+  code.Let(
+    name: "headers",
+    value: code.Case(
+      scrutinee: code.Ident(name: "content_type"),
+      branches: [
+        code.Branch(pattern: "\"\"", body: code.Ident(name: "headers")),
+        code.Branch(
+          pattern: "_",
+          body: code.Call(
+            head: code.Ident(name: "dict.insert"),
+            args: [
+              code.Ident(name: "headers"),
+              code.StrLit(value: "Content-Length"),
+              code.Raw(
+                fragment: "int.to_string(bit_array.byte_size(body))",
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  )
 }
 
 /// Emit `Content-Encoding` mutation for `@requestCompression`
