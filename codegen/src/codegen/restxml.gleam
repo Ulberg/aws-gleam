@@ -496,8 +496,8 @@ fn emit_operation(
   let local = strip_namespace(op_id)
   let pascal = local
   let snake = stringutils.pascal_to_snake(local)
-  let in_info = resolve_io_type(model, pascal <> "Input", in_r)
-  let out_info = resolve_io_type(model, pascal <> "Output", out_r)
+  let in_info = resolve_io_type(model, name_concat([pascal, "Input"]), in_r)
+  let out_info = resolve_io_type(model, name_concat([pascal, "Output"]), out_r)
 
   // `synth_in` and `in_decoder` together form the dispatcher's
   // params-blob entry point — `decode_<op>_input(raw)` parses the
@@ -510,14 +510,16 @@ fn emit_operation(
   }
   let synth_in_decoder = case in_info.synthesise, is_dispatcher {
     True, True ->
-      code.render(struct_codec.decoder(
-        "decode_" <> snake <> "_input_struct",
-        in_info.type_name,
-        [],
-        True,
-        True,
-      ))
-      <> "\n"
+      string.concat([
+        code.render(struct_codec.decoder(
+          name_concat(["decode_", snake, "_input_struct"]),
+          in_info.type_name,
+          [],
+          True,
+          True,
+        )),
+        "\n",
+      ])
     _, _ -> ""
   }
   let synth_out = case out_info.synthesise {
@@ -527,14 +529,16 @@ fn emit_operation(
   let in_decoder = case is_dispatcher {
     True ->
       emit_parse_via_decoder(
-        "decode_" <> snake <> "_input",
+        name_concat(["decode_", snake, "_input"]),
         in_info.type_name,
         case in_info.synthesise {
-          True -> "decode_" <> snake <> "_input_struct"
+          True -> name_concat(["decode_", snake, "_input_struct"])
           False ->
-            "decode_"
-            <> stringutils.pascal_to_snake(in_info.type_name)
-            <> "_struct_params"
+            name_concat([
+              "decode_",
+              stringutils.pascal_to_snake(in_info.type_name),
+              "_struct_params",
+            ])
         },
       )
     False -> ""
@@ -551,14 +555,16 @@ fn emit_operation(
   let build =
     emit_build(in_info.type_name, in_info.synthesise, snake, http, in_members)
   let parse = emit_parse(out_info, snake)
-  "\n"
-  <> synth_in_record
-  <> synth_in_decoder
-  <> synth_out
-  <> in_decoder
-  <> body_encoder
-  <> build
-  <> parse
+  string.concat([
+    "\n",
+    synth_in_record,
+    synth_in_decoder,
+    synth_out,
+    in_decoder,
+    body_encoder,
+    build,
+    parse,
+  ])
 }
 
 /// Restxml body encoder: wraps the operation's input struct as XML.
