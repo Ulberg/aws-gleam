@@ -109,3 +109,97 @@ jobs:
 
       - name: Run tests
         run: gleam test
+
+  # LocalStack end-to-end tests for the v0.1 verification gate
+  # (DynamoDB + S3 round-trips). Kept in a separate job so the
+  # default test matrix stays fast; this job pulls + boots a
+  # `localstack/localstack:3` container, runs the gated suite,
+  # and tears the container down on exit. INCLUDE_LOCALSTACK=1
+  # is the env flag the `test/support/localstack.gleam` harness
+  # reads — without it the tests skip silently.
+  localstack:
+    name: LocalStack E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Compute submodule cache key
+        id: subs-key
+        run: |
+          key=$(git ls-tree HEAD vendor | awk '{print $3}' | sort | sha256sum | cut -c1-16)
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Cache vendor submodules
+        id: cache-submodules
+        uses: actions/cache@v4
+        with:
+          path: |
+            .git/modules/vendor
+            vendor/aws-sdk-rust
+            vendor/smithy
+          key: vendor-submodules-${{ steps.subs-key.outputs.key }}
+
+      - name: Initialise sparse submodules
+        if: steps.cache-submodules.outputs.cache-hit != 'true'
+        run: scripts/init-submodules.sh
+
+      - name: Install OTP and Gleam
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27.0"
+          gleam-version: "1.16.0"
+
+      - name: Cache Gleam build artifacts and Hex packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            build
+            ~/.cache/gleam
+            ~/.hex
+          key: gleam-localstack-27.0-1.16.0-${{ hashFiles('manifest.toml', 'gleam.toml') }}
+
+      - name: Cache Smithy CLI
+        id: cache-smithy
+        uses: actions/cache@v4
+        with:
+          path: .tools/smithy-cli-linux-x86_64
+          key: smithy-cli-linux-x86_64-1.70.0
+
+      - name: Download Smithy CLI
+        if: steps.cache-smithy.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p .tools
+          curl -sSL -o .tools/smithy.zip \
+            https://github.com/smithy-lang/smithy/releases/download/1.70.0/smithy-cli-linux-x86_64.zip
+          unzip -q .tools/smithy.zip -d .tools/
+          rm .tools/smithy.zip
+          test -x .tools/smithy-cli-linux-x86_64/bin/smithy
+
+      - name: Download dependencies
+        run: gleam deps download
+
+      - name: Regenerate codegen artefacts
+        run: ./scripts/regen.sh
+
+      # Pre-pull the image so the first test's `docker compose up`
+      # doesn't include image-pull time in its boot budget.
+      - name: Pre-pull LocalStack image
+        run: docker pull --quiet localstack/localstack:3
+
+      - name: Run gleam test (INCLUDE_LOCALSTACK=1)
+        run: gleam test
+        env:
+          INCLUDE_LOCALSTACK: "1"
+
+      # Belt-and-braces teardown: the test harness already runs
+      # `docker compose down -v` via `try / after`, but if the test
+      # process crashed before the after-block fired the container
+      # could outlive the job step. `down -v` is idempotent.
+      - name: Tear down LocalStack (always)
+        if: always()
+        run: docker compose -f test/support/docker-compose.yml down -v || true
