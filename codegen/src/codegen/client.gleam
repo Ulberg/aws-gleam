@@ -72,8 +72,7 @@ pub fn items(
   }
   let client_call = client_with(Ident("config"), Ident("cache"))
   let new_body = case endpoint_rule_set_json {
-    None ->
-      code.Block(items: list.flatten([cache_setup, [client_call]]))
+    None -> code.Block(items: list.flatten([cache_setup, [client_call]]))
     Some(_) ->
       // Parse the embedded rule set, then chain it onto the default
       // config. The `let assert` is justified because the JSON is a
@@ -161,7 +160,9 @@ pub fn items(
           ]),
         ),
         Call(Ident("Ok"), [
-          Call(Ident("new"), [code.Labelled(label: "region", value: Ident("resolved"))]),
+          Call(Ident("new"), [
+            code.Labelled(label: "region", value: Ident("resolved")),
+          ]),
         ]),
       ]),
     ),
@@ -188,7 +189,9 @@ pub fn items(
       body: code.Block(items: [
         Let(
           name: "_",
-          value: Call(Ident("credentials_cache.shutdown"), [Ident("client.cache")]),
+          value: Call(Ident("credentials_cache.shutdown"), [
+            Ident("client.cache"),
+          ]),
         ),
         LetAssert(
           pattern: "Ok(cache)",
@@ -273,11 +276,7 @@ pub fn items(
       name: "shutdown_sync",
       params: [
         Param(name: "client", type_: "Client"),
-        LabelledParam(
-          label: "timeout_ms",
-          name: "timeout_ms",
-          type_: "Int",
-        ),
+        LabelledParam(label: "timeout_ms", name: "timeout_ms", type_: "Int"),
       ],
       return: CodeSome("Result(Nil, Nil)"),
       body: Call(Ident("credentials_cache.shutdown_sync"), [
@@ -326,7 +325,9 @@ pub fn invoke_fn(
     body: code.Case(
       scrutinee: Call(Ident("runtime.invoke"), [
         Ident("client.config"),
-        Call(Ident(string.concat(["build_", snake, "_request"])), [Ident("input")]),
+        Call(Ident(string.concat(["build_", snake, "_request"])), [
+          Ident("input"),
+        ]),
         Ident(string.concat(["parse_", snake, "_response"])),
       ]),
       branches: [

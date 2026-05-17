@@ -167,4 +167,3 @@ fn extract_required(xml: String, tag: String) -> Result(String, Error) {
     reason: "STS response missing <" <> tag <> "> element",
   ))
 }
-

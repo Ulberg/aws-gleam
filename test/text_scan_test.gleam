@@ -50,17 +50,11 @@ pub fn json_string_after_key_reads_value_test() {
 }
 
 pub fn json_string_after_key_tolerates_no_space_test() {
-  text_scan.json_string_after_key(
-    "{\"code\":\"InvalidArgument\"}",
-    "code",
-  )
+  text_scan.json_string_after_key("{\"code\":\"InvalidArgument\"}", "code")
   |> should.equal(Ok("InvalidArgument"))
 }
 
 pub fn json_string_after_key_returns_error_when_absent_test() {
-  text_scan.json_string_after_key(
-    "{\"other\": \"value\"}",
-    "missing",
-  )
+  text_scan.json_string_after_key("{\"other\": \"value\"}", "missing")
   |> should.equal(Error(Nil))
 }

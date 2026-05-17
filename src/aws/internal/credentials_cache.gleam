@@ -13,6 +13,7 @@
 //// rates AWS SDKs see in practice.
 
 import aws/credentials.{type Credentials, type Provider, type ProviderError}
+import aws/internal/actor_lifecycle
 import gleam/erlang/process.{type Subject}
 import gleam/option.{type Option, None, Some}
 import gleam/otp/actor
@@ -109,46 +110,19 @@ pub fn as_provider(cache: Cache) -> Provider {
   credentials.Provider(name: "Cached", fetch: fn() { get(cache) })
 }
 
-/// Tell the cache actor to exit. Fire-and-forget: the actor returns
-/// `actor.stop()` on its next message dispatch. Calling `shutdown`
-/// twice is safe — Erlang silently drops sends to a dead Pid — but
-/// callers that need to observe the actor actually exiting should
-/// use `shutdown_sync` instead.
-///
-/// Use this on a `Client` value you're done with. Without an explicit
-/// shutdown the cache actor lives for the rest of the BEAM VM's
-/// lifetime.
+/// Tell the cache actor to exit. Fire-and-forget. See
+/// `aws/internal/actor_lifecycle.shutdown_via_stop` for the contract;
+/// idempotent because Erlang silently drops sends to a dead Pid.
 pub fn shutdown(cache: Cache) -> Nil {
-  process.send(cache.subject, Stop)
+  actor_lifecycle.shutdown_via_stop(cache.subject, Stop)
 }
 
-/// Like `shutdown` but blocks until the actor has actually exited (or
-/// `timeout_ms` elapses). Internally monitors the owning Pid, sends
-/// `Stop`, then receives the `DOWN` message. Use this from tests, or
-/// from production code that must serialise a teardown — e.g.
-/// dropping a `Client` value just before exiting the process and
-/// wanting confirmation no work is still in flight.
+/// Synchronous teardown — monitors the actor, sends `Stop`, waits for
+/// `DOWN`. `Ok(Nil)` on clean exit, `Error(Nil)` only on real timeout.
+/// Already-dead actors short-circuit to `Ok(Nil)` via
+/// `subject_owner` returning `Error`.
 pub fn shutdown_sync(cache: Cache, timeout_ms: Int) -> Result(Nil, Nil) {
-  case process.subject_owner(cache.subject) {
-    Error(_) ->
-      // Subject already has no owning process — treat as a clean
-      // already-shut-down. Idempotent by design.
-      Ok(Nil)
-    Ok(pid) -> {
-      let monitor = process.monitor(pid)
-      process.send(cache.subject, Stop)
-      let selector =
-        process.new_selector()
-        |> process.select_specific_monitor(monitor, fn(_down) { Nil })
-      case process.selector_receive(selector, timeout_ms) {
-        Ok(Nil) -> Ok(Nil)
-        Error(Nil) -> {
-          process.demonitor_process(monitor)
-          Error(Nil)
-        }
-      }
-    }
-  }
+  actor_lifecycle.shutdown_via_stop_sync(cache.subject, Stop, timeout_ms)
 }
 
 fn handle_message(

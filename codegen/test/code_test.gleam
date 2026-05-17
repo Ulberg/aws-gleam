@@ -45,10 +45,9 @@ pub fn references_module_returns_false_when_absent_test() {
 pub fn let_assert_renders_with_pattern_test() {
   code.render(code.LetAssert(
     pattern: "Ok(x)",
-    value: code.Call(
-      head: code.Ident(name: "parse"),
-      args: [code.Ident(name: "input")],
-    ),
+    value: code.Call(head: code.Ident(name: "parse"), args: [
+      code.Ident(name: "input"),
+    ]),
   ))
   |> should.equal("let assert Ok(x) = parse(input)\n")
 }
@@ -59,10 +58,9 @@ pub fn let_assert_supports_complex_patterns_test() {
   // patterns, etc.
   code.render(code.LetAssert(
     pattern: "#(a, b)",
-    value: code.Call(
-      head: code.Ident(name: "pair"),
-      args: [code.IntLit(value: 1)],
-    ),
+    value: code.Call(head: code.Ident(name: "pair"), args: [
+      code.IntLit(value: 1),
+    ]),
   ))
   |> should.equal("let assert #(a, b) = pair(1)\n")
 }
@@ -77,22 +75,18 @@ pub fn const_renders_with_type_annotation_test() {
 }
 
 pub fn const_inside_module_renders_with_blank_separation_test() {
-  code.render(code.Module(items: [
-    code.Const(
-      name: "foo",
-      type_: "Int",
-      value: code.IntLit(value: 1),
-    ),
-    code.Blank,
-    code.Fn(
-      public: True,
-      name: "use_foo",
-      params: [],
-      return: code.CodeSome("Int"),
-      body: code.Ident(name: "foo"),
-    ),
-  ]))
-  |> should.equal(
-    "const foo: Int = 1\n\npub fn use_foo() -> Int {\n  foo\n}\n",
+  code.render(
+    code.Module(items: [
+      code.Const(name: "foo", type_: "Int", value: code.IntLit(value: 1)),
+      code.Blank,
+      code.Fn(
+        public: True,
+        name: "use_foo",
+        params: [],
+        return: code.CodeSome("Int"),
+        body: code.Ident(name: "foo"),
+      ),
+    ]),
   )
+  |> should.equal("const foo: Int = 1\n\npub fn use_foo() -> Int {\n  foo\n}\n")
 }
