@@ -116,8 +116,10 @@ pub fn emit_service(
           let #(op_id, _, in_r, out_r, err_ids) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
-          let in_info = resolve_io_type(model, local <> "Input", in_r)
-          let out_info = resolve_io_type(model, local <> "Output", out_r)
+          let in_info =
+            resolve_io_type(model, name_concat([local, "Input"]), in_r)
+          let out_info =
+            resolve_io_type(model, name_concat([local, "Output"]), out_r)
           OpSpec(
             op_id: op_id,
             local: local,
@@ -137,15 +139,22 @@ pub fn emit_service(
       let invoke_blocks = list.map(op_specs, emit_invoke)
       let error_blocks =
         list.map(op_specs, fn(spec) {
-          emit_error_type(spec) <> emit_error_translator(spec)
+          string.concat([emit_error_type(spec), emit_error_translator(spec)])
         })
       let body_content =
-        client_block
-        <> preamble
-        <> list.fold(op_blocks, "", fn(acc, code) { acc <> code })
-        <> list.fold(error_blocks, "", fn(acc, code) { acc <> code })
-        <> list.fold(invoke_blocks, "", fn(acc, code) { acc <> code })
-      let body = file_header(service_id, body_content) <> "\n" <> body_content
+        string.concat([
+          client_block,
+          preamble,
+          string.concat(op_blocks),
+          string.concat(error_blocks),
+          string.concat(invoke_blocks),
+        ])
+      let body =
+        string.concat([
+          file_header(service_id, body_content),
+          "\n",
+          body_content,
+        ])
       let dispatcher_specs =
         list.map(op_specs, fn(s) {
           dispatcher.DispatcherSpec(
@@ -1025,43 +1034,53 @@ fn emit_struct_codec(
   // real services never reach it.
   let encoder = case emit_json_encoder {
     True ->
-      code.render(struct_codec.encoder(
-        "encode_" <> snake <> "_struct",
-        name,
-        members,
-        False,
-        False,
-      ))
-      <> "\n"
+      string.concat([
+        code.render(struct_codec.encoder(
+          name_concat(["encode_", snake, "_struct"]),
+          name,
+          members,
+          False,
+          False,
+        )),
+        "\n",
+      ])
     False -> ""
   }
   let params_decoder = case is_dispatcher {
     True ->
-      code.render(struct_codec.decoder(
-        "decode_" <> snake <> "_struct_params",
-        name,
-        members,
-        True,
-        True,
-      ))
-      <> "\n"
+      string.concat([
+        code.render(struct_codec.decoder(
+          name_concat(["decode_", snake, "_struct_params"]),
+          name,
+          members,
+          True,
+          True,
+        )),
+        "\n",
+      ])
     False -> ""
   }
-  encoder
-  <> params_decoder
-  <> emit_struct_xml_inner_encoder(
-    name,
-    "encode_" <> snake <> "_xml_inner",
-    members,
-  )
-  <> emit_struct_xml_encoder(
-    name,
-    "encode_" <> snake <> "_xml",
-    snake,
-    members,
-    xml_namespace,
-  )
-  <> emit_struct_xml_decoder(name, "decode_" <> snake <> "_xml", members)
+  string.concat([
+    encoder,
+    params_decoder,
+    emit_struct_xml_inner_encoder(
+      name,
+      name_concat(["encode_", snake, "_xml_inner"]),
+      members,
+    ),
+    emit_struct_xml_encoder(
+      name,
+      name_concat(["encode_", snake, "_xml"]),
+      snake,
+      members,
+      xml_namespace,
+    ),
+    emit_struct_xml_decoder(
+      name,
+      name_concat(["decode_", snake, "_xml"]),
+      members,
+    ),
+  ])
 }
 
 /// Emit `decode_<snake>_xml(elem) -> Result(<Type>, String)`. Reads
