@@ -35,7 +35,10 @@ is met on `feat/next-steps` (PR #7). Highlights:
   error-type extraction.
 - STS `AssumeRole` provider; the existing `AssumeRoleWithWebIdentity`
   provider continues to cover IRSA.
-- 626 of 808 Smithy protocol-test corpus cases pass; zero fail.
+- `smithy.api#httpChecksumRequired` middleware: codegen appends a
+  `Content-MD5: base64(md5(body))` step on ops that need it,
+  verified byte-for-byte by the upstream protocol-test corpus.
+- 627 of 808 Smithy protocol-test corpus cases pass; zero fail.
 
 See [docs/audits/m6.md](docs/audits/m6.md) for the 1:1 parity table
 vs `aws-sdk-rust`.
