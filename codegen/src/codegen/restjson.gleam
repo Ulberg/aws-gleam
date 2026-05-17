@@ -248,7 +248,7 @@ fn emit_error_type(spec: OpSpec) -> String {
 
 /// See `awsjson.emit_error_translator` for the table-style design.
 fn emit_error_translator(spec: OpSpec) -> String {
-  let name = spec.local <> "Error"
+  let name = name_concat([spec.local, "Error"])
   let snake = spec.snake
   let decoder_entries =
     list.map(spec.error_ids, fn(err_id) {
@@ -256,25 +256,13 @@ fn emit_error_translator(spec: OpSpec) -> String {
       let err_snake = stringutils.pascal_to_snake(local)
       code.Tuple(items: [
         code.StrLit(value: local),
-        code.Raw(
-          fragment: "fn(body) {
-      case json.parse(body, decode_"
-            <> err_snake
-            <> "_struct()) {
-        Ok(v) -> Ok("
-            <> name
-            <> local
-            <> "(value: v))
-        Error(_) -> Error(Nil)
-      }
-    }",
-        ),
+        code.Raw(fragment: error_decoder_lambda(err_snake, name, local)),
       ])
     })
   let decoders_fn =
     code.Fn(
       public: False,
-      name: snake <> "_error_decoders",
+      name: name_concat([snake, "_error_decoders"]),
       params: [],
       return: code.CodeNone,
       body: code.ListLit(items: decoder_entries, tail: code.CodeNone),
@@ -282,7 +270,7 @@ fn emit_error_translator(spec: OpSpec) -> String {
   let translate_fn =
     code.Fn(
       public: False,
-      name: "translate_" <> snake <> "_error",
+      name: name_concat(["translate_", snake, "_error"]),
       params: [code.Param(name: "err", type_: "runtime.ClientError")],
       return: code.CodeSome(name),
       body: code.Call(
@@ -290,18 +278,22 @@ fn emit_error_translator(spec: OpSpec) -> String {
         args: [
           code.Ident(name: "err"),
           code.Call(
-            head: code.Ident(name: snake <> "_error_decoders"),
+            head: code.Ident(name: name_concat([snake, "_error_decoders"])),
             args: [],
           ),
           code.Raw(
-            fragment: "fn(reason) { "
-              <> name
-              <> "Transport(reason: reason) }",
+            fragment: name_concat([
+              "fn(reason) { ",
+              name,
+              "Transport(reason: reason) }",
+            ]),
           ),
           code.Raw(
-            fragment: "fn(et, s, body) { "
-              <> name
-              <> "Unknown(error_type: et, status: s, body: body) }",
+            fragment: name_concat([
+              "fn(et, s, body) { ",
+              name,
+              "Unknown(error_type: et, status: s, body: body) }",
+            ]),
           ),
         ],
       ),
@@ -309,6 +301,24 @@ fn emit_error_translator(spec: OpSpec) -> String {
   code.render(
     code.Module(items: [decoders_fn, code.Blank, translate_fn, code.Blank]),
   )
+}
+
+/// Multi-line per-error decoder closure for the table emitted by
+/// `<op>_error_decoders()`. Body decodes the JSON, then wraps in
+/// the op's error sum-type variant.
+fn error_decoder_lambda(
+  err_snake: String,
+  error_name: String,
+  local: String,
+) -> String {
+  string.concat([
+    "fn(body) {\n      case json.parse(body, decode_",
+    err_snake,
+    "_struct()) {\n        Ok(v) -> Ok(",
+    error_name,
+    local,
+    "(value: v))\n        Error(_) -> Error(Nil)\n      }\n    }",
+  ])
 }
 
 type HttpTrait {
@@ -687,12 +697,12 @@ fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
   let snake = stringutils.pascal_to_snake(name)
   let first_ctor = case variants {
     [v, ..] -> v.gleam_ctor
-    [] -> name <> "Unknown"
+    [] -> name_concat([name, "Unknown"])
   }
   let enc =
     code.Fn(
       public: True,
-      name: "encode_" <> snake <> "_enum",
+      name: name_concat(["encode_", snake, "_enum"]),
       params: [code.Param(name: "v", type_: name)],
       return: code.CodeSome("json.Json"),
       body: code.Case(
@@ -711,31 +721,49 @@ fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
   let dec =
     code.Fn(
       public: True,
-      name: "decode_" <> snake <> "_enum",
+      name: name_concat(["decode_", snake, "_enum"]),
       params: [],
-      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
       body: code.Call(
         head: code.Ident(name: "decode.then"),
         args: [
           code.Ident(name: "decode.string"),
-          code.Raw(
-            fragment: "fn(s) {\n    case s {\n"
-              <> list.fold(variants, "", fn(acc, v) {
-                acc
-                <> "      \""
-                <> v.wire_value
-                <> "\" -> decode.success("
-                <> v.gleam_ctor
-                <> ")\n"
-              })
-              <> "      _ -> decode.failure("
-              <> first_ctor
-              <> ", \"unknown enum value\")\n    }\n  }",
-          ),
+          enum_decode_lambda(variants, first_ctor),
         ],
       ),
     )
   code.render(code.Module(items: [enc, code.Blank, dec, code.Blank]))
+}
+
+/// `fn(s) { case s { ... } }` lambda body for the decoder. Stays
+/// as `code.Raw` since the AST has no anonymous-function node.
+fn enum_decode_lambda(
+  variants: List(types.EnumVariant),
+  first_ctor: String,
+) -> code.Code {
+  let arms =
+    list.map(variants, fn(v) {
+      string.concat([
+        "      \"",
+        v.wire_value,
+        "\" -> decode.success(",
+        v.gleam_ctor,
+        ")\n",
+      ])
+    })
+  let fallback =
+    string.concat([
+      "      _ -> decode.failure(",
+      first_ctor,
+      ", \"unknown enum value\")\n    }\n  }",
+    ])
+  code.Raw(
+    fragment: string.concat([
+      "fn(s) {\n    case s {\n",
+      string.concat(arms),
+      fallback,
+    ]),
+  )
 }
 
 fn emit_int_enum_codec(
@@ -745,14 +773,14 @@ fn emit_int_enum_codec(
   let snake = stringutils.pascal_to_snake(name)
   let first_ctor = case variants {
     [v, ..] -> v.gleam_ctor
-    [] -> name <> "Unknown"
+    [] -> name_concat([name, "Unknown"])
   }
   // Plain-int extractor — used by query/header/URI-label emitters
   // that need the wire integer value, not a wrapped json.Json.
   let int_value =
     code.Fn(
       public: True,
-      name: snake <> "_int_value",
+      name: name_concat([snake, "_int_value"]),
       params: [code.Param(name: "v", type_: name)],
       return: code.CodeSome("Int"),
       body: code.Case(
@@ -768,7 +796,7 @@ fn emit_int_enum_codec(
   let enc =
     code.Fn(
       public: True,
-      name: "encode_" <> snake <> "_int_enum",
+      name: name_concat(["encode_", snake, "_int_enum"]),
       params: [code.Param(name: "v", type_: name)],
       return: code.CodeSome("json.Json"),
       body: code.Case(
@@ -787,27 +815,14 @@ fn emit_int_enum_codec(
   let dec =
     code.Fn(
       public: True,
-      name: "decode_" <> snake <> "_int_enum",
+      name: name_concat(["decode_", snake, "_int_enum"]),
       params: [],
-      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
       body: code.Call(
         head: code.Ident(name: "decode.then"),
         args: [
           code.Ident(name: "decode.int"),
-          code.Raw(
-            fragment: "fn(n) {\n    case n {\n"
-              <> list.fold(variants, "", fn(acc, v) {
-                acc
-                <> "      "
-                <> stringutils.int_to_string(v.wire_value)
-                <> " -> decode.success("
-                <> v.gleam_ctor
-                <> ")\n"
-              })
-              <> "      _ -> decode.failure("
-              <> first_ctor
-              <> ", \"unknown int enum value\")\n    }\n  }",
-          ),
+          int_enum_decode_lambda(variants, first_ctor),
         ],
       ),
     )
@@ -822,6 +837,38 @@ fn emit_int_enum_codec(
     ]),
   )
 }
+
+/// `fn(n) { case n { ... } }` lambda body for the int-enum
+/// decoder. Same pattern as `enum_decode_lambda`.
+fn int_enum_decode_lambda(
+  variants: List(types.IntEnumVariant),
+  first_ctor: String,
+) -> code.Code {
+  let arms =
+    list.map(variants, fn(v) {
+      string.concat([
+        "      ",
+        stringutils.int_to_string(v.wire_value),
+        " -> decode.success(",
+        v.gleam_ctor,
+        ")\n",
+      ])
+    })
+  let fallback =
+    string.concat([
+      "      _ -> decode.failure(",
+      first_ctor,
+      ", \"unknown int enum value\")\n    }\n  }",
+    ])
+  code.Raw(
+    fragment: string.concat([
+      "fn(n) {\n    case n {\n",
+      string.concat(arms),
+      fallback,
+    ]),
+  )
+}
+
 
 fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
   let snake = stringutils.pascal_to_snake(name)
