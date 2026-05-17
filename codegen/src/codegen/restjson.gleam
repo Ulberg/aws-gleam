@@ -17,22 +17,22 @@ import codegen/code
 import codegen/dispatcher
 import codegen/named_shapes
 import codegen/struct_codec
+import codegen/trait_helpers
 import codegen/types.{
   type MemberDef, type Resolved, Body, Header, Label, Payload, PrefixHeaders,
   Query, QueryParams, RDocument, REnum, RIntEnum, RList, RMap, RPrim, RStruct,
   RTimestamp, RUnion,
 }
-import gleam/dict.{type Dict}
+import gleam/dict
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleam/result
 import gleam/set.{type Set}
 import gleam/string
 import internal/stringutils
 import smithy/model.{type Model}
 import smithy/shape
-import smithy/shape_id.{type ShapeId, ShapeId}
-import smithy/trait.{type Trait}
+import smithy/shape_id.{ShapeId}
+import smithy/trait
 
 pub type EmitResult {
   EmitResult(
@@ -55,7 +55,7 @@ pub fn emit_service(
     Error(_) -> Error("service not found: " <> service_id)
     Ok(shape.Service(operations: refs, traits: svc_traits, ..)) -> {
       let service_local = strip_namespace(service_id)
-      let metadata = service_metadata(svc_traits, service_local)
+      let metadata = trait_helpers.service_metadata(svc_traits, service_local)
       let resolved_ops =
         list.filter_map(refs, fn(ref) {
           let ShapeId(target) = ref.target
@@ -178,10 +178,6 @@ pub fn emit_service(
   }
 }
 
-type Metadata {
-  Metadata(service_local: String, endpoint_prefix: String, signing_name: String)
-}
-
 type OpSpec {
   OpSpec(
     op_id: String,
@@ -193,49 +189,25 @@ type OpSpec {
   )
 }
 
-fn service_metadata(traits: shape.Traits, service_local: String) -> Metadata {
-  let endpoint_prefix =
-    string_field_under(traits, "aws.api#service", "endpointPrefix")
-    |> result.unwrap(string.lowercase(service_local))
-  let signing_name =
-    string_field_under(traits, "aws.auth#sigv4", "name")
-    |> result.unwrap(endpoint_prefix)
-  Metadata(
-    service_local: service_local,
-    endpoint_prefix: endpoint_prefix,
-    signing_name: signing_name,
-  )
-}
+// `Metadata`, `service_metadata`, `string_field_under` live in
+// `codegen/trait_helpers.gleam` — see Pass 4 in plan.md.
 
-fn string_field_under(
-  traits: shape.Traits,
-  trait_id: String,
-  field: String,
-) -> Result(String, Nil) {
-  case dict.get(traits, ShapeId(trait_id)) {
-    Ok(Some(trait.Dict(d))) ->
-      case dict.get(d, ShapeId(field)) {
-        Ok(trait.String(s)) -> Ok(s)
-        _ -> Error(Nil)
-      }
-    _ -> Error(Nil)
-  }
-}
-
-fn emit_client(metadata: Metadata) -> String {
+fn emit_client(metadata: trait_helpers.Metadata) -> String {
   client.render(metadata.endpoint_prefix, metadata.signing_name)
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
-  code.render(code.Module(items: [
-    client.invoke_fn(
-      spec.snake,
-      spec.local,
-      spec.in_info.type_name,
-      spec.out_info.type_name,
-    ),
-    code.Blank,
-  ]))
+  code.render(
+    code.Module(items: [
+      client.invoke_fn(
+        spec.snake,
+        spec.local,
+        spec.in_info.type_name,
+        spec.out_info.type_name,
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 /// Per-op typed-error enum. One variant per error shape on the
@@ -244,58 +216,99 @@ fn emit_invoke(spec: OpSpec) -> String {
 /// wire, so the same decoder path works.
 fn emit_error_type(spec: OpSpec) -> String {
   let name = spec.local <> "Error"
-  let variants =
-    list.fold(spec.error_ids, "", fn(acc, err_id) {
+  let typed_variants =
+    list.map(spec.error_ids, fn(err_id) {
       let local = strip_namespace(err_id)
-      acc <> "  " <> name <> local <> "(value: " <> local <> ")\n"
+      code.Variant(name: name <> local, fields: [
+        code.Param(name: "value", type_: local),
+      ])
     })
-  "pub type "
-  <> name
-  <> " {\n"
-  <> variants
-  <> "  "
-  <> name
-  <> "Transport(reason: String)\n  "
-  <> name
-  <> "Unknown(error_type: String, status: Int, body: String)\n}\n\n"
+  let fallback_variants = [
+    code.Variant(name: name <> "Transport", fields: [
+      code.Param(name: "reason", type_: "String"),
+    ]),
+    code.Variant(name: name <> "Unknown", fields: [
+      code.Param(name: "error_type", type_: "String"),
+      code.Param(name: "status", type_: "Int"),
+      code.Param(name: "body", type_: "String"),
+    ]),
+  ]
+  code.render(
+    code.Module(items: [
+      code.TypeDef(
+        public: True,
+        is_opaque: False,
+        name: name,
+        variants: list.append(typed_variants, fallback_variants),
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 /// See `awsjson.emit_error_translator` for the table-style design.
 fn emit_error_translator(spec: OpSpec) -> String {
   let name = spec.local <> "Error"
   let snake = spec.snake
-  let decoders = case spec.error_ids {
-    [] -> "[]"
-    _ -> {
-      let entries =
-        list.fold(spec.error_ids, "", fn(acc, err_id) {
-          let local = strip_namespace(err_id)
-          let err_snake = stringutils.pascal_to_snake(local)
-          acc <> "    #(\"" <> local <> "\", fn(body) {
-      case json.parse(body, decode_" <> err_snake <> "_struct()) {
-        Ok(v) -> Ok(" <> name <> local <> "(value: v))
+  let decoder_entries =
+    list.map(spec.error_ids, fn(err_id) {
+      let local = strip_namespace(err_id)
+      let err_snake = stringutils.pascal_to_snake(local)
+      code.Tuple(items: [
+        code.StrLit(value: local),
+        code.Raw(
+          fragment: "fn(body) {
+      case json.parse(body, decode_"
+            <> err_snake
+            <> "_struct()) {
+        Ok(v) -> Ok("
+            <> name
+            <> local
+            <> "(value: v))
         Error(_) -> Error(Nil)
       }
-    }),
-"
-        })
-      "[\n" <> entries <> "  ]"
-    }
-  }
-  "fn " <> snake <> "_error_decoders() {
-  " <> decoders <> "
-}
-
-fn translate_" <> snake <> "_error(err: runtime.ClientError) -> " <> name <> " {
-  runtime.translate_service_error(
-    err,
-    " <> snake <> "_error_decoders(),
-    fn(reason) { " <> name <> "Transport(reason: reason) },
-    fn(et, s, body) { " <> name <> "Unknown(error_type: et, status: s, body: body) },
+    }",
+        ),
+      ])
+    })
+  let decoders_fn =
+    code.Fn(
+      public: False,
+      name: snake <> "_error_decoders",
+      params: [],
+      return: code.CodeNone,
+      body: code.ListLit(items: decoder_entries, tail: code.CodeNone),
+    )
+  let translate_fn =
+    code.Fn(
+      public: False,
+      name: "translate_" <> snake <> "_error",
+      params: [code.Param(name: "err", type_: "runtime.ClientError")],
+      return: code.CodeSome(name),
+      body: code.Call(
+        head: code.Ident(name: "runtime.translate_service_error"),
+        args: [
+          code.Ident(name: "err"),
+          code.Call(
+            head: code.Ident(name: snake <> "_error_decoders"),
+            args: [],
+          ),
+          code.Raw(
+            fragment: "fn(reason) { "
+              <> name
+              <> "Transport(reason: reason) }",
+          ),
+          code.Raw(
+            fragment: "fn(et, s, body) { "
+              <> name
+              <> "Unknown(error_type: et, status: s, body: body) }",
+          ),
+        ],
+      ),
+    )
+  code.render(
+    code.Module(items: [decoders_fn, code.Blank, translate_fn, code.Blank]),
   )
-}
-
-"
 }
 
 type HttpTrait {
@@ -552,13 +565,42 @@ fn emit_parse_via_decoder(
   type_name: String,
   decoder_fn: String,
 ) -> String {
-  "pub fn "
-  <> fn_name
-  <> "(body: String) -> Result("
-  <> type_name
-  <> ", String) {\n  case json.parse(body, "
-  <> decoder_fn
-  <> "()) {\n    Ok(v) -> Ok(v)\n    Error(_) -> Error(\"decode failed\")\n  }\n}\n\n"
+  code.render(
+    code.Module(items: [
+      code.Fn(
+        public: True,
+        name: fn_name,
+        params: [code.Param(name: "body", type_: "String")],
+        return: code.CodeSome("Result(" <> type_name <> ", String)"),
+        body: code.Case(
+          scrutinee: code.Call(
+            head: code.Ident(name: "json.parse"),
+            args: [
+              code.Ident(name: "body"),
+              code.Call(head: code.Ident(name: decoder_fn), args: []),
+            ],
+          ),
+          branches: [
+            code.Branch(
+              pattern: "Ok(v)",
+              body: code.Call(
+                head: code.Ident(name: "Ok"),
+                args: [code.Ident(name: "v")],
+              ),
+            ),
+            code.Branch(
+              pattern: "Error(_)",
+              body: code.Call(
+                head: code.Ident(name: "Error"),
+                args: [code.StrLit(value: "decode failed")],
+              ),
+            ),
+          ],
+        ),
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 type IOTypeInfo {
@@ -612,43 +654,57 @@ fn emit_union_def(name: String, members: List(MemberDef)) -> String {
 
 fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
   let snake = stringutils.pascal_to_snake(name)
-  let enc =
-    "pub fn encode_"
-    <> snake
-    <> "_enum(v: "
-    <> name
-    <> ") -> json.Json {\n  case v {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "    "
-      <> v.gleam_ctor
-      <> " -> json.string(\""
-      <> v.wire_value
-      <> "\")\n"
-    })
-    <> "  }\n}\n\n"
   let first_ctor = case variants {
     [v, ..] -> v.gleam_ctor
     [] -> name <> "Unknown"
   }
+  let enc =
+    code.Fn(
+      public: True,
+      name: "encode_" <> snake <> "_enum",
+      params: [code.Param(name: "v", type_: name)],
+      return: code.CodeSome("json.Json"),
+      body: code.Case(
+        scrutinee: code.Ident(name: "v"),
+        branches: list.map(variants, fn(v) {
+          code.Branch(
+            pattern: v.gleam_ctor,
+            body: code.Call(
+              head: code.Ident(name: "json.string"),
+              args: [code.StrLit(value: v.wire_value)],
+            ),
+          )
+        }),
+      ),
+    )
   let dec =
-    "pub fn decode_"
-    <> snake
-    <> "_enum() -> decode.Decoder("
-    <> name
-    <> ") {\n  decode.then(decode.string, fn(s) {\n    case s {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "      \""
-      <> v.wire_value
-      <> "\" -> decode.success("
-      <> v.gleam_ctor
-      <> ")\n"
-    })
-    <> "      _ -> decode.failure("
-    <> first_ctor
-    <> ", \"unknown enum value\")\n    }\n  })\n}\n\n"
-  enc <> dec
+    code.Fn(
+      public: True,
+      name: "decode_" <> snake <> "_enum",
+      params: [],
+      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      body: code.Call(
+        head: code.Ident(name: "decode.then"),
+        args: [
+          code.Ident(name: "decode.string"),
+          code.Raw(
+            fragment: "fn(s) {\n    case s {\n"
+              <> list.fold(variants, "", fn(acc, v) {
+                acc
+                <> "      \""
+                <> v.wire_value
+                <> "\" -> decode.success("
+                <> v.gleam_ctor
+                <> ")\n"
+              })
+              <> "      _ -> decode.failure("
+              <> first_ctor
+              <> ", \"unknown enum value\")\n    }\n  }",
+          ),
+        ],
+      ),
+    )
+  code.render(code.Module(items: [enc, code.Blank, dec, code.Blank]))
 }
 
 fn emit_int_enum_codec(
@@ -656,60 +712,84 @@ fn emit_int_enum_codec(
   variants: List(types.IntEnumVariant),
 ) -> String {
   let snake = stringutils.pascal_to_snake(name)
-  // Plain-int extractor — used by query/header/URI-label emitters
-  // that need the wire integer value, not a wrapped json.Json.
-  let int_value =
-    "pub fn "
-    <> snake
-    <> "_int_value(v: "
-    <> name
-    <> ") -> Int {\n  case v {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "    "
-      <> v.gleam_ctor
-      <> " -> "
-      <> stringutils.int_to_string(v.wire_value)
-      <> "\n"
-    })
-    <> "  }\n}\n\n"
-  let enc =
-    "pub fn encode_"
-    <> snake
-    <> "_int_enum(v: "
-    <> name
-    <> ") -> json.Json {\n  case v {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "    "
-      <> v.gleam_ctor
-      <> " -> json.int("
-      <> stringutils.int_to_string(v.wire_value)
-      <> ")\n"
-    })
-    <> "  }\n}\n\n"
   let first_ctor = case variants {
     [v, ..] -> v.gleam_ctor
     [] -> name <> "Unknown"
   }
+  // Plain-int extractor — used by query/header/URI-label emitters
+  // that need the wire integer value, not a wrapped json.Json.
+  let int_value =
+    code.Fn(
+      public: True,
+      name: snake <> "_int_value",
+      params: [code.Param(name: "v", type_: name)],
+      return: code.CodeSome("Int"),
+      body: code.Case(
+        scrutinee: code.Ident(name: "v"),
+        branches: list.map(variants, fn(v) {
+          code.Branch(
+            pattern: v.gleam_ctor,
+            body: code.IntLit(value: v.wire_value),
+          )
+        }),
+      ),
+    )
+  let enc =
+    code.Fn(
+      public: True,
+      name: "encode_" <> snake <> "_int_enum",
+      params: [code.Param(name: "v", type_: name)],
+      return: code.CodeSome("json.Json"),
+      body: code.Case(
+        scrutinee: code.Ident(name: "v"),
+        branches: list.map(variants, fn(v) {
+          code.Branch(
+            pattern: v.gleam_ctor,
+            body: code.Call(
+              head: code.Ident(name: "json.int"),
+              args: [code.IntLit(value: v.wire_value)],
+            ),
+          )
+        }),
+      ),
+    )
   let dec =
-    "pub fn decode_"
-    <> snake
-    <> "_int_enum() -> decode.Decoder("
-    <> name
-    <> ") {\n  decode.then(decode.int, fn(n) {\n    case n {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "      "
-      <> stringutils.int_to_string(v.wire_value)
-      <> " -> decode.success("
-      <> v.gleam_ctor
-      <> ")\n"
-    })
-    <> "      _ -> decode.failure("
-    <> first_ctor
-    <> ", \"unknown int enum value\")\n    }\n  })\n}\n\n"
-  int_value <> enc <> dec
+    code.Fn(
+      public: True,
+      name: "decode_" <> snake <> "_int_enum",
+      params: [],
+      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      body: code.Call(
+        head: code.Ident(name: "decode.then"),
+        args: [
+          code.Ident(name: "decode.int"),
+          code.Raw(
+            fragment: "fn(n) {\n    case n {\n"
+              <> list.fold(variants, "", fn(acc, v) {
+                acc
+                <> "      "
+                <> stringutils.int_to_string(v.wire_value)
+                <> " -> decode.success("
+                <> v.gleam_ctor
+                <> ")\n"
+              })
+              <> "      _ -> decode.failure("
+              <> first_ctor
+              <> ", \"unknown int enum value\")\n    }\n  }",
+          ),
+        ],
+      ),
+    )
+  code.render(
+    code.Module(items: [
+      int_value,
+      code.Blank,
+      enc,
+      code.Blank,
+      dec,
+      code.Blank,
+    ]),
+  )
 }
 
 fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
@@ -965,36 +1045,64 @@ fn emit_build(
 /// encodings. Each encoding is appended to any existing value.
 /// Empty list ⇒ no-op.
 fn emit_content_encoding(encodings: List(String)) -> String {
-  case encodings {
-    [] -> ""
-    _ ->
-      list.fold(encodings, "", fn(acc, enc) {
-        acc
-        <> "  let headers = rest.append_content_encoding(headers, \""
-        <> enc
-        <> "\")\n"
-      })
-  }
+  list.fold(encodings, "", fn(acc, enc) {
+    let stmt =
+      code.Let(
+        name: "headers",
+        value: code.Call(
+          head: code.Ident(name: "rest.append_content_encoding"),
+          args: [code.Ident(name: "headers"), code.StrLit(value: enc)],
+        ),
+      )
+    acc <> "  " <> code.render(stmt) <> "\n"
+  })
 }
 
 fn emit_path_setup(uri_template: String, labels: List(MemberDef)) -> String {
-  let initial = "  let path = \"" <> uri_template <> "\"\n"
-  list.fold(labels, initial, fn(acc, m) {
-    let greedy = string.contains(uri_template, "{" <> m.json_name <> "+}")
-    let greedy_str = case greedy {
-      True -> "True"
-      False -> "False"
-    }
-    acc
-    <> "  let path = case input."
-    <> m.snake_name
-    <> " {\n    option.Some(v) -> rest.substitute_label(path, \""
-    <> m.json_name
-    <> "\", "
-    <> value_to_string_with_format(m.target, m.timestamp_format)
-    <> ", "
-    <> greedy_str
-    <> ")\n    option.None -> path\n  }\n"
+  let initial =
+    code.Let(name: "path", value: code.StrLit(value: uri_template))
+  let updates =
+    list.map(labels, fn(m) {
+      let greedy = string.contains(uri_template, "{" <> m.json_name <> "+}")
+      let greedy_ident = case greedy {
+        True -> code.Ident(name: "True")
+        False -> code.Ident(name: "False")
+      }
+      code.Let(
+        name: "path",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(v)",
+              body: code.Call(
+                head: code.Ident(name: "rest.substitute_label"),
+                args: [
+                  code.Ident(name: "path"),
+                  code.StrLit(value: m.json_name),
+                  code.Raw(
+                    fragment: value_to_string_with_format(
+                      m.target,
+                      m.timestamp_format,
+                    ),
+                  ),
+                  greedy_ident,
+                ],
+              ),
+            ),
+            code.Branch(pattern: "option.None", body: code.Ident(name: "path")),
+          ],
+        ),
+      )
+    })
+  render_let_block([initial, ..updates])
+}
+
+/// Render a sequence of `code.Let` statements as an indented
+/// body fragment, two-space-prefixed and newline-terminated.
+fn render_let_block(stmts: List(code.Code)) -> String {
+  list.fold(stmts, "", fn(acc, stmt) {
+    acc <> "  " <> code.render(stmt) <> "\n"
   })
 }
 
@@ -1002,70 +1110,141 @@ fn emit_query_setup(
   queries: List(MemberDef),
   query_maps: List(MemberDef),
 ) -> String {
-  let initial = "  let query = \"\"\n"
-  let with_queries =
-    list.fold(queries, initial, fn(acc, m) {
-      let query_name = case m.binding {
-        Query(query_name: n) -> n
-        _ -> m.json_name
-      }
-      case m.target, m.idempotency_token {
-        _, True ->
-          // `@idempotencyToken` query members auto-fill via the
-          // runtime FFI when the caller leaves them unset.
-          acc
-          <> "  let query = case input."
-          <> m.snake_name
-          <> " {\n    option.Some(v) -> rest.add_query(query, \""
-          <> query_name
-          <> "\", v)\n    option.None -> rest.add_query(query, \""
-          <> query_name
-          <> "\", rest.idempotency_token())\n  }\n"
-        RList(element: e, ..), _ ->
-          acc
-          <> "  let query = case input."
-          <> m.snake_name
-          <> " {\n    option.Some(xs) -> list.fold(xs, query, fn(q, item) {\n      let v = item\n      rest.add_query(q, \""
-          <> query_name
-          <> "\", "
-          <> value_to_string_with_format(e, m.timestamp_format)
-          <> ")\n    })\n    option.None -> query\n  }\n"
-        _, _ ->
-          acc
-          <> "  let query = case input."
-          <> m.snake_name
-          <> " {\n    option.Some(v) -> rest.add_query(query, \""
-          <> query_name
-          <> "\", "
-          <> value_to_string_with_format(m.target, m.timestamp_format)
-          <> ")\n    option.None -> query\n  }\n"
-      }
-    })
-  list.fold(query_maps, with_queries, fn(acc, m) {
-    // Dispatch on the map's value type: Map<String, String> uses
-    // `add_query_params`, Map<String, List<String>> uses
-    // `add_query_params_list`. Anything else: skip.
-    let helper = case m.target {
-      RMap(
-        key: _,
-        value: RList(element: RPrim(primitive: types.PString), ..),
-        ..,
-      ) -> Ok("rest.add_query_params_list")
-      RMap(key: _, value: RPrim(primitive: types.PString), ..) ->
-        Ok("rest.add_query_params")
-      _ -> Error(Nil)
-    }
-    case helper {
-      Ok(fn_name) ->
-        acc
-        <> "  let query = case input."
-        <> m.snake_name
-        <> " {\n    option.Some(m) -> "
-        <> fn_name
-        <> "(query, m)\n    option.None -> query\n  }\n"
-      Error(_) -> acc
-    }
-  })
+  let initial = code.Let(name: "query", value: code.StrLit(value: ""))
+  let query_stmts = list.map(queries, query_member_let)
+  let map_stmts = list.filter_map(query_maps, query_map_member_let)
+  render_let_block(list.flatten([[initial], query_stmts, map_stmts]))
+}
+
+fn query_member_let(m: MemberDef) -> code.Code {
+  let query_name = case m.binding {
+    Query(query_name: n) -> n
+    _ -> m.json_name
+  }
+  case m.target, m.idempotency_token {
+    _, True ->
+      code.Let(
+        name: "query",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(v)",
+              body: code.Call(
+                head: code.Ident(name: "rest.add_query"),
+                args: [
+                  code.Ident(name: "query"),
+                  code.StrLit(value: query_name),
+                  code.Ident(name: "v"),
+                ],
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Call(
+                head: code.Ident(name: "rest.add_query"),
+                args: [
+                  code.Ident(name: "query"),
+                  code.StrLit(value: query_name),
+                  code.Call(
+                    head: code.Ident(name: "rest.idempotency_token"),
+                    args: [],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      )
+    RList(element: e, ..), _ ->
+      code.Let(
+        name: "query",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(xs)",
+              body: code.Raw(
+                fragment: "list.fold(xs, query, fn(q, item) {\n      let v = item\n      rest.add_query(q, \""
+                  <> query_name
+                  <> "\", "
+                  <> value_to_string_with_format(e, m.timestamp_format)
+                  <> ")\n    })",
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "query"),
+            ),
+          ],
+        ),
+      )
+    _, _ ->
+      code.Let(
+        name: "query",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(v)",
+              body: code.Call(
+                head: code.Ident(name: "rest.add_query"),
+                args: [
+                  code.Ident(name: "query"),
+                  code.StrLit(value: query_name),
+                  code.Raw(
+                    fragment: value_to_string_with_format(
+                      m.target,
+                      m.timestamp_format,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "query"),
+            ),
+          ],
+        ),
+      )
+  }
+}
+
+fn query_map_member_let(m: MemberDef) -> Result(code.Code, Nil) {
+  let helper = case m.target {
+    RMap(
+      key: _,
+      value: RList(element: RPrim(primitive: types.PString), ..),
+      ..,
+    ) -> Ok("rest.add_query_params_list")
+    RMap(key: _, value: RPrim(primitive: types.PString), ..) ->
+      Ok("rest.add_query_params")
+    _ -> Error(Nil)
+  }
+  case helper {
+    Ok(fn_name) ->
+      Ok(code.Let(
+        name: "query",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(m)",
+              body: code.Call(
+                head: code.Ident(name: fn_name),
+                args: [code.Ident(name: "query"), code.Ident(name: "m")],
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "query"),
+            ),
+          ],
+        ),
+      ))
+    Error(_) -> Error(Nil)
+  }
 }
 
 fn emit_header_setup(
@@ -1076,64 +1255,122 @@ fn emit_header_setup(
   // override on key collision (`HttpEmptyPrefixHeaders` test:
   // `prefixHeaders.hello = "Hello"` then `specificHeader = "There"`
   // bound to `@httpHeader("hello")` → wire `hello: There`).
-  let initial = "  let headers = dict.new()\n"
-  let with_prefix =
-    list.fold(prefix_headers, initial, fn(acc, m) {
-      let prefix = case m.binding {
-        PrefixHeaders(prefix: p) -> p
-        _ -> ""
+  let initial =
+    code.Let(
+      name: "headers",
+      value: code.Call(head: code.Ident(name: "dict.new"), args: []),
+    )
+  let prefix_stmts = list.map(prefix_headers, prefix_header_let)
+  let header_stmts = list.map(headers, header_member_let)
+  render_let_block(list.flatten([[initial], prefix_stmts, header_stmts]))
+}
+
+fn prefix_header_let(m: MemberDef) -> code.Code {
+  let prefix = case m.binding {
+    PrefixHeaders(prefix: p) -> p
+    _ -> ""
+  }
+  code.Let(
+    name: "headers",
+    value: code.Case(
+      scrutinee: code.Ident(name: "input." <> m.snake_name),
+      branches: [
+        code.Branch(
+          pattern: "option.Some(m)",
+          body: code.Call(
+            head: code.Ident(name: "rest.add_prefix_headers"),
+            args: [
+              code.Ident(name: "headers"),
+              code.StrLit(value: prefix),
+              code.Ident(name: "m"),
+            ],
+          ),
+        ),
+        code.Branch(
+          pattern: "option.None",
+          body: code.Ident(name: "headers"),
+        ),
+      ],
+    ),
+  )
+}
+
+fn header_member_let(m: MemberDef) -> code.Code {
+  let header_name = case m.binding {
+    Header(header_name: n) -> n
+    _ -> m.json_name
+  }
+  case m.target {
+    RList(element: e, ..) -> {
+      // String list-header entries get RFC 7230 list-quoting; other
+      // types (numbers, http-date timestamps, enums) use the raw
+      // wire form. Smithy's @httpHeader spec only quotes strings.
+      let render = case e {
+        RPrim(primitive: types.PString) -> "rest.quote_list_string_entry(v)"
+        _ -> value_to_string_full(e, m.timestamp_format, "http-date")
       }
-      acc
-      <> "  let headers = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(m) -> rest.add_prefix_headers(headers, \""
-      <> prefix
-      <> "\", m)\n    option.None -> headers\n  }\n"
-    })
-  list.fold(headers, with_prefix, fn(acc, m) {
-    let header_name = case m.binding {
-      Header(header_name: n) -> n
-      _ -> m.json_name
+      code.Let(
+        name: "headers",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(xs)",
+              body: code.Call(
+                head: code.Ident(name: "rest.maybe_set_list_header"),
+                args: [
+                  code.Ident(name: "headers"),
+                  code.StrLit(value: header_name),
+                  code.Raw(
+                    fragment: "list.map(xs, fn(item) { let v = item "
+                      <> render
+                      <> " })",
+                  ),
+                ],
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "headers"),
+            ),
+          ],
+        ),
+      )
     }
-    case m.target {
-      RList(element: e, ..) -> {
-        // String list-header entries get RFC 7230 list-quoting; other
-        // types (numbers, http-date timestamps, enums) use the raw
-        // wire form. Smithy's @httpHeader spec only quotes strings.
-        let render = case e {
-          RPrim(primitive: types.PString) -> "rest.quote_list_string_entry(v)"
-          _ -> value_to_string_full(e, m.timestamp_format, "http-date")
-        }
-        acc
-        <> "  let headers = case input."
-        <> m.snake_name
-        <> " {\n    option.Some(xs) -> rest.maybe_set_list_header(headers, \""
-        <> header_name
-        <> "\", list.map(xs, fn(item) { let v = item "
-        <> render
-        <> " }))\n    option.None -> headers\n  }\n"
+    _ -> {
+      // `@mediaType` on a `@httpHeader` string member means the
+      // value is opaque to HTTP — base64 the JSON form so commas /
+      // quotes / linefeeds in the payload don't break header parsing.
+      let render = case m.target, m.media_type {
+        RPrim(primitive: types.PString), option.Some(_) ->
+          "bit_array.base64_encode(bit_array.from_string(v), True)"
+        _, _ -> value_to_string_full(m.target, m.timestamp_format, "http-date")
       }
-      _ -> {
-        // `@mediaType` on a `@httpHeader` string member means the
-        // value is opaque to HTTP — base64 the JSON form so commas /
-        // quotes / linefeeds in the payload don't break header parsing.
-        let render = case m.target, m.media_type {
-          RPrim(primitive: types.PString), option.Some(_) ->
-            "bit_array.base64_encode(bit_array.from_string(v), True)"
-          _, _ ->
-            value_to_string_full(m.target, m.timestamp_format, "http-date")
-        }
-        acc
-        <> "  let headers = case input."
-        <> m.snake_name
-        <> " {\n    option.Some(v) -> rest.maybe_set_header(headers, \""
-        <> header_name
-        <> "\", "
-        <> render
-        <> ")\n    option.None -> headers\n  }\n"
-      }
+      code.Let(
+        name: "headers",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(v)",
+              body: code.Call(
+                head: code.Ident(name: "rest.maybe_set_header"),
+                args: [
+                  code.Ident(name: "headers"),
+                  code.StrLit(value: header_name),
+                  code.Raw(fragment: render),
+                ],
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "headers"),
+            ),
+          ],
+        ),
+      )
     }
-  })
+  }
 }
 
 fn emit_payload_body(m: MemberDef) -> String {
@@ -1142,60 +1379,93 @@ fn emit_payload_body(m: MemberDef) -> String {
   // JSON-encoded value; for primitive strings, the raw string.
   // `@mediaType` (on the member or its target shape) overrides
   // Content-Type for opaque-payload members.
-  case m.target {
-    types.RBlob -> {
-      let ct = case m.media_type {
-        Some(s) -> s
-        None -> "application/octet-stream"
-      }
-      "  let body = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(v) -> v\n    option.None -> <<>>\n  }\n  let content_type = \""
-      <> ct
-      <> "\"\n"
-    }
-    RPrim(primitive: types.PString) -> {
-      let ct = case m.media_type {
-        Some(s) -> s
-        None -> "text/plain"
-      }
-      "  let body = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(v) -> bit_array.from_string(v)\n    option.None -> <<>>\n  }\n  let content_type = \""
-      <> ct
-      <> "\"\n"
-    }
-    REnum(..) -> {
-      let ct = case m.media_type {
-        Some(s) -> s
-        None -> "text/plain"
-      }
-      "  let body = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(v) -> bit_array.from_string(rest.enum_wire_value("
-      <> types.json_encoder(m.target)
-      <> "(v)))\n    option.None -> <<>>\n  }\n  let content_type = \""
-      <> ct
-      <> "\"\n"
-    }
-    RStruct(..) ->
-      // Absent struct `@httpPayload` ⇒ `{}` rather than empty bytes
-      // — restJson1 servers expect to JSON-parse a structured body
-      // even when every field is null.
-      "  let body = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(v) -> bit_array.from_string(json.to_string("
-      <> types.json_encoder(m.target)
-      <> "(v)))\n    option.None -> bit_array.from_string(\"{}\")\n  }\n  let content_type = \"application/json\"\n"
-    _ ->
-      // Unions / Documents / other payload types: empty when unset.
-      "  let body = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(v) -> bit_array.from_string(json.to_string("
-      <> types.json_encoder(m.target)
-      <> "(v)))\n    option.None -> <<>>\n  }\n  let content_type = \"application/json\"\n"
+  let blob_ct = case m.media_type {
+    Some(s) -> s
+    None -> "application/octet-stream"
   }
+  let string_ct = case m.media_type {
+    Some(s) -> s
+    None -> "text/plain"
+  }
+  let #(some_expr, none_expr, content_type) = case m.target {
+    types.RBlob -> #(
+      code.Ident(name: "v"),
+      code.Raw(fragment: "<<>>"),
+      blob_ct,
+    )
+    RPrim(primitive: types.PString) -> #(
+      code.Call(
+        head: code.Ident(name: "bit_array.from_string"),
+        args: [code.Ident(name: "v")],
+      ),
+      code.Raw(fragment: "<<>>"),
+      string_ct,
+    )
+    REnum(..) -> #(
+      code.Call(
+        head: code.Ident(name: "bit_array.from_string"),
+        args: [
+          code.Call(
+            head: code.Ident(name: "rest.enum_wire_value"),
+            args: [
+              code.Call(
+                head: code.Ident(name: types.json_encoder(m.target)),
+                args: [code.Ident(name: "v")],
+              ),
+            ],
+          ),
+        ],
+      ),
+      code.Raw(fragment: "<<>>"),
+      string_ct,
+    )
+    RStruct(..) -> #(
+      json_payload_some_expr(m.target),
+      code.Call(
+        head: code.Ident(name: "bit_array.from_string"),
+        args: [code.StrLit(value: "{}")],
+      ),
+      "application/json",
+    )
+    _ -> #(
+      json_payload_some_expr(m.target),
+      code.Raw(fragment: "<<>>"),
+      "application/json",
+    )
+  }
+  let body_stmt =
+    code.Let(
+      name: "body",
+      value: code.Case(
+        scrutinee: code.Ident(name: "input." <> m.snake_name),
+        branches: [
+          code.Branch(pattern: "option.Some(v)", body: some_expr),
+          code.Branch(pattern: "option.None", body: none_expr),
+        ],
+      ),
+    )
+  let ct_stmt =
+    code.Let(name: "content_type", value: code.StrLit(value: content_type))
+  render_let_block([body_stmt, ct_stmt])
 }
+
+fn json_payload_some_expr(target: Resolved) -> code.Code {
+  code.Call(
+    head: code.Ident(name: "bit_array.from_string"),
+    args: [
+      code.Call(
+        head: code.Ident(name: "json.to_string"),
+        args: [
+          code.Call(
+            head: code.Ident(name: types.json_encoder(target)),
+            args: [code.Ident(name: "v")],
+          ),
+        ],
+      ),
+    ],
+  )
+}
+
 
 /// Render a Resolved value as a Gleam expression that produces a
 /// String — used in label / query / header position where everything
@@ -1247,31 +1517,76 @@ fn emit_body_encoder(
   input_type: String,
   body_members: List(MemberDef),
 ) -> String {
-  case body_members {
-    [] ->
-      "pub fn encode_"
-      <> snake
-      <> "_body(_input: "
-      <> input_type
-      <> ") -> json.Json {\n  json.object([])\n}\n\n"
-    _ ->
-      "pub fn encode_"
-      <> snake
-      <> "_body(input: "
-      <> input_type
-      <> ") -> json.Json {\n  let pairs = []\n"
-      <> list.fold(body_members, "", fn(acc, m) {
-        acc
-        <> "  let pairs = case input."
-        <> m.snake_name
-        <> " {\n    option.Some(v) -> [#(\""
-        <> m.json_name
-        <> "\", "
-        <> types.json_encoder_member(m.target, m.timestamp_format)
-        <> "(v)), ..pairs]\n    option.None -> pairs\n  }\n"
-      })
-      <> "  json.object(pairs)\n}\n\n"
+  let fn_name = "encode_" <> snake <> "_body"
+  let #(param_name, body) = case body_members {
+    [] -> #(
+      "_input",
+      code.Call(
+        head: code.Ident(name: "json.object"),
+        args: [code.ListLit(items: [], tail: code.CodeNone)],
+      ),
+    )
+    _ -> {
+      let initial =
+        code.Let(
+          name: "pairs",
+          value: code.ListLit(items: [], tail: code.CodeNone),
+        )
+      let updates =
+        list.map(body_members, fn(m) {
+          code.Let(
+            name: "pairs",
+            value: code.Case(
+              scrutinee: code.Ident(name: "input." <> m.snake_name),
+              branches: [
+                code.Branch(
+                  pattern: "option.Some(v)",
+                  body: code.ListLit(
+                    items: [
+                      code.Tuple(items: [
+                        code.StrLit(value: m.json_name),
+                        code.Call(
+                          head: code.Ident(
+                            name: types.json_encoder_member(
+                              m.target,
+                              m.timestamp_format,
+                            ),
+                          ),
+                          args: [code.Ident(name: "v")],
+                        ),
+                      ]),
+                    ],
+                    tail: code.CodeSome(code.Ident(name: "pairs")),
+                  ),
+                ),
+                code.Branch(
+                  pattern: "option.None",
+                  body: code.Ident(name: "pairs"),
+                ),
+              ],
+            ),
+          )
+        })
+      let tail =
+        code.Call(
+          head: code.Ident(name: "json.object"),
+          args: [code.Ident(name: "pairs")],
+        )
+      #("input", code.Block(items: list.append([initial, ..updates], [tail])))
+    }
   }
+  code.render(
+    code.Module(items: [
+      code.Fn(
+        public: True,
+        name: fn_name,
+        params: [code.Param(name: param_name, type_: input_type)],
+        return: code.CodeSome("json.Json"),
+        body: body,
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 /// Emit the per-op `parse_<op>_response`. For outputs whose Smithy
@@ -1419,10 +1734,10 @@ fn op_uses_unsupported_trait(traits: shape.Traits) -> Bool {
 fn http_trait(traits: shape.Traits) -> Option(HttpTrait) {
   case dict.get(traits, ShapeId("smithy.api#http")) {
     Ok(Some(trait.Dict(d))) -> {
-      let method = string_field(d, "method")
-      let uri = string_field(d, "uri")
-      let code = int_field(d, "code", 200)
-      let compression = request_compression_encodings(traits)
+      let method = trait_helpers.string_field(d, "method")
+      let uri = trait_helpers.string_field(d, "uri")
+      let code = trait_helpers.int_field(d, "code", 200)
+      let compression = trait_helpers.request_compression_encodings(traits)
       case method, uri {
         Some(m), Some(u) ->
           Some(HttpTrait(
@@ -1435,37 +1750,6 @@ fn http_trait(traits: shape.Traits) -> Option(HttpTrait) {
       }
     }
     _ -> None
-  }
-}
-
-fn request_compression_encodings(traits: shape.Traits) -> List(String) {
-  case dict.get(traits, ShapeId("smithy.api#requestCompression")) {
-    Ok(Some(trait.Dict(d))) ->
-      case dict.get(d, ShapeId("encodings")) {
-        Ok(trait.List(items)) ->
-          list.filter_map(items, fn(t) {
-            case t {
-              trait.String(s) -> Ok(s)
-              _ -> Error(Nil)
-            }
-          })
-        _ -> []
-      }
-    _ -> []
-  }
-}
-
-fn string_field(d: Dict(ShapeId, Trait), name: String) -> Option(String) {
-  case dict.get(d, ShapeId(name)) {
-    Ok(trait.String(s)) -> Some(s)
-    _ -> None
-  }
-}
-
-fn int_field(d: Dict(ShapeId, Trait), name: String, default: Int) -> Int {
-  case dict.get(d, ShapeId(name)) {
-    Ok(trait.Int(n)) -> n
-    _ -> default
   }
 }
 

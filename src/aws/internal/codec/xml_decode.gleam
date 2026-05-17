@@ -276,3 +276,16 @@ pub fn optional_flat_list(
     entries -> list.try_map(entries, decode) |> result.map(Some)
   }
 }
+
+/// Decode the *inner* portion of a list element — used for nested
+/// lists where the outer caller has already wrapped each entry in
+/// `<member>...</member>` and we need to extract its children as a
+/// sub-list. Returns a bare `List(a)` (not optional) since the
+/// surrounding `optional_list` already gates on presence.
+pub fn inner_list(
+  elem: Element,
+  member_name: String,
+  decode: fn(Element) -> Result(a, String),
+) -> Result(List(a), String) {
+  list.try_map(find_children(elem, member_name), decode)
+}

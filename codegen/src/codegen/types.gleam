@@ -50,13 +50,32 @@ pub type Resolved {
   /// JSON-shaped protocols this field is irrelevant.
   /// `sparse` reflects `@sparse` — sparse lists CAN contain nulls and
   /// surface as `List(Option(T))` so the codec can preserve them.
-  RList(element: Resolved, xml_entry_name: String, sparse: Bool)
+  RList(
+    element: Resolved,
+    xml_entry_name: String,
+    sparse: Bool,
+    /// `@xmlNamespace` on the list's **inner member**. When set,
+    /// each per-entry wrapping element on the wire carries the
+    /// corresponding `xmlns="..."` (or `xmlns:prefix="..."`)
+    /// attribute. This is independent of any namespace on the
+    /// list shape itself, which is dropped when the list is
+    /// flattened.
+    xml_element_namespace: option.Option(#(String, String)),
+  )
   /// Smithy map of K → V. `sparse` reflects `@sparse` — sparse maps
   /// permit null values and surface as `Dict(K, Option(V))`.
   RMap(
     key: Resolved,
     value: Resolved,
     sparse: Bool,
+    /// `@xmlNamespace` on the map's **key member**. When set, the
+    /// `<key>` wrapper on the wire carries `xmlns="..."` / `xmlns:
+    /// prefix="..."`. Distinct from the namespace on the map shape
+    /// itself (carried by `MemberDef.xml_namespace` on whatever
+    /// member references the map).
+    xml_key_namespace: option.Option(#(String, String)),
+    /// `@xmlNamespace` on the map's **value member**, same shape.
+    xml_value_namespace: option.Option(#(String, String)),
     /// `@xmlName` on the map's key member, defaults to `"key"`.
     /// Used by restXml's body emitter for `<key>K</key>` /
     /// `<custom>K</custom>` variants.
@@ -166,6 +185,13 @@ pub type MemberDef {
     /// this to scalar members; the wire form uses `@xmlName` (or
     /// the Smithy member name) as the attribute name.
     xml_attribute: Bool,
+    /// `@xmlNamespace` on the *member* — adds `xmlns:<prefix>=<uri>`
+    /// (or `xmlns=<uri>` when prefix is empty) to the wrapping
+    /// element when the member is serialised in XML. Distinct from
+    /// the shape-level `@xmlNamespace` on `RStruct`: this one
+    /// applies at the member position, regardless of the target
+    /// shape.
+    xml_namespace: option.Option(#(String, String)),
   )
 }
 
@@ -390,9 +416,7 @@ fn xml_name_of(traits: shape.Traits) -> option.Option(String) {
 /// (un-prefixed) namespace. Used by `RStruct` to emit the matching
 /// `xmlns="..."` / `xmlns:prefix="..."` attribute when the shape
 /// becomes a wire wrapper.
-fn xml_namespace_of(
-  traits: shape.Traits,
-) -> option.Option(#(String, String)) {
+fn xml_namespace_of(traits: shape.Traits) -> option.Option(#(String, String)) {
   case dict.get(traits, ShapeId("smithy.api#xmlNamespace")) {
     Ok(option.Some(trait.Dict(d))) -> {
       let uri = case dict.get(d, ShapeId("uri")) {
@@ -462,13 +486,33 @@ pub fn apply_rename(r: Resolved, rename: Dict(String, String)) -> Resolved {
         x
       }
     }
-    RList(element: e, xml_entry_name: xen, sparse: sp) ->
-      RList(element: apply_rename(e, rename), xml_entry_name: xen, sparse: sp)
-    RMap(key: k, value: v, sparse: sp, xml_key_name: kn, xml_value_name: vn) ->
+    RList(
+      element: e,
+      xml_entry_name: xen,
+      sparse: sp,
+      xml_element_namespace: ens,
+    ) ->
+      RList(
+        element: apply_rename(e, rename),
+        xml_entry_name: xen,
+        sparse: sp,
+        xml_element_namespace: ens,
+      )
+    RMap(
+      key: k,
+      value: v,
+      sparse: sp,
+      xml_key_namespace: knp,
+      xml_value_namespace: vnp,
+      xml_key_name: kn,
+      xml_value_name: vn,
+    ) ->
       RMap(
         key: apply_rename(k, rename),
         value: apply_rename(v, rename),
         sparse: sp,
+        xml_key_namespace: knp,
+        xml_value_namespace: vnp,
         xml_key_name: kn,
         xml_value_name: vn,
       )
@@ -553,6 +597,7 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
         element: resolve(model, t),
         xml_entry_name: entry_name,
         sparse: sparse,
+        xml_element_namespace: xml_namespace_of(mem.traits),
       )
     }
     shape.Map(key: k, value: v, traits: mt) -> {
@@ -574,6 +619,8 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
         key: resolve(model, kt),
         value: resolve(model, vt),
         sparse: sparse,
+        xml_key_namespace: xml_namespace_of(k.traits),
+        xml_value_namespace: xml_namespace_of(v.traits),
         xml_key_name: key_name,
         xml_value_name: value_name,
       )
@@ -717,6 +764,7 @@ fn extract_members(
       dict.has_key(mem.traits, ShapeId("smithy.api#xmlFlattened"))
     let xml_attribute =
       dict.has_key(mem.traits, ShapeId("smithy.api#xmlAttribute"))
+    let xml_namespace = xml_namespace_of(mem.traits)
     MemberDef(
       json_name: wire_name,
       snake_name: stringutils.pascal_to_snake(name),
@@ -730,6 +778,7 @@ fn extract_members(
       idempotency_token: idempotency_token,
       xml_flattened: xml_flattened,
       xml_attribute: xml_attribute,
+      xml_namespace: xml_namespace,
     )
   })
 }

@@ -158,3 +158,96 @@ pub fn flat_map(
     )
   })
 }
+
+/// `list_element` variant that carries member-level XML namespace
+/// attributes. `wrapper_attrs` go on the outer wrapping element;
+/// `member_attrs` go on every per-entry wrapping. Either list may
+/// be empty, in which case the corresponding wrapper renders
+/// without attributes — equivalent to `list_element` in that case.
+pub fn list_element_ns(
+  wrapper: String,
+  wrapper_attrs: List(#(String, String)),
+  member_name: String,
+  member_attrs: List(#(String, String)),
+  entries: List(String),
+) -> String {
+  let inner =
+    list.fold(entries, "", fn(acc, entry_inner) {
+      acc <> element_with_attrs(member_name, member_attrs, entry_inner)
+    })
+  element_with_attrs(wrapper, wrapper_attrs, inner)
+}
+
+/// `flat_list` variant with namespace attributes on every emitted
+/// member element. Empty `member_attrs` collapses to a bare element.
+pub fn flat_list_ns(
+  member_name: String,
+  member_attrs: List(#(String, String)),
+  entries: List(String),
+) -> String {
+  list.fold(entries, "", fn(acc, entry_inner) {
+    acc <> element_with_attrs(member_name, member_attrs, entry_inner)
+  })
+}
+
+/// `map_element` variant with namespace attributes on the outer
+/// wrapper plus the key / value wrappers. The intermediate
+/// `<entry>` wrapper is unattributed (Smithy doesn't expose a
+/// trait for it).
+pub fn map_element_ns(
+  wrapper: String,
+  wrapper_attrs: List(#(String, String)),
+  key_name: String,
+  key_attrs: List(#(String, String)),
+  value_name: String,
+  value_attrs: List(#(String, String)),
+  entries: Dict(String, String),
+) -> String {
+  element_with_attrs(
+    wrapper,
+    wrapper_attrs,
+    map_entries_ns(key_name, key_attrs, value_name, value_attrs, entries),
+  )
+}
+
+/// `map_entries` variant with namespace attributes on the key /
+/// value wrappers. Used for nested maps and as the body of
+/// `map_element_ns`.
+pub fn map_entries_ns(
+  key_name: String,
+  key_attrs: List(#(String, String)),
+  value_name: String,
+  value_attrs: List(#(String, String)),
+  entries: Dict(String, String),
+) -> String {
+  dict.fold(entries, "", fn(acc, k, v) {
+    acc
+    <> element(
+      "entry",
+      element_with_attrs(key_name, key_attrs, escape_text(k))
+        <> element_with_attrs(value_name, value_attrs, v),
+    )
+  })
+}
+
+/// `flat_map` variant with namespace attributes on the repeated
+/// member wrappers and on the key / value wrappers inside.
+pub fn flat_map_ns(
+  member_name: String,
+  member_attrs: List(#(String, String)),
+  key_name: String,
+  key_attrs: List(#(String, String)),
+  value_name: String,
+  value_attrs: List(#(String, String)),
+  entries: Dict(String, String),
+) -> String {
+  dict.fold(entries, "", fn(acc, k, v) {
+    acc
+    <> element_with_attrs(
+      member_name,
+      member_attrs,
+      element_with_attrs(key_name, key_attrs, escape_text(k))
+        <> element_with_attrs(value_name, value_attrs, v),
+    )
+  })
+}

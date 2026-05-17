@@ -20,20 +20,19 @@ import codegen/code
 import codegen/dispatcher
 import codegen/named_shapes
 import codegen/struct_codec
+import codegen/trait_helpers
 import codegen/types.{
   type MemberDef, type Resolved, REnum, RIntEnum, RList, RMap, RStruct, RUnion,
 }
 import gleam/dict
 import gleam/list
 import gleam/option
-import gleam/result
 import gleam/set.{type Set}
 import gleam/string
 import internal/stringutils
 import smithy/model.{type Model}
 import smithy/shape
 import smithy/shape_id.{ShapeId}
-import smithy/trait
 
 pub type Protocol {
   AwsJson10
@@ -69,7 +68,7 @@ pub fn emit_service(
     Error(_) -> Error("service not found: " <> service_id)
     Ok(shape.Service(operations: refs, traits: svc_traits, ..)) -> {
       let service_target = strip_namespace(service_id)
-      let metadata = service_metadata(svc_traits, service_target)
+      let metadata = trait_helpers.service_metadata(svc_traits, service_target)
       // Walk each operation's input / output; keep only ops whose
       // shapes resolve cleanly (no Unsupported anywhere). Each entry
       // also carries the operation's `errors` list (Smithy error
@@ -170,10 +169,6 @@ pub fn emit_service(
   }
 }
 
-type Metadata {
-  Metadata(service_local: String, endpoint_prefix: String, signing_name: String)
-}
-
 type OpSpec {
   OpSpec(
     op_id: String,
@@ -188,63 +183,34 @@ type OpSpec {
   )
 }
 
-/// Extract per-service metadata from the service shape's traits.
-/// `aws.api#service.endpointPrefix` and `aws.auth#sigv4.name` are
-/// what the runtime needs to build endpoint URLs and sign requests.
-fn service_metadata(traits: shape.Traits, service_local: String) -> Metadata {
-  let endpoint_prefix =
-    string_field_under(traits, "aws.api#service", "endpointPrefix")
-    |> result.unwrap(string.lowercase(service_local))
-  let signing_name =
-    string_field_under(traits, "aws.auth#sigv4", "name")
-    |> result.unwrap(endpoint_prefix)
-  Metadata(
-    service_local: service_local,
-    endpoint_prefix: endpoint_prefix,
-    signing_name: signing_name,
-  )
-}
+// `Metadata`, `service_metadata`, `string_field_under` live in
+// `codegen/trait_helpers.gleam` — see Pass 4 in plan.md.
 
-fn string_field_under(
-  traits: shape.Traits,
-  trait_id: String,
-  field: String,
-) -> Result(String, Nil) {
-  case dict.get(traits, ShapeId(trait_id)) {
-    Ok(option.Some(trait.Dict(d))) ->
-      case dict.get(d, ShapeId(field)) {
-        Ok(trait.String(s)) -> Ok(s)
-        _ -> Error(Nil)
-      }
-    _ -> Error(Nil)
-  }
-}
-
-fn emit_client(metadata: Metadata) -> String {
+fn emit_client(metadata: trait_helpers.Metadata) -> String {
   client.render(metadata.endpoint_prefix, metadata.signing_name)
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
   let err_type = spec.local <> "Error"
-  code.render(code.Module(items: [
-    code.DocComment([
-      "Invoke "
-        <> spec.local
-        <> ". Signs the request with SigV4 and dispatches via the configured",
-      "HTTP transport. Service errors come back as typed `"
-        <> err_type
-        <> "`",
-      "variants; transport, decode, and credentials failures all collapse",
-      "into the generic `" <> err_type <> "Transport` variant.",
+  code.render(
+    code.Module(items: [
+      code.DocComment([
+        "Invoke "
+          <> spec.local
+          <> ". Signs the request with SigV4 and dispatches via the configured",
+        "HTTP transport. Service errors come back as typed `" <> err_type <> "`",
+        "variants; transport, decode, and credentials failures all collapse",
+        "into the generic `" <> err_type <> "Transport` variant.",
+      ]),
+      client.invoke_fn(
+        spec.snake,
+        spec.local,
+        spec.in_info.type_name,
+        spec.out_info.type_name,
+      ),
+      code.Blank,
     ]),
-    client.invoke_fn(
-      spec.snake,
-      spec.local,
-      spec.in_info.type_name,
-      spec.out_info.type_name,
-    ),
-    code.Blank,
-  ]))
+  )
 }
 
 fn resolve_or_unit(model: Model, id: String) -> Resolved {
@@ -451,20 +417,34 @@ fn emit_operation_with(
 /// have a typed variant for.
 fn emit_error_type(spec: OpSpec) -> String {
   let name = spec.local <> "Error"
-  let variants =
-    list.fold(spec.error_ids, "", fn(acc, err_id) {
+  let typed_variants =
+    list.map(spec.error_ids, fn(err_id) {
       let local = strip_namespace(err_id)
-      acc <> "  " <> name <> local <> "(value: " <> local <> ")\n"
+      code.Variant(name: name <> local, fields: [
+        code.Param(name: "value", type_: local),
+      ])
     })
-  "pub type "
-  <> name
-  <> " {\n"
-  <> variants
-  <> "  "
-  <> name
-  <> "Transport(reason: String)\n  "
-  <> name
-  <> "Unknown(error_type: String, status: Int, body: String)\n}\n\n"
+  let fallback_variants = [
+    code.Variant(name: name <> "Transport", fields: [
+      code.Param(name: "reason", type_: "String"),
+    ]),
+    code.Variant(name: name <> "Unknown", fields: [
+      code.Param(name: "error_type", type_: "String"),
+      code.Param(name: "status", type_: "Int"),
+      code.Param(name: "body", type_: "String"),
+    ]),
+  ]
+  code.render(
+    code.Module(items: [
+      code.TypeDef(
+        public: True,
+        is_opaque: False,
+        name: name,
+        variants: list.append(typed_variants, fallback_variants),
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 /// Emit `translate_<op>_error` — maps `runtime.ClientError`
@@ -482,38 +462,65 @@ fn emit_error_type(spec: OpSpec) -> String {
 fn emit_error_translator(spec: OpSpec) -> String {
   let name = spec.local <> "Error"
   let snake = spec.snake
-  let decoders = case spec.error_ids {
-    [] -> "[]"
-    _ -> {
-      let entries =
-        list.fold(spec.error_ids, "", fn(acc, err_id) {
-          let local = strip_namespace(err_id)
-          let err_snake = stringutils.pascal_to_snake(local)
-          acc <> "    #(\"" <> local <> "\", fn(body) {
-      case json.parse(body, decode_" <> err_snake <> "_struct()) {
-        Ok(v) -> Ok(" <> name <> local <> "(value: v))
+  let decoder_entries =
+    list.map(spec.error_ids, fn(err_id) {
+      let local = strip_namespace(err_id)
+      let err_snake = stringutils.pascal_to_snake(local)
+      code.Tuple(items: [
+        code.StrLit(value: local),
+        code.Raw(
+          fragment: "fn(body) {
+      case json.parse(body, decode_"
+            <> err_snake
+            <> "_struct()) {
+        Ok(v) -> Ok("
+            <> name
+            <> local
+            <> "(value: v))
         Error(_) -> Error(Nil)
       }
-    }),
-"
-        })
-      "[\n" <> entries <> "  ]"
-    }
-  }
-  "fn " <> snake <> "_error_decoders() {
-  " <> decoders <> "
-}
-
-fn translate_" <> snake <> "_error(err: runtime.ClientError) -> " <> name <> " {
-  runtime.translate_service_error(
-    err,
-    " <> snake <> "_error_decoders(),
-    fn(reason) { " <> name <> "Transport(reason: reason) },
-    fn(et, s, body) { " <> name <> "Unknown(error_type: et, status: s, body: body) },
+    }",
+        ),
+      ])
+    })
+  let decoders_fn =
+    code.Fn(
+      public: False,
+      name: snake <> "_error_decoders",
+      params: [],
+      return: code.CodeNone,
+      body: code.ListLit(items: decoder_entries, tail: code.CodeNone),
+    )
+  let translate_fn =
+    code.Fn(
+      public: False,
+      name: "translate_" <> snake <> "_error",
+      params: [code.Param(name: "err", type_: "runtime.ClientError")],
+      return: code.CodeSome(name),
+      body: code.Call(
+        head: code.Ident(name: "runtime.translate_service_error"),
+        args: [
+          code.Ident(name: "err"),
+          code.Call(
+            head: code.Ident(name: snake <> "_error_decoders"),
+            args: [],
+          ),
+          code.Raw(
+            fragment: "fn(reason) { "
+              <> name
+              <> "Transport(reason: reason) }",
+          ),
+          code.Raw(
+            fragment: "fn(et, s, body) { "
+              <> name
+              <> "Unknown(error_type: et, status: s, body: body) }",
+          ),
+        ],
+      ),
+    )
+  code.render(
+    code.Module(items: [decoders_fn, code.Blank, translate_fn, code.Blank]),
   )
-}
-
-"
 }
 
 fn emit_operation_body(
@@ -645,13 +652,42 @@ fn emit_parse_via_decoder(
   type_name: String,
   decoder_fn: String,
 ) -> String {
-  "pub fn "
-  <> fn_name
-  <> "(body: String) -> Result("
-  <> type_name
-  <> ", String) {\n  case json.parse(body, "
-  <> decoder_fn
-  <> "()) {\n    Ok(v) -> Ok(v)\n    Error(_) -> Error(\"decode failed\")\n  }\n}\n\n"
+  code.render(
+    code.Module(items: [
+      code.Fn(
+        public: True,
+        name: fn_name,
+        params: [code.Param(name: "body", type_: "String")],
+        return: code.CodeSome("Result(" <> type_name <> ", String)"),
+        body: code.Case(
+          scrutinee: code.Call(
+            head: code.Ident(name: "json.parse"),
+            args: [
+              code.Ident(name: "body"),
+              code.Call(head: code.Ident(name: decoder_fn), args: []),
+            ],
+          ),
+          branches: [
+            code.Branch(
+              pattern: "Ok(v)",
+              body: code.Call(
+                head: code.Ident(name: "Ok"),
+                args: [code.Ident(name: "v")],
+              ),
+            ),
+            code.Branch(
+              pattern: "Error(_)",
+              body: code.Call(
+                head: code.Ident(name: "Error"),
+                args: [code.StrLit(value: "decode failed")],
+              ),
+            ),
+          ],
+        ),
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 type IOTypeInfo {
@@ -702,43 +738,57 @@ fn emit_union_def(name: String, members: List(MemberDef)) -> String {
 
 fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
   let snake = stringutils.pascal_to_snake(name)
-  let enc =
-    "pub fn encode_"
-    <> snake
-    <> "_enum(v: "
-    <> name
-    <> ") -> json.Json {\n  case v {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "    "
-      <> v.gleam_ctor
-      <> " -> json.string(\""
-      <> v.wire_value
-      <> "\")\n"
-    })
-    <> "  }\n}\n\n"
   let first_ctor = case variants {
     [v, ..] -> v.gleam_ctor
     [] -> name <> "Unknown"
   }
+  let enc =
+    code.Fn(
+      public: True,
+      name: "encode_" <> snake <> "_enum",
+      params: [code.Param(name: "v", type_: name)],
+      return: code.CodeSome("json.Json"),
+      body: code.Case(
+        scrutinee: code.Ident(name: "v"),
+        branches: list.map(variants, fn(v) {
+          code.Branch(
+            pattern: v.gleam_ctor,
+            body: code.Call(
+              head: code.Ident(name: "json.string"),
+              args: [code.StrLit(value: v.wire_value)],
+            ),
+          )
+        }),
+      ),
+    )
   let dec =
-    "pub fn decode_"
-    <> snake
-    <> "_enum() -> decode.Decoder("
-    <> name
-    <> ") {\n  decode.then(decode.string, fn(s) {\n    case s {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "      \""
-      <> v.wire_value
-      <> "\" -> decode.success("
-      <> v.gleam_ctor
-      <> ")\n"
-    })
-    <> "      _ -> decode.failure("
-    <> first_ctor
-    <> ", \"unknown enum value\")\n    }\n  })\n}\n\n"
-  enc <> dec
+    code.Fn(
+      public: True,
+      name: "decode_" <> snake <> "_enum",
+      params: [],
+      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      body: code.Call(
+        head: code.Ident(name: "decode.then"),
+        args: [
+          code.Ident(name: "decode.string"),
+          code.Raw(
+            fragment: "fn(s) {\n    case s {\n"
+              <> list.fold(variants, "", fn(acc, v) {
+                acc
+                <> "      \""
+                <> v.wire_value
+                <> "\" -> decode.success("
+                <> v.gleam_ctor
+                <> ")\n"
+              })
+              <> "      _ -> decode.failure("
+              <> first_ctor
+              <> ", \"unknown enum value\")\n    }\n  }",
+          ),
+        ],
+      ),
+    )
+  code.render(code.Module(items: [enc, code.Blank, dec, code.Blank]))
 }
 
 fn emit_int_enum_codec(
@@ -746,43 +796,57 @@ fn emit_int_enum_codec(
   variants: List(types.IntEnumVariant),
 ) -> String {
   let snake = stringutils.pascal_to_snake(name)
-  let enc =
-    "pub fn encode_"
-    <> snake
-    <> "_int_enum(v: "
-    <> name
-    <> ") -> json.Json {\n  case v {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "    "
-      <> v.gleam_ctor
-      <> " -> json.int("
-      <> stringutils.int_to_string(v.wire_value)
-      <> ")\n"
-    })
-    <> "  }\n}\n\n"
   let first_ctor = case variants {
     [v, ..] -> v.gleam_ctor
     [] -> name <> "Unknown"
   }
+  let enc =
+    code.Fn(
+      public: True,
+      name: "encode_" <> snake <> "_int_enum",
+      params: [code.Param(name: "v", type_: name)],
+      return: code.CodeSome("json.Json"),
+      body: code.Case(
+        scrutinee: code.Ident(name: "v"),
+        branches: list.map(variants, fn(v) {
+          code.Branch(
+            pattern: v.gleam_ctor,
+            body: code.Call(
+              head: code.Ident(name: "json.int"),
+              args: [code.IntLit(value: v.wire_value)],
+            ),
+          )
+        }),
+      ),
+    )
   let dec =
-    "pub fn decode_"
-    <> snake
-    <> "_int_enum() -> decode.Decoder("
-    <> name
-    <> ") {\n  decode.then(decode.int, fn(n) {\n    case n {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "      "
-      <> stringutils.int_to_string(v.wire_value)
-      <> " -> decode.success("
-      <> v.gleam_ctor
-      <> ")\n"
-    })
-    <> "      _ -> decode.failure("
-    <> first_ctor
-    <> ", \"unknown int enum value\")\n    }\n  })\n}\n\n"
-  enc <> dec
+    code.Fn(
+      public: True,
+      name: "decode_" <> snake <> "_int_enum",
+      params: [],
+      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      body: code.Call(
+        head: code.Ident(name: "decode.then"),
+        args: [
+          code.Ident(name: "decode.int"),
+          code.Raw(
+            fragment: "fn(n) {\n    case n {\n"
+              <> list.fold(variants, "", fn(acc, v) {
+                acc
+                <> "      "
+                <> stringutils.int_to_string(v.wire_value)
+                <> " -> decode.success("
+                <> v.gleam_ctor
+                <> ")\n"
+              })
+              <> "      _ -> decode.failure("
+              <> first_ctor
+              <> ", \"unknown int enum value\")\n    }\n  }",
+          ),
+        ],
+      ),
+    )
+  code.render(code.Module(items: [enc, code.Blank, dec, code.Blank]))
 }
 
 fn emit_struct_codec(

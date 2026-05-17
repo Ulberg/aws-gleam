@@ -29,22 +29,22 @@ import codegen/code
 import codegen/dispatcher
 import codegen/named_shapes
 import codegen/struct_codec
+import codegen/trait_helpers
 import codegen/types.{
   type MemberDef, type Resolved, Body, Header, Label, Payload, PrefixHeaders,
   Query, QueryParams, RBlob, RDocument, REnum, RIntEnum, RList, RMap, RPrim,
   RStruct, RTimestamp, RUnion, RUnit, Unsupported,
 }
-import gleam/dict.{type Dict}
+import gleam/dict
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleam/result
 import gleam/set.{type Set}
 import gleam/string
 import internal/stringutils
 import smithy/model.{type Model}
 import smithy/shape
-import smithy/shape_id.{type ShapeId, ShapeId}
-import smithy/trait.{type Trait}
+import smithy/shape_id.{ShapeId}
+import smithy/trait
 
 pub type EmitResult {
   EmitResult(
@@ -67,7 +67,7 @@ pub fn emit_service(
     Error(_) -> Error("service not found: " <> service_id)
     Ok(shape.Service(operations: refs, traits: svc_traits, ..)) -> {
       let service_local = strip_namespace(service_id)
-      let metadata = service_metadata(svc_traits, service_local)
+      let metadata = trait_helpers.service_metadata(svc_traits, service_local)
       let resolved_ops =
         list.filter_map(refs, fn(ref) {
           let ShapeId(target) = ref.target
@@ -169,10 +169,6 @@ pub fn emit_service(
   }
 }
 
-type Metadata {
-  Metadata(service_local: String, endpoint_prefix: String, signing_name: String)
-}
-
 type OpSpec {
   OpSpec(
     op_id: String,
@@ -184,49 +180,22 @@ type OpSpec {
   )
 }
 
-fn service_metadata(traits: shape.Traits, service_local: String) -> Metadata {
-  let endpoint_prefix =
-    string_field_under(traits, "aws.api#service", "endpointPrefix")
-    |> result.unwrap(string.lowercase(service_local))
-  let signing_name =
-    string_field_under(traits, "aws.auth#sigv4", "name")
-    |> result.unwrap(endpoint_prefix)
-  Metadata(
-    service_local: service_local,
-    endpoint_prefix: endpoint_prefix,
-    signing_name: signing_name,
-  )
-}
-
-fn string_field_under(
-  traits: shape.Traits,
-  trait_id: String,
-  field: String,
-) -> Result(String, Nil) {
-  case dict.get(traits, ShapeId(trait_id)) {
-    Ok(Some(trait.Dict(d))) ->
-      case dict.get(d, ShapeId(field)) {
-        Ok(trait.String(s)) -> Ok(s)
-        _ -> Error(Nil)
-      }
-    _ -> Error(Nil)
-  }
-}
-
-fn emit_client(metadata: Metadata) -> String {
+fn emit_client(metadata: trait_helpers.Metadata) -> String {
   client.render(metadata.endpoint_prefix, metadata.signing_name)
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
-  code.render(code.Module(items: [
-    client.invoke_fn(
-      spec.snake,
-      spec.local,
-      spec.in_info.type_name,
-      spec.out_info.type_name,
-    ),
-    code.Blank,
-  ]))
+  code.render(
+    code.Module(items: [
+      client.invoke_fn(
+        spec.snake,
+        spec.local,
+        spec.in_info.type_name,
+        spec.out_info.type_name,
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 /// restXml typed-error enum + translator. restXml errors come back
@@ -239,20 +208,34 @@ fn emit_invoke(spec: OpSpec) -> String {
 /// which still carries the raw body so callers aren't stuck.
 fn emit_error_type(spec: OpSpec) -> String {
   let name = spec.local <> "Error"
-  let variants =
-    list.fold(spec.error_ids, "", fn(acc, err_id) {
+  let typed_variants =
+    list.map(spec.error_ids, fn(err_id) {
       let local = strip_namespace(err_id)
-      acc <> "  " <> name <> local <> "(value: " <> local <> ")\n"
+      code.Variant(name: name <> local, fields: [
+        code.Param(name: "value", type_: local),
+      ])
     })
-  "pub type "
-  <> name
-  <> " {\n"
-  <> variants
-  <> "  "
-  <> name
-  <> "Transport(reason: String)\n  "
-  <> name
-  <> "Unknown(error_type: String, status: Int, body: String)\n}\n\n"
+  let fallback_variants = [
+    code.Variant(name: name <> "Transport", fields: [
+      code.Param(name: "reason", type_: "String"),
+    ]),
+    code.Variant(name: name <> "Unknown", fields: [
+      code.Param(name: "error_type", type_: "String"),
+      code.Param(name: "status", type_: "Int"),
+      code.Param(name: "body", type_: "String"),
+    ]),
+  ]
+  code.render(
+    code.Module(items: [
+      code.TypeDef(
+        public: True,
+        is_opaque: False,
+        name: name,
+        variants: list.append(typed_variants, fallback_variants),
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 /// See `awsjson.emit_error_translator` for the table-style design.
@@ -264,24 +247,52 @@ fn emit_error_type(spec: OpSpec) -> String {
 fn emit_error_translator(spec: OpSpec) -> String {
   let name = spec.local <> "Error"
   let snake = spec.snake
-  "fn " <> snake <> "_error_decoders() {
-  []
-}
-
-fn translate_" <> snake <> "_error(err: runtime.ClientError) -> " <> name <> " {
-  runtime.translate_service_error(
-    err,
-    " <> snake <> "_error_decoders(),
-    fn(reason) { " <> name <> "Transport(reason: reason) },
-    fn(et, s, body) { " <> name <> "Unknown(error_type: et, status: s, body: body) },
+  let decoders_fn =
+    code.Fn(
+      public: False,
+      name: snake <> "_error_decoders",
+      params: [],
+      return: code.CodeNone,
+      body: code.ListLit(items: [], tail: code.CodeNone),
+    )
+  let translate_fn =
+    code.Fn(
+      public: False,
+      name: "translate_" <> snake <> "_error",
+      params: [code.Param(name: "err", type_: "runtime.ClientError")],
+      return: code.CodeSome(name),
+      body: code.Call(
+        head: code.Ident(name: "runtime.translate_service_error"),
+        args: [
+          code.Ident(name: "err"),
+          code.Call(
+            head: code.Ident(name: snake <> "_error_decoders"),
+            args: [],
+          ),
+          code.Raw(
+            fragment: "fn(reason) { "
+              <> name
+              <> "Transport(reason: reason) }",
+          ),
+          code.Raw(
+            fragment: "fn(et, s, body) { "
+              <> name
+              <> "Unknown(error_type: et, status: s, body: body) }",
+          ),
+        ],
+      ),
+    )
+  code.render(
+    code.Module(items: [decoders_fn, code.Blank, translate_fn, code.Blank]),
   )
 }
 
-"
-}
-
 type HttpTrait {
-  HttpTrait(method: String, uri: String, code: Int)
+  /// `compression` carries the `@requestCompression` encodings
+  /// list, e.g. `["gzip"]`. When non-empty the SDK appends each
+  /// encoding to the request's `Content-Encoding` header
+  /// (Smithy `SDKAppliedContentEncoding` protocol test).
+  HttpTrait(method: String, uri: String, code: Int, compression: List(String))
 }
 
 fn resolve_or_unit(model: Model, id: String) -> Resolved {
@@ -451,7 +462,7 @@ fn collect_struct_refs(r: Resolved, acc: Set(String)) -> Set(String) {
 
 fn fixpoint_struct_refs(
   model: Model,
-  struct_index: Dict(String, String),
+  struct_index: dict.Dict(String, String),
   seeds: Set(String),
 ) -> Set(String) {
   let next =
@@ -573,28 +584,38 @@ fn emit_body_encoder_xml(
     False, Some(s) -> s
     False, None -> input_type
   }
-  case synthesised {
-    True ->
-      "pub fn encode_"
-      <> snake
-      <> "_body_xml(_input: "
-      <> input_type
-      <> ") -> String {\n  xml.empty_element(\""
-      <> root
-      <> "\")\n}\n\n"
+  let fn_name = "encode_" <> snake <> "_body_xml"
+  let #(param_name, body) = case synthesised {
+    True -> #(
+      "_input",
+      code.Call(
+        head: code.Ident(name: "xml.empty_element"),
+        args: [code.StrLit(value: root)],
+      ),
+    )
     False -> {
       let input_snake = stringutils.pascal_to_snake(input_type)
-      "pub fn encode_"
-      <> snake
-      <> "_body_xml(input: "
-      <> input_type
-      <> ") -> String {\n  encode_"
-      <> input_snake
-      <> "_xml(input, \""
-      <> root
-      <> "\")\n}\n\n"
+      #(
+        "input",
+        code.Call(
+          head: code.Ident(name: "encode_" <> input_snake <> "_xml"),
+          args: [code.Ident(name: "input"), code.StrLit(value: root)],
+        ),
+      )
     }
   }
+  code.render(
+    code.Module(items: [
+      code.Fn(
+        public: True,
+        name: fn_name,
+        params: [code.Param(name: param_name, type_: input_type)],
+        return: code.CodeSome("String"),
+        body: body,
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 fn emit_parse_via_decoder(
@@ -602,13 +623,42 @@ fn emit_parse_via_decoder(
   type_name: String,
   decoder_fn: String,
 ) -> String {
-  "pub fn "
-  <> fn_name
-  <> "(body: String) -> Result("
-  <> type_name
-  <> ", String) {\n  case json.parse(body, "
-  <> decoder_fn
-  <> "()) {\n    Ok(v) -> Ok(v)\n    Error(_) -> Error(\"decode failed\")\n  }\n}\n\n"
+  code.render(
+    code.Module(items: [
+      code.Fn(
+        public: True,
+        name: fn_name,
+        params: [code.Param(name: "body", type_: "String")],
+        return: code.CodeSome("Result(" <> type_name <> ", String)"),
+        body: code.Case(
+          scrutinee: code.Call(
+            head: code.Ident(name: "json.parse"),
+            args: [
+              code.Ident(name: "body"),
+              code.Call(head: code.Ident(name: decoder_fn), args: []),
+            ],
+          ),
+          branches: [
+            code.Branch(
+              pattern: "Ok(v)",
+              body: code.Call(
+                head: code.Ident(name: "Ok"),
+                args: [code.Ident(name: "v")],
+              ),
+            ),
+            code.Branch(
+              pattern: "Error(_)",
+              body: code.Call(
+                head: code.Ident(name: "Error"),
+                args: [code.StrLit(value: "decode failed")],
+              ),
+            ),
+          ],
+        ),
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 type IOTypeInfo {
@@ -700,75 +750,104 @@ fn emit_enum_codec(
   is_dispatcher: Bool,
 ) -> String {
   let snake = stringutils.pascal_to_snake(name)
+  let first_ctor = case variants {
+    [v, ..] -> v.gleam_ctor
+    [] -> name <> "Unknown"
+  }
   // JSON enum encoder stays — it's reached from `encode_<X>_xml*`
   // (wire path) for enum-typed members. The JSON decoder is only
   // ever called from `decode_<X>_struct_params`, which is itself
   // dispatcher-only, so its emission is gated on the same flag.
   let enc =
-    "pub fn encode_"
-    <> snake
-    <> "_enum(v: "
-    <> name
-    <> ") -> json.Json {\n  case v {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "    "
-      <> v.gleam_ctor
-      <> " -> json.string(\""
-      <> v.wire_value
-      <> "\")\n"
-    })
-    <> "  }\n}\n\n"
+    code.Fn(
+      public: True,
+      name: "encode_" <> snake <> "_enum",
+      params: [code.Param(name: "v", type_: name)],
+      return: code.CodeSome("json.Json"),
+      body: code.Case(
+        scrutinee: code.Ident(name: "v"),
+        branches: list.map(variants, fn(v) {
+          code.Branch(
+            pattern: v.gleam_ctor,
+            body: code.Call(
+              head: code.Ident(name: "json.string"),
+              args: [code.StrLit(value: v.wire_value)],
+            ),
+          )
+        }),
+      ),
+    )
   // Inverse wire→Gleam helper for XML response decoders. Sentinel-
   // first variant gets returned on unknown wire values so callers
   // can still pattern-match exhaustively.
-  let first_ctor = case variants {
-    [v, ..] -> v.gleam_ctor
-    [] -> name <> "Unknown"
-  }
   let from_wire =
-    "pub fn "
-    <> snake
-    <> "_from_wire(s: String) -> Result("
-    <> name
-    <> ", String) {\n  case s {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "    \""
-      <> v.wire_value
-      <> "\" -> Ok("
-      <> v.gleam_ctor
-      <> ")\n"
-    })
-    <> "    _ -> Ok("
-    <> first_ctor
-    <> ")\n  }\n}\n\n"
-  let dec = case is_dispatcher {
+    code.Fn(
+      public: True,
+      name: snake <> "_from_wire",
+      params: [code.Param(name: "s", type_: "String")],
+      return: code.CodeSome("Result(" <> name <> ", String)"),
+      body: code.Case(
+        scrutinee: code.Ident(name: "s"),
+        branches: list.append(
+          list.map(variants, fn(v) {
+            code.Branch(
+              pattern: "\"" <> v.wire_value <> "\"",
+              body: code.Call(
+                head: code.Ident(name: "Ok"),
+                args: [code.Ident(name: v.gleam_ctor)],
+              ),
+            )
+          }),
+          [
+            code.Branch(
+              pattern: "_",
+              body: code.Call(
+                head: code.Ident(name: "Ok"),
+                args: [code.Ident(name: first_ctor)],
+              ),
+            ),
+          ],
+        ),
+      ),
+    )
+  let dec_items = case is_dispatcher {
     True -> {
-      let first_ctor = case variants {
-        [v, ..] -> v.gleam_ctor
-        [] -> name <> "Unknown"
-      }
-      "pub fn decode_"
-      <> snake
-      <> "_enum() -> decode.Decoder("
-      <> name
-      <> ") {\n  decode.then(decode.string, fn(s) {\n    case s {\n"
-      <> list.fold(variants, "", fn(acc, v) {
-        acc
-        <> "      \""
-        <> v.wire_value
-        <> "\" -> decode.success("
-        <> v.gleam_ctor
-        <> ")\n"
-      })
-      <> "      _ -> decode.failure("
-      <> first_ctor
-      <> ", \"unknown enum value\")\n    }\n  })\n}\n\n"
+      let dec_fn =
+        code.Fn(
+          public: True,
+          name: "decode_" <> snake <> "_enum",
+          params: [],
+          return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+          body: code.Call(
+            head: code.Ident(name: "decode.then"),
+            args: [
+              code.Ident(name: "decode.string"),
+              code.Raw(
+                fragment: "fn(s) {\n    case s {\n"
+                  <> list.fold(variants, "", fn(acc, v) {
+                    acc
+                    <> "      \""
+                    <> v.wire_value
+                    <> "\" -> decode.success("
+                    <> v.gleam_ctor
+                    <> ")\n"
+                  })
+                  <> "      _ -> decode.failure("
+                  <> first_ctor
+                  <> ", \"unknown enum value\")\n    }\n  }",
+              ),
+            ],
+          ),
+        )
+      [code.Blank, dec_fn, code.Blank]
     }
-    False -> ""
+    False -> []
   }
-  enc <> from_wire <> dec
+  code.render(
+    code.Module(
+      items: list.append([enc, code.Blank, from_wire, code.Blank], dec_items),
+    ),
+  )
 }
 
 fn emit_int_enum_codec(
@@ -776,76 +855,115 @@ fn emit_int_enum_codec(
   variants: List(types.IntEnumVariant),
 ) -> String {
   let snake = stringutils.pascal_to_snake(name)
-  let int_value =
-    "pub fn "
-    <> snake
-    <> "_int_value(v: "
-    <> name
-    <> ") -> Int {\n  case v {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "    "
-      <> v.gleam_ctor
-      <> " -> "
-      <> stringutils.int_to_string(v.wire_value)
-      <> "\n"
-    })
-    <> "  }\n}\n\n"
-  let enc =
-    "pub fn encode_"
-    <> snake
-    <> "_int_enum(v: "
-    <> name
-    <> ") -> json.Json {\n  case v {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "    "
-      <> v.gleam_ctor
-      <> " -> json.int("
-      <> stringutils.int_to_string(v.wire_value)
-      <> ")\n"
-    })
-    <> "  }\n}\n\n"
   let first_ctor = case variants {
     [v, ..] -> v.gleam_ctor
     [] -> name <> "Unknown"
   }
+  let int_value =
+    code.Fn(
+      public: True,
+      name: snake <> "_int_value",
+      params: [code.Param(name: "v", type_: name)],
+      return: code.CodeSome("Int"),
+      body: code.Case(
+        scrutinee: code.Ident(name: "v"),
+        branches: list.map(variants, fn(v) {
+          code.Branch(
+            pattern: v.gleam_ctor,
+            body: code.IntLit(value: v.wire_value),
+          )
+        }),
+      ),
+    )
+  let enc =
+    code.Fn(
+      public: True,
+      name: "encode_" <> snake <> "_int_enum",
+      params: [code.Param(name: "v", type_: name)],
+      return: code.CodeSome("json.Json"),
+      body: code.Case(
+        scrutinee: code.Ident(name: "v"),
+        branches: list.map(variants, fn(v) {
+          code.Branch(
+            pattern: v.gleam_ctor,
+            body: code.Call(
+              head: code.Ident(name: "json.int"),
+              args: [code.IntLit(value: v.wire_value)],
+            ),
+          )
+        }),
+      ),
+    )
   let dec =
-    "pub fn decode_"
-    <> snake
-    <> "_int_enum() -> decode.Decoder("
-    <> name
-    <> ") {\n  decode.then(decode.int, fn(n) {\n    case n {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "      "
-      <> stringutils.int_to_string(v.wire_value)
-      <> " -> decode.success("
-      <> v.gleam_ctor
-      <> ")\n"
-    })
-    <> "      _ -> decode.failure("
-    <> first_ctor
-    <> ", \"unknown int enum value\")\n    }\n  })\n}\n\n"
+    code.Fn(
+      public: True,
+      name: "decode_" <> snake <> "_int_enum",
+      params: [],
+      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      body: code.Call(
+        head: code.Ident(name: "decode.then"),
+        args: [
+          code.Ident(name: "decode.int"),
+          code.Raw(
+            fragment: "fn(n) {\n    case n {\n"
+              <> list.fold(variants, "", fn(acc, v) {
+                acc
+                <> "      "
+                <> stringutils.int_to_string(v.wire_value)
+                <> " -> decode.success("
+                <> v.gleam_ctor
+                <> ")\n"
+              })
+              <> "      _ -> decode.failure("
+              <> first_ctor
+              <> ", \"unknown int enum value\")\n    }\n  }",
+          ),
+        ],
+      ),
+    )
   // Inverse Int → Gleam helper for XML response decoders.
   let from_int =
-    "pub fn "
-    <> snake
-    <> "_from_int(n: Int) -> Result("
-    <> name
-    <> ", String) {\n  case n {\n"
-    <> list.fold(variants, "", fn(acc, v) {
-      acc
-      <> "    "
-      <> stringutils.int_to_string(v.wire_value)
-      <> " -> Ok("
-      <> v.gleam_ctor
-      <> ")\n"
-    })
-    <> "    _ -> Ok("
-    <> first_ctor
-    <> ")\n  }\n}\n\n"
-  int_value <> enc <> from_int <> dec
+    code.Fn(
+      public: True,
+      name: snake <> "_from_int",
+      params: [code.Param(name: "n", type_: "Int")],
+      return: code.CodeSome("Result(" <> name <> ", String)"),
+      body: code.Case(
+        scrutinee: code.Ident(name: "n"),
+        branches: list.append(
+          list.map(variants, fn(v) {
+            code.Branch(
+              pattern: stringutils.int_to_string(v.wire_value),
+              body: code.Call(
+                head: code.Ident(name: "Ok"),
+                args: [code.Ident(name: v.gleam_ctor)],
+              ),
+            )
+          }),
+          [
+            code.Branch(
+              pattern: "_",
+              body: code.Call(
+                head: code.Ident(name: "Ok"),
+                args: [code.Ident(name: first_ctor)],
+              ),
+            ),
+          ],
+        ),
+      ),
+    )
+  code.render(
+    code.Module(items: [
+      int_value,
+      code.Blank,
+      enc,
+      code.Blank,
+      from_int,
+      code.Blank,
+      dec,
+      code.Blank,
+    ]),
+  )
 }
 
 fn emit_struct_codec(
@@ -1035,24 +1153,7 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> String {
       <> "_xml)"
     RUnion(gleam_name: gn, ..) -> emit_unsupported_decoder(gn)
     RList(element: e, xml_entry_name: entry, ..) -> {
-      let inner_decoder = case e {
-        RPrim(primitive: types.PString) -> "xml_decode.string_text"
-        RPrim(primitive: types.PInt) -> "xml_decode.int_text"
-        RPrim(primitive: types.PBool) -> "xml_decode.bool_text"
-        RPrim(primitive: types.PFloat) -> "xml_decode.float_text"
-        RTimestamp -> "xml_decode.timestamp_text"
-        RStruct(local_name: n, ..) ->
-          "decode_" <> stringutils.pascal_to_snake(n) <> "_xml"
-        REnum(local_name: n, ..) ->
-          "fn(e) { case xml_decode.string_text(e) { Ok(s) -> "
-          <> stringutils.pascal_to_snake(n)
-          <> "_from_wire(s) Error(r) -> Error(r) } }"
-        RIntEnum(local_name: n, ..) ->
-          "fn(e) { case xml_decode.int_text(e) { Ok(i) -> "
-          <> stringutils.pascal_to_snake(n)
-          <> "_from_int(i) Error(r) -> Error(r) } }"
-        _ -> "fn(_) { Error(\"xml: unsupported list element\") }"
-      }
+      let inner_decoder = list_element_decoder(e)
       "xml_decode.optional_list(elem, \""
       <> member_name
       <> "\", \""
@@ -1066,6 +1167,39 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> String {
     RDocument -> emit_unsupported_decoder(types.gleam_type(target))
     RUnit -> emit_unsupported_decoder(types.gleam_type(target))
     Unsupported(..) -> emit_unsupported_decoder(types.gleam_type(target))
+  }
+}
+
+/// Decoder expression for one *list element* — i.e. the per-entry
+/// callback passed to `optional_list` / `optional_flat_list`.
+/// Mirrors `xml_inner_expr_for_list_element` on the encoder side.
+fn list_element_decoder(e: Resolved) -> String {
+  case e {
+    RPrim(primitive: types.PString) -> "xml_decode.string_text"
+    RPrim(primitive: types.PInt) -> "xml_decode.int_text"
+    RPrim(primitive: types.PBool) -> "xml_decode.bool_text"
+    RPrim(primitive: types.PFloat) -> "xml_decode.float_text"
+    RTimestamp -> "xml_decode.timestamp_text"
+    RStruct(local_name: n, ..) ->
+      "decode_" <> stringutils.pascal_to_snake(n) <> "_xml"
+    REnum(local_name: n, ..) ->
+      "fn(e) { case xml_decode.string_text(e) { Ok(s) -> "
+      <> stringutils.pascal_to_snake(n)
+      <> "_from_wire(s) Error(r) -> Error(r) } }"
+    RIntEnum(local_name: n, ..) ->
+      "fn(e) { case xml_decode.int_text(e) { Ok(i) -> "
+      <> stringutils.pascal_to_snake(n)
+      <> "_from_int(i) Error(r) -> Error(r) } }"
+    // Nested list: each outer entry wraps an inner list whose
+    // children share the same per-entry name. `inner_list`
+    // extracts those children and recursively decodes.
+    RList(element: inner_e, xml_entry_name: inner_entry, ..) ->
+      "fn(e) { xml_decode.inner_list(e, \""
+      <> inner_entry
+      <> "\", "
+      <> list_element_decoder(inner_e)
+      <> ") }"
+    _ -> "fn(_) { Error(\"xml: unsupported list element\") }"
   }
 }
 
@@ -1103,41 +1237,75 @@ fn emit_struct_xml_encoder(
         _, _ -> False
       }
     })
-  let xmlns_attr = xmlns_attr_expr(xml_namespace)
-  case attr_members, xml_namespace {
-    [], option.None ->
-      "pub fn "
-      <> fn_name
-      <> "(input: "
-      <> type_name
-      <> ", root: String) -> String {\n  xml.element(root, encode_"
-      <> snake
-      <> "_xml_inner(input))\n}\n\n"
+  let inner_call =
+    code.Call(
+      head: code.Ident(name: "encode_" <> snake <> "_xml_inner"),
+      args: [code.Ident(name: "input")],
+    )
+  let #(body, attrs_emitter) = case attr_members, xml_namespace {
+    [], option.None -> #(
+      code.Call(
+        head: code.Ident(name: "xml.element"),
+        args: [code.Ident(name: "root"), inner_call],
+      ),
+      "",
+    )
     _, _ -> {
-      // Build the attribute list expression: either just the
-      // `xmlns` literal, just the user-attrs accumulator, or a
-      // concat of both. The list syntax tolerates either form.
-      let attrs_expr = case attr_members, xml_namespace {
-        [], option.Some(_) -> "[" <> xmlns_attr <> "]"
-        _, option.None -> "encode_" <> snake <> "_xml_attrs(input)"
-        _, option.Some(_) ->
-          "[" <> xmlns_attr <> ", ..encode_" <> snake <> "_xml_attrs(input)]"
-      }
-      let attrs_emitter = case attr_members {
+      let attrs_arg = struct_xml_attrs_expr(attr_members, xml_namespace, snake)
+      let extra = case attr_members {
         [] -> ""
         _ -> emit_struct_xml_attrs(snake, type_name, attr_members)
       }
-      "pub fn "
-      <> fn_name
-      <> "(input: "
-      <> type_name
-      <> ", root: String) -> String {\n  xml.element_with_attrs(root, "
-      <> attrs_expr
-      <> ", encode_"
-      <> snake
-      <> "_xml_inner(input))\n}\n\n"
-      <> attrs_emitter
+      #(
+        code.Call(
+          head: code.Ident(name: "xml.element_with_attrs"),
+          args: [code.Ident(name: "root"), attrs_arg, inner_call],
+        ),
+        extra,
+      )
     }
+  }
+  let main_fn =
+    code.Fn(
+      public: True,
+      name: fn_name,
+      params: [
+        code.Param(name: "input", type_: type_name),
+        code.Param(name: "root", type_: "String"),
+      ],
+      return: code.CodeSome("String"),
+      body: body,
+    )
+  code.render(code.Module(items: [main_fn, code.Blank])) <> attrs_emitter
+}
+
+/// Build the `attrs` argument expression for `xml.element_with_attrs`:
+/// either the namespace-only list `[#("xmlns", "...")]`, the user-
+/// attrs accumulator `encode_<snake>_xml_attrs(input)`, or both
+/// concatenated `[#("xmlns", "..."), ..encode_<snake>_xml_attrs(input)]`.
+fn struct_xml_attrs_expr(
+  attr_members: List(MemberDef),
+  xml_namespace: option.Option(#(String, String)),
+  snake: String,
+) -> code.Code {
+  let xmlns_attr = xmlns_attr_expr(xml_namespace)
+  let attrs_call =
+    code.Call(
+      head: code.Ident(name: "encode_" <> snake <> "_xml_attrs"),
+      args: [code.Ident(name: "input")],
+    )
+  case attr_members, xml_namespace {
+    [], option.Some(_) ->
+      code.ListLit(
+        items: [code.Raw(fragment: xmlns_attr)],
+        tail: code.CodeNone,
+      )
+    _, option.None -> attrs_call
+    _, option.Some(_) ->
+      code.ListLit(
+        items: [code.Raw(fragment: xmlns_attr)],
+        tail: code.CodeSome(attrs_call),
+      )
   }
 }
 
@@ -1145,9 +1313,7 @@ fn emit_struct_xml_encoder(
 /// for an `@xmlNamespace` trait. Returns the empty string when
 /// there's no namespace — the caller still emits the list literal,
 /// which collapses to `[]` if no other attrs are present.
-fn xmlns_attr_expr(
-  ns: option.Option(#(String, String)),
-) -> String {
+fn xmlns_attr_expr(ns: option.Option(#(String, String))) -> String {
   case ns {
     option.None -> ""
     option.Some(#("", uri)) -> "#(\"xmlns\", \"" <> uri <> "\")"
@@ -1156,27 +1322,65 @@ fn xmlns_attr_expr(
   }
 }
 
+/// Render the `xmlns` attribute *list* expression — `[]` or
+/// `[#("xmlns", "...")]`. Used by member-level `@xmlNamespace`
+/// emission where the caller wants a List(#(String, String))
+/// argument suitable for the `_ns` runtime helpers.
+fn xmlns_attrs_list_expr(ns: option.Option(#(String, String))) -> String {
+  case ns {
+    option.None -> "[]"
+    option.Some(_) -> "[" <> xmlns_attr_expr(ns) <> "]"
+  }
+}
+
 fn emit_struct_xml_attrs(
   snake: String,
   type_name: String,
   attr_members: List(MemberDef),
 ) -> String {
-  "fn encode_"
-  <> snake
-  <> "_xml_attrs(input: "
-  <> type_name
-  <> ") -> List(#(String, String)) {\n  let attrs = []\n"
-  <> list.fold(attr_members, "", fn(acc, m) {
-    acc
-    <> "  let attrs = case input."
-    <> m.snake_name
-    <> " {\n    option.Some(v) -> [#(\""
-    <> m.json_name
-    <> "\", "
-    <> attr_value_expr(m.target)
-    <> "), ..attrs]\n    option.None -> attrs\n  }\n"
-  })
-  <> "  attrs\n}\n\n"
+  let initial =
+    code.Let(name: "attrs", value: code.ListLit(items: [], tail: code.CodeNone))
+  let updates =
+    list.map(attr_members, fn(m) {
+      code.Let(
+        name: "attrs",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(v)",
+              body: code.ListLit(
+                items: [
+                  code.Tuple(items: [
+                    code.StrLit(value: m.json_name),
+                    code.Raw(fragment: attr_value_expr(m.target)),
+                  ]),
+                ],
+                tail: code.CodeSome(code.Ident(name: "attrs")),
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "attrs"),
+            ),
+          ],
+        ),
+      )
+    })
+  let tail = code.Ident(name: "attrs")
+  let body_items = list.append([initial, ..updates], [tail])
+  code.render(
+    code.Module(items: [
+      code.Fn(
+        public: False,
+        name: "encode_" <> snake <> "_xml_attrs",
+        params: [code.Param(name: "input", type_: type_name)],
+        return: code.CodeSome("List(#(String, String))"),
+        body: code.Block(items: body_items),
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 fn attr_value_expr(target: Resolved) -> String {
@@ -1214,29 +1418,48 @@ fn emit_struct_xml_inner_encoder(
         _, _ -> False
       }
     })
-  case body_members {
-    [] ->
-      "pub fn "
-      <> fn_name
-      <> "(_input: "
-      <> type_name
-      <> ") -> String {\n  \"\"\n}\n\n"
-    _ ->
-      "pub fn "
-      <> fn_name
-      <> "(input: "
-      <> type_name
-      <> ") -> String {\n  let inner = \"\"\n"
-      <> list.fold(body_members, "", fn(acc, m) {
-        acc
-        <> "  let inner = case input."
-        <> m.snake_name
-        <> " {\n    option.Some(v) -> inner <> "
-        <> xml_value_expr(m)
-        <> "\n    option.None -> inner\n  }\n"
-      })
-      <> "  inner\n}\n\n"
+  let #(param_name, body_items) = case body_members {
+    [] -> #("_input", [code.StrLit(value: "")])
+    _ -> {
+      let initial = code.Let(name: "inner", value: code.StrLit(value: ""))
+      let updates =
+        list.map(body_members, fn(m) {
+          code.Let(
+            name: "inner",
+            value: code.Case(
+              scrutinee: code.Ident(name: "input." <> m.snake_name),
+              branches: [
+                code.Branch(
+                  pattern: "option.Some(v)",
+                  body: code.Concat(parts: [
+                    code.Ident(name: "inner"),
+                    code.Raw(fragment: xml_value_expr(m)),
+                  ]),
+                ),
+                code.Branch(
+                  pattern: "option.None",
+                  body: code.Ident(name: "inner"),
+                ),
+              ],
+            ),
+          )
+        })
+      let tail = code.Ident(name: "inner")
+      #("input", list.append([initial, ..updates], [tail]))
+    }
   }
+  code.render(
+    code.Module(items: [
+      code.Fn(
+        public: True,
+        name: fn_name,
+        params: [code.Param(name: param_name, type_: type_name)],
+        return: code.CodeSome("String"),
+        body: code.Block(items: body_items),
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 /// Render `v` (a Gleam value of `target`'s type) as an XML element
@@ -1244,70 +1467,97 @@ fn emit_struct_xml_inner_encoder(
 /// lists.
 fn xml_value_expr(m: MemberDef) -> String {
   let member_name = m.json_name
+  let mem_ns = m.xml_namespace
   case m.target {
     RPrim(primitive: types.PString) ->
-      "xml.element(\"" <> member_name <> "\", xml.escape_text(v))"
+      wrap_with_attrs(member_name, mem_ns, "xml.escape_text(v)")
     RPrim(primitive: types.PInt) ->
-      "xml.element(\"" <> member_name <> "\", xml.int_text(v))"
+      wrap_with_attrs(member_name, mem_ns, "xml.int_text(v)")
     RPrim(primitive: types.PBool) ->
-      "xml.element(\"" <> member_name <> "\", xml.bool_text(v))"
+      wrap_with_attrs(member_name, mem_ns, "xml.bool_text(v)")
     RPrim(primitive: types.PFloat) ->
-      "xml.element(\""
-      <> member_name
-      <> "\", case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" })"
-    RBlob -> "xml.element(\"" <> member_name <> "\", xml.blob_text(v))"
+      wrap_with_attrs(
+        member_name,
+        mem_ns,
+        "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }",
+      )
+    RBlob -> wrap_with_attrs(member_name, mem_ns, "xml.blob_text(v)")
     RTimestamp ->
       // restXml's protocol default is `date-time` (ISO 8601). The
       // `@timestampFormat` member trait overrides it; the member
       // walker collapses both the member-level and target-shape
       // trait into `m.timestamp_format`.
-      "xml.element(\""
-      <> member_name
-      <> "\", "
-      <> xml_timestamp_format_expr(m.timestamp_format)
-      <> "(v))"
+      wrap_with_attrs(
+        member_name,
+        mem_ns,
+        xml_timestamp_format_expr(m.timestamp_format) <> "(v)",
+      )
     REnum(local_name: _, ..) ->
-      "xml.element(\""
-      <> member_name
-      <> "\", rest.enum_wire_value("
-      <> types.json_encoder(m.target)
-      <> "(v)))"
+      wrap_with_attrs(
+        member_name,
+        mem_ns,
+        "rest.enum_wire_value(" <> types.json_encoder(m.target) <> "(v))",
+      )
     RIntEnum(local_name: n, ..) ->
-      "xml.element(\""
-      <> member_name
-      <> "\", xml.int_text("
-      <> stringutils.pascal_to_snake(n)
-      <> "_int_value(v)))"
+      wrap_with_attrs(
+        member_name,
+        mem_ns,
+        "xml.int_text(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))",
+      )
     RStruct(local_name: name, ..) ->
-      "encode_"
-      <> stringutils.pascal_to_snake(name)
-      <> "_xml(v, \""
-      <> member_name
-      <> "\")"
+      // Smithy: shape-level `@xmlNamespace` only applies when the
+      // struct is the document root, not when it's nested as a
+      // member. So always splice the inner body and add the
+      // wrapping element ourselves — member-level `@xmlNamespace`
+      // (if any) lands on the wrapper via `wrap_with_attrs`.
+      wrap_with_attrs(
+        member_name,
+        mem_ns,
+        "encode_"
+          <> stringutils.pascal_to_snake(name)
+          <> "_xml_inner(v)",
+      )
     RUnion(local_name: n, ..) ->
       // Wrap the union variant's emission in the outer member's
       // element. `encode_<U>_union_xml_inner` handles dispatching
       // on the variant and emitting `<variant_tag>...</variant_tag>`.
-      "xml.element(\""
-      <> member_name
-      <> "\", encode_"
-      <> stringutils.pascal_to_snake(n)
-      <> "_union_xml_inner(v))"
-    RList(element: _e, xml_entry_name: entry, ..) -> {
+      wrap_with_attrs(
+        member_name,
+        mem_ns,
+        "encode_" <> stringutils.pascal_to_snake(n) <> "_union_xml_inner(v)",
+      )
+    RList(element: _e, xml_entry_name: entry, xml_element_namespace: ens, ..) -> {
       // Smithy default list: `<MemberName><member>...</member>...
       // </MemberName>`. The list shape's member `@xmlName` overrides
       // the per-entry tag — S3's Buckets list uses `<Bucket>`.
       // `@xmlFlattened` on the member drops the wrapper: entries
       // become repeated `<member_name>value</member_name>` siblings.
       let inner = xml_inner_expr_for_list_element(m.target)
-      case m.xml_flattened {
-        True ->
+      // For flat lists the member-level namespace is the outer
+      // (repeated) element's namespace; if the outer member has
+      // none, fall back to the list-inner's namespace. For non-
+      // flat lists the outer wrapper carries the member's
+      // namespace, the per-entry tag carries the list-inner's.
+      let flat_member_ns = case mem_ns {
+        option.Some(_) -> mem_ns
+        option.None -> ens
+      }
+      case m.xml_flattened, mem_ns, ens {
+        True, option.None, option.None ->
           "xml.flat_list(\""
           <> member_name
           <> "\", list.map(v, fn(item) { let v = item "
           <> inner
           <> " }))"
-        False ->
+        True, _, _ ->
+          "xml.flat_list_ns(\""
+          <> member_name
+          <> "\", "
+          <> xmlns_attrs_list_expr(flat_member_ns)
+          <> ", list.map(v, fn(item) { let v = item "
+          <> inner
+          <> " }))"
+        False, option.None, option.None ->
           "xml.list_element(\""
           <> member_name
           <> "\", \""
@@ -1315,9 +1565,28 @@ fn xml_value_expr(m: MemberDef) -> String {
           <> "\", list.map(v, fn(item) { let v = item "
           <> inner
           <> " }))"
+        False, _, _ ->
+          "xml.list_element_ns(\""
+          <> member_name
+          <> "\", "
+          <> xmlns_attrs_list_expr(mem_ns)
+          <> ", \""
+          <> entry
+          <> "\", "
+          <> xmlns_attrs_list_expr(ens)
+          <> ", list.map(v, fn(item) { let v = item "
+          <> inner
+          <> " }))"
       }
     }
-    RMap(value: v, xml_key_name: kn, xml_value_name: vn, ..) -> {
+    RMap(
+      value: v,
+      xml_key_name: kn,
+      xml_value_name: vn,
+      xml_key_namespace: knp,
+      xml_value_namespace: vnp,
+      ..
+    ) -> {
       // Smithy default XML map: `<wrapper><entry><key>K</key>
       // <value>V</value></entry>...</wrapper>`. `@xmlFlattened` on
       // the member drops the outer wrapper AND `<entry>`:
@@ -1325,8 +1594,12 @@ fn xml_value_expr(m: MemberDef) -> String {
       // siblings. `@xmlName` on the map's key / value members
       // replaces the default `key` / `value` labels.
       let val_expr = xml_map_value_expr(v)
-      case m.xml_flattened {
-        True ->
+      let any_ns = case mem_ns, knp, vnp {
+        option.None, option.None, option.None -> False
+        _, _, _ -> True
+      }
+      case m.xml_flattened, any_ns {
+        True, False ->
           "xml.flat_map(\""
           <> member_name
           <> "\", \""
@@ -1336,7 +1609,23 @@ fn xml_value_expr(m: MemberDef) -> String {
           <> "\", dict.map_values(v, fn(_, v) { "
           <> val_expr
           <> " }))"
-        False ->
+        True, True ->
+          "xml.flat_map_ns(\""
+          <> member_name
+          <> "\", "
+          <> xmlns_attrs_list_expr(mem_ns)
+          <> ", \""
+          <> kn
+          <> "\", "
+          <> xmlns_attrs_list_expr(knp)
+          <> ", \""
+          <> vn
+          <> "\", "
+          <> xmlns_attrs_list_expr(vnp)
+          <> ", dict.map_values(v, fn(_, v) { "
+          <> val_expr
+          <> " }))"
+        False, False ->
           "xml.map_element(\""
           <> member_name
           <> "\", \""
@@ -1346,11 +1635,47 @@ fn xml_value_expr(m: MemberDef) -> String {
           <> "\", dict.map_values(v, fn(_, v) { "
           <> val_expr
           <> " }))"
+        False, True ->
+          "xml.map_element_ns(\""
+          <> member_name
+          <> "\", "
+          <> xmlns_attrs_list_expr(mem_ns)
+          <> ", \""
+          <> kn
+          <> "\", "
+          <> xmlns_attrs_list_expr(knp)
+          <> ", \""
+          <> vn
+          <> "\", "
+          <> xmlns_attrs_list_expr(vnp)
+          <> ", dict.map_values(v, fn(_, v) { "
+          <> val_expr
+          <> " }))"
       }
     }
     RDocument -> "xml.element(\"" <> member_name <> "\", \"\")"
     RUnit -> "xml.empty_element(\"" <> member_name <> "\")"
     Unsupported(..) -> "\"\""
+  }
+}
+
+/// Render `<name>inner</name>` or `<name xmlns=...>inner</name>`
+/// depending on whether the member carries an `@xmlNamespace`.
+fn wrap_with_attrs(
+  name: String,
+  ns: option.Option(#(String, String)),
+  inner_expr: String,
+) -> String {
+  case ns {
+    option.None -> "xml.element(\"" <> name <> "\", " <> inner_expr <> ")"
+    option.Some(_) ->
+      "xml.element_with_attrs(\""
+      <> name
+      <> "\", ["
+      <> xmlns_attr_expr(ns)
+      <> "], "
+      <> inner_expr
+      <> ")"
   }
 }
 
@@ -1371,12 +1696,7 @@ fn xml_map_value_expr(target: Resolved) -> String {
       "xml.int_text(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))"
     RStruct(local_name: name, ..) ->
       "encode_" <> stringutils.pascal_to_snake(name) <> "_xml_inner(v)"
-    RMap(
-      value: vv,
-      xml_key_name: kn,
-      xml_value_name: vn,
-      ..,
-    ) ->
+    RMap(value: vv, xml_key_name: kn, xml_value_name: vn, ..) ->
       // Nested map value: produce just the inner entries; the
       // surrounding `<value>` wrapper sits on the outer map's
       // entry. Recursive — supports Map<String, Map<String, ...>>.
@@ -1416,7 +1736,12 @@ fn xml_inner_expr_for_list_element(target: Resolved) -> String {
         RPrim(primitive: types.PFloat) ->
           "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
         RBlob -> "xml.blob_text(v)"
-        RTimestamp -> "xml.int_text(v)"
+        // restXml's protocol default is `date-time` (ISO 8601). The
+        // per-member `@timestampFormat` override doesn't apply at
+        // the list-element position (Smithy puts that trait on the
+        // *list member*, not its target shape, and we currently
+        // don't plumb it through `RList`).
+        RTimestamp -> "json_timestamp.format_iso8601(v)"
         REnum(..) -> "rest.enum_wire_value(" <> types.json_encoder(e) <> "(v))"
         RIntEnum(local_name: n, ..) ->
           "xml.int_text(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))"
@@ -1424,6 +1749,23 @@ fn xml_inner_expr_for_list_element(target: Resolved) -> String {
           // Lists of structs: each entry is an inline struct without
           // an outer wrapper (caller's `<member>...</member>` wraps).
           "encode_" <> stringutils.pascal_to_snake(n) <> "_xml_inner(v)"
+        RList(element: inner_e, xml_entry_name: inner_entry, ..) ->
+          // Nested list — outer entry's `<member>` wraps an inline
+          // list. Recurse via a synthetic single-step call to
+          // `xml.flat_list` (no outer wrapper; the surrounding
+          // `<member>` provides it).
+          "xml.flat_list(\""
+          <> inner_entry
+          <> "\", list.map(v, fn(inner_item) { let v = inner_item "
+          <> xml_inner_expr_for_list_element(RList(
+            element: inner_e,
+            xml_entry_name: inner_entry,
+            sparse: False,
+            xml_element_namespace: option.None,
+          ))
+          <> " }))"
+        RUnion(local_name: n, ..) ->
+          "encode_" <> stringutils.pascal_to_snake(n) <> "_union_xml_inner(v)"
         _ -> "\"\""
       }
     _ -> "\"\""
@@ -1640,41 +1982,171 @@ fn emit_build(
           <> "_body_xml(input)\n  let body = bit_array.from_string(body_xml)\n  let content_type = \"application/xml\"\n"
       }
   }
+  let compression_setup = emit_content_encoding(http.compression)
 
-  "pub fn build_"
-  <> snake
-  <> "_request(\n  "
-  <> header_or_input
-  <> ": "
-  <> input_type
-  <> ",\n) -> #(String, String, dict.Dict(String, String), BitArray) {\n"
-  <> path_setup
-  <> query_setup
-  <> header_setup
-  <> body_setup
-  <> "  let headers = case content_type, dict.has_key(headers, \"Content-Type\") {\n    \"\", _ -> headers\n    _, True -> headers\n    _, False -> dict.insert(headers, \"Content-Type\", content_type)\n  }\n  let headers = case content_type {\n    \"\" -> headers\n    _ -> dict.insert(headers, \"Content-Length\", int.to_string(bit_array.byte_size(body)))\n  }\n  let path = rest.build_path(path, query)\n  #(\""
-  <> http.method
-  <> "\", path, headers, body)\n}\n\n"
+  let body_lines =
+    path_setup
+    <> query_setup
+    <> header_setup
+    <> body_setup
+    <> compression_setup
+    <> "  "
+    <> code.render(content_type_let_block())
+    <> "\n  "
+    <> code.render(content_length_let_block())
+    <> "\n  "
+    <> code.render(
+      code.Let(
+        name: "path",
+        value: code.Call(
+          head: code.Ident(name: "rest.build_path"),
+          args: [code.Ident(name: "path"), code.Ident(name: "query")],
+        ),
+      ),
+    )
+    <> "\n  "
+    <> code.render(
+      code.Tuple(items: [
+        code.StrLit(value: http.method),
+        code.Ident(name: "path"),
+        code.Ident(name: "headers"),
+        code.Ident(name: "body"),
+      ]),
+    )
+    <> "\n"
+  code.render(
+    code.Module(items: [
+      code.Fn(
+        public: True,
+        name: "build_" <> snake <> "_request",
+        params: [code.Param(name: header_or_input, type_: input_type)],
+        return: code.CodeSome(
+          "#(String, String, dict.Dict(String, String), BitArray)",
+        ),
+        body: code.Raw(fragment: body_lines),
+      ),
+      code.Blank,
+    ]),
+  )
+}
+
+/// The `Content-Type` header gating block — fixed across protocols.
+/// Lifted to a helper so both restxml and restjson can share it
+/// (next pass) and to keep `emit_build` readable.
+fn content_type_let_block() -> code.Code {
+  code.Let(
+    name: "headers",
+    value: code.Case(
+      scrutinee: code.Raw(
+        fragment: "content_type, dict.has_key(headers, \"Content-Type\")",
+      ),
+      branches: [
+        code.Branch(pattern: "\"\", _", body: code.Ident(name: "headers")),
+        code.Branch(pattern: "_, True", body: code.Ident(name: "headers")),
+        code.Branch(
+          pattern: "_, False",
+          body: code.Call(
+            head: code.Ident(name: "dict.insert"),
+            args: [
+              code.Ident(name: "headers"),
+              code.StrLit(value: "Content-Type"),
+              code.Ident(name: "content_type"),
+            ],
+          ),
+        ),
+      ],
+    ),
+  )
+}
+
+/// The `Content-Length` header block — only set when there's a
+/// body to measure (content_type empty → no body).
+fn content_length_let_block() -> code.Code {
+  code.Let(
+    name: "headers",
+    value: code.Case(
+      scrutinee: code.Ident(name: "content_type"),
+      branches: [
+        code.Branch(pattern: "\"\"", body: code.Ident(name: "headers")),
+        code.Branch(
+          pattern: "_",
+          body: code.Call(
+            head: code.Ident(name: "dict.insert"),
+            args: [
+              code.Ident(name: "headers"),
+              code.StrLit(value: "Content-Length"),
+              code.Raw(
+                fragment: "int.to_string(bit_array.byte_size(body))",
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  )
+}
+
+fn emit_content_encoding(encodings: List(String)) -> String {
+  list.fold(encodings, "", fn(acc, enc) {
+    let stmt =
+      code.Let(
+        name: "headers",
+        value: code.Call(
+          head: code.Ident(name: "rest.append_content_encoding"),
+          args: [code.Ident(name: "headers"), code.StrLit(value: enc)],
+        ),
+      )
+    acc <> "  " <> code.render(stmt) <> "\n"
+  })
 }
 
 fn emit_path_setup(uri_template: String, labels: List(MemberDef)) -> String {
-  let initial = "  let path = \"" <> uri_template <> "\"\n"
-  list.fold(labels, initial, fn(acc, m) {
-    let greedy = string.contains(uri_template, "{" <> m.json_name <> "+}")
-    let greedy_str = case greedy {
-      True -> "True"
-      False -> "False"
-    }
-    acc
-    <> "  let path = case input."
-    <> m.snake_name
-    <> " {\n    option.Some(v) -> rest.substitute_label(path, \""
-    <> m.json_name
-    <> "\", "
-    <> value_to_string_with_format(m.target, m.timestamp_format)
-    <> ", "
-    <> greedy_str
-    <> ")\n    option.None -> path\n  }\n"
+  let initial =
+    code.Let(name: "path", value: code.StrLit(value: uri_template))
+  let updates =
+    list.map(labels, fn(m) {
+      let greedy = string.contains(uri_template, "{" <> m.json_name <> "+}")
+      let greedy_ident = case greedy {
+        True -> code.Ident(name: "True")
+        False -> code.Ident(name: "False")
+      }
+      code.Let(
+        name: "path",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(v)",
+              body: code.Call(
+                head: code.Ident(name: "rest.substitute_label"),
+                args: [
+                  code.Ident(name: "path"),
+                  code.StrLit(value: m.json_name),
+                  code.Raw(
+                    fragment: value_to_string_with_format(
+                      m.target,
+                      m.timestamp_format,
+                    ),
+                  ),
+                  greedy_ident,
+                ],
+              ),
+            ),
+            code.Branch(pattern: "option.None", body: code.Ident(name: "path")),
+          ],
+        ),
+      )
+    })
+  render_let_block([initial, ..updates])
+}
+
+/// Render a sequence of `code.Let` statements as the indented body
+/// fragment used inside `build_<op>_request`. Returns `"  let X =
+/// ...\n  let Y = ...\n"` — each statement on its own line, two-
+/// space-indented to match the surrounding function.
+fn render_let_block(stmts: List(code.Code)) -> String {
+  list.fold(stmts, "", fn(acc, stmt) {
+    acc <> "  " <> code.render(stmt) <> "\n"
   })
 }
 
@@ -1682,70 +2154,149 @@ fn emit_query_setup(
   queries: List(MemberDef),
   query_maps: List(MemberDef),
 ) -> String {
-  let initial = "  let query = \"\"\n"
-  let with_queries =
-    list.fold(queries, initial, fn(acc, m) {
-      let query_name = case m.binding {
-        Query(query_name: n) -> n
-        _ -> m.json_name
-      }
-      case m.target, m.idempotency_token {
-        _, True ->
-          // `@idempotencyToken` query members auto-fill via the
-          // runtime FFI when the caller leaves them unset.
-          acc
-          <> "  let query = case input."
-          <> m.snake_name
-          <> " {\n    option.Some(v) -> rest.add_query(query, \""
-          <> query_name
-          <> "\", v)\n    option.None -> rest.add_query(query, \""
-          <> query_name
-          <> "\", rest.idempotency_token())\n  }\n"
-        RList(element: e, ..), _ ->
-          acc
-          <> "  let query = case input."
-          <> m.snake_name
-          <> " {\n    option.Some(xs) -> list.fold(xs, query, fn(q, item) {\n      let v = item\n      rest.add_query(q, \""
-          <> query_name
-          <> "\", "
-          <> value_to_string_with_format(e, m.timestamp_format)
-          <> ")\n    })\n    option.None -> query\n  }\n"
-        _, _ ->
-          acc
-          <> "  let query = case input."
-          <> m.snake_name
-          <> " {\n    option.Some(v) -> rest.add_query(query, \""
-          <> query_name
-          <> "\", "
-          <> value_to_string_with_format(m.target, m.timestamp_format)
-          <> ")\n    option.None -> query\n  }\n"
-      }
-    })
-  list.fold(query_maps, with_queries, fn(acc, m) {
-    // Dispatch on the map's value type: Map<String, String> uses
-    // `add_query_params`, Map<String, List<String>> uses
-    // `add_query_params_list`. Anything else: skip.
-    let helper = case m.target {
-      RMap(
-        key: _,
-        value: RList(element: RPrim(primitive: types.PString), ..),
-        ..,
-      ) -> Ok("rest.add_query_params_list")
-      RMap(key: _, value: RPrim(primitive: types.PString), ..) ->
-        Ok("rest.add_query_params")
-      _ -> Error(Nil)
-    }
-    case helper {
-      Ok(fn_name) ->
-        acc
-        <> "  let query = case input."
-        <> m.snake_name
-        <> " {\n    option.Some(m) -> "
-        <> fn_name
-        <> "(query, m)\n    option.None -> query\n  }\n"
-      Error(_) -> acc
-    }
-  })
+  let initial = code.Let(name: "query", value: code.StrLit(value: ""))
+  let query_stmts = list.map(queries, query_member_let)
+  let map_stmts = list.filter_map(query_maps, query_map_member_let)
+  render_let_block(list.flatten([[initial], query_stmts, map_stmts]))
+}
+
+/// Build the `let query = case input.<member> { ... }` statement for
+/// a single `@httpQuery` member. Three variants: an
+/// `@idempotencyToken` member auto-fills via `rest.idempotency_
+/// token()` when unset, a list member folds an `rest.add_query`
+/// per element, and the scalar case stringifies once.
+fn query_member_let(m: MemberDef) -> code.Code {
+  let query_name = case m.binding {
+    Query(query_name: n) -> n
+    _ -> m.json_name
+  }
+  case m.target, m.idempotency_token {
+    _, True ->
+      code.Let(
+        name: "query",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(v)",
+              body: code.Call(
+                head: code.Ident(name: "rest.add_query"),
+                args: [
+                  code.Ident(name: "query"),
+                  code.StrLit(value: query_name),
+                  code.Ident(name: "v"),
+                ],
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Call(
+                head: code.Ident(name: "rest.add_query"),
+                args: [
+                  code.Ident(name: "query"),
+                  code.StrLit(value: query_name),
+                  code.Call(
+                    head: code.Ident(name: "rest.idempotency_token"),
+                    args: [],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      )
+    RList(element: e, ..), _ ->
+      code.Let(
+        name: "query",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(xs)",
+              body: code.Raw(
+                fragment: "list.fold(xs, query, fn(q, item) {\n      let v = item\n      rest.add_query(q, \""
+                  <> query_name
+                  <> "\", "
+                  <> value_to_string_with_format(e, m.timestamp_format)
+                  <> ")\n    })",
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "query"),
+            ),
+          ],
+        ),
+      )
+    _, _ ->
+      code.Let(
+        name: "query",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(v)",
+              body: code.Call(
+                head: code.Ident(name: "rest.add_query"),
+                args: [
+                  code.Ident(name: "query"),
+                  code.StrLit(value: query_name),
+                  code.Raw(
+                    fragment: value_to_string_with_format(
+                      m.target,
+                      m.timestamp_format,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "query"),
+            ),
+          ],
+        ),
+      )
+  }
+}
+
+/// Build the `let query = case input.<member> { ... }` statement for
+/// a single `@httpQueryParams` member. Returns `Error(Nil)` for
+/// unsupported map value types (the emitter then drops the field).
+fn query_map_member_let(m: MemberDef) -> Result(code.Code, Nil) {
+  let helper = case m.target {
+    RMap(
+      key: _,
+      value: RList(element: RPrim(primitive: types.PString), ..),
+      ..,
+    ) -> Ok("rest.add_query_params_list")
+    RMap(key: _, value: RPrim(primitive: types.PString), ..) ->
+      Ok("rest.add_query_params")
+    _ -> Error(Nil)
+  }
+  case helper {
+    Ok(fn_name) ->
+      Ok(code.Let(
+        name: "query",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(m)",
+              body: code.Call(
+                head: code.Ident(name: fn_name),
+                args: [code.Ident(name: "query"), code.Ident(name: "m")],
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "query"),
+            ),
+          ],
+        ),
+      ))
+    Error(_) -> Error(Nil)
+  }
 }
 
 fn emit_header_setup(
@@ -1758,46 +2309,110 @@ fn emit_header_setup(
   // (`HttpEmptyPrefixHeaders` test: `prefixHeaders.hello = "Hello"`
   // and `specificHeader = "There"` bound to `@httpHeader("hello")`
   // → wire `hello: There`).
-  let initial = "  let headers = dict.new()\n"
-  let with_prefix =
-    list.fold(prefix_headers, initial, fn(acc, m) {
-      let prefix = case m.binding {
-        PrefixHeaders(prefix: p) -> p
-        _ -> ""
-      }
-      acc
-      <> "  let headers = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(m) -> rest.add_prefix_headers(headers, \""
-      <> prefix
-      <> "\", m)\n    option.None -> headers\n  }\n"
-    })
-  list.fold(headers, with_prefix, fn(acc, m) {
-    let header_name = case m.binding {
-      Header(header_name: n) -> n
-      _ -> m.json_name
-    }
-    case m.target {
-      RList(element: e, ..) ->
-        acc
-        <> "  let headers = case input."
-        <> m.snake_name
-        <> " {\n    option.Some(xs) -> rest.maybe_set_list_header(headers, \""
-        <> header_name
-        <> "\", list.map(xs, fn(item) { let v = item "
-        <> value_to_string_for_header(e, m.timestamp_format)
-        <> " }))\n    option.None -> headers\n  }\n"
-      _ ->
-        acc
-        <> "  let headers = case input."
-        <> m.snake_name
-        <> " {\n    option.Some(v) -> rest.maybe_set_header(headers, \""
-        <> header_name
-        <> "\", "
-        <> value_to_string_for_header(m.target, m.timestamp_format)
-        <> ")\n    option.None -> headers\n  }\n"
-    }
-  })
+  let initial =
+    code.Let(
+      name: "headers",
+      value: code.Call(head: code.Ident(name: "dict.new"), args: []),
+    )
+  let prefix_stmts = list.map(prefix_headers, prefix_header_let)
+  let header_stmts = list.map(headers, header_member_let)
+  render_let_block(list.flatten([[initial], prefix_stmts, header_stmts]))
+}
+
+fn prefix_header_let(m: MemberDef) -> code.Code {
+  let prefix = case m.binding {
+    PrefixHeaders(prefix: p) -> p
+    _ -> ""
+  }
+  code.Let(
+    name: "headers",
+    value: code.Case(
+      scrutinee: code.Ident(name: "input." <> m.snake_name),
+      branches: [
+        code.Branch(
+          pattern: "option.Some(m)",
+          body: code.Call(
+            head: code.Ident(name: "rest.add_prefix_headers"),
+            args: [
+              code.Ident(name: "headers"),
+              code.StrLit(value: prefix),
+              code.Ident(name: "m"),
+            ],
+          ),
+        ),
+        code.Branch(
+          pattern: "option.None",
+          body: code.Ident(name: "headers"),
+        ),
+      ],
+    ),
+  )
+}
+
+fn header_member_let(m: MemberDef) -> code.Code {
+  let header_name = case m.binding {
+    Header(header_name: n) -> n
+    _ -> m.json_name
+  }
+  case m.target {
+    RList(element: e, ..) ->
+      code.Let(
+        name: "headers",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(xs)",
+              body: code.Call(
+                head: code.Ident(name: "rest.maybe_set_list_header"),
+                args: [
+                  code.Ident(name: "headers"),
+                  code.StrLit(value: header_name),
+                  code.Raw(
+                    fragment: "list.map(xs, fn(item) { let v = item "
+                      <> value_to_string_for_header(e, m.timestamp_format)
+                      <> " })",
+                  ),
+                ],
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "headers"),
+            ),
+          ],
+        ),
+      )
+    _ ->
+      code.Let(
+        name: "headers",
+        value: code.Case(
+          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(v)",
+              body: code.Call(
+                head: code.Ident(name: "rest.maybe_set_header"),
+                args: [
+                  code.Ident(name: "headers"),
+                  code.StrLit(value: header_name),
+                  code.Raw(
+                    fragment: value_to_string_for_header(
+                      m.target,
+                      m.timestamp_format,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "headers"),
+            ),
+          ],
+        ),
+      )
+  }
 }
 
 fn emit_payload_body(m: MemberDef) -> String {
@@ -1817,59 +2432,110 @@ fn emit_payload_body(m: MemberDef) -> String {
     option.Some(mt) -> mt
     option.None -> "text/plain"
   }
-  case m.target {
-    types.RBlob ->
-      "  let body = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(v) -> v\n    option.None -> <<>>\n  }\n  let content_type = \""
-      <> blob_ct
-      <> "\"\n"
-    RPrim(primitive: types.PString) ->
-      "  let body = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(v) -> bit_array.from_string(v)\n    option.None -> <<>>\n  }\n  let content_type = \""
-      <> string_ct
-      <> "\"\n"
-    REnum(local_name: _, ..) ->
-      // `@httpPayload` enum: wire form is the enum's wire value as
-      // plain text. Default Content-Type is `text/plain` (same as
-      // string payloads), overridable via `@mediaType`.
-      "  let body = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(v) -> bit_array.from_string(rest.enum_wire_value("
-      <> types.json_encoder(m.target)
-      <> "(v)))\n    option.None -> <<>>\n  }\n  let content_type = \""
-      <> string_ct
-      <> "\"\n"
+  let #(some_expr, content_type) = case m.target {
+    types.RBlob -> #(code.Ident(name: "v"), blob_ct)
+    RPrim(primitive: types.PString) -> #(
+      code.Call(
+        head: code.Ident(name: "bit_array.from_string"),
+        args: [code.Ident(name: "v")],
+      ),
+      string_ct,
+    )
+    REnum(local_name: _, ..) -> #(
+      code.Call(
+        head: code.Ident(name: "bit_array.from_string"),
+        args: [
+          code.Call(
+            head: code.Ident(name: "rest.enum_wire_value"),
+            args: [
+              code.Call(
+                head: code.Ident(name: types.json_encoder(m.target)),
+                args: [code.Ident(name: "v")],
+              ),
+            ],
+          ),
+        ],
+      ),
+      string_ct,
+    )
+    RUnion(local_name: name, ..) -> #(
+      code.Call(
+        head: code.Ident(name: "bit_array.from_string"),
+        args: [
+          code.Call(
+            head: code.Ident(name: "xml.element"),
+            args: [
+              code.StrLit(value: name),
+              code.Call(
+                head: code.Ident(
+                  name: "encode_"
+                    <> stringutils.pascal_to_snake(name)
+                    <> "_union_xml_inner",
+                ),
+                args: [code.Ident(name: "v")],
+              ),
+            ],
+          ),
+        ],
+      ),
+      "application/xml",
+    )
     RStruct(local_name: name, xml_name: xn, ..) -> {
-      // Smithy `@httpPayload` for a struct member: the wire root
-      // element name comes from (in priority order):
-      //   1. `@xmlName` on the @httpPayload **member** itself —
-      //      detected by `m.json_name != m.member_name`. This is
-      //      the `HttpPayloadWithMemberXmlName` case.
-      //   2. `@xmlName` on the target struct **shape** —
-      //      `HttpPayloadWithXmlName` / `BodyWithXmlName`.
-      //   3. The target shape's Smithy local name.
       let wrapper = case m.json_name == m.member_name, xn {
         False, _ -> m.json_name
         True, Some(s) -> s
         True, None -> name
       }
-      "  let body = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(v) -> bit_array.from_string(encode_"
-      <> stringutils.pascal_to_snake(name)
-      <> "_xml(v, \""
-      <> wrapper
-      <> "\"))\n    option.None -> <<>>\n  }\n  let content_type = \"application/xml\"\n"
+      #(
+        code.Call(
+          head: code.Ident(name: "bit_array.from_string"),
+          args: [
+            code.Call(
+              head: code.Ident(
+                name: "encode_" <> stringutils.pascal_to_snake(name) <> "_xml",
+              ),
+              args: [code.Ident(name: "v"), code.StrLit(value: wrapper)],
+            ),
+          ],
+        ),
+        "application/xml",
+      )
     }
-    _ ->
-      "  let body = case input."
-      <> m.snake_name
-      <> " {\n    option.Some(v) -> bit_array.from_string(json.to_string("
-      <> types.json_encoder(m.target)
-      <> "(v)))\n    option.None -> <<>>\n  }\n  let content_type = \"application/xml\"\n"
+    _ -> #(
+      code.Call(
+        head: code.Ident(name: "bit_array.from_string"),
+        args: [
+          code.Call(
+            head: code.Ident(name: "json.to_string"),
+            args: [
+              code.Call(
+                head: code.Ident(name: types.json_encoder(m.target)),
+                args: [code.Ident(name: "v")],
+              ),
+            ],
+          ),
+        ],
+      ),
+      "application/xml",
+    )
   }
+  let body_stmt =
+    code.Let(
+      name: "body",
+      value: code.Case(
+        scrutinee: code.Ident(name: "input." <> m.snake_name),
+        branches: [
+          code.Branch(pattern: "option.Some(v)", body: some_expr),
+          code.Branch(
+            pattern: "option.None",
+            body: code.Raw(fragment: "<<>>"),
+          ),
+        ],
+      ),
+    )
+  let ct_stmt =
+    code.Let(name: "content_type", value: code.StrLit(value: content_type))
+  render_let_block([body_stmt, ct_stmt])
 }
 
 /// Render a Resolved value as a Gleam expression that produces a
@@ -2059,29 +2725,22 @@ fn op_uses_unsupported_trait(traits: shape.Traits) -> Bool {
 fn http_trait(traits: shape.Traits) -> Option(HttpTrait) {
   case dict.get(traits, ShapeId("smithy.api#http")) {
     Ok(Some(trait.Dict(d))) -> {
-      let method = string_field(d, "method")
-      let uri = string_field(d, "uri")
-      let code = int_field(d, "code", 200)
+      let method = trait_helpers.string_field(d, "method")
+      let uri = trait_helpers.string_field(d, "uri")
+      let code = trait_helpers.int_field(d, "code", 200)
+      let compression = trait_helpers.request_compression_encodings(traits)
       case method, uri {
-        Some(m), Some(u) -> Some(HttpTrait(method: m, uri: u, code: code))
+        Some(m), Some(u) ->
+          Some(HttpTrait(
+            method: m,
+            uri: u,
+            code: code,
+            compression: compression,
+          ))
         _, _ -> None
       }
     }
     _ -> None
-  }
-}
-
-fn string_field(d: Dict(ShapeId, Trait), name: String) -> Option(String) {
-  case dict.get(d, ShapeId(name)) {
-    Ok(trait.String(s)) -> Some(s)
-    _ -> None
-  }
-}
-
-fn int_field(d: Dict(ShapeId, Trait), name: String, default: Int) -> Int {
-  case dict.get(d, ShapeId(name)) {
-    Ok(trait.Int(n)) -> n
-    _ -> default
   }
 }
 

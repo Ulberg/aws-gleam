@@ -465,90 +465,126 @@ fn xml_children_equal(
   b: List(xml_decode.Node),
 ) -> Bool {
   // Drop whitespace-only Text nodes from both sides — Smithy
-  // fixtures are pretty-printed; the codegen emits one line. Then
-  // pick an equality mode based on the structure of the children:
+  // fixtures are pretty-printed; the codegen emits one line.
   //
-  //   * Same name on every sibling (map's `<entry>` or list's
-  //     `<member>`): compare as a multiset, since the codegen's
-  //     iteration order is sometimes alphabetical for maps but
-  //     fixtures usually echo the params' insertion order.
-  //   * Distinct names on every sibling (a struct's members): also
-  //     compare as a multiset — XML struct member order is
-  //     semantically unspecified, but the codegen sorts by member
-  //     name while fixtures echo the Smithy declaration order.
-  //   * Mixed (some duplicates + some uniques): ordered compare,
-  //     since the relative position of the unique siblings carries
-  //     meaning (and the duplicates' order doesn't matter, but
-  //     can't be disentangled without consulting the model).
+  // Sibling semantics: XML doesn't impose order on sibling
+  // elements, and Smithy doesn't either. Two complications make
+  // the comparison non-trivial:
+  //
+  //   * Same-name repeats (map entries, flat lists). Order WITHIN
+  //     the repeat group is preserved by Smithy — `XmlListsRequest`
+  //     emits `flattenedList=["hi","bye"]` as `<flattenedList>hi
+  //     </flattenedList><flattenedList>bye</flattenedList>`, and
+  //     the test fixture expects exactly that ordering.
+  //   * Distinct-name siblings (struct members). The codegen sorts
+  //     alphabetically; fixtures echo the Smithy declaration
+  //     order. Member order is unspecified — multiset compare is
+  //     the right semantic.
+  //
+  // Mixed children (a struct with both kinds at once, e.g.
+  // `XmlListsRequest`) need both behaviours: group children by
+  // element name, treat each group as an ordered sequence, and
+  // compare the *set* of (name, sequence) pairs as a multiset.
+  // Text-only children (`<foo>text</foo>`) compare via text
+  // equality at the parent level.
   let na = normalise_children(a)
   let nb = normalise_children(b)
   case length(na) == length(nb) {
     False -> False
-    True ->
-      case classify_children(na), classify_children(nb) {
-        AllSameName, AllSameName -> children_multiset_equal(na, nb)
-        AllDistinctNames, AllDistinctNames -> children_multiset_equal(na, nb)
-        _, _ -> children_ordered_equal(na, nb)
-      }
+    True -> children_grouped_equal(na, nb)
   }
 }
 
-type ChildShape {
-  AllSameName
-  AllDistinctNames
-  Mixed
-}
-
-fn classify_children(ns: List(xml_decode.Node)) -> ChildShape {
-  let names =
-    list.filter_map(ns, fn(n) {
-      case n {
-        xml_decode.ElementNode(element: e) -> Ok(e.name)
-        _ -> Error(Nil)
-      }
+/// Group children by their element name, then compare each
+/// group's ordered sequence between sides. Text nodes interleave
+/// with elements — they're compared by content via
+/// `xml_node_equal` against the corresponding-position text node
+/// on the other side. The set of names must match.
+fn children_grouped_equal(
+  a: List(xml_decode.Node),
+  b: List(xml_decode.Node),
+) -> Bool {
+  // Split element nodes from text nodes. Text-node ordering
+  // generally doesn't matter for Smithy bodies (we only see them
+  // as `<foo>text</foo>` children, where `text` is the entire
+  // content and the parent's `xml_node_equal` handles it).
+  let #(a_elems, a_text) = partition_text(a)
+  let #(b_elems, b_text) = partition_text(b)
+  // Element side: group by name, compare each group ordered.
+  let a_groups = group_by_name(a_elems)
+  let b_groups = group_by_name(b_elems)
+  // Same set of names.
+  let a_names =
+    list.map(a_groups, fn(p) {
+      let #(name, _) = p
+      name
     })
-  let total = list.length(names)
-  let unique = list.length(list.unique(names))
-  case unique == 1, unique == total {
-    True, _ -> AllSameName
-    _, True -> AllDistinctNames
-    _, _ -> Mixed
+    |> list.sort(string.compare)
+  let b_names =
+    list.map(b_groups, fn(p) {
+      let #(name, _) = p
+      name
+    })
+    |> list.sort(string.compare)
+  case a_names == b_names {
+    False -> False
+    True ->
+      list.all(a_groups, fn(g) {
+        let #(name, a_group) = g
+        case
+          list.find(b_groups, fn(p) {
+            let #(n, _) = p
+            n == name
+          })
+        {
+          Ok(#(_, b_group)) -> children_multiset_equal(a_group, b_group)
+          Error(_) -> False
+        }
+      })
+      && children_multiset_equal(a_text, b_text)
   }
+}
+
+fn partition_text(
+  ns: List(xml_decode.Node),
+) -> #(List(xml_decode.Node), List(xml_decode.Node)) {
+  list.partition(ns, fn(n) {
+    case n {
+      xml_decode.ElementNode(..) -> True
+      xml_decode.Text(..) -> False
+    }
+  })
+}
+
+fn group_by_name(
+  ns: List(xml_decode.Node),
+) -> List(#(String, List(xml_decode.Node))) {
+  list.fold(ns, [], fn(acc, n) {
+    let name = case n {
+      xml_decode.ElementNode(element: e) -> e.name
+      _ -> ""
+    }
+    case
+      list.find(acc, fn(p) {
+        let #(k, _) = p
+        k == name
+      })
+    {
+      Ok(_) ->
+        list.map(acc, fn(p) {
+          let #(k, vs) = p
+          case k == name {
+            True -> #(k, list.append(vs, [n]))
+            False -> p
+          }
+        })
+      Error(_) -> list.append(acc, [#(name, [n])])
+    }
+  })
 }
 
 fn length(xs: List(a)) -> Int {
   list.length(xs)
-}
-
-fn same_name_siblings(ns: List(xml_decode.Node)) -> Bool {
-  case ns {
-    [] -> False
-    [first, ..rest] ->
-      case first {
-        xml_decode.ElementNode(element: e) -> {
-          let name = e.name
-          list.all(rest, fn(n) {
-            case n {
-              xml_decode.ElementNode(element: oe) -> oe.name == name
-              _ -> False
-            }
-          })
-        }
-        _ -> False
-      }
-  }
-}
-
-fn children_ordered_equal(
-  a: List(xml_decode.Node),
-  b: List(xml_decode.Node),
-) -> Bool {
-  case a, b {
-    [], [] -> True
-    [], _ | _, [] -> False
-    [ah, ..at], [bh, ..bt] ->
-      xml_node_equal(ah, bh) && children_ordered_equal(at, bt)
-  }
 }
 
 fn children_multiset_equal(

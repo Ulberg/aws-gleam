@@ -6,6 +6,7 @@
 ////   Action=<OperationName>&Version=<service.version>
 //// method = POST, uri = "/", content-type = application/x-www-form-urlencoded.
 
+import codegen/code.{type Code, CodeSome}
 import codegen/dispatcher
 import gleam/dict
 import gleam/list
@@ -97,33 +98,78 @@ fn emit_empty_operation(op_id: String, version: String) -> EmittedOp {
   let local = strip_namespace(op_id)
   let pascal = local
   let snake = stringutils.pascal_to_snake(local)
+  let input_type = pascal <> "Input"
+  let output_type = pascal <> "Output"
   let body_literal = "Action=" <> local <> "&Version=" <> version
-  let template = "
-pub type " <> pascal <> "Input {
-  " <> pascal <> "Input
+  let module =
+    code.Module(items: [
+      code.Blank,
+      code.TypeDef(
+        public: True,
+        is_opaque: False,
+        name: input_type,
+        variants: [code.UnitVariant(name: input_type)],
+      ),
+      code.Blank,
+      code.TypeDef(
+        public: True,
+        is_opaque: False,
+        name: output_type,
+        variants: [code.UnitVariant(name: output_type)],
+      ),
+      code.Blank,
+      build_request_fn(snake, input_type, body_literal),
+      code.Blank,
+      parse_response_fn(snake, output_type),
+      code.Blank,
+    ])
+  EmittedOp(operation_id: op_id, code: code.render(module))
 }
 
-pub type " <> pascal <> "Output {
-  " <> pascal <> "Output
+/// `pub fn build_<snake>_request(_input: <input_type>) -> #(...) { ... }`
+/// — the awsQuery / ec2Query empty-input form is a fixed
+/// `Action=Op&Version=v` body with `POST /` and a standard
+/// form-urlencoded content-type header.
+fn build_request_fn(snake: String, input_type: String, body_literal: String) -> Code {
+  let headers_assign =
+    code.Let(
+      name: "headers",
+      value: code.Raw(
+        fragment: "dict.from_list([#(\"Content-Type\", \"application/x-www-form-urlencoded\")])",
+      ),
+    )
+  let tuple_expr =
+    code.Tuple(items: [
+      code.StrLit(value: "POST"),
+      code.StrLit(value: "/"),
+      code.Ident(name: "headers"),
+      code.Raw(fragment: "<<\"" <> body_literal <> "\">>"),
+    ])
+  code.Fn(
+    public: True,
+    name: "build_" <> snake <> "_request",
+    params: [code.Param(name: "_input", type_: input_type)],
+    return: CodeSome("#(String, String, dict.Dict(String, String), BitArray)"),
+    body: code.Block(items: [headers_assign, tuple_expr]),
+  )
 }
 
-pub fn build_" <> snake <> "_request(
-  _input: " <> pascal <> "Input,
-) -> #(String, String, dict.Dict(String, String), BitArray) {
-  let headers =
-    dict.from_list([#(\"Content-Type\", \"application/x-www-form-urlencoded\")])
-  #(\"POST\", \"/\", headers, <<\"" <> body_literal <> "\">>)
-}
-
-pub fn parse_" <> snake <> "_response(
-  _code: Int,
-  _headers: dict.Dict(String, String),
-  _body: BitArray,
-) -> Result(" <> pascal <> "Output, String) {
-  Ok(" <> pascal <> "Output)
-}
-"
-  EmittedOp(operation_id: op_id, code: template)
+/// `pub fn parse_<snake>_response(_code, _headers, _body) -> Result(<output_type>, String) { Ok(<output_type>) }`.
+fn parse_response_fn(snake: String, output_type: String) -> Code {
+  code.Fn(
+    public: True,
+    name: "parse_" <> snake <> "_response",
+    params: [
+      code.Param(name: "_code", type_: "Int"),
+      code.Param(name: "_headers", type_: "dict.Dict(String, String)"),
+      code.Param(name: "_body", type_: "BitArray"),
+    ],
+    return: CodeSome("Result(" <> output_type <> ", String)"),
+    body: code.Call(
+      head: code.Ident(name: "Ok"),
+      args: [code.Ident(name: output_type)],
+    ),
+  )
 }
 
 fn file_header(service_id: String, variant: Variant) -> String {
@@ -131,11 +177,21 @@ fn file_header(service_id: String, variant: Variant) -> String {
     AwsQuery -> "awsQuery"
     Ec2Query -> "ec2Query"
   }
-  "//// Generated from " <> service_id <> " (" <> proto <> ").
-//// DO NOT EDIT. Re-generate via the codegen subproject.
-
-import gleam/dict
-"
+  code.render(
+    code.Module(items: [
+      code.ModuleDocComment(lines: [
+        "Generated from " <> service_id <> " (" <> proto <> ").",
+        "DO NOT EDIT. Re-generate via the codegen subproject.",
+      ]),
+      code.Blank,
+      code.Import(
+        path: "gleam/dict",
+        alias: code.CodeNone,
+        unqualified: [],
+      ),
+    ]),
+  )
+  <> "\n"
 }
 
 fn is_unit_or_empty(model: Model, ref: shape.Reference) -> Bool {
