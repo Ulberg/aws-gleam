@@ -216,19 +216,19 @@ fn emit_invoke(spec: OpSpec) -> String {
 /// every restXml service error will land in the `Unknown` variant,
 /// which still carries the raw body so callers aren't stuck.
 fn emit_error_type(spec: OpSpec) -> String {
-  let name = spec.local <> "Error"
+  let name = name_concat([spec.local, "Error"])
   let typed_variants =
     list.map(spec.error_ids, fn(err_id) {
       let local = strip_namespace(err_id)
-      code.Variant(name: name <> local, fields: [
+      code.Variant(name: name_concat([name, local]), fields: [
         code.Param(name: "value", type_: local),
       ])
     })
   let fallback_variants = [
-    code.Variant(name: name <> "Transport", fields: [
+    code.Variant(name: name_concat([name, "Transport"]), fields: [
       code.Param(name: "reason", type_: "String"),
     ]),
-    code.Variant(name: name <> "Unknown", fields: [
+    code.Variant(name: name_concat([name, "Unknown"]), fields: [
       code.Param(name: "error_type", type_: "String"),
       code.Param(name: "status", type_: "Int"),
       code.Param(name: "body", type_: "String"),
@@ -402,9 +402,17 @@ fn emit_named_shapes(
   list.fold(shapes, "", fn(acc, r) {
     case r {
       REnum(gleam_name: n, variants: vs, ..) ->
-        acc <> emit_enum_def(n, vs) <> emit_enum_codec(n, vs, is_dispatcher)
+        string.concat([
+          acc,
+          emit_enum_def(n, vs),
+          emit_enum_codec(n, vs, is_dispatcher),
+        ])
       RIntEnum(gleam_name: n, variants: vs, ..) ->
-        acc <> emit_int_enum_def(n, vs) <> emit_int_enum_codec(n, vs)
+        string.concat([
+          acc,
+          emit_int_enum_def(n, vs),
+          emit_int_enum_codec(n, vs),
+        ])
       RStruct(
         gleam_name: n,
         full_id: id,
@@ -417,14 +425,20 @@ fn emit_named_shapes(
           False -> {
             let ms = types.resolve_members(model, id)
             let emit_json_encoder = set.contains(union_reachable, ln)
-            acc
-            <> emit_record_def(n, ms)
-            <> emit_struct_codec(n, ms, is_dispatcher, emit_json_encoder, xns)
+            string.concat([
+              acc,
+              emit_record_def(n, ms),
+              emit_struct_codec(n, ms, is_dispatcher, emit_json_encoder, xns),
+            ])
           }
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
         let ms = types.resolve_members(model, id)
-        acc <> emit_union_def(n, ms) <> emit_union_codec(n, ms, is_dispatcher)
+        string.concat([
+          acc,
+          emit_union_def(n, ms),
+          emit_union_codec(n, ms, is_dispatcher),
+        ])
       }
       _ -> acc
     }
@@ -603,7 +617,7 @@ fn emit_body_encoder_xml(
     False, Some(s) -> s
     False, None -> input_type
   }
-  let fn_name = "encode_" <> snake <> "_body_xml"
+  let fn_name = name_concat(["encode_", snake, "_body_xml"])
   let #(param_name, body) = case synthesised {
     True -> #(
       "_input",
@@ -617,7 +631,7 @@ fn emit_body_encoder_xml(
       #(
         "input",
         code.Call(
-          head: code.Ident(name: "encode_" <> input_snake <> "_xml"),
+          head: code.Ident(name: name_concat(["encode_", input_snake, "_xml"])),
           args: [code.Ident(name: "input"), code.StrLit(value: root)],
         ),
       )
@@ -648,7 +662,7 @@ fn emit_parse_via_decoder(
         public: True,
         name: fn_name,
         params: [code.Param(name: "body", type_: "String")],
-        return: code.CodeSome("Result(" <> type_name <> ", String)"),
+        return: code.CodeSome(name_concat(["Result(", type_name, ", String)"])),
         body: code.Case(
           scrutinee: code.Call(
             head: code.Ident(name: "json.parse"),
@@ -743,22 +757,22 @@ fn resolve_io_type(
 // ---------- type definitions ----------
 
 fn emit_record_def(name: String, members: List(MemberDef)) -> String {
-  code.render(named_shapes.record_def(name, members)) <> "\n"
+  string.concat([code.render(named_shapes.record_def(name, members)), "\n"])
 }
 
 fn emit_enum_def(name: String, variants: List(types.EnumVariant)) -> String {
-  code.render(named_shapes.enum_def(name, variants)) <> "\n"
+  string.concat([code.render(named_shapes.enum_def(name, variants)), "\n"])
 }
 
 fn emit_int_enum_def(
   name: String,
   variants: List(types.IntEnumVariant),
 ) -> String {
-  code.render(named_shapes.int_enum_def(name, variants)) <> "\n"
+  string.concat([code.render(named_shapes.int_enum_def(name, variants)), "\n"])
 }
 
 fn emit_union_def(name: String, members: List(MemberDef)) -> String {
-  code.render(named_shapes.union_def(name, members)) <> "\n"
+  string.concat([code.render(named_shapes.union_def(name, members)), "\n"])
 }
 
 // ---------- codec helpers ----------
@@ -926,12 +940,12 @@ fn emit_int_enum_codec(
   let snake = stringutils.pascal_to_snake(name)
   let first_ctor = case variants {
     [v, ..] -> v.gleam_ctor
-    [] -> name <> "Unknown"
+    [] -> name_concat([name, "Unknown"])
   }
   let int_value =
     code.Fn(
       public: True,
-      name: snake <> "_int_value",
+      name: name_concat([snake, "_int_value"]),
       params: [code.Param(name: "v", type_: name)],
       return: code.CodeSome("Int"),
       body: code.Case(
