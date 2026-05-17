@@ -2821,28 +2821,104 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
     })
   case payload, out_info.synthesise {
     _, True ->
-      "pub fn parse_"
-      <> snake
-      <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  _body: BitArray,\n) -> Result("
-      <> output_type
-      <> ", String) {\n  Ok("
-      <> output_type
-      <> ")\n}\n\n"
+      code.render(
+        code.Module(items: [
+          code.Fn(
+            public: True,
+            name: "parse_" <> snake <> "_response",
+            params: parse_response_params("_body"),
+            return: code.CodeSome("Result(" <> output_type <> ", String)"),
+            body: code.Call(
+              head: code.Ident(name: "Ok"),
+              args: [code.Ident(name: output_type)],
+            ),
+          ),
+          code.Blank,
+        ]),
+      )
     Ok(p), False -> emit_parse_with_payload(out_info, snake, p)
     Error(_), False -> {
       let decoder =
         "decode_" <> stringutils.pascal_to_snake(output_type) <> "_xml"
-      "pub fn parse_"
-      <> snake
-      <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  body: BitArray,\n) -> Result("
-      <> output_type
-      <> ", String) {\n  case bit_array.to_string(body) {\n    Ok(text) -> case text {\n      \"\" -> "
-      <> decoder
-      <> "(xml_decode.Element(name: \"empty\", attrs: [], children: []))\n      _ -> case xml_decode.parse(text) {\n        Ok(root) -> "
-      <> decoder
-      <> "(root)\n        Error(r) -> Error(r)\n      }\n    }\n    Error(_) -> Error(\"non-utf8 body\")\n  }\n}\n\n"
+      let inner_text_case =
+        code.Case(
+          scrutinee: code.Ident(name: "text"),
+          branches: [
+            code.Branch(
+              pattern: "\"\"",
+              body: code.Call(
+                head: code.Ident(name: decoder),
+                args: [
+                  code.Raw(
+                    fragment: "xml_decode.Element(name: \"empty\", attrs: [], children: [])",
+                  ),
+                ],
+              ),
+            ),
+            code.Branch(
+              pattern: "_",
+              body: code.Case(
+                scrutinee: code.Call(
+                  head: code.Ident(name: "xml_decode.parse"),
+                  args: [code.Ident(name: "text")],
+                ),
+                branches: [
+                  code.Branch(
+                    pattern: "Ok(root)",
+                    body: code.Call(
+                      head: code.Ident(name: decoder),
+                      args: [code.Ident(name: "root")],
+                    ),
+                  ),
+                  code.Branch(
+                    pattern: "Error(r)",
+                    body: code.Call(
+                      head: code.Ident(name: "Error"),
+                      args: [code.Ident(name: "r")],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        )
+      code.render(
+        code.Module(items: [
+          code.Fn(
+            public: True,
+            name: "parse_" <> snake <> "_response",
+            params: parse_response_params("body"),
+            return: code.CodeSome("Result(" <> output_type <> ", String)"),
+            body: code.Case(
+              scrutinee: code.Call(
+                head: code.Ident(name: "bit_array.to_string"),
+                args: [code.Ident(name: "body")],
+              ),
+              branches: [
+                code.Branch(pattern: "Ok(text)", body: inner_text_case),
+                code.Branch(
+                  pattern: "Error(_)",
+                  body: code.Call(
+                    head: code.Ident(name: "Error"),
+                    args: [code.StrLit(value: "non-utf8 body")],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          code.Blank,
+        ]),
+      )
     }
   }
+}
+
+fn parse_response_params(body_param: String) -> List(code.Param) {
+  [
+    code.Param(name: "_code", type_: "Int"),
+    code.Param(name: "_headers", type_: "dict.Dict(String, String)"),
+    code.Param(name: body_param, type_: "BitArray"),
+  ]
 }
 
 fn emit_parse_with_payload(
@@ -2851,46 +2927,67 @@ fn emit_parse_with_payload(
   payload: MemberDef,
 ) -> String {
   let output_type = out_info.type_name
-  let constructor_fields =
-    list.fold(out_info.members, "", fn(acc, m) {
+  let ctor_args =
+    list.map(out_info.members, fn(m) {
       let value = case m.snake_name == payload.snake_name {
-        True -> "payload"
-        False -> "option.None"
+        True -> code.Ident(name: "payload")
+        False -> code.Ident(name: "option.None")
       }
-      acc <> "    " <> m.snake_name <> ": " <> value <> ",\n"
+      code.Labelled(label: m.snake_name, value: value)
     })
   let payload_decode = case payload.target {
-    RBlob -> "let payload = option.Some(body)"
+    RBlob ->
+      code.Let(
+        name: "payload",
+        value: code.Call(
+          head: code.Ident(name: "option.Some"),
+          args: [code.Ident(name: "body")],
+        ),
+      )
     RPrim(primitive: types.PString) ->
-      "use payload <- result.try(case bit_array.to_string(body) {\n      Ok(s) -> Ok(option.Some(s))\n      Error(_) -> Error(\"non-utf8 payload\")\n    })"
+      code.Raw(
+        fragment: "use payload <- result.try(case bit_array.to_string(body) {\n      Ok(s) -> Ok(option.Some(s))\n      Error(_) -> Error(\"non-utf8 payload\")\n    })",
+      )
     RStruct(local_name: name, ..) -> {
       let decoder = "decode_" <> stringutils.pascal_to_snake(name) <> "_xml"
-      "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case xml_decode.parse(text) {\n        Ok(root) -> case "
-      <> decoder
-      <> "(root) {\n          Ok(v) -> Ok(option.Some(v))\n          Error(r) -> Error(r)\n        }\n        Error(r) -> Error(r)\n      }\n    })"
+      code.Raw(
+        fragment: "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case xml_decode.parse(text) {\n        Ok(root) -> case "
+          <> decoder
+          <> "(root) {\n          Ok(v) -> Ok(option.Some(v))\n          Error(r) -> Error(r)\n        }\n        Error(r) -> Error(r)\n      }\n    })",
+      )
     }
-    _ -> "let payload = option.None"
+    _ -> code.Let(name: "payload", value: code.Ident(name: "option.None"))
   }
-  // Payload bindings that fall through to `option.None` (e.g. Union
-  // payloads, not yet implemented) leave `body` unused — bind as
-  // `_body` to silence the warning.
-  let body_param = case string.contains(payload_decode, "body") {
+  let payload_fragment = case payload_decode {
+    code.Raw(fragment: f) -> f
+    other -> code.render(other)
+  }
+  let body_param = case string.contains(payload_fragment, "body") {
     True -> "body"
     False -> "_body"
   }
-  "pub fn parse_"
-  <> snake
-  <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  "
-  <> body_param
-  <> ": BitArray,\n) -> Result("
-  <> output_type
-  <> ", String) {\n  {\n    "
-  <> payload_decode
-  <> "\n    Ok("
-  <> output_type
-  <> "(\n"
-  <> constructor_fields
-  <> "    ))\n  }\n}\n\n"
+  let inner =
+    code.Block(items: [
+      payload_decode,
+      code.Call(
+        head: code.Ident(name: "Ok"),
+        args: [
+          code.Call(head: code.Ident(name: output_type), args: ctor_args),
+        ],
+      ),
+    ])
+  code.render(
+    code.Module(items: [
+      code.Fn(
+        public: True,
+        name: "parse_" <> snake <> "_response",
+        params: parse_response_params(body_param),
+        return: code.CodeSome("Result(" <> output_type <> ", String)"),
+        body: code.Block(items: [inner]),
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 /// See `awsjson.file_header` for the design — body-scan picks the
