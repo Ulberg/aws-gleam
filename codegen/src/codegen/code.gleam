@@ -66,6 +66,14 @@ pub type Code {
   /// into a closure passed to `callee`.
   Use(name: String, callee: Code)
 
+  /// A `fn(p1, p2, ...) { body }` anonymous-function expression.
+  /// Parameters are bare identifier names — anonymous functions in
+  /// Gleam don't carry type annotations on params. Used by the codegen
+  /// for body closures fed to `list.map` / `list.fold` / similar; lets
+  /// emitters compose the closure body out of typed AST instead of
+  /// templating a `code.Raw` fragment.
+  Lambda(params: List(String), body: Code)
+
   /// A `case scrutinee { ... }` expression. Each branch is
   /// `pattern -> body`.
   Case(scrutinee: Code, branches: List(Branch))
@@ -265,6 +273,16 @@ fn do_render(c: Code, indent: Int) -> String {
           ])
       }
 
+    Lambda(params: ps, body: b) ->
+      string.concat([
+        pad(indent),
+        "fn(",
+        string.join(ps, ", "),
+        ") { ",
+        do_render_expr(b, indent),
+        " }",
+      ])
+
     Case(scrutinee: s, branches: bs) -> {
       let header =
         string.concat([pad(indent), "case ", do_render_expr(s, indent), " {"])
@@ -343,6 +361,17 @@ fn do_render_expr(c: Code, indent: Int) -> String {
     // in. Skipping the wrap matches the hand-written style and
     // avoids artificial indentation on `let x = case ... { ... }`.
     Case(..) -> string.trim_start(do_render(c, indent))
+    // Anonymous functions render inline too: `fn(p) { body }`. The
+    // body uses `do_render_expr` so we don't add line breaks for
+    // simple bodies, matching how callers template them today.
+    Lambda(params: ps, body: b) ->
+      string.concat([
+        "fn(",
+        string.join(ps, ", "),
+        ") { ",
+        do_render_expr(b, indent),
+        " }",
+      ])
     _ ->
       // Larger constructs in expression position fall back to the
       // statement renderer — Gleam allows blocks as expressions when

@@ -74,6 +74,49 @@ pub fn const_renders_with_type_annotation_test() {
   |> should.equal("const greeting: String = \"hi\"\n")
 }
 
+pub fn lambda_renders_inline_test() {
+  code.render(code.Lambda(
+    params: ["x"],
+    body: code.Call(head: code.Ident(name: "double"), args: [
+      code.Ident(name: "x"),
+    ]),
+  ))
+  |> should.equal("fn(x) { double(x) }\n")
+}
+
+pub fn lambda_with_no_params_renders_test() {
+  code.render(code.Lambda(params: [], body: code.IntLit(value: 42)))
+  |> should.equal("fn() { 42 }\n")
+}
+
+pub fn lambda_with_multiple_params_renders_test() {
+  code.render(code.Lambda(
+    params: ["a", "b"],
+    body: code.Call(head: code.Ident(name: "plus"), args: [
+      code.Ident(name: "a"),
+      code.Ident(name: "b"),
+    ]),
+  ))
+  |> should.equal("fn(a, b) { plus(a, b) }\n")
+}
+
+pub fn lambda_works_as_call_argument_test() {
+  // The motivating use case: passing a closure to `list.map` /
+  // `list.fold` without templating it as a Raw fragment.
+  code.render(
+    code.Call(head: code.Ident(name: "list.map"), args: [
+      code.Ident(name: "xs"),
+      code.Lambda(
+        params: ["x"],
+        body: code.Call(head: code.Ident(name: "f"), args: [
+          code.Ident(name: "x"),
+        ]),
+      ),
+    ]),
+  )
+  |> should.equal("list.map(xs, fn(x) { f(x) })\n")
+}
+
 pub fn const_inside_module_renders_with_blank_separation_test() {
   code.render(
     code.Module(items: [

@@ -4,22 +4,15 @@ Small simplifications and clean-ups that remain after the
 `rest_request` extraction and the smells.md sweep. None are urgent;
 each can be picked up independently.
 
-## 1. Lambda-body templates still emitted via `code.Raw`
+## 1. Lambda-body templates still emitted via `code.Raw` — DONE
 
-Two spots in `rest_request.gleam` build inline closures by templating
-strings into `code.Raw(fragment: ...)`:
-
-- `query_member_let` — the list-folding form:
-  `list.fold(xs, query, fn(q, item) { let v = item rest.add_query(...) })`
-- `header_member_let` — the list-mapping form:
-  `list.map(xs, fn(item) { let v = item <render> })`
-
-Both carry embedded `\n` and 2-space indentation literals. Per the
-existing convention this use of `code.Raw` is "pragmatic," but the
-bodies are large enough to be worth a proper AST representation.
-Requires either extending `code.gleam` with a `code.Lambda` node or
-expressing the closure as a `code.Fn`-as-expression. Mechanical once
-the AST piece is in place.
+Closed by adding `code.Lambda(params, body)` and lifting both
+closures in `rest_request.gleam` (`query_member_let`'s `list.fold`
+and `header_member_let`'s `list.map`) onto it. Inner-expression
+rendering keys on the `v` binding via `code.Let(name: "v", value:
+item)` inside the Lambda body, so the existing
+`value_to_string_with_format` helper still works without parameter-
+name plumbing.
 
 ## 2. Inner case ladders in `xml_value_expr`
 

@@ -153,15 +153,30 @@ fn query_member_let(m: MemberDef) -> code.Code {
     _, True -> #("option.Some(v)", add_query_call(code.Ident(name: "v")))
     RList(element: e, ..), _ -> #(
       "option.Some(xs)",
-      code.Raw(
-        fragment: string.concat([
-          "list.fold(xs, query, fn(q, item) {\n      let v = item\n      rest.add_query(q, \"",
-          query_name,
-          "\", ",
-          value_to_string_with_format(e, m.timestamp_format),
-          ")\n    })",
-        ]),
-      ),
+      // `list.fold(xs, query, fn(q, item) { let v = item; rest.add_query(...) })`.
+      // The inner `let v = item` lets `value_to_string_with_format`
+      // emit its rendering keyed on `v` — that helper assumes a
+      // `v`-named binding by convention. Renaming the helper to
+      // accept the binding name would invert the dependency; the
+      // current shape keeps the rendering atom-sized.
+      code.Call(head: code.Ident(name: "list.fold"), args: [
+        code.Ident(name: "xs"),
+        code.Ident(name: "query"),
+        code.Lambda(
+          params: ["q", "item"],
+          body: code.Block(items: [
+            code.Let(name: "v", value: code.Ident(name: "item")),
+            code.Call(head: code.Ident(name: "rest.add_query"), args: [
+              code.Ident(name: "q"),
+              code.StrLit(value: query_name),
+              code.Raw(fragment: value_to_string_with_format(
+                e,
+                m.timestamp_format,
+              )),
+            ]),
+          ]),
+        ),
+      ]),
     )
     _, _ -> #(
       "option.Some(v)",
@@ -292,13 +307,21 @@ fn header_member_let(m: MemberDef) -> code.Code {
                 args: [
                   code.Ident(name: "headers"),
                   code.StrLit(value: header_name),
-                  code.Raw(
-                    fragment: string.concat([
-                      "list.map(xs, fn(item) { let v = item ",
-                      render,
-                      " })",
-                    ]),
-                  ),
+                  // `list.map(xs, fn(item) { let v = item; <render> })` —
+                  // `<render>` is an expression keyed on `v`. The
+                  // `let v = item` binding hosts the rename so the
+                  // helper-emitted rendering doesn't have to thread
+                  // through a parameter name.
+                  code.Call(head: code.Ident(name: "list.map"), args: [
+                    code.Ident(name: "xs"),
+                    code.Lambda(
+                      params: ["item"],
+                      body: code.Block(items: [
+                        code.Let(name: "v", value: code.Ident(name: "item")),
+                        code.Raw(fragment: render),
+                      ]),
+                    ),
+                  ]),
                 ],
               ),
             ),
