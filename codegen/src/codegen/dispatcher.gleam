@@ -215,10 +215,12 @@ pub fn label_for_namespace(namespace: String) -> Result(String, String) {
     "aws.protocoltests.query" -> Ok("awsquery")
     "aws.protocoltests.ec2" -> Ok("ec2query")
     other ->
-      Error(string.concat([
-        "no dispatcher label registered for namespace ",
-        other,
-      ]))
+      Error(
+        string.concat([
+          "no dispatcher label registered for namespace ",
+          other,
+        ]),
+      )
   }
 }
 

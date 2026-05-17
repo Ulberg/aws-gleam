@@ -56,9 +56,6 @@ pub type RawNode
 @external(erlang, "erlang", "element")
 fn tuple_element(index: Int, tup: RawNode) -> RawNode
 
-@external(erlang, "erlang", "tuple_size")
-fn tuple_size(tup: RawNode) -> Int
-
 fn tag_of(t: RawNode) -> String {
   unsafe_atom_to_string(tuple_element(1, t))
 }
@@ -211,18 +208,10 @@ pub fn timestamp_text(e: Element) -> Result(Int, String) {
   // Try ISO 8601 first (the protocol default for body timestamps),
   // then HTTP-date (`Tue, 29 Apr 2014 18:30:38 GMT`, used when
   // `@timestampFormat("http-date")` is set), then plain epoch.
-  case parse_iso8601_ffi(t) {
-    Ok(secs) -> Ok(secs)
-    Error(_) ->
-      case parse_http_date_ffi(t) {
-        Ok(secs) -> Ok(secs)
-        Error(_) ->
-          case int.parse(t) {
-            Ok(n) -> Ok(n)
-            Error(_) -> Error("xml: invalid timestamp: " <> t)
-          }
-      }
-  }
+  parse_iso8601_ffi(t)
+  |> result.lazy_or(fn() { parse_http_date_ffi(t) })
+  |> result.lazy_or(fn() { int.parse(t) })
+  |> result.map_error(fn(_) { "xml: invalid timestamp: " <> t })
 }
 
 @external(erlang, "aws_ffi", "parse_iso8601")

@@ -28,12 +28,13 @@ import codegen/client
 import codegen/code
 import codegen/dispatcher
 import codegen/named_shapes
+import codegen/rest_request
 import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
-  type MemberDef, type Resolved, Body, Header, Label, Payload, PrefixHeaders,
-  Query, QueryParams, RBlob, RDocument, REnum, RIntEnum, RList, RMap, RPrim,
-  RStruct, RTimestamp, RUnion, RUnit, Unsupported,
+  type HttpTrait, type MemberDef, type Resolved, Body, HttpTrait, Payload,
+  RBlob, RDocument, REnum, RIntEnum, RList, RMap, RPrim, RStruct, RTimestamp,
+  RUnion, RUnit, Unsupported,
 }
 import gleam/dict
 import gleam/list
@@ -300,13 +301,6 @@ fn emit_error_translator(spec: OpSpec) -> String {
   )
 }
 
-type HttpTrait {
-  /// `compression` carries the `@requestCompression` encodings
-  /// list, e.g. `["gzip"]`. When non-empty the SDK appends each
-  /// encoding to the request's `Content-Encoding` header
-  /// (Smithy `SDKAppliedContentEncoding` protocol test).
-  HttpTrait(method: String, uri: String, code: Int, compression: List(String))
-}
 
 fn resolve_or_unit(model: Model, id: String) -> Resolved {
   case id {
@@ -399,20 +393,17 @@ fn emit_named_shapes(
   is_dispatcher: Bool,
   union_reachable: Set(String),
 ) -> String {
-  list.fold(shapes, "", fn(acc, r) {
+  shapes
+  |> list.flat_map(fn(r) {
     case r {
-      REnum(gleam_name: n, variants: vs, ..) ->
-        string.concat([
-          acc,
-          emit_enum_def(n, vs),
-          emit_enum_codec(n, vs, is_dispatcher),
-        ])
-      RIntEnum(gleam_name: n, variants: vs, ..) ->
-        string.concat([
-          acc,
-          emit_int_enum_def(n, vs),
-          emit_int_enum_codec(n, vs),
-        ])
+      REnum(gleam_name: n, variants: vs, ..) -> [
+        emit_enum_def(n, vs),
+        emit_enum_codec(n, vs, is_dispatcher),
+      ]
+      RIntEnum(gleam_name: n, variants: vs, ..) -> [
+        emit_int_enum_def(n, vs),
+        emit_int_enum_codec(n, vs),
+      ]
       RStruct(
         gleam_name: n,
         full_id: id,
@@ -421,28 +412,24 @@ fn emit_named_shapes(
         ..,
       ) ->
         case ln == "Unit" {
-          True -> acc
+          True -> []
           False -> {
             let ms = types.resolve_members(model, id)
             let emit_json_encoder = set.contains(union_reachable, ln)
-            string.concat([
-              acc,
+            [
               emit_record_def(n, ms),
               emit_struct_codec(n, ms, is_dispatcher, emit_json_encoder, xns),
-            ])
+            ]
           }
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
         let ms = types.resolve_members(model, id)
-        string.concat([
-          acc,
-          emit_union_def(n, ms),
-          emit_union_codec(n, ms, is_dispatcher),
-        ])
+        [emit_union_def(n, ms), emit_union_codec(n, ms, is_dispatcher)]
       }
-      _ -> acc
+      _ -> []
     }
   })
+  |> string.concat
 }
 
 /// Walk every union shape and collect the set of struct local names
@@ -621,10 +608,9 @@ fn emit_body_encoder_xml(
   let #(param_name, body) = case synthesised {
     True -> #(
       "_input",
-      code.Call(
-        head: code.Ident(name: "xml.empty_element"),
-        args: [code.StrLit(value: root)],
-      ),
+      code.Call(head: code.Ident(name: "xml.empty_element"), args: [
+        code.StrLit(value: root),
+      ]),
     )
     False -> {
       let input_snake = stringutils.pascal_to_snake(input_type)
@@ -664,27 +650,22 @@ fn emit_parse_via_decoder(
         params: [code.Param(name: "body", type_: "String")],
         return: code.CodeSome(name_concat(["Result(", type_name, ", String)"])),
         body: code.Case(
-          scrutinee: code.Call(
-            head: code.Ident(name: "json.parse"),
-            args: [
-              code.Ident(name: "body"),
-              code.Call(head: code.Ident(name: decoder_fn), args: []),
-            ],
-          ),
+          scrutinee: code.Call(head: code.Ident(name: "json.parse"), args: [
+            code.Ident(name: "body"),
+            code.Call(head: code.Ident(name: decoder_fn), args: []),
+          ]),
           branches: [
             code.Branch(
               pattern: "Ok(v)",
-              body: code.Call(
-                head: code.Ident(name: "Ok"),
-                args: [code.Ident(name: "v")],
-              ),
+              body: code.Call(head: code.Ident(name: "Ok"), args: [
+                code.Ident(name: "v"),
+              ]),
             ),
             code.Branch(
               pattern: "Error(_)",
-              body: code.Call(
-                head: code.Ident(name: "Error"),
-                args: [code.StrLit(value: "decode failed")],
-              ),
+              body: code.Call(head: code.Ident(name: "Error"), args: [
+                code.StrLit(value: "decode failed"),
+              ]),
             ),
           ],
         ),
@@ -802,10 +783,9 @@ fn emit_enum_codec(
         branches: list.map(variants, fn(v) {
           code.Branch(
             pattern: v.gleam_ctor,
-            body: code.Call(
-              head: code.Ident(name: "json.string"),
-              args: [code.StrLit(value: v.wire_value)],
-            ),
+            body: code.Call(head: code.Ident(name: "json.string"), args: [
+              code.StrLit(value: v.wire_value),
+            ]),
           )
         }),
       ),
@@ -825,19 +805,17 @@ fn emit_enum_codec(
           list.map(variants, fn(v) {
             code.Branch(
               pattern: name_concat(["\"", v.wire_value, "\""]),
-              body: code.Call(
-                head: code.Ident(name: "Ok"),
-                args: [code.Ident(name: v.gleam_ctor)],
-              ),
+              body: code.Call(head: code.Ident(name: "Ok"), args: [
+                code.Ident(name: v.gleam_ctor),
+              ]),
             )
           }),
           [
             code.Branch(
               pattern: "_",
-              body: code.Call(
-                head: code.Ident(name: "Ok"),
-                args: [code.Ident(name: first_ctor)],
-              ),
+              body: code.Call(head: code.Ident(name: "Ok"), args: [
+                code.Ident(name: first_ctor),
+              ]),
             ),
           ],
         ),
@@ -851,22 +829,20 @@ fn emit_enum_codec(
           name: name_concat(["decode_", snake, "_enum"]),
           params: [],
           return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-          body: code.Call(
-            head: code.Ident(name: "decode.then"),
-            args: [
-              code.Ident(name: "decode.string"),
-              enum_decode_lambda(variants, first_ctor),
-            ],
-          ),
+          body: code.Call(head: code.Ident(name: "decode.then"), args: [
+            code.Ident(name: "decode.string"),
+            enum_decode_lambda(variants, first_ctor),
+          ]),
         )
       [code.Blank, dec_fn, code.Blank]
     }
     False -> []
   }
   code.render(
-    code.Module(
-      items: list.append([enc, code.Blank, from_wire, code.Blank], dec_items),
-    ),
+    code.Module(items: list.append(
+      [enc, code.Blank, from_wire, code.Blank],
+      dec_items,
+    )),
   )
 }
 
@@ -969,10 +945,9 @@ fn emit_int_enum_codec(
         branches: list.map(variants, fn(v) {
           code.Branch(
             pattern: v.gleam_ctor,
-            body: code.Call(
-              head: code.Ident(name: "json.int"),
-              args: [code.IntLit(value: v.wire_value)],
-            ),
+            body: code.Call(head: code.Ident(name: "json.int"), args: [
+              code.IntLit(value: v.wire_value),
+            ]),
           )
         }),
       ),
@@ -983,13 +958,10 @@ fn emit_int_enum_codec(
       name: name_concat(["decode_", snake, "_int_enum"]),
       params: [],
       return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-      body: code.Call(
-        head: code.Ident(name: "decode.then"),
-        args: [
-          code.Ident(name: "decode.int"),
-          int_enum_decode_lambda(variants, first_ctor),
-        ],
-      ),
+      body: code.Call(head: code.Ident(name: "decode.then"), args: [
+        code.Ident(name: "decode.int"),
+        int_enum_decode_lambda(variants, first_ctor),
+      ]),
     )
   // Inverse Int → Gleam helper for XML response decoders.
   let from_int =
@@ -1004,19 +976,17 @@ fn emit_int_enum_codec(
           list.map(variants, fn(v) {
             code.Branch(
               pattern: stringutils.int_to_string(v.wire_value),
-              body: code.Call(
-                head: code.Ident(name: "Ok"),
-                args: [code.Ident(name: v.gleam_ctor)],
-              ),
+              body: code.Call(head: code.Ident(name: "Ok"), args: [
+                code.Ident(name: v.gleam_ctor),
+              ]),
             )
           }),
           [
             code.Branch(
               pattern: "_",
-              body: code.Call(
-                head: code.Ident(name: "Ok"),
-                args: [code.Ident(name: first_ctor)],
-              ),
+              body: code.Call(head: code.Ident(name: "Ok"), args: [
+                code.Ident(name: first_ctor),
+              ]),
             ),
           ],
         ),
@@ -1137,15 +1107,13 @@ fn emit_struct_xml_decoder(
         _ -> False
       }
     })
-  let return =
-    code.CodeSome(name_concat(["Result(", type_name, ", String)"]))
+  let return = code.CodeSome(name_concat(["Result(", type_name, ", String)"]))
   let #(param_name, body) = case members {
     [] -> #(
       "_elem",
-      code.Call(
-        head: code.Ident(name: "Ok"),
-        args: [code.Ident(name: type_name)],
-      ),
+      code.Call(head: code.Ident(name: "Ok"), args: [
+        code.Ident(name: type_name),
+      ]),
     )
     _ -> {
       let param = case has_real_body_read {
@@ -1158,10 +1126,9 @@ fn emit_struct_xml_decoder(
             Body ->
               code.Use(
                 name: m.snake_name,
-                callee: code.Call(
-                  head: code.Ident(name: "result.try"),
-                  args: [xml_value_decoder_expr(m.target, m.json_name)],
-                ),
+                callee: code.Call(head: code.Ident(name: "result.try"), args: [
+                  xml_value_decoder_expr(m.target, m.json_name),
+                ]),
               )
             _ ->
               code.Let(
@@ -1172,15 +1139,15 @@ fn emit_struct_xml_decoder(
         })
       let ctor_args =
         list.map(members, fn(m) {
-          code.Labelled(label: m.snake_name, value: code.Ident(name: m.snake_name))
+          code.Labelled(
+            label: m.snake_name,
+            value: code.Ident(name: m.snake_name),
+          )
         })
       let tail =
-        code.Call(
-          head: code.Ident(name: "Ok"),
-          args: [
-            code.Call(head: code.Ident(name: type_name), args: ctor_args),
-          ],
-        )
+        code.Call(head: code.Ident(name: "Ok"), args: [
+          code.Call(head: code.Ident(name: type_name), args: ctor_args),
+        ])
       #(param, code.Block(items: list.append(stmts, [tail])))
     }
   }
@@ -1205,22 +1172,17 @@ fn emit_struct_xml_decoder(
 /// `optional_list` reads.
 fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
   let optional_child_via = fn(decoder_ident: String) {
-    code.Call(
-      head: code.Ident(name: "xml_decode.optional_child"),
-      args: [
-        code.Ident(name: "elem"),
-        code.StrLit(value: member_name),
-        code.Ident(name: decoder_ident),
-      ],
-    )
+    code.Call(head: code.Ident(name: "xml_decode.optional_child"), args: [
+      code.Ident(name: "elem"),
+      code.StrLit(value: member_name),
+      code.Ident(name: decoder_ident),
+    ])
   }
   case target {
     RPrim(primitive: types.PString) ->
       optional_child_via("xml_decode.string_text")
-    RPrim(primitive: types.PInt) ->
-      optional_child_via("xml_decode.int_text")
-    RPrim(primitive: types.PBool) ->
-      optional_child_via("xml_decode.bool_text")
+    RPrim(primitive: types.PInt) -> optional_child_via("xml_decode.int_text")
+    RPrim(primitive: types.PBool) -> optional_child_via("xml_decode.bool_text")
     // `smithy_float_text` recognises the Smithy IEEE-754 special
     // tokens (`NaN` / `Infinity` / `-Infinity`) and returns the
     // matching `json_float.SmithyFloat` variant directly, so
@@ -1230,16 +1192,13 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
     RBlob ->
       // S3 wraps blob bodies in base64; decode the text content then
       // base64-decode. Failure on either side produces a String error.
-      code.Call(
-        head: code.Ident(name: "xml_decode.optional_child"),
-        args: [
-          code.Ident(name: "elem"),
-          code.StrLit(value: member_name),
-          code.Raw(
-            fragment: "fn(e) { case xml_decode.string_text(e) { Ok(s) -> case bit_array.base64_decode(s) { Ok(b) -> Ok(b) Error(_) -> Error(\"xml: bad base64\") } Error(r) -> Error(r) } }",
-          ),
-        ],
-      )
+      code.Call(head: code.Ident(name: "xml_decode.optional_child"), args: [
+        code.Ident(name: "elem"),
+        code.StrLit(value: member_name),
+        code.Raw(
+          fragment: "fn(e) { case xml_decode.string_text(e) { Ok(s) -> case bit_array.base64_decode(s) { Ok(b) -> Ok(b) Error(_) -> Error(\"xml: bad base64\") } Error(r) -> Error(r) } }",
+        ),
+      ])
     // Wire timestamps in restXml are ISO 8601 (e.g.
     // `2024-01-02T03:04:05.000Z`); the type walker surfaces them
     // as `Int` (epoch seconds), so `xml_decode.timestamp_text`
@@ -1255,15 +1214,12 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
     RUnion(gleam_name: gn, ..) -> emit_unsupported_decoder(gn)
     RList(element: e, xml_entry_name: entry, ..) -> {
       let inner_decoder = list_element_decoder(e)
-      code.Call(
-        head: code.Ident(name: "xml_decode.optional_list"),
-        args: [
-          code.Ident(name: "elem"),
-          code.StrLit(value: member_name),
-          code.StrLit(value: entry),
-          code.Raw(fragment: inner_decoder),
-        ],
-      )
+      code.Call(head: code.Ident(name: "xml_decode.optional_list"), args: [
+        code.Ident(name: "elem"),
+        code.StrLit(value: member_name),
+        code.StrLit(value: entry),
+        code.Raw(fragment: inner_decoder),
+      ])
     }
     RMap(key: _, value: _, ..) ->
       emit_unsupported_decoder(types.gleam_type(target))
@@ -1357,10 +1313,10 @@ fn emit_struct_xml_encoder(
     )
   let #(body, attrs_emitter) = case attr_members, xml_namespace {
     [], option.None -> #(
-      code.Call(
-        head: code.Ident(name: "xml.element"),
-        args: [code.Ident(name: "root"), inner_call],
-      ),
+      code.Call(head: code.Ident(name: "xml.element"), args: [
+        code.Ident(name: "root"),
+        inner_call,
+      ]),
       "",
     )
     _, _ -> {
@@ -1370,10 +1326,11 @@ fn emit_struct_xml_encoder(
         _ -> emit_struct_xml_attrs(snake, type_name, attr_members)
       }
       #(
-        code.Call(
-          head: code.Ident(name: "xml.element_with_attrs"),
-          args: [code.Ident(name: "root"), attrs_arg, inner_call],
-        ),
+        code.Call(head: code.Ident(name: "xml.element_with_attrs"), args: [
+          code.Ident(name: "root"),
+          attrs_arg,
+          inner_call,
+        ]),
         extra,
       )
     }
@@ -1412,10 +1369,7 @@ fn struct_xml_attrs_expr(
     )
   case attr_members, xml_namespace {
     [], option.Some(_) ->
-      code.ListLit(
-        items: [code.Raw(fragment: xmlns_attr)],
-        tail: code.CodeNone,
-      )
+      code.ListLit(items: [code.Raw(fragment: xmlns_attr)], tail: code.CodeNone)
     _, option.None -> attrs_call
     _, option.Some(_) ->
       code.ListLit(
@@ -1432,8 +1386,7 @@ fn struct_xml_attrs_expr(
 fn xmlns_attr_expr(ns: option.Option(#(String, String))) -> String {
   case ns {
     option.None -> ""
-    option.Some(#("", uri)) ->
-      name_concat(["#(\"xmlns\", \"", uri, "\")"])
+    option.Some(#("", uri)) -> name_concat(["#(\"xmlns\", \"", uri, "\")"])
     option.Some(#(prefix, uri)) ->
       name_concat(["#(\"xmlns:", prefix, "\", \"", uri, "\")"])
   }
@@ -1465,10 +1418,7 @@ fn emit_struct_xml_attrs(
                 tail: code.CodeSome(code.Ident(name: "attrs")),
               ),
             ),
-            code.Branch(
-              pattern: "option.None",
-              body: code.Ident(name: "attrs"),
-            ),
+            code.Branch(pattern: "option.None", body: code.Ident(name: "attrs")),
           ],
         ),
       )
@@ -1577,32 +1527,11 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
   let mem_ns = m.xml_namespace
   case m.target {
     RPrim(primitive: types.PString) ->
-      wrap_with_attrs(
-        member_name,
-        mem_ns,
-        code.Call(
-          head: code.Ident(name: "xml.escape_text"),
-          args: [code.Ident(name: "v")],
-        ),
-      )
+      wrap_text_call(member_name, mem_ns, "xml.escape_text")
     RPrim(primitive: types.PInt) ->
-      wrap_with_attrs(
-        member_name,
-        mem_ns,
-        code.Call(
-          head: code.Ident(name: "xml.int_text"),
-          args: [code.Ident(name: "v")],
-        ),
-      )
+      wrap_text_call(member_name, mem_ns, "xml.int_text")
     RPrim(primitive: types.PBool) ->
-      wrap_with_attrs(
-        member_name,
-        mem_ns,
-        code.Call(
-          head: code.Ident(name: "xml.bool_text"),
-          args: [code.Ident(name: "v")],
-        ),
-      )
+      wrap_text_call(member_name, mem_ns, "xml.bool_text")
     RPrim(primitive: types.PFloat) ->
       wrap_with_attrs(
         member_name,
@@ -1611,60 +1540,42 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
           fragment: "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }",
         ),
       )
-    RBlob ->
-      wrap_with_attrs(
-        member_name,
-        mem_ns,
-        code.Call(
-          head: code.Ident(name: "xml.blob_text"),
-          args: [code.Ident(name: "v")],
-        ),
-      )
+    RBlob -> wrap_text_call(member_name, mem_ns, "xml.blob_text")
     RTimestamp ->
       // restXml's protocol default is `date-time` (ISO 8601). The
       // `@timestampFormat` member trait overrides it; the member
       // walker collapses both the member-level and target-shape
       // trait into `m.timestamp_format`.
-      wrap_with_attrs(
+      wrap_text_call(
         member_name,
         mem_ns,
-        code.Call(
-          head: code.Ident(name: xml_timestamp_format_expr(m.timestamp_format)),
-          args: [code.Ident(name: "v")],
-        ),
+        xml_timestamp_format_expr(m.timestamp_format),
       )
     REnum(local_name: _, ..) ->
       wrap_with_attrs(
         member_name,
         mem_ns,
-        code.Call(
-          head: code.Ident(name: "rest.enum_wire_value"),
-          args: [
-            code.Call(
-              head: code.Ident(name: types.json_encoder(m.target)),
-              args: [code.Ident(name: "v")],
-            ),
-          ],
-        ),
+        code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
+          code.Call(head: code.Ident(name: types.json_encoder(m.target)), args: [
+            code.Ident(name: "v"),
+          ]),
+        ]),
       )
     RIntEnum(local_name: n, ..) ->
       wrap_with_attrs(
         member_name,
         mem_ns,
-        code.Call(
-          head: code.Ident(name: "xml.int_text"),
-          args: [
-            code.Call(
-              head: code.Ident(
-                name: name_concat([
-                  stringutils.pascal_to_snake(n),
-                  "_int_value",
-                ]),
-              ),
-              args: [code.Ident(name: "v")],
+        code.Call(head: code.Ident(name: "xml.int_text"), args: [
+          code.Call(
+            head: code.Ident(
+              name: name_concat([
+                stringutils.pascal_to_snake(n),
+                "_int_value",
+              ]),
             ),
-          ],
-        ),
+            args: [code.Ident(name: "v")],
+          ),
+        ]),
       )
     RStruct(local_name: name, ..) ->
       // Smithy: shape-level `@xmlNamespace` only applies when the
@@ -1672,37 +1583,23 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
       // member. So always splice the inner body and add the
       // wrapping element ourselves — member-level `@xmlNamespace`
       // (if any) lands on the wrapper via `wrap_with_attrs`.
-      wrap_with_attrs(
+      wrap_text_call(
         member_name,
         mem_ns,
-        code.Call(
-          head: code.Ident(
-            name: name_concat([
-              "encode_",
-              stringutils.pascal_to_snake(name),
-              "_xml_inner",
-            ]),
-          ),
-          args: [code.Ident(name: "v")],
-        ),
+        name_concat(["encode_", stringutils.pascal_to_snake(name), "_xml_inner"]),
       )
     RUnion(local_name: n, ..) ->
       // Wrap the union variant's emission in the outer member's
       // element. `encode_<U>_union_xml_inner` handles dispatching
       // on the variant and emitting `<variant_tag>...</variant_tag>`.
-      wrap_with_attrs(
+      wrap_text_call(
         member_name,
         mem_ns,
-        code.Call(
-          head: code.Ident(
-            name: name_concat([
-              "encode_",
-              stringutils.pascal_to_snake(n),
-              "_union_xml_inner",
-            ]),
-          ),
-          args: [code.Ident(name: "v")],
-        ),
+        name_concat([
+          "encode_",
+          stringutils.pascal_to_snake(n),
+          "_union_xml_inner",
+        ]),
       )
     RList(element: _e, xml_entry_name: entry, xml_element_namespace: ens, ..) -> {
       // Smithy default list: `<MemberName><member>...</member>...
@@ -1730,39 +1627,30 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
       }
       case m.xml_flattened, mem_ns, ens {
         True, option.None, option.None ->
-          code.Call(
-            head: code.Ident(name: "xml.flat_list"),
-            args: [code.StrLit(value: member_name), mapped_v],
-          )
+          code.Call(head: code.Ident(name: "xml.flat_list"), args: [
+            code.StrLit(value: member_name),
+            mapped_v,
+          ])
         True, _, _ ->
-          code.Call(
-            head: code.Ident(name: "xml.flat_list_ns"),
-            args: [
-              code.StrLit(value: member_name),
-              xmlns_attrs_list_code(flat_member_ns),
-              mapped_v,
-            ],
-          )
+          code.Call(head: code.Ident(name: "xml.flat_list_ns"), args: [
+            code.StrLit(value: member_name),
+            xmlns_attrs_list_code(flat_member_ns),
+            mapped_v,
+          ])
         False, option.None, option.None ->
-          code.Call(
-            head: code.Ident(name: "xml.list_element"),
-            args: [
-              code.StrLit(value: member_name),
-              code.StrLit(value: entry),
-              mapped_v,
-            ],
-          )
+          code.Call(head: code.Ident(name: "xml.list_element"), args: [
+            code.StrLit(value: member_name),
+            code.StrLit(value: entry),
+            mapped_v,
+          ])
         False, _, _ ->
-          code.Call(
-            head: code.Ident(name: "xml.list_element_ns"),
-            args: [
-              code.StrLit(value: member_name),
-              xmlns_attrs_list_code(mem_ns),
-              code.StrLit(value: entry),
-              xmlns_attrs_list_code(ens),
-              mapped_v,
-            ],
-          )
+          code.Call(head: code.Ident(name: "xml.list_element_ns"), args: [
+            code.StrLit(value: member_name),
+            xmlns_attrs_list_code(mem_ns),
+            code.StrLit(value: entry),
+            xmlns_attrs_list_code(ens),
+            mapped_v,
+          ])
       }
     }
     RMap(
@@ -1771,7 +1659,7 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
       xml_value_name: vn,
       xml_key_namespace: knp,
       xml_value_namespace: vnp,
-      ..
+      ..,
     ) -> {
       // Smithy default XML map: `<wrapper><entry><key>K</key>
       // <value>V</value></entry>...</wrapper>`. `@xmlFlattened` on
@@ -1794,65 +1682,67 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
       }
       case m.xml_flattened, any_ns {
         True, False ->
-          code.Call(
-            head: code.Ident(name: "xml.flat_map"),
-            args: [
-              code.StrLit(value: member_name),
-              code.StrLit(value: kn),
-              code.StrLit(value: vn),
-              mapped_v,
-            ],
-          )
+          code.Call(head: code.Ident(name: "xml.flat_map"), args: [
+            code.StrLit(value: member_name),
+            code.StrLit(value: kn),
+            code.StrLit(value: vn),
+            mapped_v,
+          ])
         True, True ->
-          code.Call(
-            head: code.Ident(name: "xml.flat_map_ns"),
-            args: [
-              code.StrLit(value: member_name),
-              xmlns_attrs_list_code(mem_ns),
-              code.StrLit(value: kn),
-              xmlns_attrs_list_code(knp),
-              code.StrLit(value: vn),
-              xmlns_attrs_list_code(vnp),
-              mapped_v,
-            ],
-          )
+          code.Call(head: code.Ident(name: "xml.flat_map_ns"), args: [
+            code.StrLit(value: member_name),
+            xmlns_attrs_list_code(mem_ns),
+            code.StrLit(value: kn),
+            xmlns_attrs_list_code(knp),
+            code.StrLit(value: vn),
+            xmlns_attrs_list_code(vnp),
+            mapped_v,
+          ])
         False, False ->
-          code.Call(
-            head: code.Ident(name: "xml.map_element"),
-            args: [
-              code.StrLit(value: member_name),
-              code.StrLit(value: kn),
-              code.StrLit(value: vn),
-              mapped_v,
-            ],
-          )
+          code.Call(head: code.Ident(name: "xml.map_element"), args: [
+            code.StrLit(value: member_name),
+            code.StrLit(value: kn),
+            code.StrLit(value: vn),
+            mapped_v,
+          ])
         False, True ->
-          code.Call(
-            head: code.Ident(name: "xml.map_element_ns"),
-            args: [
-              code.StrLit(value: member_name),
-              xmlns_attrs_list_code(mem_ns),
-              code.StrLit(value: kn),
-              xmlns_attrs_list_code(knp),
-              code.StrLit(value: vn),
-              xmlns_attrs_list_code(vnp),
-              mapped_v,
-            ],
-          )
+          code.Call(head: code.Ident(name: "xml.map_element_ns"), args: [
+            code.StrLit(value: member_name),
+            xmlns_attrs_list_code(mem_ns),
+            code.StrLit(value: kn),
+            xmlns_attrs_list_code(knp),
+            code.StrLit(value: vn),
+            xmlns_attrs_list_code(vnp),
+            mapped_v,
+          ])
       }
     }
     RDocument ->
-      code.Call(
-        head: code.Ident(name: "xml.element"),
-        args: [code.StrLit(value: member_name), code.StrLit(value: "")],
-      )
+      code.Call(head: code.Ident(name: "xml.element"), args: [
+        code.StrLit(value: member_name),
+        code.StrLit(value: ""),
+      ])
     RUnit ->
-      code.Call(
-        head: code.Ident(name: "xml.empty_element"),
-        args: [code.StrLit(value: member_name)],
-      )
+      code.Call(head: code.Ident(name: "xml.empty_element"), args: [
+        code.StrLit(value: member_name),
+      ])
     Unsupported(..) -> code.StrLit(value: "")
   }
+}
+
+/// Common shape: `<wrap><xml_fn(v)></wrap>`. The leaf branches of
+/// `xml_value_expr` all share this — only the inner function name
+/// differs. Pulled out to keep that case expression scannable.
+fn wrap_text_call(
+  name: String,
+  ns: option.Option(#(String, String)),
+  xml_fn: String,
+) -> code.Code {
+  wrap_with_attrs(
+    name,
+    ns,
+    code.Call(head: code.Ident(name: xml_fn), args: [code.Ident(name: "v")]),
+  )
 }
 
 /// Render `<name>inner</name>` or `<name xmlns=...>inner</name>`
@@ -1864,31 +1754,26 @@ fn wrap_with_attrs(
 ) -> code.Code {
   case ns {
     option.None ->
-      code.Call(
-        head: code.Ident(name: "xml.element"),
-        args: [code.StrLit(value: name), inner],
-      )
+      code.Call(head: code.Ident(name: "xml.element"), args: [
+        code.StrLit(value: name),
+        inner,
+      ])
     option.Some(_) ->
-      code.Call(
-        head: code.Ident(name: "xml.element_with_attrs"),
-        args: [
-          code.StrLit(value: name),
-          code.ListLit(
-            items: [code.Raw(fragment: xmlns_attr_expr(ns))],
-            tail: code.CodeNone,
-          ),
-          inner,
-        ],
-      )
+      code.Call(head: code.Ident(name: "xml.element_with_attrs"), args: [
+        code.StrLit(value: name),
+        code.ListLit(
+          items: [code.Raw(fragment: xmlns_attr_expr(ns))],
+          tail: code.CodeNone,
+        ),
+        inner,
+      ])
   }
 }
 
 /// `code.Code` version of `xmlns_attrs_list_expr` — returns the
 /// attribute-list literal node directly so callers can splice it
 /// into an AST argument list without going through `code.Raw`.
-fn xmlns_attrs_list_code(
-  ns: option.Option(#(String, String)),
-) -> code.Code {
+fn xmlns_attrs_list_code(ns: option.Option(#(String, String))) -> code.Code {
   case ns {
     option.None -> code.ListLit(items: [], tail: code.CodeNone)
     option.Some(_) ->
@@ -2042,23 +1927,20 @@ fn emit_union_codec(
             name_concat([name, stringutils.pascalize_member(m.member_name)])
           code.Branch(
             pattern: name_concat([ctor, "(x)"]),
-            body: code.Call(
-              head: code.Ident(name: "json.object"),
-              args: [
-                code.ListLit(
-                  items: [
-                    code.Tuple(items: [
-                      code.StrLit(value: m.json_name),
-                      code.Call(
-                        head: code.Ident(name: types.json_encoder(m.target)),
-                        args: [code.Ident(name: "x")],
-                      ),
-                    ]),
-                  ],
-                  tail: code.CodeNone,
-                ),
-              ],
-            ),
+            body: code.Call(head: code.Ident(name: "json.object"), args: [
+              code.ListLit(
+                items: [
+                  code.Tuple(items: [
+                    code.StrLit(value: m.json_name),
+                    code.Call(
+                      head: code.Ident(name: types.json_encoder(m.target)),
+                      args: [code.Ident(name: "x")],
+                    ),
+                  ]),
+                ],
+                tail: code.CodeNone,
+              ),
+            ]),
           )
         }),
       ),
@@ -2081,13 +1963,10 @@ fn emit_union_codec(
             name_concat([name, stringutils.pascalize_member(m.member_name)])
           code.Branch(
             pattern: name_concat([ctor, "(x)"]),
-            body: code.Call(
-              head: code.Ident(name: "xml.element"),
-              args: [
-                code.StrLit(value: m.json_name),
-                union_variant_xml_inner_expr(m.target),
-              ],
-            ),
+            body: code.Call(head: code.Ident(name: "xml.element"), args: [
+              code.StrLit(value: m.json_name),
+              union_variant_xml_inner_expr(m.target),
+            ]),
           )
         }),
       ),
@@ -2107,9 +1986,10 @@ fn emit_union_codec(
     False -> []
   }
   code.render(
-    code.Module(
-      items: list.append([enc, code.Blank, xml_inner, code.Blank], dec_params_items),
-    ),
+    code.Module(items: list.append(
+      [enc, code.Blank, xml_inner, code.Blank],
+      dec_params_items,
+    )),
   )
 }
 
@@ -2118,59 +1998,47 @@ fn emit_union_codec(
 fn union_variant_xml_inner_expr(target: Resolved) -> code.Code {
   case target {
     RPrim(primitive: types.PString) ->
-      code.Call(
-        head: code.Ident(name: "xml.escape_text"),
-        args: [code.Ident(name: "x")],
-      )
+      code.Call(head: code.Ident(name: "xml.escape_text"), args: [
+        code.Ident(name: "x"),
+      ])
     RPrim(primitive: types.PInt) ->
-      code.Call(
-        head: code.Ident(name: "xml.int_text"),
-        args: [code.Ident(name: "x")],
-      )
+      code.Call(head: code.Ident(name: "xml.int_text"), args: [
+        code.Ident(name: "x"),
+      ])
     RPrim(primitive: types.PBool) ->
-      code.Call(
-        head: code.Ident(name: "xml.bool_text"),
-        args: [code.Ident(name: "x")],
-      )
+      code.Call(head: code.Ident(name: "xml.bool_text"), args: [
+        code.Ident(name: "x"),
+      ])
     RPrim(primitive: types.PFloat) ->
       code.Raw(
         fragment: "case x { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }",
       )
     RBlob ->
-      code.Call(
-        head: code.Ident(name: "xml.blob_text"),
-        args: [code.Ident(name: "x")],
-      )
+      code.Call(head: code.Ident(name: "xml.blob_text"), args: [
+        code.Ident(name: "x"),
+      ])
     RTimestamp ->
-      code.Call(
-        head: code.Ident(name: "json_timestamp.format_iso8601"),
-        args: [code.Ident(name: "x")],
-      )
+      code.Call(head: code.Ident(name: "json_timestamp.format_iso8601"), args: [
+        code.Ident(name: "x"),
+      ])
     REnum(..) ->
-      code.Call(
-        head: code.Ident(name: "rest.enum_wire_value"),
-        args: [
-          code.Call(
-            head: code.Ident(name: types.json_encoder(target)),
-            args: [code.Ident(name: "x")],
-          ),
-        ],
-      )
+      code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
+        code.Call(head: code.Ident(name: types.json_encoder(target)), args: [
+          code.Ident(name: "x"),
+        ]),
+      ])
     RIntEnum(local_name: n, ..) ->
-      code.Call(
-        head: code.Ident(name: "xml.int_text"),
-        args: [
-          code.Call(
-            head: code.Ident(
-              name: name_concat([
-                stringutils.pascal_to_snake(n),
-                "_int_value",
-              ]),
-            ),
-            args: [code.Ident(name: "x")],
+      code.Call(head: code.Ident(name: "xml.int_text"), args: [
+        code.Call(
+          head: code.Ident(
+            name: name_concat([
+              stringutils.pascal_to_snake(n),
+              "_int_value",
+            ]),
           ),
-        ],
-      )
+          args: [code.Ident(name: "x")],
+        ),
+      ])
     RStruct(local_name: n, ..) ->
       code.Call(
         head: code.Ident(
@@ -2207,28 +2075,20 @@ fn union_params_decoder_body(
 ) -> code.Code {
   case members {
     [] ->
-      code.Call(
-        head: code.Ident(name: "decode.failure"),
-        args: [
-          code.Ident(name: name_concat([name, "Empty"])),
-          code.StrLit(value: "empty union"),
-        ],
-      )
+      code.Call(head: code.Ident(name: "decode.failure"), args: [
+        code.Ident(name: name_concat([name, "Empty"])),
+        code.StrLit(value: "empty union"),
+      ])
     [first, ..rest] ->
       code.Block(items: [
         code.Use(name: "", callee: code.Ident(name: "decode.recursive")),
-        code.Call(
-          head: code.Ident(name: "decode.one_of"),
-          args: [
-            emit_union_branch_params(name, first),
-            code.ListLit(
-              items: list.map(rest, fn(m) {
-                emit_union_branch_params(name, m)
-              }),
-              tail: code.CodeNone,
-            ),
-          ],
-        ),
+        code.Call(head: code.Ident(name: "decode.one_of"), args: [
+          emit_union_branch_params(name, first),
+          code.ListLit(
+            items: list.map(rest, fn(m) { emit_union_branch_params(name, m) }),
+            tail: code.CodeNone,
+          ),
+        ]),
       ])
   }
 }
@@ -2236,16 +2096,11 @@ fn union_params_decoder_body(
 fn emit_union_branch_params(union_name: String, m: MemberDef) -> code.Code {
   let ctor =
     name_concat([union_name, stringutils.pascalize_member(m.member_name)])
-  code.Call(
-    head: code.Ident(name: "decode.field"),
-    args: [
-      code.StrLit(value: m.member_name),
-      code.Raw(fragment: types.json_decoder_params(m.target)),
-      code.Raw(
-        fragment: name_concat(["fn(x) { decode.success(", ctor, "(x)) }"]),
-      ),
-    ],
-  )
+  code.Call(head: code.Ident(name: "decode.field"), args: [
+    code.StrLit(value: m.member_name),
+    code.Raw(fragment: types.json_decoder_params(m.target)),
+    code.Raw(fragment: name_concat(["fn(x) { decode.success(", ctor, "(x)) }"])),
+  ])
 }
 
 /// Emit the per-op `build_<op>_request`. Partitions members by HTTP
@@ -2264,278 +2119,48 @@ fn emit_build(
   http: HttpTrait,
   members: List(MemberDef),
 ) -> String {
-  let payload =
-    list.find(members, fn(m) {
-      case m.binding {
-        Payload -> True
-        _ -> False
+  rest_request.build_request_module(
+    input_type,
+    is_unit,
+    snake,
+    http,
+    members,
+    fn(cats: types.BindingCategories) {
+      case cats.payload {
+        Ok(p) -> emit_payload_body(p)
+        Error(_) -> xml_body_setup(snake, cats.body)
       }
-    })
-  let labels =
-    list.filter(members, fn(m) {
-      case m.binding {
-        Label -> True
-        _ -> False
-      }
-    })
-  let queries =
-    list.filter(members, fn(m) {
-      case m.binding {
-        Query(_) -> True
-        _ -> False
-      }
-    })
-  let query_maps =
-    list.filter(members, fn(m) {
-      case m.binding {
-        QueryParams -> True
-        _ -> False
-      }
-    })
-  let headers =
-    list.filter(members, fn(m) {
-      case m.binding {
-        Header(_) -> True
-        _ -> False
-      }
-    })
-  let prefix_headers =
-    list.filter(members, fn(m) {
-      case m.binding {
-        PrefixHeaders(_) -> True
-        _ -> False
-      }
-    })
-  let body_members =
-    list.filter(members, fn(m) {
-      case m.binding {
-        Body -> True
-        _ -> False
-      }
-    })
-
-  // Mirror `restjson.emit_build`: a named-but-empty input ends up
-  // with `input` unused, so bind as `_input` rather than triggering
-  // an unused-argument warning.
-  let input_consumed =
-    !is_unit
-    && {
-      [labels, queries, query_maps, headers, prefix_headers, body_members]
-      |> list.any(fn(xs) { xs != [] })
-      || case payload {
-        Ok(_) -> True
-        Error(_) -> False
-      }
-    }
-  let header_or_input = case input_consumed {
-    True -> "input"
-    False -> "_input"
-  }
-
-  let path_setup = emit_path_setup(http.uri, labels)
-  let query_setup = emit_query_setup(queries, query_maps)
-  let header_setup = emit_header_setup(headers, prefix_headers)
-  let body_setup = case payload {
-    Ok(p) -> emit_payload_body(p)
-    Error(_) ->
-      case body_members {
-        [] ->
-          render_let_block([
-            code.Let(name: "body", value: code.Raw(fragment: "<<>>")),
-            code.Let(name: "content_type", value: code.StrLit(value: "")),
-          ])
-        _ ->
-          render_let_block([
-            code.Let(
-              name: "body_xml",
-              value: code.Call(
-                head: code.Ident(name: name_concat(["encode_", snake, "_body_xml"])),
-                args: [code.Ident(name: "input")],
-              ),
-            ),
-            code.Let(
-              name: "body",
-              value: code.Call(
-                head: code.Ident(name: "bit_array.from_string"),
-                args: [code.Ident(name: "body_xml")],
-              ),
-            ),
-            code.Let(
-              name: "content_type",
-              value: code.StrLit(value: "application/xml"),
-            ),
-          ])
-      }
-  }
-  let compression_setup = emit_content_encoding(http.compression)
-
-  let body_lines =
-    string.concat([
-      path_setup,
-      query_setup,
-      header_setup,
-      body_setup,
-      compression_setup,
-      "  ",
-      code.render(content_type_let_block()),
-      "\n  ",
-      code.render(content_length_let_block()),
-      "\n  ",
-      code.render(
-        code.Let(
-          name: "path",
-          value: code.Call(
-            head: code.Ident(name: "rest.build_path"),
-            args: [code.Ident(name: "path"), code.Ident(name: "query")],
-          ),
-        ),
-      ),
-      "\n  ",
-      code.render(
-        code.Tuple(items: [
-          code.StrLit(value: http.method),
-          code.Ident(name: "path"),
-          code.Ident(name: "headers"),
-          code.Ident(name: "body"),
-        ]),
-      ),
-      "\n",
-    ])
-  code.render(
-    code.Module(items: [
-      code.Fn(
-        public: True,
-        name: name_concat(["build_", snake, "_request"]),
-        params: [code.Param(name: header_or_input, type_: input_type)],
-        return: code.CodeSome(
-          "#(String, String, dict.Dict(String, String), BitArray)",
-        ),
-        body: code.Raw(fragment: body_lines),
-      ),
-      code.Blank,
-    ]),
+    },
   )
 }
 
-/// The `Content-Type` header gating block — fixed across protocols.
-/// Lifted to a helper so both restxml and restjson can share it
-/// (next pass) and to keep `emit_build` readable.
-fn content_type_let_block() -> code.Code {
-  code.Let(
-    name: "headers",
-    value: code.Case(
-      scrutinee: code.Raw(
-        fragment: "content_type, dict.has_key(headers, \"Content-Type\")",
-      ),
-      branches: [
-        code.Branch(pattern: "\"\", _", body: code.Ident(name: "headers")),
-        code.Branch(pattern: "_, True", body: code.Ident(name: "headers")),
-        code.Branch(
-          pattern: "_, False",
-          body: code.Call(
-            head: code.Ident(name: "dict.insert"),
-            args: [
-              code.Ident(name: "headers"),
-              code.StrLit(value: "Content-Type"),
-              code.Ident(name: "content_type"),
-            ],
-          ),
-        ),
-      ],
-    ),
-  )
-}
-
-/// The `Content-Length` header block — only set when there's a
-/// body to measure (content_type empty → no body).
-fn content_length_let_block() -> code.Code {
-  code.Let(
-    name: "headers",
-    value: code.Case(
-      scrutinee: code.Ident(name: "content_type"),
-      branches: [
-        code.Branch(pattern: "\"\"", body: code.Ident(name: "headers")),
-        code.Branch(
-          pattern: "_",
-          body: code.Call(
-            head: code.Ident(name: "dict.insert"),
-            args: [
-              code.Ident(name: "headers"),
-              code.StrLit(value: "Content-Length"),
-              code.Raw(
-                fragment: "int.to_string(bit_array.byte_size(body))",
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  )
-}
-
-fn emit_content_encoding(encodings: List(String)) -> String {
-  list.fold(encodings, "", fn(acc, enc) {
-    let stmt =
+fn xml_body_setup(snake: String, body: List(MemberDef)) -> List(code.Code) {
+  case body {
+    [] -> [
+      code.Let(name: "body", value: code.Raw(fragment: "<<>>")),
+      code.Let(name: "content_type", value: code.StrLit(value: "")),
+    ]
+    _ -> [
       code.Let(
-        name: "headers",
+        name: "body_xml",
         value: code.Call(
-          head: code.Ident(name: "rest.append_content_encoding"),
-          args: [code.Ident(name: "headers"), code.StrLit(value: enc)],
+          head: code.Ident(name: name_concat(["encode_", snake, "_body_xml"])),
+          args: [code.Ident(name: "input")],
         ),
-      )
-    string.concat([acc, "  ", code.render(stmt), "\n"])
-  })
-}
-
-fn emit_path_setup(uri_template: String, labels: List(MemberDef)) -> String {
-  let initial =
-    code.Let(name: "path", value: code.StrLit(value: uri_template))
-  let updates =
-    list.map(labels, fn(m) {
-      let greedy =
-        string.contains(uri_template, name_concat(["{", m.json_name, "+}"]))
-      let greedy_ident = case greedy {
-        True -> code.Ident(name: "True")
-        False -> code.Ident(name: "False")
-      }
+      ),
       code.Let(
-        name: "path",
-        value: code.Case(
-          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(
-              pattern: "option.Some(v)",
-              body: code.Call(
-                head: code.Ident(name: "rest.substitute_label"),
-                args: [
-                  code.Ident(name: "path"),
-                  code.StrLit(value: m.json_name),
-                  code.Raw(
-                    fragment: value_to_string_with_format(
-                      m.target,
-                      m.timestamp_format,
-                    ),
-                  ),
-                  greedy_ident,
-                ],
-              ),
-            ),
-            code.Branch(pattern: "option.None", body: code.Ident(name: "path")),
-          ],
+        name: "body",
+        value: code.Call(
+          head: code.Ident(name: "bit_array.from_string"),
+          args: [code.Ident(name: "body_xml")],
         ),
-      )
-    })
-  render_let_block([initial, ..updates])
-}
-
-/// Render a sequence of `code.Let` statements as the indented body
-/// fragment used inside `build_<op>_request`. Returns `"  let X =
-/// ...\n  let Y = ...\n"` — each statement on its own line, two-
-/// space-indented to match the surrounding function.
-fn render_let_block(stmts: List(code.Code)) -> String {
-  list.fold(stmts, "", fn(acc, stmt) {
-    string.concat([acc, "  ", code.render(stmt), "\n"])
-  })
+      ),
+      code.Let(
+        name: "content_type",
+        value: code.StrLit(value: "application/xml"),
+      ),
+    ]
+  }
 }
 
 /// Build a Gleam identifier name from a list of parts. Used in
@@ -2546,276 +2171,7 @@ fn name_concat(parts: List(String)) -> String {
   string.concat(parts)
 }
 
-fn emit_query_setup(
-  queries: List(MemberDef),
-  query_maps: List(MemberDef),
-) -> String {
-  let initial = code.Let(name: "query", value: code.StrLit(value: ""))
-  let query_stmts = list.map(queries, query_member_let)
-  let map_stmts = list.filter_map(query_maps, query_map_member_let)
-  render_let_block(list.flatten([[initial], query_stmts, map_stmts]))
-}
-
-/// Build the `let query = case input.<member> { ... }` statement for
-/// a single `@httpQuery` member. Three variants: an
-/// `@idempotencyToken` member auto-fills via `rest.idempotency_
-/// token()` when unset, a list member folds an `rest.add_query`
-/// per element, and the scalar case stringifies once.
-fn query_member_let(m: MemberDef) -> code.Code {
-  let query_name = case m.binding {
-    Query(query_name: n) -> n
-    _ -> m.json_name
-  }
-  case m.target, m.idempotency_token {
-    _, True ->
-      code.Let(
-        name: "query",
-        value: code.Case(
-          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(
-              pattern: "option.Some(v)",
-              body: code.Call(
-                head: code.Ident(name: "rest.add_query"),
-                args: [
-                  code.Ident(name: "query"),
-                  code.StrLit(value: query_name),
-                  code.Ident(name: "v"),
-                ],
-              ),
-            ),
-            code.Branch(
-              pattern: "option.None",
-              body: code.Call(
-                head: code.Ident(name: "rest.add_query"),
-                args: [
-                  code.Ident(name: "query"),
-                  code.StrLit(value: query_name),
-                  code.Call(
-                    head: code.Ident(name: "rest.idempotency_token"),
-                    args: [],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      )
-    RList(element: e, ..), _ ->
-      code.Let(
-        name: "query",
-        value: code.Case(
-          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(
-              pattern: "option.Some(xs)",
-              body: code.Raw(
-                fragment: name_concat([
-                  "list.fold(xs, query, fn(q, item) {\n      let v = item\n      rest.add_query(q, \"",
-                  query_name,
-                  "\", ",
-                  value_to_string_with_format(e, m.timestamp_format),
-                  ")\n    })",
-                ]),
-              ),
-            ),
-            code.Branch(
-              pattern: "option.None",
-              body: code.Ident(name: "query"),
-            ),
-          ],
-        ),
-      )
-    _, _ ->
-      code.Let(
-        name: "query",
-        value: code.Case(
-          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(
-              pattern: "option.Some(v)",
-              body: code.Call(
-                head: code.Ident(name: "rest.add_query"),
-                args: [
-                  code.Ident(name: "query"),
-                  code.StrLit(value: query_name),
-                  code.Raw(
-                    fragment: value_to_string_with_format(
-                      m.target,
-                      m.timestamp_format,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            code.Branch(
-              pattern: "option.None",
-              body: code.Ident(name: "query"),
-            ),
-          ],
-        ),
-      )
-  }
-}
-
-/// Build the `let query = case input.<member> { ... }` statement for
-/// a single `@httpQueryParams` member. Returns `Error(Nil)` for
-/// unsupported map value types (the emitter then drops the field).
-fn query_map_member_let(m: MemberDef) -> Result(code.Code, Nil) {
-  let helper = case m.target {
-    RMap(
-      key: _,
-      value: RList(element: RPrim(primitive: types.PString), ..),
-      ..,
-    ) -> Ok("rest.add_query_params_list")
-    RMap(key: _, value: RPrim(primitive: types.PString), ..) ->
-      Ok("rest.add_query_params")
-    _ -> Error(Nil)
-  }
-  case helper {
-    Ok(fn_name) ->
-      Ok(code.Let(
-        name: "query",
-        value: code.Case(
-          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(
-              pattern: "option.Some(m)",
-              body: code.Call(
-                head: code.Ident(name: fn_name),
-                args: [code.Ident(name: "query"), code.Ident(name: "m")],
-              ),
-            ),
-            code.Branch(
-              pattern: "option.None",
-              body: code.Ident(name: "query"),
-            ),
-          ],
-        ),
-      ))
-    Error(_) -> Error(Nil)
-  }
-}
-
-fn emit_header_setup(
-  headers: List(MemberDef),
-  prefix_headers: List(MemberDef),
-) -> String {
-  // Apply prefix-headers FIRST so explicit `@httpHeader` members
-  // win on key collision. Mirrors restjson; the prior restxml
-  // order let prefix headers shadow the specific binding
-  // (`HttpEmptyPrefixHeaders` test: `prefixHeaders.hello = "Hello"`
-  // and `specificHeader = "There"` bound to `@httpHeader("hello")`
-  // → wire `hello: There`).
-  let initial =
-    code.Let(
-      name: "headers",
-      value: code.Call(head: code.Ident(name: "dict.new"), args: []),
-    )
-  let prefix_stmts = list.map(prefix_headers, prefix_header_let)
-  let header_stmts = list.map(headers, header_member_let)
-  render_let_block(list.flatten([[initial], prefix_stmts, header_stmts]))
-}
-
-fn prefix_header_let(m: MemberDef) -> code.Code {
-  let prefix = case m.binding {
-    PrefixHeaders(prefix: p) -> p
-    _ -> ""
-  }
-  code.Let(
-    name: "headers",
-    value: code.Case(
-      scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-      branches: [
-        code.Branch(
-          pattern: "option.Some(m)",
-          body: code.Call(
-            head: code.Ident(name: "rest.add_prefix_headers"),
-            args: [
-              code.Ident(name: "headers"),
-              code.StrLit(value: prefix),
-              code.Ident(name: "m"),
-            ],
-          ),
-        ),
-        code.Branch(
-          pattern: "option.None",
-          body: code.Ident(name: "headers"),
-        ),
-      ],
-    ),
-  )
-}
-
-fn header_member_let(m: MemberDef) -> code.Code {
-  let header_name = case m.binding {
-    Header(header_name: n) -> n
-    _ -> m.json_name
-  }
-  case m.target {
-    RList(element: e, ..) ->
-      code.Let(
-        name: "headers",
-        value: code.Case(
-          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(
-              pattern: "option.Some(xs)",
-              body: code.Call(
-                head: code.Ident(name: "rest.maybe_set_list_header"),
-                args: [
-                  code.Ident(name: "headers"),
-                  code.StrLit(value: header_name),
-                  code.Raw(
-                    fragment: name_concat([
-                      "list.map(xs, fn(item) { let v = item ",
-                      value_to_string_for_header(e, m.timestamp_format),
-                      " })",
-                    ]),
-                  ),
-                ],
-              ),
-            ),
-            code.Branch(
-              pattern: "option.None",
-              body: code.Ident(name: "headers"),
-            ),
-          ],
-        ),
-      )
-    _ ->
-      code.Let(
-        name: "headers",
-        value: code.Case(
-          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(
-              pattern: "option.Some(v)",
-              body: code.Call(
-                head: code.Ident(name: "rest.maybe_set_header"),
-                args: [
-                  code.Ident(name: "headers"),
-                  code.StrLit(value: header_name),
-                  code.Raw(
-                    fragment: value_to_string_for_header(
-                      m.target,
-                      m.timestamp_format,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            code.Branch(
-              pattern: "option.None",
-              body: code.Ident(name: "headers"),
-            ),
-          ],
-        ),
-      )
-  }
-}
-
-fn emit_payload_body(m: MemberDef) -> String {
+fn emit_payload_body(m: MemberDef) -> List(code.Code) {
   // @httpPayload — the member's value IS the body.
   //   * blob: raw bytes; Content-Type defaults to
   //     `application/octet-stream`, overridden by `@mediaType`.
@@ -2835,51 +2191,37 @@ fn emit_payload_body(m: MemberDef) -> String {
   let #(some_expr, content_type) = case m.target {
     types.RBlob -> #(code.Ident(name: "v"), blob_ct)
     RPrim(primitive: types.PString) -> #(
-      code.Call(
-        head: code.Ident(name: "bit_array.from_string"),
-        args: [code.Ident(name: "v")],
-      ),
+      code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+        code.Ident(name: "v"),
+      ]),
       string_ct,
     )
     REnum(local_name: _, ..) -> #(
-      code.Call(
-        head: code.Ident(name: "bit_array.from_string"),
-        args: [
-          code.Call(
-            head: code.Ident(name: "rest.enum_wire_value"),
-            args: [
-              code.Call(
-                head: code.Ident(name: types.json_encoder(m.target)),
-                args: [code.Ident(name: "v")],
-              ),
-            ],
-          ),
-        ],
-      ),
+      code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+        code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
+          code.Call(head: code.Ident(name: types.json_encoder(m.target)), args: [
+            code.Ident(name: "v"),
+          ]),
+        ]),
+      ]),
       string_ct,
     )
     RUnion(local_name: name, ..) -> #(
-      code.Call(
-        head: code.Ident(name: "bit_array.from_string"),
-        args: [
+      code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+        code.Call(head: code.Ident(name: "xml.element"), args: [
+          code.StrLit(value: name),
           code.Call(
-            head: code.Ident(name: "xml.element"),
-            args: [
-              code.StrLit(value: name),
-              code.Call(
-                head: code.Ident(
-                  name: name_concat([
-                    "encode_",
-                    stringutils.pascal_to_snake(name),
-                    "_union_xml_inner",
-                  ]),
-                ),
-                args: [code.Ident(name: "v")],
-              ),
-            ],
+            head: code.Ident(
+              name: name_concat([
+                "encode_",
+                stringutils.pascal_to_snake(name),
+                "_union_xml_inner",
+              ]),
+            ),
+            args: [code.Ident(name: "v")],
           ),
-        ],
-      ),
+        ]),
+      ]),
       "application/xml",
     )
     RStruct(local_name: name, xml_name: xn, ..) -> {
@@ -2889,39 +2231,29 @@ fn emit_payload_body(m: MemberDef) -> String {
         True, None -> name
       }
       #(
-        code.Call(
-          head: code.Ident(name: "bit_array.from_string"),
-          args: [
-            code.Call(
-              head: code.Ident(
-                name: name_concat([
-                  "encode_",
-                  stringutils.pascal_to_snake(name),
-                  "_xml",
-                ]),
-              ),
-              args: [code.Ident(name: "v"), code.StrLit(value: wrapper)],
+        code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+          code.Call(
+            head: code.Ident(
+              name: name_concat([
+                "encode_",
+                stringutils.pascal_to_snake(name),
+                "_xml",
+              ]),
             ),
-          ],
-        ),
+            args: [code.Ident(name: "v"), code.StrLit(value: wrapper)],
+          ),
+        ]),
         "application/xml",
       )
     }
     _ -> #(
-      code.Call(
-        head: code.Ident(name: "bit_array.from_string"),
-        args: [
-          code.Call(
-            head: code.Ident(name: "json.to_string"),
-            args: [
-              code.Call(
-                head: code.Ident(name: types.json_encoder(m.target)),
-                args: [code.Ident(name: "v")],
-              ),
-            ],
-          ),
-        ],
-      ),
+      code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+        code.Call(head: code.Ident(name: "json.to_string"), args: [
+          code.Call(head: code.Ident(name: types.json_encoder(m.target)), args: [
+            code.Ident(name: "v"),
+          ]),
+        ]),
+      ]),
       "application/xml",
     )
   }
@@ -2932,73 +2264,13 @@ fn emit_payload_body(m: MemberDef) -> String {
         scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
         branches: [
           code.Branch(pattern: "option.Some(v)", body: some_expr),
-          code.Branch(
-            pattern: "option.None",
-            body: code.Raw(fragment: "<<>>"),
-          ),
+          code.Branch(pattern: "option.None", body: code.Raw(fragment: "<<>>")),
         ],
       ),
     )
   let ct_stmt =
     code.Let(name: "content_type", value: code.StrLit(value: content_type))
-  render_let_block([body_stmt, ct_stmt])
-}
-
-/// Render a Resolved value as a Gleam expression that produces a
-/// String — used in label / query / header position where everything
-/// is stringified. Format-aware variant; the no-format wrapper has
-/// been removed since every caller carries an explicit timestamp
-/// format.
-fn value_to_string_with_format(
-  target: Resolved,
-  timestamp_format: Option(String),
-) -> String {
-  // Default to date-time (ISO 8601) when the member carries no
-  // explicit `@timestampFormat`. Headers diverge — their protocol
-  // default is `http-date` — so the header emitter calls
-  // `value_to_string_for_header` instead of this one.
-  value_to_string_for_default(target, timestamp_format, "date-time")
-}
-
-fn value_to_string_for_header(
-  target: Resolved,
-  timestamp_format: Option(String),
-) -> String {
-  value_to_string_for_default(target, timestamp_format, "http-date")
-}
-
-fn value_to_string_for_default(
-  target: Resolved,
-  timestamp_format: Option(String),
-  default: String,
-) -> String {
-  case target {
-    RPrim(primitive: types.PString) -> "v"
-    RPrim(primitive: types.PInt) -> "rest.int_to_query(v)"
-    RPrim(primitive: types.PFloat) ->
-      "case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
-    RPrim(primitive: types.PBool) -> "rest.bool_to_query(v)"
-    REnum(local_name: _, ..) ->
-      name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
-    RIntEnum(local_name: n, ..) ->
-      name_concat([
-        "rest.int_to_query(",
-        stringutils.pascal_to_snake(n),
-        "_int_value(v))",
-      ])
-    RTimestamp -> {
-      let chosen = case timestamp_format {
-        Some(f) -> f
-        None -> default
-      }
-      case chosen {
-        "epoch-seconds" -> "rest.int_to_query(v)"
-        "http-date" -> "json_timestamp.format_http_date(v)"
-        _ -> "json_timestamp.format_iso8601(v)"
-      }
-    }
-    _ -> "\"\""
-  }
+  [body_stmt, ct_stmt]
 }
 
 /// `parse_<op>_response`: parse the wire body as XML, then run the
@@ -3025,10 +2297,9 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
             return: code.CodeSome(
               name_concat(["Result(", output_type, ", String)"]),
             ),
-            body: code.Call(
-              head: code.Ident(name: "Ok"),
-              args: [code.Ident(name: output_type)],
-            ),
+            body: code.Call(head: code.Ident(name: "Ok"), args: [
+              code.Ident(name: output_type),
+            ]),
           ),
           code.Blank,
         ]),
@@ -3042,47 +2313,39 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
           "_xml",
         ])
       let inner_text_case =
-        code.Case(
-          scrutinee: code.Ident(name: "text"),
-          branches: [
-            code.Branch(
-              pattern: "\"\"",
-              body: code.Call(
-                head: code.Ident(name: decoder),
-                args: [
-                  code.Raw(
-                    fragment: "xml_decode.Element(name: \"empty\", attrs: [], children: [])",
-                  ),
-                ],
+        code.Case(scrutinee: code.Ident(name: "text"), branches: [
+          code.Branch(
+            pattern: "\"\"",
+            body: code.Call(head: code.Ident(name: decoder), args: [
+              code.Raw(
+                fragment: "xml_decode.Element(name: \"empty\", attrs: [], children: [])",
               ),
-            ),
-            code.Branch(
-              pattern: "_",
-              body: code.Case(
-                scrutinee: code.Call(
-                  head: code.Ident(name: "xml_decode.parse"),
-                  args: [code.Ident(name: "text")],
+            ]),
+          ),
+          code.Branch(
+            pattern: "_",
+            body: code.Case(
+              scrutinee: code.Call(
+                head: code.Ident(name: "xml_decode.parse"),
+                args: [code.Ident(name: "text")],
+              ),
+              branches: [
+                code.Branch(
+                  pattern: "Ok(root)",
+                  body: code.Call(head: code.Ident(name: decoder), args: [
+                    code.Ident(name: "root"),
+                  ]),
                 ),
-                branches: [
-                  code.Branch(
-                    pattern: "Ok(root)",
-                    body: code.Call(
-                      head: code.Ident(name: decoder),
-                      args: [code.Ident(name: "root")],
-                    ),
-                  ),
-                  code.Branch(
-                    pattern: "Error(r)",
-                    body: code.Call(
-                      head: code.Ident(name: "Error"),
-                      args: [code.Ident(name: "r")],
-                    ),
-                  ),
-                ],
-              ),
+                code.Branch(
+                  pattern: "Error(r)",
+                  body: code.Call(head: code.Ident(name: "Error"), args: [
+                    code.Ident(name: "r"),
+                  ]),
+                ),
+              ],
             ),
-          ],
-        )
+          ),
+        ])
       code.render(
         code.Module(items: [
           code.Fn(
@@ -3101,10 +2364,9 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
                 code.Branch(pattern: "Ok(text)", body: inner_text_case),
                 code.Branch(
                   pattern: "Error(_)",
-                  body: code.Call(
-                    head: code.Ident(name: "Error"),
-                    args: [code.StrLit(value: "non-utf8 body")],
-                  ),
+                  body: code.Call(head: code.Ident(name: "Error"), args: [
+                    code.StrLit(value: "non-utf8 body"),
+                  ]),
                 ),
               ],
             ),
@@ -3142,10 +2404,9 @@ fn emit_parse_with_payload(
     RBlob ->
       code.Let(
         name: "payload",
-        value: code.Call(
-          head: code.Ident(name: "option.Some"),
-          args: [code.Ident(name: "body")],
-        ),
+        value: code.Call(head: code.Ident(name: "option.Some"), args: [
+          code.Ident(name: "body"),
+        ]),
       )
     RPrim(primitive: types.PString) ->
       code.Raw(
@@ -3175,12 +2436,9 @@ fn emit_parse_with_payload(
   let inner =
     code.Block(items: [
       payload_decode,
-      code.Call(
-        head: code.Ident(name: "Ok"),
-        args: [
-          code.Call(head: code.Ident(name: output_type), args: ctor_args),
-        ],
-      ),
+      code.Call(head: code.Ident(name: "Ok"), args: [
+        code.Call(head: code.Ident(name: output_type), args: ctor_args),
+      ]),
     ])
   code.render(
     code.Module(items: [

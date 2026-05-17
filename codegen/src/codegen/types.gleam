@@ -344,6 +344,83 @@ pub type HttpBinding {
   ResponseCode
 }
 
+/// The `@http(method, uri, code)` trait + `@requestCompression`. Used
+/// by the rest-protocol `emit_build` emitters to build the request
+/// path / status / encoding. `compression` is the `@requestCompression`
+/// encodings list (e.g. `["gzip"]`); when non-empty the SDK appends
+/// each encoding to the `Content-Encoding` header.
+pub type HttpTrait {
+  HttpTrait(method: String, uri: String, code: Int, compression: List(String))
+}
+
+/// A struct's members partitioned by their `HttpBinding`. Returned by
+/// `categorize_bindings`; consumed by the rest-protocol `emit_build`
+/// emitters to avoid seven near-identical `list.filter` ladders.
+pub type BindingCategories {
+  BindingCategories(
+    payload: Result(MemberDef, Nil),
+    labels: List(MemberDef),
+    queries: List(MemberDef),
+    query_maps: List(MemberDef),
+    headers: List(MemberDef),
+    prefix_headers: List(MemberDef),
+    body: List(MemberDef),
+  )
+}
+
+/// Walk `members` once and bucket each by its `binding`. `Payload` is
+/// `Result(MemberDef, Nil)` because Smithy permits at most one
+/// `@httpPayload` member per operation. Order within each bucket
+/// matches input order (the per-bucket `list.filter` callers used).
+pub fn categorize_bindings(members: List(MemberDef)) -> BindingCategories {
+  let empty =
+    BindingCategories(
+      payload: Error(Nil),
+      labels: [],
+      queries: [],
+      query_maps: [],
+      headers: [],
+      prefix_headers: [],
+      body: [],
+    )
+  let acc =
+    list.fold(members, empty, fn(acc, m) {
+      case m.binding {
+        Body -> BindingCategories(..acc, body: [m, ..acc.body])
+        Label -> BindingCategories(..acc, labels: [m, ..acc.labels])
+        Query(_) -> BindingCategories(..acc, queries: [m, ..acc.queries])
+        QueryParams ->
+          BindingCategories(..acc, query_maps: [m, ..acc.query_maps])
+        Header(_) -> BindingCategories(..acc, headers: [m, ..acc.headers])
+        PrefixHeaders(_) ->
+          BindingCategories(..acc, prefix_headers: [m, ..acc.prefix_headers])
+        Payload -> BindingCategories(..acc, payload: Ok(m))
+        ResponseCode -> acc
+      }
+    })
+  BindingCategories(
+    payload: acc.payload,
+    labels: list.reverse(acc.labels),
+    queries: list.reverse(acc.queries),
+    query_maps: list.reverse(acc.query_maps),
+    headers: list.reverse(acc.headers),
+    prefix_headers: list.reverse(acc.prefix_headers),
+    body: list.reverse(acc.body),
+  )
+}
+
+/// True if any of the body-shaped buckets has at least one member.
+/// Mirrors the `input_consumed` check the rest-protocol emitters do
+/// before deciding whether to bind `input` vs `_input`.
+pub fn has_any_binding(c: BindingCategories) -> Bool {
+  case c.payload {
+    Ok(_) -> True
+    Error(_) ->
+      [c.labels, c.queries, c.query_maps, c.headers, c.prefix_headers, c.body]
+      |> list.any(fn(xs) { xs != [] })
+  }
+}
+
 /// Build a `full_id → unique gleam_name` map for the whole model.
 /// Two Smithy shapes with the same local name but different
 /// namespaces collapse to the same Gleam type name otherwise; we

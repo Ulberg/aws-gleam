@@ -184,7 +184,9 @@ fn do_render(c: Code, indent: Int) -> String {
       let header = string.concat([pad(indent), keyword, n, " {"])
       let body =
         vs
-        |> list.map(fn(v) { string.concat([pad(indent + 1), render_variant(v)]) })
+        |> list.map(fn(v) {
+          string.concat([pad(indent + 1), render_variant(v)])
+        })
         |> string.join("\n")
       string.concat([header, "\n", body, "\n", pad(indent), "}"])
     }

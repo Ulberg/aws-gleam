@@ -110,19 +110,13 @@ fn emit_empty_operation(op_id: String, version: String) -> EmittedOp {
   let module =
     code.Module(items: [
       code.Blank,
-      code.TypeDef(
-        public: True,
-        is_opaque: False,
-        name: input_type,
-        variants: [code.UnitVariant(name: input_type)],
-      ),
+      code.TypeDef(public: True, is_opaque: False, name: input_type, variants: [
+        code.UnitVariant(name: input_type),
+      ]),
       code.Blank,
-      code.TypeDef(
-        public: True,
-        is_opaque: False,
-        name: output_type,
-        variants: [code.UnitVariant(name: output_type)],
-      ),
+      code.TypeDef(public: True, is_opaque: False, name: output_type, variants: [
+        code.UnitVariant(name: output_type),
+      ]),
       code.Blank,
       build_request_fn(snake, input_type, body_literal),
       code.Blank,
@@ -136,7 +130,11 @@ fn emit_empty_operation(op_id: String, version: String) -> EmittedOp {
 /// — the awsQuery / ec2Query empty-input form is a fixed
 /// `Action=Op&Version=v` body with `POST /` and a standard
 /// form-urlencoded content-type header.
-fn build_request_fn(snake: String, input_type: String, body_literal: String) -> Code {
+fn build_request_fn(
+  snake: String,
+  input_type: String,
+  body_literal: String,
+) -> Code {
   let headers_assign =
     code.Let(
       name: "headers",
@@ -171,10 +169,9 @@ fn parse_response_fn(snake: String, output_type: String) -> Code {
       code.Param(name: "_body", type_: "BitArray"),
     ],
     return: CodeSome(name_concat(["Result(", output_type, ", String)"])),
-    body: code.Call(
-      head: code.Ident(name: "Ok"),
-      args: [code.Ident(name: output_type)],
-    ),
+    body: code.Call(head: code.Ident(name: "Ok"), args: [
+      code.Ident(name: output_type),
+    ]),
   )
 }
 
@@ -190,11 +187,7 @@ fn file_header(service_id: String, variant: Variant) -> String {
         "DO NOT EDIT. Re-generate via the codegen subproject.",
       ]),
       code.Blank,
-      code.Import(
-        path: "gleam/dict",
-        alias: code.CodeNone,
-        unqualified: [],
-      ),
+      code.Import(path: "gleam/dict", alias: code.CodeNone, unqualified: []),
     ]),
   )
   |> fn(s) { string.concat([s, "\n"]) }

@@ -44,7 +44,7 @@ pub fn awsjson10_emits_operations_test() {
   let m = load(json10_path)
   let svc = find_service(m, "aws.protocols#awsJson1_0", "JsonRpc10")
   let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson10)
-  should.be_true(list.length(r.operations_emitted) > 0)
+  should.be_true(r.operations_emitted != [])
   should.be_true(string.contains(r.source, "Generated from"))
   should.be_true(string.contains(r.source, "application/x-amz-json-1.0"))
 }
@@ -53,7 +53,7 @@ pub fn awsjson11_emits_operations_test() {
   let m = load(json11_path)
   let svc = find_service(m, "aws.protocols#awsJson1_1", "JsonProtocol")
   let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson11)
-  should.be_true(list.length(r.operations_emitted) > 0)
+  should.be_true(r.operations_emitted != [])
   should.be_true(string.contains(r.source, "application/x-amz-json-1.1"))
 }
 
@@ -73,7 +73,7 @@ pub fn restxml_emits_http_traits_test() {
   let m = load(restxml_path)
   let svc = find_service(m, "aws.protocols#restXml", "RestXml")
   let assert Ok(r) = restxml.emit_service(m, svc)
-  should.be_true(list.length(r.operations_emitted) > 0)
+  should.be_true(r.operations_emitted != [])
 }
 
 pub fn awsquery_emits_action_version_body_test() {
@@ -90,7 +90,7 @@ pub fn ec2query_emits_action_version_body_test() {
   let m = load(ec2query_path)
   let svc = find_service(m, "aws.protocols#ec2Query", "AwsEc2")
   let assert Ok(r) = awsquery.emit_service(m, svc, awsquery.Ec2Query)
-  should.be_true(list.length(r.operations_emitted) > 0)
+  should.be_true(r.operations_emitted != [])
   should.be_true(string.contains(r.source, "Action="))
 }
 

@@ -380,43 +380,40 @@ fn emit_named_shapes(
   is_dispatcher: Bool,
   encoder_reachable: Set(String),
 ) -> String {
-  list.fold(shapes, "", fn(acc, r) {
+  shapes
+  |> list.flat_map(fn(r) {
     case r {
-      REnum(gleam_name: n, variants: vs, ..) ->
-        string.concat([acc, emit_enum_def(n, vs), emit_enum_codec(n, vs)])
-      RIntEnum(gleam_name: n, variants: vs, ..) ->
-        string.concat([
-          acc,
-          emit_int_enum_def(n, vs),
-          emit_int_enum_codec(n, vs),
-        ])
+      REnum(gleam_name: n, variants: vs, ..) -> [
+        emit_enum_def(n, vs),
+        emit_enum_codec(n, vs),
+      ]
+      RIntEnum(gleam_name: n, variants: vs, ..) -> [
+        emit_int_enum_def(n, vs),
+        emit_int_enum_codec(n, vs),
+      ]
       RStruct(gleam_name: n, full_id: id, local_name: ln, ..) ->
         case ln == "Unit" {
           // The synthetic Unit struct is per-operation, not a top-level
           // named type — skip in the preamble.
-          True -> acc
+          True -> []
           False -> {
             let ms = types.resolve_members(model, id)
             let emit_encoder =
               is_dispatcher || set.contains(encoder_reachable, ln)
-            string.concat([
-              acc,
+            [
               emit_record_def(n, ms),
               emit_struct_codec(n, ms, is_dispatcher, emit_encoder),
-            ])
+            ]
           }
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
         let ms = types.resolve_members(model, id)
-        string.concat([
-          acc,
-          emit_union_def(n, ms),
-          emit_union_codec(n, ms, is_dispatcher),
-        ])
+        [emit_union_def(n, ms), emit_union_codec(n, ms, is_dispatcher)]
       }
-      _ -> acc
+      _ -> []
     }
   })
+  |> string.concat
 }
 
 // ---------- per-operation emission ----------
@@ -434,7 +431,14 @@ fn emit_operation_with(
   let in_info = spec.in_info
   let out_info = spec.out_info
   string.concat([
-    emit_operation_body(snake, target_value, ct, in_info, out_info, is_dispatcher),
+    emit_operation_body(
+      snake,
+      target_value,
+      ct,
+      in_info,
+      out_info,
+      is_dispatcher,
+    ),
     emit_error_type(spec),
     emit_error_translator(spec),
   ])
@@ -659,15 +663,11 @@ fn emit_operation_body(
           name: name_concat(["encode_", snake, "_input"]),
           params: [code.Param(name: "input", type_: in_info.type_name)],
           return: code.CodeSome("String"),
-          body: code.Call(
-            head: code.Ident(name: "json.to_string"),
-            args: [
-              code.Call(
-                head: code.Ident(name: in_struct_encoder_name),
-                args: [code.Ident(name: "input")],
-              ),
-            ],
-          ),
+          body: code.Call(head: code.Ident(name: "json.to_string"), args: [
+            code.Call(head: code.Ident(name: in_struct_encoder_name), args: [
+              code.Ident(name: "input"),
+            ]),
+          ]),
         ),
         code.Blank,
       ]),
@@ -730,27 +730,22 @@ fn emit_parse_via_decoder(
         params: [code.Param(name: "body", type_: "String")],
         return: code.CodeSome(name_concat(["Result(", type_name, ", String)"])),
         body: code.Case(
-          scrutinee: code.Call(
-            head: code.Ident(name: "json.parse"),
-            args: [
-              code.Ident(name: "body"),
-              code.Call(head: code.Ident(name: decoder_fn), args: []),
-            ],
-          ),
+          scrutinee: code.Call(head: code.Ident(name: "json.parse"), args: [
+            code.Ident(name: "body"),
+            code.Call(head: code.Ident(name: decoder_fn), args: []),
+          ]),
           branches: [
             code.Branch(
               pattern: "Ok(v)",
-              body: code.Call(
-                head: code.Ident(name: "Ok"),
-                args: [code.Ident(name: "v")],
-              ),
+              body: code.Call(head: code.Ident(name: "Ok"), args: [
+                code.Ident(name: "v"),
+              ]),
             ),
             code.Branch(
               pattern: "Error(_)",
-              body: code.Call(
-                head: code.Ident(name: "Error"),
-                args: [code.StrLit(value: "decode failed")],
-              ),
+              body: code.Call(head: code.Ident(name: "Error"), args: [
+                code.StrLit(value: "decode failed"),
+              ]),
             ),
           ],
         ),
@@ -823,10 +818,9 @@ fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
         branches: list.map(variants, fn(v) {
           code.Branch(
             pattern: v.gleam_ctor,
-            body: code.Call(
-              head: code.Ident(name: "json.string"),
-              args: [code.StrLit(value: v.wire_value)],
-            ),
+            body: code.Call(head: code.Ident(name: "json.string"), args: [
+              code.StrLit(value: v.wire_value),
+            ]),
           )
         }),
       ),
@@ -837,13 +831,10 @@ fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
       name: name_concat(["decode_", snake, "_enum"]),
       params: [],
       return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-      body: code.Call(
-        head: code.Ident(name: "decode.then"),
-        args: [
-          code.Ident(name: "decode.string"),
-          enum_decode_lambda(variants, first_ctor),
-        ],
-      ),
+      body: code.Call(head: code.Ident(name: "decode.then"), args: [
+        code.Ident(name: "decode.string"),
+        enum_decode_lambda(variants, first_ctor),
+      ]),
     )
   code.render(code.Module(items: [enc, code.Blank, dec, code.Blank]))
 }
@@ -900,10 +891,9 @@ fn emit_int_enum_codec(
         branches: list.map(variants, fn(v) {
           code.Branch(
             pattern: v.gleam_ctor,
-            body: code.Call(
-              head: code.Ident(name: "json.int"),
-              args: [code.IntLit(value: v.wire_value)],
-            ),
+            body: code.Call(head: code.Ident(name: "json.int"), args: [
+              code.IntLit(value: v.wire_value),
+            ]),
           )
         }),
       ),
@@ -914,13 +904,10 @@ fn emit_int_enum_codec(
       name: name_concat(["decode_", snake, "_int_enum"]),
       params: [],
       return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-      body: code.Call(
-        head: code.Ident(name: "decode.then"),
-        args: [
-          code.Ident(name: "decode.int"),
-          int_enum_decode_lambda(variants, first_ctor),
-        ],
-      ),
+      body: code.Call(head: code.Ident(name: "decode.then"), args: [
+        code.Ident(name: "decode.int"),
+        int_enum_decode_lambda(variants, first_ctor),
+      ]),
     )
   code.render(code.Module(items: [enc, code.Blank, dec, code.Blank]))
 }
@@ -1040,23 +1027,20 @@ fn emit_union_codec(
             name_concat([name, stringutils.pascalize_member(m.member_name)])
           code.Branch(
             pattern: name_concat([ctor, "(x)"]),
-            body: code.Call(
-              head: code.Ident(name: "json.object"),
-              args: [
-                code.ListLit(
-                  items: [
-                    code.Tuple(items: [
-                      code.StrLit(value: m.member_name),
-                      code.Call(
-                        head: code.Ident(name: types.json_encoder(m.target)),
-                        args: [code.Ident(name: "x")],
-                      ),
-                    ]),
-                  ],
-                  tail: code.CodeNone,
-                ),
-              ],
-            ),
+            body: code.Call(head: code.Ident(name: "json.object"), args: [
+              code.ListLit(
+                items: [
+                  code.Tuple(items: [
+                    code.StrLit(value: m.member_name),
+                    code.Call(
+                      head: code.Ident(name: types.json_encoder(m.target)),
+                      args: [code.Ident(name: "x")],
+                    ),
+                  ]),
+                ],
+                tail: code.CodeNone,
+              ),
+            ]),
           )
         }),
       ),
@@ -1088,9 +1072,10 @@ fn emit_union_codec(
     False -> []
   }
   code.render(
-    code.Module(
-      items: list.append([enc, code.Blank, dec, code.Blank], dec_params_items),
-    ),
+    code.Module(items: list.append(
+      [enc, code.Blank, dec, code.Blank],
+      dec_params_items,
+    )),
   )
 }
 
@@ -1106,26 +1091,20 @@ fn union_decoder_body(
 ) -> code.Code {
   case members {
     [] ->
-      code.Call(
-        head: code.Ident(name: "decode.failure"),
-        args: [
-          code.Ident(name: name_concat([name, "Empty"])),
-          code.StrLit(value: "empty union"),
-        ],
-      )
+      code.Call(head: code.Ident(name: "decode.failure"), args: [
+        code.Ident(name: name_concat([name, "Empty"])),
+        code.StrLit(value: "empty union"),
+      ])
     [first, ..rest] ->
       code.Block(items: [
         code.Use(name: "", callee: code.Ident(name: "decode.recursive")),
-        code.Call(
-          head: code.Ident(name: "decode.one_of"),
-          args: [
-            branch_fn(name, first),
-            code.ListLit(
-              items: list.map(rest, fn(m) { branch_fn(name, m) }),
-              tail: code.CodeNone,
-            ),
-          ],
-        ),
+        code.Call(head: code.Ident(name: "decode.one_of"), args: [
+          branch_fn(name, first),
+          code.ListLit(
+            items: list.map(rest, fn(m) { branch_fn(name, m) }),
+            tail: code.CodeNone,
+          ),
+        ]),
       ])
   }
 }
@@ -1133,41 +1112,34 @@ fn union_decoder_body(
 fn emit_union_branch(union_name: String, m: MemberDef) -> code.Code {
   let ctor =
     name_concat([union_name, stringutils.pascalize_member(m.member_name)])
-  code.Call(
-    head: code.Ident(name: "decode.field"),
-    args: [
-      code.StrLit(value: m.member_name),
-      code.Raw(fragment: types.json_decoder(m.target)),
-      code.Raw(
-        fragment: name_concat([
-          "fn(x) { decode.success(",
-          ctor,
-          "(x)) }",
-        ]),
-      ),
-    ],
-  )
+  code.Call(head: code.Ident(name: "decode.field"), args: [
+    code.StrLit(value: m.member_name),
+    code.Raw(fragment: types.json_decoder(m.target)),
+    code.Raw(
+      fragment: name_concat([
+        "fn(x) { decode.success(",
+        ctor,
+        "(x)) }",
+      ]),
+    ),
+  ])
 }
 
 fn emit_union_branch_params(union_name: String, m: MemberDef) -> code.Code {
   let ctor =
     name_concat([union_name, stringutils.pascalize_member(m.member_name)])
-  code.Call(
-    head: code.Ident(name: "decode.field"),
-    args: [
-      code.StrLit(value: m.member_name),
-      code.Raw(fragment: types.json_decoder_params(m.target)),
-      code.Raw(
-        fragment: name_concat([
-          "fn(x) { decode.success(",
-          ctor,
-          "(x)) }",
-        ]),
-      ),
-    ],
-  )
+  code.Call(head: code.Ident(name: "decode.field"), args: [
+    code.StrLit(value: m.member_name),
+    code.Raw(fragment: types.json_decoder_params(m.target)),
+    code.Raw(
+      fragment: name_concat([
+        "fn(x) { decode.success(",
+        ctor,
+        "(x)) }",
+      ]),
+    ),
+  ])
 }
-
 
 fn emit_build(
   input_type: String,
@@ -1186,38 +1158,32 @@ fn emit_build(
   let body_let =
     code.Let(
       name: "body",
-      value: code.Call(
-        head: code.Ident(name: "bit_array.from_string"),
-        args: [code.Ident(name: "body_str")],
-      ),
+      value: code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+        code.Ident(name: "body_str"),
+      ]),
     )
   let headers_let =
     code.Let(
       name: "headers",
-      value: code.Call(
-        head: code.Ident(name: "dict.from_list"),
-        args: [
-          code.ListLit(
-            items: [
-              code.Tuple(items: [
-                code.StrLit(value: "Content-Type"),
-                code.StrLit(value: ct),
-              ]),
-              code.Tuple(items: [
-                code.StrLit(value: "Content-Length"),
-                code.Raw(
-                  fragment: "int.to_string(bit_array.byte_size(body))",
-                ),
-              ]),
-              code.Tuple(items: [
-                code.StrLit(value: "X-Amz-Target"),
-                code.StrLit(value: target_value),
-              ]),
-            ],
-            tail: code.CodeNone,
-          ),
-        ],
-      ),
+      value: code.Call(head: code.Ident(name: "dict.from_list"), args: [
+        code.ListLit(
+          items: [
+            code.Tuple(items: [
+              code.StrLit(value: "Content-Type"),
+              code.StrLit(value: ct),
+            ]),
+            code.Tuple(items: [
+              code.StrLit(value: "Content-Length"),
+              code.Raw(fragment: "int.to_string(bit_array.byte_size(body))"),
+            ]),
+            code.Tuple(items: [
+              code.StrLit(value: "X-Amz-Target"),
+              code.StrLit(value: target_value),
+            ]),
+          ],
+          tail: code.CodeNone,
+        ),
+      ]),
     )
   let return_tuple =
     code.Tuple(items: [
@@ -1250,25 +1216,20 @@ fn emit_build(
 fn emit_parse(output_type: String, snake: String) -> String {
   let decoder = name_concat(["decode_", snake, "_output"])
   let inner_text_case =
-    code.Case(
-      scrutinee: code.Ident(name: "text"),
-      branches: [
-        code.Branch(
-          pattern: "\"\"",
-          body: code.Call(
-            head: code.Ident(name: decoder),
-            args: [code.StrLit(value: "{}")],
-          ),
-        ),
-        code.Branch(
-          pattern: "_",
-          body: code.Call(
-            head: code.Ident(name: decoder),
-            args: [code.Ident(name: "text")],
-          ),
-        ),
-      ],
-    )
+    code.Case(scrutinee: code.Ident(name: "text"), branches: [
+      code.Branch(
+        pattern: "\"\"",
+        body: code.Call(head: code.Ident(name: decoder), args: [
+          code.StrLit(value: "{}"),
+        ]),
+      ),
+      code.Branch(
+        pattern: "_",
+        body: code.Call(head: code.Ident(name: decoder), args: [
+          code.Ident(name: "text"),
+        ]),
+      ),
+    ])
   code.render(
     code.Module(items: [
       code.Fn(
@@ -1279,7 +1240,9 @@ fn emit_parse(output_type: String, snake: String) -> String {
           code.Param(name: "_headers", type_: "dict.Dict(String, String)"),
           code.Param(name: "body", type_: "BitArray"),
         ],
-        return: code.CodeSome(name_concat(["Result(", output_type, ", String)"])),
+        return: code.CodeSome(
+          name_concat(["Result(", output_type, ", String)"]),
+        ),
         body: code.Case(
           scrutinee: code.Call(
             head: code.Ident(name: "bit_array.to_string"),
@@ -1289,10 +1252,9 @@ fn emit_parse(output_type: String, snake: String) -> String {
             code.Branch(pattern: "Ok(text)", body: inner_text_case),
             code.Branch(
               pattern: "Error(_)",
-              body: code.Call(
-                head: code.Ident(name: "Error"),
-                args: [code.StrLit(value: "non-utf8 body")],
-              ),
+              body: code.Call(head: code.Ident(name: "Error"), args: [
+                code.StrLit(value: "non-utf8 body"),
+              ]),
             ),
           ],
         ),

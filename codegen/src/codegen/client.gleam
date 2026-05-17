@@ -138,10 +138,7 @@ pub fn invoke_fn(
     body: code.Case(
       scrutinee: Call(Ident("runtime.invoke"), [
         Ident("client.config"),
-        Call(
-          Ident(name_concat(["build_", snake, "_request"])),
-          [Ident("input")],
-        ),
+        Call(Ident(name_concat(["build_", snake, "_request"])), [Ident("input")]),
         Ident(name_concat(["parse_", snake, "_response"])),
       ]),
       branches: [
@@ -149,10 +146,9 @@ pub fn invoke_fn(
         code.Branch(
           pattern: "Error(err)",
           body: Call(Ident("Error"), [
-            Call(
-              Ident(name_concat(["translate_", snake, "_error"])),
-              [Ident("err")],
-            ),
+            Call(Ident(name_concat(["translate_", snake, "_error"])), [
+              Ident("err"),
+            ]),
           ]),
         ),
       ],
