@@ -752,7 +752,7 @@ fn emit_enum_codec(
   let snake = stringutils.pascal_to_snake(name)
   let first_ctor = case variants {
     [v, ..] -> v.gleam_ctor
-    [] -> name <> "Unknown"
+    [] -> name_concat([name, "Unknown"])
   }
   // JSON enum encoder stays — it's reached from `encode_<X>_xml*`
   // (wire path) for enum-typed members. The JSON decoder is only
@@ -761,7 +761,7 @@ fn emit_enum_codec(
   let enc =
     code.Fn(
       public: True,
-      name: "encode_" <> snake <> "_enum",
+      name: name_concat(["encode_", snake, "_enum"]),
       params: [code.Param(name: "v", type_: name)],
       return: code.CodeSome("json.Json"),
       body: code.Case(
@@ -783,15 +783,15 @@ fn emit_enum_codec(
   let from_wire =
     code.Fn(
       public: True,
-      name: snake <> "_from_wire",
+      name: name_concat([snake, "_from_wire"]),
       params: [code.Param(name: "s", type_: "String")],
-      return: code.CodeSome("Result(" <> name <> ", String)"),
+      return: code.CodeSome(name_concat(["Result(", name, ", String)"])),
       body: code.Case(
         scrutinee: code.Ident(name: "s"),
         branches: list.append(
           list.map(variants, fn(v) {
             code.Branch(
-              pattern: "\"" <> v.wire_value <> "\"",
+              pattern: name_concat(["\"", v.wire_value, "\""]),
               body: code.Call(
                 head: code.Ident(name: "Ok"),
                 args: [code.Ident(name: v.gleam_ctor)],
@@ -815,27 +815,14 @@ fn emit_enum_codec(
       let dec_fn =
         code.Fn(
           public: True,
-          name: "decode_" <> snake <> "_enum",
+          name: name_concat(["decode_", snake, "_enum"]),
           params: [],
-          return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+          return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
           body: code.Call(
             head: code.Ident(name: "decode.then"),
             args: [
               code.Ident(name: "decode.string"),
-              code.Raw(
-                fragment: "fn(s) {\n    case s {\n"
-                  <> list.fold(variants, "", fn(acc, v) {
-                    acc
-                    <> "      \""
-                    <> v.wire_value
-                    <> "\" -> decode.success("
-                    <> v.gleam_ctor
-                    <> ")\n"
-                  })
-                  <> "      _ -> decode.failure("
-                  <> first_ctor
-                  <> ", \"unknown enum value\")\n    }\n  }",
-              ),
+              enum_decode_lambda(variants, first_ctor),
             ],
           ),
         )
@@ -847,6 +834,69 @@ fn emit_enum_codec(
     code.Module(
       items: list.append([enc, code.Blank, from_wire, code.Blank], dec_items),
     ),
+  )
+}
+
+/// `fn(s) { case s { ... } }` lambda body for the dispatcher-side
+/// decoder. Stays as `code.Raw` since the AST has no anonymous-
+/// function node.
+fn enum_decode_lambda(
+  variants: List(types.EnumVariant),
+  first_ctor: String,
+) -> code.Code {
+  let arms =
+    list.map(variants, fn(v) {
+      string.concat([
+        "      \"",
+        v.wire_value,
+        "\" -> decode.success(",
+        v.gleam_ctor,
+        ")\n",
+      ])
+    })
+  let fallback =
+    string.concat([
+      "      _ -> decode.failure(",
+      first_ctor,
+      ", \"unknown enum value\")\n    }\n  }",
+    ])
+  code.Raw(
+    fragment: string.concat([
+      "fn(s) {\n    case s {\n",
+      string.concat(arms),
+      fallback,
+    ]),
+  )
+}
+
+/// `fn(n) { case n { ... } }` lambda body for the int-enum
+/// dispatcher decoder. Same pattern as `enum_decode_lambda`.
+fn int_enum_decode_lambda(
+  variants: List(types.IntEnumVariant),
+  first_ctor: String,
+) -> code.Code {
+  let arms =
+    list.map(variants, fn(v) {
+      string.concat([
+        "      ",
+        stringutils.int_to_string(v.wire_value),
+        " -> decode.success(",
+        v.gleam_ctor,
+        ")\n",
+      ])
+    })
+  let fallback =
+    string.concat([
+      "      _ -> decode.failure(",
+      first_ctor,
+      ", \"unknown int enum value\")\n    }\n  }",
+    ])
+  code.Raw(
+    fragment: string.concat([
+      "fn(n) {\n    case n {\n",
+      string.concat(arms),
+      fallback,
+    ]),
   )
 }
 
@@ -878,7 +928,7 @@ fn emit_int_enum_codec(
   let enc =
     code.Fn(
       public: True,
-      name: "encode_" <> snake <> "_int_enum",
+      name: name_concat(["encode_", snake, "_int_enum"]),
       params: [code.Param(name: "v", type_: name)],
       return: code.CodeSome("json.Json"),
       body: code.Case(
@@ -897,27 +947,14 @@ fn emit_int_enum_codec(
   let dec =
     code.Fn(
       public: True,
-      name: "decode_" <> snake <> "_int_enum",
+      name: name_concat(["decode_", snake, "_int_enum"]),
       params: [],
-      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
       body: code.Call(
         head: code.Ident(name: "decode.then"),
         args: [
           code.Ident(name: "decode.int"),
-          code.Raw(
-            fragment: "fn(n) {\n    case n {\n"
-              <> list.fold(variants, "", fn(acc, v) {
-                acc
-                <> "      "
-                <> stringutils.int_to_string(v.wire_value)
-                <> " -> decode.success("
-                <> v.gleam_ctor
-                <> ")\n"
-              })
-              <> "      _ -> decode.failure("
-              <> first_ctor
-              <> ", \"unknown int enum value\")\n    }\n  }",
-          ),
+          int_enum_decode_lambda(variants, first_ctor),
         ],
       ),
     )
@@ -925,9 +962,9 @@ fn emit_int_enum_codec(
   let from_int =
     code.Fn(
       public: True,
-      name: snake <> "_from_int",
+      name: name_concat([snake, "_from_int"]),
       params: [code.Param(name: "n", type_: "Int")],
-      return: code.CodeSome("Result(" <> name <> ", String)"),
+      return: code.CodeSome(name_concat(["Result(", name, ", String)"])),
       body: code.Case(
         scrutinee: code.Ident(name: "n"),
         branches: list.append(
@@ -2361,8 +2398,16 @@ fn emit_path_setup(uri_template: String, labels: List(MemberDef)) -> String {
 /// space-indented to match the surrounding function.
 fn render_let_block(stmts: List(code.Code)) -> String {
   list.fold(stmts, "", fn(acc, stmt) {
-    acc <> "  " <> code.render(stmt) <> "\n"
+    string.concat([acc, "  ", code.render(stmt), "\n"])
   })
+}
+
+/// Build a Gleam identifier name from a list of parts. Used in
+/// place of the `<>` operator throughout codegen so the Gleam
+/// source of the emitters doesn't itself use string concat to
+/// shape the generated identifiers.
+fn name_concat(parts: List(String)) -> String {
+  string.concat(parts)
 }
 
 fn emit_query_setup(
