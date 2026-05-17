@@ -15,19 +15,42 @@ fn always_unreachable(
   Error(http_send.ConnectFailed(reason: "no network in tests"))
 }
 
+fn empty_env(_name: String) -> Result(String, Nil) {
+  Error(Nil)
+}
+
+fn no_files(_path: String) -> Result(String, Nil) {
+  Error(Nil)
+}
+
+fn no_runner(
+  _command: String,
+  _args: List(String),
+) -> Result(#(Int, BitArray), Nil) {
+  Error(Nil)
+}
+
+fn unconfigured_chain() -> credentials.Provider {
+  credentials.default_chain_with(
+    send: always_unreachable,
+    imds_send: always_unreachable,
+    profile: "default",
+    env: empty_env,
+    read_file: no_files,
+    runner: no_runner,
+  )
+}
+
 pub fn default_chain_has_name_chain_test() {
-  let provider =
-    credentials.default_chain(send: always_unreachable, profile: "default")
+  let provider = unconfigured_chain()
   provider.name |> should.equal("Chain")
 }
 
 pub fn default_chain_exhausts_with_all_seven_providers_in_order_test() {
-  // No env / config / token files exist in the test process, and our send
-  // refuses to reach anything. Every provider should fail; the exhausted
-  // attempt list lets us assert the canonical order without needing any
-  // provider to actually succeed.
-  let provider =
-    credentials.default_chain(send: always_unreachable, profile: "default")
+  // Every seam refuses (no env, no files, no subprocess, no network), so
+  // every provider should fail; the exhausted attempt list lets us assert
+  // the canonical order without needing any provider to actually succeed.
+  let provider = unconfigured_chain()
   let assert Error(ChainExhausted(attempts: attempts)) =
     credentials.fetch(provider)
 

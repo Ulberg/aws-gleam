@@ -95,6 +95,15 @@ pub fn get(cache: Cache) -> Result(Credentials, ProviderError) {
   actor.call(cache.subject, waiting: 5000, sending: Get)
 }
 
+/// Re-expose the cache as a regular `Provider`. The returned provider's
+/// `fetch` closure proxies to `get(cache)` — so the rest of the SDK can
+/// thread `Provider` values around as before, but now hot-path reads
+/// debounce into the actor and avoid re-running the seven-stage chain
+/// on every signed request.
+pub fn as_provider(cache: Cache) -> Provider {
+  credentials.Provider(name: "Cached", fetch: fn() { get(cache) })
+}
+
 fn handle_message(
   state: State,
   message: Message,

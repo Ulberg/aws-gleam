@@ -10,8 +10,10 @@
 
 import codegen/code.{
   type Code, Blank, Call, CodeSome, DocComment, Fn, Ident, LabelledParam, Module,
-  Param, StrLit, TypeDef, Variant,
+  Param, Raw, TypeDef, Variant,
 }
+import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/string
 
 fn name_concat(parts: List(String)) -> String {
@@ -20,14 +22,99 @@ fn name_concat(parts: List(String)) -> String {
 
 /// Build the AST nodes for the per-service Client section. Pairs with
 /// `code.render(code.Module(items))` at the emit site.
-pub fn items(endpoint_prefix: String, signing_name: String) -> List(Code) {
-  [
+///
+/// When `endpoint_rule_set_json` is `Some(json)`, the generated `new`
+/// constructor parses the embedded JSON once and attaches the
+/// resulting `RuleSet` to the client config, so per-request URL
+/// resolution runs the official Smithy rule set. When `None` the
+/// generated client uses the static `<prefix>.<region>.amazonaws.com`
+/// URL the runtime defaults to.
+pub fn items(
+  endpoint_prefix: String,
+  signing_name: String,
+  endpoint_rule_set_json: Option(String),
+) -> List(Code) {
+  // Common preamble for every Client constructor: build the default
+  // config and start a per-Client credentials cache so the seven-stage
+  // chain runs once at construction rather than per signed request.
+  // The cache actor's `start` call cannot realistically fail (it is
+  // just spawning an OTP actor) so `let assert` matches the
+  // "generator-time invariant" pattern used elsewhere.
+  let cache_setup = [
+    Raw("let config = runtime.default_config("),
+    Raw(
+      name_concat([
+        "  region, \"",
+        endpoint_prefix,
+        "\", \"",
+        signing_name,
+        "\"",
+      ]),
+    ),
+    Raw(")"),
+    Raw("let assert Ok(cache) ="),
+    Raw("  credentials_cache.start_default(config.provider)"),
+    Raw("let config = runtime.with_credentials_provider("),
+    Raw("  config,"),
+    Raw("  credentials_cache.as_provider(cache),"),
+    Raw(")"),
+  ]
+  let new_body = case endpoint_rule_set_json {
+    None ->
+      code.Block(
+        items: list.flatten([
+          cache_setup,
+          [Call(Ident("Client"), [Ident("config")])],
+        ]),
+      )
+    Some(_) ->
+      // Parse the embedded rule set, then chain it onto the default
+      // config. The `let assert` is justified because the JSON is a
+      // codegen-time constant — if it ever fails to parse, that is a
+      // generator bug rather than a runtime concern.
+      code.Block(
+        items: list.flatten([
+          cache_setup,
+          [
+            Raw("let assert Ok(rule_set) ="),
+            Raw("  endpoints.parse_rule_set(endpoint_rule_set_json)"),
+            Call(Ident("Client"), [
+              Call(Ident("runtime.with_endpoint_rule_set"), [
+                Ident("config"),
+                Ident("rule_set"),
+              ]),
+            ]),
+          ],
+        ]),
+      )
+  }
+  let rule_set_constant = case endpoint_rule_set_json {
+    None -> []
+    Some(json) -> [
+      DocComment([
+        "Smithy endpoint rule set for this service, lifted verbatim",
+        "from the source model. Parsed once in `new` and attached to",
+        "every Client via `runtime.with_endpoint_rule_set`.",
+      ]),
+      Raw(
+        name_concat([
+          "const endpoint_rule_set_json: String = \"",
+          escape_const_string(json),
+          "\"",
+        ]),
+      ),
+      Blank,
+    ]
+  }
+  let header = [
     TypeDef(public: True, is_opaque: True, name: "Client", variants: [
       Variant(name: "Client", fields: [
         Param(name: "config", type_: "runtime.ClientConfig"),
       ]),
     ]),
     Blank,
+  ]
+  let new_section = [
     DocComment([
       "Build a Client for an AWS region. Credentials resolve through",
       "the default chain (env → web-identity → SSO → profile → process",
@@ -38,18 +125,34 @@ pub fn items(endpoint_prefix: String, signing_name: String) -> List(Code) {
       name: "new",
       params: [LabelledParam(label: "region", name: "region", type_: "String")],
       return: CodeSome("Client"),
-      body: Call(Ident("Client"), [
-        Call(Ident("runtime.default_config"), [
-          Ident("region"),
-          StrLit(endpoint_prefix),
-          StrLit(signing_name),
-        ]),
-      ]),
+      body: new_body,
     ),
     Blank,
     DocComment([
+      "Build a Client by resolving the region from the standard AWS",
+      "sources (`AWS_REGION`, `AWS_DEFAULT_REGION`, `~/.aws/config`).",
+      "Returns `Error(_)` when no source supplies a region — typical in",
+      "Lambda/ECS/EC2 where exactly one of these is always set.",
+    ]),
+    Fn(
+      public: True,
+      name: "new_with_auto_region",
+      params: [],
+      return: CodeSome("Result(Client, region.ResolveError)"),
+      body: code.Block(items: [
+        Raw("use resolved <- result.try(region.resolve(profile: \"default\"))"),
+        Raw("Ok(new(region: resolved))"),
+      ]),
+    ),
+    Blank,
+  ]
+  let withers = [
+    DocComment([
       "Override the credentials provider — use for non-default",
       "profiles, in-process static credentials, or a custom chain.",
+      "The supplied provider is wrapped in a fresh per-Client",
+      "credentials cache so callers don't lose refresh/coalesce",
+      "behaviour by overriding the default chain.",
     ]),
     Fn(
       public: True,
@@ -59,10 +162,14 @@ pub fn items(endpoint_prefix: String, signing_name: String) -> List(Code) {
         Param(name: "provider", type_: "credentials.Provider"),
       ],
       return: CodeSome("Client"),
-      body: Call(Ident("Client"), [
-        Call(Ident("runtime.with_credentials_provider"), [
-          Ident("client.config"),
-          Ident("provider"),
+      body: code.Block(items: [
+        Raw("let assert Ok(cache) ="),
+        Raw("  credentials_cache.start_default(provider)"),
+        Call(Ident("Client"), [
+          Call(Ident("runtime.with_credentials_provider"), [
+            Ident("client.config"),
+            Call(Ident("credentials_cache.as_provider"), [Ident("cache")]),
+          ]),
         ]),
       ]),
     ),
@@ -106,12 +213,41 @@ pub fn items(endpoint_prefix: String, signing_name: String) -> List(Code) {
     ),
     Blank,
   ]
+  list.flatten([header, rule_set_constant, new_section, withers])
+}
+
+/// Escape a JSON document for embedding inside a Gleam double-quoted
+/// string literal. The same escapes as the `trait` serialiser apply
+/// — backslash and double-quote get escaped — and embedded newlines
+/// become `\n` so the resulting Gleam source stays single-line.
+fn escape_const_string(s: String) -> String {
+  s
+  |> string.to_graphemes
+  |> list.map(escape_one)
+  |> string.concat
+}
+
+fn escape_one(g: String) -> String {
+  case g {
+    "\\" -> "\\\\"
+    "\"" -> "\\\""
+    "\n" -> "\\n"
+    "\r" -> "\\r"
+    "\t" -> "\\t"
+    other -> other
+  }
 }
 
 /// Convenience: build + render in one call.
-pub fn render(endpoint_prefix: String, signing_name: String) -> String {
+pub fn render(
+  endpoint_prefix: String,
+  signing_name: String,
+  endpoint_rule_set_json: Option(String),
+) -> String {
   string.concat([
-    code.render(Module(items(endpoint_prefix, signing_name))),
+    code.render(
+      Module(items(endpoint_prefix, signing_name, endpoint_rule_set_json)),
+    ),
     "\n",
   ])
 }

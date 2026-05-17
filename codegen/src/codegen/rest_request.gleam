@@ -251,11 +251,14 @@ fn prefix_header_let(m: MemberDef) -> code.Code {
       branches: [
         code.Branch(
           pattern: "option.Some(m)",
-          body: code.Call(head: code.Ident(name: "rest.add_prefix_headers"), args: [
-            code.Ident(name: "headers"),
-            code.StrLit(value: prefix),
-            code.Ident(name: "m"),
-          ]),
+          body: code.Call(
+            head: code.Ident(name: "rest.add_prefix_headers"),
+            args: [
+              code.Ident(name: "headers"),
+              code.StrLit(value: prefix),
+              code.Ident(name: "m"),
+            ],
+          ),
         ),
         code.Branch(pattern: "option.None", body: code.Ident(name: "headers")),
       ],
@@ -284,17 +287,25 @@ fn header_member_let(m: MemberDef) -> code.Code {
           branches: [
             code.Branch(
               pattern: "option.Some(xs)",
-              body: code.Call(head: code.Ident(name: "rest.maybe_set_list_header"), args: [
-                code.Ident(name: "headers"),
-                code.StrLit(value: header_name),
-                code.Raw(fragment: string.concat([
-                  "list.map(xs, fn(item) { let v = item ",
-                  render,
-                  " })",
-                ])),
-              ]),
+              body: code.Call(
+                head: code.Ident(name: "rest.maybe_set_list_header"),
+                args: [
+                  code.Ident(name: "headers"),
+                  code.StrLit(value: header_name),
+                  code.Raw(
+                    fragment: string.concat([
+                      "list.map(xs, fn(item) { let v = item ",
+                      render,
+                      " })",
+                    ]),
+                  ),
+                ],
+              ),
             ),
-            code.Branch(pattern: "option.None", body: code.Ident(name: "headers")),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "headers"),
+            ),
           ],
         ),
       )
@@ -315,13 +326,19 @@ fn header_member_let(m: MemberDef) -> code.Code {
           branches: [
             code.Branch(
               pattern: "option.Some(v)",
-              body: code.Call(head: code.Ident(name: "rest.maybe_set_header"), args: [
-                code.Ident(name: "headers"),
-                code.StrLit(value: header_name),
-                code.Raw(fragment: render),
-              ]),
+              body: code.Call(
+                head: code.Ident(name: "rest.maybe_set_header"),
+                args: [
+                  code.Ident(name: "headers"),
+                  code.StrLit(value: header_name),
+                  code.Raw(fragment: render),
+                ],
+              ),
             ),
-            code.Branch(pattern: "option.None", body: code.Ident(name: "headers")),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Ident(name: "headers"),
+            ),
           ],
         ),
       )

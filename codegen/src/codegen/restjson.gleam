@@ -206,7 +206,11 @@ type OpSpec {
 // `codegen/trait_helpers.gleam` — see Pass 4 in plan.md.
 
 fn emit_client(metadata: trait_helpers.Metadata) -> String {
-  client.render(metadata.endpoint_prefix, metadata.signing_name)
+  client.render(
+    metadata.endpoint_prefix,
+    metadata.signing_name,
+    metadata.endpoint_rule_set_json,
+  )
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
@@ -1051,14 +1055,11 @@ fn json_body_setup(snake: String, body: List(MemberDef)) -> List(code.Code) {
       ),
       code.Let(
         name: "body",
-        value: code.Call(
-          head: code.Ident(name: "bit_array.from_string"),
-          args: [
-            code.Call(head: code.Ident(name: "json.to_string"), args: [
-              code.Ident(name: "body_json"),
-            ]),
-          ],
-        ),
+        value: code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+          code.Call(head: code.Ident(name: "json.to_string"), args: [
+            code.Ident(name: "body_json"),
+          ]),
+        ]),
       ),
       code.Let(
         name: "content_type",
@@ -1430,6 +1431,9 @@ fn emit_parse_with_payload(
 fn file_header(service_id: String, body: String) -> String {
   let candidates = [
     #("aws/credentials", "credentials.", code.CodeNone),
+    #("aws/endpoints", "endpoints.", code.CodeNone),
+    #("aws/internal/credentials_cache", "credentials_cache.", code.CodeNone),
+    #("aws/region", "region.", code.CodeNone),
     #("aws/internal/client/runtime", "runtime.", code.CodeSome("runtime")),
     #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
     #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
@@ -1448,7 +1452,7 @@ fn file_header(service_id: String, body: String) -> String {
   ]
   let used =
     candidates
-    |> list.filter(fn(c) { string.contains(body, c.1) })
+    |> list.filter(fn(c) { code.references_module(body, c.1) })
     |> list.map(fn(c) { code.Import(path: c.0, alias: c.2, unqualified: []) })
   let items =
     [

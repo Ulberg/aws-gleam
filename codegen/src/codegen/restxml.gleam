@@ -32,9 +32,9 @@ import codegen/rest_request
 import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
-  type HttpTrait, type MemberDef, type Resolved, Body, HttpTrait, Payload,
-  RBlob, RDocument, REnum, RIntEnum, RList, RMap, RPrim, RStruct, RTimestamp,
-  RUnion, RUnit, Unsupported,
+  type HttpTrait, type MemberDef, type Resolved, Body, Header, HttpTrait, PBool,
+  PInt, PString, Payload, RBlob, RDocument, REnum, RIntEnum, RList, RMap, RPrim,
+  RStruct, RTimestamp, RUnion, RUnit, ResponseCode, Unsupported,
 }
 import gleam/dict
 import gleam/list
@@ -191,7 +191,11 @@ type OpSpec {
 }
 
 fn emit_client(metadata: trait_helpers.Metadata) -> String {
-  client.render(metadata.endpoint_prefix, metadata.signing_name)
+  client.render(
+    metadata.endpoint_prefix,
+    metadata.signing_name,
+    metadata.endpoint_rule_set_json,
+  )
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
@@ -300,7 +304,6 @@ fn emit_error_translator(spec: OpSpec) -> String {
     code.Module(items: [decoders_fn, code.Blank, translate_fn, code.Blank]),
   )
 }
-
 
 fn resolve_or_unit(model: Model, id: String) -> Resolved {
   case id {
@@ -1127,7 +1130,7 @@ fn emit_struct_xml_decoder(
               code.Use(
                 name: m.snake_name,
                 callee: code.Call(head: code.Ident(name: "result.try"), args: [
-                  xml_value_decoder_expr(m.target, m.json_name),
+                  xml_value_decoder_expr_for_member(m),
                 ]),
               )
             _ ->
@@ -1168,6 +1171,24 @@ fn emit_struct_xml_decoder(
 /// Build the `Result(Option(a), String)` decoder expression that reads
 /// a single member from the parent XML element. Mirrors
 /// `xml_value_expr` on the encoder side: primitives use `int_text` /
+/// Member-aware wrapper around `xml_value_decoder_expr`. Honours
+/// `@xmlFlattened` on list members — flattened lists land as a list
+/// of `<member_name>` siblings rather than a wrapped `<member><entry>`
+/// shape, so they need `optional_flat_list` instead of `optional_list`.
+fn xml_value_decoder_expr_for_member(m: MemberDef) -> code.Code {
+  case m.target, m.xml_flattened {
+    RList(element: e, ..), True -> {
+      let inner_decoder = list_element_decoder(e)
+      code.Call(head: code.Ident(name: "xml_decode.optional_flat_list"), args: [
+        code.Ident(name: "elem"),
+        code.StrLit(value: m.json_name),
+        code.Raw(fragment: inner_decoder),
+      ])
+    }
+    _, _ -> xml_value_decoder_expr(m.target, m.json_name)
+  }
+}
+
 /// `string_text` / etc., nested structs recurse, lists become wrapped
 /// `optional_list` reads.
 fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
@@ -2150,10 +2171,9 @@ fn xml_body_setup(snake: String, body: List(MemberDef)) -> List(code.Code) {
       ),
       code.Let(
         name: "body",
-        value: code.Call(
-          head: code.Ident(name: "bit_array.from_string"),
-          args: [code.Ident(name: "body_xml")],
-        ),
+        value: code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+          code.Ident(name: "body_xml"),
+        ]),
       ),
       code.Let(
         name: "content_type",
@@ -2312,16 +2332,41 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
           stringutils.pascal_to_snake(output_type),
           "_xml",
         ])
+      let overrides = response_overrides(out_info)
+      // The decoder produces `Result(Output, String)` already; if the
+      // output binds any `@httpHeader` / `@httpResponseCode` members we
+      // wrap the Ok branch in a record-update expression that overlays
+      // those values from `headers` / `code`. When every output member
+      // is bound to a header (no body members) we sidestep the
+      // `..decoded` base to silence the "redundant record update"
+      // warning — the decoder's value is discarded.
+      let full_override =
+        list.length(overrides) == list.length(out_info.members)
+      let bare_decode_call =
+        code.Call(head: code.Ident(name: decoder), args: [
+          code.Raw(
+            fragment: "xml_decode.Element(name: \"empty\", attrs: [], children: [])",
+          ),
+        ])
+      let bare_decode_call_with_root =
+        code.Call(head: code.Ident(name: decoder), args: [
+          code.Ident(name: "root"),
+        ])
+      let with_overrides = fn(call: code.Code) -> code.Code {
+        case overrides {
+          [] -> call
+          _ ->
+            wrap_decode_with_overrides_at(
+              call,
+              output_type,
+              overrides,
+              full_override: full_override,
+            )
+        }
+      }
       let inner_text_case =
         code.Case(scrutinee: code.Ident(name: "text"), branches: [
-          code.Branch(
-            pattern: "\"\"",
-            body: code.Call(head: code.Ident(name: decoder), args: [
-              code.Raw(
-                fragment: "xml_decode.Element(name: \"empty\", attrs: [], children: [])",
-              ),
-            ]),
-          ),
+          code.Branch(pattern: "\"\"", body: with_overrides(bare_decode_call)),
           code.Branch(
             pattern: "_",
             body: code.Case(
@@ -2332,9 +2377,7 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
               branches: [
                 code.Branch(
                   pattern: "Ok(root)",
-                  body: code.Call(head: code.Ident(name: decoder), args: [
-                    code.Ident(name: "root"),
-                  ]),
+                  body: with_overrides(bare_decode_call_with_root),
                 ),
                 code.Branch(
                   pattern: "Error(r)",
@@ -2351,7 +2394,10 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
           code.Fn(
             public: True,
             name: name_concat(["parse_", snake, "_response"]),
-            params: parse_response_params("body"),
+            params: response_params(
+              body_param: "body",
+              overrides_used: overrides,
+            ),
             return: code.CodeSome(
               name_concat(["Result(", output_type, ", String)"]),
             ),
@@ -2376,6 +2422,129 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
       )
     }
   }
+}
+
+/// A single `Output(..decoded, field: header_value)` override produced by
+/// a `@httpHeader` or `@httpResponseCode` member.
+type ResponseOverride {
+  ResponseOverride(field: String, value_expr: String)
+}
+
+fn response_overrides(out_info: IOTypeInfo) -> List(ResponseOverride) {
+  list.filter_map(out_info.members, fn(m) {
+    case m.binding {
+      Header(header_name: name) ->
+        case header_extractor(m.target, name) {
+          option.Some(expr) ->
+            Ok(ResponseOverride(field: m.snake_name, value_expr: expr))
+          option.None -> Error(Nil)
+        }
+      ResponseCode ->
+        Ok(ResponseOverride(
+          field: m.snake_name,
+          value_expr: "option.Some(code)",
+        ))
+      _ -> Error(Nil)
+    }
+  })
+}
+
+/// Map a Smithy `@httpHeader` target type to the matching extractor
+/// call. Types we don't yet bind (enums, timestamps, lists) fall
+/// through with `None` so the field continues to land as `option.None`
+/// — same behaviour the codegen had before this pass; new binding
+/// support drops into this match without touching anything else.
+fn header_extractor(target: Resolved, header_name: String) -> Option(String) {
+  case target {
+    RPrim(primitive: PString) ->
+      option.Some(call_extractor("string_header", header_name))
+    RPrim(primitive: PInt) ->
+      option.Some(call_extractor("int_header", header_name))
+    RPrim(primitive: PBool) ->
+      option.Some(call_extractor("bool_header", header_name))
+    // `RPrim(PFloat)` would map to `json_float.SmithyFloat` in the
+    // generated record — we don't yet emit the wrap/unwrap glue, so
+    // float-bound headers stay `None` for now. Add the helper plus
+    // a generator case here to close that gap.
+    _ -> option.None
+  }
+}
+
+fn call_extractor(fn_name: String, header_name: String) -> String {
+  name_concat(["rest.", fn_name, "(headers, \"", header_name, "\")"])
+}
+
+/// `full_override = True` produces `Output(field: ..., ...)` without
+/// the `..decoded` base — used when every member of the output type is
+/// bound to a header or the response code, which sidesteps Gleam's
+/// "redundant record update" warning.
+fn wrap_decode_with_overrides_at(
+  decoder_call: code.Code,
+  output_type: String,
+  overrides: List(ResponseOverride),
+  full_override full_override: Bool,
+) -> code.Code {
+  let overrides_text =
+    overrides
+    |> list.map(fn(o) { name_concat([o.field, ": ", o.value_expr]) })
+    |> string.join(", ")
+  let prefix = case full_override {
+    True -> ""
+    False -> "..decoded, "
+  }
+  let ok_body =
+    code.Call(head: code.Ident(name: "Ok"), args: [
+      code.Raw(
+        fragment: name_concat([
+          output_type,
+          "(",
+          prefix,
+          overrides_text,
+          ")",
+        ]),
+      ),
+    ])
+  let pattern = case full_override {
+    True -> "Ok(_)"
+    False -> "Ok(decoded)"
+  }
+  code.Case(scrutinee: decoder_call, branches: [
+    code.Branch(pattern: pattern, body: ok_body),
+    code.Branch(
+      pattern: "Error(r)",
+      body: code.Call(head: code.Ident(name: "Error"), args: [
+        code.Ident(name: "r"),
+      ]),
+    ),
+  ])
+}
+
+/// Build the `parse_<op>_response` parameter list, deciding whether to
+/// underscore each unused arg. When overrides exist we bind both
+/// `code` and `headers`; without any, we keep the original `_code` /
+/// `_headers` form so no `unused` warnings fire on the generated
+/// module.
+fn response_params(
+  body_param body_param: String,
+  overrides_used overrides: List(ResponseOverride),
+) -> List(code.Param) {
+  let uses_code =
+    list.any(overrides, fn(o) { string.contains(o.value_expr, "code") })
+  let uses_headers =
+    list.any(overrides, fn(o) { string.contains(o.value_expr, "headers") })
+  let code_name = case uses_code {
+    True -> "code"
+    False -> "_code"
+  }
+  let headers_name = case uses_headers {
+    True -> "headers"
+    False -> "_headers"
+  }
+  [
+    code.Param(name: code_name, type_: "Int"),
+    code.Param(name: headers_name, type_: "dict.Dict(String, String)"),
+    code.Param(name: body_param, type_: "BitArray"),
+  ]
 }
 
 fn parse_response_params(body_param: String) -> List(code.Param) {
@@ -2461,6 +2630,9 @@ fn emit_parse_with_payload(
 fn file_header(service_id: String, body: String) -> String {
   let candidates = [
     #("aws/credentials", "credentials.", code.CodeNone),
+    #("aws/endpoints", "endpoints.", code.CodeNone),
+    #("aws/internal/credentials_cache", "credentials_cache.", code.CodeNone),
+    #("aws/region", "region.", code.CodeNone),
     #("aws/internal/client/runtime", "runtime.", code.CodeSome("runtime")),
     #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
     #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
@@ -2481,7 +2653,7 @@ fn file_header(service_id: String, body: String) -> String {
   ]
   let used =
     candidates
-    |> list.filter(fn(c) { string.contains(body, c.1) })
+    |> list.filter(fn(c) { code.references_module(body, c.1) })
     |> list.map(fn(c) { code.Import(path: c.0, alias: c.2, unqualified: []) })
   let items =
     [

@@ -18,8 +18,20 @@ import smithy/trait.{type Trait}
 /// `endpoint_prefix` and `signing_name` feed the runtime's URL +
 /// SigV4 setup; `service_local` is the Smithy short name (the part
 /// after `#`) and feeds the file-header comment.
+///
+/// `endpoint_rule_set_json` carries the raw
+/// `smithy.rules#endpointRuleSet` trait re-serialised back to JSON.
+/// When present the generated `Client.new` parses it and attaches it
+/// via `runtime.with_endpoint_rule_set`, so per-request URL resolution
+/// runs the official Smithy rule set rather than the static
+/// `<prefix>.<region>.amazonaws.com` fallback.
 pub type Metadata {
-  Metadata(service_local: String, endpoint_prefix: String, signing_name: String)
+  Metadata(
+    service_local: String,
+    endpoint_prefix: String,
+    signing_name: String,
+    endpoint_rule_set_json: Option(String),
+  )
 }
 
 /// Extract a `Metadata` record from a service shape's `Traits`.
@@ -40,7 +52,19 @@ pub fn service_metadata(
     service_local: service_local,
     endpoint_prefix: endpoint_prefix,
     signing_name: signing_name,
+    endpoint_rule_set_json: endpoint_rule_set_json(traits),
   )
+}
+
+/// Re-serialise the `smithy.rules#endpointRuleSet` trait body back to
+/// JSON. Returns `None` when the service shape doesn't declare the
+/// trait — the legacy `<prefix>.<region>.amazonaws.com` URL is then
+/// the only thing the runtime can fall back to.
+pub fn endpoint_rule_set_json(traits: shape.Traits) -> Option(String) {
+  case dict.get(traits, ShapeId("smithy.rules#endpointRuleSet")) {
+    Ok(Some(t)) -> Some(trait.to_json_string(t))
+    _ -> None
+  }
 }
 
 /// Look up a `String` field nested under another trait. E.g. the

@@ -438,6 +438,50 @@ fn trim_trailing(s: String) -> String {
   }
 }
 
+/// Does the rendered body actually reference a module via its qualifier
+/// `prefix` (e.g. `"decode."`)?  Used by file-header emitters to import
+/// only modules a generated body uses. Naive substring matching trips on
+/// suffixes — `"decode."` inside `"xml_decode."` would falsely "use" the
+/// `decode` module. This walks the body and accepts a match only when the
+/// character immediately before the prefix is *not* an identifier
+/// character (i.e. it sits on a real word boundary).
+pub fn references_module(body: String, prefix: String) -> Bool {
+  any_word_boundary(body, prefix)
+}
+
+fn any_word_boundary(body: String, prefix: String) -> Bool {
+  case string.split_once(body, on: prefix) {
+    Error(_) -> False
+    Ok(#(before, after)) ->
+      case ends_with_ident_char(before) {
+        // identifier ran straight into prefix — keep scanning after it.
+        True -> any_word_boundary(after, prefix)
+        False -> True
+      }
+  }
+}
+
+fn ends_with_ident_char(s: String) -> Bool {
+  case string.length(s) {
+    0 -> False
+    n -> is_ident_char(string.slice(s, at_index: n - 1, length: 1))
+  }
+}
+
+fn is_ident_char(c: String) -> Bool {
+  case c {
+    "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" -> True
+    "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" -> True
+    "u" | "v" | "w" | "x" | "y" | "z" -> True
+    "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" -> True
+    "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" -> True
+    "U" | "V" | "W" | "X" | "Y" | "Z" -> True
+    "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" -> True
+    "_" -> True
+    _ -> False
+  }
+}
+
 fn int_to_string(n: Int) -> String {
   case n {
     0 -> "0"

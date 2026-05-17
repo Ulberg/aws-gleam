@@ -43,6 +43,48 @@ pub fn parse_repeated_children_test() {
   should.equal(items |> list_length, 3)
 }
 
+const list_objects_xml: String = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ListBucketResult>
+  <Name>my-bucket</Name>
+  <Prefix>photos/</Prefix>
+  <Marker></Marker>
+  <MaxKeys>1000</MaxKeys>
+  <IsTruncated>false</IsTruncated>
+  <Contents>
+    <Key>photos/cat.jpg</Key>
+    <Size>10240</Size>
+  </Contents>
+  <Contents>
+    <Key>photos/dog.jpg</Key>
+    <Size>20480</Size>
+  </Contents>
+  <CommonPrefixes>
+    <Prefix>photos/2024/</Prefix>
+  </CommonPrefixes>
+  <CommonPrefixes>
+    <Prefix>photos/2025/</Prefix>
+  </CommonPrefixes>
+</ListBucketResult>"
+
+pub fn decode_flattened_list_test() {
+  // S3's ListObjects response has `Contents` and `CommonPrefixes` as
+  // `@xmlFlattened` lists — repeated siblings of the parent, NOT wrapped
+  // in a `<Contents>...<member>...</member>` envelope. The codegen must
+  // emit `optional_flat_list` rather than `optional_list` for these,
+  // otherwise the Gleam record receives `None` even though the server
+  // sent two entries.
+  let assert Ok(root) = xml_decode.parse(list_objects_xml)
+  let assert Ok(out) = s3.decode_list_objects_output_xml(root)
+
+  let assert option.Some(contents) = out.contents
+  list_length(contents) |> should.equal(2)
+  let assert [first, ..] = contents
+  first.key |> should.equal(option.Some("photos/cat.jpg"))
+
+  let assert option.Some(prefixes) = out.common_prefixes
+  list_length(prefixes) |> should.equal(2)
+}
+
 pub fn decode_list_buckets_output_test() {
   let assert Ok(root) = xml_decode.parse(list_buckets_xml)
   let assert Ok(out) = s3.decode_list_buckets_output_xml(root)

@@ -5,9 +5,11 @@
 
 import aws/internal/uri
 import gleam/dict.{type Dict}
+import gleam/float
 import gleam/int
 import gleam/json
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/string
 
 /// Substitute a single `@httpLabel` member into the URI template.
@@ -206,5 +208,76 @@ pub fn enum_wire_value(j: json.Json) -> String {
   case len > 2 {
     True -> string.slice(s, 1, len - 2)
     False -> s
+  }
+}
+
+// ---------- response-side header extraction ----------
+//
+// The runtime gives `parse_<op>_response` a `dict.Dict(String, String)`
+// with lowercased keys. The helpers below normalise the caller-supplied
+// header name to lowercase for the lookup so generated code can use the
+// header's wire spelling verbatim — e.g. `string_header(headers, "ETag")`
+// works the same whether the server replied with `ETag:` or `etag:`.
+
+pub fn string_header(
+  headers: Dict(String, String),
+  name: String,
+) -> Option(String) {
+  case dict.get(headers, string.lowercase(name)) {
+    Ok(v) -> Some(v)
+    Error(_) -> None
+  }
+}
+
+pub fn int_header(headers: Dict(String, String), name: String) -> Option(Int) {
+  case dict.get(headers, string.lowercase(name)) {
+    Ok(v) ->
+      case int.parse(string.trim(v)) {
+        Ok(n) -> Some(n)
+        Error(_) -> None
+      }
+    Error(_) -> None
+  }
+}
+
+pub fn bool_header(
+  headers: Dict(String, String),
+  name: String,
+) -> Option(Bool) {
+  case dict.get(headers, string.lowercase(name)) {
+    Ok(v) ->
+      case string.lowercase(string.trim(v)) {
+        "true" -> Some(True)
+        "false" -> Some(False)
+        _ -> None
+      }
+    Error(_) -> None
+  }
+}
+
+/// Float header — used for shapes that bind a `Float` member to a
+/// response header. Falls through to `None` if the value can't be
+/// parsed; same forgiving contract as `int_header` / `bool_header`.
+pub fn float_header(
+  headers: Dict(String, String),
+  name: String,
+) -> Option(Float) {
+  case dict.get(headers, string.lowercase(name)) {
+    Ok(v) -> parse_float(string.trim(v))
+    Error(_) -> None
+  }
+}
+
+fn parse_float(s: String) -> Option(Float) {
+  case float.parse(s) {
+    Ok(f) -> Some(f)
+    Error(_) ->
+      // Integer literals are valid Float wire values per the Smithy
+      // spec — `1` decodes to `1.0`. The Gleam stdlib's float parser
+      // rejects them, so fall back to int + cast.
+      case int.parse(s) {
+        Ok(n) -> Some(int.to_float(n))
+        Error(_) -> None
+      }
   }
 }

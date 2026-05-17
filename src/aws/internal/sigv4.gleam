@@ -1,4 +1,3 @@
-import aws/credentials.{type Credentials}
 import aws/internal/crypto
 import aws/internal/http_request.{
   type Header, type HttpRequest, Header, HttpRequest,
@@ -6,7 +5,7 @@ import aws/internal/http_request.{
 import aws/internal/uri
 import gleam/bit_array
 import gleam/list
-import gleam/option.{Some}
+import gleam/option.{type Option, Some}
 import gleam/order
 import gleam/string
 
@@ -21,6 +20,34 @@ pub type SigningOptions {
   )
 }
 
+/// Minimal credentials shape the signer needs. Lives here rather than
+/// `aws/credentials` so callers in providers/* (e.g. the STS
+/// AssumeRole provider that signs its own request) can construct one
+/// without dragging the full `Credentials` type — which would form a
+/// dependency cycle with the provider chain that *consumes* signed
+/// requests.
+pub type SigningCredentials {
+  SigningCredentials(
+    access_key_id: String,
+    secret_access_key: String,
+    session_token: Option(String),
+  )
+}
+
+/// Convenience constructor mirroring the most common case: static keys
+/// with no session token.
+pub fn make_credentials(
+  access_key_id access_key_id: String,
+  secret_access_key secret_access_key: String,
+  session_token session_token: Option(String),
+) -> SigningCredentials {
+  SigningCredentials(
+    access_key_id: access_key_id,
+    secret_access_key: secret_access_key,
+    session_token: session_token,
+  )
+}
+
 pub type CanonicalParts {
   CanonicalParts(
     canonical_request: String,
@@ -32,7 +59,7 @@ pub type CanonicalParts {
 
 pub fn canonical_request(
   req: HttpRequest,
-  creds: Credentials,
+  creds: SigningCredentials,
   opts: SigningOptions,
 ) -> CanonicalParts {
   let payload_hash = case opts.sign_body {
@@ -101,7 +128,7 @@ pub fn signature(key: BitArray, sts: String) -> String {
 }
 
 pub fn authorization_header(
-  creds: Credentials,
+  creds: SigningCredentials,
   timestamp: String,
   region: String,
   service: String,
@@ -125,7 +152,7 @@ pub fn authorization_header(
 
 pub fn sign(
   req: HttpRequest,
-  creds: Credentials,
+  creds: SigningCredentials,
   opts: SigningOptions,
 ) -> HttpRequest {
   let parts = canonical_request(req, creds, opts)
@@ -163,7 +190,7 @@ pub fn sign(
 
 fn prepare_headers(
   req: HttpRequest,
-  creds: Credentials,
+  creds: SigningCredentials,
   opts: SigningOptions,
   payload_hash: String,
 ) -> List(Header) {
@@ -188,7 +215,7 @@ fn prepare_headers(
 
 fn headers_for_signing(
   prepared: List(Header),
-  creds: Credentials,
+  creds: SigningCredentials,
   opts: SigningOptions,
 ) -> List(Header) {
   case creds.session_token, opts.omit_session_token {

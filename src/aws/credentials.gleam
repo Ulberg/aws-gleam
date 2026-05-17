@@ -17,7 +17,9 @@ import aws/internal/providers/ecs
 import aws/internal/providers/imds
 import aws/internal/providers/process as process_provider
 import aws/internal/providers/sso
+import aws/internal/providers/sts
 import aws/internal/providers/sts_web_identity as web_identity
+import aws/internal/sigv4
 import gleam/bit_array
 import gleam/int
 import gleam/list
@@ -985,6 +987,99 @@ pub fn from_aws_cli_with(
   })
 }
 
+// ----- STS AssumeRole provider -----
+
+@external(erlang, "aws_ffi", "aws_timestamp")
+fn aws_timestamp() -> String
+
+/// Provider that wraps a source provider with an STS `AssumeRole` call.
+///
+/// Fetch order on every call:
+///   1. The wrapped `source` provider resolves "outer" credentials.
+///   2. Those credentials sign a `AssumeRole` request to STS, which
+///      hands back temporary credentials for the target role.
+///
+/// `region` is what STS signs against; the global endpoint accepts any
+/// region so `"us-east-1"` is a safe default.
+///
+/// Use this when your profile carries a `role_arn` / `source_profile`
+/// chain, or when you need a programmatic assume-role hop without
+/// editing your shared config.
+pub fn from_assume_role(
+  source source: Provider,
+  send send: HttpSend,
+  region region: String,
+  role_arn role_arn: String,
+  role_session_name role_session_name: String,
+  external_id external_id: Option(String),
+) -> Provider {
+  from_assume_role_with(
+    source: source,
+    send: send,
+    region: region,
+    role_arn: role_arn,
+    role_session_name: role_session_name,
+    external_id: external_id,
+    endpoint: sts.default_endpoint,
+    duration_seconds: sts.default_duration_seconds,
+    timestamp: aws_timestamp,
+  )
+}
+
+/// Fully-explicit form — used by tests and callers that need a regional
+/// STS endpoint or a non-default session duration.
+pub fn from_assume_role_with(
+  source source: Provider,
+  send send: HttpSend,
+  region region: String,
+  role_arn role_arn: String,
+  role_session_name role_session_name: String,
+  external_id external_id: Option(String),
+  endpoint endpoint: String,
+  duration_seconds duration_seconds: Int,
+  timestamp timestamp: fn() -> String,
+) -> Provider {
+  let label = "AssumeRole(" <> role_arn <> ")"
+  let options =
+    sts.Options(
+      endpoint: endpoint,
+      region: region,
+      role_arn: role_arn,
+      role_session_name: role_session_name,
+      duration_seconds: duration_seconds,
+      external_id: external_id,
+    )
+  Provider(name: label, fetch: fn() {
+    use outer <- result.try(source.fetch())
+    let signing =
+      sigv4.SigningCredentials(
+        access_key_id: outer.access_key_id,
+        secret_access_key: outer.secret_access_key,
+        session_token: outer.session_token,
+      )
+    case
+      sts.fetch(
+        send: send,
+        source: signing,
+        options: options,
+        timestamp: timestamp,
+      )
+    {
+      Ok(c) ->
+        Ok(Credentials(
+          access_key_id: c.access_key_id,
+          secret_access_key: c.secret_access_key,
+          session_token: Some(c.session_token),
+          expires_at: Some(c.expires_at),
+          source: label,
+        ))
+      Error(sts.Misconfigured(reason: reason)) ->
+        Error(NotConfigured(reason: reason))
+      Error(sts.Failed(reason: reason)) -> Error(FetchFailed(reason: reason))
+    }
+  })
+}
+
 // ----- default chain -----
 
 /// Standard AWS credential-provider chain, in the precedence order other AWS
@@ -1006,13 +1101,64 @@ pub fn from_aws_cli_with(
 /// credential_process branches (they all share the AWS-CLI profile concept).
 /// Pass `"default"` to mimic the AWS CLI's default behaviour.
 pub fn default_chain(send send: HttpSend, profile profile: String) -> Provider {
+  default_chain_with(
+    send: send,
+    imds_send: imds_send,
+    profile: profile,
+    env: os_get_env,
+    read_file: read_file_string,
+    runner: os_process.run,
+  )
+}
+
+/// Injectable variant of `default_chain`. Every OS-touching seam (env-var
+/// lookup, file reading, OS-process spawning, HTTP send) is a parameter, so a
+/// test can drive the chain end-to-end without touching real env or filesystem.
+///
+/// `send` is the HTTP transport used by web-identity, SSO, and ECS; `imds_send`
+/// is the short-timeout variant used by IMDS specifically — they're separate
+/// arguments because the production wiring picks distinct senders for them.
+pub fn default_chain_with(
+  send send: HttpSend,
+  imds_send imds_send: HttpSend,
+  profile profile: String,
+  env env: fn(String) -> Result(String, Nil),
+  read_file read_file: fn(String) -> Result(String, Nil),
+  runner runner: fn(String, List(String)) -> Result(#(Int, BitArray), Nil),
+) -> Provider {
+  let config_reader = fn() {
+    use home <- result.try(env("HOME"))
+    read_file(home <> "/.aws/config")
+  }
+  let credentials_reader = fn() {
+    use home <- result.try(env("HOME"))
+    read_file(home <> "/.aws/credentials")
+  }
+  let sso_cache_reader = fn(filename: String) {
+    use home <- result.try(env("HOME"))
+    read_file(home <> "/.aws/sso/cache/" <> filename)
+  }
   chain([
-    from_environment(),
-    from_web_identity(send: send),
-    from_sso(send: send, profile: profile),
-    from_profile(name: profile),
-    from_process(profile: profile),
-    from_ecs(send: send),
+    from_environment_with(lookup: env),
+    from_web_identity_with_env(send: send, lookup: env, read_file: read_file),
+    from_sso_with_env(
+      send: send,
+      profile: profile,
+      config_reader: config_reader,
+      cache_reader: sso_cache_reader,
+    ),
+    from_profile_with(
+      name: profile,
+      credentials_reader: credentials_reader,
+      config_reader: config_reader,
+    ),
+    from_process_with_env(
+      profile: profile,
+      config_reader: config_reader,
+      credentials_reader: credentials_reader,
+      runner: runner,
+    ),
+    from_ecs_with_env(send: send, lookup: env, read_file: read_file),
     // IMDS uses a short-timeout sender so its link-local connect fails fast
     // when we're not on EC2 instead of stalling the whole chain.
     from_imds(send: imds_send),

@@ -195,7 +195,11 @@ type OpSpec {
 // `codegen/trait_helpers.gleam` — see Pass 4 in plan.md.
 
 fn emit_client(metadata: trait_helpers.Metadata) -> String {
-  client.render(metadata.endpoint_prefix, metadata.signing_name)
+  client.render(
+    metadata.endpoint_prefix,
+    metadata.signing_name,
+    metadata.endpoint_rule_set_json,
+  )
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
@@ -1292,6 +1296,9 @@ fn file_header(service_id: String, protocol: Protocol, body: String) -> String {
   }
   let candidates = [
     #("aws/credentials", "credentials.", code.CodeNone),
+    #("aws/endpoints", "endpoints.", code.CodeNone),
+    #("aws/internal/credentials_cache", "credentials_cache.", code.CodeNone),
+    #("aws/region", "region.", code.CodeNone),
     #("aws/internal/client/runtime", "runtime.", code.CodeSome("runtime")),
     #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
     #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
@@ -1304,10 +1311,11 @@ fn file_header(service_id: String, protocol: Protocol, body: String) -> String {
     #("gleam/json", "json.", code.CodeNone),
     #("gleam/list", "list.", code.CodeNone),
     #("gleam/option", "option.", code.CodeNone),
+    #("gleam/result", "result.", code.CodeNone),
   ]
   let used =
     candidates
-    |> list.filter(fn(c) { string.contains(body, c.1) })
+    |> list.filter(fn(c) { code.references_module(body, c.1) })
     |> list.map(fn(c) { code.Import(path: c.0, alias: c.2, unqualified: []) })
   let items =
     [

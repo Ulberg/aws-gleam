@@ -11,19 +11,30 @@
 //// across DynamoDB.
 
 import aws/credentials.{type Provider}
+import aws/endpoints.{type Params, type RuleSet}
 import aws/internal/http_request as our_http
 import aws/internal/http_send.{type HttpError, type Send}
 import aws/internal/sigv4.{SigningOptions}
+import aws/retry.{type Strategy}
 import gleam/bit_array
 import gleam/dict.{type Dict}
 import gleam/http
 import gleam/http/request
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 
 /// Configuration carried inside every generated `Client`. See module
 /// docs for what's threaded through where.
+///
+/// `endpoint_rule_set` and `endpoint_params` are the Smithy endpoint
+/// resolution inputs. When `endpoint_rule_set` is `Some`, every `invoke`
+/// call computes the request URL by walking the rule set against
+/// `endpoint_params` merged with `{Region: region}` and any operation-
+/// specific parameters threaded through `invoke_with_endpoint_params`.
+/// When it's `None`, `endpoint_url` is used verbatim — that's the
+/// pre-M3 behaviour the runtime keeps as a fallback.
 pub type ClientConfig {
   ClientConfig(
     provider: Provider,
@@ -33,6 +44,9 @@ pub type ClientConfig {
     endpoint_url: String,
     http_send: Send,
     timestamp: fn() -> String,
+    retry_strategy: Strategy,
+    endpoint_rule_set: Option(RuleSet),
+    endpoint_params: Params,
   )
 }
 
@@ -65,6 +79,9 @@ pub fn default_config(
     endpoint_url: default_endpoint(endpoint_prefix, region),
     http_send: http_send.default_send,
     timestamp: aws_timestamp,
+    retry_strategy: retry.standard(),
+    endpoint_rule_set: None,
+    endpoint_params: dict.new(),
   )
 }
 
@@ -89,9 +106,64 @@ pub fn with_http_send(config: ClientConfig, send: Send) -> ClientConfig {
   ClientConfig(..config, http_send: send)
 }
 
+/// Override the retry strategy used to wrap `http_send`. Pass
+/// `retry.standard()` for the AWS-standard 3-attempt backoff (the
+/// default), or `retry.adaptive(bucket)` to add the token-bucket gate.
+pub fn with_retry_strategy(
+  config: ClientConfig,
+  strategy: Strategy,
+) -> ClientConfig {
+  ClientConfig(..config, retry_strategy: strategy)
+}
+
+/// Attach a Smithy endpoint rule set. When set, the runtime walks the rule
+/// set per request to compute the endpoint URL — the value passed in via
+/// `with_endpoint_url` (or `default_endpoint`) is then ignored except as a
+/// fallback when the rule set is cleared. Use this from generated service
+/// constructors that embed their service's rule set.
+pub fn with_endpoint_rule_set(
+  config: ClientConfig,
+  rule_set: RuleSet,
+) -> ClientConfig {
+  ClientConfig(..config, endpoint_rule_set: Some(rule_set))
+}
+
+/// Set a single client-level endpoint-rule-set parameter (e.g.
+/// `"UseFIPS"` -> `BoolVal(True)`). Operation-specific params (S3
+/// `Bucket`, `Key`) are threaded per-call via
+/// `invoke_with_endpoint_params`.
+pub fn with_endpoint_param(
+  config: ClientConfig,
+  name: String,
+  value: endpoints.Value,
+) -> ClientConfig {
+  ClientConfig(
+    ..config,
+    endpoint_params: dict.insert(config.endpoint_params, name, value),
+  )
+}
+
 /// Run one operation end-to-end. See module docs for the pipeline.
+///
+/// Operations that need to thread rule-set parameters known only to the
+/// op itself (e.g. S3's `Bucket`) should use `invoke_with_endpoint_params`
+/// instead and pass those parameters through `op_params`.
 pub fn invoke(
   config: ClientConfig,
+  built: #(String, String, Dict(String, String), BitArray),
+  parse: fn(Int, Dict(String, String), BitArray) -> Result(output, String),
+) -> Result(output, ClientError) {
+  invoke_with_endpoint_params(config, dict.new(), built, parse)
+}
+
+/// Same as `invoke` but with extra rule-set parameters merged in for this
+/// operation only — used by generated S3 ops to supply `Bucket`/`Key` etc.
+/// without leaking them onto the client config. If the client has no
+/// `endpoint_rule_set`, `op_params` is ignored (the static `endpoint_url`
+/// is used).
+pub fn invoke_with_endpoint_params(
+  config: ClientConfig,
+  op_params: Params,
   built: #(String, String, Dict(String, String), BitArray),
   parse: fn(Int, Dict(String, String), BitArray) -> Result(output, String),
 ) -> Result(output, ClientError) {
@@ -102,7 +174,9 @@ pub fn invoke(
     |> result.map_error(CredentialsError),
   )
 
-  let host = host_from_endpoint(config.endpoint_url)
+  use endpoint_url <- result.try(resolve_endpoint_url(config, op_params))
+
+  let host = host_from_endpoint(endpoint_url)
   let header_pairs =
     [#("host", host), ..dict.to_list(headers)]
     |> list.map(fn(p) { our_http.Header(name: p.0, value: p.1) })
@@ -133,9 +207,15 @@ pub fn invoke(
       sign_body: True,
       omit_session_token: False,
     )
-  let signed = sigv4.sign(unsigned, creds, opts)
+  let signing_creds =
+    sigv4.SigningCredentials(
+      access_key_id: creds.access_key_id,
+      secret_access_key: creds.secret_access_key,
+      session_token: creds.session_token,
+    )
+  let signed = sigv4.sign(unsigned, signing_creds, opts)
 
-  let full_url = config.endpoint_url <> uri
+  let full_url = endpoint_url <> uri
   let assert Ok(base) = request.to(full_url)
   let http_req =
     base
@@ -146,8 +226,10 @@ pub fn invoke(
       request.set_header(r, h.name, h.value)
     })
 
+  let send =
+    retry.with_retry(send: config.http_send, strategy: config.retry_strategy)
   use resp <- result.try(
-    config.http_send(http_req)
+    send(http_req)
     |> result.map_error(TransportError),
   )
 
@@ -164,6 +246,47 @@ pub fn invoke(
         body: resp.body,
       ))
     }
+  }
+}
+
+/// Compute the request URL using the rule set if attached, otherwise fall
+/// back to the static `endpoint_url`. Returns a runtime error if the rule
+/// set can't be resolved — bubbles up as `DecodeError` for now so existing
+/// callers don't need a new variant.
+fn resolve_endpoint_url(
+  config: ClientConfig,
+  op_params: Params,
+) -> Result(String, ClientError) {
+  case config.endpoint_rule_set {
+    None -> Ok(config.endpoint_url)
+    Some(rs) -> {
+      let params =
+        dict.insert(
+          merge_params(config.endpoint_params, op_params),
+          "Region",
+          endpoints.StringVal(config.region),
+        )
+      case endpoints.resolve(rs, params) {
+        Ok(endpoint) -> Ok(endpoint.url)
+        Error(err) -> Error(DecodeError(reason: describe_endpoint_error(err)))
+      }
+    }
+  }
+}
+
+fn merge_params(base: Params, overlay: Params) -> Params {
+  dict.fold(overlay, base, fn(acc, k, v) { dict.insert(acc, k, v) })
+}
+
+fn describe_endpoint_error(err: endpoints.ResolveError) -> String {
+  case err {
+    endpoints.RuleError(message: m) -> "endpoint rule error: " <> m
+    endpoints.NoMatch -> "endpoint rule set: no match"
+    endpoints.InvalidRuleSet(reason: r) -> "invalid endpoint rule set: " <> r
+    endpoints.Unsupported(reason: r) -> "endpoint unsupported: " <> r
+    endpoints.MissingParameter(name: n) -> "endpoint parameter missing: " <> n
+    endpoints.RequiredParameterMissing(name: n) ->
+      "endpoint required parameter missing: " <> n
   }
 }
 
@@ -283,7 +406,32 @@ fn error_type_from_body(body: String) -> String {
     Error(_) ->
       case extract_quoted_field(body, "code") {
         Ok(v) -> normalise_error_type(v)
-        Error(_) -> "Unknown"
+        Error(_) ->
+          case extract_xml_error_code(body) {
+            Ok(v) -> normalise_error_type(v)
+            Error(_) -> "Unknown"
+          }
+      }
+  }
+}
+
+/// Pull the error code out of a restXml error body. Two shapes appear
+/// in the wild — S3-style `<Error><Code>NoSuchBucket</Code>...</Error>`
+/// and SQS/SNS-style `<ErrorResponse><Error><Code>X</Code>...</Error>...`.
+/// In both cases the first `<Code>` element holds the error type, so a
+/// single text search keyed on `<Code>` covers both shapes without
+/// dragging in the full XML decoder for an error-only path.
+fn extract_xml_error_code(body: String) -> Result(String, Nil) {
+  case string.split_once(body, "<Code>") {
+    Error(_) -> Error(Nil)
+    Ok(#(_, rest)) ->
+      case string.split_once(rest, "</Code>") {
+        Error(_) -> Error(Nil)
+        Ok(#(code, _)) ->
+          case string.trim(code) {
+            "" -> Error(Nil)
+            non_empty -> Ok(non_empty)
+          }
       }
   }
 }
