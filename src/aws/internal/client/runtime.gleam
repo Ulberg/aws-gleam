@@ -15,6 +15,7 @@ import aws/endpoints.{type Params, type RuleSet}
 import aws/internal/http_request as our_http
 import aws/internal/http_send.{type HttpError, type Send}
 import aws/internal/sigv4.{SigningOptions}
+import aws/internal/text_scan
 import aws/retry.{type Strategy}
 import gleam/bit_array
 import gleam/dict.{type Dict}
@@ -402,8 +403,8 @@ fn normalise_error_type(raw: String) -> String {
 
 fn error_type_from_body(body: String) -> String {
   let found =
-    extract_quoted_field(body, "__type")
-    |> result.lazy_or(fn() { extract_quoted_field(body, "code") })
+    text_scan.json_string_after_key(body, "__type")
+    |> result.lazy_or(fn() { text_scan.json_string_after_key(body, "code") })
     |> result.lazy_or(fn() { extract_xml_error_code(body) })
   case found {
     Ok(v) -> normalise_error_type(v)
@@ -416,29 +417,14 @@ fn error_type_from_body(body: String) -> String {
 /// and SQS/SNS-style `<ErrorResponse><Error><Code>X</Code>...</Error>...`.
 /// In both cases the first `<Code>` element holds the error type, so a
 /// single text search keyed on `<Code>` covers both shapes without
-/// dragging in the full XML decoder for an error-only path.
+/// dragging in the full XML decoder for an error-only path. The trim
+/// + empty-check rejects `<Code/>` and `<Code>   </Code>` so the
+/// fallback to "Unknown" still fires for malformed bodies.
 fn extract_xml_error_code(body: String) -> Result(String, Nil) {
-  use #(_, rest) <- result.try(string.split_once(body, "<Code>"))
-  use #(code, _) <- result.try(string.split_once(rest, "</Code>"))
-  case string.trim(code) {
+  use raw <- result.try(text_scan.xml_tag_text(body, "Code"))
+  case string.trim(raw) {
     "" -> Error(Nil)
     non_empty -> Ok(non_empty)
-  }
-}
-
-fn extract_quoted_field(body: String, key: String) -> Result(String, Nil) {
-  let needle = "\"" <> key <> "\""
-  case string.split_once(body, needle) {
-    Error(_) -> Error(Nil)
-    Ok(#(_, rest)) ->
-      case string.split_once(rest, "\"") {
-        Error(_) -> Error(Nil)
-        Ok(#(_, after_first_quote)) ->
-          case string.split_once(after_first_quote, "\"") {
-            Error(_) -> Error(Nil)
-            Ok(#(value, _)) -> Ok(value)
-          }
-      }
   }
 }
 

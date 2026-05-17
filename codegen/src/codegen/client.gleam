@@ -16,10 +16,6 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
 
-fn name_concat(parts: List(String)) -> String {
-  string.concat(parts)
-}
-
 /// Build the AST nodes for the per-service Client section. Pairs with
 /// `code.render(code.Module(items))` at the emit site.
 ///
@@ -259,7 +255,7 @@ pub fn invoke_fn(
   in_type: String,
   out_type: String,
 ) -> Code {
-  let err_type = name_concat([op_local, "Error"])
+  let err_type = string.concat([op_local, "Error"])
   Fn(
     public: True,
     name: snake,
@@ -267,19 +263,19 @@ pub fn invoke_fn(
       Param(name: "client", type_: "Client"),
       Param(name: "input", type_: in_type),
     ],
-    return: CodeSome(name_concat(["Result(", out_type, ", ", err_type, ")"])),
+    return: CodeSome(string.concat(["Result(", out_type, ", ", err_type, ")"])),
     body: code.Case(
       scrutinee: Call(Ident("runtime.invoke"), [
         Ident("client.config"),
-        Call(Ident(name_concat(["build_", snake, "_request"])), [Ident("input")]),
-        Ident(name_concat(["parse_", snake, "_response"])),
+        Call(Ident(string.concat(["build_", snake, "_request"])), [Ident("input")]),
+        Ident(string.concat(["parse_", snake, "_response"])),
       ]),
       branches: [
         code.Branch(pattern: "Ok(out)", body: Call(Ident("Ok"), [Ident("out")])),
         code.Branch(
           pattern: "Error(err)",
           body: Call(Ident("Error"), [
-            Call(Ident(name_concat(["translate_", snake, "_error"])), [
+            Call(Ident(string.concat(["translate_", snake, "_error"])), [
               Ident("err"),
             ]),
           ]),

@@ -20,6 +20,7 @@ import aws/internal/providers/sso
 import aws/internal/providers/sts
 import aws/internal/providers/sts_web_identity as web_identity
 import aws/internal/sigv4
+import aws/internal/text_scan
 import gleam/bit_array
 import gleam/int
 import gleam/list
@@ -752,7 +753,7 @@ fn resolve_and_fetch_sso(
     other -> "profile " <> other
   }
   use sso_cfg <- result.try(
-    resolve_sso_config(config, profile, section)
+    resolve_sso_config(config, section)
     |> result.map_error(fn(reason) {
       NotConfigured(
         reason: "profile '" <> profile <> "' is not an SSO profile: " <> reason,
@@ -790,13 +791,13 @@ fn resolve_and_fetch_sso(
 
 /// Build an `SsoConfig` from the profile's settings, preferring the
 /// modern `sso_session` shape and falling back to the legacy
-/// `sso_start_url` shape. Returns a reason on the way out — both
-/// branches' missing-key errors collapse to a single `NotConfigured`
-/// at the call site rather than the chain seeing six different
-/// "no sso_X" reasons depending on which key was first missing.
+/// `sso_start_url` shape. The reason surfaced on failure is always
+/// the legacy branch's (it runs second through `lazy_or`); the
+/// modern branch's "no sso_session" is the trivial case the chain
+/// expects when a profile simply isn't an SSO profile, so swallowing
+/// it is the right choice.
 fn resolve_sso_config(
   config: ini.Ini,
-  _profile: String,
   section: String,
 ) -> Result(SsoConfig, String) {
   resolve_sso_config_modern(config, section)
@@ -807,28 +808,20 @@ fn resolve_sso_config_modern(
   config: ini.Ini,
   section: String,
 ) -> Result(SsoConfig, String) {
-  use session <- result.try(
-    ini.get_property(config, section: section, key: "sso_session")
-    |> result.replace_error("no sso_session"),
-  )
-  use account_id <- result.try(
-    ini.get_property(config, section: section, key: "sso_account_id")
-    |> result.replace_error("no sso_account_id"),
-  )
-  use role_name <- result.try(
-    ini.get_property(config, section: section, key: "sso_role_name")
-    |> result.replace_error("no sso_role_name"),
-  )
+  use session <- result.try(require_property(config, section, "sso_session"))
+  use account_id <- result.try(require_property(
+    config,
+    section,
+    "sso_account_id",
+  ))
+  use role_name <- result.try(require_property(config, section, "sso_role_name"))
   let session_section = "sso-session " <> session
   // Modern profiles put `sso_region` on the session block, but the AWS
   // CLI also tolerates it on the profile itself. Try the session block
   // first, then the profile, then give up.
   use region <- result.try(
-    ini.get_property(config, section: session_section, key: "sso_region")
-    |> result.lazy_or(fn() {
-      ini.get_property(config, section: section, key: "sso_region")
-    })
-    |> result.replace_error("no sso_region"),
+    require_property(config, session_section, "sso_region")
+    |> result.lazy_or(fn() { require_property(config, section, "sso_region") }),
   )
   Ok(SsoConfig(
     region: region,
@@ -843,22 +836,14 @@ fn resolve_sso_config_legacy(
   config: ini.Ini,
   section: String,
 ) -> Result(SsoConfig, String) {
-  use start_url <- result.try(
-    ini.get_property(config, section: section, key: "sso_start_url")
-    |> result.replace_error("no sso_start_url"),
-  )
-  use region <- result.try(
-    ini.get_property(config, section: section, key: "sso_region")
-    |> result.replace_error("no sso_region"),
-  )
-  use account_id <- result.try(
-    ini.get_property(config, section: section, key: "sso_account_id")
-    |> result.replace_error("no sso_account_id"),
-  )
-  use role_name <- result.try(
-    ini.get_property(config, section: section, key: "sso_role_name")
-    |> result.replace_error("no sso_role_name"),
-  )
+  use start_url <- result.try(require_property(config, section, "sso_start_url"))
+  use region <- result.try(require_property(config, section, "sso_region"))
+  use account_id <- result.try(require_property(
+    config,
+    section,
+    "sso_account_id",
+  ))
+  use role_name <- result.try(require_property(config, section, "sso_role_name"))
   Ok(SsoConfig(
     region: region,
     account_id: account_id,
@@ -868,21 +853,23 @@ fn resolve_sso_config_legacy(
   ))
 }
 
+/// Look up a required INI property, returning `Error("no <key>")` if
+/// the key is absent. Used by both SSO resolvers; the consistent
+/// error format makes the "is this an SSO profile at all?" check
+/// readable at the call site.
+fn require_property(
+  config: ini.Ini,
+  section: String,
+  key: String,
+) -> Result(String, String) {
+  ini.get_property(config, section: section, key: key)
+  |> result.replace_error("no " <> key)
+}
+
 fn extract_access_token(json_text: String) -> Result(String, Nil) {
   // The token cache JSON has `{"accessToken": "...", "expiresAt": "...", ...}`.
   // A full decoder is overkill; pull just the one field.
-  case string.split_once(json_text, "\"accessToken\"") {
-    Ok(#(_, after_key)) ->
-      case string.split_once(after_key, "\"") {
-        Ok(#(_, after_first_quote)) ->
-          case string.split_once(after_first_quote, "\"") {
-            Ok(#(value, _)) -> Ok(value)
-            Error(_) -> Error(Nil)
-          }
-        Error(_) -> Error(Nil)
-      }
-    Error(_) -> Error(Nil)
-  }
+  text_scan.json_string_after_key(json_text, "accessToken")
 }
 
 fn read_default_config_file() -> Result(String, Nil) {

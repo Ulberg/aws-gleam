@@ -21,6 +21,7 @@ import aws/internal/datetime
 import aws/internal/http_request as our_http
 import aws/internal/http_send.{type Send}
 import aws/internal/sigv4.{type SigningCredentials, SigningOptions}
+import aws/internal/text_scan
 import aws/internal/uri
 import gleam/bit_array
 import gleam/http
@@ -253,16 +254,8 @@ fn decode_xml(body: BitArray) -> Result(StsCredentials, Error) {
 }
 
 fn extract_required(xml: String, tag: String) -> Result(String, Error) {
-  extract_field(xml, tag)
+  text_scan.xml_tag_text(xml, tag)
   |> result.replace_error(Failed(
     reason: "STS response missing <" <> tag <> "> element",
   ))
-}
-
-fn extract_field(xml: String, tag: String) -> Result(String, Nil) {
-  let open = "<" <> tag <> ">"
-  let close = "</" <> tag <> ">"
-  use #(_, after_open) <- result.try(string.split_once(xml, open))
-  use #(content, _) <- result.try(string.split_once(after_open, close))
-  Ok(content)
 }

@@ -5,8 +5,10 @@
 
 import aws/credentials.{ChainExhausted}
 import aws/internal/http_send.{type HttpError}
+import gleam/bit_array
 import gleam/http/request.{type Request}
 import gleam/http/response
+import gleam/string
 import gleeunit/should
 
 fn always_unreachable(
@@ -85,9 +87,14 @@ pub fn default_chain_resolves_through_aws_cli_when_native_providers_fall_through
     <> "\"SecretAccessKey\": \"cli-secret\", "
     <> "\"SessionToken\": \"cli-session\", "
     <> "\"Expiration\": \"2026-01-01T00:00:00Z\"}"
-  let cli_runner = fn(cmd: String, _args: List(String)) {
-    case string_contains(cmd, "aws configure export-credentials") {
-      True -> Ok(#(0, bit_array_from_string(aws_cli_json)))
+  // `process_provider.fetch` splits the command line on whitespace into
+  // (program, args), so we get cmd="aws" and args=["configure",
+  // "export-credentials", ...] — assert on the joined form so the test
+  // doesn't bind to the splitter's exact behaviour.
+  let cli_runner = fn(cmd: String, args: List(String)) {
+    let joined = string.join([cmd, ..args], " ")
+    case string.contains(joined, "aws configure export-credentials") {
+      True -> Ok(#(0, bit_array.from_string(aws_cli_json)))
       False -> Error(Nil)
     }
   }
@@ -104,19 +111,6 @@ pub fn default_chain_resolves_through_aws_cli_when_native_providers_fall_through
   creds.access_key_id |> should.equal("CLI-AKID")
   creds.source |> should.equal("AwsCli(default)")
 }
-
-@external(erlang, "string", "find")
-fn string_find_ffi(s: String, sub: String) -> String
-
-fn string_contains(s: String, sub: String) -> Bool {
-  case string_find_ffi(s, sub) {
-    "nomatch" -> False
-    _ -> True
-  }
-}
-
-@external(erlang, "unicode", "characters_to_binary")
-fn bit_array_from_string(s: String) -> BitArray
 
 fn list_map_first(
   pairs: List(#(String, credentials.ProviderError)),
