@@ -712,6 +712,21 @@ pub fn from_sso_with_env(
   })
 }
 
+/// Resolved SSO configuration plus the cache-file key derived from it.
+/// Modern (`sso_session`) and legacy (`sso_start_url`) profiles end up
+/// here after their respective normalisation pass.
+type SsoConfig {
+  SsoConfig(
+    region: String,
+    account_id: String,
+    role_name: String,
+    cache_key: String,
+    /// Human-readable label for error messages. "session 'X'" for
+    /// modern profiles, "start URL 'https://...'" for legacy ones.
+    cache_label: String,
+  )
+}
+
 fn resolve_and_fetch_sso(
   send: HttpSend,
   profile: String,
@@ -736,56 +751,120 @@ fn resolve_and_fetch_sso(
     "default" -> "default"
     other -> "profile " <> other
   }
-  use sso_session <- result.try(
-    ini.get_property(config, section: section, key: "sso_session")
-    |> result.replace_error(NotConfigured(
-      reason: "profile '" <> profile <> "' has no sso_session",
-    )),
+  use sso_cfg <- result.try(
+    resolve_sso_config(config, profile, section)
+    |> result.map_error(fn(reason) {
+      NotConfigured(
+        reason: "profile '" <> profile <> "' is not an SSO profile: " <> reason,
+      )
+    }),
   )
-  use region <- result.try(
-    ini.get_property(config, section: section, key: "sso_region")
-    |> result.replace_error(NotConfigured(
-      reason: "profile '" <> profile <> "' has no sso_region",
-    )),
-  )
-  use account_id <- result.try(
-    ini.get_property(config, section: section, key: "sso_account_id")
-    |> result.replace_error(NotConfigured(
-      reason: "profile '" <> profile <> "' has no sso_account_id",
-    )),
-  )
-  use role_name <- result.try(
-    ini.get_property(config, section: section, key: "sso_role_name")
-    |> result.replace_error(NotConfigured(
-      reason: "profile '" <> profile <> "' has no sso_role_name",
-    )),
-  )
-  let cache_filename = sha1_hex(sso_session) <> ".json"
+  let cache_filename = sso_cfg.cache_key <> ".json"
   use cache_text <- result.try(
     cache_reader(cache_filename)
     |> result.replace_error(NotConfigured(
-      reason: "no SSO token cache for session '"
-      <> sso_session
-      <> "' — run `aws sso login`",
+      reason: "no SSO token cache for "
+      <> sso_cfg.cache_label
+      <> " — run `aws sso login`",
     )),
   )
   use access_token <- result.try(
     extract_access_token(cache_text)
     |> result.replace_error(FetchFailed(
-      reason: "SSO token cache for session '"
-      <> sso_session
-      <> "' is missing accessToken",
+      reason: "SSO token cache for "
+      <> sso_cfg.cache_label
+      <> " is missing accessToken",
     )),
   )
   wrap_sso_result(sso.fetch(
     send,
     sso.Options(
-      region: region,
-      account_id: account_id,
-      role_name: role_name,
+      region: sso_cfg.region,
+      account_id: sso_cfg.account_id,
+      role_name: sso_cfg.role_name,
       access_token: access_token,
-      endpoint: sso.default_endpoint(region),
+      endpoint: sso.default_endpoint(sso_cfg.region),
     ),
+  ))
+}
+
+/// Build an `SsoConfig` from the profile's settings, preferring the
+/// modern `sso_session` shape and falling back to the legacy
+/// `sso_start_url` shape. Returns a reason on the way out — both
+/// branches' missing-key errors collapse to a single `NotConfigured`
+/// at the call site rather than the chain seeing six different
+/// "no sso_X" reasons depending on which key was first missing.
+fn resolve_sso_config(
+  config: ini.Ini,
+  _profile: String,
+  section: String,
+) -> Result(SsoConfig, String) {
+  resolve_sso_config_modern(config, section)
+  |> result.lazy_or(fn() { resolve_sso_config_legacy(config, section) })
+}
+
+fn resolve_sso_config_modern(
+  config: ini.Ini,
+  section: String,
+) -> Result(SsoConfig, String) {
+  use session <- result.try(
+    ini.get_property(config, section: section, key: "sso_session")
+    |> result.replace_error("no sso_session"),
+  )
+  use account_id <- result.try(
+    ini.get_property(config, section: section, key: "sso_account_id")
+    |> result.replace_error("no sso_account_id"),
+  )
+  use role_name <- result.try(
+    ini.get_property(config, section: section, key: "sso_role_name")
+    |> result.replace_error("no sso_role_name"),
+  )
+  let session_section = "sso-session " <> session
+  // Modern profiles put `sso_region` on the session block, but the AWS
+  // CLI also tolerates it on the profile itself. Try the session block
+  // first, then the profile, then give up.
+  use region <- result.try(
+    ini.get_property(config, section: session_section, key: "sso_region")
+    |> result.lazy_or(fn() {
+      ini.get_property(config, section: section, key: "sso_region")
+    })
+    |> result.replace_error("no sso_region"),
+  )
+  Ok(SsoConfig(
+    region: region,
+    account_id: account_id,
+    role_name: role_name,
+    cache_key: sha1_hex(session),
+    cache_label: "session '" <> session <> "'",
+  ))
+}
+
+fn resolve_sso_config_legacy(
+  config: ini.Ini,
+  section: String,
+) -> Result(SsoConfig, String) {
+  use start_url <- result.try(
+    ini.get_property(config, section: section, key: "sso_start_url")
+    |> result.replace_error("no sso_start_url"),
+  )
+  use region <- result.try(
+    ini.get_property(config, section: section, key: "sso_region")
+    |> result.replace_error("no sso_region"),
+  )
+  use account_id <- result.try(
+    ini.get_property(config, section: section, key: "sso_account_id")
+    |> result.replace_error("no sso_account_id"),
+  )
+  use role_name <- result.try(
+    ini.get_property(config, section: section, key: "sso_role_name")
+    |> result.replace_error("no sso_role_name"),
+  )
+  Ok(SsoConfig(
+    region: region,
+    account_id: account_id,
+    role_name: role_name,
+    cache_key: sha1_hex(start_url),
+    cache_label: "start URL '" <> start_url <> "'",
   ))
 }
 
@@ -1090,8 +1169,11 @@ pub fn from_assume_role_with(
 ///   3. SSO session, via `~/.aws/config` + the cached SSO token
 ///   4. Shared credentials file (`~/.aws/credentials`)
 ///   5. `credential_process` from the named profile
-///   6. ECS container metadata (`AWS_CONTAINER_CREDENTIALS_*_URI`)
-///   7. EC2 IMDSv2
+///   6. `aws configure export-credentials` (covers Identity Center / SSO
+///      sessions and other CLI-only auth flows when the native providers
+///      don't recognise the profile shape)
+///   7. ECS container metadata (`AWS_CONTAINER_CREDENTIALS_*_URI`)
+///   8. EC2 IMDSv2
 ///
 /// The returned `Provider` is the bare chain — it does not cache. Wrap it in
 /// `aws/internal/credentials_cache.start_default` to get the cache + refresh
@@ -1158,6 +1240,13 @@ pub fn default_chain_with(
       credentials_reader: credentials_reader,
       runner: runner,
     ),
+    // AWS CLI v2 fallback: covers any auth flow the CLI itself supports —
+    // notably Identity Center (`aws sso login`) and `login_session` /
+    // DPoP profiles we don't yet handle natively. The CLI exits non-zero
+    // when it can't produce credentials, which the runner surfaces as
+    // `LaunchFailed` → `NotConfigured`, so the chain falls through
+    // quietly when there's no working CLI session.
+    from_aws_cli_with(profile: profile, runner: runner),
     from_ecs_with_env(send: send, lookup: env, read_file: read_file),
     // IMDS uses a short-timeout sender so its link-local connect fails fast
     // when we're not on EC2 instead of stalling the whole chain.

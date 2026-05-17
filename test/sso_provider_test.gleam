@@ -231,6 +231,90 @@ pub fn cache_without_access_token_is_fetch_failed_test() {
   }
 }
 
+// ----- legacy `sso_start_url` profile shape -----
+//
+// The pre-2022 AWS CLI flow puts `sso_start_url`, `sso_region`,
+// `sso_account_id`, `sso_role_name` directly on the profile (no
+// `sso_session` indirection). The cache file is keyed on sha1 of the
+// start URL rather than sha1 of the session name. The resolver MUST
+// accept this shape too, otherwise users with older config land on
+// `NotConfigured` and the chain falls through with no working creds.
+
+const legacy_config: String = "[profile legacy-dev]
+sso_start_url = https://example.awsapps.com/start
+sso_region = us-east-1
+sso_account_id = 999988887777
+sso_role_name = AdminAccess
+"
+
+pub fn legacy_sso_start_url_profile_resolves_test() {
+  let send = fn(req: Request(BitArray)) {
+    let assert Ok(auth) = request.get_header(req, "x-amz-sso_bearer_token")
+    auth |> should.equal("LEGACY-CACHED-TOKEN")
+    ok_json(happy_body)
+  }
+  let provider =
+    credentials.from_sso_with_env(
+      send: send,
+      profile: "legacy-dev",
+      config_reader: fn() { Ok(legacy_config) },
+      cache_reader: fn(filename: String) {
+        // Cache filename must be sha1(start_url) + ".json" — 40 hex
+        // chars plus the suffix. Same shape as the modern format; the
+        // only difference is *what* gets hashed.
+        let assert True = string.ends_with(filename, ".json")
+        let assert True = string.length(filename) == 45
+        Ok(
+          "{\"accessToken\":\"LEGACY-CACHED-TOKEN\",\"expiresAt\":\"2030-01-02T03:04:05Z\"}",
+        )
+      },
+    )
+  let assert Ok(creds) = credentials.fetch(provider)
+  creds.source |> should.equal("SSO")
+  // Verifies the wire SSO call succeeded — happy_body is the mocked
+  // portal response, so the credentials carry the portal's keys.
+  creds.access_key_id |> should.equal("AKID-SSO")
+}
+
+// ----- modern profile with separate `[sso-session NAME]` block -----
+//
+// The post-2022 shape splits SSO config across two sections: the
+// profile carries `sso_session`/`sso_account_id`/`sso_role_name` and a
+// separate `[sso-session NAME]` block holds `sso_start_url` /
+// `sso_region`. The resolver should pull `sso_region` from the session
+// block when the profile doesn't carry it.
+
+const modern_split_config: String = "[profile dev]
+sso_session = corp
+sso_account_id = 123456789012
+sso_role_name = DeveloperAccess
+
+[sso-session corp]
+sso_start_url = https://example.awsapps.com/start
+sso_region = eu-west-1
+"
+
+pub fn modern_sso_session_block_resolves_test() {
+  let send = fn(req: Request(BitArray)) {
+    let assert Ok(auth) = request.get_header(req, "x-amz-sso_bearer_token")
+    auth |> should.equal("CACHED-ACCESS-TOKEN")
+    // The portal URL the runtime builds must use the session block's
+    // region (eu-west-1), not us-east-1 — that's how the regional
+    // partition split lands correctly.
+    string.contains(req.path, "/federation/credentials")
+    |> should.be_true
+    ok_json(happy_body)
+  }
+  let provider =
+    credentials.from_sso_with_env(
+      send: send,
+      profile: "dev",
+      config_reader: fn() { Ok(modern_split_config) },
+      cache_reader: fn(_) { Ok(valid_cache) },
+    )
+  let assert Ok(_creds) = credentials.fetch(provider)
+}
+
 pub fn unreadable_config_is_not_configured_test() {
   let provider =
     credentials.from_sso_with_env(

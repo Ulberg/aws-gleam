@@ -9,8 +9,8 @@
 //// take those as parameters.
 
 import codegen/code.{
-  type Code, Blank, Call, CodeSome, DocComment, Fn, Ident, LabelledParam, Module,
-  Param, Raw, TypeDef, Variant,
+  type Code, Blank, Call, CodeSome, Const, DocComment, Fn, Ident, LabelledParam,
+  Let, LetAssert, Module, Param, StrLit, TypeDef, Use, Variant,
 }
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -41,23 +41,27 @@ pub fn items(
   // just spawning an OTP actor) so `let assert` matches the
   // "generator-time invariant" pattern used elsewhere.
   let cache_setup = [
-    Raw("let config = runtime.default_config("),
-    Raw(
-      name_concat([
-        "  region, \"",
-        endpoint_prefix,
-        "\", \"",
-        signing_name,
-        "\"",
+    Let(
+      name: "config",
+      value: Call(Ident("runtime.default_config"), [
+        Ident("region"),
+        StrLit(endpoint_prefix),
+        StrLit(signing_name),
       ]),
     ),
-    Raw(")"),
-    Raw("let assert Ok(cache) ="),
-    Raw("  credentials_cache.start_default(config.provider)"),
-    Raw("let config = runtime.with_credentials_provider("),
-    Raw("  config,"),
-    Raw("  credentials_cache.as_provider(cache),"),
-    Raw(")"),
+    LetAssert(
+      pattern: "Ok(cache)",
+      value: Call(Ident("credentials_cache.start_default"), [
+        Ident("config.provider"),
+      ]),
+    ),
+    Let(
+      name: "config",
+      value: Call(Ident("runtime.with_credentials_provider"), [
+        Ident("config"),
+        Call(Ident("credentials_cache.as_provider"), [Ident("cache")]),
+      ]),
+    ),
   ]
   let new_body = case endpoint_rule_set_json {
     None ->
@@ -76,8 +80,12 @@ pub fn items(
         items: list.flatten([
           cache_setup,
           [
-            Raw("let assert Ok(rule_set) ="),
-            Raw("  endpoints.parse_rule_set(endpoint_rule_set_json)"),
+            LetAssert(
+              pattern: "Ok(rule_set)",
+              value: Call(Ident("endpoints.parse_rule_set"), [
+                Ident("endpoint_rule_set_json"),
+              ]),
+            ),
             Call(Ident("Client"), [
               Call(Ident("runtime.with_endpoint_rule_set"), [
                 Ident("config"),
@@ -96,12 +104,10 @@ pub fn items(
         "from the source model. Parsed once in `new` and attached to",
         "every Client via `runtime.with_endpoint_rule_set`.",
       ]),
-      Raw(
-        name_concat([
-          "const endpoint_rule_set_json: String = \"",
-          escape_const_string(json),
-          "\"",
-        ]),
+      Const(
+        name: "endpoint_rule_set_json",
+        type_: "String",
+        value: StrLit(json),
       ),
       Blank,
     ]
@@ -140,8 +146,17 @@ pub fn items(
       params: [],
       return: CodeSome("Result(Client, region.ResolveError)"),
       body: code.Block(items: [
-        Raw("use resolved <- result.try(region.resolve(profile: \"default\"))"),
-        Raw("Ok(new(region: resolved))"),
+        Use(
+          name: "resolved",
+          callee: Call(Ident("result.try"), [
+            Call(Ident("region.resolve"), [
+              code.Labelled(label: "profile", value: StrLit("default")),
+            ]),
+          ]),
+        ),
+        Call(Ident("Ok"), [
+          Call(Ident("new"), [code.Labelled(label: "region", value: Ident("resolved"))]),
+        ]),
       ]),
     ),
     Blank,
@@ -163,8 +178,12 @@ pub fn items(
       ],
       return: CodeSome("Client"),
       body: code.Block(items: [
-        Raw("let assert Ok(cache) ="),
-        Raw("  credentials_cache.start_default(provider)"),
+        LetAssert(
+          pattern: "Ok(cache)",
+          value: Call(Ident("credentials_cache.start_default"), [
+            Ident("provider"),
+          ]),
+        ),
         Call(Ident("Client"), [
           Call(Ident("runtime.with_credentials_provider"), [
             Ident("client.config"),
@@ -214,28 +233,6 @@ pub fn items(
     Blank,
   ]
   list.flatten([header, rule_set_constant, new_section, withers])
-}
-
-/// Escape a JSON document for embedding inside a Gleam double-quoted
-/// string literal. The same escapes as the `trait` serialiser apply
-/// — backslash and double-quote get escaped — and embedded newlines
-/// become `\n` so the resulting Gleam source stays single-line.
-fn escape_const_string(s: String) -> String {
-  s
-  |> string.to_graphemes
-  |> list.map(escape_one)
-  |> string.concat
-}
-
-fn escape_one(g: String) -> String {
-  case g {
-    "\\" -> "\\\\"
-    "\"" -> "\\\""
-    "\n" -> "\\n"
-    "\r" -> "\\r"
-    "\t" -> "\\t"
-    other -> other
-  }
 }
 
 /// Convenience: build + render in one call.

@@ -50,6 +50,18 @@ pub type Code {
   /// A `let name = expr` statement. Used inside `Body`.
   Let(name: String, value: Code)
 
+  /// A `let assert <pattern> = expr` statement. `pattern` is a Gleam
+  /// pattern as a string (e.g. `"Ok(rule_set)"`); the renderer emits
+  /// it verbatim, just as `Use` emits its `name` verbatim. Reserved
+  /// for invariants that hold by construction — the caller has
+  /// already proved the match is total, and a runtime failure would
+  /// be a generator bug rather than an end-user condition.
+  LetAssert(pattern: String, value: Code)
+
+  /// A module-level `const NAME: Type = value` declaration. Rendered
+  /// as a top-level item; not allowed inside a function body.
+  Const(name: String, type_: String, value: Code)
+
   /// A `use name <- callee` continuation. Lifts the rest of the body
   /// into a closure passed to `callee`.
   Use(name: String, callee: Code)
@@ -218,6 +230,26 @@ fn do_render(c: Code, indent: Int) -> String {
 
     Let(name: n, value: v) ->
       string.concat([pad(indent), "let ", n, " = ", do_render_expr(v, indent)])
+
+    LetAssert(pattern: p, value: v) ->
+      string.concat([
+        pad(indent),
+        "let assert ",
+        p,
+        " = ",
+        do_render_expr(v, indent),
+      ])
+
+    Const(name: n, type_: t, value: v) ->
+      string.concat([
+        pad(indent),
+        "const ",
+        n,
+        ": ",
+        t,
+        " = ",
+        do_render_expr(v, indent),
+      ])
 
     Use(name: n, callee: c2) ->
       case n {

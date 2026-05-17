@@ -401,17 +401,13 @@ fn normalise_error_type(raw: String) -> String {
 }
 
 fn error_type_from_body(body: String) -> String {
-  case extract_quoted_field(body, "__type") {
+  let found =
+    extract_quoted_field(body, "__type")
+    |> result.lazy_or(fn() { extract_quoted_field(body, "code") })
+    |> result.lazy_or(fn() { extract_xml_error_code(body) })
+  case found {
     Ok(v) -> normalise_error_type(v)
-    Error(_) ->
-      case extract_quoted_field(body, "code") {
-        Ok(v) -> normalise_error_type(v)
-        Error(_) ->
-          case extract_xml_error_code(body) {
-            Ok(v) -> normalise_error_type(v)
-            Error(_) -> "Unknown"
-          }
-      }
+    Error(_) -> "Unknown"
   }
 }
 
@@ -422,17 +418,11 @@ fn error_type_from_body(body: String) -> String {
 /// single text search keyed on `<Code>` covers both shapes without
 /// dragging in the full XML decoder for an error-only path.
 fn extract_xml_error_code(body: String) -> Result(String, Nil) {
-  case string.split_once(body, "<Code>") {
-    Error(_) -> Error(Nil)
-    Ok(#(_, rest)) ->
-      case string.split_once(rest, "</Code>") {
-        Error(_) -> Error(Nil)
-        Ok(#(code, _)) ->
-          case string.trim(code) {
-            "" -> Error(Nil)
-            non_empty -> Ok(non_empty)
-          }
-      }
+  use #(_, rest) <- result.try(string.split_once(body, "<Code>"))
+  use #(code, _) <- result.try(string.split_once(rest, "</Code>"))
+  case string.trim(code) {
+    "" -> Error(Nil)
+    non_empty -> Ok(non_empty)
   }
 }
 

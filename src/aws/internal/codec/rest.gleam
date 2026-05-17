@@ -10,6 +10,7 @@ import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import gleam/string
 
 /// Substitute a single `@httpLabel` member into the URI template.
@@ -223,35 +224,27 @@ pub fn string_header(
   headers: Dict(String, String),
   name: String,
 ) -> Option(String) {
-  case dict.get(headers, string.lowercase(name)) {
-    Ok(v) -> Some(v)
-    Error(_) -> None
-  }
+  dict.get(headers, string.lowercase(name))
+  |> option.from_result
 }
 
 pub fn int_header(headers: Dict(String, String), name: String) -> Option(Int) {
-  case dict.get(headers, string.lowercase(name)) {
-    Ok(v) ->
-      case int.parse(string.trim(v)) {
-        Ok(n) -> Some(n)
-        Error(_) -> None
-      }
-    Error(_) -> None
-  }
+  use raw <- option.then(string_header(headers, name))
+  raw
+  |> string.trim
+  |> int.parse
+  |> option.from_result
 }
 
 pub fn bool_header(
   headers: Dict(String, String),
   name: String,
 ) -> Option(Bool) {
-  case dict.get(headers, string.lowercase(name)) {
-    Ok(v) ->
-      case string.lowercase(string.trim(v)) {
-        "true" -> Some(True)
-        "false" -> Some(False)
-        _ -> None
-      }
-    Error(_) -> None
+  use raw <- option.then(string_header(headers, name))
+  case string.lowercase(string.trim(raw)) {
+    "true" -> Some(True)
+    "false" -> Some(False)
+    _ -> None
   }
 }
 
@@ -262,22 +255,15 @@ pub fn float_header(
   headers: Dict(String, String),
   name: String,
 ) -> Option(Float) {
-  case dict.get(headers, string.lowercase(name)) {
-    Ok(v) -> parse_float(string.trim(v))
-    Error(_) -> None
-  }
+  use raw <- option.then(string_header(headers, name))
+  parse_float(string.trim(raw))
 }
 
 fn parse_float(s: String) -> Option(Float) {
-  case float.parse(s) {
-    Ok(f) -> Some(f)
-    Error(_) ->
-      // Integer literals are valid Float wire values per the Smithy
-      // spec — `1` decodes to `1.0`. The Gleam stdlib's float parser
-      // rejects them, so fall back to int + cast.
-      case int.parse(s) {
-        Ok(n) -> Some(int.to_float(n))
-        Error(_) -> None
-      }
-  }
+  // Integer literals are valid Float wire values per the Smithy spec —
+  // `1` decodes to `1.0`. The stdlib's float parser rejects them, so
+  // fall back to int + cast on the `Error` side via `lazy_or`.
+  float.parse(s)
+  |> result.lazy_or(fn() { int.parse(s) |> result.map(int.to_float) })
+  |> option.from_result
 }

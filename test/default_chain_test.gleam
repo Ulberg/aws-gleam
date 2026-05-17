@@ -46,9 +46,9 @@ pub fn default_chain_has_name_chain_test() {
   provider.name |> should.equal("Chain")
 }
 
-pub fn default_chain_exhausts_with_all_seven_providers_in_order_test() {
+pub fn default_chain_exhausts_with_all_eight_providers_in_order_test() {
   // Every seam refuses (no env, no files, no subprocess, no network), so
-  // every provider should fail; the exhausted attempt list lets us assert
+  // every provider should fail; the exhausted attempt log lets us assert
   // the canonical order without needing any provider to actually succeed.
   let provider = unconfigured_chain()
   let assert Error(ChainExhausted(attempts: attempts)) =
@@ -57,8 +57,10 @@ pub fn default_chain_exhausts_with_all_seven_providers_in_order_test() {
   // Pull the provider names out of the attempt log.
   let names = list_map_first(attempts)
 
-  // Length tells us we composed 7 providers; the order tells us we composed
-  // them in the right sequence.
+  // Length tells us we composed 8 providers; the order tells us we
+  // composed them in the right sequence. AwsCli sits before ECS because
+  // it's the catch-all for CLI-only auth flows (Identity Center, etc.);
+  // ECS / IMDS are reserved for compute-platform metadata services.
   names
   |> should.equal([
     "Environment",
@@ -66,10 +68,55 @@ pub fn default_chain_exhausts_with_all_seven_providers_in_order_test() {
     "SSO(default)",
     "Profile(default)",
     "Process(default)",
+    "AwsCli(default)",
     "ECS",
     "IMDSv2",
   ])
 }
+
+pub fn default_chain_resolves_through_aws_cli_when_native_providers_fall_through_test() {
+  // Native env/web-identity/SSO/profile/process all decline (no env, no
+  // files, no subprocess for `credential_process`). The CLI fallback's
+  // runner returns the canonical `aws configure export-credentials
+  // --format process` JSON payload — the chain should land on the CLI
+  // creds and return them as `AwsCli(default)`-sourced.
+  let aws_cli_json =
+    "{\"Version\": 1, \"AccessKeyId\": \"CLI-AKID\", "
+    <> "\"SecretAccessKey\": \"cli-secret\", "
+    <> "\"SessionToken\": \"cli-session\", "
+    <> "\"Expiration\": \"2026-01-01T00:00:00Z\"}"
+  let cli_runner = fn(cmd: String, _args: List(String)) {
+    case string_contains(cmd, "aws configure export-credentials") {
+      True -> Ok(#(0, bit_array_from_string(aws_cli_json)))
+      False -> Error(Nil)
+    }
+  }
+  let provider =
+    credentials.default_chain_with(
+      send: always_unreachable,
+      imds_send: always_unreachable,
+      profile: "default",
+      env: empty_env,
+      read_file: no_files,
+      runner: cli_runner,
+    )
+  let assert Ok(creds) = credentials.fetch(provider)
+  creds.access_key_id |> should.equal("CLI-AKID")
+  creds.source |> should.equal("AwsCli(default)")
+}
+
+@external(erlang, "string", "find")
+fn string_find_ffi(s: String, sub: String) -> String
+
+fn string_contains(s: String, sub: String) -> Bool {
+  case string_find_ffi(s, sub) {
+    "nomatch" -> False
+    _ -> True
+  }
+}
+
+@external(erlang, "unicode", "characters_to_binary")
+fn bit_array_from_string(s: String) -> BitArray
 
 fn list_map_first(
   pairs: List(#(String, credentials.ProviderError)),
