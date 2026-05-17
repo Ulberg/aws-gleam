@@ -1016,29 +1016,139 @@ fn emit_build(
   target_value: String,
   ct: String,
 ) -> String {
-  "pub fn build_"
-  <> snake
-  <> "_request(\n  input: "
-  <> input_type
-  <> ",\n) -> #(String, String, dict.Dict(String, String), BitArray) {\n  let body_str = encode_"
-  <> snake
-  <> "_input(input)\n  let body = bit_array.from_string(body_str)\n  let headers =\n    dict.from_list([\n      #(\"Content-Type\", \""
-  <> ct
-  <> "\"),\n      #(\"Content-Length\", int.to_string(bit_array.byte_size(body))),\n      #(\"X-Amz-Target\", \""
-  <> target_value
-  <> "\"),\n    ])\n  #(\"POST\", \"/\", headers, body)\n}\n\n"
+  let body_str_let =
+    code.Let(
+      name: "body_str",
+      value: code.Call(
+        head: code.Ident(name: name_concat(["encode_", snake, "_input"])),
+        args: [code.Ident(name: "input")],
+      ),
+    )
+  let body_let =
+    code.Let(
+      name: "body",
+      value: code.Call(
+        head: code.Ident(name: "bit_array.from_string"),
+        args: [code.Ident(name: "body_str")],
+      ),
+    )
+  let headers_let =
+    code.Let(
+      name: "headers",
+      value: code.Call(
+        head: code.Ident(name: "dict.from_list"),
+        args: [
+          code.ListLit(
+            items: [
+              code.Tuple(items: [
+                code.StrLit(value: "Content-Type"),
+                code.StrLit(value: ct),
+              ]),
+              code.Tuple(items: [
+                code.StrLit(value: "Content-Length"),
+                code.Raw(
+                  fragment: "int.to_string(bit_array.byte_size(body))",
+                ),
+              ]),
+              code.Tuple(items: [
+                code.StrLit(value: "X-Amz-Target"),
+                code.StrLit(value: target_value),
+              ]),
+            ],
+            tail: code.CodeNone,
+          ),
+        ],
+      ),
+    )
+  let return_tuple =
+    code.Tuple(items: [
+      code.StrLit(value: "POST"),
+      code.StrLit(value: "/"),
+      code.Ident(name: "headers"),
+      code.Ident(name: "body"),
+    ])
+  code.render(
+    code.Module(items: [
+      code.Fn(
+        public: True,
+        name: name_concat(["build_", snake, "_request"]),
+        params: [code.Param(name: "input", type_: input_type)],
+        return: code.CodeSome(
+          "#(String, String, dict.Dict(String, String), BitArray)",
+        ),
+        body: code.Block(items: [
+          body_str_let,
+          body_let,
+          headers_let,
+          return_tuple,
+        ]),
+      ),
+      code.Blank,
+    ]),
+  )
 }
 
 fn emit_parse(output_type: String, snake: String) -> String {
-  "pub fn parse_"
-  <> snake
-  <> "_response(\n  _code: Int,\n  _headers: dict.Dict(String, String),\n  body: BitArray,\n) -> Result("
-  <> output_type
-  <> ", String) {\n  case bit_array.to_string(body) {\n    Ok(text) -> case text {\n      \"\" -> decode_"
-  <> snake
-  <> "_output(\"{}\")\n      _ -> decode_"
-  <> snake
-  <> "_output(text)\n    }\n    Error(_) -> Error(\"non-utf8 body\")\n  }\n}\n\n"
+  let decoder = name_concat(["decode_", snake, "_output"])
+  let inner_text_case =
+    code.Case(
+      scrutinee: code.Ident(name: "text"),
+      branches: [
+        code.Branch(
+          pattern: "\"\"",
+          body: code.Call(
+            head: code.Ident(name: decoder),
+            args: [code.StrLit(value: "{}")],
+          ),
+        ),
+        code.Branch(
+          pattern: "_",
+          body: code.Call(
+            head: code.Ident(name: decoder),
+            args: [code.Ident(name: "text")],
+          ),
+        ),
+      ],
+    )
+  code.render(
+    code.Module(items: [
+      code.Fn(
+        public: True,
+        name: name_concat(["parse_", snake, "_response"]),
+        params: [
+          code.Param(name: "_code", type_: "Int"),
+          code.Param(name: "_headers", type_: "dict.Dict(String, String)"),
+          code.Param(name: "body", type_: "BitArray"),
+        ],
+        return: code.CodeSome(name_concat(["Result(", output_type, ", String)"])),
+        body: code.Case(
+          scrutinee: code.Call(
+            head: code.Ident(name: "bit_array.to_string"),
+            args: [code.Ident(name: "body")],
+          ),
+          branches: [
+            code.Branch(pattern: "Ok(text)", body: inner_text_case),
+            code.Branch(
+              pattern: "Error(_)",
+              body: code.Call(
+                head: code.Ident(name: "Error"),
+                args: [code.StrLit(value: "non-utf8 body")],
+              ),
+            ),
+          ],
+        ),
+      ),
+      code.Blank,
+    ]),
+  )
+}
+
+/// Build a Gleam identifier name from a list of parts. Used in
+/// place of the `<>` operator throughout codegen so the Gleam
+/// source of the emitters doesn't itself use string concat to
+/// shape the generated identifiers.
+fn name_concat(parts: List(String)) -> String {
+  string.concat(parts)
 }
 
 /// Operation-level traits the emitter doesn't yet honour. Emitting code
