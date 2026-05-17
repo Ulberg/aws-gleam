@@ -827,12 +827,12 @@ fn emit_int_enum_codec(
   let snake = stringutils.pascal_to_snake(name)
   let first_ctor = case variants {
     [v, ..] -> v.gleam_ctor
-    [] -> name <> "Unknown"
+    [] -> name_concat([name, "Unknown"])
   }
   let enc =
     code.Fn(
       public: True,
-      name: "encode_" <> snake <> "_int_enum",
+      name: name_concat(["encode_", snake, "_int_enum"]),
       params: [code.Param(name: "v", type_: name)],
       return: code.CodeSome("json.Json"),
       body: code.Case(
@@ -851,31 +851,53 @@ fn emit_int_enum_codec(
   let dec =
     code.Fn(
       public: True,
-      name: "decode_" <> snake <> "_int_enum",
+      name: name_concat(["decode_", snake, "_int_enum"]),
       params: [],
-      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
       body: code.Call(
         head: code.Ident(name: "decode.then"),
         args: [
           code.Ident(name: "decode.int"),
-          code.Raw(
-            fragment: "fn(n) {\n    case n {\n"
-              <> list.fold(variants, "", fn(acc, v) {
-                acc
-                <> "      "
-                <> stringutils.int_to_string(v.wire_value)
-                <> " -> decode.success("
-                <> v.gleam_ctor
-                <> ")\n"
-              })
-              <> "      _ -> decode.failure("
-              <> first_ctor
-              <> ", \"unknown int enum value\")\n    }\n  }",
-          ),
+          int_enum_decode_lambda(variants, first_ctor),
         ],
       ),
     )
   code.render(code.Module(items: [enc, code.Blank, dec, code.Blank]))
+}
+
+/// The anonymous `fn(n) { case n { ... } }` lambda body of a
+/// `decode_<E>_int_enum`. Wrapped in `code.Raw` because the AST
+/// has no Lambda node; the inner `case` over wire integers is
+/// rendered via the same Gleam-source helpers (`int_to_string`
+/// for the patterns, `string.join` for the fold) so the
+/// emitter source itself stays free of `<>` chains.
+fn int_enum_decode_lambda(
+  variants: List(types.IntEnumVariant),
+  first_ctor: String,
+) -> code.Code {
+  let arms =
+    list.map(variants, fn(v) {
+      string.concat([
+        "      ",
+        stringutils.int_to_string(v.wire_value),
+        " -> decode.success(",
+        v.gleam_ctor,
+        ")\n",
+      ])
+    })
+  let fallback =
+    string.concat([
+      "      _ -> decode.failure(",
+      first_ctor,
+      ", \"unknown int enum value\")\n    }\n  }",
+    ])
+  code.Raw(
+    fragment: string.concat([
+      "fn(n) {\n    case n {\n",
+      string.concat(arms),
+      fallback,
+    ]),
+  )
 }
 
 fn emit_struct_codec(
