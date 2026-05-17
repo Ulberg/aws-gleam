@@ -1263,24 +1263,30 @@ fn list_element_decoder(e: Resolved) -> String {
     RPrim(primitive: types.PFloat) -> "xml_decode.float_text"
     RTimestamp -> "xml_decode.timestamp_text"
     RStruct(local_name: n, ..) ->
-      "decode_" <> stringutils.pascal_to_snake(n) <> "_xml"
+      name_concat(["decode_", stringutils.pascal_to_snake(n), "_xml"])
     REnum(local_name: n, ..) ->
-      "fn(e) { case xml_decode.string_text(e) { Ok(s) -> "
-      <> stringutils.pascal_to_snake(n)
-      <> "_from_wire(s) Error(r) -> Error(r) } }"
+      name_concat([
+        "fn(e) { case xml_decode.string_text(e) { Ok(s) -> ",
+        stringutils.pascal_to_snake(n),
+        "_from_wire(s) Error(r) -> Error(r) } }",
+      ])
     RIntEnum(local_name: n, ..) ->
-      "fn(e) { case xml_decode.int_text(e) { Ok(i) -> "
-      <> stringutils.pascal_to_snake(n)
-      <> "_from_int(i) Error(r) -> Error(r) } }"
+      name_concat([
+        "fn(e) { case xml_decode.int_text(e) { Ok(i) -> ",
+        stringutils.pascal_to_snake(n),
+        "_from_int(i) Error(r) -> Error(r) } }",
+      ])
     // Nested list: each outer entry wraps an inner list whose
     // children share the same per-entry name. `inner_list`
     // extracts those children and recursively decodes.
     RList(element: inner_e, xml_entry_name: inner_entry, ..) ->
-      "fn(e) { xml_decode.inner_list(e, \""
-      <> inner_entry
-      <> "\", "
-      <> list_element_decoder(inner_e)
-      <> ") }"
+      name_concat([
+        "fn(e) { xml_decode.inner_list(e, \"",
+        inner_entry,
+        "\", ",
+        list_element_decoder(inner_e),
+        ") }",
+      ])
     _ -> "fn(_) { Error(\"xml: unsupported list element\") }"
   }
 }
@@ -1864,22 +1870,33 @@ fn xml_map_value_expr(target: Resolved) -> String {
       "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
     RBlob -> "xml.blob_text(v)"
     RTimestamp -> "json_timestamp.format_iso8601(v)"
-    REnum(..) -> "rest.enum_wire_value(" <> types.json_encoder(target) <> "(v))"
+    REnum(..) ->
+      name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
     RIntEnum(local_name: n, ..) ->
-      "xml.int_text(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))"
+      name_concat([
+        "xml.int_text(",
+        stringutils.pascal_to_snake(n),
+        "_int_value(v))",
+      ])
     RStruct(local_name: name, ..) ->
-      "encode_" <> stringutils.pascal_to_snake(name) <> "_xml_inner(v)"
+      name_concat([
+        "encode_",
+        stringutils.pascal_to_snake(name),
+        "_xml_inner(v)",
+      ])
     RMap(value: vv, xml_key_name: kn, xml_value_name: vn, ..) ->
       // Nested map value: produce just the inner entries; the
       // surrounding `<value>` wrapper sits on the outer map's
       // entry. Recursive — supports Map<String, Map<String, ...>>.
-      "xml.map_entries(\""
-      <> kn
-      <> "\", \""
-      <> vn
-      <> "\", dict.map_values(v, fn(_, v) { "
-      <> xml_map_value_expr(vv)
-      <> " }))"
+      name_concat([
+        "xml.map_entries(\"",
+        kn,
+        "\", \"",
+        vn,
+        "\", dict.map_values(v, fn(_, v) { ",
+        xml_map_value_expr(vv),
+        " }))",
+      ])
     _ -> "\"\""
   }
 }
@@ -1915,30 +1932,45 @@ fn xml_inner_expr_for_list_element(target: Resolved) -> String {
         // *list member*, not its target shape, and we currently
         // don't plumb it through `RList`).
         RTimestamp -> "json_timestamp.format_iso8601(v)"
-        REnum(..) -> "rest.enum_wire_value(" <> types.json_encoder(e) <> "(v))"
+        REnum(..) ->
+          name_concat(["rest.enum_wire_value(", types.json_encoder(e), "(v))"])
         RIntEnum(local_name: n, ..) ->
-          "xml.int_text(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))"
+          name_concat([
+            "xml.int_text(",
+            stringutils.pascal_to_snake(n),
+            "_int_value(v))",
+          ])
         RStruct(local_name: n, ..) ->
           // Lists of structs: each entry is an inline struct without
           // an outer wrapper (caller's `<member>...</member>` wraps).
-          "encode_" <> stringutils.pascal_to_snake(n) <> "_xml_inner(v)"
+          name_concat([
+            "encode_",
+            stringutils.pascal_to_snake(n),
+            "_xml_inner(v)",
+          ])
         RList(element: inner_e, xml_entry_name: inner_entry, ..) ->
           // Nested list — outer entry's `<member>` wraps an inline
           // list. Recurse via a synthetic single-step call to
           // `xml.flat_list` (no outer wrapper; the surrounding
           // `<member>` provides it).
-          "xml.flat_list(\""
-          <> inner_entry
-          <> "\", list.map(v, fn(inner_item) { let v = inner_item "
-          <> xml_inner_expr_for_list_element(RList(
-            element: inner_e,
-            xml_entry_name: inner_entry,
-            sparse: False,
-            xml_element_namespace: option.None,
-          ))
-          <> " }))"
+          name_concat([
+            "xml.flat_list(\"",
+            inner_entry,
+            "\", list.map(v, fn(inner_item) { let v = inner_item ",
+            xml_inner_expr_for_list_element(RList(
+              element: inner_e,
+              xml_entry_name: inner_entry,
+              sparse: False,
+              xml_element_namespace: option.None,
+            )),
+            " }))",
+          ])
         RUnion(local_name: n, ..) ->
-          "encode_" <> stringutils.pascal_to_snake(n) <> "_union_xml_inner(v)"
+          name_concat([
+            "encode_",
+            stringutils.pascal_to_snake(n),
+            "_union_xml_inner(v)",
+          ])
         _ -> "\"\""
       }
     _ -> "\"\""
