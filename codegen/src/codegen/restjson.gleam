@@ -452,67 +452,81 @@ fn emit_operation(
   let local = strip_namespace(op_id)
   let pascal = local
   let snake = stringutils.pascal_to_snake(local)
-  let in_info = resolve_io_type(model, pascal <> "Input", in_r, rename)
-  let out_info = resolve_io_type(model, pascal <> "Output", out_r, rename)
+  let in_info =
+    resolve_io_type(model, name_concat([pascal, "Input"]), in_r, rename)
+  let out_info =
+    resolve_io_type(model, name_concat([pascal, "Output"]), out_r, rename)
 
   let synth_in = case in_info.synthesise {
     True ->
-      emit_record_def(in_info.type_name, [])
-      <> code.render(struct_codec.encoder(
-        "encode_" <> snake <> "_input_struct",
-        in_info.type_name,
-        [],
-        False,
-        False,
-      ))
-      <> "\n"
-      <> code.render(struct_codec.decoder(
-        "decode_" <> snake <> "_input_struct",
-        in_info.type_name,
-        [],
-        False,
-        False,
-      ))
-      <> "\n"
+      string.concat([
+        emit_record_def(in_info.type_name, []),
+        code.render(struct_codec.encoder(
+          name_concat(["encode_", snake, "_input_struct"]),
+          in_info.type_name,
+          [],
+          False,
+          False,
+        )),
+        "\n",
+        code.render(struct_codec.decoder(
+          name_concat(["decode_", snake, "_input_struct"]),
+          in_info.type_name,
+          [],
+          False,
+          False,
+        )),
+        "\n",
+      ])
     False -> ""
   }
   let synth_out = case out_info.synthesise {
     True ->
-      emit_record_def(out_info.type_name, [])
-      <> code.render(struct_codec.encoder(
-        "encode_" <> snake <> "_output_struct",
-        out_info.type_name,
-        [],
-        False,
-        False,
-      ))
-      <> "\n"
-      <> code.render(struct_codec.decoder(
-        "decode_" <> snake <> "_output_struct",
-        out_info.type_name,
-        [],
-        False,
-        False,
-      ))
-      <> "\n"
+      string.concat([
+        emit_record_def(out_info.type_name, []),
+        code.render(struct_codec.encoder(
+          name_concat(["encode_", snake, "_output_struct"]),
+          out_info.type_name,
+          [],
+          False,
+          False,
+        )),
+        "\n",
+        code.render(struct_codec.decoder(
+          name_concat(["decode_", snake, "_output_struct"]),
+          out_info.type_name,
+          [],
+          False,
+          False,
+        )),
+        "\n",
+      ])
     False -> ""
   }
   let in_struct_encoder_name = case in_info.synthesise {
-    True -> "encode_" <> snake <> "_input_struct"
+    True -> name_concat(["encode_", snake, "_input_struct"])
     False ->
-      "encode_" <> stringutils.pascal_to_snake(in_info.type_name) <> "_struct"
+      name_concat([
+        "encode_",
+        stringutils.pascal_to_snake(in_info.type_name),
+        "_struct",
+      ])
   }
   let out_struct_decoder_name = case out_info.synthesise {
-    True -> "decode_" <> snake <> "_output_struct"
+    True -> name_concat(["decode_", snake, "_output_struct"])
     False ->
-      "decode_" <> stringutils.pascal_to_snake(out_info.type_name) <> "_struct"
+      name_concat([
+        "decode_",
+        stringutils.pascal_to_snake(out_info.type_name),
+        "_struct",
+      ])
   }
   let in_encoder =
     code.render(
       code.Module(items: [
         code.Fn(
           public: True,
-          name: "encode_" <> snake <> "_input",
+          name: name_concat(["encode_", snake, "_input"]),
           params: [code.Param(name: "input", type_: in_info.type_name)],
           return: code.CodeSome("String"),
           body: code.Call(
@@ -534,19 +548,21 @@ fn emit_operation(
   // decoder so dispatcher params round-trip into typed structs.
   let in_decoder =
     emit_parse_via_decoder(
-      "decode_" <> snake <> "_input",
+      name_concat(["decode_", snake, "_input"]),
       in_info.type_name,
       case in_info.synthesise {
-        True -> "decode_" <> snake <> "_input_struct"
+        True -> name_concat(["decode_", snake, "_input_struct"])
         False ->
-          "decode_"
-          <> stringutils.pascal_to_snake(in_info.type_name)
-          <> "_struct_params"
+          name_concat([
+            "decode_",
+            stringutils.pascal_to_snake(in_info.type_name),
+            "_struct_params",
+          ])
       },
     )
   let out_decoder =
     emit_parse_via_decoder(
-      "decode_" <> snake <> "_output",
+      name_concat(["decode_", snake, "_output"]),
       out_info.type_name,
       out_struct_decoder_name,
     )
@@ -562,15 +578,17 @@ fn emit_operation(
   let build =
     emit_build(in_info.type_name, in_info.synthesise, snake, http, in_members)
   let parse = emit_parse(out_info, snake)
-  "\n"
-  <> synth_in
-  <> synth_out
-  <> in_encoder
-  <> in_decoder
-  <> out_decoder
-  <> body_encoder
-  <> build
-  <> parse
+  string.concat([
+    "\n",
+    synth_in,
+    synth_out,
+    in_encoder,
+    in_decoder,
+    out_decoder,
+    body_encoder,
+    build,
+    parse,
+  ])
 }
 
 fn emit_parse_via_decoder(
