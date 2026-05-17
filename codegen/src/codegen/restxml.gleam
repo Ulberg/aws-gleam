@@ -1322,17 +1322,6 @@ fn xmlns_attr_expr(ns: option.Option(#(String, String))) -> String {
   }
 }
 
-/// Render the `xmlns` attribute *list* expression — `[]` or
-/// `[#("xmlns", "...")]`. Used by member-level `@xmlNamespace`
-/// emission where the caller wants a List(#(String, String))
-/// argument suitable for the `_ns` runtime helpers.
-fn xmlns_attrs_list_expr(ns: option.Option(#(String, String))) -> String {
-  case ns {
-    option.None -> "[]"
-    option.Some(_) -> "[" <> xmlns_attr_expr(ns) <> "]"
-  }
-}
-
 fn emit_struct_xml_attrs(
   snake: String,
   type_name: String,
@@ -1433,7 +1422,7 @@ fn emit_struct_xml_inner_encoder(
                   pattern: "option.Some(v)",
                   body: code.Concat(parts: [
                     code.Ident(name: "inner"),
-                    code.Raw(fragment: xml_value_expr(m)),
+                    xml_value_expr(m),
                   ]),
                 ),
                 code.Branch(
@@ -1465,23 +1454,54 @@ fn emit_struct_xml_inner_encoder(
 /// Render `v` (a Gleam value of `target`'s type) as an XML element
 /// `<member_name>...</member_name>`. Recursive for nested structs and
 /// lists.
-fn xml_value_expr(m: MemberDef) -> String {
+fn xml_value_expr(m: MemberDef) -> code.Code {
   let member_name = m.json_name
   let mem_ns = m.xml_namespace
   case m.target {
     RPrim(primitive: types.PString) ->
-      wrap_with_attrs(member_name, mem_ns, "xml.escape_text(v)")
+      wrap_with_attrs(
+        member_name,
+        mem_ns,
+        code.Call(
+          head: code.Ident(name: "xml.escape_text"),
+          args: [code.Ident(name: "v")],
+        ),
+      )
     RPrim(primitive: types.PInt) ->
-      wrap_with_attrs(member_name, mem_ns, "xml.int_text(v)")
+      wrap_with_attrs(
+        member_name,
+        mem_ns,
+        code.Call(
+          head: code.Ident(name: "xml.int_text"),
+          args: [code.Ident(name: "v")],
+        ),
+      )
     RPrim(primitive: types.PBool) ->
-      wrap_with_attrs(member_name, mem_ns, "xml.bool_text(v)")
+      wrap_with_attrs(
+        member_name,
+        mem_ns,
+        code.Call(
+          head: code.Ident(name: "xml.bool_text"),
+          args: [code.Ident(name: "v")],
+        ),
+      )
     RPrim(primitive: types.PFloat) ->
       wrap_with_attrs(
         member_name,
         mem_ns,
-        "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }",
+        code.Raw(
+          fragment: "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }",
+        ),
       )
-    RBlob -> wrap_with_attrs(member_name, mem_ns, "xml.blob_text(v)")
+    RBlob ->
+      wrap_with_attrs(
+        member_name,
+        mem_ns,
+        code.Call(
+          head: code.Ident(name: "xml.blob_text"),
+          args: [code.Ident(name: "v")],
+        ),
+      )
     RTimestamp ->
       // restXml's protocol default is `date-time` (ISO 8601). The
       // `@timestampFormat` member trait overrides it; the member
@@ -1490,19 +1510,40 @@ fn xml_value_expr(m: MemberDef) -> String {
       wrap_with_attrs(
         member_name,
         mem_ns,
-        xml_timestamp_format_expr(m.timestamp_format) <> "(v)",
+        code.Call(
+          head: code.Ident(name: xml_timestamp_format_expr(m.timestamp_format)),
+          args: [code.Ident(name: "v")],
+        ),
       )
     REnum(local_name: _, ..) ->
       wrap_with_attrs(
         member_name,
         mem_ns,
-        "rest.enum_wire_value(" <> types.json_encoder(m.target) <> "(v))",
+        code.Call(
+          head: code.Ident(name: "rest.enum_wire_value"),
+          args: [
+            code.Call(
+              head: code.Ident(name: types.json_encoder(m.target)),
+              args: [code.Ident(name: "v")],
+            ),
+          ],
+        ),
       )
     RIntEnum(local_name: n, ..) ->
       wrap_with_attrs(
         member_name,
         mem_ns,
-        "xml.int_text(" <> stringutils.pascal_to_snake(n) <> "_int_value(v))",
+        code.Call(
+          head: code.Ident(name: "xml.int_text"),
+          args: [
+            code.Call(
+              head: code.Ident(
+                name: stringutils.pascal_to_snake(n) <> "_int_value",
+              ),
+              args: [code.Ident(name: "v")],
+            ),
+          ],
+        ),
       )
     RStruct(local_name: name, ..) ->
       // Smithy: shape-level `@xmlNamespace` only applies when the
@@ -1513,9 +1554,14 @@ fn xml_value_expr(m: MemberDef) -> String {
       wrap_with_attrs(
         member_name,
         mem_ns,
-        "encode_"
-          <> stringutils.pascal_to_snake(name)
-          <> "_xml_inner(v)",
+        code.Call(
+          head: code.Ident(
+            name: "encode_"
+              <> stringutils.pascal_to_snake(name)
+              <> "_xml_inner",
+          ),
+          args: [code.Ident(name: "v")],
+        ),
       )
     RUnion(local_name: n, ..) ->
       // Wrap the union variant's emission in the outer member's
@@ -1524,7 +1570,14 @@ fn xml_value_expr(m: MemberDef) -> String {
       wrap_with_attrs(
         member_name,
         mem_ns,
-        "encode_" <> stringutils.pascal_to_snake(n) <> "_union_xml_inner(v)",
+        code.Call(
+          head: code.Ident(
+            name: "encode_"
+              <> stringutils.pascal_to_snake(n)
+              <> "_union_xml_inner",
+          ),
+          args: [code.Ident(name: "v")],
+        ),
       )
     RList(element: _e, xml_entry_name: entry, xml_element_namespace: ens, ..) -> {
       // Smithy default list: `<MemberName><member>...</member>...
@@ -1533,6 +1586,12 @@ fn xml_value_expr(m: MemberDef) -> String {
       // `@xmlFlattened` on the member drops the wrapper: entries
       // become repeated `<member_name>value</member_name>` siblings.
       let inner = xml_inner_expr_for_list_element(m.target)
+      let mapped_v =
+        code.Raw(
+          fragment: "list.map(v, fn(item) { let v = item "
+            <> inner
+            <> " })",
+        )
       // For flat lists the member-level namespace is the outer
       // (repeated) element's namespace; if the outer member has
       // none, fall back to the list-inner's namespace. For non-
@@ -1544,39 +1603,39 @@ fn xml_value_expr(m: MemberDef) -> String {
       }
       case m.xml_flattened, mem_ns, ens {
         True, option.None, option.None ->
-          "xml.flat_list(\""
-          <> member_name
-          <> "\", list.map(v, fn(item) { let v = item "
-          <> inner
-          <> " }))"
+          code.Call(
+            head: code.Ident(name: "xml.flat_list"),
+            args: [code.StrLit(value: member_name), mapped_v],
+          )
         True, _, _ ->
-          "xml.flat_list_ns(\""
-          <> member_name
-          <> "\", "
-          <> xmlns_attrs_list_expr(flat_member_ns)
-          <> ", list.map(v, fn(item) { let v = item "
-          <> inner
-          <> " }))"
+          code.Call(
+            head: code.Ident(name: "xml.flat_list_ns"),
+            args: [
+              code.StrLit(value: member_name),
+              xmlns_attrs_list_code(flat_member_ns),
+              mapped_v,
+            ],
+          )
         False, option.None, option.None ->
-          "xml.list_element(\""
-          <> member_name
-          <> "\", \""
-          <> entry
-          <> "\", list.map(v, fn(item) { let v = item "
-          <> inner
-          <> " }))"
+          code.Call(
+            head: code.Ident(name: "xml.list_element"),
+            args: [
+              code.StrLit(value: member_name),
+              code.StrLit(value: entry),
+              mapped_v,
+            ],
+          )
         False, _, _ ->
-          "xml.list_element_ns(\""
-          <> member_name
-          <> "\", "
-          <> xmlns_attrs_list_expr(mem_ns)
-          <> ", \""
-          <> entry
-          <> "\", "
-          <> xmlns_attrs_list_expr(ens)
-          <> ", list.map(v, fn(item) { let v = item "
-          <> inner
-          <> " }))"
+          code.Call(
+            head: code.Ident(name: "xml.list_element_ns"),
+            args: [
+              code.StrLit(value: member_name),
+              xmlns_attrs_list_code(mem_ns),
+              code.StrLit(value: entry),
+              xmlns_attrs_list_code(ens),
+              mapped_v,
+            ],
+          )
       }
     }
     RMap(
@@ -1594,68 +1653,74 @@ fn xml_value_expr(m: MemberDef) -> String {
       // siblings. `@xmlName` on the map's key / value members
       // replaces the default `key` / `value` labels.
       let val_expr = xml_map_value_expr(v)
+      let mapped_v =
+        code.Raw(
+          fragment: "dict.map_values(v, fn(_, v) { " <> val_expr <> " })",
+        )
       let any_ns = case mem_ns, knp, vnp {
         option.None, option.None, option.None -> False
         _, _, _ -> True
       }
       case m.xml_flattened, any_ns {
         True, False ->
-          "xml.flat_map(\""
-          <> member_name
-          <> "\", \""
-          <> kn
-          <> "\", \""
-          <> vn
-          <> "\", dict.map_values(v, fn(_, v) { "
-          <> val_expr
-          <> " }))"
+          code.Call(
+            head: code.Ident(name: "xml.flat_map"),
+            args: [
+              code.StrLit(value: member_name),
+              code.StrLit(value: kn),
+              code.StrLit(value: vn),
+              mapped_v,
+            ],
+          )
         True, True ->
-          "xml.flat_map_ns(\""
-          <> member_name
-          <> "\", "
-          <> xmlns_attrs_list_expr(mem_ns)
-          <> ", \""
-          <> kn
-          <> "\", "
-          <> xmlns_attrs_list_expr(knp)
-          <> ", \""
-          <> vn
-          <> "\", "
-          <> xmlns_attrs_list_expr(vnp)
-          <> ", dict.map_values(v, fn(_, v) { "
-          <> val_expr
-          <> " }))"
+          code.Call(
+            head: code.Ident(name: "xml.flat_map_ns"),
+            args: [
+              code.StrLit(value: member_name),
+              xmlns_attrs_list_code(mem_ns),
+              code.StrLit(value: kn),
+              xmlns_attrs_list_code(knp),
+              code.StrLit(value: vn),
+              xmlns_attrs_list_code(vnp),
+              mapped_v,
+            ],
+          )
         False, False ->
-          "xml.map_element(\""
-          <> member_name
-          <> "\", \""
-          <> kn
-          <> "\", \""
-          <> vn
-          <> "\", dict.map_values(v, fn(_, v) { "
-          <> val_expr
-          <> " }))"
+          code.Call(
+            head: code.Ident(name: "xml.map_element"),
+            args: [
+              code.StrLit(value: member_name),
+              code.StrLit(value: kn),
+              code.StrLit(value: vn),
+              mapped_v,
+            ],
+          )
         False, True ->
-          "xml.map_element_ns(\""
-          <> member_name
-          <> "\", "
-          <> xmlns_attrs_list_expr(mem_ns)
-          <> ", \""
-          <> kn
-          <> "\", "
-          <> xmlns_attrs_list_expr(knp)
-          <> ", \""
-          <> vn
-          <> "\", "
-          <> xmlns_attrs_list_expr(vnp)
-          <> ", dict.map_values(v, fn(_, v) { "
-          <> val_expr
-          <> " }))"
+          code.Call(
+            head: code.Ident(name: "xml.map_element_ns"),
+            args: [
+              code.StrLit(value: member_name),
+              xmlns_attrs_list_code(mem_ns),
+              code.StrLit(value: kn),
+              xmlns_attrs_list_code(knp),
+              code.StrLit(value: vn),
+              xmlns_attrs_list_code(vnp),
+              mapped_v,
+            ],
+          )
       }
     }
-    RDocument -> "xml.element(\"" <> member_name <> "\", \"\")"
-    RUnit -> "xml.empty_element(\"" <> member_name <> "\")"
-    Unsupported(..) -> "\"\""
+    RDocument ->
+      code.Call(
+        head: code.Ident(name: "xml.element"),
+        args: [code.StrLit(value: member_name), code.StrLit(value: "")],
+      )
+    RUnit ->
+      code.Call(
+        head: code.Ident(name: "xml.empty_element"),
+        args: [code.StrLit(value: member_name)],
+      )
+    Unsupported(..) -> code.StrLit(value: "")
   }
 }
 
@@ -1664,18 +1729,42 @@ fn xml_value_expr(m: MemberDef) -> String {
 fn wrap_with_attrs(
   name: String,
   ns: option.Option(#(String, String)),
-  inner_expr: String,
-) -> String {
+  inner: code.Code,
+) -> code.Code {
   case ns {
-    option.None -> "xml.element(\"" <> name <> "\", " <> inner_expr <> ")"
+    option.None ->
+      code.Call(
+        head: code.Ident(name: "xml.element"),
+        args: [code.StrLit(value: name), inner],
+      )
     option.Some(_) ->
-      "xml.element_with_attrs(\""
-      <> name
-      <> "\", ["
-      <> xmlns_attr_expr(ns)
-      <> "], "
-      <> inner_expr
-      <> ")"
+      code.Call(
+        head: code.Ident(name: "xml.element_with_attrs"),
+        args: [
+          code.StrLit(value: name),
+          code.ListLit(
+            items: [code.Raw(fragment: xmlns_attr_expr(ns))],
+            tail: code.CodeNone,
+          ),
+          inner,
+        ],
+      )
+  }
+}
+
+/// `code.Code` version of `xmlns_attrs_list_expr` — returns the
+/// attribute-list literal node directly so callers can splice it
+/// into an AST argument list without going through `code.Raw`.
+fn xmlns_attrs_list_code(
+  ns: option.Option(#(String, String)),
+) -> code.Code {
+  case ns {
+    option.None -> code.ListLit(items: [], tail: code.CodeNone)
+    option.Some(_) ->
+      code.ListLit(
+        items: [code.Raw(fragment: xmlns_attr_expr(ns))],
+        tail: code.CodeNone,
+      )
   }
 }
 
