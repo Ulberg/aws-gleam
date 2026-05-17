@@ -35,7 +35,9 @@ pub fn items(
   // chain runs once at construction rather than per signed request.
   // The cache actor's `start` call cannot realistically fail (it is
   // just spawning an OTP actor) so `let assert` matches the
-  // "generator-time invariant" pattern used elsewhere.
+  // "generator-time invariant" pattern used elsewhere. The cache
+  // subject is stashed on the `Client` value so `shutdown` can
+  // release the actor cleanly.
   let cache_setup = [
     Let(
       name: "config",
@@ -59,14 +61,14 @@ pub fn items(
       ]),
     ),
   ]
+  let client_call =
+    Call(Ident("Client"), [
+      code.Labelled(label: "config", value: Ident("config")),
+      code.Labelled(label: "cache", value: Ident("cache")),
+    ])
   let new_body = case endpoint_rule_set_json {
     None ->
-      code.Block(
-        items: list.flatten([
-          cache_setup,
-          [Call(Ident("Client"), [Ident("config")])],
-        ]),
-      )
+      code.Block(items: list.flatten([cache_setup, [client_call]]))
     Some(_) ->
       // Parse the embedded rule set, then chain it onto the default
       // config. The `let assert` is justified because the JSON is a
@@ -82,12 +84,14 @@ pub fn items(
                 Ident("endpoint_rule_set_json"),
               ]),
             ),
-            Call(Ident("Client"), [
-              Call(Ident("runtime.with_endpoint_rule_set"), [
+            Let(
+              name: "config",
+              value: Call(Ident("runtime.with_endpoint_rule_set"), [
                 Ident("config"),
                 Ident("rule_set"),
               ]),
-            ]),
+            ),
+            client_call,
           ],
         ]),
       )
@@ -112,6 +116,7 @@ pub fn items(
     TypeDef(public: True, is_opaque: True, name: "Client", variants: [
       Variant(name: "Client", fields: [
         Param(name: "config", type_: "runtime.ClientConfig"),
+        Param(name: "cache", type_: "credentials_cache.Cache"),
       ]),
     ]),
     Blank,
@@ -163,7 +168,9 @@ pub fn items(
       "profiles, in-process static credentials, or a custom chain.",
       "The supplied provider is wrapped in a fresh per-Client",
       "credentials cache so callers don't lose refresh/coalesce",
-      "behaviour by overriding the default chain.",
+      "behaviour by overriding the default chain. The previously",
+      "running cache actor is stopped — call this on a Client value",
+      "you intend to keep, not on one that's about to be discarded.",
     ]),
     Fn(
       public: True,
@@ -174,6 +181,10 @@ pub fn items(
       ],
       return: CodeSome("Client"),
       body: code.Block(items: [
+        Let(
+          name: "_",
+          value: Call(Ident("credentials_cache.shutdown"), [Ident("client.cache")]),
+        ),
         LetAssert(
           pattern: "Ok(cache)",
           value: Call(Ident("credentials_cache.start_default"), [
@@ -181,10 +192,14 @@ pub fn items(
           ]),
         ),
         Call(Ident("Client"), [
-          Call(Ident("runtime.with_credentials_provider"), [
-            Ident("client.config"),
-            Call(Ident("credentials_cache.as_provider"), [Ident("cache")]),
-          ]),
+          code.Labelled(
+            label: "config",
+            value: Call(Ident("runtime.with_credentials_provider"), [
+              Ident("client.config"),
+              Call(Ident("credentials_cache.as_provider"), [Ident("cache")]),
+            ]),
+          ),
+          code.Labelled(label: "cache", value: Ident("cache")),
         ]),
       ]),
     ),
@@ -201,10 +216,14 @@ pub fn items(
       ],
       return: CodeSome("Client"),
       body: Call(Ident("Client"), [
-        Call(Ident("runtime.with_endpoint_url"), [
-          Ident("client.config"),
-          Ident("url"),
-        ]),
+        code.Labelled(
+          label: "config",
+          value: Call(Ident("runtime.with_endpoint_url"), [
+            Ident("client.config"),
+            Ident("url"),
+          ]),
+        ),
+        code.Labelled(label: "cache", value: Ident("client.cache")),
       ]),
     ),
     Blank,
@@ -220,11 +239,31 @@ pub fn items(
       ],
       return: CodeSome("Client"),
       body: Call(Ident("Client"), [
-        Call(Ident("runtime.with_http_send"), [
-          Ident("client.config"),
-          Ident("send"),
-        ]),
+        code.Labelled(
+          label: "config",
+          value: Call(Ident("runtime.with_http_send"), [
+            Ident("client.config"),
+            Ident("send"),
+          ]),
+        ),
+        code.Labelled(label: "cache", value: Ident("client.cache")),
       ]),
+    ),
+    Blank,
+    DocComment([
+      "Release the per-Client credentials cache actor. Call this when a",
+      "Client value is no longer needed — long-running processes that",
+      "build many Clients (tests, scripts, multi-tenant servers) will",
+      "otherwise accumulate one BEAM process per `new` call. The send",
+      "is fire-and-forget; the actor exits the next time it processes",
+      "a message.",
+    ]),
+    Fn(
+      public: True,
+      name: "shutdown",
+      params: [Param(name: "client", type_: "Client")],
+      return: CodeSome("Nil"),
+      body: Call(Ident("credentials_cache.shutdown"), [Ident("client.cache")]),
     ),
     Blank,
   ]

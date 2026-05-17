@@ -13,7 +13,7 @@
 //// rates AWS SDKs see in practice.
 
 import aws/credentials.{type Credentials, type Provider, type ProviderError}
-import gleam/erlang/process.{type Subject}
+import gleam/erlang/process.{type Pid, type Subject}
 import gleam/option.{type Option, None, Some}
 import gleam/otp/actor
 
@@ -24,6 +24,11 @@ pub opaque type Cache {
 
 type Message {
   Get(reply: Subject(Result(Credentials, ProviderError)))
+  /// Politely ask the actor to exit. Sent by `shutdown`; the actor
+  /// returns `actor.stop` next iteration. Unrelated to OTP supervisor
+  /// `EXIT` signals — those still trigger normal actor shutdown
+  /// behaviour.
+  Stop
 }
 
 type State {
@@ -104,11 +109,30 @@ pub fn as_provider(cache: Cache) -> Provider {
   credentials.Provider(name: "Cached", fetch: fn() { get(cache) })
 }
 
+/// Tell the cache actor to exit. Use this when you're done with a
+/// `Client` value — actors are not garbage-collected when their
+/// owning value goes out of scope, so without an explicit shutdown
+/// the process leaks for the lifetime of the BEAM VM. The fire-and-
+/// forget send doesn't wait for the actor to actually exit; callers
+/// that need to synchronise on shutdown should `process.monitor` the
+/// subject first.
+pub fn shutdown(cache: Cache) -> Nil {
+  process.send(cache.subject, Stop)
+}
+
+/// The OTP `Pid` owning the cache actor. Mostly useful from tests
+/// (`process.is_alive`-style assertions); production code should
+/// stick to `get` / `shutdown` and let the subject hide the Pid.
+pub fn owner_pid(cache: Cache) -> Result(Pid, Nil) {
+  process.subject_owner(cache.subject)
+}
+
 fn handle_message(
   state: State,
   message: Message,
 ) -> actor.Next(State, Message) {
   case message {
+    Stop -> actor.stop()
     Get(reply: reply) ->
       case fresh_enough(state) {
         True -> {

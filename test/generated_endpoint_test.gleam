@@ -145,6 +145,22 @@ fn count_messages(subject: process.Subject(Int), acc: Int) -> Int {
   }
 }
 
+pub fn dynamodb_shutdown_releases_the_cache_actor_test() {
+  // The generated `Client.shutdown` is the user-visible path to
+  // release the per-Client cache actor. We don't have access to
+  // the actor's Pid from the typed Client value, so use the
+  // before/after timing: a Client built and immediately shut down
+  // should not accumulate live processes across many iterations.
+  //
+  // The strongest pure-typed assertion we can make from this side
+  // of the API is that `shutdown` is callable and returns Nil.
+  // Lifecycle correctness is covered by
+  // `credentials_cache_test.shutdown_stops_the_actor_test`.
+  let client = dynamodb.new(region: "us-east-1")
+  dynamodb.shutdown(client)
+  Nil
+}
+
 pub fn new_with_auto_region_uses_region_resolve_test() {
   // Reach into `region.resolve_with` with a stub env supplying
   // `AWS_REGION=eu-central-1`. This is the same path

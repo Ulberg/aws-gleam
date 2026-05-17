@@ -226,3 +226,41 @@ pub fn start_default_works_with_real_clock_test() {
   out.access_key_id |> should.equal("AKID")
   out.source |> should.equal("Static")
 }
+
+pub fn shutdown_stops_the_actor_test() {
+  // The cache spawns an OTP process; without a shutdown path that
+  // process lives until the BEAM exits. Verify shutdown actually
+  // terminates the process by inspecting the owning Pid with
+  // `process.is_alive` before and after.
+  let inner =
+    credentials.static_provider(Credentials(
+      access_key_id: "AKID",
+      secret_access_key: "SECRET",
+      session_token: None,
+      expires_at: None,
+      source: "ignored",
+    ))
+  let assert Ok(cache) = credentials_cache.start_default(provider: inner)
+  let assert Ok(pid) = credentials_cache.owner_pid(cache)
+  process.is_alive(pid) |> should.be_true
+
+  credentials_cache.shutdown(cache)
+  // `shutdown` is fire-and-forget — the actor exits on its next
+  // message dispatch. Poll briefly; if it doesn't die within a
+  // reasonable window, the test fails.
+  await_dead(pid, 50) |> should.be_true
+}
+
+fn await_dead(pid: process.Pid, attempts: Int) -> Bool {
+  case attempts {
+    0 -> !process.is_alive(pid)
+    _ ->
+      case process.is_alive(pid) {
+        False -> True
+        True -> {
+          process.sleep(10)
+          await_dead(pid, attempts - 1)
+        }
+      }
+  }
+}
