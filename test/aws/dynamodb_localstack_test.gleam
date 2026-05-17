@@ -12,7 +12,6 @@
 //// `aws_test_support_ffi`; see `test/support/{localstack,docker-compose.yml}`
 //// for the container shape.
 
-import aws/credentials
 import aws/services/dynamodb
 import gleam/dict
 import gleam/option.{None, Some}
@@ -25,22 +24,9 @@ const table_name: String = "aws-sdk-gleam-e2e"
 
 const partition_key: String = "id"
 
-/// Static credentials that LocalStack accepts. The actual values
-/// don't matter — LocalStack ignores the signature — but the
-/// credential chain expects a non-empty access key + secret.
-fn fake_credentials() -> credentials.Provider {
-  credentials.static_provider(credentials.Credentials(
-    access_key_id: "test",
-    secret_access_key: "test",
-    session_token: None,
-    expires_at: None,
-    source: "LocalStack",
-  ))
-}
-
 fn build_client(endpoint: String) -> dynamodb.Client {
   dynamodb.new(region: region)
-  |> dynamodb.with_credentials_provider(fake_credentials())
+  |> dynamodb.with_credentials_provider(localstack.fake_credentials())
   |> dynamodb.with_endpoint_url(endpoint)
 }
 
@@ -110,23 +96,17 @@ fn get_item_input(id: String) -> dynamodb.GetItemInput {
 }
 
 pub fn dynamodb_get_item_round_trip_test() {
-  case localstack.localstack_enabled() {
-    False -> Nil
-    True ->
-      localstack.with_container(fn(container) {
-        let client = build_client(container.endpoint)
-        let assert Ok(_) = dynamodb.create_table(client, create_table_input())
-        let assert Ok(_) =
-          dynamodb.put_item(client, put_item_input("k1", "hello"))
-        let assert Ok(out) = dynamodb.get_item(client, get_item_input("k1"))
-        let assert Some(item) = out.item
-        // `value` from the PutItem should round-trip back as
-        // `AttributeValueS("hello")`. The String tag is the proof
-        // the typed encoder + decoder cycle is wire-compatible with
-        // a real DynamoDB API impl (LocalStack is faithful).
-        let assert Ok(dynamodb.AttributeValueS(s)) = dict.get(item, "value")
-        s |> should.equal("hello")
-        dynamodb.shutdown(client)
-      })
-  }
+  use container <- localstack.when_enabled
+  let client = build_client(container.endpoint)
+  let assert Ok(_) = dynamodb.create_table(client, create_table_input())
+  let assert Ok(_) = dynamodb.put_item(client, put_item_input("k1", "hello"))
+  let assert Ok(out) = dynamodb.get_item(client, get_item_input("k1"))
+  let assert Some(item) = out.item
+  // `value` from the PutItem should round-trip back as
+  // `AttributeValueS("hello")`. The String tag is the proof the
+  // typed encoder + decoder cycle is wire-compatible with a real
+  // DynamoDB API impl (LocalStack is faithful).
+  let assert Ok(dynamodb.AttributeValueS(s)) = dict.get(item, "value")
+  s |> should.equal("hello")
+  dynamodb.shutdown(client)
 }

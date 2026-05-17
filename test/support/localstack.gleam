@@ -1,34 +1,29 @@
 //// LocalStack container harness for end-to-end tests.
 ////
 //// Per CLAUDE.md the v0.1 gate requires LocalStack-backed tests for
-//// DynamoDB `GetItem` and S3 `GetObject`. This module provides the
-//// `with_container` helper that:
+//// DynamoDB `GetItem` and S3 `GetObject`. This module provides:
 ////
-////   1. Boots `test/support/docker-compose.yml` via `docker compose
-////      up --wait` (healthcheck blocks until LocalStack is ready).
-////   2. Runs the supplied callback with a `Container` carrying the
-////      endpoint URL.
-////   3. Tears the container down with `docker compose down -v` on
-////      every exit path — Ok or panic.
+////   - `localstack_enabled` — checks `INCLUDE_LOCALSTACK=1` so a
+////     plain `gleam test` skips the E2E tests silently.
+////   - `when_enabled(fun)` — combines the env gate with container
+////     boot + teardown so each test body is "the work that runs when
+////     LocalStack is available".
+////   - `fake_credentials` — `test:test` keys LocalStack accepts.
 ////
-//// The boot/teardown shells out to `os:cmd/1` rather than via the
-//// `gleam_otp` HTTP layer; that keeps the harness independent of the
-//// runtime under test.
-////
-//// Tests that use this helper are gated on `INCLUDE_LOCALSTACK=1` in
-//// the environment so a plain `gleam test` stays fast. See
-//// `localstack_enabled()`.
+//// Boot / teardown shells out to `docker compose` via the Erlang FFI
+//// in `aws_test_support_ffi`, which uses `open_port` for an honest
+//// exit-code signal rather than scraping `os:cmd` stdout, and runs
+//// teardown inside `try / after` so the container dies cleanly even
+//// when the callback panics.
 
-import gleam/erlang/process
+import aws/credentials
+import gleam/option.{None}
 
 pub type Container {
   Container(endpoint: String)
 }
 
-/// Is `INCLUDE_LOCALSTACK=1` set? LocalStack-backed tests should
-/// guard their body with `case localstack_enabled() { False -> Nil
-/// True -> ... }` so a default `gleam test` skips them without
-/// failing on an unavailable container.
+/// Is `INCLUDE_LOCALSTACK=1` set?
 pub fn localstack_enabled() -> Bool {
   case get_env("INCLUDE_LOCALSTACK") {
     Ok("1") -> True
@@ -36,24 +31,36 @@ pub fn localstack_enabled() -> Bool {
   }
 }
 
-/// Boot LocalStack, run `fun`, tear down. The teardown runs
-/// unconditionally — even if `fun` panics — via Erlang try/after.
-/// Returns whatever `fun` returned.
-pub fn with_container(fun: fn(Container) -> a) -> a {
-  start_localstack()
-  // Give the healthcheck a moment to mark the container ready even
-  // after `docker compose up --wait` returns. LocalStack reports
-  // "running" briefly before its API listener accepts traffic.
-  process.sleep(500)
-  let container = Container(endpoint: "http://localhost:4566")
-  run_with_teardown(fn() { fun(container) })
+/// Run `fun` if `INCLUDE_LOCALSTACK=1` is set; otherwise return Nil.
+/// When enabled, boots the LocalStack container, hands the callback
+/// a `Container` describing the local endpoint, then tears it down.
+/// Folds the gate + container lifecycle so each E2E test body is
+/// "what runs once LocalStack is available."
+pub fn when_enabled(fun: fn(Container) -> Nil) -> Nil {
+  case localstack_enabled() {
+    False -> Nil
+    True -> {
+      let container = Container(endpoint: "http://localhost:4566")
+      with_teardown(fn() { fun(container) })
+    }
+  }
 }
 
-@external(erlang, "aws_test_support_ffi", "start_localstack")
-fn start_localstack() -> Nil
+/// `test:test` keys LocalStack accepts. The actual values don't
+/// matter — LocalStack ignores the signature — but the credential
+/// chain expects non-empty access key + secret.
+pub fn fake_credentials() -> credentials.Provider {
+  credentials.static_provider(credentials.Credentials(
+    access_key_id: "test",
+    secret_access_key: "test",
+    session_token: None,
+    expires_at: None,
+    source: "LocalStack",
+  ))
+}
 
-@external(erlang, "aws_test_support_ffi", "run_with_teardown")
-fn run_with_teardown(fun: fn() -> a) -> a
+@external(erlang, "aws_test_support_ffi", "with_teardown")
+fn with_teardown(fun: fn() -> a) -> a
 
 @external(erlang, "aws_ffi", "get_env")
 fn get_env(name: String) -> Result(String, Nil)

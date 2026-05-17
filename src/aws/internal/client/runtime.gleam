@@ -114,15 +114,8 @@ pub fn with_credentials_provider(
 /// The static `endpoint_url` is also updated so services without a
 /// rule set continue to honour the override via the fallback path.
 pub fn with_endpoint_url(config: ClientConfig, url: String) -> ClientConfig {
-  ClientConfig(
-    ..config,
-    endpoint_url: url,
-    endpoint_params: dict.insert(
-      config.endpoint_params,
-      "Endpoint",
-      endpoints.StringVal(url),
-    ),
-  )
+  ClientConfig(..config, endpoint_url: url)
+  |> with_endpoint_param("Endpoint", endpoints.StringVal(url))
 }
 
 pub fn with_http_send(config: ClientConfig, send: Send) -> ClientConfig {
