@@ -693,18 +693,18 @@ fn emit_record_def(name: String, members: List(MemberDef)) -> String {
 }
 
 fn emit_enum_def(name: String, variants: List(types.EnumVariant)) -> String {
-  code.render(named_shapes.enum_def(name, variants)) <> "\n"
+  string.concat([code.render(named_shapes.enum_def(name, variants)), "\n"])
 }
 
 fn emit_int_enum_def(
   name: String,
   variants: List(types.IntEnumVariant),
 ) -> String {
-  code.render(named_shapes.int_enum_def(name, variants)) <> "\n"
+  string.concat([code.render(named_shapes.int_enum_def(name, variants)), "\n"])
 }
 
 fn emit_union_def(name: String, members: List(MemberDef)) -> String {
-  code.render(named_shapes.union_def(name, members)) <> "\n"
+  string.concat([code.render(named_shapes.union_def(name, members)), "\n"])
 }
 
 // ---------- codec helpers ----------
@@ -894,21 +894,21 @@ fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
   // Smithy member names regardless of `@jsonName`.
   [
     struct_codec.encoder(
-      "encode_" <> snake <> "_struct",
+      name_concat(["encode_", snake, "_struct"]),
       name,
       members,
       False,
       False,
     ),
     struct_codec.decoder(
-      "decode_" <> snake <> "_struct",
+      name_concat(["decode_", snake, "_struct"]),
       name,
       members,
       False,
       False,
     ),
     struct_codec.decoder(
-      "decode_" <> snake <> "_struct_params",
+      name_concat(["decode_", snake, "_struct_params"]),
       name,
       members,
       True,
@@ -916,7 +916,8 @@ fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
     ),
   ]
   |> list.map(code.render)
-  |> list.fold("", fn(acc, s) { acc <> s <> "\n" })
+  |> list.map(fn(s) { string.concat([s, "\n"]) })
+  |> string.concat
 }
 
 fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
@@ -924,15 +925,16 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
   let enc =
     code.Fn(
       public: True,
-      name: "encode_" <> snake <> "_union",
+      name: name_concat(["encode_", snake, "_union"]),
       params: [code.Param(name: "v", type_: name)],
       return: code.CodeSome("json.Json"),
       body: code.Case(
         scrutinee: code.Ident(name: "v"),
         branches: list.map(members, fn(m) {
-          let ctor = name <> stringutils.pascalize_member(m.member_name)
+          let ctor =
+            name_concat([name, stringutils.pascalize_member(m.member_name)])
           code.Branch(
-            pattern: ctor <> "(x)",
+            pattern: name_concat([ctor, "(x)"]),
             body: code.Call(
               head: code.Ident(name: "json.object"),
               args: [
@@ -957,9 +959,9 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
   let dec =
     code.Fn(
       public: True,
-      name: "decode_" <> snake <> "_union",
+      name: name_concat(["decode_", snake, "_union"]),
       params: [],
-      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
       body: union_decoder_body(name, members, emit_union_branch),
     )
   // Parallel decoder keyed by member names — used by the protocol-test
@@ -969,9 +971,9 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
   let dec_params =
     code.Fn(
       public: True,
-      name: "decode_" <> snake <> "_union_params",
+      name: name_concat(["decode_", snake, "_union_params"]),
       params: [],
-      return: code.CodeSome("decode.Decoder(" <> name <> ")"),
+      return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
       body: union_decoder_body(name, members, emit_union_branch_params),
     )
   code.render(
@@ -1001,7 +1003,7 @@ fn union_decoder_body(
       code.Call(
         head: code.Ident(name: "decode.failure"),
         args: [
-          code.Ident(name: name <> "Empty"),
+          code.Ident(name: name_concat([name, "Empty"])),
           code.StrLit(value: "empty union"),
         ],
       )
@@ -1023,25 +1025,31 @@ fn union_decoder_body(
 }
 
 fn emit_union_branch(union_name: String, m: MemberDef) -> code.Code {
-  let ctor = union_name <> stringutils.pascalize_member(m.member_name)
+  let ctor =
+    name_concat([union_name, stringutils.pascalize_member(m.member_name)])
   code.Call(
     head: code.Ident(name: "decode.field"),
     args: [
       code.StrLit(value: m.json_name),
       code.Raw(fragment: types.json_decoder(m.target)),
-      code.Raw(fragment: "fn(x) { decode.success(" <> ctor <> "(x)) }"),
+      code.Raw(
+        fragment: name_concat(["fn(x) { decode.success(", ctor, "(x)) }"]),
+      ),
     ],
   )
 }
 
 fn emit_union_branch_params(union_name: String, m: MemberDef) -> code.Code {
-  let ctor = union_name <> stringutils.pascalize_member(m.member_name)
+  let ctor =
+    name_concat([union_name, stringutils.pascalize_member(m.member_name)])
   code.Call(
     head: code.Ident(name: "decode.field"),
     args: [
       code.StrLit(value: m.member_name),
       code.Raw(fragment: types.json_decoder_params(m.target)),
-      code.Raw(fragment: "fn(x) { decode.success(" <> ctor <> "(x)) }"),
+      code.Raw(
+        fragment: name_concat(["fn(x) { decode.success(", ctor, "(x)) }"]),
+      ),
     ],
   )
 }
@@ -1322,7 +1330,7 @@ fn emit_path_setup(uri_template: String, labels: List(MemberDef)) -> String {
       code.Let(
         name: "path",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(v)",
@@ -1377,7 +1385,7 @@ fn query_member_let(m: MemberDef) -> code.Code {
       code.Let(
         name: "query",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(v)",
@@ -1411,7 +1419,7 @@ fn query_member_let(m: MemberDef) -> code.Code {
       code.Let(
         name: "query",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(xs)",
@@ -1434,7 +1442,7 @@ fn query_member_let(m: MemberDef) -> code.Code {
       code.Let(
         name: "query",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(v)",
@@ -1478,7 +1486,7 @@ fn query_map_member_let(m: MemberDef) -> Result(code.Code, Nil) {
       Ok(code.Let(
         name: "query",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(m)",
@@ -1524,7 +1532,7 @@ fn prefix_header_let(m: MemberDef) -> code.Code {
   code.Let(
     name: "headers",
     value: code.Case(
-      scrutinee: code.Ident(name: "input." <> m.snake_name),
+      scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
       branches: [
         code.Branch(
           pattern: "option.Some(m)",
@@ -1563,7 +1571,7 @@ fn header_member_let(m: MemberDef) -> code.Code {
       code.Let(
         name: "headers",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(xs)",
@@ -1600,7 +1608,7 @@ fn header_member_let(m: MemberDef) -> code.Code {
       code.Let(
         name: "headers",
         value: code.Case(
-          scrutinee: code.Ident(name: "input." <> m.snake_name),
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(
               pattern: "option.Some(v)",
@@ -1688,7 +1696,7 @@ fn emit_payload_body(m: MemberDef) -> String {
     code.Let(
       name: "body",
       value: code.Case(
-        scrutinee: code.Ident(name: "input." <> m.snake_name),
+        scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
         branches: [
           code.Branch(pattern: "option.Some(v)", body: some_expr),
           code.Branch(pattern: "option.None", body: none_expr),
@@ -1788,7 +1796,7 @@ fn emit_body_encoder(
           code.Let(
             name: "pairs",
             value: code.Case(
-              scrutinee: code.Ident(name: "input." <> m.snake_name),
+              scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
               branches: [
                 code.Branch(
                   pattern: "option.Some(v)",
