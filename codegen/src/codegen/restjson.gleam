@@ -120,9 +120,10 @@ pub fn emit_service(
           let #(op_id, _, in_r, out_r, err_ids) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
-          let in_info = resolve_io_type(model, local <> "Input", in_r, rename)
+          let in_info =
+            resolve_io_type(model, name_concat([local, "Input"]), in_r, rename)
           let out_info =
-            resolve_io_type(model, local <> "Output", out_r, rename)
+            resolve_io_type(model, name_concat([local, "Output"]), out_r, rename)
           OpSpec(
             op_id: op_id,
             local: local,
@@ -142,15 +143,22 @@ pub fn emit_service(
       let invoke_blocks = list.map(op_specs, emit_invoke)
       let error_blocks =
         list.map(op_specs, fn(spec) {
-          emit_error_type(spec) <> emit_error_translator(spec)
+          string.concat([emit_error_type(spec), emit_error_translator(spec)])
         })
       let body_content =
-        client_block
-        <> preamble
-        <> list.fold(op_blocks, "", fn(acc, code) { acc <> code })
-        <> list.fold(error_blocks, "", fn(acc, code) { acc <> code })
-        <> list.fold(invoke_blocks, "", fn(acc, code) { acc <> code })
-      let body = file_header(service_id, body_content) <> "\n" <> body_content
+        string.concat([
+          client_block,
+          preamble,
+          string.concat(op_blocks),
+          string.concat(error_blocks),
+          string.concat(invoke_blocks),
+        ])
+      let body =
+        string.concat([
+          file_header(service_id, body_content),
+          "\n",
+          body_content,
+        ])
       let dispatcher_specs =
         list.map(op_specs, fn(s) {
           dispatcher.DispatcherSpec(
@@ -215,19 +223,19 @@ fn emit_invoke(spec: OpSpec) -> String {
 /// awsjson emitter — restJson1 errors are still JSON-shaped on the
 /// wire, so the same decoder path works.
 fn emit_error_type(spec: OpSpec) -> String {
-  let name = spec.local <> "Error"
+  let name = name_concat([spec.local, "Error"])
   let typed_variants =
     list.map(spec.error_ids, fn(err_id) {
       let local = strip_namespace(err_id)
-      code.Variant(name: name <> local, fields: [
+      code.Variant(name: name_concat([name, local]), fields: [
         code.Param(name: "value", type_: local),
       ])
     })
   let fallback_variants = [
-    code.Variant(name: name <> "Transport", fields: [
+    code.Variant(name: name_concat([name, "Transport"]), fields: [
       code.Param(name: "reason", type_: "String"),
     ]),
-    code.Variant(name: name <> "Unknown", fields: [
+    code.Variant(name: name_concat([name, "Unknown"]), fields: [
       code.Param(name: "error_type", type_: "String"),
       code.Param(name: "status", type_: "Int"),
       code.Param(name: "body", type_: "String"),
@@ -425,9 +433,13 @@ fn emit_named_shapes(
   list.fold(shapes, "", fn(acc, r) {
     case r {
       REnum(gleam_name: n, variants: vs, ..) ->
-        acc <> emit_enum_def(n, vs) <> emit_enum_codec(n, vs)
+        string.concat([acc, emit_enum_def(n, vs), emit_enum_codec(n, vs)])
       RIntEnum(gleam_name: n, variants: vs, ..) ->
-        acc <> emit_int_enum_def(n, vs) <> emit_int_enum_codec(n, vs)
+        string.concat([
+          acc,
+          emit_int_enum_def(n, vs),
+          emit_int_enum_codec(n, vs),
+        ])
       RStruct(gleam_name: n, full_id: id, local_name: ln, ..) ->
         case ln == "Unit" {
           True -> acc
@@ -435,14 +447,18 @@ fn emit_named_shapes(
             let ms =
               types.resolve_members(model, id)
               |> list.map(fn(m) { types.apply_rename_member(m, rename) })
-            acc <> emit_record_def(n, ms) <> emit_struct_codec(n, ms)
+            string.concat([
+              acc,
+              emit_record_def(n, ms),
+              emit_struct_codec(n, ms),
+            ])
           }
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
         let ms =
           types.resolve_members(model, id)
           |> list.map(fn(m) { types.apply_rename_member(m, rename) })
-        acc <> emit_union_def(n, ms) <> emit_union_codec(n, ms)
+        string.concat([acc, emit_union_def(n, ms), emit_union_codec(n, ms)])
       }
       _ -> acc
     }
@@ -612,7 +628,7 @@ fn emit_parse_via_decoder(
         public: True,
         name: fn_name,
         params: [code.Param(name: "body", type_: "String")],
-        return: code.CodeSome("Result(" <> type_name <> ", String)"),
+        return: code.CodeSome(name_concat(["Result(", type_name, ", String)"])),
         body: code.Case(
           scrutinee: code.Call(
             head: code.Ident(name: "json.parse"),
@@ -673,7 +689,7 @@ fn resolve_io_type(
 // ---------- type definitions ----------
 
 fn emit_record_def(name: String, members: List(MemberDef)) -> String {
-  code.render(named_shapes.record_def(name, members)) <> "\n"
+  string.concat([code.render(named_shapes.record_def(name, members)), "\n"])
 }
 
 fn emit_enum_def(name: String, variants: List(types.EnumVariant)) -> String {
