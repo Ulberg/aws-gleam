@@ -14,41 +14,35 @@ item)` inside the Lambda body, so the existing
 `value_to_string_with_format` helper still works without parameter-
 name plumbing.
 
-## 2. Inner case ladders in `xml_value_expr`
+## 2. Inner case ladders in `xml_value_expr` — REJECTED
 
-`restxml.xml_value_expr` still has two 4-way `case` ladders inside its
-`RList` and `RMap` branches, dispatching on
-`(xml_flattened?, has_member_ns?, has_inner_ns?)`. Each arm picks one
-of four call shapes (`xml.flat_list` / `xml.flat_list_ns` /
-`xml.list_element` / `xml.list_element_ns`, and the analogous map
-quartet). Could become a lookup over the boolean tuple, or split into
-a `pick_call_name(...) -> String` helper feeding a single `code.Call`
-construction.
+The two 4-way cases in `xml_value_expr`'s `RList` and `RMap` branches
+dispatch on `(xml_flattened?, has_member_ns?, has_inner_ns?)`. The
+function name AND the argument arity vary across the four branches
+(`flat_list(name, items)` vs `list_element_ns(name, mem_ns, entry,
+ens, items)`), so a `pick_call_name + single Call` factoring needs a
+parallel `pick_args` helper that's no shorter than the current case.
+The runtime `aws/internal/codec/xml` module is the right place for
+an "always-optional-ns" merger — but that's a larger reshape of the
+runtime API for marginal codegen-side gain. Leaving as-is.
 
-## 3. `emit_operation` synth blocks in awsjson + restxml
+## 3. `emit_operation` synth blocks in awsjson + restxml — REJECTED
 
-Both still have ~60 lines of paired
-`synth_in_record / synth_in_encoder / synth_in_decoder /
-synth_out_record / synth_out_decoder` declarations. The restjson
-`synth_io_def` helper doesn't fit because awsjson/restxml gate parts
-on `is_dispatcher` and use different `struct_codec` flags. A shared
-helper would need extra parameters, but the `rest_request` extraction
-showed the shared-module pattern works fine — worth a second look.
+`synth_in_record` / `synth_in_decoder` / `synth_out_record` are
+already one-line wrappers (`case should { True -> emit_record_def(...)
+False -> "" }`) around shared helpers. A `synth_text(should, fn() {
+... })` factoring adds a closure parameter per call site without
+shrinking line count. The duplication is real but cheap; leaving
+as-is preserves locality.
 
-## 4. `body_members` filter inside `restjson.emit_operation`
+## 4. `body_members` filter inside `restjson.emit_operation` — DONE
 
-`emit_operation` does its own `list.filter(in_members, Body -> True ...)`
-to feed `emit_body_encoder`. After the `types.categorize_bindings`
-helper exists, this could become `types.categorize_bindings(in_members).body`
-for consistency. Small.
+Replaced the open-coded `list.filter(..., Body -> True ...)` with
+`types.categorize_bindings(in_members).body`. The unused `Body`
+constructor import dropped out of `restjson.gleam` at the same time.
 
-## 5. Pre-existing env-dependent test failure
+## 5. Pre-existing env-dependent test failure — DONE
 
-`test/default_chain_test.gleam:31` —
-`default_chain_exhausts_with_all_seven_providers_in_order_test` fails
-on the developer's machine because the environment-variables provider
-returns real AWS credentials from the shell, breaking the "all 7
-providers exhaust" assertion. Not caused by any refactor in this PR.
-Either run `unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY ...`
-before `gleam test`, or rework the test to scrub the env. Flagging for
-awareness.
+Closed by adding `credentials.default_chain_with` (injectable env /
+file / runner seams) and switching the test to use it. The "all
+providers exhaust" assertion no longer depends on real env scrubbing.

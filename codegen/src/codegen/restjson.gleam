@@ -20,8 +20,8 @@ import codegen/rest_request
 import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
-  type HttpTrait, type MemberDef, type Resolved, Body, HttpTrait, Payload,
-  RDocument, REnum, RIntEnum, RList, RMap, RPrim, RStruct, RUnion,
+  type HttpTrait, type MemberDef, type Resolved, HttpTrait, Payload, RDocument,
+  REnum, RIntEnum, RList, RMap, RPrim, RStruct, RUnion,
 }
 import gleam/dict
 import gleam/list
@@ -529,13 +529,7 @@ fn emit_operation(
       out_struct_decoder_name,
     )
   let in_members = in_info.members
-  let body_members =
-    list.filter(in_members, fn(m) {
-      case m.binding {
-        Body -> True
-        _ -> False
-      }
-    })
+  let body_members = types.categorize_bindings(in_members).body
   let body_encoder = emit_body_encoder(snake, in_info.type_name, body_members)
   let build =
     emit_build(in_info.type_name, in_info.synthesise, snake, http, in_members)
