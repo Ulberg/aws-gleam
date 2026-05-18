@@ -1,0 +1,229 @@
+//// SigV4a — AWS Signature Version 4 with asymmetric ECDSA P-256
+//// signatures, used by S3 Multi-Region Access Points (MRAP) and a
+//// few other multi-region offerings.
+////
+//// The canonical-request shape is identical to SigV4 except for
+//// the algorithm string (AWS4-ECDSA-P256-SHA256) and the
+//// `X-Amz-Region-Set` header that carries the comma-joined region
+//// list. The string-to-sign uses the same five-line shape; the
+//// credential scope drops the region because SigV4a is region-
+//// agnostic by design.
+////
+//// **v1 limitation — non-deterministic nonces.** Erlang's
+//// `crypto:sign/4` generates a fresh random nonce per call. The
+//// resulting signatures verify correctly with the corresponding
+//// public key (which is what AWS does server-side), but they
+//// won't match the aws-c-auth v4a fixture's literal bytes. The
+//// RFC 6979 deterministic-nonce variant that matches the
+//// reference vectors is a follow-up — it needs a pure-Erlang
+//// HMAC-DRBG implementation.
+////
+//// **v1 limitation — caller-supplied EC private key.** AWS's
+//// deterministic key-derivation algorithm (turning an IAM secret
+//// + access key into an EC private scalar) is also deferred —
+//// it requires HMAC-SHA256 composition with modular reduction
+//// onto the P-256 curve. v1 accepts an already-derived 32-byte
+//// scalar; callers wire in their own key derivation.
+
+import aws/internal/crypto
+import aws/internal/http_request.{
+  type Header, type HttpRequest, Header, HttpRequest,
+}
+import aws/internal/uri
+import gleam/bit_array
+import gleam/list
+import gleam/order
+import gleam/string
+
+pub type EcdsaPrivateKey {
+  /// 32-byte P-256 (secp256r1) scalar. SEC1 form. Build via
+  /// `ecdsa_private_key_from_bytes`; the wrapper validates the
+  /// byte width so a malformed input fails at construction
+  /// rather than at signing time.
+  EcdsaPrivateKey(scalar: BitArray)
+}
+
+/// Build an `EcdsaPrivateKey` from a 32-byte scalar. Returns
+/// `Error(_)` when the input is the wrong length — SigV4a is
+/// strictly P-256, so any other key size is a bug.
+pub fn ecdsa_private_key_from_bytes(
+  bytes: BitArray,
+) -> Result(EcdsaPrivateKey, String) {
+  case bit_array.byte_size(bytes) {
+    32 -> Ok(EcdsaPrivateKey(scalar: bytes))
+    _ -> Error("SigV4a private key must be a 32-byte P-256 scalar")
+  }
+}
+
+pub type Sigv4aOptions {
+  Sigv4aOptions(
+    /// AWS-form compact timestamp: `YYYYMMDDTHHMMSSZ`.
+    timestamp: String,
+    /// The region set the signature binds to. Single-region calls
+    /// pass `["us-east-1"]`; multi-region calls pass the list.
+    /// Order is preserved into the `X-Amz-Region-Set` header.
+    region_set: List(String),
+    /// Service name as it appears in the credential scope.
+    service: String,
+    /// `True` ⇒ canonical-request payload-hash line carries
+    /// `sha256(req.body)`; `False` ⇒ `sha256("")`.
+    sign_body: Bool,
+  )
+}
+
+/// Sign `req` with `private_key` and `access_key_id`, returning
+/// the request with `Authorization`, `X-Amz-Date`,
+/// `X-Amz-Region-Set`, and (when `sign_body`) `X-Amz-Content-Sha256`
+/// headers added.
+pub fn sign(
+  req: HttpRequest,
+  private_key: EcdsaPrivateKey,
+  access_key_id: String,
+  opts: Sigv4aOptions,
+) -> HttpRequest {
+  let date = string.slice(opts.timestamp, 0, 8)
+  let region_set_value = string.join(opts.region_set, ",")
+  let payload_hash = case opts.sign_body {
+    True -> crypto.hex_encode(crypto.sha256(req.body))
+    False -> crypto.hex_encode(crypto.sha256(bit_array.from_string("")))
+  }
+  let prepared = case opts.sign_body {
+    True ->
+      req.headers
+      |> upsert("X-Amz-Date", opts.timestamp)
+      |> upsert("X-Amz-Region-Set", region_set_value)
+      |> upsert("X-Amz-Content-Sha256", payload_hash)
+    False ->
+      req.headers
+      |> upsert("X-Amz-Date", opts.timestamp)
+      |> upsert("X-Amz-Region-Set", region_set_value)
+  }
+  let canonical_uri = encode_path(req.path)
+  let canonical_query = canonical_query_string(req.query)
+  let canonical_headers_block = canonical_headers(prepared)
+  let signed_headers_list = signed_headers(prepared)
+  let creq =
+    req.method
+    <> "\n"
+    <> canonical_uri
+    <> "\n"
+    <> canonical_query
+    <> "\n"
+    <> canonical_headers_block
+    <> "\n"
+    <> signed_headers_list
+    <> "\n"
+    <> payload_hash
+  // Credential scope drops the region — `X-Amz-Region-Set`
+  // carries it instead.
+  let scope = date <> "/" <> opts.service <> "/aws4_request"
+  let creq_hash = crypto.hex_encode(crypto.sha256(bit_array.from_string(creq)))
+  let sts =
+    "AWS4-ECDSA-P256-SHA256\n"
+    <> opts.timestamp
+    <> "\n"
+    <> scope
+    <> "\n"
+    <> creq_hash
+  let sig_der =
+    ecdsa_p256_sign(private_key.scalar, bit_array.from_string(sts))
+  let sig_hex = crypto.hex_encode(sig_der)
+  let auth =
+    "AWS4-ECDSA-P256-SHA256 Credential="
+    <> access_key_id
+    <> "/"
+    <> scope
+    <> ", SignedHeaders="
+    <> signed_headers_list
+    <> ", Signature="
+    <> sig_hex
+  let final_headers =
+    list.append(prepared, [Header(name: "Authorization", value: auth)])
+  HttpRequest(..req, headers: final_headers)
+}
+
+/// ECDSA P-256 signature over `data`, returning the DER-encoded
+/// blob. Erlang's `crypto:sign/4` uses a random nonce per call;
+/// signatures verify correctly server-side but won't match
+/// RFC-6979 deterministic-nonce reference vectors.
+@external(erlang, "aws_ffi", "ecdsa_p256_sign")
+pub fn ecdsa_p256_sign(private_key: BitArray, data: BitArray) -> BitArray
+
+/// ECDSA P-256 verification. `public_key` is the uncompressed
+/// SEC1 form (`04 || X || Y`, 65 bytes).
+@external(erlang, "aws_ffi", "ecdsa_p256_verify")
+pub fn ecdsa_p256_verify(
+  public_key: BitArray,
+  data: BitArray,
+  signature: BitArray,
+) -> Bool
+
+// ---------- canonical-request helpers ----------
+//
+// These mirror the private helpers in `aws/internal/sigv4`. The
+// duplication is intentional while SigV4a stabilises; once the
+// shape is solid both can call into a neutral
+// `aws/internal/sigv4_canonical` module.
+
+fn upsert(headers: List(Header), name: String, value: String) -> List(Header) {
+  let lower = string.lowercase(name)
+  let already =
+    list.any(headers, fn(h) { string.lowercase(h.name) == lower })
+  case already {
+    True ->
+      list.map(headers, fn(h) {
+        case string.lowercase(h.name) == lower {
+          True -> Header(name: h.name, value: value)
+          False -> h
+        }
+      })
+    False -> list.append(headers, [Header(name: name, value: value)])
+  }
+}
+
+fn canonical_headers(headers: List(Header)) -> String {
+  headers
+  |> list.map(fn(h) { #(string.lowercase(h.name), string.trim(h.value)) })
+  |> list.sort(by: fn(a, b) { string.compare(a.0, b.0) })
+  |> list.map(fn(p) { p.0 <> ":" <> p.1 <> "\n" })
+  |> string.concat
+}
+
+fn signed_headers(headers: List(Header)) -> String {
+  headers
+  |> list.map(fn(h) { string.lowercase(h.name) })
+  |> list.unique
+  |> list.sort(by: string.compare)
+  |> string.join(";")
+}
+
+fn canonical_query_string(query: String) -> String {
+  case query {
+    "" -> ""
+    _ ->
+      string.split(query, "&")
+      |> list.map(fn(pair) {
+        case string.split_once(pair, "=") {
+          Ok(#(name, value)) -> #(
+            uri.encode_component(name),
+            uri.encode_component(value),
+          )
+          Error(_) -> #(uri.encode_component(pair), "")
+        }
+      })
+      |> list.sort(by: fn(a, b) {
+        case string.compare(a.0, b.0) {
+          order.Eq -> string.compare(a.1, b.1)
+          other -> other
+        }
+      })
+      |> list.map(fn(p) { p.0 <> "=" <> p.1 })
+      |> string.join("&")
+  }
+}
+
+fn encode_path(path: String) -> String {
+  string.split(path, "/")
+  |> list.map(uri.encode_segment)
+  |> string.join("/")
+}

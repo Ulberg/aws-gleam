@@ -1,6 +1,7 @@
 -module(aws_ffi).
 -include_lib("xmerl/include/xmerl.hrl").
--export([sha256/1, sha1/1, md5/1, crc32c/1, hmac_sha256/2, hex_encode/1, get_env/1,
+-export([sha256/1, sha1/1, md5/1, crc32c/1, hmac_sha256/2, hex_encode/1,
+         ecdsa_p256_sign/2, ecdsa_p256_verify/3, get_env/1,
          read_file/1, unix_seconds/0, parse_iso8601/1, run_process/2,
          sha1_hex/1, aws_timestamp/0, random_float/0,
          encode_dynamic_to_json/1, float_nan/0, float_infinity/0,
@@ -103,6 +104,26 @@ md5(Data) ->
 
 hmac_sha256(Key, Data) ->
     crypto:mac(hmac, sha256, Key, Data).
+
+%% Sign `Data` with an ECDSA P-256 (secp256r1) private key, using
+%% SHA-256 as the message digest. `PrivateKey` is the 32-byte
+%% scalar value as a binary. Returns the DER-encoded ASN.1
+%% signature blob.
+%%
+%% Used by SigV4a (`AWS4-ECDSA-P256-SHA256`). Erlang's `crypto`
+%% module generates a fresh random nonce per call rather than the
+%% RFC 6979 deterministic nonce AWS reference vectors use, so
+%% signatures verify correctly against the AWS public-key check
+%% but won't match the aws-c-auth v4a fixture's literal bytes.
+ecdsa_p256_sign(PrivateKey, Data) when is_binary(PrivateKey), is_binary(Data) ->
+    crypto:sign(ecdsa, sha256, Data, [PrivateKey, secp256r1]).
+
+%% Verify a SigV4a signature. `PublicKey` is the uncompressed 65-byte
+%% SEC1 form (`04 || X || Y`); `Signature` is the DER-encoded blob
+%% returned by `ecdsa_p256_sign`. Returns a boolean.
+ecdsa_p256_verify(PublicKey, Data, Signature)
+  when is_binary(PublicKey), is_binary(Data), is_binary(Signature) ->
+    crypto:verify(ecdsa, sha256, Data, Signature, [PublicKey, secp256r1]).
 
 %% CRC-32C (Castagnoli polynomial 0x1EDC6F41, reflected 0x82F63B78).
 %% Used by AWS multi-algorithm checksum (`crc32c` variant) — base64
