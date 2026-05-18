@@ -107,6 +107,14 @@ pub type Code {
   /// An integer literal.
   IntLit(value: Int)
 
+  /// `Ctor(..record, field1: v1, field2: v2)` — Gleam record update
+  /// expression. `record` is the base value, `type_` is the
+  /// constructor name (Gleam requires it explicitly), and `fields`
+  /// are `Labelled(field, value)` overrides. Used by the codegen for
+  /// in-place updates that would otherwise need a manual rebuild —
+  /// e.g. threading a pagination cursor into a typed input.
+  RecordUpdate(record: Code, type_: String, fields: List(Code))
+
   /// Raw passthrough — emitter hands a pre-formatted Gleam fragment.
   /// Escape hatch for legacy code; should eventually be empty.
   Raw(fragment: String)
@@ -321,6 +329,9 @@ fn do_render(c: Code, indent: Int) -> String {
 
     IntLit(value: n) -> string.concat([pad(indent), int_to_string(n)])
 
+    RecordUpdate(record: r, type_: t, fields: fs) ->
+      string.concat([pad(indent), render_record_update(r, t, fs, indent)])
+
     Raw(fragment: f) -> indent_raw(f, indent)
 
     DocComment(lines: ls) ->
@@ -352,6 +363,8 @@ fn do_render_expr(c: Code, indent: Int) -> String {
     StrLit(value: v) -> escape_string_literal(v)
     IntLit(value: n) -> int_to_string(n)
     Raw(fragment: f) -> f
+    RecordUpdate(record: r, type_: t, fields: fs) ->
+      render_record_update(r, t, fs, indent)
     Call(head: h, args: as_) -> render_call(h, as_, indent)
     Concat(parts: ps) -> render_concat(ps, indent)
     Tuple(items: xs) -> render_tuple(xs, indent)
@@ -378,6 +391,27 @@ fn do_render_expr(c: Code, indent: Int) -> String {
       // delimited.
       string.concat(["{\n", do_render(c, indent + 1), "\n", pad(indent), "}"])
   }
+}
+
+fn render_record_update(
+  record: Code,
+  type_: String,
+  fields: List(Code),
+  indent: Int,
+) -> String {
+  // Gleam syntax: `Ctor(..base, field1: v1, field2: v2)`.
+  let record_str = do_render_expr(record, indent)
+  let field_str =
+    fields
+    |> list.map(fn(f) {
+      case f {
+        Labelled(label: l, value: v) ->
+          string.concat([l, ": ", do_render_expr(v, indent)])
+        _ -> do_render_expr(f, indent)
+      }
+    })
+    |> string.join(", ")
+  string.concat([type_, "(..", record_str, ", ", field_str, ")"])
 }
 
 fn render_call(head: Code, args: List(Code), indent: Int) -> String {

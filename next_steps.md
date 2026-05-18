@@ -114,11 +114,35 @@ client beyond DynamoDB + S3 mainline.
    / EKS end-to-end through SigV4 + the embedded rule sets, on top
    of the existing DynamoDB / S3 endpoint-test coverage.
 
-3. **Paginators** — Smithy `@paginated`. Without these callers loop
-   on `next_token` by hand. High-value targets: `ListObjects`,
-   DynamoDB `Query` / `Scan`, `ListFunctions`.
+3. **Paginators** — DONE (2026-05-18). `aws/pagination.fold` lives
+   in the runtime; the codegen emits a `paginate_<op>` wrapper per
+   operation carrying `smithy.api#paginated`. The wrapper threads
+   the input/output cursor field (`@paginated.inputToken` /
+   `outputToken`), projects the items list (`@paginated.items`),
+   and folds across pages into a caller-supplied accumulator. The
+   cursor type is parametric — DynamoDB's `LastEvaluatedKey`
+   (`Dict(String, AttributeValue)`) flows through the same helper
+   as a `String` `NextToken`. End-to-end smoke tests in
+   `test/paginator_smoke_test.gleam` cover the
+   `DynamoDB.ListTables` case (2-page fold + cursor threading).
 
-4. **Waiters** — `@waitable`. Common needs: `bucket_exists`,
+4. **Waiters** — DONE (2026-05-18). `aws/waiter.wait(step,
+   max_attempts, min_delay_ms, max_delay_ms)` drives a polling
+   closure with exponential backoff, returning `Ok(Nil)` /
+   `Error(Failed(_))` / `Error(MaxAttemptsExceeded(_))`. The
+   codegen emits one `wait_until_<waiter>` Gleam function per
+   `smithy.waiters#waitable` waiter on an op. Acceptors with
+   `success: true|false` and `errorType: "..."` matchers are
+   translated to the appropriate `Settled` / `Continue` /
+   `FailedNow` step expression; the `errorType` match is dispatched
+   on either the typed `<Op>Error<X>(_)` variant when the op
+   declared `X` as a known error, or the `<Op>ErrorUnknown(error_type:
+   "<X>", ..)` catch-all otherwise. Waiters with any unsupported
+   matcher (`output`, `inputOutput`, `outputCount`,
+   `errorContains` — JMESPath) are dropped at trait-parse time.
+   End-to-end smoke test in `test/waiter_smoke_test.gleam` covers
+   `S3.wait_until_bucket_exists` (settles on first 200) and the
+   runtime's `MaxAttemptsExceeded` path.
    `table_active`, `function_active`.
 
 5. **Event streams** — `@streaming` on unions. DynamoDB Streams,
@@ -126,7 +150,22 @@ client beyond DynamoDB + S3 mainline.
 
 6. **S3 transfer manager / multipart upload** — built on streaming.
 
-7. **Presigned URLs** — the SigV4 query-string variant.
+7. **Presigned URLs** — DONE (2026-05-18). `sigv4.presigned_url`
+   builds the query-string-auth variant of SigV4 — the auth fields
+   (`X-Amz-Algorithm`, `X-Amz-Credential`, `X-Amz-Date`,
+   `X-Amz-Expires`, `X-Amz-SignedHeaders`, optionally
+   `X-Amz-Security-Token`, and `X-Amz-Signature`) ride in the URL
+   query string instead of headers. Reuses the existing canonical-
+   header / signed-header helpers so all headers the caller carries
+   on the request get signed (not just `Host`). Honours
+   `opts.omit_session_token` per the v4 spec — the token is
+   appended to the URL AFTER signing rather than included in the
+   canonical request. `payload_hash: Option(String)` lets callers
+   pin `UNSIGNED-PAYLOAD` (S3's per-service convention) or pass a
+   pre-computed body hash; `None` falls back to the standard
+   `sign_body`-driven path. Verified end-to-end against every
+   `query-signature.txt` fixture in the aws-c-auth v4 suite
+   (`test/presigned_url_test.gleam`).
 
 8. **SigV4a** — multi-region signing for S3 MRAP.
 
@@ -142,6 +181,18 @@ client beyond DynamoDB + S3 mainline.
     fractional-second timestamp headers, `@xmlName` on unions
     (~30 failing protocol tests). v0.1 plan scope-concern #2
     explicitly suggests dropping restJson1 from the M5 gate.
+
+    Building blocks landed (2026-05-18): `crypto.sha1`,
+    `crypto.crc32`, `crypto.crc32c`, `crypto.crc32_be_bytes`,
+    plus `rest.checksum_header` / `rest.with_checksum_header`
+    covering all four `aws.protocols#httpChecksum` algorithms
+    (`sha256` / `sha1` / `crc32` / `crc32c`). CRC32C uses a
+    pure-Erlang Castagnoli implementation (OTP's stdlib has no
+    built-in for it). The middleware that wires these into
+    operations carrying the multi-algorithm trait — picking
+    the algorithm from request options + service config,
+    computing the digest, and verifying the response header
+    — is the next codegen-side piece.
 
 12. **Timestamp fractional seconds + offsets** — currently `Int`
     epoch seconds. CloudWatch / EventBridge / metric APIs lose

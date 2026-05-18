@@ -127,6 +127,180 @@ pub fn op_error_type(op_local: String, emitted: Set(String)) -> String {
   }
 }
 
+/// Raw Smithy member names lifted out of the operation's
+/// `smithy.api#paginated` trait. `input_token` / `output_token`
+/// are PascalCased Smithy member names on the op's input / output
+/// shapes (e.g. `"NextToken"`); `items` likewise names the
+/// output member that holds the page items list; `page_size`
+/// (when present) names an input member the caller can use to
+/// control per-page count. The emitter is responsible for
+/// resolving these wire-form names to the corresponding Gleam
+/// snake_case record field names before splicing them into the
+/// generated `paginate_<op>` source.
+pub type PaginatedTrait {
+  PaginatedTrait(
+    input_token: String,
+    output_token: String,
+    items: String,
+    page_size: Option(String),
+  )
+}
+
+/// Extract `smithy.api#paginated` from an operation's traits.
+/// Returns `None` when the trait is absent or when any of the
+/// required fields (`inputToken`, `outputToken`, `items`) is
+/// missing — without all three the codegen has no cursor + items
+/// to thread, so we treat it as non-paginated.
+pub fn paginated_trait(traits: shape.Traits) -> Option(PaginatedTrait) {
+  case dict.get(traits, ShapeId("smithy.api#paginated")) {
+    Ok(Some(trait.Dict(d))) -> {
+      let input_token = string_field(d, "inputToken")
+      let output_token = string_field(d, "outputToken")
+      let items = string_field(d, "items")
+      let page_size = string_field(d, "pageSize")
+      case input_token, output_token, items {
+        Some(it), Some(ot), Some(i) ->
+          Some(PaginatedTrait(
+            input_token: it,
+            output_token: ot,
+            items: i,
+            page_size: page_size,
+          ))
+        _, _, _ -> None
+      }
+    }
+    _ -> None
+  }
+}
+
+/// One waiter lifted out of `smithy.waiters#waitable`. `name` is
+/// the waiter key (e.g. `"BucketExists"`); `acceptors` is the
+/// ordered list of `state` + `matcher` rules the codegen must
+/// translate to `Settled` / `Continue` / `FailedNow`. Waiters
+/// containing any unsupported matcher (`output`, `inputOutput`,
+/// `outputCount`, `errorContains`) are dropped here so the codegen
+/// never has to worry about them.
+pub type WaiterDef {
+  WaiterDef(
+    name: String,
+    acceptors: List(WaiterAcceptor),
+    min_delay_ms: Int,
+    max_delay_ms: Int,
+  )
+}
+
+pub type WaiterAcceptor {
+  WaiterAcceptor(state: WaiterState, matcher: WaiterMatcher)
+}
+
+pub type WaiterState {
+  WaiterSuccess
+  WaiterFailure
+  WaiterRetry
+}
+
+/// Subset of `smithy.waiters#Matcher` the v1 codegen supports.
+/// `MatchSuccess(True)` ⇒ match when the typed operation returns
+/// `Ok(_)`. `MatchSuccess(False)` ⇒ match on any `Error(_)`.
+/// `MatchErrorType(local)` ⇒ match when the typed error variant
+/// equals `<Op>Error<local>`. JMESPath matchers (`output`,
+/// `inputOutput`) and `outputCount` / `errorContains` are tracked
+/// in the audit and deferred.
+pub type WaiterMatcher {
+  MatchSuccess(value: Bool)
+  MatchErrorType(local: String)
+}
+
+/// Extract every supported waiter from an op's traits. Drops any
+/// waiter that uses a matcher the codegen doesn't yet support so
+/// the generator emits clean code (or nothing) rather than a
+/// partial wait function that ignores some acceptors.
+pub fn waitable_traits(traits: shape.Traits) -> List(WaiterDef) {
+  case dict.get(traits, ShapeId("smithy.waiters#waitable")) {
+    Ok(Some(trait.Dict(d))) ->
+      dict.to_list(d)
+      |> list.filter_map(fn(pair) {
+        let #(ShapeId(name), body) = pair
+        case body {
+          trait.Dict(waiter_body) ->
+            case parse_waiter(name, waiter_body) {
+              Some(w) -> Ok(w)
+              None -> Error(Nil)
+            }
+          _ -> Error(Nil)
+        }
+      })
+    _ -> []
+  }
+}
+
+fn parse_waiter(
+  name: String,
+  body: Dict(ShapeId, Trait),
+) -> Option(WaiterDef) {
+  // Smithy default cadence: min=2s, max=120s when the trait
+  // doesn't override.
+  let min_delay = int_field(body, "minDelay", 2) * 1000
+  let max_delay = int_field(body, "maxDelay", 120) * 1000
+  case dict.get(body, ShapeId("acceptors")) {
+    Ok(trait.List(items)) -> {
+      let acceptors =
+        list.filter_map(items, fn(item) {
+          case item {
+            trait.Dict(a) ->
+              case parse_acceptor(a) {
+                Some(ac) -> Ok(ac)
+                None -> Error(Nil)
+              }
+            _ -> Error(Nil)
+          }
+        })
+      // If any acceptor in the waiter is unsupported we get fewer
+      // items back than the input list. Drop the whole waiter in
+      // that case — partial coverage would be misleading.
+      case list.length(acceptors) == list.length(items) {
+        True ->
+          Some(WaiterDef(
+            name: name,
+            acceptors: acceptors,
+            min_delay_ms: min_delay,
+            max_delay_ms: max_delay,
+          ))
+        False -> None
+      }
+    }
+    _ -> None
+  }
+}
+
+fn parse_acceptor(body: Dict(ShapeId, Trait)) -> Option(WaiterAcceptor) {
+  let state_opt = case string_field(body, "state") {
+    Some("success") -> Some(WaiterSuccess)
+    Some("failure") -> Some(WaiterFailure)
+    Some("retry") -> Some(WaiterRetry)
+    _ -> None
+  }
+  let matcher_opt = case dict.get(body, ShapeId("matcher")) {
+    Ok(trait.Dict(m)) -> parse_matcher(m)
+    _ -> None
+  }
+  case state_opt, matcher_opt {
+    Some(s), Some(m) -> Some(WaiterAcceptor(state: s, matcher: m))
+    _, _ -> None
+  }
+}
+
+fn parse_matcher(body: Dict(ShapeId, Trait)) -> Option(WaiterMatcher) {
+  case dict.to_list(body) {
+    [#(ShapeId("success"), trait.Bool(v))] -> Some(MatchSuccess(value: v))
+    [#(ShapeId("errorType"), trait.String(s))] -> Some(MatchErrorType(local: s))
+    // Other matchers (`output`, `inputOutput`, `outputCount`,
+    // `errorContains`) are deferred — return None so the caller
+    // drops the entire waiter.
+    _ -> None
+  }
+}
+
 /// Extract the `encodings` list from `@requestCompression`. Returns
 /// an empty list when the trait is absent or malformed.
 pub fn request_compression_encodings(traits: shape.Traits) -> List(String) {

@@ -284,6 +284,61 @@ pub fn with_content_md5_header(
   dict.insert(headers, "Content-MD5", digest)
 }
 
+/// Checksum algorithm picked by the `aws.protocols#httpChecksum`
+/// trait. Each variant maps to one of the AWS `x-amz-checksum-*`
+/// request headers; the codegen / runtime middleware writes the
+/// base64-encoded digest of the request body into that header
+/// before signing.
+pub type ChecksumAlgorithm {
+  ChecksumSha256
+  ChecksumSha1
+  ChecksumCrc32
+  ChecksumCrc32C
+}
+
+/// `(header_name, base64_digest)` pair for a body checksum. The
+/// header name follows the AWS convention `x-amz-checksum-<algo>`
+/// (lowercase). The digest is base64 of the raw bytes — same
+/// padding rules as `Content-MD5`. Pure function; the
+/// `aws.protocols#httpChecksum` middleware in the codegen layer
+/// calls this and inserts the result into the request headers.
+pub fn checksum_header(
+  algorithm: ChecksumAlgorithm,
+  body: BitArray,
+) -> #(String, String) {
+  case algorithm {
+    ChecksumSha256 -> #(
+      "x-amz-checksum-sha256",
+      bit_array.base64_encode(crypto.sha256(body), True),
+    )
+    ChecksumSha1 -> #(
+      "x-amz-checksum-sha1",
+      bit_array.base64_encode(crypto.sha1(body), True),
+    )
+    ChecksumCrc32 -> #(
+      "x-amz-checksum-crc32",
+      bit_array.base64_encode(crypto.crc32_be_bytes(crypto.crc32(body)), True),
+    )
+    ChecksumCrc32C -> #(
+      "x-amz-checksum-crc32c",
+      bit_array.base64_encode(crypto.crc32_be_bytes(crypto.crc32c(body)), True),
+    )
+  }
+}
+
+/// Add an `x-amz-checksum-<algo>` header to the request. Convenience
+/// wrapper around `checksum_header` that lets call sites stay
+/// pipeline-style with the existing `Dict(String, String)` header
+/// shape — same ergonomics as `with_content_md5_header`.
+pub fn with_checksum_header(
+  headers: Dict(String, String),
+  algorithm: ChecksumAlgorithm,
+  body: BitArray,
+) -> Dict(String, String) {
+  let #(name, value) = checksum_header(algorithm, body)
+  dict.insert(headers, name, value)
+}
+
 fn parse_float(s: String) -> Option(Float) {
   // Integer literals are valid Float wire values per the Smithy spec —
   // `1` decodes to `1.0`. The stdlib's float parser rejects them, so

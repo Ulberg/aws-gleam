@@ -19,8 +19,10 @@ import codegen/client
 import codegen/code
 import codegen/dispatcher
 import codegen/named_shapes
+import codegen/paginator
 import codegen/struct_codec
 import codegen/trait_helpers
+import codegen/waiter
 import codegen/types.{
   type MemberDef, type Resolved, REnum, RIntEnum, RList, RMap, RStruct, RUnion,
 }
@@ -96,9 +98,19 @@ pub fn emit_service(
                       t
                     })
                   let requires_md5 = trait_helpers.op_requires_md5(ts)
+                  let paginated = trait_helpers.paginated_trait(ts)
+                  let waiters = trait_helpers.waitable_traits(ts)
                   case types.is_supported(in_r), types.is_supported(out_r) {
                     True, True ->
-                      Ok(#(target, in_r, out_r, err_ids, requires_md5))
+                      Ok(#(
+                        target,
+                        in_r,
+                        out_r,
+                        err_ids,
+                        requires_md5,
+                        paginated,
+                        waiters,
+                      ))
                     _, _ -> Error(Nil)
                   }
                 }
@@ -122,13 +134,27 @@ pub fn emit_service(
       let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, in_r, out_r, err_ids, requires_md5) = t
+          let #(
+            op_id,
+            in_r,
+            out_r,
+            err_ids,
+            requires_md5,
+            paginated,
+            waiters,
+          ) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info =
             resolve_io_type(model, name_concat([local, "Input"]), in_r)
           let out_info =
             resolve_io_type(model, name_concat([local, "Output"]), out_r)
+          let pagination_info =
+            paginator.info_for(
+              members_in: in_info.members,
+              members_out: out_info.members,
+              trait: paginated,
+            )
           OpSpec(
             op_id: op_id,
             local: local,
@@ -141,6 +167,8 @@ pub fn emit_service(
               local,
               emitted_type_names,
             ),
+            pagination_info: pagination_info,
+            waiters: waiters,
           )
         })
       let op_blocks =
@@ -149,12 +177,16 @@ pub fn emit_service(
         })
       let client_block = emit_client(metadata)
       let invoke_blocks = list.map(op_specs, emit_invoke)
+      let paginate_blocks = list.map(op_specs, emit_paginator)
+      let waiter_blocks = list.map(op_specs, emit_waiter)
       let body_content =
         string.concat([
           client_block,
           preamble,
           string.concat(op_blocks),
           string.concat(invoke_blocks),
+          string.concat(paginate_blocks),
+          string.concat(waiter_blocks),
         ])
       let body =
         string.concat([
@@ -175,7 +207,7 @@ pub fn emit_service(
         module_name: derive_module_name(service_id),
         source: body,
         operations_emitted: list.map(resolved_ops, fn(t) {
-          let #(op_id, _, _, _, _) = t
+          let #(op_id, _, _, _, _, _, _) = t
           op_id
         }),
         dispatcher_specs: dispatcher_specs,
@@ -205,6 +237,14 @@ type OpSpec {
     /// that exact name already exists in the service, falls back to
     /// `<OpLocal>OperationError` to avoid duplicate type definitions.
     error_type: String,
+    /// Pagination plumbing extracted from `smithy.api#paginated`.
+    /// `Some(_)` ⇒ emit a `paginate_<op>` wrapper; `None` ⇒ skip.
+    pagination_info: option.Option(paginator.PaginationInfo),
+    /// Waiters extracted from `smithy.waiters#waitable`. Empty when
+    /// the op carries no waiter or every declared waiter used a
+    /// matcher the v1 codegen doesn't support (dropped at trait-
+    /// parse time).
+    waiters: List(trait_helpers.WaiterDef),
   )
 }
 
@@ -217,6 +257,35 @@ fn emit_client(metadata: trait_helpers.Metadata) -> String {
     metadata.signing_name,
     metadata.endpoint_rule_set_json,
   )
+}
+
+fn emit_paginator(spec: OpSpec) -> String {
+  paginator.emit(
+    snake: spec.snake,
+    input_type: spec.in_info.type_name,
+    error_type: spec.error_type,
+    info: spec.pagination_info,
+  )
+}
+
+fn emit_waiter(spec: OpSpec) -> String {
+  waiter.emit(
+    op_snake: spec.snake,
+    input_type: spec.in_info.type_name,
+    error_type: spec.error_type,
+    waiters: spec.waiters,
+    known_error_locals: known_error_locals(spec.error_ids),
+  )
+}
+
+/// Set of stripped-namespace locals for every error shape the op
+/// declared. Used by the waiter emitter to decide whether an
+/// `errorType` acceptor maps to a typed variant or the
+/// `<Op>ErrorUnknown` fall-through.
+fn known_error_locals(error_ids: List(String)) -> Set(String) {
+  list.fold(error_ids, set.new(), fn(acc, id) {
+    set.insert(acc, strip_namespace(id))
+  })
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
@@ -278,12 +347,22 @@ fn resolve_or_unit(model: Model, id: String) -> Resolved {
 /// detection via a seen-set keyed on the local Gleam name.
 fn collect_named_shapes(
   model: Model,
-  ops: List(#(String, Resolved, Resolved, List(String), Bool)),
+  ops: List(
+    #(
+      String,
+      Resolved,
+      Resolved,
+      List(String),
+      Bool,
+      option.Option(trait_helpers.PaginatedTrait),
+      List(trait_helpers.WaiterDef),
+    ),
+  ),
 ) -> List(Resolved) {
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_op_id, in_r, out_r, err_ids, _) = t
+      let #(_op_id, in_r, out_r, err_ids, _, _, _) = t
       let acc = walk(model, acc, in_r)
       let acc = walk(model, acc, out_r)
       list.fold(err_ids, acc, fn(a, err_id) {
@@ -346,10 +425,20 @@ fn remember(
 /// targets, since the dispatcher round-trips through encoders too.
 fn input_reachable_structs(
   model: Model,
-  resolved_ops: List(#(String, Resolved, Resolved, List(String), Bool)),
+  resolved_ops: List(
+    #(
+      String,
+      Resolved,
+      Resolved,
+      List(String),
+      Bool,
+      option.Option(trait_helpers.PaginatedTrait),
+      List(trait_helpers.WaiterDef),
+    ),
+  ),
 ) -> Set(String) {
   list.fold(resolved_ops, set.new(), fn(acc, t) {
-    let #(_, in_r, _, _, _) = t
+    let #(_, in_r, _, _, _, _, _) = t
     walk_for_structs(model, acc, in_r)
   })
 }
@@ -1382,6 +1471,8 @@ fn file_header(service_id: String, protocol: Protocol, body: String) -> String {
     #("aws/credentials", "credentials.", code.CodeNone),
     #("aws/endpoints", "endpoints.", code.CodeNone),
     #("aws/internal/credentials_cache", "credentials_cache.", code.CodeNone),
+    #("aws/pagination", "pagination.", code.CodeNone),
+    #("aws/waiter", "waiter.", code.CodeNone),
     #("aws/region", "region.", code.CodeNone),
     #("aws/internal/client/runtime", "runtime.", code.CodeSome("runtime")),
     #("aws/internal/codec/json_document", "json_document.", code.CodeNone),

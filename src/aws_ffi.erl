@@ -1,6 +1,6 @@
 -module(aws_ffi).
 -include_lib("xmerl/include/xmerl.hrl").
--export([sha256/1, md5/1, hmac_sha256/2, hex_encode/1, get_env/1,
+-export([sha256/1, sha1/1, md5/1, crc32c/1, hmac_sha256/2, hex_encode/1, get_env/1,
          read_file/1, unix_seconds/0, parse_iso8601/1, run_process/2,
          sha1_hex/1, aws_timestamp/0, random_float/0,
          encode_dynamic_to_json/1, float_nan/0, float_infinity/0,
@@ -86,6 +86,14 @@ format_http_date(Seconds) when is_integer(Seconds) ->
 sha256(Data) ->
     crypto:hash(sha256, Data).
 
+%% Raw SHA-1 digest as a 20-byte binary. Exposed for the AWS
+%% multi-algorithm checksum feature (`sha1` variant) — base64-
+%% encoded into the `x-amz-checksum-sha1` header. Distinct from
+%% `sha1_hex/1`, which returns the lowercase hex form used by the
+%% SSO cache-file naming.
+sha1(Data) ->
+    crypto:hash(sha, Data).
+
 %% Raw MD5 digest, used by the `@httpChecksumRequired` body-checksum
 %% helper. MD5 is a degraded primitive for security work but the
 %% AWS wire spec for this trait requires it (Content-MD5 is the
@@ -95,6 +103,35 @@ md5(Data) ->
 
 hmac_sha256(Key, Data) ->
     crypto:mac(hmac, sha256, Key, Data).
+
+%% CRC-32C (Castagnoli polynomial 0x1EDC6F41, reflected 0x82F63B78).
+%% Used by AWS multi-algorithm checksum (`crc32c` variant) — base64
+%% of the BE 4-byte form goes into `x-amz-checksum-crc32c`. Not
+%% available in OTP's stdlib so we compute it byte-by-byte; the
+%% loop is short enough that a fully-precomputed table isn't worth
+%% the static overhead. Returns the unsigned 32-bit integer value.
+crc32c(Data) when is_binary(Data) ->
+    Crc = crc32c_loop(Data, 16#FFFFFFFF),
+    Crc bxor 16#FFFFFFFF.
+
+crc32c_loop(<<>>, Crc) -> Crc;
+crc32c_loop(<<B, Rest/binary>>, Crc) ->
+    crc32c_loop(Rest, crc32c_byte(Crc bxor B)).
+
+%% Single-byte CRC-32C step using the reflected polynomial. Eight
+%% conditional shifts per byte; runs ~25 MB/s on a modern laptop
+%% which is enough for SDK checksum use (payloads bounded by S3
+%% put-object size + memory anyway).
+crc32c_byte(Crc) ->
+    crc32c_bits(Crc, 8).
+
+crc32c_bits(Crc, 0) -> Crc;
+crc32c_bits(Crc, N) ->
+    NewCrc = case Crc band 1 of
+        1 -> (Crc bsr 1) bxor 16#82F63B78;
+        0 -> Crc bsr 1
+    end,
+    crc32c_bits(NewCrc, N - 1).
 
 hex_encode(Bin) ->
     binary:encode_hex(Bin, lowercase).

@@ -28,7 +28,9 @@ import codegen/client
 import codegen/code
 import codegen/dispatcher
 import codegen/named_shapes
+import codegen/paginator
 import codegen/rest_request
+import codegen/waiter
 import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
@@ -91,13 +93,24 @@ pub fn emit_service(
                       t
                     })
                   let requires_md5 = trait_helpers.op_requires_md5(op_traits)
+                  let paginated = trait_helpers.paginated_trait(op_traits)
+                  let waiters = trait_helpers.waitable_traits(op_traits)
                   case
                     members_have_no_http_bindings(in_r),
                     types.is_supported(in_r),
                     types.is_supported(out_r)
                   {
                     True, True, True ->
-                      Ok(#(target, http, in_r, out_r, err_ids, requires_md5))
+                      Ok(#(
+                        target,
+                        http,
+                        in_r,
+                        out_r,
+                        err_ids,
+                        requires_md5,
+                        paginated,
+                        waiters,
+                      ))
                     _, _, _ -> Error(Nil)
                   }
                 }
@@ -116,13 +129,19 @@ pub fn emit_service(
       let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, _, in_r, out_r, err_ids, _) = t
+          let #(op_id, _, in_r, out_r, err_ids, _, paginated, waiters) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info =
             resolve_io_type(model, name_concat([local, "Input"]), in_r)
           let out_info =
             resolve_io_type(model, name_concat([local, "Output"]), out_r)
+          let pagination_info =
+            paginator.info_for(
+              members_in: in_info.members,
+              members_out: out_info.members,
+              trait: paginated,
+            )
           OpSpec(
             op_id: op_id,
             local: local,
@@ -134,12 +153,14 @@ pub fn emit_service(
               local,
               emitted_type_names,
             ),
+            pagination_info: pagination_info,
+            waiters: waiters,
           )
         })
 
       let op_blocks =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, http, in_r, out_r, _, requires_md5) = t
+          let #(op_id, http, in_r, out_r, _, requires_md5, _, _) = t
           emit_operation(
             model,
             op_id,
@@ -152,6 +173,8 @@ pub fn emit_service(
         })
       let client_block = emit_client(metadata)
       let invoke_blocks = list.map(op_specs, emit_invoke)
+      let paginate_blocks = list.map(op_specs, emit_paginator)
+      let waiter_blocks = list.map(op_specs, emit_waiter)
       let error_blocks =
         list.map(op_specs, fn(spec) {
           string.concat([emit_error_type(spec), emit_error_translator(spec)])
@@ -163,6 +186,8 @@ pub fn emit_service(
           string.concat(op_blocks),
           string.concat(error_blocks),
           string.concat(invoke_blocks),
+          string.concat(paginate_blocks),
+          string.concat(waiter_blocks),
         ])
       let body =
         string.concat([
@@ -184,7 +209,7 @@ pub fn emit_service(
         source: body,
         dispatcher_specs: dispatcher_specs,
         operations_emitted: list.map(resolved_ops, fn(t) {
-          let #(op_id, _, _, _, _, _) = t
+          let #(op_id, _, _, _, _, _, _, _) = t
           op_id
         }),
       ))
@@ -205,6 +230,13 @@ type OpSpec {
     /// `<OpLocal>Error`; suffixed to `<OpLocal>OperationError` when
     /// a Smithy struct of the same name exists in the service.
     error_type: String,
+    /// Pagination plumbing extracted from `smithy.api#paginated`.
+    /// `Some(_)` ⇒ emit a `paginate_<op>` wrapper; `None` ⇒ skip.
+    pagination_info: option.Option(paginator.PaginationInfo),
+    /// Waiters extracted from `smithy.waiters#waitable`. Empty when
+    /// the op carries no waiter or every declared waiter used a
+    /// matcher the v1 codegen doesn't support.
+    waiters: List(trait_helpers.WaiterDef),
   )
 }
 
@@ -213,6 +245,29 @@ fn emit_client(metadata: trait_helpers.Metadata) -> String {
     metadata.endpoint_prefix,
     metadata.signing_name,
     metadata.endpoint_rule_set_json,
+  )
+}
+
+fn emit_paginator(spec: OpSpec) -> String {
+  paginator.emit(
+    snake: spec.snake,
+    input_type: spec.in_info.type_name,
+    error_type: spec.error_type,
+    info: spec.pagination_info,
+  )
+}
+
+fn emit_waiter(spec: OpSpec) -> String {
+  waiter.emit(
+    op_snake: spec.snake,
+    input_type: spec.in_info.type_name,
+    error_type: spec.error_type,
+    waiters: spec.waiters,
+    known_error_locals: list.fold(
+      spec.error_ids,
+      set.new(),
+      fn(acc, id) { set.insert(acc, strip_namespace(id)) },
+    ),
   )
 }
 
@@ -354,12 +409,23 @@ fn members_have_no_http_bindings(_r: Resolved) -> Bool {
 
 fn collect_named_shapes(
   model: Model,
-  ops: List(#(String, HttpTrait, Resolved, Resolved, List(String), Bool)),
+  ops: List(
+    #(
+      String,
+      HttpTrait,
+      Resolved,
+      Resolved,
+      List(String),
+      Bool,
+      option.Option(trait_helpers.PaginatedTrait),
+      List(trait_helpers.WaiterDef),
+    ),
+  ),
 ) -> List(Resolved) {
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_, _, in_r, out_r, err_ids, _) = t
+      let #(_, _, in_r, out_r, err_ids, _, _, _) = t
       let acc = walk(model, acc, in_r)
       let acc = walk(model, acc, out_r)
       list.fold(err_ids, acc, fn(a, err_id) {
@@ -2681,6 +2747,8 @@ fn file_header(service_id: String, body: String) -> String {
     #("aws/credentials", "credentials.", code.CodeNone),
     #("aws/endpoints", "endpoints.", code.CodeNone),
     #("aws/internal/credentials_cache", "credentials_cache.", code.CodeNone),
+    #("aws/pagination", "pagination.", code.CodeNone),
+    #("aws/waiter", "waiter.", code.CodeNone),
     #("aws/region", "region.", code.CodeNone),
     #("aws/internal/client/runtime", "runtime.", code.CodeSome("runtime")),
     #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
