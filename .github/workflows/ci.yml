@@ -121,7 +121,8 @@ jobs:
         # apparently didn't make it to the erlc subprocess).
         run: ./scripts/test.sh
         env:
-          ERL_FLAGS: "+t 4194304"
+          ERL_FLAGS: "+t 16777216"
+          ERL_AFLAGS: "+t 16777216"
 
   # LocalStack end-to-end tests for the v0.1 verification gate
   # (DynamoDB + S3 round-trips). Kept in a separate job so the
@@ -215,7 +216,8 @@ jobs:
         run: ./scripts/test.sh
         env:
           INCLUDE_LOCALSTACK: "1"
-          ERL_FLAGS: "+t 4194304"
+          ERL_FLAGS: "+t 16777216"
+          ERL_AFLAGS: "+t 16777216"
 
       # Belt-and-braces teardown: the test harness already runs
       # `docker compose down -v` via `try / after`, but if the test
