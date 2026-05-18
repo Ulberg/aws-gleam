@@ -113,7 +113,15 @@ jobs:
         # 1M-atom ceiling and the BEAM segfaults during compile
         # without the bump. Local `gleam test` runs go through the
         # same wrapper.
+        #
+        # Belt-and-braces: also expose ERL_FLAGS at the step env
+        # level so the bump applies even if `gleam test`'s child
+        # processes don't inherit it through the script's `export`
+        # (we hit a segfault in CI where the in-script export
+        # apparently didn't make it to the erlc subprocess).
         run: ./scripts/test.sh
+        env:
+          ERL_FLAGS: "+t 4194304"
 
   # LocalStack end-to-end tests for the v0.1 verification gate
   # (DynamoDB + S3 round-trips). Kept in a separate job so the
@@ -207,6 +215,7 @@ jobs:
         run: ./scripts/test.sh
         env:
           INCLUDE_LOCALSTACK: "1"
+          ERL_FLAGS: "+t 4194304"
 
       # Belt-and-braces teardown: the test harness already runs
       # `docker compose down -v` via `try / after`, but if the test
