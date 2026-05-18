@@ -105,10 +105,48 @@ pub fn int_field(d: Dict(ShapeId, Trait), name: String, default: Int) -> Int {
 /// The rest/awsjson emitters use this to append a `Content-MD5:
 /// base64(md5(body))` step to the generated `build_<op>_request`.
 /// Distinct from the multi-algorithm `aws.protocols#httpChecksum`
-/// trait, which is still emitter-skipped pending a richer checksum
-/// middleware.
+/// trait — see `http_checksum_trait`.
 pub fn op_requires_md5(traits: shape.Traits) -> Bool {
   dict.has_key(traits, ShapeId("smithy.api#httpChecksumRequired"))
+}
+
+/// Multi-algorithm checksum trait extracted from
+/// `aws.protocols#httpChecksum`. `request_required` mirrors the
+/// trait's `requestChecksumRequired`; `request_algorithm_member`
+/// (when present) names an input member whose enum value picks the
+/// algorithm at runtime. v1 emits a SHA-256 checksum when
+/// `request_required` is set; the algorithm-member dispatch is a
+/// follow-up that needs the codegen to walk the input enum's
+/// variants.
+pub type HttpChecksumInfo {
+  HttpChecksumInfo(
+    request_required: Bool,
+    request_algorithm_member: Option(String),
+  )
+}
+
+pub fn http_checksum_trait(traits: shape.Traits) -> Option(HttpChecksumInfo) {
+  case dict.get(traits, ShapeId("aws.protocols#httpChecksum")) {
+    Ok(Some(trait.Dict(d))) -> {
+      let required = case dict.get(d, ShapeId("requestChecksumRequired")) {
+        Ok(trait.Bool(v)) -> v
+        _ -> False
+      }
+      let alg_member = string_field(d, "requestAlgorithmMember")
+      // Only surface the trait when there's something for the
+      // emitter to do — without `request_required` or an
+      // algorithm member, the v1 codegen has nothing to emit.
+      case required, alg_member {
+        False, None -> None
+        _, _ ->
+          Some(HttpChecksumInfo(
+            request_required: required,
+            request_algorithm_member: alg_member,
+          ))
+      }
+    }
+    _ -> None
+  }
 }
 
 /// Pick the Gleam type name for an operation's typed error sum.
