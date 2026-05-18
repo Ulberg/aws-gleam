@@ -79,26 +79,23 @@ FAILURES=()
 ERRLOG=$(mktemp)
 trap 'rm -f $SERVICES_LIST $ERRLOG' EXIT
 
-# Sanity: first 3 lines of SERVICES_LIST so the CI log shows
-# what the loop is actually iterating over. Earlier attempts had
-# the loop reporting 0 failures while only 1 file existed —
-# suggesting either the loop runs once with stale vars, or every
-# call writes to the same `$out`. Print enough state to tell.
-echo "  SERVICES_LIST first 3 lines:"
-head -3 "$SERVICES_LIST" | sed 's/^/    /'
-
 ITER=0
-while read -r name proto; do
+# `$CODEGEN` (gleam run -m aws_codegen) reads stdin during BEAM
+# startup on some platforms (Ubuntu CI reproduces it; macOS local
+# does not). When the loop body inherits stdin from `done < FILE`
+# the command consumes the rest of the file, the loop exits after
+# one iteration, and 408 service codegens never happen — yet the
+# count guard reports "found 1" with no failures recorded. Fix:
+# feed SERVICES_LIST via a dedicated file descriptor (FD 3) and
+# explicitly redirect the loop body's stdin to `/dev/null` so the
+# command can't reach the loop driver's input.
+while read -r -u 3 name proto; do
   ITER=$((ITER + 1))
   out="../src/aws/services/${name//-/_}.gleam"
   PER_SERVICE_LOG=$(mktemp)
   $CODEGEN "$proto" "../vendor/aws-sdk-rust/aws-models/${name}.json" "$out" \
-    >"$PER_SERVICE_LOG" 2>&1
+    </dev/null >"$PER_SERVICE_LOG" 2>&1
   rc=$?
-  # First-iteration trace for debugging the CI no-op.
-  if [ "$ITER" -le 3 ]; then
-    echo "  iter $ITER: name=$name proto=$proto out=$out rc=$rc size=$([ -e "$out" ] && wc -c <"$out" | tr -d ' ' || echo missing)"
-  fi
   if [ "$rc" -ne 0 ] || [ ! -s "$out" ]; then
     FAILURES+=("$name ($proto)")
     {
@@ -112,7 +109,7 @@ while read -r name proto; do
     rm -f "$out"
   fi
   rm -f "$PER_SERVICE_LOG"
-done < "$SERVICES_LIST"
+done 3< "$SERVICES_LIST"
 echo "  loop iterated $ITER times"
 
 if [ ${#FAILURES[@]} -gt 0 ]; then
