@@ -78,20 +78,27 @@ echo "→ regenerating service clients"
 FAILURES=()
 ERRLOG=$(mktemp)
 trap 'rm -f $SERVICES_LIST $ERRLOG' EXIT
-# Loop body intentionally avoids `out=$(cmd 2>&1)` capture — earlier
-# attempts using that pattern saw CI's per-service loop finish 409
-# calls in ~1.4s with zero recorded failures and zero files written,
-# while the same pattern locally took 1.2s per call and wrote every
-# file. Direct redirection to a per-iteration log file dodges
-# whatever subshell / IFS / glob edge case in CI's bash was making
-# the exit-code + file-size guards both report "ok" while the loop
-# silently did nothing.
+
+# Sanity: first 3 lines of SERVICES_LIST so the CI log shows
+# what the loop is actually iterating over. Earlier attempts had
+# the loop reporting 0 failures while only 1 file existed —
+# suggesting either the loop runs once with stale vars, or every
+# call writes to the same `$out`. Print enough state to tell.
+echo "  SERVICES_LIST first 3 lines:"
+head -3 "$SERVICES_LIST" | sed 's/^/    /'
+
+ITER=0
 while read -r name proto; do
+  ITER=$((ITER + 1))
   out="../src/aws/services/${name//-/_}.gleam"
   PER_SERVICE_LOG=$(mktemp)
   $CODEGEN "$proto" "../vendor/aws-sdk-rust/aws-models/${name}.json" "$out" \
     >"$PER_SERVICE_LOG" 2>&1
   rc=$?
+  # First-iteration trace for debugging the CI no-op.
+  if [ "$ITER" -le 3 ]; then
+    echo "  iter $ITER: name=$name proto=$proto out=$out rc=$rc size=$([ -e "$out" ] && wc -c <"$out" | tr -d ' ' || echo missing)"
+  fi
   if [ "$rc" -ne 0 ] || [ ! -s "$out" ]; then
     FAILURES+=("$name ($proto)")
     {
@@ -106,6 +113,7 @@ while read -r name proto; do
   fi
   rm -f "$PER_SERVICE_LOG"
 done < "$SERVICES_LIST"
+echo "  loop iterated $ITER times"
 
 if [ ${#FAILURES[@]} -gt 0 ]; then
   echo "  ${#FAILURES[@]} services failed codegen:"
