@@ -123,6 +123,36 @@ pub fn int_to_timestamp(seconds: Int) -> Timestamp {
   Timestamp(seconds: seconds, nanoseconds: 0)
 }
 
+/// Format a `Timestamp` as ISO 8601 (`2024-01-02T03:04:05Z`).
+/// Wire-equivalent to `format_iso8601(t.seconds)` — sub-second
+/// precision is dropped because the underlying FFI doesn't
+/// emit fractional seconds yet. Promoted to a distinct entry
+/// point so the codegen can call this from `Timestamp`-typed
+/// code paths without a redundant `timestamp_to_int` step.
+pub fn format_iso8601_precise(t: Timestamp) -> String {
+  format_iso8601(t.seconds)
+}
+
+/// Format a `Timestamp` as HTTP-date
+/// (`Tue, 29 Apr 2014 18:30:38 GMT`). Same nanosecond caveat as
+/// `format_iso8601_precise` — HTTP-date is whole-second precision
+/// by definition.
+pub fn format_http_date_precise(t: Timestamp) -> String {
+  format_http_date(t.seconds)
+}
+
+/// Render a `Timestamp` as a plain epoch-seconds integer string
+/// (`"1700000000"`). Used by URI / query / header / XML emitters
+/// when `@timestampFormat("epoch-seconds")` is in force — the
+/// wire form is the integer-as-decimal-digits, no fractional
+/// component.
+pub fn epoch_seconds_text(t: Timestamp) -> String {
+  int_to_decimal(t.seconds)
+}
+
+@external(erlang, "erlang", "integer_to_binary")
+fn int_to_decimal(n: Int) -> String
+
 /// Encode a `Timestamp` as a JSON epoch-seconds number. When
 /// `nanoseconds == 0` we emit a JSON Int (`1700000000`) so the
 /// wire bytes match the existing `json.int` path the codegen

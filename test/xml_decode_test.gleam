@@ -1,3 +1,4 @@
+import aws/internal/codec/json_timestamp
 import aws/internal/codec/xml_decode
 import aws/services/s3
 import gleam/option
@@ -92,7 +93,10 @@ pub fn decode_list_buckets_output_test() {
   should.equal(list_length(buckets), 2)
   let assert [first, ..] = buckets
   should.equal(first.name, option.Some("my-test-bucket"))
-  should.equal(first.creation_date, option.Some(1_700_000_000))
+  should.equal(
+    first.creation_date,
+    option.Some(json_timestamp.Timestamp(seconds: 1_700_000_000, nanoseconds: 0)),
+  )
   let assert option.Some(owner) = out.owner
   should.equal(owner.id, option.Some("abc123"))
   should.equal(owner.display_name, option.Some("example-user"))

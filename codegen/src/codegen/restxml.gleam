@@ -1424,10 +1424,11 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
       ])
     // Wire timestamps in restXml are ISO 8601 (e.g.
     // `2024-01-02T03:04:05.000Z`); the type walker surfaces them
-    // as `Int` (epoch seconds), so `xml_decode.timestamp_text`
-    // does the ISO 8601 → epoch conversion and falls through to
-    // integer parsing for the (rare) integer-on-wire case.
-    RTimestamp -> optional_child_via("xml_decode.timestamp_text")
+    // as `json_timestamp.Timestamp`, so `xml_decode.timestamp_text_precise`
+    // does the ISO 8601 → Timestamp conversion (nanoseconds=0 until
+    // the FFI parser learns fractional seconds) and falls through
+    // to integer parsing for the (rare) integer-on-wire case.
+    RTimestamp -> optional_child_via("xml_decode.timestamp_text_precise")
     REnum(gleam_name: gn, ..) -> emit_unsupported_decoder(gn)
     RIntEnum(gleam_name: gn, ..) -> emit_unsupported_decoder(gn)
     RStruct(gleam_name: name, ..) ->
@@ -1461,7 +1462,7 @@ fn list_element_decoder(e: Resolved) -> String {
     RPrim(primitive: types.PInt) -> "xml_decode.int_text"
     RPrim(primitive: types.PBool) -> "xml_decode.bool_text"
     RPrim(primitive: types.PFloat) -> "xml_decode.float_text"
-    RTimestamp -> "xml_decode.timestamp_text"
+    RTimestamp -> "xml_decode.timestamp_text_precise"
     RStruct(gleam_name: n, ..) ->
       name_concat(["decode_", stringutils.pascal_to_snake(n), "_xml"])
     REnum(gleam_name: n, ..) ->
@@ -1684,7 +1685,7 @@ fn attr_value_expr(target: Resolved) -> String {
     RPrim(primitive: types.PBool) -> "xml.bool_text(v)"
     RPrim(primitive: types.PFloat) ->
       "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
-    RTimestamp -> "json_timestamp.format_iso8601(v)"
+    RTimestamp -> "json_timestamp.format_iso8601_precise(v)"
     REnum(..) ->
       name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
     _ -> "\"\""
@@ -2078,7 +2079,7 @@ fn xml_map_value_expr(target: Resolved) -> String {
     RPrim(primitive: types.PFloat) ->
       "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
     RBlob -> "xml.blob_text(v)"
-    RTimestamp -> "json_timestamp.format_iso8601(v)"
+    RTimestamp -> "json_timestamp.format_iso8601_precise(v)"
     REnum(..) ->
       name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
     RIntEnum(gleam_name: n, ..) ->
@@ -2113,12 +2114,13 @@ fn xml_map_value_expr(target: Resolved) -> String {
 /// Map a member-level `@timestampFormat` to the wire-format helper
 /// the runtime exposes. restXml's protocol default is `date-time`
 /// (ISO 8601); the trait overrides it. The returned expression
-/// names a `fn(Int) -> String` ready to splice into `xml.element`.
+/// names a `fn(Timestamp) -> String` ready to splice into
+/// `xml.element`.
 fn xml_timestamp_format_expr(format: Option(String)) -> String {
   case format {
-    Some("epoch-seconds") -> "xml.int_text"
-    Some("http-date") -> "json_timestamp.format_http_date"
-    _ -> "json_timestamp.format_iso8601"
+    Some("epoch-seconds") -> "json_timestamp.epoch_seconds_text"
+    Some("http-date") -> "json_timestamp.format_http_date_precise"
+    _ -> "json_timestamp.format_iso8601_precise"
   }
 }
 
@@ -2140,7 +2142,7 @@ fn xml_inner_expr_for_list_element(target: Resolved) -> String {
         // the list-element position (Smithy puts that trait on the
         // *list member*, not its target shape, and we currently
         // don't plumb it through `RList`).
-        RTimestamp -> "json_timestamp.format_iso8601(v)"
+        RTimestamp -> "json_timestamp.format_iso8601_precise(v)"
         REnum(..) ->
           name_concat(["rest.enum_wire_value(", types.json_encoder(e), "(v))"])
         RIntEnum(gleam_name: n, ..) ->
@@ -2302,9 +2304,10 @@ fn union_variant_xml_inner_expr(target: Resolved) -> code.Code {
         code.Ident(name: "x"),
       ])
     RTimestamp ->
-      code.Call(head: code.Ident(name: "json_timestamp.format_iso8601"), args: [
-        code.Ident(name: "x"),
-      ])
+      code.Call(
+        head: code.Ident(name: "json_timestamp.format_iso8601_precise"),
+        args: [code.Ident(name: "x")],
+      )
     REnum(..) ->
       code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
         code.Call(head: code.Ident(name: types.json_encoder(target)), args: [

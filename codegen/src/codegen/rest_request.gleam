@@ -614,9 +614,9 @@ fn value_to_string(
         None -> default_ts_format
       }
       case chosen {
-        "epoch-seconds" -> "rest.int_to_query(v)"
-        "http-date" -> "json_timestamp.format_http_date(v)"
-        _ -> "json_timestamp.format_iso8601(v)"
+        "epoch-seconds" -> "json_timestamp.epoch_seconds_text(v)"
+        "http-date" -> "json_timestamp.format_http_date_precise(v)"
+        _ -> "json_timestamp.format_iso8601_precise(v)"
       }
     }
     _ -> "\"\""

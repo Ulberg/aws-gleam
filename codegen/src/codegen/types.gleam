@@ -103,7 +103,12 @@ pub type Resolved {
   )
   /// Reference to a Smithy union, same as RStruct.
   RUnion(local_name: String, gleam_name: String, full_id: String)
-  /// Smithy `@timestamp`. Default representation: Int (epoch seconds).
+  /// Smithy `@timestamp`. Surfaces as `json_timestamp.Timestamp`
+  /// (seconds + nanoseconds). Wire encoding matches the prior
+  /// `Int` API for `nanoseconds=0` — `encode_epoch_seconds`
+  /// emits JSON Int when the nanos slot is zero, so existing
+  /// protocol-test fixtures keep passing without a wire-form
+  /// change.
   RTimestamp
   /// Smithy `@blob` → Gleam `BitArray`.
   RBlob
@@ -972,7 +977,11 @@ pub fn gleam_type(r: Resolved) -> String {
     RMap(key: _k, value: v, sparse: False, ..) ->
       name_concat(["dict.Dict(String, ", gleam_type(v), ")"])
     RStruct(gleam_name: n, ..) | RUnion(gleam_name: n, ..) -> n
-    RTimestamp -> "Int"
+    // Codegen surfaces `@timestamp` as `json_timestamp.Timestamp`
+    // (seconds + nanoseconds). The Int-only API is still callable
+    // via `int_to_timestamp` / `timestamp_to_int` from
+    // `aws/internal/codec/json_timestamp`.
+    RTimestamp -> "json_timestamp.Timestamp"
     RBlob -> "BitArray"
     RStreamingBlob -> "streaming.StreamingBody"
     RDocument -> "json.Json"
@@ -993,9 +1002,9 @@ pub fn json_encoder_member(
 ) -> String {
   case r, format {
     RTimestamp, option.Some("date-time") ->
-      "fn(v) { json.string(json_timestamp.format_iso8601(v)) }"
+      "fn(v) { json.string(json_timestamp.format_iso8601_precise(v)) }"
     RTimestamp, option.Some("http-date") ->
-      "fn(v) { json.string(json_timestamp.format_http_date(v)) }"
+      "fn(v) { json.string(json_timestamp.format_http_date_precise(v)) }"
     _, _ -> json_encoder(r)
   }
 }
@@ -1005,7 +1014,7 @@ pub fn json_decoder_member(
   format: option.Option(String),
 ) -> String {
   case r, format {
-    RTimestamp, _ -> "json_timestamp.decoder()"
+    RTimestamp, _ -> "json_timestamp.decoder_precise()"
     _, _ -> json_decoder(r)
   }
 }
@@ -1015,7 +1024,7 @@ pub fn json_decoder_member_params(
   format: option.Option(String),
 ) -> String {
   case r, format {
-    RTimestamp, _ -> "json_timestamp.decoder()"
+    RTimestamp, _ -> "json_timestamp.decoder_precise()"
     _, _ -> json_decoder_params(r)
   }
 }
@@ -1056,7 +1065,7 @@ pub fn json_encoder(r: Resolved) -> String {
       name_concat(["encode_", stringutils.pascal_to_snake(n), "_struct"])
     RUnion(gleam_name: n, ..) ->
       name_concat(["encode_", stringutils.pascal_to_snake(n), "_union"])
-    RTimestamp -> "json.int"
+    RTimestamp -> "json_timestamp.encode_epoch_seconds"
     RBlob -> "fn(b) { json.string(bit_array.base64_encode(b, True)) }"
     RStreamingBlob ->
       "fn(b) { json.string(bit_array.base64_encode(streaming.to_bit_array(b), True)) }"
@@ -1136,7 +1145,7 @@ pub fn json_decoder(r: Resolved) -> String {
       name_concat(["decode_", stringutils.pascal_to_snake(n), "_struct()"])
     RUnion(gleam_name: n, ..) ->
       name_concat(["decode_", stringutils.pascal_to_snake(n), "_union()"])
-    RTimestamp -> "json_timestamp.decoder()"
+    RTimestamp -> "json_timestamp.decoder_precise()"
     RBlob ->
       // Smithy protocol-test params encode blobs as UTF-8 strings, not
       // base64. The on-the-wire response form IS base64 — a wire-side
