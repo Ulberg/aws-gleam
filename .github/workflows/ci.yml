@@ -108,7 +108,12 @@ jobs:
         run: gleam format --check src test
 
       - name: Run tests
-        run: gleam test
+        # Use scripts/test.sh so ERL_FLAGS="+t 4194304" is set —
+        # generating 409 services blows past the BEAM's default
+        # 1M-atom ceiling and the BEAM segfaults during compile
+        # without the bump. Local `gleam test` runs go through the
+        # same wrapper.
+        run: ./scripts/test.sh
 
   # LocalStack end-to-end tests for the v0.1 verification gate
   # (DynamoDB + S3 round-trips). Kept in a separate job so the
@@ -120,7 +125,12 @@ jobs:
   localstack:
     name: LocalStack E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Regenerating 409 services takes ~13 minutes on the Ubuntu
+    # runner (each `gleam run -m aws_codegen` is a fresh BEAM start;
+    # Linux is ~2× slower than macOS for that). Plus image pull,
+    # test run, teardown — 30 min gives comfortable margin without
+    # letting a genuinely-hung container linger forever.
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -192,7 +202,9 @@ jobs:
         run: docker pull --quiet localstack/localstack:3
 
       - name: Run gleam test (INCLUDE_LOCALSTACK=1)
-        run: gleam test
+        # See note in the `test` job's "Run tests" step — without
+        # `+t 4194304` the BEAM segfaults under the 409-service load.
+        run: ./scripts/test.sh
         env:
           INCLUDE_LOCALSTACK: "1"
 
