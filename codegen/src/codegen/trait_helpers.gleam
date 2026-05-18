@@ -9,6 +9,7 @@ import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
+import gleam/set.{type Set}
 import gleam/string
 import smithy/shape
 import smithy/shape_id.{type ShapeId, ShapeId}
@@ -108,6 +109,22 @@ pub fn int_field(d: Dict(ShapeId, Trait), name: String, default: Int) -> Int {
 /// middleware.
 pub fn op_requires_md5(traits: shape.Traits) -> Bool {
   dict.has_key(traits, ShapeId("smithy.api#httpChecksumRequired"))
+}
+
+/// Pick the Gleam type name for an operation's typed error sum.
+/// Normally `<OpLocal>Error`, but if a Smithy structure with that
+/// exact name already exists in the service (e.g. Application
+/// Discovery's `BatchDeleteImportDataError` record carrier
+/// collides with the synthetic `BatchDeleteImportData` operation
+/// error sum), we suffix with `Operation` instead so the two types
+/// don't share a name. The wire form is unaffected — operation
+/// error sums are local to the SDK, never serialised.
+pub fn op_error_type(op_local: String, emitted: Set(String)) -> String {
+  let candidate = string.concat([op_local, "Error"])
+  case set.contains(emitted, candidate) {
+    True -> string.concat([op_local, "OperationError"])
+    False -> candidate
+  }
 }
 
 /// Extract the `encodings` list from `@requestCompression`. Returns

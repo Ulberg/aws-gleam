@@ -4,13 +4,17 @@
 # the codegen / fixtures change.
 #
 # Outputs:
-#   src/aws/services/dynamodb.gleam       — real DynamoDB SDK
-#   src/aws/services/s3.gleam             — real S3 SDK
+#   src/aws/services/<service>.gleam      — typed Gleam SDK per service
 #   src/aws/services/protocoltests/*      — generated protocol-test fixtures
 #   test/protocol_tests/*_dispatchers.gleam — generated test harness glue
 #
-# Both kinds of file regenerate deterministically from sources that
-# IS in git (`vendor/aws-sdk-rust/aws-models/*.json` and
+# Auto-discovers every awsJson1_0 / awsJson1_1 / restJson1 / restXml
+# service shape in vendor/aws-sdk-rust/aws-models and runs the codegen
+# against each. awsQuery / ec2Query / rpcv2Cbor are skipped here:
+# their bodies aren't fully supported yet (see docs/audits/m5.md).
+#
+# All outputs regenerate deterministically from sources that ARE in
+# git (`vendor/aws-sdk-rust/aws-models/*.json` and
 # `test/fixtures/protocol-tests/*.json`), so we don't ship the
 # 100k+ LOC of derived code through the repo.
 
@@ -31,9 +35,46 @@ cd "$REPO/codegen"
 
 mkdir -p ../src/aws/services/protocoltests ../test/protocol_tests
 
+# Map each model to its protocol. Outputs lines of `<name> <protocol>`.
+# Skips models whose service shape has none of the mainline protocols
+# we support — awsQuery / ec2Query / rpcv2Cbor are excluded until
+# their body codecs land.
+echo "→ enumerating service models"
+SERVICES_LIST=$(mktemp)
+trap 'rm -f $SERVICES_LIST' EXIT
+
+for f in "$REPO"/vendor/aws-sdk-rust/aws-models/*.json; do
+  name=$(basename "$f" .json)
+  # Skip the generic sdk-* helpers (sdk-endpoints.json, sdk-default-configuration.json).
+  case "$name" in
+    sdk-*) continue ;;
+  esac
+  # `|| true` because grep exits 1 when there's no match — that's
+  # expected for awsQuery / ec2Query / rpcv2Cbor models we're
+  # skipping. Without it, `set -e` would terminate the script.
+  proto=$({ grep -m1 -oE '"aws.protocols#(awsJson1_0|awsJson1_1|restJson1|restXml)"' "$f" || true; } | sed -E 's/^"aws.protocols#//;s/".*$//')
+  if [ -n "$proto" ]; then
+    echo "$name $proto" >> "$SERVICES_LIST"
+  fi
+done
+
+TOTAL=$(wc -l < "$SERVICES_LIST" | tr -d ' ')
+echo "  $TOTAL services to generate"
+
 echo "→ regenerating service clients"
-$CODEGEN awsJson1_0 ../vendor/aws-sdk-rust/aws-models/dynamodb.json ../src/aws/services/dynamodb.gleam >/dev/null
-$CODEGEN restXml ../vendor/aws-sdk-rust/aws-models/s3.json ../src/aws/services/s3.gleam >/dev/null
+FAILURES=()
+while read -r name proto; do
+  out="../src/aws/services/${name//-/_}.gleam"
+  if ! $CODEGEN "$proto" "../vendor/aws-sdk-rust/aws-models/${name}.json" "$out" >/dev/null 2>&1; then
+    FAILURES+=("$name ($proto)")
+    rm -f "$out"
+  fi
+done < "$SERVICES_LIST"
+
+if [ ${#FAILURES[@]} -gt 0 ]; then
+  echo "  ${#FAILURES[@]} services failed codegen:"
+  printf '    - %s\n' "${FAILURES[@]}"
+fi
 
 echo "→ regenerating protocol-test client modules + dispatchers"
 $CODEGEN awsJson1_0 ../test/fixtures/protocol-tests/awsJson1_0.json ../src/aws/services/protocoltests/json10.gleam --dispatcher-out ../test/protocol_tests/awsjson10_dispatchers.gleam >/dev/null
@@ -46,13 +87,10 @@ $CODEGEN ec2Query   ../test/fixtures/protocol-tests/ec2Query.json   ../src/aws/s
 cd "$REPO"
 
 # `gleam format` to match the project's check-formatting CI step.
-# The emitter doesn't try to mimic the formatter's wrapping; we let
-# the formatter own that pass.
+# Format every generated service module, not just the previous two.
 echo "→ formatting generated modules"
 gleam format \
-  src/aws/services/dynamodb.gleam \
-  src/aws/services/s3.gleam \
-  src/aws/services/protocoltests \
+  src/aws/services \
   test/protocol_tests >/dev/null
 
 echo "done."

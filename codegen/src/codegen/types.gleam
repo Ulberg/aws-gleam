@@ -705,20 +705,29 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
         xml_value_name: value_name,
       )
     }
-    shape.Structure(traits: t, ..) ->
+    shape.Structure(traits: t, ..) -> {
+      let local = strip_namespace(target_id)
       RStruct(
-        local_name: strip_namespace(target_id),
-        gleam_name: strip_namespace(target_id),
+        local_name: local,
+        // Gleam type names MUST start with an uppercase letter. Smithy
+        // shape names are PascalCase by convention but a handful (e.g.
+        // `com.amazonaws.finspacedata#locationType`) sneak through
+        // lower-cased; pascalize unconditionally so the generated
+        // source compiles.
+        gleam_name: stringutils.gleam_type_name(local),
         full_id: target_id,
         xml_name: xml_name_of(t),
         xml_namespace: xml_namespace_of(t),
       )
-    shape.Union(..) ->
+    }
+    shape.Union(..) -> {
+      let local = strip_namespace(target_id)
       RUnion(
-        local_name: strip_namespace(target_id),
-        gleam_name: strip_namespace(target_id),
+        local_name: local,
+        gleam_name: stringutils.gleam_type_name(local),
         full_id: target_id,
       )
+    }
 
     shape.Service(..) | shape.Resource(..) | shape.Operation(..) ->
       Unsupported(reason: "service/resource/operation shape as field target")
@@ -744,6 +753,7 @@ fn resolve_enum(
   members: Dict(String, shape.Member),
 ) -> Resolved {
   let local = strip_namespace(target_id)
+  let gleam_name = stringutils.gleam_type_name(local)
   let variants =
     dict.to_list(members)
     |> list.sort(fn(a, b) { string.compare(a.0, b.0) })
@@ -754,11 +764,11 @@ fn resolve_enum(
         _ -> member_name
       }
       EnumVariant(
-        gleam_ctor: variant_constructor(local, member_name),
+        gleam_ctor: variant_constructor(gleam_name, member_name),
         wire_value: wire,
       )
     })
-  REnum(local_name: local, gleam_name: local, variants: variants)
+  REnum(local_name: local, gleam_name: gleam_name, variants: variants)
 }
 
 fn resolve_int_enum(
@@ -766,6 +776,7 @@ fn resolve_int_enum(
   members: Dict(String, shape.Member),
 ) -> Resolved {
   let local = strip_namespace(target_id)
+  let gleam_name = stringutils.gleam_type_name(local)
   let variants =
     dict.to_list(members)
     |> list.sort(fn(a, b) { string.compare(a.0, b.0) })
@@ -776,11 +787,11 @@ fn resolve_int_enum(
         _ -> 0
       }
       IntEnumVariant(
-        gleam_ctor: variant_constructor(local, member_name),
+        gleam_ctor: variant_constructor(gleam_name, member_name),
         wire_value: wire,
       )
     })
-  RIntEnum(local_name: local, gleam_name: local, variants: variants)
+  RIntEnum(local_name: local, gleam_name: gleam_name, variants: variants)
 }
 
 fn extract_members(
@@ -1003,9 +1014,9 @@ pub fn json_encoder(r: Resolved) -> String {
     RPrim(primitive: PInt) -> "json.int"
     RPrim(primitive: PFloat) -> "json_float.encode"
     RPrim(primitive: PBool) -> "json.bool"
-    REnum(local_name: n, ..) ->
+    REnum(gleam_name: n, ..) ->
       name_concat(["encode_", stringutils.pascal_to_snake(n), "_enum"])
-    RIntEnum(local_name: n, ..) ->
+    RIntEnum(gleam_name: n, ..) ->
       name_concat(["encode_", stringutils.pascal_to_snake(n), "_int_enum"])
     RList(element: e, sparse: True, ..) ->
       name_concat([
@@ -1027,9 +1038,9 @@ pub fn json_encoder(r: Resolved) -> String {
         json_encoder(v),
         "(pair.1)) })) }",
       ])
-    RStruct(local_name: n, ..) ->
+    RStruct(gleam_name: n, ..) ->
       name_concat(["encode_", stringutils.pascal_to_snake(n), "_struct"])
-    RUnion(local_name: n, ..) ->
+    RUnion(gleam_name: n, ..) ->
       name_concat(["encode_", stringutils.pascal_to_snake(n), "_union"])
     RTimestamp -> "json.int"
     RBlob -> "fn(b) { json.string(bit_array.base64_encode(b, True)) }"
@@ -1054,13 +1065,13 @@ fn name_concat(parts: List(String)) -> String {
 /// function so the member-keyed convention reaches the leaves.
 pub fn json_decoder_params(r: Resolved) -> String {
   case r {
-    RStruct(local_name: n, ..) ->
+    RStruct(gleam_name: n, ..) ->
       name_concat([
         "decode_",
         stringutils.pascal_to_snake(n),
         "_struct_params()",
       ])
-    RUnion(local_name: n, ..) ->
+    RUnion(gleam_name: n, ..) ->
       name_concat([
         "decode_",
         stringutils.pascal_to_snake(n),
@@ -1089,9 +1100,9 @@ pub fn json_decoder(r: Resolved) -> String {
     RPrim(primitive: PInt) -> "decode.int"
     RPrim(primitive: PFloat) -> "json_float.decoder()"
     RPrim(primitive: PBool) -> "decode.bool"
-    REnum(local_name: n, ..) ->
+    REnum(gleam_name: n, ..) ->
       name_concat(["decode_", stringutils.pascal_to_snake(n), "_enum()"])
-    RIntEnum(local_name: n, ..) ->
+    RIntEnum(gleam_name: n, ..) ->
       name_concat(["decode_", stringutils.pascal_to_snake(n), "_int_enum()"])
     RList(element: e, sparse: True, ..) ->
       name_concat(["decode.list(decode.optional(", json_decoder(e), "))"])
@@ -1105,9 +1116,9 @@ pub fn json_decoder(r: Resolved) -> String {
       ])
     RMap(value: v, sparse: False, ..) ->
       name_concat(["decode.dict(decode.string, ", json_decoder(v), ")"])
-    RStruct(local_name: n, ..) ->
+    RStruct(gleam_name: n, ..) ->
       name_concat(["decode_", stringutils.pascal_to_snake(n), "_struct()"])
-    RUnion(local_name: n, ..) ->
+    RUnion(gleam_name: n, ..) ->
       name_concat(["decode_", stringutils.pascal_to_snake(n), "_union()"])
     RTimestamp -> "json_timestamp.decoder()"
     RBlob ->

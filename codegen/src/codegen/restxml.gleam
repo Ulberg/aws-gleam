@@ -113,6 +113,7 @@ pub fn emit_service(
       let preamble =
         emit_named_shapes(model, named_shapes, is_dispatcher, union_reachable)
 
+      let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
         list.map(resolved_ops, fn(t) {
           let #(op_id, _, in_r, out_r, err_ids, _) = t
@@ -129,6 +130,10 @@ pub fn emit_service(
             in_info: in_info,
             out_info: out_info,
             error_ids: err_ids,
+            error_type: trait_helpers.op_error_type(
+              local,
+              emitted_type_names,
+            ),
           )
         })
 
@@ -196,6 +201,10 @@ type OpSpec {
     in_info: IOTypeInfo,
     out_info: IOTypeInfo,
     error_ids: List(String),
+    /// Gleam type name for this op's typed error sum. Normally
+    /// `<OpLocal>Error`; suffixed to `<OpLocal>OperationError` when
+    /// a Smithy struct of the same name exists in the service.
+    error_type: String,
   )
 }
 
@@ -212,9 +221,9 @@ fn emit_invoke(spec: OpSpec) -> String {
     code.Module(items: [
       client.invoke_fn(
         spec.snake,
-        spec.local,
         spec.in_info.type_name,
         spec.out_info.type_name,
+        spec.error_type,
       ),
       code.Blank,
     ]),
@@ -230,7 +239,7 @@ fn emit_invoke(spec: OpSpec) -> String {
 /// every restXml service error will land in the `Unknown` variant,
 /// which still carries the raw body so callers aren't stuck.
 fn emit_error_type(spec: OpSpec) -> String {
-  let name = name_concat([spec.local, "Error"])
+  let name = spec.error_type
   let typed_variants =
     list.map(spec.error_ids, fn(err_id) {
       let local = strip_namespace(err_id)
@@ -268,7 +277,7 @@ fn emit_error_type(spec: OpSpec) -> String {
 /// plan.md teaches the runtime to read XML error bodies; the table
 /// will populate once that lands.
 fn emit_error_translator(spec: OpSpec) -> String {
-  let name = name_concat([spec.local, "Error"])
+  let name = spec.error_type
   let snake = spec.snake
   let decoders_fn =
     code.Fn(
@@ -405,6 +414,7 @@ fn emit_named_shapes(
   is_dispatcher: Bool,
   union_reachable: Set(String),
 ) -> String {
+  let emitted_type_names = named_shapes.emitted_type_names(shapes)
   shapes
   |> list.flat_map(fn(r) {
     case r {
@@ -423,8 +433,11 @@ fn emit_named_shapes(
         xml_namespace: xns,
         ..,
       ) ->
-        case ln == "Unit" {
-          True -> []
+        case id == "smithy.api#Unit" {
+          True -> {
+            let _ = ln
+            []
+          }
           False -> {
             let ms = types.resolve_members(model, id)
             let emit_json_encoder = set.contains(union_reachable, ln)
@@ -436,7 +449,10 @@ fn emit_named_shapes(
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
         let ms = types.resolve_members(model, id)
-        [emit_union_def(n, ms), emit_union_codec(n, ms, is_dispatcher)]
+        [
+          emit_union_def(n, ms, emitted_type_names),
+          emit_union_codec(n, ms, is_dispatcher, emitted_type_names),
+        ]
       }
       _ -> []
     }
@@ -772,8 +788,15 @@ fn emit_int_enum_def(
   string.concat([code.render(named_shapes.int_enum_def(name, variants)), "\n"])
 }
 
-fn emit_union_def(name: String, members: List(MemberDef)) -> String {
-  string.concat([code.render(named_shapes.union_def(name, members)), "\n"])
+fn emit_union_def(
+  name: String,
+  members: List(MemberDef),
+  emitted: Set(String),
+) -> String {
+  string.concat([
+    code.render(named_shapes.union_def(name, members, emitted)),
+    "\n",
+  ])
 }
 
 // ---------- codec helpers ----------
@@ -1245,7 +1268,7 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
     RTimestamp -> optional_child_via("xml_decode.timestamp_text")
     REnum(gleam_name: gn, ..) -> emit_unsupported_decoder(gn)
     RIntEnum(gleam_name: gn, ..) -> emit_unsupported_decoder(gn)
-    RStruct(local_name: name, ..) ->
+    RStruct(gleam_name: name, ..) ->
       optional_child_via(
         name_concat(["decode_", stringutils.pascal_to_snake(name), "_xml"]),
       )
@@ -1277,15 +1300,15 @@ fn list_element_decoder(e: Resolved) -> String {
     RPrim(primitive: types.PBool) -> "xml_decode.bool_text"
     RPrim(primitive: types.PFloat) -> "xml_decode.float_text"
     RTimestamp -> "xml_decode.timestamp_text"
-    RStruct(local_name: n, ..) ->
+    RStruct(gleam_name: n, ..) ->
       name_concat(["decode_", stringutils.pascal_to_snake(n), "_xml"])
-    REnum(local_name: n, ..) ->
+    REnum(gleam_name: n, ..) ->
       name_concat([
         "fn(e) { case xml_decode.string_text(e) { Ok(s) -> ",
         stringutils.pascal_to_snake(n),
         "_from_wire(s) Error(r) -> Error(r) } }",
       ])
-    RIntEnum(local_name: n, ..) ->
+    RIntEnum(gleam_name: n, ..) ->
       name_concat([
         "fn(e) { case xml_decode.int_text(e) { Ok(i) -> ",
         stringutils.pascal_to_snake(n),
@@ -1599,7 +1622,7 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
           ]),
         ]),
       )
-    RIntEnum(local_name: n, ..) ->
+    RIntEnum(gleam_name: n, ..) ->
       wrap_with_attrs(
         member_name,
         mem_ns,
@@ -1615,7 +1638,7 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
           ),
         ]),
       )
-    RStruct(local_name: name, ..) ->
+    RStruct(gleam_name: name, ..) ->
       // Smithy: shape-level `@xmlNamespace` only applies when the
       // struct is the document root, not when it's nested as a
       // member. So always splice the inner body and add the
@@ -1626,7 +1649,7 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
         mem_ns,
         name_concat(["encode_", stringutils.pascal_to_snake(name), "_xml_inner"]),
       )
-    RUnion(local_name: n, ..) ->
+    RUnion(gleam_name: n, ..) ->
       // Wrap the union variant's emission in the outer member's
       // element. `encode_<U>_union_xml_inner` handles dispatching
       // on the variant and emitting `<variant_tag>...</variant_tag>`.
@@ -1836,13 +1859,13 @@ fn xml_map_value_expr(target: Resolved) -> String {
     RTimestamp -> "json_timestamp.format_iso8601(v)"
     REnum(..) ->
       name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
-    RIntEnum(local_name: n, ..) ->
+    RIntEnum(gleam_name: n, ..) ->
       name_concat([
         "xml.int_text(",
         stringutils.pascal_to_snake(n),
         "_int_value(v))",
       ])
-    RStruct(local_name: name, ..) ->
+    RStruct(gleam_name: name, ..) ->
       name_concat([
         "encode_",
         stringutils.pascal_to_snake(name),
@@ -1898,13 +1921,13 @@ fn xml_inner_expr_for_list_element(target: Resolved) -> String {
         RTimestamp -> "json_timestamp.format_iso8601(v)"
         REnum(..) ->
           name_concat(["rest.enum_wire_value(", types.json_encoder(e), "(v))"])
-        RIntEnum(local_name: n, ..) ->
+        RIntEnum(gleam_name: n, ..) ->
           name_concat([
             "xml.int_text(",
             stringutils.pascal_to_snake(n),
             "_int_value(v))",
           ])
-        RStruct(local_name: n, ..) ->
+        RStruct(gleam_name: n, ..) ->
           // Lists of structs: each entry is an inline struct without
           // an outer wrapper (caller's `<member>...</member>` wraps).
           name_concat([
@@ -1950,6 +1973,7 @@ fn emit_union_codec(
   name: String,
   members: List(MemberDef),
   is_dispatcher: Bool,
+  emitted: Set(String),
 ) -> String {
   let snake = stringutils.pascal_to_snake(name)
   let enc =
@@ -1962,7 +1986,7 @@ fn emit_union_codec(
         scrutinee: code.Ident(name: "v"),
         branches: list.map(members, fn(m) {
           let ctor =
-            name_concat([name, stringutils.pascalize_member(m.member_name)])
+            stringutils.union_variant_ctor(name, m.member_name, emitted)
           code.Branch(
             pattern: name_concat([ctor, "(x)"]),
             body: code.Call(head: code.Ident(name: "json.object"), args: [
@@ -1998,7 +2022,7 @@ fn emit_union_codec(
         scrutinee: code.Ident(name: "v"),
         branches: list.map(members, fn(m) {
           let ctor =
-            name_concat([name, stringutils.pascalize_member(m.member_name)])
+            stringutils.union_variant_ctor(name, m.member_name, emitted)
           code.Branch(
             pattern: name_concat([ctor, "(x)"]),
             body: code.Call(head: code.Ident(name: "xml.element"), args: [
@@ -2017,7 +2041,7 @@ fn emit_union_codec(
         name: name_concat(["decode_", snake, "_union_params"]),
         params: [],
         return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-        body: union_params_decoder_body(name, members),
+        body: union_params_decoder_body(name, members, emitted),
       ),
       code.Blank,
     ]
@@ -2065,7 +2089,7 @@ fn union_variant_xml_inner_expr(target: Resolved) -> code.Code {
           code.Ident(name: "x"),
         ]),
       ])
-    RIntEnum(local_name: n, ..) ->
+    RIntEnum(gleam_name: n, ..) ->
       code.Call(head: code.Ident(name: "xml.int_text"), args: [
         code.Call(
           head: code.Ident(
@@ -2077,7 +2101,7 @@ fn union_variant_xml_inner_expr(target: Resolved) -> code.Code {
           args: [code.Ident(name: "x")],
         ),
       ])
-    RStruct(local_name: n, ..) ->
+    RStruct(gleam_name: n, ..) ->
       code.Call(
         head: code.Ident(
           name: name_concat([
@@ -2088,7 +2112,7 @@ fn union_variant_xml_inner_expr(target: Resolved) -> code.Code {
         ),
         args: [code.Ident(name: "x")],
       )
-    RUnion(local_name: n, ..) ->
+    RUnion(gleam_name: n, ..) ->
       code.Call(
         head: code.Ident(
           name: name_concat([
@@ -2110,6 +2134,7 @@ fn union_variant_xml_inner_expr(target: Resolved) -> code.Code {
 fn union_params_decoder_body(
   name: String,
   members: List(MemberDef),
+  emitted: Set(String),
 ) -> code.Code {
   case members {
     [] ->
@@ -2121,9 +2146,11 @@ fn union_params_decoder_body(
       code.Block(items: [
         code.Use(name: "", callee: code.Ident(name: "decode.recursive")),
         code.Call(head: code.Ident(name: "decode.one_of"), args: [
-          emit_union_branch_params(name, first),
+          emit_union_branch_params(name, first, emitted),
           code.ListLit(
-            items: list.map(rest, fn(m) { emit_union_branch_params(name, m) }),
+            items: list.map(rest, fn(m) {
+              emit_union_branch_params(name, m, emitted)
+            }),
             tail: code.CodeNone,
           ),
         ]),
@@ -2131,9 +2158,12 @@ fn union_params_decoder_body(
   }
 }
 
-fn emit_union_branch_params(union_name: String, m: MemberDef) -> code.Code {
-  let ctor =
-    name_concat([union_name, stringutils.pascalize_member(m.member_name)])
+fn emit_union_branch_params(
+  union_name: String,
+  m: MemberDef,
+  emitted: Set(String),
+) -> code.Code {
+  let ctor = stringutils.union_variant_ctor(union_name, m.member_name, emitted)
   code.Call(head: code.Ident(name: "decode.field"), args: [
     code.StrLit(value: m.member_name),
     code.Raw(fragment: types.json_decoder_params(m.target)),
@@ -2245,15 +2275,15 @@ fn emit_payload_body(m: MemberDef) -> List(code.Code) {
       ]),
       string_ct,
     )
-    RUnion(local_name: name, ..) -> #(
+    RUnion(local_name: wire, gleam_name: gn, ..) -> #(
       code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
         code.Call(head: code.Ident(name: "xml.element"), args: [
-          code.StrLit(value: name),
+          code.StrLit(value: wire),
           code.Call(
             head: code.Ident(
               name: name_concat([
                 "encode_",
-                stringutils.pascal_to_snake(name),
+                stringutils.pascal_to_snake(gn),
                 "_union_xml_inner",
               ]),
             ),
@@ -2263,11 +2293,11 @@ fn emit_payload_body(m: MemberDef) -> List(code.Code) {
       ]),
       "application/xml",
     )
-    RStruct(local_name: name, xml_name: xn, ..) -> {
+    RStruct(local_name: wire, gleam_name: gn, xml_name: xn, ..) -> {
       let wrapper = case m.json_name == m.member_name, xn {
         False, _ -> m.json_name
         True, Some(s) -> s
-        True, None -> name
+        True, None -> wire
       }
       #(
         code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
@@ -2275,7 +2305,7 @@ fn emit_payload_body(m: MemberDef) -> List(code.Code) {
             head: code.Ident(
               name: name_concat([
                 "encode_",
-                stringutils.pascal_to_snake(name),
+                stringutils.pascal_to_snake(gn),
                 "_xml",
               ]),
             ),
@@ -2600,7 +2630,7 @@ fn emit_parse_with_payload(
       code.Raw(
         fragment: "use payload <- result.try(case bit_array.to_string(body) {\n      Ok(s) -> Ok(option.Some(s))\n      Error(_) -> Error(\"non-utf8 payload\")\n    })",
       )
-    RStruct(local_name: name, ..) -> {
+    RStruct(gleam_name: name, ..) -> {
       let decoder =
         name_concat(["decode_", stringutils.pascal_to_snake(name), "_xml"])
       code.Raw(

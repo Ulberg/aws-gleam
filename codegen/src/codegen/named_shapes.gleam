@@ -10,13 +10,37 @@
 import codegen/code.{
   type Code, Param, PositionalVariant, TypeDef, UnitVariant, Variant,
 }
-import codegen/types.{type EnumVariant, type IntEnumVariant, type MemberDef}
+import codegen/types.{
+  type EnumVariant, type IntEnumVariant, type MemberDef, type Resolved, REnum,
+  RIntEnum, RStruct, RUnion,
+}
 import gleam/list
+import gleam/set.{type Set}
 import gleam/string
 import internal/stringutils
 
 fn name_concat(parts: List(String)) -> String {
   string.concat(parts)
+}
+
+/// Set of `gleam_name`s for every top-level shape that an emitter
+/// will materialise as a `pub type` in the generated module —
+/// structs, unions, enums, int-enums. Used by collision-detection
+/// helpers (`trait_helpers.op_error_type`,
+/// `stringutils.union_variant_ctor`) to know which Gleam identifiers
+/// are already taken before they synthesise a new one. The set is
+/// per-service: each emitter call passes its own resolved-shape
+/// list in.
+pub fn emitted_type_names(shapes: List(Resolved)) -> Set(String) {
+  list.fold(shapes, set.new(), fn(acc, r) {
+    case r {
+      REnum(gleam_name: n, ..)
+      | RIntEnum(gleam_name: n, ..)
+      | RStruct(gleam_name: n, ..)
+      | RUnion(gleam_name: n, ..) -> set.insert(acc, n)
+      _ -> acc
+    }
+  })
 }
 
 /// `pub type Name { Name(field: option.Option(T), ...) }`. Body-less
@@ -89,7 +113,11 @@ pub fn int_enum_def(name: String, variants: List(IntEnumVariant)) -> Code {
 /// stay positional (`Ctor(T)` not `Ctor(value: T)`) so callers can
 /// pattern-match as `Ctor(x)` — the form smithy-rs and aws-sdk-go-v2
 /// match.
-pub fn union_def(name: String, members: List(MemberDef)) -> Code {
+pub fn union_def(
+  name: String,
+  members: List(MemberDef),
+  emitted: Set(String),
+) -> Code {
   case members {
     [] ->
       TypeDef(public: True, is_opaque: False, name: name, variants: [
@@ -102,10 +130,11 @@ pub fn union_def(name: String, members: List(MemberDef)) -> Code {
         name: name,
         variants: list.map(members, fn(m) {
           PositionalVariant(
-            name: name_concat([
+            name: stringutils.union_variant_ctor(
               name,
-              stringutils.pascalize_member(m.member_name),
-            ]),
+              m.member_name,
+              emitted,
+            ),
             types: [types.gleam_type(m.target)],
           )
         }),

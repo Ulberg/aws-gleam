@@ -485,7 +485,7 @@ fn value_to_string(
     RPrim(primitive: types.PBool) -> "rest.bool_to_query(v)"
     REnum(local_name: _, ..) ->
       name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
-    RIntEnum(local_name: n, ..) ->
+    RIntEnum(gleam_name: n, ..) ->
       name_concat([
         "rest.int_to_query(",
         stringutils.pascal_to_snake(n),

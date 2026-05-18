@@ -309,11 +309,10 @@ pub fn render(
 /// instead of each carrying a copy.
 pub fn invoke_fn(
   snake: String,
-  op_local: String,
   in_type: String,
   out_type: String,
+  err_type: String,
 ) -> Code {
-  let err_type = string.concat([op_local, "Error"])
   Fn(
     public: True,
     name: snake,

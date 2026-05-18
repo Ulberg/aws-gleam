@@ -119,6 +119,7 @@ pub fn emit_service(
       let preamble =
         emit_named_shapes(model, named_shapes, is_dispatcher, encoder_reachable)
 
+      let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
         list.map(resolved_ops, fn(t) {
           let #(op_id, in_r, out_r, err_ids, requires_md5) = t
@@ -136,6 +137,10 @@ pub fn emit_service(
             out_info: out_info,
             error_ids: err_ids,
             requires_md5: requires_md5,
+            error_type: trait_helpers.op_error_type(
+              local,
+              emitted_type_names,
+            ),
           )
         })
       let op_blocks =
@@ -195,6 +200,11 @@ type OpSpec {
     /// The emitter appends a `Content-MD5: base64(md5(body))` step
     /// at the end of the generated `build_<op>_request`.
     requires_md5: Bool,
+    /// The Gleam type name to use for this operation's typed error
+    /// sum. Normally `<OpLocal>Error`, but if a Smithy structure with
+    /// that exact name already exists in the service, falls back to
+    /// `<OpLocal>OperationError` to avoid duplicate type definitions.
+    error_type: String,
   )
 }
 
@@ -210,7 +220,7 @@ fn emit_client(metadata: trait_helpers.Metadata) -> String {
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
-  let err_type = name_concat([spec.local, "Error"])
+  let err_type = spec.error_type
   code.render(
     code.Module(items: [
       code.DocComment([
@@ -233,9 +243,9 @@ fn emit_invoke(spec: OpSpec) -> String {
       ]),
       client.invoke_fn(
         spec.snake,
-        spec.local,
         spec.in_info.type_name,
         spec.out_info.type_name,
+        spec.error_type,
       ),
       code.Blank,
     ]),
@@ -391,6 +401,7 @@ fn emit_named_shapes(
   is_dispatcher: Bool,
   encoder_reachable: Set(String),
 ) -> String {
+  let emitted_type_names = named_shapes.emitted_type_names(shapes)
   shapes
   |> list.flat_map(fn(r) {
     case r {
@@ -403,23 +414,42 @@ fn emit_named_shapes(
         emit_int_enum_codec(n, vs),
       ]
       RStruct(gleam_name: n, full_id: id, local_name: ln, ..) ->
-        case ln == "Unit" {
-          // The synthetic Unit struct is per-operation, not a top-level
-          // named type — skip in the preamble.
-          True -> []
+        case id == "smithy.api#Unit" {
+          // The synthetic Unit struct stands in for `smithy.api#Unit`
+          // at operation input/output position and is materialised
+          // per-op (as `<OpName>Input` / `<OpName>Output`), not as a
+          // top-level type. User-defined shapes that happen to be
+          // named `Unit` (e.g. `com.amazonaws.datazone#Unit`) must
+          // still emit normally — that's why we key the sentinel on
+          // the full Smithy ID, not just `local_name`.
+          True -> {
+            let _ = #(n, ln)
+            []
+          }
           False -> {
             let ms = types.resolve_members(model, id)
-            let emit_encoder =
-              is_dispatcher || set.contains(encoder_reachable, ln)
+            // Always emit the encoder when the struct appears as a
+            // top-level named shape. Output-only structs that don't
+            // appear in any union variant still get one — the cost is
+            // a handful of dead encoders, but the previous
+            // input-reachable gating produced dangling
+            // `encode_<X>_struct` references whenever a union variant
+            // wrapped an output-only struct (e.g. SSM's
+            // `ExecutionPreview` union over
+            // `AutomationExecutionPreview`).
+            let _ = encoder_reachable
             [
               emit_record_def(n, ms),
-              emit_struct_codec(n, ms, is_dispatcher, emit_encoder),
+              emit_struct_codec(n, ms, is_dispatcher, True),
             ]
           }
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
         let ms = types.resolve_members(model, id)
-        [emit_union_def(n, ms), emit_union_codec(n, ms, is_dispatcher)]
+        [
+          emit_union_def(n, ms, emitted_type_names),
+          emit_union_codec(n, ms, is_dispatcher, emitted_type_names),
+        ]
       }
       _ -> []
     }
@@ -462,7 +492,7 @@ fn emit_operation_with(
 /// `Unknown(error_type, status, body)` for service errors we don't
 /// have a typed variant for.
 fn emit_error_type(spec: OpSpec) -> String {
-  let name = name_concat([spec.local, "Error"])
+  let name = spec.error_type
   let typed_variants =
     list.map(spec.error_ids, fn(err_id) {
       let local = strip_namespace(err_id)
@@ -506,7 +536,7 @@ fn emit_error_type(spec: OpSpec) -> String {
 /// identical across protocols, since the translator helper lives in
 /// the shared runtime.
 fn emit_error_translator(spec: OpSpec) -> String {
-  let name = name_concat([spec.local, "Error"])
+  let name = spec.error_type
   let snake = spec.snake
   let decoder_entries =
     list.map(spec.error_ids, fn(err_id) {
@@ -809,8 +839,15 @@ fn emit_int_enum_def(
   string.concat([code.render(named_shapes.int_enum_def(name, variants)), "\n"])
 }
 
-fn emit_union_def(name: String, members: List(MemberDef)) -> String {
-  string.concat([code.render(named_shapes.union_def(name, members)), "\n"])
+fn emit_union_def(
+  name: String,
+  members: List(MemberDef),
+  emitted: Set(String),
+) -> String {
+  string.concat([
+    code.render(named_shapes.union_def(name, members, emitted)),
+    "\n",
+  ])
 }
 
 // ---------- encoder helpers ----------
@@ -1026,6 +1063,7 @@ fn emit_union_codec(
   name: String,
   members: List(MemberDef),
   is_dispatcher: Bool,
+  emitted: Set(String),
 ) -> String {
   let snake = stringutils.pascal_to_snake(name)
   let enc =
@@ -1038,7 +1076,7 @@ fn emit_union_codec(
         scrutinee: code.Ident(name: "v"),
         branches: list.map(members, fn(m) {
           let ctor =
-            name_concat([name, stringutils.pascalize_member(m.member_name)])
+            stringutils.union_variant_ctor(name, m.member_name, emitted)
           code.Branch(
             pattern: name_concat([ctor, "(x)"]),
             body: code.Call(head: code.Ident(name: "json.object"), args: [
@@ -1069,7 +1107,9 @@ fn emit_union_codec(
       name: name_concat(["decode_", snake, "_union"]),
       params: [],
       return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-      body: union_decoder_body(name, members, emit_union_branch),
+      body: union_decoder_body(name, members, fn(union_name, m) {
+        emit_union_branch(union_name, m, emitted)
+      }),
     )
   let dec_params_items = case is_dispatcher {
     True -> [
@@ -1079,7 +1119,9 @@ fn emit_union_codec(
         name: name_concat(["decode_", snake, "_union_params"]),
         params: [],
         return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-        body: union_decoder_body(name, members, emit_union_branch_params),
+        body: union_decoder_body(name, members, fn(union_name, m) {
+          emit_union_branch_params(union_name, m, emitted)
+        }),
       ),
       code.Blank,
     ]
@@ -1123,9 +1165,12 @@ fn union_decoder_body(
   }
 }
 
-fn emit_union_branch(union_name: String, m: MemberDef) -> code.Code {
-  let ctor =
-    name_concat([union_name, stringutils.pascalize_member(m.member_name)])
+fn emit_union_branch(
+  union_name: String,
+  m: MemberDef,
+  emitted: Set(String),
+) -> code.Code {
+  let ctor = stringutils.union_variant_ctor(union_name, m.member_name, emitted)
   code.Call(head: code.Ident(name: "decode.field"), args: [
     code.StrLit(value: m.member_name),
     code.Raw(fragment: types.json_decoder(m.target)),
@@ -1139,9 +1184,12 @@ fn emit_union_branch(union_name: String, m: MemberDef) -> code.Code {
   ])
 }
 
-fn emit_union_branch_params(union_name: String, m: MemberDef) -> code.Code {
-  let ctor =
-    name_concat([union_name, stringutils.pascalize_member(m.member_name)])
+fn emit_union_branch_params(
+  union_name: String,
+  m: MemberDef,
+  emitted: Set(String),
+) -> code.Code {
+  let ctor = stringutils.union_variant_ctor(union_name, m.member_name, emitted)
   code.Call(head: code.Ident(name: "decode.field"), args: [
     code.StrLit(value: m.member_name),
     code.Raw(fragment: types.json_decoder_params(m.target)),

@@ -3,15 +3,89 @@
 //// express directly.
 
 import gleam/list
+import gleam/set.{type Set}
 import gleam/string
 
-/// `Foo` → `Foo`, `foo` → `Foo` — uppercases the first grapheme,
-/// leaves the rest. Used by the union variant constructor name
-/// builders.
+/// `Foo` → `Foo`, `foo` → `Foo`, `__Bar` → `Bar`, `AbpV1_0_x` →
+/// `AbpV10X` — strips every underscore (Gleam type and constructor
+/// names cannot contain `_`) and uppercases the grapheme that
+/// follows it, preserving word boundaries Smithy expressed with
+/// the underscore. Used by the union variant constructor name
+/// builders and by `Resolved.gleam_name` for structs / unions /
+/// enums.
 pub fn pascalize_member(s: String) -> String {
-  case string.to_graphemes(s) {
-    [first, ..rest] -> string.uppercase(first) <> string.concat(rest)
-    [] -> s
+  pascalize_member_loop(string.to_graphemes(s), True)
+}
+
+fn pascalize_member_loop(graphemes: List(String), upper: Bool) -> String {
+  case graphemes {
+    ["_", ..rest] -> pascalize_member_loop(rest, True)
+    [g, ..rest] -> {
+      let head = case upper {
+        True -> string.uppercase(g)
+        False -> g
+      }
+      head <> pascalize_member_loop(rest, False)
+    }
+    [] -> ""
+  }
+}
+
+/// Like `pascalize_member` but additionally suffixes the result with
+/// `Shape` when it collides with a Gleam prelude type name. Some
+/// Smithy shapes are literally named `Result` / `List` / `Bool` /
+/// etc. (see `transcribe-streaming` → `pub type Result`); the prelude
+/// types are auto-imported and would shadow each other, so the
+/// codegen emits a suffixed Gleam type while keeping `local_name` —
+/// which still drives wire-format serialisation — untouched.
+/// `Shape` is used (not `_`) because Gleam type names cannot contain
+/// underscores.
+pub fn gleam_type_name(s: String) -> String {
+  let pascalized = pascalize_member(s)
+  case is_reserved_type_name(pascalized) {
+    True -> pascalized <> "Shape"
+    False -> pascalized
+  }
+}
+
+/// Build the Gleam variant constructor name for a Smithy union
+/// member. Default convention is `<UnionLocal><Pascalized(Member)>` —
+/// e.g. `Principal` with member `User` → `PrincipalUser`. If that
+/// collides with another top-level type name in the same module
+/// (e.g. a struct also named `PrincipalUser`), the constructor is
+/// renamed to `<UnionLocal>Variant<Pascalized(Member)>` so the
+/// emitted module compiles. Pass the set of *already-emitted Gleam
+/// type names* (`gleam_name` for each struct / union / enum /
+/// int-enum) so the check is module-scoped.
+pub fn union_variant_ctor(
+  union_name: String,
+  member_name: String,
+  emitted: Set(String),
+) -> String {
+  let suffix = pascalize_member(member_name)
+  let candidate = union_name <> suffix
+  case set.contains(emitted, candidate) {
+    True -> union_name <> "Variant" <> suffix
+    False -> candidate
+  }
+}
+
+fn is_reserved_type_name(s: String) -> Bool {
+  case s {
+    "Result"
+    | "List"
+    | "BitArray"
+    | "Bool"
+    | "Float"
+    | "Int"
+    | "String"
+    | "Nil"
+    | "Iterator"
+    | "Dynamic"
+    | "Option"
+    | "Dict"
+    | "Set" -> True
+    _ -> False
   }
 }
 

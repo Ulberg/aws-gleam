@@ -87,8 +87,15 @@ Requires Gleam and Erlang/OTP.
 gleam deps download
 scripts/init-submodules.sh    # first time only — pins upstream Smithy + AWS models
 ./scripts/regen.sh            # generate service clients + protocol-test dispatchers
-gleam test
+./scripts/test.sh             # gleam test with ERL_FLAGS="+t 4194304"
 ```
+
+The atom-table bump is required when all ~409 services are generated:
+each service module allocates a few thousand atoms at compile time
+(type names, function names, etc.), which blows past Erlang's default
+1M-atom ceiling. `+t 4194304` raises it to 4M, more than enough for
+the full service set. Without it the BEAM crashes mid-compile with
+`no more index entries in atom_tab`.
 
 ### Why regen?
 

@@ -117,6 +117,7 @@ pub fn emit_service(
         list.map(named_shapes, fn(r) { types.apply_rename(r, rename) })
       let preamble = emit_named_shapes(model, named_shapes, rename)
 
+      let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
         list.map(resolved_ops, fn(t) {
           let #(op_id, _, in_r, out_r, err_ids, _) = t
@@ -138,6 +139,10 @@ pub fn emit_service(
             in_info: in_info,
             out_info: out_info,
             error_ids: err_ids,
+            error_type: trait_helpers.op_error_type(
+              local,
+              emitted_type_names,
+            ),
           )
         })
 
@@ -201,6 +206,10 @@ type OpSpec {
     in_info: IOTypeInfo,
     out_info: IOTypeInfo,
     error_ids: List(String),
+    /// Gleam type name for this op's typed error sum. Normally
+    /// `<OpLocal>Error`; suffixed to `<OpLocal>OperationError` when
+    /// a Smithy struct of the same name exists in the service.
+    error_type: String,
   )
 }
 
@@ -220,9 +229,9 @@ fn emit_invoke(spec: OpSpec) -> String {
     code.Module(items: [
       client.invoke_fn(
         spec.snake,
-        spec.local,
         spec.in_info.type_name,
         spec.out_info.type_name,
+        spec.error_type,
       ),
       code.Blank,
     ]),
@@ -234,7 +243,7 @@ fn emit_invoke(spec: OpSpec) -> String {
 /// awsjson emitter — restJson1 errors are still JSON-shaped on the
 /// wire, so the same decoder path works.
 fn emit_error_type(spec: OpSpec) -> String {
-  let name = name_concat([spec.local, "Error"])
+  let name = spec.error_type
   let typed_variants =
     list.map(spec.error_ids, fn(err_id) {
       let local = strip_namespace(err_id)
@@ -267,7 +276,7 @@ fn emit_error_type(spec: OpSpec) -> String {
 
 /// See `awsjson.emit_error_translator` for the table-style design.
 fn emit_error_translator(spec: OpSpec) -> String {
-  let name = name_concat([spec.local, "Error"])
+  let name = spec.error_type
   let snake = spec.snake
   let decoder_entries =
     list.map(spec.error_ids, fn(err_id) {
@@ -433,6 +442,7 @@ fn emit_named_shapes(
   shapes: List(Resolved),
   rename: dict.Dict(String, String),
 ) -> String {
+  let emitted_type_names = named_shapes.emitted_type_names(shapes)
   shapes
   |> list.flat_map(fn(r) {
     case r {
@@ -445,8 +455,11 @@ fn emit_named_shapes(
         emit_int_enum_codec(n, vs),
       ]
       RStruct(gleam_name: n, full_id: id, local_name: ln, ..) ->
-        case ln == "Unit" {
-          True -> []
+        case id == "smithy.api#Unit" {
+          True -> {
+            let _ = ln
+            []
+          }
           False -> {
             let ms =
               types.resolve_members(model, id)
@@ -458,7 +471,10 @@ fn emit_named_shapes(
         let ms =
           types.resolve_members(model, id)
           |> list.map(fn(m) { types.apply_rename_member(m, rename) })
-        [emit_union_def(n, ms), emit_union_codec(n, ms)]
+        [
+          emit_union_def(n, ms, emitted_type_names),
+          emit_union_codec(n, ms, emitted_type_names),
+        ]
       }
       _ -> []
     }
@@ -689,8 +705,15 @@ fn emit_int_enum_def(
   string.concat([code.render(named_shapes.int_enum_def(name, variants)), "\n"])
 }
 
-fn emit_union_def(name: String, members: List(MemberDef)) -> String {
-  string.concat([code.render(named_shapes.union_def(name, members)), "\n"])
+fn emit_union_def(
+  name: String,
+  members: List(MemberDef),
+  emitted: Set(String),
+) -> String {
+  string.concat([
+    code.render(named_shapes.union_def(name, members, emitted)),
+    "\n",
+  ])
 }
 
 // ---------- codec helpers ----------
@@ -897,7 +920,11 @@ fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
   |> string.concat
 }
 
-fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
+fn emit_union_codec(
+  name: String,
+  members: List(MemberDef),
+  emitted: Set(String),
+) -> String {
   let snake = stringutils.pascal_to_snake(name)
   let enc =
     code.Fn(
@@ -909,7 +936,7 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
         scrutinee: code.Ident(name: "v"),
         branches: list.map(members, fn(m) {
           let ctor =
-            name_concat([name, stringutils.pascalize_member(m.member_name)])
+            stringutils.union_variant_ctor(name, m.member_name, emitted)
           code.Branch(
             pattern: name_concat([ctor, "(x)"]),
             body: code.Call(head: code.Ident(name: "json.object"), args: [
@@ -936,7 +963,9 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       name: name_concat(["decode_", snake, "_union"]),
       params: [],
       return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-      body: union_decoder_body(name, members, emit_union_branch),
+      body: union_decoder_body(name, members, fn(union_name, m) {
+        emit_union_branch(union_name, m, emitted)
+      }),
     )
   // Parallel decoder keyed by member names — used by the protocol-test
   // dispatchers. Unions in `params` have variant tags identified by
@@ -948,7 +977,9 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       name: name_concat(["decode_", snake, "_union_params"]),
       params: [],
       return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-      body: union_decoder_body(name, members, emit_union_branch_params),
+      body: union_decoder_body(name, members, fn(union_name, m) {
+        emit_union_branch_params(union_name, m, emitted)
+      }),
     )
   code.render(
     code.Module(items: [
@@ -992,9 +1023,12 @@ fn union_decoder_body(
   }
 }
 
-fn emit_union_branch(union_name: String, m: MemberDef) -> code.Code {
-  let ctor =
-    name_concat([union_name, stringutils.pascalize_member(m.member_name)])
+fn emit_union_branch(
+  union_name: String,
+  m: MemberDef,
+  emitted: Set(String),
+) -> code.Code {
+  let ctor = stringutils.union_variant_ctor(union_name, m.member_name, emitted)
   code.Call(head: code.Ident(name: "decode.field"), args: [
     code.StrLit(value: m.json_name),
     code.Raw(fragment: types.json_decoder(m.target)),
@@ -1002,9 +1036,12 @@ fn emit_union_branch(union_name: String, m: MemberDef) -> code.Code {
   ])
 }
 
-fn emit_union_branch_params(union_name: String, m: MemberDef) -> code.Code {
-  let ctor =
-    name_concat([union_name, stringutils.pascalize_member(m.member_name)])
+fn emit_union_branch_params(
+  union_name: String,
+  m: MemberDef,
+  emitted: Set(String),
+) -> code.Code {
+  let ctor = stringutils.union_variant_ctor(union_name, m.member_name, emitted)
   code.Call(head: code.Ident(name: "decode.field"), args: [
     code.StrLit(value: m.member_name),
     code.Raw(fragment: types.json_decoder_params(m.target)),
@@ -1366,7 +1403,7 @@ fn emit_parse_with_payload(
           fragment: "result.try(case bit_array.to_string(body) {\n      Ok(s) -> Ok(option.Some(s))\n      Error(_) -> Error(\"non-utf8 payload\")\n    })",
         ),
       )
-    RStruct(local_name: name, ..) -> {
+    RStruct(gleam_name: name, ..) -> {
       let decoder =
         name_concat(["decode_", stringutils.pascal_to_snake(name), "_struct"])
       code.Raw(
@@ -1381,7 +1418,7 @@ fn emit_parse_with_payload(
       code.Raw(
         fragment: "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case json.parse(text, decode.dynamic) {\n        Ok(d) -> Ok(option.Some(json_document.from_dynamic(d)))\n        Error(_) -> Error(\"decode failed\")\n      }\n    })",
       )
-    REnum(local_name: name, ..) -> {
+    REnum(gleam_name: name, ..) -> {
       let decoder =
         name_concat(["decode_", stringutils.pascal_to_snake(name), "_enum"])
       code.Raw(

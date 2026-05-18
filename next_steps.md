@@ -100,12 +100,19 @@ client beyond DynamoDB + S3 mainline.
    unskips `@streaming` shapes. v0.1 plan scope-concern #3 says
    GetObject buffers to `BitArray` for v0.1.
 
-2. **Codegen-driven additional services**. Smithy models for ~300
-   services live in `vendor/aws-sdk-rust/aws-models/`. The codegen
-   supports the four mainline protocols, so generating SQS, SNS,
-   Lambda, EventBridge, IAM, STS, Cognito, EC2 should mostly be a
-   matter of running `gleam run -m aws_codegen` against each
-   model — but each will surface protocol edge cases worth auditing.
+2. **Codegen-driven additional services** — DONE (2026-05-18).
+   `./scripts/regen.sh` now auto-discovers every `awsJson1_0 /
+   awsJson1_1 / restJson1 / restXml` service in
+   `vendor/aws-sdk-rust/aws-models/` (~409 services) and runs the
+   codegen against each. All generate, format, and compile cleanly
+   under `./scripts/test.sh` (which sets `ERL_FLAGS="+t 4194304"`
+   to lift Erlang's default 1M-atom ceiling — the generated
+   service modules together allocate several million atoms).
+   `awsQuery` / `ec2Query` / `rpcv2Cbor` services are intentionally
+   skipped until their body codecs land. Per-protocol smoke tests
+   (`test/service_smoke_test.gleam`) exercise SQS / CloudWatch Logs
+   / EKS end-to-end through SigV4 + the embedded rule sets, on top
+   of the existing DynamoDB / S3 endpoint-test coverage.
 
 3. **Paginators** — Smithy `@paginated`. Without these callers loop
    on `next_token` by hand. High-value targets: `ListObjects`,
