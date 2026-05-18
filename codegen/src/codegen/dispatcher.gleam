@@ -30,7 +30,8 @@ fn name_concat(parts: List(String)) -> String {
 /// emitter just wrote into the service module.
 pub type DispatcherSpec {
   DispatcherSpec(
-    /// Smithy operation ID — `<namespace>#<PascalName>`.
+    /// Smithy operation ID — `<namespace>#<PascalName>`. For error-shape
+    /// dispatchers (`is_error_shape: True`) this is the error shape ID.
     op_id: String,
     /// Snake-cased operation name; matches `build_<snake>_request`,
     /// `parse_<snake>_response`, and (when `has_typed_input` is `True`)
@@ -38,13 +39,21 @@ pub type DispatcherSpec {
     snake: String,
     /// Public input record type name in the service module. For Unit
     /// inputs this is the synthesised singleton (e.g.
-    /// `EmptyInputAndEmptyOutputInput`).
+    /// `EmptyInputAndEmptyOutputInput`). Unused for error-shape
+    /// dispatchers.
     input_type: String,
     /// `True` when the input shape carries members and a
     /// `decode_<snake>_input` function exists. `False` for Unit-input
     /// operations where the dispatcher constructs the singleton
     /// directly.
     has_typed_input: Bool,
+    /// `True` when this spec is for an error shape (used as the
+    /// dispatch target for `smithy.test#httpResponseTests` on the
+    /// error itself). The emitted dispatcher's `build_request`
+    /// callback returns `Error` — the runner only invokes
+    /// `parse_response` for error-shape lookups, so no request-side
+    /// code is ever generated.
+    is_error_shape: Bool,
   )
 }
 
@@ -113,9 +122,10 @@ fn register_all_fn(specs: List(DispatcherSpec)) -> Code {
 }
 
 fn dispatcher_fn(s: DispatcherSpec) -> Code {
-  let build_request_body = case s.has_typed_input {
-    True -> typed_build_request(s.snake)
-    False -> singleton_build_request(s.snake, s.input_type)
+  let build_request_body = case s.is_error_shape, s.has_typed_input {
+    True, _ -> error_shape_build_request()
+    False, True -> typed_build_request(s.snake)
+    False, False -> singleton_build_request(s.snake, s.input_type)
   }
   // `Dispatcher` is constructed with labelled args. Each label is
   // a `Labelled` node so the AST captures both the keyword and the
@@ -182,6 +192,10 @@ fn singleton_build_request(snake: String, input_type: String) -> String {
   ])
 }
 
+fn error_shape_build_request() -> String {
+  "fn(_params) { Error(\"error-shape dispatcher has no request side\") }"
+}
+
 fn response_parser_fn() -> Code {
   Fn(
     public: False,
@@ -214,6 +228,7 @@ pub fn label_for_namespace(namespace: String) -> Result(String, String) {
     "aws.protocoltests.restxml" -> Ok("restxml")
     "aws.protocoltests.query" -> Ok("awsquery")
     "aws.protocoltests.ec2" -> Ok("ec2query")
+    "aws.protocoltests.rpcv2cbor" -> Ok("rpcv2cbor")
     other ->
       Error(
         string.concat([

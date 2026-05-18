@@ -79,6 +79,7 @@ pub fn emit_service(
             snake: snake,
             input_type: name_concat([local, "Input"]),
             has_typed_input: False,
+            is_error_shape: False,
           )
         })
       Ok(EmitResult(

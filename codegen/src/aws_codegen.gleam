@@ -17,6 +17,7 @@
 import argv
 import codegen/awsjson
 import codegen/awsquery
+import codegen/cbor_rpc
 import codegen/dispatcher
 import codegen/restjson
 import codegen/restxml
@@ -167,6 +168,10 @@ fn emit(
       use r <- result.try(awsquery.emit_service(m, svc_id, awsquery.Ec2Query))
       Ok(Emitted(r.source, r.operations_emitted, r.dispatcher_specs))
     }
+    "rpcv2Cbor" -> {
+      use r <- result.try(cbor_rpc.emit_services(m))
+      Ok(Emitted(r.source, r.operations_emitted, r.dispatcher_specs))
+    }
     other -> Error("unsupported protocol: " <> other)
   }
 }
@@ -226,6 +231,7 @@ fn find_service(m: model.Model, proto_name: String) -> Result(String, String) {
     "restXml" -> ShapeId("aws.protocols#restXml")
     "awsQuery" -> ShapeId("aws.protocols#awsQuery")
     "ec2Query" -> ShapeId("aws.protocols#ec2Query")
+    "rpcv2Cbor" -> ShapeId("smithy.protocols#rpcv2Cbor")
     _ -> ShapeId("")
   }
   let candidates =

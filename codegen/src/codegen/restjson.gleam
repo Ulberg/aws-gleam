@@ -233,6 +233,7 @@ pub fn emit_service(
             // appears, plumb `is_dispatcher_target` through here
             // the same way the awsjson emitter does.
             has_typed_input: True,
+            is_error_shape: False,
           )
         })
       Ok(EmitResult(

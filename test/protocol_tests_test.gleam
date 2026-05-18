@@ -16,6 +16,7 @@ import protocol_tests/dispatch
 import protocol_tests/ec2query_dispatchers
 import protocol_tests/restjson1_dispatchers
 import protocol_tests/restxml_dispatchers
+import protocol_tests/rpcv2cbor_dispatchers
 import protocol_tests/runner
 
 /// Test cases the runner explicitly skips, keyed by case ID with a
@@ -87,7 +88,11 @@ pub fn ec2query_protocol_test() {
 }
 
 pub fn rpcv2cbor_protocol_test() {
-  run("rpcv2Cbor", "test/fixtures/protocol-tests/rpcv2Cbor.json")
+  run_with(
+    "rpcv2Cbor",
+    "test/fixtures/protocol-tests/rpcv2Cbor.json",
+    rpcv2cbor_dispatchers.register_all(dispatch.new()),
+  )
 }
 
 fn run(name: String, path: String) {

@@ -207,6 +207,7 @@ pub fn emit_service(
             snake: s.snake,
             input_type: s.in_info.type_name,
             has_typed_input: is_dispatcher,
+            is_error_shape: False,
           )
         })
       Ok(EmitResult(
