@@ -647,7 +647,10 @@ pub fn resolve(model: Model, target_id: String) -> Resolved {
     "smithy.api#Timestamp" -> RTimestamp
     "smithy.api#Blob" -> RBlob
     "smithy.api#Document" -> RDocument
-    "smithy.api#BigInteger" -> Unsupported(reason: "bigInteger")
+    // Erlang Int is arbitrary precision via BEAM bignums, so Smithy
+    // `bigInteger` maps cleanly to our `PInt` — no overflow risk
+    // even at hundreds of digits. Wire form stays JSON Int.
+    "smithy.api#BigInteger" -> RPrim(primitive: PInt)
     "smithy.api#BigDecimal" -> Unsupported(reason: "bigDecimal")
     "smithy.api#Unit" -> RUnit
     _ -> resolve_user_defined(model, target_id)
@@ -749,7 +752,9 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
 
     shape.Service(..) | shape.Resource(..) | shape.Operation(..) ->
       Unsupported(reason: "service/resource/operation shape as field target")
-    shape.BigInteger(..) -> Unsupported(reason: "bigInteger")
+    // See note on the `smithy.api#BigInteger` case above — Erlang
+    // Int is arbitrary-precision so no conversion overhead.
+    shape.BigInteger(..) -> RPrim(primitive: PInt)
     shape.BigDecimal(..) -> Unsupported(reason: "bigDecimal")
   }
 }
