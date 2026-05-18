@@ -78,29 +78,33 @@ echo "→ regenerating service clients"
 FAILURES=()
 ERRLOG=$(mktemp)
 trap 'rm -f $SERVICES_LIST $ERRLOG' EXIT
+# Loop body intentionally avoids `out=$(cmd 2>&1)` capture — earlier
+# attempts using that pattern saw CI's per-service loop finish 409
+# calls in ~1.4s with zero recorded failures and zero files written,
+# while the same pattern locally took 1.2s per call and wrote every
+# file. Direct redirection to a per-iteration log file dodges
+# whatever subshell / IFS / glob edge case in CI's bash was making
+# the exit-code + file-size guards both report "ok" while the loop
+# silently did nothing.
 while read -r name proto; do
   out="../src/aws/services/${name//-/_}.gleam"
-  # Capture stderr so a failing service surfaces a real diagnostic
-  # instead of an unattributable downstream "Unknown module" error
-  # at `gleam test` time. The codegen calls `erlang:halt(1)` on
-  # error so the `if !` check actually fires — before that, every
-  # error printed to stdout and exited 0, masking failures.
-  out_err=$($CODEGEN "$proto" "../vendor/aws-sdk-rust/aws-models/${name}.json" "$out" 2>&1)
+  PER_SERVICE_LOG=$(mktemp)
+  $CODEGEN "$proto" "../vendor/aws-sdk-rust/aws-models/${name}.json" "$out" \
+    >"$PER_SERVICE_LOG" 2>&1
   rc=$?
-  # Two failure modes worth catching:
-  #   1. Non-zero exit  — `aws_codegen.main` halt(1) on error.
-  #   2. Exit 0 but no file written — defensive against any
-  #      future code path that silently no-ops. Locally a hot
-  #      cache makes individual calls drop below 5ms, which is
-  #      what CI was doing too while leaving the directory
-  #      empty, so the count guard alone isn't enough — surface
-  #      the per-service no-op the moment it happens.
   if [ "$rc" -ne 0 ] || [ ! -s "$out" ]; then
     FAILURES+=("$name ($proto)")
-    printf '%s (%s) rc=%s:\n%s\n\n' "$name" "$proto" "$rc" "$out_err" \
-      >> "$ERRLOG"
+    {
+      printf '%s (%s) rc=%s out=%s exists=%s size=%s\n' \
+        "$name" "$proto" "$rc" "$out" \
+        "$( [ -e "$out" ] && echo yes || echo no )" \
+        "$( [ -e "$out" ] && wc -c <"$out" | tr -d ' ' || echo - )"
+      cat "$PER_SERVICE_LOG"
+      printf '\n'
+    } >> "$ERRLOG"
     rm -f "$out"
   fi
+  rm -f "$PER_SERVICE_LOG"
 done < "$SERVICES_LIST"
 
 if [ ${#FAILURES[@]} -gt 0 ]; then
