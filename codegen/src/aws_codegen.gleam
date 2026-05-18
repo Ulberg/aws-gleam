@@ -44,9 +44,17 @@ pub fn main() {
       io.println(
         "usage: gleam run -m aws_codegen -- <protocol> <input.json> <output.gleam> [--dispatcher-out <path>]",
       )
+      halt(2)
     }
   }
 }
+
+/// Exit the BEAM process with the given status code. Gleam `main`
+/// returning `Nil` always exits 0, so we have to call `erlang:halt/1`
+/// ourselves to propagate failure up to `scripts/regen.sh` (whose
+/// `if ! $CODEGEN ...` check only sees the exit code, not stdout).
+@external(erlang, "erlang", "halt")
+fn halt(code: Int) -> a
 
 type ParsedArgs {
   ParsedArgs(
@@ -126,7 +134,17 @@ fn run(
         <> ")",
       )
     }
-    Error(reason) -> io.println("error: " <> reason)
+    Error(reason) -> {
+      io.println("error: " <> reason)
+      // Propagate failure to the shell so `scripts/regen.sh` (and any
+      // CI step that swallows our stdout via `>/dev/null 2>&1`) can
+      // see something went wrong. Before this, every failed codegen
+      // returned exit 0 and the script silently produced an empty
+      // services directory — CI then errored at `gleam test` time
+      // with "Unknown module aws/services/<X>" which was hard to
+      // attribute back to the codegen step.
+      halt(1)
+    }
   }
 }
 

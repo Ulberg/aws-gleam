@@ -63,10 +63,18 @@ echo "  $TOTAL services to generate"
 
 echo "→ regenerating service clients"
 FAILURES=()
+ERRLOG=$(mktemp)
+trap 'rm -f $SERVICES_LIST $ERRLOG' EXIT
 while read -r name proto; do
   out="../src/aws/services/${name//-/_}.gleam"
-  if ! $CODEGEN "$proto" "../vendor/aws-sdk-rust/aws-models/${name}.json" "$out" >/dev/null 2>&1; then
+  # Capture stderr so a failing service surfaces a real diagnostic
+  # instead of an unattributable downstream "Unknown module" error
+  # at `gleam test` time. The codegen calls `erlang:halt(1)` on
+  # error so the `if !` check actually fires — before that, every
+  # error printed to stdout and exited 0, masking failures.
+  if ! out_err=$($CODEGEN "$proto" "../vendor/aws-sdk-rust/aws-models/${name}.json" "$out" 2>&1 >/dev/null); then
     FAILURES+=("$name ($proto)")
+    printf '%s (%s):\n%s\n\n' "$name" "$proto" "$out_err" >> "$ERRLOG"
     rm -f "$out"
   fi
 done < "$SERVICES_LIST"
@@ -74,6 +82,12 @@ done < "$SERVICES_LIST"
 if [ ${#FAILURES[@]} -gt 0 ]; then
   echo "  ${#FAILURES[@]} services failed codegen:"
   printf '    - %s\n' "${FAILURES[@]}"
+  echo
+  echo "  first 20 lines of the captured error log:"
+  head -20 "$ERRLOG" | sed 's/^/    /'
+  echo
+  echo "  full log: $ERRLOG"
+  exit 1
 fi
 
 echo "→ regenerating protocol-test client modules + dispatchers"
