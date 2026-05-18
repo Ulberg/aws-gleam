@@ -85,9 +85,20 @@ while read -r name proto; do
   # at `gleam test` time. The codegen calls `erlang:halt(1)` on
   # error so the `if !` check actually fires — before that, every
   # error printed to stdout and exited 0, masking failures.
-  if ! out_err=$($CODEGEN "$proto" "../vendor/aws-sdk-rust/aws-models/${name}.json" "$out" 2>&1 >/dev/null); then
+  out_err=$($CODEGEN "$proto" "../vendor/aws-sdk-rust/aws-models/${name}.json" "$out" 2>&1)
+  rc=$?
+  # Two failure modes worth catching:
+  #   1. Non-zero exit  — `aws_codegen.main` halt(1) on error.
+  #   2. Exit 0 but no file written — defensive against any
+  #      future code path that silently no-ops. Locally a hot
+  #      cache makes individual calls drop below 5ms, which is
+  #      what CI was doing too while leaving the directory
+  #      empty, so the count guard alone isn't enough — surface
+  #      the per-service no-op the moment it happens.
+  if [ "$rc" -ne 0 ] || [ ! -s "$out" ]; then
     FAILURES+=("$name ($proto)")
-    printf '%s (%s):\n%s\n\n' "$name" "$proto" "$out_err" >> "$ERRLOG"
+    printf '%s (%s) rc=%s:\n%s\n\n' "$name" "$proto" "$rc" "$out_err" \
+      >> "$ERRLOG"
     rm -f "$out"
   fi
 done < "$SERVICES_LIST"
