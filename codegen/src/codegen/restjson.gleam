@@ -82,6 +82,8 @@ pub fn emit_service(
                   let requires_md5 = trait_helpers.op_requires_md5(op_traits)
                   let paginated = trait_helpers.paginated_trait(op_traits)
                   let waiters = trait_helpers.waitable_traits(op_traits)
+                  let http_checksum =
+                    trait_helpers.http_checksum_trait(op_traits)
                   case
                     members_have_no_http_bindings(in_r),
                     types.is_supported(in_r),
@@ -97,6 +99,7 @@ pub fn emit_service(
                         requires_md5,
                         paginated,
                         waiters,
+                        http_checksum,
                       ))
                     _, _, _ -> Error(Nil)
                   }
@@ -124,6 +127,7 @@ pub fn emit_service(
             requires_md5,
             paginated,
             waiters,
+            http_checksum,
           ) = t
           #(
             op_id,
@@ -134,6 +138,7 @@ pub fn emit_service(
             requires_md5,
             paginated,
             waiters,
+            http_checksum,
           )
         })
       let named_shapes = collect_named_shapes(model, resolved_ops)
@@ -144,7 +149,7 @@ pub fn emit_service(
       let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, _, in_r, out_r, err_ids, _, paginated, waiters) = t
+          let #(op_id, _, in_r, out_r, err_ids, _, paginated, waiters, _) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info =
@@ -180,8 +185,18 @@ pub fn emit_service(
 
       let op_blocks =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, http, in_r, out_r, _, requires_md5, _, _) = t
-          emit_operation(model, op_id, http, in_r, out_r, rename, requires_md5)
+          let #(op_id, http, in_r, out_r, _, requires_md5, _, _, http_checksum) =
+            t
+          emit_operation(
+            model,
+            op_id,
+            http,
+            in_r,
+            out_r,
+            rename,
+            requires_md5,
+            http_checksum,
+          )
         })
       let client_block = emit_client(metadata)
       let invoke_blocks = list.map(op_specs, emit_invoke)
@@ -224,7 +239,7 @@ pub fn emit_service(
         module_name: derive_module_name(service_id),
         source: body,
         operations_emitted: list.map(resolved_ops, fn(t) {
-          let #(op_id, _, _, _, _, _, _, _) = t
+          let #(op_id, _, _, _, _, _, _, _, _) = t
           op_id
         }),
         dispatcher_specs: dispatcher_specs,
@@ -454,6 +469,7 @@ fn collect_named_shapes(
       Bool,
       option.Option(trait_helpers.PaginatedTrait),
       List(trait_helpers.WaiterDef),
+      option.Option(trait_helpers.HttpChecksumInfo),
     ),
   ),
 ) -> List(Resolved) {
@@ -464,7 +480,7 @@ fn collect_named_shapes(
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_, _, in_r, out_r, err_ids, _, _, _) = t
+      let #(_, _, in_r, out_r, err_ids, _, _, _, _) = t
       let acc = walk(model, acc, in_r)
       let acc = walk(model, acc, out_r)
       list.fold(err_ids, acc, fn(a, err_id) {
@@ -567,6 +583,7 @@ fn emit_operation(
   out_r: Resolved,
   rename: dict.Dict(String, String),
   requires_md5: Bool,
+  http_checksum: Option(trait_helpers.HttpChecksumInfo),
 ) -> String {
   let local = strip_namespace(op_id)
   let pascal = local
@@ -633,6 +650,7 @@ fn emit_operation(
       http,
       in_members,
       requires_md5,
+      http_checksum,
     )
   let parse = emit_parse(out_info, snake)
   string.concat([
@@ -1140,6 +1158,7 @@ fn emit_build(
   http: HttpTrait,
   members: List(MemberDef),
   requires_md5: Bool,
+  http_checksum: Option(trait_helpers.HttpChecksumInfo),
 ) -> String {
   rest_request.build_request_module(
     input_type,
@@ -1148,6 +1167,7 @@ fn emit_build(
     http,
     members,
     requires_md5,
+    http_checksum,
     fn(cats: types.BindingCategories) {
       case cats.payload {
         Ok(p) -> emit_payload_body(p)
@@ -1586,14 +1606,13 @@ fn file_header(service_id: String, body: String) -> String {
   code.render(code.Module(items: items))
 }
 
-fn op_uses_unsupported_trait(traits: shape.Traits) -> Bool {
-  // `smithy.api#httpChecksumRequired` is no longer in the skip list —
-  // `rest_request.build_request_module` emits a
-  // `rest.with_content_md5_header` call when the trait is present.
-  // `aws.protocols#httpChecksum` still skips: it's the multi-algorithm
-  // request/response validation trait used by S3 Get/PutObject, gated
-  // on a broader checksum middleware that's v0.2.
-  dict.has_key(traits, ShapeId("aws.protocols#httpChecksum"))
+fn op_uses_unsupported_trait(_traits: shape.Traits) -> Bool {
+  // Both `smithy.api#httpChecksumRequired` (Content-MD5) and
+  // `aws.protocols#httpChecksum` (multi-algorithm) are now emitted
+  // by `rest_request.build_request_module`. The v1 multi-algorithm
+  // path always picks SHA-256 — the algorithm-member dispatch that
+  // honours the input's `ChecksumAlgorithm` field is a follow-up.
+  False
 }
 
 

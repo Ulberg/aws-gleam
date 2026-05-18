@@ -8,6 +8,7 @@
 //// fully-rendered `pub fn build_<op>_request(...)` module fragment.
 
 import codegen/code
+import codegen/trait_helpers
 import codegen/types.{
   type BindingCategories, type HttpTrait, type MemberDef, type Resolved, Header,
   PrefixHeaders, Query, REnum, RIntEnum, RList, RMap, RPrim, RTimestamp,
@@ -34,6 +35,13 @@ fn name_concat(parts: List(String)) -> String {
 /// headers, body)` step after the body is fully assembled, so the
 /// Content-MD5 header is computed from the exact bytes about to be
 /// sent on the wire (not before query / label substitution).
+///
+/// `http_checksum` reflects `aws.protocols#httpChecksum`. When
+/// `request_required` is set the emitter appends a sha256
+/// checksum (v1 behaviour — algorithm-member dispatch is a
+/// follow-up). Mutually compatible with `requires_md5`: AWS
+/// services don't apply both, but the emitter doesn't enforce
+/// the constraint.
 pub fn build_request_module(
   input_type: String,
   is_unit: Bool,
@@ -41,6 +49,7 @@ pub fn build_request_module(
   http: HttpTrait,
   members: List(MemberDef),
   requires_md5: Bool,
+  http_checksum: option.Option(trait_helpers.HttpChecksumInfo),
   body_setup: fn(BindingCategories) -> List(code.Code),
 ) -> String {
   let cats = types.categorize_bindings(members)
@@ -78,6 +87,22 @@ pub fn build_request_module(
     ]
     False -> []
   }
+  let checksum_step = case http_checksum {
+    option.Some(trait_helpers.HttpChecksumInfo(request_required: True, ..)) -> [
+      code.Let(
+        name: "headers",
+        value: code.Call(
+          head: code.Ident(name: "rest.with_checksum_header"),
+          args: [
+            code.Ident(name: "headers"),
+            code.Ident(name: "rest.ChecksumSha256"),
+            code.Ident(name: "body"),
+          ],
+        ),
+      ),
+    ]
+    _ -> []
+  }
   let body_items =
     list.flatten([
       emit_path_setup(http.uri, cats.labels),
@@ -87,6 +112,7 @@ pub fn build_request_module(
       [content_type_let_block(), content_length_let_block()],
       emit_content_encoding(http.compression),
       md5_step,
+      checksum_step,
       [path_assign, result_tuple],
     ])
   code.render(
