@@ -107,6 +107,13 @@ pub type Resolved {
   RTimestamp
   /// Smithy `@blob` → Gleam `BitArray`.
   RBlob
+  /// Smithy `@blob` carrying `smithy.api#streaming` → Gleam
+  /// `streaming.StreamingBody`. Wire form is identical (the
+  /// runtime materialises the buffered payload in / out), but
+  /// the public record field surfaces the forward-compatible
+  /// wrapper so callers can drop in a chunked iterator later
+  /// without an API break.
+  RStreamingBlob
   /// Smithy `@document` → free-form JSON.
   RDocument
   /// `smithy.api#Unit` used as a target. In unions this becomes a
@@ -658,7 +665,13 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
     shape.Float(..) | shape.Double(..) -> RPrim(primitive: PFloat)
     shape.Bool(..) -> RPrim(primitive: PBool)
     shape.Timestamp(..) -> RTimestamp
-    shape.Blob(..) -> RBlob
+    shape.Blob(traits: bt) -> {
+      let streaming = dict.has_key(bt, ShapeId("smithy.api#streaming"))
+      case streaming {
+        True -> RStreamingBlob
+        False -> RBlob
+      }
+    }
     shape.Document(..) -> RDocument
 
     shape.Enum(members: m, ..) -> resolve_enum(target_id, m)
@@ -961,6 +974,7 @@ pub fn gleam_type(r: Resolved) -> String {
     RStruct(gleam_name: n, ..) | RUnion(gleam_name: n, ..) -> n
     RTimestamp -> "Int"
     RBlob -> "BitArray"
+    RStreamingBlob -> "streaming.StreamingBody"
     RDocument -> "json.Json"
     RUnit -> "Nil"
     Unsupported(reason: _) -> "Nil"
@@ -1044,6 +1058,8 @@ pub fn json_encoder(r: Resolved) -> String {
       name_concat(["encode_", stringutils.pascal_to_snake(n), "_union"])
     RTimestamp -> "json.int"
     RBlob -> "fn(b) { json.string(bit_array.base64_encode(b, True)) }"
+    RStreamingBlob ->
+      "fn(b) { json.string(bit_array.base64_encode(streaming.to_bit_array(b), True)) }"
     RDocument -> "fn(j) { j }"
     RUnit -> "fn(_) { json.object([]) }"
     Unsupported(..) -> "fn(_) { json.null() }"
@@ -1126,6 +1142,13 @@ pub fn json_decoder(r: Resolved) -> String {
       // base64. The on-the-wire response form IS base64 — a wire-side
       // decoder lands when real-response tests do.
       "decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })"
+    RStreamingBlob ->
+      // Protocol-test params surface a streaming blob as a UTF-8
+      // string too (the corpus doesn't distinguish — `@streaming`
+      // is purely a wire / runtime concern). Wrap the raw bytes
+      // in `streaming.from_bit_array` so the public field stays
+      // typed as `StreamingBody`.
+      "decode.then(decode.string, fn(s) { decode.success(streaming.from_bit_array(bit_array.from_string(s))) })"
     RDocument -> "json_document.decoder()"
     RUnit -> "decode.success(Nil)"
     Unsupported(..) -> "decode.success(Nil)"

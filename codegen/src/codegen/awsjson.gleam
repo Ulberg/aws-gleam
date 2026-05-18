@@ -22,10 +22,10 @@ import codegen/named_shapes
 import codegen/paginator
 import codegen/struct_codec
 import codegen/trait_helpers
-import codegen/waiter
 import codegen/types.{
   type MemberDef, type Resolved, REnum, RIntEnum, RList, RMap, RStruct, RUnion,
 }
+import codegen/waiter
 import gleam/dict
 import gleam/list
 import gleam/option
@@ -134,15 +134,8 @@ pub fn emit_service(
       let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
         list.map(resolved_ops, fn(t) {
-          let #(
-            op_id,
-            in_r,
-            out_r,
-            err_ids,
-            requires_md5,
-            paginated,
-            waiters,
-          ) = t
+          let #(op_id, in_r, out_r, err_ids, requires_md5, paginated, waiters) =
+            t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info =
@@ -163,10 +156,7 @@ pub fn emit_service(
             out_info: out_info,
             error_ids: err_ids,
             requires_md5: requires_md5,
-            error_type: trait_helpers.op_error_type(
-              local,
-              emitted_type_names,
-            ),
+            error_type: trait_helpers.op_error_type(local, emitted_type_names),
             pagination_info: pagination_info,
             waiters: waiters,
           )
@@ -1456,7 +1446,6 @@ fn op_uses_unsupported_trait(traits: shape.Traits) -> Bool {
   dict.has_key(traits, ShapeId("smithy.api#requestCompression"))
 }
 
-
 /// Build the module-doc + import block as a `code.Module` AST. The
 /// body itself is still raw string concatenation (each
 /// emit_operation, emit_record_def etc. is independent), so we
@@ -1480,6 +1469,7 @@ fn file_header(service_id: String, protocol: Protocol, body: String) -> String {
     #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
     #("aws/internal/codec/json_timestamp", "json_timestamp.", code.CodeNone),
     #("aws/internal/http_send", "http_send.", code.CodeNone),
+    #("aws/streaming", "streaming.", code.CodeNone),
     #("gleam/bit_array", "bit_array.", code.CodeNone),
     #("gleam/dict", "dict.", code.CodeNone),
     #("gleam/dynamic/decode", "decode.", code.CodeNone),

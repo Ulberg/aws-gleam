@@ -18,13 +18,13 @@ import codegen/dispatcher
 import codegen/named_shapes
 import codegen/paginator
 import codegen/rest_request
-import codegen/waiter
 import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
   type HttpTrait, type MemberDef, type Resolved, HttpTrait, Payload, RDocument,
   REnum, RIntEnum, RList, RMap, RPrim, RStruct, RUnion,
 }
+import codegen/waiter
 import gleam/dict
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -174,10 +174,7 @@ pub fn emit_service(
             in_info: in_info,
             out_info: out_info,
             error_ids: err_ids,
-            error_type: trait_helpers.op_error_type(
-              local,
-              emitted_type_names,
-            ),
+            error_type: trait_helpers.op_error_type(local, emitted_type_names),
             pagination_info: pagination_info,
             waiters: waiters,
           )
@@ -296,11 +293,9 @@ fn emit_waiter(spec: OpSpec) -> String {
     input_type: spec.in_info.type_name,
     error_type: spec.error_type,
     waiters: spec.waiters,
-    known_error_locals: list.fold(
-      spec.error_ids,
-      set.new(),
-      fn(acc, id) { set.insert(acc, strip_namespace(id)) },
-    ),
+    known_error_locals: list.fold(spec.error_ids, set.new(), fn(acc, id) {
+      set.insert(acc, strip_namespace(id))
+    }),
   )
 }
 
@@ -1232,6 +1227,15 @@ fn emit_payload_body(m: MemberDef) -> List(code.Code) {
   }
   let #(some_expr, none_expr, content_type) = case m.target {
     types.RBlob -> #(code.Ident(name: "v"), code.Raw(fragment: "<<>>"), blob_ct)
+    types.RStreamingBlob -> #(
+      // Buffered materialisation. Drops when a chunked-send
+      // transport replaces `to_bit_array` with a lazy reader.
+      code.Call(head: code.Ident(name: "streaming.to_bit_array"), args: [
+        code.Ident(name: "v"),
+      ]),
+      code.Raw(fragment: "<<>>"),
+      blob_ct,
+    )
     RPrim(primitive: types.PString) -> #(
       code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
         code.Ident(name: "v"),
@@ -1492,6 +1496,17 @@ fn emit_parse_with_payload(
           code.Ident(name: "body"),
         ]),
       )
+    types.RStreamingBlob ->
+      // Lazy iterator slot for a future chunked-recv transport;
+      // today the v1 buffered transport hands `body` over whole.
+      code.Let(
+        name: "payload",
+        value: code.Call(head: code.Ident(name: "option.Some"), args: [
+          code.Call(head: code.Ident(name: "streaming.from_bit_array"), args: [
+            code.Ident(name: "body"),
+          ]),
+        ]),
+      )
     RPrim(primitive: types.PString) ->
       code.Use(
         name: "payload",
@@ -1581,6 +1596,7 @@ fn file_header(service_id: String, body: String) -> String {
     #("aws/internal/codec/json_timestamp", "json_timestamp.", code.CodeNone),
     #("aws/internal/codec/rest", "rest.", code.CodeNone),
     #("aws/internal/http_send", "http_send.", code.CodeNone),
+    #("aws/streaming", "streaming.", code.CodeNone),
     #("gleam/bit_array", "bit_array.", code.CodeNone),
     #("gleam/dict", "dict.", code.CodeNone),
     #("gleam/dynamic/decode", "decode.", code.CodeNone),
@@ -1615,7 +1631,6 @@ fn op_uses_unsupported_trait(_traits: shape.Traits) -> Bool {
   // honours the input's `ChecksumAlgorithm` field is a follow-up.
   False
 }
-
 
 fn http_trait(traits: shape.Traits) -> Option(HttpTrait) {
   case dict.get(traits, ShapeId("smithy.api#http")) {

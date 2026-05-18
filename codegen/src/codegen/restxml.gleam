@@ -30,14 +30,14 @@ import codegen/dispatcher
 import codegen/named_shapes
 import codegen/paginator
 import codegen/rest_request
-import codegen/waiter
 import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
   type HttpTrait, type MemberDef, type Resolved, Body, Header, HttpTrait, PBool,
   PInt, PString, Payload, RBlob, RDocument, REnum, RIntEnum, RList, RMap, RPrim,
-  RStruct, RTimestamp, RUnion, RUnit, ResponseCode, Unsupported,
+  RStreamingBlob, RStruct, RTimestamp, RUnion, RUnit, ResponseCode, Unsupported,
 }
+import codegen/waiter
 import gleam/dict
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -152,10 +152,7 @@ pub fn emit_service(
             in_info: in_info,
             out_info: out_info,
             error_ids: err_ids,
-            error_type: trait_helpers.op_error_type(
-              local,
-              emitted_type_names,
-            ),
+            error_type: trait_helpers.op_error_type(local, emitted_type_names),
             pagination_info: pagination_info,
             waiters: waiters,
           )
@@ -269,11 +266,9 @@ fn emit_waiter(spec: OpSpec) -> String {
     input_type: spec.in_info.type_name,
     error_type: spec.error_type,
     waiters: spec.waiters,
-    known_error_locals: list.fold(
-      spec.error_ids,
-      set.new(),
-      fn(acc, id) { set.insert(acc, strip_namespace(id)) },
-    ),
+    known_error_locals: list.fold(spec.error_ids, set.new(), fn(acc, id) {
+      set.insert(acc, strip_namespace(id))
+    }),
   )
 }
 
@@ -1335,6 +1330,17 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
           fragment: "fn(e) { case xml_decode.string_text(e) { Ok(s) -> case bit_array.base64_decode(s) { Ok(b) -> Ok(b) Error(_) -> Error(\"xml: bad base64\") } Error(r) -> Error(r) } }",
         ),
       ])
+    RStreamingBlob ->
+      // A `@streaming` blob in non-payload position is rare — the
+      // wire form is still base64-in-XML, the public field is
+      // `StreamingBody`, so wrap the decoded bytes after base64.
+      code.Call(head: code.Ident(name: "xml_decode.optional_child"), args: [
+        code.Ident(name: "elem"),
+        code.StrLit(value: member_name),
+        code.Raw(
+          fragment: "fn(e) { case xml_decode.string_text(e) { Ok(s) -> case bit_array.base64_decode(s) { Ok(b) -> Ok(streaming.from_bit_array(b)) Error(_) -> Error(\"xml: bad base64\") } Error(r) -> Error(r) } }",
+        ),
+      ])
     // Wire timestamps in restXml are ISO 8601 (e.g.
     // `2024-01-02T03:04:05.000Z`); the type walker surfaces them
     // as `Int` (epoch seconds), so `xml_decode.timestamp_text`
@@ -1677,6 +1683,14 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
         ),
       )
     RBlob -> wrap_text_call(member_name, mem_ns, "xml.blob_text")
+    RStreamingBlob ->
+      // Same wire form as `RBlob`; `v` is a `StreamingBody`
+      // wrapper so unwrap before the base64-text helper.
+      wrap_with_attrs(
+        member_name,
+        mem_ns,
+        code.Raw(fragment: "xml.blob_text(streaming.to_bit_array(v))"),
+      )
     RTimestamp ->
       // restXml's protocol default is `date-time` (ISO 8601). The
       // `@timestampFormat` member trait overrides it; the member
@@ -2336,6 +2350,14 @@ fn emit_payload_body(m: MemberDef) -> List(code.Code) {
   }
   let #(some_expr, content_type) = case m.target {
     types.RBlob -> #(code.Ident(name: "v"), blob_ct)
+    types.RStreamingBlob -> #(
+      // Buffered materialisation; chunked-send transport will
+      // replace `to_bit_array` with a lazy reader.
+      code.Call(head: code.Ident(name: "streaming.to_bit_array"), args: [
+        code.Ident(name: "v"),
+      ]),
+      blob_ct,
+    )
     RPrim(primitive: types.PString) -> #(
       code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
         code.Ident(name: "v"),
@@ -2703,6 +2725,17 @@ fn emit_parse_with_payload(
           code.Ident(name: "body"),
         ]),
       )
+    RStreamingBlob ->
+      // Lazy iterator slot for a future chunked-recv transport;
+      // today the v1 buffered transport hands `body` over whole.
+      code.Let(
+        name: "payload",
+        value: code.Call(head: code.Ident(name: "option.Some"), args: [
+          code.Call(head: code.Ident(name: "streaming.from_bit_array"), args: [
+            code.Ident(name: "body"),
+          ]),
+        ]),
+      )
     RPrim(primitive: types.PString) ->
       code.Raw(
         fragment: "use payload <- result.try(case bit_array.to_string(body) {\n      Ok(s) -> Ok(option.Some(s))\n      Error(_) -> Error(\"non-utf8 payload\")\n    })",
@@ -2769,6 +2802,7 @@ fn file_header(service_id: String, body: String) -> String {
     #("aws/internal/codec/xml", "xml.", code.CodeNone),
     #("aws/internal/codec/xml_decode", "xml_decode.", code.CodeNone),
     #("aws/internal/http_send", "http_send.", code.CodeNone),
+    #("aws/streaming", "streaming.", code.CodeNone),
     #("gleam/bit_array", "bit_array.", code.CodeNone),
     #("gleam/dict", "dict.", code.CodeNone),
     #("gleam/dynamic/decode", "decode.", code.CodeNone),
@@ -2803,7 +2837,6 @@ fn op_uses_unsupported_trait(_traits: shape.Traits) -> Bool {
   // honours the input's `ChecksumAlgorithm` field is a follow-up.
   False
 }
-
 
 fn http_trait(traits: shape.Traits) -> Option(HttpTrait) {
   case dict.get(traits, ShapeId("smithy.api#http")) {
