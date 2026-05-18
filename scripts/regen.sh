@@ -103,6 +103,24 @@ if [ ${#FAILURES[@]} -gt 0 ]; then
   exit 1
 fi
 
+# Belt-and-braces: count what landed on disk. The per-service
+# `gleam run` calls historically exited 0 even when they did
+# nothing useful (codegen errors printed to stdout, returned
+# `Nil`, BEAM exited 0). The `aws_codegen.main` halt(1) fix and
+# the `if !` guard above should catch every failure path now —
+# but if some new path slips through, a sample count mismatch
+# surfaces it here instead of as a downstream "Unknown module"
+# at `gleam test` time minutes later.
+WRITTEN=$(find ../src/aws/services -maxdepth 1 -name '*.gleam' | wc -l | tr -d ' ')
+if [ "$WRITTEN" -lt "$TOTAL" ]; then
+  echo
+  echo "  service-count check: expected $TOTAL .gleam files, found $WRITTEN."
+  echo "  the per-service loop reported 0 failures but the directory is short."
+  echo "  one or more codegen calls exited 0 without writing — investigate"
+  echo "  by running ./scripts/regen.sh interactively without stderr suppression."
+  exit 1
+fi
+
 echo "→ regenerating protocol-test client modules + dispatchers"
 $CODEGEN awsJson1_0 ../test/fixtures/protocol-tests/awsJson1_0.json ../src/aws/services/protocoltests/json10.gleam --dispatcher-out ../test/protocol_tests/awsjson10_dispatchers.gleam >/dev/null
 $CODEGEN awsJson1_1 ../test/fixtures/protocol-tests/awsJson1_1.json ../src/aws/services/protocoltests/json11.gleam --dispatcher-out ../test/protocol_tests/awsjson11_dispatchers.gleam >/dev/null
