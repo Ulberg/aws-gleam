@@ -231,4 +231,3 @@ pub fn presigned_url_includes_session_token_when_present_test() {
   string.contains(url, "X-Amz-Security-Token=session%2Ftoken%2Bwith%3Dspecial")
   |> should.be_true
 }
-

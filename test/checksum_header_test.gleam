@@ -77,7 +77,11 @@ pub fn with_checksum_header_for_wire_emits_correct_algo_test() {
 pub fn with_checksum_header_inserts_in_dict_test() {
   let headers = dict.from_list([#("Content-Type", "text/plain")])
   let out =
-    rest.with_checksum_header(headers, ChecksumSha256, bit_array.from_string("hi"))
+    rest.with_checksum_header(
+      headers,
+      ChecksumSha256,
+      bit_array.from_string("hi"),
+    )
   // Preexisting Content-Type stays; checksum header added.
   out
   |> dict.get("Content-Type")

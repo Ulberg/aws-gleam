@@ -5,14 +5,15 @@
 //// (CloudWatch, EventBridge, metric APIs).
 
 import aws/internal/codec/json_timestamp.{
-  type Timestamp, Timestamp, decoder_precise, int_to_timestamp,
-  timestamp_to_int,
+  type Timestamp, Timestamp, decoder_precise, int_to_timestamp, timestamp_to_int,
 }
 import gleam/dynamic
 import gleam/dynamic/decode
 import gleeunit/should
 
-fn decode_value(d: dynamic.Dynamic) -> Result(Timestamp, List(decode.DecodeError)) {
+fn decode_value(
+  d: dynamic.Dynamic,
+) -> Result(Timestamp, List(decode.DecodeError)) {
   decode.run(d, decoder_precise())
 }
 
@@ -24,13 +25,17 @@ pub fn decoder_precise_int_wire_form_test() {
 pub fn decoder_precise_preserves_fractional_seconds_test() {
   // 1700000000.5 ⇒ 1700000000 seconds + 500ms = 500_000_000 ns.
   decode_value(dynamic.float(1_700_000_000.5))
-  |> should.equal(Ok(Timestamp(seconds: 1_700_000_000, nanoseconds: 500_000_000)))
+  |> should.equal(
+    Ok(Timestamp(seconds: 1_700_000_000, nanoseconds: 500_000_000)),
+  )
 }
 
 pub fn decoder_precise_handles_quarter_second_test() {
   // 1700000000.25 ⇒ 250_000_000 ns.
   decode_value(dynamic.float(1_700_000_000.25))
-  |> should.equal(Ok(Timestamp(seconds: 1_700_000_000, nanoseconds: 250_000_000)))
+  |> should.equal(
+    Ok(Timestamp(seconds: 1_700_000_000, nanoseconds: 250_000_000)),
+  )
 }
 
 pub fn decoder_precise_zero_fractional_keeps_zero_nanos_test() {

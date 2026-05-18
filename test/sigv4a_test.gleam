@@ -11,7 +11,9 @@
 //// failure (the server-side check signs the same canonical
 //// request hash, so any mismatch breaks the round-trip).
 
-import aws/internal/http_request.{type Header, type HttpRequest, Header, HttpRequest}
+import aws/internal/http_request.{
+  type Header, type HttpRequest, Header, HttpRequest,
+}
 import aws/internal/sigv4a
 import gleam/bit_array
 import gleam/list
@@ -56,7 +58,8 @@ fn example_opts() -> sigv4a.Sigv4aOptions {
 }
 
 pub fn sign_adds_authorization_header_test() {
-  let signed = sigv4a.sign(example_request(), private_key(), "AKIDEXAMPLE", example_opts())
+  let signed =
+    sigv4a.sign(example_request(), private_key(), "AKIDEXAMPLE", example_opts())
   case find_header(signed.headers, "Authorization") {
     Ok(v) ->
       string.starts_with(v, "AWS4-ECDSA-P256-SHA256 Credential=AKIDEXAMPLE/")
@@ -94,23 +97,22 @@ pub fn sign_signature_verifies_with_public_key_test() {
   let assert Ok(sig_hex) = extract_signature(auth)
   let sig_bytes = decode_hex(sig_hex)
   let creq = canonical_for_round_trip(signed)
-  let creq_hash =
-    crypto_hex_encode(crypto_sha256(bit_array.from_string(creq)))
+  let creq_hash = crypto_hex_encode(crypto_sha256(bit_array.from_string(creq)))
   let sts =
     "AWS4-ECDSA-P256-SHA256\n20150830T123600Z\n20150830/service/aws4_request\n"
     <> creq_hash
-  sigv4a.ecdsa_p256_verify(
-    public_key(),
-    bit_array.from_string(sts),
-    sig_bytes,
-  )
+  sigv4a.ecdsa_p256_verify(public_key(), bit_array.from_string(sts), sig_bytes)
   |> should.be_true
 }
 
 // ---------- test helpers ----------
 
 fn find_header(headers: List(Header), name: String) -> Result(String, Nil) {
-  case list.find(headers, fn(h) { string.lowercase(h.name) == string.lowercase(name) }) {
+  case
+    list.find(headers, fn(h) {
+      string.lowercase(h.name) == string.lowercase(name)
+    })
+  {
     Ok(h) -> Ok(h.value)
     Error(_) -> Error(Nil)
   }
@@ -145,8 +147,7 @@ fn canonical_for_round_trip(signed: HttpRequest) -> String {
     |> list.map(fn(p) { p.0 })
     |> list.unique
     |> string.join(";")
-  let payload_hash =
-    crypto_hex_encode(crypto_sha256(bit_array.from_string("")))
+  let payload_hash = crypto_hex_encode(crypto_sha256(bit_array.from_string("")))
   signed.method
   <> "\n"
   <> signed.path

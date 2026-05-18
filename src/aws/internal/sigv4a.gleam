@@ -125,8 +125,7 @@ pub fn sign(
     <> scope
     <> "\n"
     <> creq_hash
-  let sig_der =
-    ecdsa_p256_sign(private_key.scalar, bit_array.from_string(sts))
+  let sig_der = ecdsa_p256_sign(private_key.scalar, bit_array.from_string(sts))
   let sig_hex = crypto.hex_encode(sig_der)
   let auth =
     "AWS4-ECDSA-P256-SHA256 Credential="
@@ -167,8 +166,7 @@ pub fn ecdsa_p256_verify(
 
 fn upsert(headers: List(Header), name: String, value: String) -> List(Header) {
   let lower = string.lowercase(name)
-  let already =
-    list.any(headers, fn(h) { string.lowercase(h.name) == lower })
+  let already = list.any(headers, fn(h) { string.lowercase(h.name) == lower })
   case already {
     True ->
       list.map(headers, fn(h) {

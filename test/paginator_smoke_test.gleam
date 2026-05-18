@@ -47,17 +47,18 @@ pub fn paginate_list_tables_folds_two_pages_test() {
   let state = process.new_subject()
   process.send(state, 0)
   let send: fn(Request(BitArray)) ->
-    Result(response.Response(BitArray), aws_http.HttpError) =
-    fn(_req: Request(BitArray)) {
-      let n = unwrap_or(process.receive(state, 0), 0)
-      process.send(state, n + 1)
-      let body = case n {
-        0 ->
-          "{\"TableNames\":[\"alpha\",\"beta\"],\"LastEvaluatedTableName\":\"beta\"}"
-        _ -> "{\"TableNames\":[\"gamma\"]}"
-      }
-      Ok(response.Response(status: 200, headers: [], body: json_bytes(body)))
+    Result(response.Response(BitArray), aws_http.HttpError) = fn(
+    _req: Request(BitArray),
+  ) {
+    let n = unwrap_or(process.receive(state, 0), 0)
+    process.send(state, n + 1)
+    let body = case n {
+      0 ->
+        "{\"TableNames\":[\"alpha\",\"beta\"],\"LastEvaluatedTableName\":\"beta\"}"
+      _ -> "{\"TableNames\":[\"gamma\"]}"
     }
+    Ok(response.Response(status: 200, headers: [], body: json_bytes(body)))
+  }
   let client =
     dynamodb.new(region: "us-east-1")
     |> dynamodb.with_credentials_provider(static_credentials())
@@ -66,10 +67,7 @@ pub fn paginate_list_tables_folds_two_pages_test() {
   let result =
     dynamodb.paginate_list_tables(
       client,
-      dynamodb.ListTablesInput(
-        exclusive_start_table_name: None,
-        limit: None,
-      ),
+      dynamodb.ListTablesInput(exclusive_start_table_name: None, limit: None),
       [],
       fn(acc, items) { list.append(acc, items) },
     )
@@ -87,18 +85,18 @@ pub fn paginate_list_tables_threads_cursor_between_pages_test() {
   let counter = process.new_subject()
   process.send(counter, 0)
   let send: fn(Request(BitArray)) ->
-    Result(response.Response(BitArray), aws_http.HttpError) =
-    fn(req: Request(BitArray)) {
-      process.send(bodies, req.body)
-      let n = unwrap_or(process.receive(counter, 0), 0)
-      process.send(counter, n + 1)
-      let body = case n {
-        0 ->
-          "{\"TableNames\":[\"alpha\"],\"LastEvaluatedTableName\":\"alpha\"}"
-        _ -> "{\"TableNames\":[\"beta\"]}"
-      }
-      Ok(response.Response(status: 200, headers: [], body: json_bytes(body)))
+    Result(response.Response(BitArray), aws_http.HttpError) = fn(
+    req: Request(BitArray),
+  ) {
+    process.send(bodies, req.body)
+    let n = unwrap_or(process.receive(counter, 0), 0)
+    process.send(counter, n + 1)
+    let body = case n {
+      0 -> "{\"TableNames\":[\"alpha\"],\"LastEvaluatedTableName\":\"alpha\"}"
+      _ -> "{\"TableNames\":[\"beta\"]}"
     }
+    Ok(response.Response(status: 200, headers: [], body: json_bytes(body)))
+  }
   let client =
     dynamodb.new(region: "us-east-1")
     |> dynamodb.with_credentials_provider(static_credentials())
@@ -107,10 +105,7 @@ pub fn paginate_list_tables_threads_cursor_between_pages_test() {
   let _ =
     dynamodb.paginate_list_tables(
       client,
-      dynamodb.ListTablesInput(
-        exclusive_start_table_name: None,
-        limit: None,
-      ),
+      dynamodb.ListTablesInput(exclusive_start_table_name: None, limit: None),
       0,
       fn(acc, items) { acc + list.length(items) },
     )

@@ -272,10 +272,7 @@ pub fn waitable_traits(traits: shape.Traits) -> List(WaiterDef) {
   }
 }
 
-fn parse_waiter(
-  name: String,
-  body: Dict(ShapeId, Trait),
-) -> Option(WaiterDef) {
+fn parse_waiter(name: String, body: Dict(ShapeId, Trait)) -> Option(WaiterDef) {
   // Smithy default cadence: min=2s, max=120s when the trait
   // doesn't override.
   let min_delay = int_field(body, "minDelay", 2) * 1000

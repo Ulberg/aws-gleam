@@ -341,9 +341,7 @@ fn build_canonical_uri(path: String, normalize: Bool) -> String {
 }
 
 fn host_from_headers(headers: List(Header)) -> String {
-  case
-    list.find(headers, fn(h) { string.lowercase(h.name) == "host" })
-  {
+  case list.find(headers, fn(h) { string.lowercase(h.name) == "host" }) {
     Ok(h) -> h.value
     Error(_) -> ""
   }

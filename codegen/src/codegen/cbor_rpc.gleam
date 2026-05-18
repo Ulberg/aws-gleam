@@ -338,8 +338,7 @@ fn parse_error_response_fn(
   with_message: Bool,
 ) -> Code {
   let body = case with_message {
-    True ->
-      "case cbor.decode_value(body) {
+    True -> "case cbor.decode_value(body) {
     Error(reason) -> Error(\"cbor decode failed: \" <> reason)
     Ok(value) -> {
       let message = case cbor.get_field(value, \"message\") {
@@ -349,8 +348,7 @@ fn parse_error_response_fn(
       Ok(" <> ctor <> "(message: message))
     }
   }"
-    False ->
-      "case cbor.decode_value(body) {
+    False -> "case cbor.decode_value(body) {
     Error(reason) -> Error(\"cbor decode failed: \" <> reason)
     Ok(_) -> Ok(" <> ctor <> ")
   }"

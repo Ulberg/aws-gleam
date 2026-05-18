@@ -35,8 +35,7 @@ import gleam/result
 /// types.
 pub fn fold(
   acc acc: a,
-  step step: fn(Option(cursor)) ->
-    Result(#(List(item), Option(cursor)), error),
+  step step: fn(Option(cursor)) -> Result(#(List(item), Option(cursor)), error),
   reducer reducer: fn(a, List(item)) -> a,
 ) -> Result(a, error) {
   loop(acc, None, step, reducer)
@@ -45,8 +44,7 @@ pub fn fold(
 fn loop(
   acc: a,
   token: Option(cursor),
-  step: fn(Option(cursor)) ->
-    Result(#(List(item), Option(cursor)), error),
+  step: fn(Option(cursor)) -> Result(#(List(item), Option(cursor)), error),
   reducer: fn(a, List(item)) -> a,
 ) -> Result(a, error) {
   use #(items, next) <- result.try(step(token))

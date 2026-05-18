@@ -130,11 +130,7 @@ pub fn union_def(
         name: name,
         variants: list.map(members, fn(m) {
           PositionalVariant(
-            name: stringutils.union_variant_ctor(
-              name,
-              m.member_name,
-              emitted,
-            ),
+            name: stringutils.union_variant_ctor(name, m.member_name, emitted),
             types: [types.gleam_type(m.target)],
           )
         }),

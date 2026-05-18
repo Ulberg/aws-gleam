@@ -103,7 +103,6 @@ fn find_list_member(
   }
 }
 
-
 /// One-shot string emission for the per-protocol emitters: if
 /// `info` is `Some(_)`, render the `paginate_<op>` function (with a
 /// trailing blank line so it lays out cleanly inside the generated
@@ -199,24 +198,17 @@ fn step_closure(
         Labelled(label: input_token_field, value: Ident(name: "cursor")),
       ])
     False ->
-      RecordUpdate(
-        record: Ident(name: "input"),
-        type_: input_type,
-        fields: [
-          Labelled(label: input_token_field, value: Ident(name: "cursor")),
-        ],
-      )
+      RecordUpdate(record: Ident(name: "input"), type_: input_type, fields: [
+        Labelled(label: input_token_field, value: Ident(name: "cursor")),
+      ])
   }
   let input_with_cursor =
     Let(
       name: "input",
-      value: Case(
-        scrutinee: Ident(name: "cursor"),
-        branches: [
-          Branch(pattern: "option.Some(_)", body: cursored_input),
-          Branch(pattern: "option.None", body: Ident(name: "input")),
-        ],
-      ),
+      value: Case(scrutinee: Ident(name: "cursor"), branches: [
+        Branch(pattern: "option.Some(_)", body: cursored_input),
+        Branch(pattern: "option.None", body: Ident(name: "input")),
+      ]),
     )
   let project_ok =
     Call(head: Ident(name: "Ok"), args: [

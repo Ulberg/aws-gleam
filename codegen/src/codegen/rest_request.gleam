@@ -178,15 +178,18 @@ fn build_dispatched_checksum_step(member: MemberDef) -> code.Code {
   let snake = member.snake_name
   let encoder = types.json_encoder(member.target)
   let some_branch =
-    code.Call(head: code.Ident(name: "rest.with_checksum_header_for_wire"), args: [
-      code.Ident(name: "headers"),
-      code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
-        code.Call(head: code.Ident(name: encoder), args: [
-          code.Ident(name: "v"),
+    code.Call(
+      head: code.Ident(name: "rest.with_checksum_header_for_wire"),
+      args: [
+        code.Ident(name: "headers"),
+        code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
+          code.Call(head: code.Ident(name: encoder), args: [
+            code.Ident(name: "v"),
+          ]),
         ]),
-      ]),
-      code.Ident(name: "body"),
-    ])
+        code.Ident(name: "body"),
+      ],
+    )
   code.Let(
     name: "headers",
     value: code.Case(

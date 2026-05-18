@@ -85,14 +85,14 @@ fn is_reserved_type_name(s: String) -> Bool {
     | "Option"
     | "Dict"
     | "Set"
-    // `Ok` / `Error` are `Result`'s variant constructors, not
-    // types — but Gleam will treat a user-defined `pub type Error`
-    // as shadowing `Result.Error` whenever the variant name
-    // resolves the same way, breaking generated enum decoders
-    // that emit `Error("unknown enum value")` etc. S3's
-    // `com.amazonaws.s3#Error` is the canonical offender. Rename
-    // the user struct to `ErrorShape` so the prelude wins.
-    | "Error"
+    | // `Ok` / `Error` are `Result`'s variant constructors, not
+      // types — but Gleam will treat a user-defined `pub type Error`
+      // as shadowing `Result.Error` whenever the variant name
+      // resolves the same way, breaking generated enum decoders
+      // that emit `Error("unknown enum value")` etc. S3's
+      // `com.amazonaws.s3#Error` is the canonical offender. Rename
+      // the user struct to `ErrorShape` so the prelude wins.
+      "Error"
     | "Ok"
     | "None"
     | "Some" -> True

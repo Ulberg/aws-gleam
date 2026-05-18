@@ -15,11 +15,9 @@ import gleeunit/should
 pub fn fold_single_page_test() {
   let pages = [#(["a", "b", "c"], None)]
   let result =
-    pagination.fold(
-      acc: [],
-      step: lookup_step(pages),
-      reducer: fn(acc, items) { list.append(acc, items) },
-    )
+    pagination.fold(acc: [], step: lookup_step(pages), reducer: fn(acc, items) {
+      list.append(acc, items)
+    })
   result |> should.equal(Ok(["a", "b", "c"]))
 }
 
@@ -30,11 +28,9 @@ pub fn fold_multi_page_advances_cursor_test() {
     #(["e"], None),
   ]
   let result =
-    pagination.fold(
-      acc: [],
-      step: lookup_step(pages),
-      reducer: fn(acc, items) { list.append(acc, items) },
-    )
+    pagination.fold(acc: [], step: lookup_step(pages), reducer: fn(acc, items) {
+      list.append(acc, items)
+    })
   result |> should.equal(Ok(["a", "b", "c", "d", "e"]))
 }
 

@@ -90,17 +90,13 @@ pub fn decoder_precise() -> decode.Decoder(Timestamp) {
       decode.success(Timestamp(seconds: n, nanoseconds: 0))
     }),
     [
-      decode.then(decode.float, fn(f) {
-        decode.success(float_to_timestamp(f))
-      }),
+      decode.then(decode.float, fn(f) { decode.success(float_to_timestamp(f)) }),
       decode.then(decode.string, fn(s) {
         case parse_iso8601_ffi(s) {
-          Ok(n) ->
-            decode.success(Timestamp(seconds: n, nanoseconds: 0))
+          Ok(n) -> decode.success(Timestamp(seconds: n, nanoseconds: 0))
           Error(_) ->
             case parse_http_date_ffi(s) {
-              Ok(n) ->
-                decode.success(Timestamp(seconds: n, nanoseconds: 0))
+              Ok(n) -> decode.success(Timestamp(seconds: n, nanoseconds: 0))
               Error(_) ->
                 decode.failure(
                   Timestamp(seconds: 0, nanoseconds: 0),

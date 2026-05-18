@@ -80,11 +80,9 @@ fn encode_bytes(b: BitArray) -> BitArray {
 }
 
 fn encode_list(items: List(Value)) -> BitArray {
-  list.fold(
-    items,
-    encode_head(4, list.length(items)),
-    fn(acc, v) { bit_array.append(acc, encode(v)) },
-  )
+  list.fold(items, encode_head(4, list.length(items)), fn(acc, v) {
+    bit_array.append(acc, encode(v))
+  })
 }
 
 fn encode_map(entries: List(#(Value, Value))) -> BitArray {
@@ -93,16 +91,14 @@ fn encode_map(entries: List(#(Value, Value))) -> BitArray {
   // including the major-type head byte. AWS's rpcv2Cbor leans
   // on this when computing wire-form digests.
   let sorted =
-    list.sort(entries, by: fn(a, b) { compare_bytewise(encode(a.0), encode(b.0)) })
-  list.fold(
-    sorted,
-    encode_head(5, list.length(sorted)),
-    fn(acc, entry) {
-      let k = encode(entry.0)
-      let v = encode(entry.1)
-      bit_array.append(bit_array.append(acc, k), v)
-    },
-  )
+    list.sort(entries, by: fn(a, b) {
+      compare_bytewise(encode(a.0), encode(b.0))
+    })
+  list.fold(sorted, encode_head(5, list.length(sorted)), fn(acc, entry) {
+    let k = encode(entry.0)
+    let v = encode(entry.1)
+    bit_array.append(bit_array.append(acc, k), v)
+  })
 }
 
 /// Build a CBOR head byte sequence for a given `major_type`
@@ -262,7 +258,10 @@ fn decode_map_entries(
   }
 }
 
-fn decode_simple(info: Int, rest: BitArray) -> Result(#(Value, BitArray), String) {
+fn decode_simple(
+  info: Int,
+  rest: BitArray,
+) -> Result(#(Value, BitArray), String) {
   case info {
     20 -> Ok(#(CBool(False), rest))
     21 -> Ok(#(CBool(True), rest))
