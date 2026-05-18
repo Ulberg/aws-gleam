@@ -35,6 +35,19 @@ cd "$REPO/codegen"
 
 mkdir -p ../src/aws/services/protocoltests ../test/protocol_tests
 
+# Force a fresh codegen build before the per-service loop runs
+# 409 sequential `gleam run -m aws_codegen` calls. CI's
+# `actions/cache@v4` step restores a previously-cached `codegen/build`
+# whose BEAM modules were compiled against an OLDER version of the
+# codegen source. Without this step, `gleam run` would happily use
+# those stale BEAMs — and any codegen logic added after the cache
+# key was last bumped (e.g. `aws_codegen.main` calling `halt(1)` on
+# error) silently doesn't run. `gleam build` checks source vs build
+# state and recompiles if anything changed, so the per-service loop
+# always uses the freshly-built codegen.
+echo "→ rebuilding codegen"
+gleam build >/dev/null
+
 # Map each model to its protocol. Outputs lines of `<name> <protocol>`.
 # Skips models whose service shape has none of the mainline protocols
 # we support — awsQuery / ec2Query / rpcv2Cbor are excluded until
