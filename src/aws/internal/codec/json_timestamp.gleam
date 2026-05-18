@@ -13,6 +13,7 @@
 //// coerce to `Int` (epoch seconds).
 
 import gleam/dynamic/decode
+import gleam/json
 
 @external(erlang, "aws_ffi", "parse_iso8601")
 fn parse_iso8601_ffi(t: String) -> Result(Int, Nil)
@@ -120,6 +121,26 @@ pub fn timestamp_to_int(t: Timestamp) -> Int {
 /// zero nanoseconds. Symmetric with `timestamp_to_int`.
 pub fn int_to_timestamp(seconds: Int) -> Timestamp {
   Timestamp(seconds: seconds, nanoseconds: 0)
+}
+
+/// Encode a `Timestamp` as a JSON epoch-seconds number. When
+/// `nanoseconds == 0` we emit a JSON Int (`1700000000`) so the
+/// wire bytes match the existing `json.int` path the codegen
+/// uses for the `Int` API — flipping a member to precise must
+/// not perturb the wire form for callers who never set
+/// nanoseconds. When `nanoseconds > 0` we emit a JSON Float
+/// (`1700000000.5`) so the fractional component reaches the
+/// server intact.
+pub fn encode_epoch_seconds(t: Timestamp) -> json.Json {
+  case t.nanoseconds {
+    0 -> json.int(t.seconds)
+    _ ->
+      json.float(
+        int_to_float(t.seconds)
+        +. int_to_float(t.nanoseconds)
+        /. 1_000_000_000.0,
+      )
+  }
 }
 
 fn float_to_timestamp(f: Float) -> Timestamp {
