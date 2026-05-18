@@ -339,6 +339,41 @@ pub fn with_checksum_header(
   dict.insert(headers, name, value)
 }
 
+/// Translate a Smithy `ChecksumAlgorithm` enum's wire value
+/// (e.g. `"SHA256"`, `"CRC32C"`) to the runtime `ChecksumAlgorithm`
+/// variant, falling back to `ChecksumSha256` when the wire value
+/// doesn't match a supported algorithm. Used by the codegen's
+/// algorithm-member dispatch for `aws.protocols#httpChecksum` so
+/// generated request builders can read the caller's typed enum
+/// choice without needing a per-service jump table.
+pub fn checksum_algorithm_from_wire(wire: String) -> ChecksumAlgorithm {
+  case wire {
+    "SHA256" -> ChecksumSha256
+    "SHA1" -> ChecksumSha1
+    "CRC32" -> ChecksumCrc32
+    "CRC32C" -> ChecksumCrc32C
+    // Unknown algorithms (CRC64NVME etc.) fall back to SHA-256 —
+    // the safe default per the `aws.protocols#httpChecksum`
+    // spec when no `requestChecksumRequired` is set or when the
+    // declared algorithm isn't one we can compute.
+    _ -> ChecksumSha256
+  }
+}
+
+/// Add the `x-amz-checksum-<algo>` header using a wire-form
+/// algorithm name. Equivalent to
+/// `with_checksum_header(headers, checksum_algorithm_from_wire(wire), body)`.
+/// Exists so the codegen can emit a single call that takes the
+/// generated enum's wire-encoder output directly, without
+/// needing per-service algorithm-mapping helpers.
+pub fn with_checksum_header_for_wire(
+  headers: Dict(String, String),
+  wire: String,
+  body: BitArray,
+) -> Dict(String, String) {
+  with_checksum_header(headers, checksum_algorithm_from_wire(wire), body)
+}
+
 fn parse_float(s: String) -> Option(Float) {
   // Integer literals are valid Float wire values per the Smithy spec —
   // `1` decodes to `1.0`. The stdlib's float parser rejects them, so

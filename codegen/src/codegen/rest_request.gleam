@@ -87,22 +87,7 @@ pub fn build_request_module(
     ]
     False -> []
   }
-  let checksum_step = case http_checksum {
-    option.Some(trait_helpers.HttpChecksumInfo(request_required: True, ..)) -> [
-      code.Let(
-        name: "headers",
-        value: code.Call(
-          head: code.Ident(name: "rest.with_checksum_header"),
-          args: [
-            code.Ident(name: "headers"),
-            code.Ident(name: "rest.ChecksumSha256"),
-            code.Ident(name: "body"),
-          ],
-        ),
-      ),
-    ]
-    _ -> []
-  }
+  let checksum_step = build_checksum_step(http_checksum, members)
   let body_items =
     list.flatten([
       emit_path_setup(http.uri, cats.labels),
@@ -129,6 +114,109 @@ pub fn build_request_module(
       code.Blank,
     ]),
   )
+}
+
+/// Generate the `aws.protocols#httpChecksum` middleware step
+/// that adds the right `x-amz-checksum-<algo>` header before
+/// signing. Three cases:
+///
+/// 1. `request_algorithm_member` is set AND points to a real
+///    enum member on the input — emit a `case` that reads the
+///    caller's typed enum choice, pulls its wire value via
+///    `rest.enum_wire_value`, and calls
+///    `rest.with_checksum_header_for_wire`. Falls back to
+///    `ChecksumSha256` when the field is `option.None`.
+/// 2. `request_required` is set with no algorithm member — emit
+///    an unconditional SHA-256 header. This matches the v1
+///    behaviour from M10.
+/// 3. Otherwise — emit nothing.
+fn build_checksum_step(
+  http_checksum: option.Option(trait_helpers.HttpChecksumInfo),
+  members: List(MemberDef),
+) -> List(code.Code) {
+  case http_checksum {
+    option.None -> []
+    option.Some(trait_helpers.HttpChecksumInfo(
+      request_required: required,
+      request_algorithm_member: alg_member,
+    )) ->
+      case alg_member {
+        option.Some(name) ->
+          case find_algorithm_member(members, name) {
+            option.Some(m) -> [build_dispatched_checksum_step(m)]
+            option.None ->
+              case required {
+                True -> [default_sha256_checksum_step()]
+                False -> []
+              }
+          }
+        option.None ->
+          case required {
+            True -> [default_sha256_checksum_step()]
+            False -> []
+          }
+      }
+  }
+}
+
+fn default_sha256_checksum_step() -> code.Code {
+  code.Let(
+    name: "headers",
+    value: code.Call(head: code.Ident(name: "rest.with_checksum_header"), args: [
+      code.Ident(name: "headers"),
+      code.Ident(name: "rest.ChecksumSha256"),
+      code.Ident(name: "body"),
+    ]),
+  )
+}
+
+fn build_dispatched_checksum_step(member: MemberDef) -> code.Code {
+  // Read the caller's enum value via the JSON encoder (which
+  // returns the wire-form string wrapped in a json.Json) and
+  // pass that to the wire-form helper. SHA-256 fallback when
+  // the field is None.
+  let snake = member.snake_name
+  let encoder = types.json_encoder(member.target)
+  let some_branch =
+    code.Call(head: code.Ident(name: "rest.with_checksum_header_for_wire"), args: [
+      code.Ident(name: "headers"),
+      code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
+        code.Call(head: code.Ident(name: encoder), args: [
+          code.Ident(name: "v"),
+        ]),
+      ]),
+      code.Ident(name: "body"),
+    ])
+  code.Let(
+    name: "headers",
+    value: code.Case(
+      scrutinee: code.Ident(name: name_concat(["input.", snake])),
+      branches: [
+        code.Branch(pattern: "option.Some(v)", body: some_branch),
+        code.Branch(
+          pattern: "option.None",
+          body: code.Call(
+            head: code.Ident(name: "rest.with_checksum_header"),
+            args: [
+              code.Ident(name: "headers"),
+              code.Ident(name: "rest.ChecksumSha256"),
+              code.Ident(name: "body"),
+            ],
+          ),
+        ),
+      ],
+    ),
+  )
+}
+
+fn find_algorithm_member(
+  members: List(MemberDef),
+  member_name: String,
+) -> option.Option(MemberDef) {
+  case list.find(members, fn(m) { m.member_name == member_name }) {
+    Ok(m) -> option.Some(m)
+    Error(_) -> option.None
+  }
 }
 
 // ---------- path / query / header setup ----------

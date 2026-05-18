@@ -45,6 +45,35 @@ pub fn crc32c_checksum_header_hello_world_test() {
   value |> should.equal("crUfeA==")
 }
 
+pub fn checksum_algorithm_from_wire_maps_known_values_test() {
+  rest.checksum_algorithm_from_wire("SHA256")
+  |> should.equal(ChecksumSha256)
+  rest.checksum_algorithm_from_wire("SHA1")
+  |> should.equal(ChecksumSha1)
+  rest.checksum_algorithm_from_wire("CRC32")
+  |> should.equal(ChecksumCrc32)
+  rest.checksum_algorithm_from_wire("CRC32C")
+  |> should.equal(ChecksumCrc32C)
+}
+
+pub fn checksum_algorithm_from_wire_defaults_unknown_to_sha256_test() {
+  // CRC64NVME isn't yet supported; the runtime defaults to
+  // SHA-256 rather than crashing so callers always get a valid
+  // checksum on the request.
+  rest.checksum_algorithm_from_wire("CRC64NVME")
+  |> should.equal(ChecksumSha256)
+  rest.checksum_algorithm_from_wire("")
+  |> should.equal(ChecksumSha256)
+}
+
+pub fn with_checksum_header_for_wire_emits_correct_algo_test() {
+  let body = bit_array.from_string("hi")
+  let headers = dict.new()
+  rest.with_checksum_header_for_wire(headers, "SHA256", body)
+  |> dict.get("x-amz-checksum-sha256")
+  |> should.equal(Ok("j0NDRmSPa5bfid2pAcUXaxCm2Dlh3TwayItZstwyeqQ="))
+}
+
 pub fn with_checksum_header_inserts_in_dict_test() {
   let headers = dict.from_list([#("Content-Type", "text/plain")])
   let out =
