@@ -226,6 +226,7 @@ pub fn label_for_namespace(namespace: String) -> Result(String, String) {
     "aws.protocoltests.json" -> Ok("awsjson11")
     "aws.protocoltests.restjson" -> Ok("restjson1")
     "aws.protocoltests.restxml" -> Ok("restxml")
+    "aws.protocoltests.restxml.xmlns" -> Ok("restxml_with_namespace")
     "aws.protocoltests.query" -> Ok("awsquery")
     "aws.protocoltests.ec2" -> Ok("ec2query")
     "aws.protocoltests.rpcv2cbor" -> Ok("rpcv2cbor")

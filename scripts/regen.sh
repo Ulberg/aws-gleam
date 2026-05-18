@@ -146,6 +146,7 @@ $CODEGEN awsJson1_0 ../test/fixtures/protocol-tests/awsJson1_0.json ../src/aws/s
 $CODEGEN awsJson1_1 ../test/fixtures/protocol-tests/awsJson1_1.json ../src/aws/services/protocoltests/json11.gleam --dispatcher-out ../test/protocol_tests/awsjson11_dispatchers.gleam >/dev/null
 $CODEGEN restJson1  ../test/fixtures/protocol-tests/restJson1.json  ../src/aws/services/protocoltests/restjson1.gleam --dispatcher-out ../test/protocol_tests/restjson1_dispatchers.gleam >/dev/null
 $CODEGEN restXml    ../test/fixtures/protocol-tests/restXml.json    ../src/aws/services/protocoltests/restxml.gleam   --dispatcher-out ../test/protocol_tests/restxml_dispatchers.gleam >/dev/null
+$CODEGEN restXml    ../test/fixtures/protocol-tests/restXmlWithNamespace.json ../src/aws/services/protocoltests/restxml_with_namespace.gleam --dispatcher-out ../test/protocol_tests/restxml_with_namespace_dispatchers.gleam >/dev/null
 $CODEGEN awsQuery   ../test/fixtures/protocol-tests/awsQuery.json   ../src/aws/services/protocoltests/awsquery.gleam  --dispatcher-out ../test/protocol_tests/awsquery_dispatchers.gleam >/dev/null
 $CODEGEN ec2Query   ../test/fixtures/protocol-tests/ec2Query.json   ../src/aws/services/protocoltests/ec2query.gleam  --dispatcher-out ../test/protocol_tests/ec2query_dispatchers.gleam >/dev/null
 $CODEGEN rpcv2Cbor  ../test/fixtures/protocol-tests/rpcv2Cbor.json  ../src/aws/services/protocoltests/rpcv2cbor.gleam --dispatcher-out ../test/protocol_tests/rpcv2cbor_dispatchers.gleam >/dev/null

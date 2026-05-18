@@ -26,12 +26,20 @@ import smithy/trait.{type Trait}
 /// via `runtime.with_endpoint_rule_set`, so per-request URL resolution
 /// runs the official Smithy rule set rather than the static
 /// `<prefix>.<region>.amazonaws.com` fallback.
+///
+/// `xml_namespace` carries the service-level `smithy.api#xmlNamespace`
+/// trait. The Smithy XML spec says a service-level namespace applies
+/// to the root element of every operation's input and output body
+/// when the struct itself doesn't carry its own `@xmlNamespace`.
+/// `Some(#(prefix, uri))` is the trait's `prefix` (empty string means
+/// "default namespace, xmlns=") and `uri` fields.
 pub type Metadata {
   Metadata(
     service_local: String,
     endpoint_prefix: String,
     signing_name: String,
     endpoint_rule_set_json: Option(String),
+    xml_namespace: Option(#(String, String)),
   )
 }
 
@@ -54,7 +62,29 @@ pub fn service_metadata(
     endpoint_prefix: endpoint_prefix,
     signing_name: signing_name,
     endpoint_rule_set_json: endpoint_rule_set_json(traits),
+    xml_namespace: xml_namespace_trait(traits),
   )
+}
+
+/// Read `smithy.api#xmlNamespace` from a trait dict. The trait body
+/// is `{"uri": "...", "prefix": "..."}` — `prefix` defaults to
+/// empty (the default namespace, emitted as `xmlns="..."` not
+/// `xmlns:foo="..."`).
+pub fn xml_namespace_trait(
+  traits: shape.Traits,
+) -> Option(#(String, String)) {
+  case dict.get(traits, ShapeId("smithy.api#xmlNamespace")) {
+    Ok(Some(trait.Dict(d))) -> {
+      case string_field(d, "uri") {
+        Some(uri) -> {
+          let prefix = string_field(d, "prefix") |> option.unwrap("")
+          Some(#(prefix, uri))
+        }
+        None -> None
+      }
+    }
+    _ -> None
+  }
 }
 
 /// Re-serialise the `smithy.rules#endpointRuleSet` trait body back to

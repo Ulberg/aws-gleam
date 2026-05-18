@@ -16,6 +16,7 @@ import protocol_tests/dispatch
 import protocol_tests/ec2query_dispatchers
 import protocol_tests/restjson1_dispatchers
 import protocol_tests/restxml_dispatchers
+import protocol_tests/restxml_with_namespace_dispatchers
 import protocol_tests/rpcv2cbor_dispatchers
 import protocol_tests/runner
 
@@ -65,9 +66,10 @@ pub fn restxml_protocol_test() {
 }
 
 pub fn restxml_with_namespace_protocol_test() {
-  run(
+  run_with(
     "restXmlWithNamespace",
     "test/fixtures/protocol-tests/restXmlWithNamespace.json",
+    restxml_with_namespace_dispatchers.register_all(dispatch.new()),
   )
 }
 
@@ -93,10 +95,6 @@ pub fn rpcv2cbor_protocol_test() {
     "test/fixtures/protocol-tests/rpcv2Cbor.json",
     rpcv2cbor_dispatchers.register_all(dispatch.new()),
   )
-}
-
-fn run(name: String, path: String) {
-  run_with(name, path, dispatch.new())
 }
 
 fn run_with(name: String, path: String, registry: dispatch.Registry) {

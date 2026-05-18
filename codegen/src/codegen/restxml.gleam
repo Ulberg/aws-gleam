@@ -171,6 +171,7 @@ pub fn emit_service(
             is_dispatcher,
             requires_md5,
             http_checksum,
+            metadata.xml_namespace,
           )
         })
       let client_block = emit_client(metadata)
@@ -604,12 +605,21 @@ fn emit_operation(
   is_dispatcher: Bool,
   requires_md5: Bool,
   http_checksum: option.Option(trait_helpers.HttpChecksumInfo),
+  service_xml_namespace: option.Option(#(String, String)),
 ) -> String {
   let local = strip_namespace(op_id)
   let pascal = local
   let snake = stringutils.pascal_to_snake(local)
   let in_info = resolve_io_type(model, name_concat([pascal, "Input"]), in_r)
   let out_info = resolve_io_type(model, name_concat([pascal, "Output"]), out_r)
+  // Smithy: service-level @xmlNamespace falls in on the body root
+  // when the input/output struct doesn't carry its own. Nested
+  // members of the struct don't inherit, so this override only
+  // touches the wrapper element, not the struct codec itself.
+  let root_xmlns = case in_info.xml_namespace, service_xml_namespace {
+    option.Some(_), _ -> in_info.xml_namespace
+    option.None, ns -> ns
+  }
 
   // `synth_in` and `in_decoder` together form the dispatcher's
   // params-blob entry point — `decode_<op>_input(raw)` parses the
@@ -663,6 +673,9 @@ fn emit_operation(
       local,
       in_info.synthesise,
       in_info.xml_name,
+      in_info.xml_namespace,
+      root_xmlns,
+      in_members,
     )
   let build =
     emit_build(
@@ -698,6 +711,9 @@ fn emit_body_encoder_xml(
   op_local: String,
   synthesised: Bool,
   input_xml_name: option.Option(String),
+  input_xml_namespace: option.Option(#(String, String)),
+  effective_root_xmlns: option.Option(#(String, String)),
+  input_members: List(MemberDef),
 ) -> String {
   // The Smithy spec wraps the request body in an element named after
   // the **input shape's local name** (e.g. `XmlTimestampsRequest`),
@@ -711,14 +727,23 @@ fn emit_body_encoder_xml(
     False, None -> input_type
   }
   let fn_name = name_concat(["encode_", snake, "_body_xml"])
-  let #(param_name, body) = case synthesised {
-    True -> #(
+  // `service_root_xmlns` is the namespace pair we need to splice in
+  // ourselves around the struct's regular `_xml` output — only set
+  // when the service has `@xmlNamespace` and the input struct
+  // doesn't already carry its own (which the struct codec would
+  // emit on the wrapper itself).
+  let service_root_xmlns = case input_xml_namespace, effective_root_xmlns {
+    option.Some(_), _ -> option.None
+    option.None, ns -> ns
+  }
+  let #(param_name, body) = case synthesised, service_root_xmlns {
+    True, _ -> #(
       "_input",
       code.Call(head: code.Ident(name: "xml.empty_element"), args: [
         code.StrLit(value: root),
       ]),
     )
-    False -> {
+    False, option.None -> {
       let input_snake = stringutils.pascal_to_snake(input_type)
       #(
         "input",
@@ -728,6 +753,10 @@ fn emit_body_encoder_xml(
         ),
       )
     }
+    False, option.Some(ns) -> #(
+      "input",
+      service_xmlns_wrapped_body(input_type, snake, root, ns, input_members),
+    )
   }
   code.render(
     code.Module(items: [
@@ -741,6 +770,58 @@ fn emit_body_encoder_xml(
       code.Blank,
     ]),
   )
+}
+
+/// Build the body expression when the service-level `@xmlNamespace`
+/// has to land on the root wrapper. Two cases:
+///
+/// * Input struct has no `@xmlAttribute` members → cheap path,
+///   `xml.element_with_attrs(root, [ns], encode_<X>_xml_inner(input))`.
+/// * Input struct has `@xmlAttribute` members → merge the
+///   namespace attribute with the struct's collected attrs via
+///   the existing `_xml_attrs` helper.
+fn service_xmlns_wrapped_body(
+  input_type: String,
+  _snake: String,
+  root: String,
+  ns: #(String, String),
+  input_members: List(MemberDef),
+) -> code.Code {
+  let input_snake = stringutils.pascal_to_snake(input_type)
+  let inner_call =
+    code.Call(
+      head: code.Ident(name: name_concat(["encode_", input_snake, "_xml_inner"])),
+      args: [code.Ident(name: "input")],
+    )
+  let xmlns_pair = code.Raw(fragment: xmlns_attr_expr(option.Some(ns)))
+  let has_xml_attrs =
+    list.any(input_members, fn(m) {
+      case m.binding, m.xml_attribute {
+        Body, True -> True
+        _, _ -> False
+      }
+    })
+  let attrs = case has_xml_attrs {
+    False ->
+      code.ListLit(items: [xmlns_pair], tail: code.CodeNone)
+    True ->
+      code.ListLit(
+        items: [xmlns_pair],
+        tail: code.CodeSome(
+          code.Call(
+            head: code.Ident(
+              name: name_concat(["encode_", input_snake, "_xml_attrs"]),
+            ),
+            args: [code.Ident(name: "input")],
+          ),
+        ),
+      )
+  }
+  code.Call(head: code.Ident(name: "xml.element_with_attrs"), args: [
+    code.StrLit(value: root),
+    attrs,
+    inner_call,
+  ])
 }
 
 fn emit_parse_via_decoder(
@@ -1459,14 +1540,17 @@ fn emit_struct_xml_encoder(
         code.Ident(name: "root"),
         inner_call,
       ]),
-      "",
+      // Even for structs with no `@xmlAttribute` members and no
+      // shape-level `@xmlNamespace`, emit a stub `_xml_attrs` that
+      // returns `[]`. Member-position emission (`xml_value_expr` →
+      // `RStruct`) always calls it, so a missing function would
+      // break that path; the stub is dead code for the struct's
+      // own `_xml` wrapper but cheap.
+      emit_struct_xml_attrs(snake, type_name, []),
     )
     _, _ -> {
       let attrs_arg = struct_xml_attrs_expr(attr_members, xml_namespace, snake)
-      let extra = case attr_members {
-        [] -> ""
-        _ -> emit_struct_xml_attrs(snake, type_name, attr_members)
-      }
+      let extra = emit_struct_xml_attrs(snake, type_name, attr_members)
       #(
         code.Call(head: code.Ident(name: "xml.element_with_attrs"), args: [
           code.Ident(name: "root"),
@@ -1567,12 +1651,24 @@ fn emit_struct_xml_attrs(
     })
   let tail = code.Ident(name: "attrs")
   let body_items = list.append([initial, ..updates], [tail])
+  // Empty-attrs structs still produce `let attrs = []; attrs` so the
+  // function exists for the `xml_value_expr` call site, but `input`
+  // is unused — bind as `_input` to silence the warning.
+  let param_name = case attr_members {
+    [] -> "_input"
+    _ -> "input"
+  }
+  // Emit as `pub` so unused-function warnings don't fire for stubs
+  // whose owning struct is never used as a nested struct member.
+  // The stub is always callable from inside the module (the
+  // member-position encoder for `RStruct` calls it); making it
+  // public is harmless — nothing outside this module needs it.
   code.render(
     code.Module(items: [
       code.Fn(
-        public: False,
+        public: True,
         name: name_concat(["encode_", snake, "_xml_attrs"]),
-        params: [code.Param(name: "input", type_: type_name)],
+        params: [code.Param(name: param_name, type_: type_name)],
         return: code.CodeSome("List(#(String, String))"),
         body: code.Block(items: body_items),
       ),
@@ -1730,14 +1826,14 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
     RStruct(gleam_name: name, ..) ->
       // Smithy: shape-level `@xmlNamespace` only applies when the
       // struct is the document root, not when it's nested as a
-      // member. So always splice the inner body and add the
-      // wrapping element ourselves — member-level `@xmlNamespace`
-      // (if any) lands on the wrapper via `wrap_with_attrs`.
-      wrap_text_call(
-        member_name,
-        mem_ns,
-        name_concat(["encode_", stringutils.pascal_to_snake(name), "_xml_inner"]),
-      )
+      // member. We splice the inner body and add the wrapping
+      // element ourselves. The wrapper's attributes are:
+      //   1. Member-level `@xmlNamespace` (if any) — `mem_ns`
+      //   2. `@xmlAttribute` members of the target struct, via the
+      //      always-emitted `encode_<X>_xml_attrs(v)` helper.
+      // Concat in that order so the namespace declaration sits
+      // before the prefixed attribute references that depend on it.
+      struct_member_wrapped(member_name, mem_ns, name)
     RUnion(gleam_name: n, ..) ->
       // Wrap the union variant's emission in the outer member's
       // element. `encode_<U>_union_xml_inner` handles dispatching
@@ -1893,6 +1989,43 @@ fn wrap_text_call(
     ns,
     code.Call(head: code.Ident(name: xml_fn), args: [code.Ident(name: "v")]),
   )
+}
+
+/// Render a struct-typed member as `<member_name [mem_ns] [..struct_attrs]>
+/// encode_<X>_xml_inner(v)</member_name>`. The struct's own
+/// `_xml_attrs(v)` helper rides on the wrapper so any
+/// `@xmlAttribute` members of the target struct land where the
+/// Smithy spec puts them — attributes on the wrapping element, not
+/// children of it.
+fn struct_member_wrapped(
+  member_name: String,
+  mem_ns: option.Option(#(String, String)),
+  target_name: String,
+) -> code.Code {
+  let target_snake = stringutils.pascal_to_snake(target_name)
+  let inner =
+    code.Call(
+      head: code.Ident(name: name_concat(["encode_", target_snake, "_xml_inner"])),
+      args: [code.Ident(name: "v")],
+    )
+  let attrs_call =
+    code.Call(
+      head: code.Ident(name: name_concat(["encode_", target_snake, "_xml_attrs"])),
+      args: [code.Ident(name: "v")],
+    )
+  let attrs = case mem_ns {
+    option.None -> attrs_call
+    option.Some(_) ->
+      code.ListLit(
+        items: [code.Raw(fragment: xmlns_attr_expr(mem_ns))],
+        tail: code.CodeSome(attrs_call),
+      )
+  }
+  code.Call(head: code.Ident(name: "xml.element_with_attrs"), args: [
+    code.StrLit(value: member_name),
+    attrs,
+    inner,
+  ])
 }
 
 /// Render `<name>inner</name>` or `<name xmlns=...>inner</name>`
