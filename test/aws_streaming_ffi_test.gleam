@@ -7,6 +7,7 @@
 
 import gleam/bit_array
 import gleam/erlang/atom.{type Atom}
+import gleam/int
 import gleam/list
 import gleeunit/should
 
@@ -172,3 +173,41 @@ fn send_sync_response(
 
 @external(erlang, "aws_test_support_ffi", "send_stream_error")
 fn send_stream_error(request_id: Int, reason: Atom) -> Nil
+
+// ---------- build_http_options ----------
+//
+// Pure-function tests against the option-builder that
+// streaming_send/6 (and the 7-arg HTTP/2 variant) call before
+// dispatching to httpc. Lets us pin the option list without
+// needing a real HTTP server.
+
+pub fn build_http_options_default_test() {
+  // VerifyTls = True, Http2 = False.
+  let opts = build_http_options(30_000, True, False)
+  case list.length(opts) {
+    2 -> Nil
+    n -> panic as { "expected 2 options, got " <> int.to_string(n) }
+  }
+}
+
+pub fn build_http_options_verify_off_adds_ssl_opt_test() {
+  let opts = build_http_options(30_000, False, False)
+  // Three options: autoredirect, timeout, ssl.
+  list.length(opts) |> should.equal(3)
+}
+
+pub fn build_http_options_http2_adds_http_version_test() {
+  // HTTP/2 flag should add a fourth option entry.
+  let opts = build_http_options(30_000, False, True)
+  list.length(opts) |> should.equal(4)
+}
+
+pub fn build_http_options_http2_with_verify_tls_test() {
+  // HTTP/2 + verify on: autoredirect, timeout, http_version. Three
+  // options (no ssl override).
+  let opts = build_http_options(30_000, True, True)
+  list.length(opts) |> should.equal(3)
+}
+
+@external(erlang, "aws_streaming_ffi", "build_http_options")
+fn build_http_options(timeout_ms: Int, verify_tls: Bool, http2: Bool) -> List(a)

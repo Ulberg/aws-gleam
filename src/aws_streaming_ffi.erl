@@ -29,7 +29,11 @@
 %% we surface that verbatim.
 
 -module(aws_streaming_ffi).
--export([request_streaming/4, collect_stream/2, streaming_send/6]).
+-export([
+    request_streaming/4, collect_stream/2,
+    streaming_send/6, streaming_send/7,
+    build_http_options/3
+]).
 
 %% Single-call streaming send for the Gleam wrapper. Translates the
 %% Gleam-side request parameters into an httpc tuple here so the
@@ -45,9 +49,16 @@
 %% Returns the same `{ok, {Status, Headers, [Chunk]}} | {error, Reason}`
 %% shape as `request_streaming/4`.
 streaming_send(Method, Url, Headers, Body, Timeout, VerifyTls) ->
+    streaming_send(Method, Url, Headers, Body, Timeout, VerifyTls, false).
+
+%% 7-arg form opts into HTTP/2 via `{http_version, "HTTP/2"}`.
+%% OTP 27.1+ supports HTTP/2 in `httpc`; servers that don't speak it
+%% negotiate down to HTTP/1.1. Pass `true` only for endpoints
+%% known to benefit (S3 multipart, Bedrock streaming responses).
+streaming_send(Method, Url, Headers, Body, Timeout, VerifyTls, Http2) ->
     UrlList = unicode:characters_to_list(Url),
     HeadersList = prepare_headers(Headers),
-    HttpOptions = build_http_options(Timeout, VerifyTls),
+    HttpOptions = build_http_options(Timeout, VerifyTls, Http2),
     Request = build_request(Method, UrlList, HeadersList, Headers, Body),
     request_streaming(Method, Request, HttpOptions, Timeout).
 
@@ -63,10 +74,25 @@ prepare_headers_loop([{Name, Value} | Rest], Acc, UaSet) ->
     Pair = {unicode:characters_to_list(Name), unicode:characters_to_list(Value)},
     prepare_headers_loop(Rest, [Pair | Acc], UaSet1).
 
-build_http_options(Timeout, true) ->
+build_http_options(Timeout, VerifyTls) ->
+    build_http_options(Timeout, VerifyTls, false).
+
+%% 3-arg form keyed on (timeout, verify_tls, http2). HTTP/2 = true
+%% adds `{http_version, "HTTP/2"}` to the option list — httpc
+%% upgrades the request over TLS via ALPN. Servers that don't
+%% speak HTTP/2 negotiate down without an error.
+build_http_options(Timeout, true, false) ->
     [{autoredirect, false}, {timeout, Timeout}];
-build_http_options(Timeout, false) ->
-    [{autoredirect, false}, {timeout, Timeout}, {ssl, [{verify, verify_none}]}].
+build_http_options(Timeout, false, false) ->
+    [{autoredirect, false}, {timeout, Timeout}, {ssl, [{verify, verify_none}]}];
+build_http_options(Timeout, true, true) ->
+    [{autoredirect, false}, {timeout, Timeout}, {http_version, "HTTP/2"}];
+build_http_options(Timeout, false, true) ->
+    [
+        {autoredirect, false}, {timeout, Timeout},
+        {ssl, [{verify, verify_none}]},
+        {http_version, "HTTP/2"}
+    ].
 
 %% GET / HEAD / OPTIONS take a `{Url, Headers}` request tuple; every
 %% other method needs `{Url, Headers, ContentType, Body}`. The
