@@ -26,6 +26,11 @@
 //// `test/sigv4a_key_derivation_test.gleam` against the aws-c-auth
 //// v4a fixture's `public-key.json` (X / Y derived from the
 //// canonical `AKIDEXAMPLE` / `wJalrXUtnFEMI...` pair).
+////
+//// Canonical-request helpers (`canonical_headers`, `signed_headers`,
+//// `canonical_query_string`, `build_canonical_uri`,
+//// `normalize_path`) live in `aws/internal/sigv4_canonical` and
+//// are shared with the SigV4 module.
 
 import aws/internal/crypto
 import aws/internal/http_request.{
