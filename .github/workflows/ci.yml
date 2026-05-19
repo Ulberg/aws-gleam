@@ -122,34 +122,25 @@ jobs:
           echo "--- gleam"; gleam --version || true
           echo "--- src/aws/services size"; ls src/aws/services 2>/dev/null | wc -l
 
-      # Shrink-test: keep only a handful of generated services and
-      # see if `gleam build` completes. If it does, the SIGSEGV is
-      # volume-dependent (memory / allocator / cumulative heap
-      # pressure). If it still crashes with 10 services, the bug is
-      # in a specific service file or in our hand-written code.
-      - name: Shrink generated services to 10
+      # Volume-dependence narrowing. Previous shrink-to-10-services
+      # build got past "Compiling aws" in 0.06 s — but failed
+      # because tests referenced moved services. This iteration
+      # keeps ALL 409 services but moves tests aside. If `gleam
+      # build` then completes, the SIGSEGV is in test compilation
+      # (where the test file count + service refs explode the
+      # module graph). If it still crashes, the bug is volume of
+      # the `src/aws/services/*.gleam` tree itself.
+      - name: Move tests aside
         run: |
-          echo "--- before shrink ---"
-          ls src/aws/services | wc -l
-          # Keep dynamodb / s3 (which the test suite directly exercises)
-          # plus a handful of small services to seed the typing graph.
-          # Move the rest aside so gleam doesn't see them.
-          mkdir -p /tmp/aws-services-stash
-          for f in src/aws/services/*.gleam; do
-            base=$(basename "$f")
-            case "$base" in
-              dynamodb.gleam|s3.gleam|sts.gleam|ec2.gleam|iam.gleam|cloudwatch.gleam|sns.gleam|sqs.gleam|kms.gleam|secretsmanager.gleam)
-                continue
-                ;;
-              *)
-                mv "$f" /tmp/aws-services-stash/
-                ;;
-            esac
-          done
-          echo "--- after shrink ---"
-          ls src/aws/services | wc -l
+          echo "--- before ---"
+          ls test | wc -l
+          mkdir -p /tmp/aws-tests-stash
+          mv test /tmp/aws-tests-stash/test
+          mkdir -p test
+          echo "--- after ---"
+          ls test | wc -l
 
-      - name: Build with shrunk service set
+      - name: Build full src/ without tests
         run: |
           ulimit -s 131072
           ulimit -c unlimited
