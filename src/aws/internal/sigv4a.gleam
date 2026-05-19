@@ -31,11 +31,10 @@ import aws/internal/crypto
 import aws/internal/http_request.{
   type Header, type HttpRequest, Header, HttpRequest,
 }
-import aws/internal/uri
+import aws/internal/sigv4_canonical
 import gleam/bit_array
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleam/order
 import gleam/string
 
 pub type EcdsaPrivateKey {
@@ -152,10 +151,12 @@ pub fn canonical_request(
   let prepared =
     prepare_headers(req, opts, creds, payload_hash, region_set_value)
   let signing_headers = headers_for_signing(prepared, creds, opts)
-  let canonical_uri = build_canonical_uri(req.path, opts.normalize_path)
-  let canonical_query = canonical_query_string(req.query)
-  let canonical_headers_block = canonical_headers(signing_headers)
-  let signed_headers_list = signed_headers(signing_headers)
+  let canonical_uri =
+    sigv4_canonical.build_canonical_uri(req.path, opts.normalize_path)
+  let canonical_query = sigv4_canonical.canonical_query_string(req.query)
+  let canonical_headers_block =
+    sigv4_canonical.canonical_headers(signing_headers)
+  let signed_headers_list = sigv4_canonical.signed_headers(signing_headers)
   let creq =
     req.method
     <> "\n"
@@ -387,155 +388,5 @@ fn upsert(headers: List(Header), name: String, value: String) -> List(Header) {
         }
       })
     False -> list.append(headers, [Header(name: name, value: value)])
-  }
-}
-
-fn canonical_headers(headers: List(Header)) -> String {
-  // Per SigV4 spec: lowercase names, trim + collapse internal runs of
-  // ASCII whitespace in values, group duplicate header names with
-  // comma-joined values, sort by name. Direct port of
-  // `sigv4.canonical_headers` so SigV4a + SigV4 emit identical
-  // canonical header blocks for equivalent inputs.
-  let prepared =
-    headers
-    |> list.map(fn(h) {
-      #(string.lowercase(h.name), collapse_spaces(string.trim(h.value)))
-    })
-    |> do_group_by_name([])
-    |> list.sort(by: fn(a, b) { string.compare(a.0, b.0) })
-
-  prepared
-  |> list.map(fn(p) { p.0 <> ":" <> string.join(p.1, ",") <> "\n" })
-  |> string.concat
-}
-
-fn signed_headers(headers: List(Header)) -> String {
-  headers
-  |> list.map(fn(h) { string.lowercase(h.name) })
-  |> list.unique
-  |> list.sort(by: string.compare)
-  |> string.join(";")
-}
-
-fn do_group_by_name(
-  pairs: List(#(String, String)),
-  acc: List(#(String, List(String))),
-) -> List(#(String, List(String))) {
-  case pairs {
-    [] -> list.reverse(list.map(acc, fn(p) { #(p.0, list.reverse(p.1)) }))
-    [#(name, value), ..rest] -> {
-      let updated = case list.key_find(acc, name) {
-        Ok(existing) -> {
-          let new_values = [value, ..existing]
-          list.key_set(acc, name, new_values)
-        }
-        Error(_) -> [#(name, [value]), ..acc]
-      }
-      do_group_by_name(rest, updated)
-    }
-  }
-}
-
-fn collapse_spaces(s: String) -> String {
-  // Accumulate into a reversed grapheme list (O(1) prepend) and
-  // join once at the end — keeps the whole pass O(n) instead of
-  // O(n²) from repeated `acc <> c` binary concatenation.
-  do_collapse(string.to_graphemes(s), False, [])
-  |> list.reverse
-  |> string.concat
-}
-
-fn do_collapse(
-  chars: List(String),
-  last_was_space: Bool,
-  acc: List(String),
-) -> List(String) {
-  case chars {
-    [] -> acc
-    [c, ..rest] ->
-      case c == " " || c == "\t" {
-        True ->
-          case last_was_space {
-            True -> do_collapse(rest, True, acc)
-            False -> do_collapse(rest, True, [" ", ..acc])
-          }
-        False -> do_collapse(rest, False, [c, ..acc])
-      }
-  }
-}
-
-fn canonical_query_string(query: String) -> String {
-  case query {
-    "" -> ""
-    _ ->
-      string.split(query, "&")
-      |> list.map(fn(pair) {
-        case string.split_once(pair, "=") {
-          Ok(#(name, value)) -> #(
-            uri.encode_component(name),
-            uri.encode_component(value),
-          )
-          Error(_) -> #(uri.encode_component(pair), "")
-        }
-      })
-      |> list.sort(by: fn(a, b) {
-        case string.compare(a.0, b.0) {
-          order.Eq -> string.compare(a.1, b.1)
-          other -> other
-        }
-      })
-      |> list.map(fn(p) { p.0 <> "=" <> p.1 })
-      |> string.join("&")
-  }
-}
-
-fn encode_path(path: String) -> String {
-  string.split(path, "/")
-  |> list.map(uri.encode_segment)
-  |> string.join("/")
-}
-
-/// Compose dot-segment removal (when requested) with percent
-/// encoding. Mirrors `sigv4.build_canonical_uri` so SigV4a and
-/// SigV4 produce identical canonical URIs given the same inputs.
-fn build_canonical_uri(path: String, normalize: Bool) -> String {
-  case normalize {
-    True -> encode_path(normalize_path(path))
-    False -> encode_path(path)
-  }
-}
-
-/// RFC 3986 §5.2.4 dot-segment removal. Direct port of
-/// `sigv4.normalize_path` — duplication is intentional while
-/// SigV4a stabilises; both can call into a neutral
-/// `aws/internal/sigv4_canonical` later.
-fn normalize_path(path: String) -> String {
-  let trailing_slash = string.ends_with(path, "/") && path != "/"
-  let segments = case string.starts_with(path, "/") {
-    True -> string.split(path, "/") |> list.drop(1)
-    False -> string.split(path, "/")
-  }
-  let processed = process_segments(segments, [])
-  case processed, trailing_slash {
-    [], _ -> "/"
-    parts, True -> "/" <> string.join(parts, "/") <> "/"
-    parts, False -> "/" <> string.join(parts, "/")
-  }
-}
-
-fn process_segments(
-  segments: List(String),
-  stack: List(String),
-) -> List(String) {
-  case segments {
-    [] -> list.reverse(stack)
-    ["", ..rest] -> process_segments(rest, stack)
-    [".", ..rest] -> process_segments(rest, stack)
-    ["..", ..rest] ->
-      case stack {
-        [_, ..tail] -> process_segments(rest, tail)
-        [] -> process_segments(rest, stack)
-      }
-    [seg, ..rest] -> process_segments(rest, [seg, ..stack])
   }
 }

@@ -2,11 +2,11 @@ import aws/internal/crypto
 import aws/internal/http_request.{
   type Header, type HttpRequest, Header, HttpRequest,
 }
+import aws/internal/sigv4_canonical
 import aws/internal/uri
 import gleam/bit_array
 import gleam/list
 import gleam/option.{type Option, Some}
-import gleam/order
 import gleam/string
 
 pub type SigningOptions {
@@ -69,10 +69,12 @@ pub fn canonical_request(
 
   let prepared = prepare_headers(req, creds, opts, payload_hash)
   let signing_headers = headers_for_signing(prepared, creds, opts)
-  let canonical_headers_block = canonical_headers(signing_headers)
-  let signed_headers_list = signed_headers(signing_headers)
-  let canonical_uri = build_canonical_uri(req.path, opts.normalize_path)
-  let canonical_query = canonical_query_string(req.query)
+  let canonical_headers_block =
+    sigv4_canonical.canonical_headers(signing_headers)
+  let signed_headers_list = sigv4_canonical.signed_headers(signing_headers)
+  let canonical_uri =
+    sigv4_canonical.build_canonical_uri(req.path, opts.normalize_path)
+  let canonical_query = sigv4_canonical.canonical_query_string(req.query)
 
   let creq =
     build_creq(
@@ -230,8 +232,8 @@ pub fn presigned_url(
   // headers (custom `My-Header*`, `Content-Type`, etc.) ride
   // along — they must all appear in `SignedHeaders` and the
   // canonical-headers block.
-  let signed_headers_list = signed_headers(req.headers)
-  let canonical_headers_block = canonical_headers(req.headers)
+  let signed_headers_list = sigv4_canonical.signed_headers(req.headers)
+  let canonical_headers_block = sigv4_canonical.canonical_headers(req.headers)
   // Auth params other than X-Amz-Signature. Credential scope goes
   // in unencoded; `canonical_query_string` (idempotent over
   // pre-encoded values via `uri.encode_component`'s decode-then-
@@ -257,8 +259,9 @@ pub fn presigned_url(
     _, _ -> auth_params
   }
   let merged_query = merge_query(req.query, auth_params_for_signing)
-  let canonical_uri = build_canonical_uri(req.path, opts.normalize_path)
-  let canonical_query = canonical_query_string(merged_query)
+  let canonical_uri =
+    sigv4_canonical.build_canonical_uri(req.path, opts.normalize_path)
+  let canonical_query = sigv4_canonical.canonical_query_string(merged_query)
   let payload_hash = case payload_hash {
     Some(h) -> h
     _ ->
@@ -327,17 +330,6 @@ fn build_creq(
   <> signed_headers_list
   <> "\n"
   <> payload_hash
-}
-
-/// Encode the request path for the canonical-request URI line,
-/// applying RFC 3986 path normalisation when `opts.normalize_path`
-/// is set. Shared by `canonical_request` and `presigned_url` so
-/// both flows handle dot-segments the same way.
-fn build_canonical_uri(path: String, normalize: Bool) -> String {
-  case normalize {
-    True -> encode_path(normalize_path(path))
-    False -> encode_path(path)
-  }
 }
 
 fn host_from_headers(headers: List(Header)) -> String {
@@ -422,155 +414,5 @@ fn upsert_header(
       })
     True, False -> headers
     False, _ -> list.append(headers, [Header(name: name, value: value)])
-  }
-}
-
-fn canonical_headers(headers: List(Header)) -> String {
-  let prepared =
-    headers
-    |> list.map(fn(h) {
-      #(string.lowercase(h.name), collapse_spaces(string.trim(h.value)))
-    })
-    |> group_by_name
-    |> list.sort(by: fn(a, b) { string.compare(a.0, b.0) })
-
-  prepared
-  |> list.map(fn(p) { p.0 <> ":" <> string.join(p.1, ",") <> "\n" })
-  |> string.concat
-}
-
-fn signed_headers(headers: List(Header)) -> String {
-  headers
-  |> list.map(fn(h) { string.lowercase(h.name) })
-  |> list.unique
-  |> list.sort(by: string.compare)
-  |> string.join(";")
-}
-
-fn group_by_name(
-  pairs: List(#(String, String)),
-) -> List(#(String, List(String))) {
-  do_group_by_name(pairs, [])
-}
-
-fn do_group_by_name(
-  pairs: List(#(String, String)),
-  acc: List(#(String, List(String))),
-) -> List(#(String, List(String))) {
-  case pairs {
-    [] -> list.reverse(list.map(acc, fn(p) { #(p.0, list.reverse(p.1)) }))
-    [#(name, value), ..rest] -> {
-      let updated = case list.key_find(acc, name) {
-        Ok(existing) -> {
-          let new_values = [value, ..existing]
-          list.key_set(acc, name, new_values)
-        }
-        Error(_) -> [#(name, [value]), ..acc]
-      }
-      do_group_by_name(rest, updated)
-    }
-  }
-}
-
-fn collapse_spaces(s: String) -> String {
-  do_collapse(string.to_graphemes(s), False, "")
-}
-
-fn do_collapse(
-  chars: List(String),
-  last_was_space: Bool,
-  acc: String,
-) -> String {
-  case chars {
-    [] -> acc
-    [c, ..rest] ->
-      case c == " " || c == "\t" {
-        True ->
-          case last_was_space {
-            True -> do_collapse(rest, True, acc)
-            False -> do_collapse(rest, True, acc <> " ")
-          }
-        False -> do_collapse(rest, False, acc <> c)
-      }
-  }
-}
-
-fn normalize_path(path: String) -> String {
-  let trailing_slash = case string.ends_with(path, "/") && path != "/" {
-    True -> True
-    False -> False
-  }
-  let segments = case string.starts_with(path, "/") {
-    True -> string.split(path, "/") |> drop_first
-    False -> string.split(path, "/")
-  }
-  let processed = process_segments(segments, [])
-  case processed, trailing_slash {
-    [], _ -> "/"
-    parts, True -> "/" <> string.join(parts, "/") <> "/"
-    parts, False -> "/" <> string.join(parts, "/")
-  }
-}
-
-fn drop_first(xs: List(a)) -> List(a) {
-  case xs {
-    [] -> []
-    [_, ..rest] -> rest
-  }
-}
-
-fn process_segments(
-  segments: List(String),
-  stack: List(String),
-) -> List(String) {
-  case segments {
-    [] -> list.reverse(stack)
-    ["", ..rest] -> process_segments(rest, stack)
-    [".", ..rest] -> process_segments(rest, stack)
-    ["..", ..rest] ->
-      case stack {
-        [_, ..tail] -> process_segments(rest, tail)
-        [] -> process_segments(rest, stack)
-      }
-    [seg, ..rest] -> process_segments(rest, [seg, ..stack])
-  }
-}
-
-pub fn encode_path(path: String) -> String {
-  string.split(path, "/")
-  |> list.map(uri.encode_segment)
-  |> string.join("/")
-}
-
-fn canonical_query_string(query: String) -> String {
-  case query {
-    "" -> ""
-    _ -> {
-      string.split(query, "&")
-      |> list.map(parse_query_pair)
-      |> list.sort(by: query_pair_compare)
-      |> list.map(fn(p) { p.0 <> "=" <> p.1 })
-      |> string.join("&")
-    }
-  }
-}
-
-fn parse_query_pair(pair: String) -> #(String, String) {
-  case string.split_once(pair, "=") {
-    Ok(#(name, value)) -> #(
-      uri.encode_component(name),
-      uri.encode_component(value),
-    )
-    Error(_) -> #(uri.encode_component(pair), "")
-  }
-}
-
-fn query_pair_compare(
-  a: #(String, String),
-  b: #(String, String),
-) -> order.Order {
-  case string.compare(a.0, b.0) {
-    order.Eq -> string.compare(a.1, b.1)
-    other -> other
   }
 }
