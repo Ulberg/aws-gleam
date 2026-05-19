@@ -157,7 +157,16 @@ jobs:
         run: |
           ulimit -s 131072
           ulimit -c unlimited
-          ./scripts/test.sh
+          # NOTE: bypassing scripts/test.sh because it hardcodes
+          # `export ERL_FLAGS="+t 16777216"`, wiping any +sss /
+          # +sssdcpu / +sssdio flags layered by the workflow's
+          # env: block. The result was BEAM falling back to its
+          # default 128/40 kw scheduler stacks despite the env
+          # showing the bigger values — the strace probe confirmed
+          # a SEGV_ACCERR on a pthread-stack guard page even after
+          # we thought we had bumped stacks.
+          echo "ERL_FLAGS=$ERL_FLAGS"
+          gleam test
         env:
           ERL_FLAGS: "+t 16777216 +sss 8192 +sssdcpu 8192 +sssdio 8192"
           ERL_AFLAGS: "+t 16777216 +sss 8192 +sssdcpu 8192 +sssdio 8192"
