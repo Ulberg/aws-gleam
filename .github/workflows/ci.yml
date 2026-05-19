@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ["27.0"]
+        otp: ["27.3.4"]
         gleam: ["1.16.0"]
 
     steps:
@@ -170,7 +170,7 @@ jobs:
       - name: Install OTP and Gleam
         uses: erlef/setup-beam@v1
         with:
-          otp-version: "27.0"
+          otp-version: "27.3.4"
           gleam-version: "1.16.0"
 
       - name: Cache Gleam build artifacts and Hex packages
