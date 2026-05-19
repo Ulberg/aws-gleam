@@ -11,7 +11,8 @@
     with_teardown/1,
     capture_new/0, capture_put/1, capture_get/1,
     send_stream_start/2, send_stream_chunk/2, send_stream_end/2,
-    send_sync_response/4, send_stream_error/2
+    send_sync_response/4, send_stream_error/2,
+    start_chunked_echo/1, ensure_inets/0
 ]).
 
 %% Synthetic httpc stream messages addressed to `self()`. The
@@ -40,6 +41,75 @@ send_sync_response(ReqId, Status, Headers, Body) ->
 send_stream_error(ReqId, Reason) ->
     self() ! {http, {ReqId, {error, Reason}}},
     nil.
+
+%% ---------------------------------------------------------------------
+%% Tiny one-shot HTTP server for streaming-transport integration tests.
+%%
+%% Spawns a process that listens on a random local port, accepts a
+%% single TCP connection, drains the request bytes, then writes a
+%% canned `Transfer-Encoding: chunked` response with three chunks of
+%% caller-supplied bodies. Returns the listening port number so the
+%% Gleam test can build `http://127.0.0.1:<port>/`.
+%%
+%% Why this instead of inets httpd / cowboy: zero application start
+%% cost, no extra deps, no docker. The server lives just long enough
+%% to satisfy one request and exits — there's no shutdown plumbing
+%% to leak between tests.
+
+ensure_inets() ->
+    _ = application:ensure_all_started(inets),
+    nil.
+
+start_chunked_echo(Chunks) when is_list(Chunks) ->
+    {ok, Listen} = gen_tcp:listen(0, [
+        binary, {packet, raw}, {active, false}, {reuseaddr, true}
+    ]),
+    {ok, Port} = inet:port(Listen),
+    Parent = self(),
+    spawn_link(fun() ->
+        Parent ! ready,
+        case gen_tcp:accept(Listen, 5000) of
+            {ok, Conn} ->
+                _ = drain_request(Conn),
+                ok = write_chunked_response(Conn, Chunks),
+                gen_tcp:close(Conn),
+                gen_tcp:close(Listen);
+            _ ->
+                gen_tcp:close(Listen)
+        end
+    end),
+    receive ready -> ok after 1000 -> error(server_did_not_arm) end,
+    Port.
+
+%% Drain the request bytes until we see the end-of-headers marker.
+%% We don't parse — the server's job is to ship a known response;
+%% the request shape is the SDK's concern.
+drain_request(Conn) ->
+    case gen_tcp:recv(Conn, 0, 1000) of
+        {ok, Bin} ->
+            case binary:match(Bin, <<"\r\n\r\n">>) of
+                nomatch -> drain_request(Conn);
+                _ -> ok
+            end;
+        _ -> ok
+    end.
+
+write_chunked_response(Conn, Chunks) ->
+    Status = <<"HTTP/1.1 200 OK\r\n">>,
+    Headers = <<
+        "Content-Type: application/octet-stream\r\n",
+        "Transfer-Encoding: chunked\r\n",
+        "\r\n"
+    >>,
+    ok = gen_tcp:send(Conn, Status),
+    ok = gen_tcp:send(Conn, Headers),
+    lists:foreach(fun(Chunk) -> write_chunk(Conn, Chunk) end, Chunks),
+    %% Final zero-length chunk + trailer terminator.
+    gen_tcp:send(Conn, <<"0\r\n\r\n">>).
+
+write_chunk(Conn, Chunk) when is_binary(Chunk) ->
+    HexLen = list_to_binary(string:to_lower(erlang:integer_to_list(byte_size(Chunk), 16))),
+    gen_tcp:send(Conn, <<HexLen/binary, "\r\n", Chunk/binary, "\r\n">>).
 
 %% Trivial per-test request capture — lets a Gleam test that hands a
 %% stub `Send` to provider code retrieve the dispatched request after
