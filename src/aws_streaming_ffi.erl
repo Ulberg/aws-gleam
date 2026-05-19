@@ -29,7 +29,65 @@
 %% we surface that verbatim.
 
 -module(aws_streaming_ffi).
--export([request_streaming/4, collect_stream/2]).
+-export([request_streaming/4, collect_stream/2, streaming_send/6]).
+
+%% Single-call streaming send for the Gleam wrapper. Translates the
+%% Gleam-side request parameters into an httpc tuple here so the
+%% Gleam side doesn't need to think about per-method tuple shapes.
+%%
+%% - Method: atom (`get`, `post`, etc.)
+%% - Url: binary
+%% - Headers: list of `{Name, Value}` binary pairs
+%% - Body: binary (empty for GET / HEAD)
+%% - Timeout: int (ms)
+%% - VerifyTls: bool
+%%
+%% Returns the same `{ok, {Status, Headers, [Chunk]}} | {error, Reason}`
+%% shape as `request_streaming/4`.
+streaming_send(Method, Url, Headers, Body, Timeout, VerifyTls) ->
+    UrlList = unicode:characters_to_list(Url),
+    HeadersList = prepare_headers(Headers),
+    HttpOptions = build_http_options(Timeout, VerifyTls),
+    Request = build_request(Method, UrlList, HeadersList, Headers, Body),
+    request_streaming(Method, Request, HttpOptions, Timeout).
+
+prepare_headers(Headers) ->
+    prepare_headers_loop(Headers, [], false).
+
+prepare_headers_loop([], Acc, true) ->
+    Acc;
+prepare_headers_loop([], Acc, false) ->
+    [{"user-agent", "aws-gleam/0.1"} | Acc];
+prepare_headers_loop([{Name, Value} | Rest], Acc, UaSet) ->
+    UaSet1 = UaSet orelse Name =:= <<"user-agent">>,
+    Pair = {unicode:characters_to_list(Name), unicode:characters_to_list(Value)},
+    prepare_headers_loop(Rest, [Pair | Acc], UaSet1).
+
+build_http_options(Timeout, true) ->
+    [{autoredirect, false}, {timeout, Timeout}];
+build_http_options(Timeout, false) ->
+    [{autoredirect, false}, {timeout, Timeout}, {ssl, [{verify, verify_none}]}].
+
+%% GET / HEAD / OPTIONS take a `{Url, Headers}` request tuple; every
+%% other method needs `{Url, Headers, ContentType, Body}`. The
+%% content-type comes from the caller-supplied headers (Authority on
+%% AWS request bodies), defaulting to `application/octet-stream` to
+%% match gleam_httpc.
+build_request(Method, UrlList, HeadersList, _RawHeaders, _Body) when
+    Method =:= get; Method =:= head; Method =:= options
+->
+    {UrlList, HeadersList};
+build_request(_Method, UrlList, HeadersList, RawHeaders, Body) ->
+    ContentType = lookup_content_type(RawHeaders),
+    {UrlList, HeadersList, ContentType, Body}.
+
+lookup_content_type([]) ->
+    "application/octet-stream";
+lookup_content_type([{Name, Value} | Rest]) ->
+    case string:lowercase(Name) of
+        <<"content-type">> -> unicode:characters_to_list(Value);
+        _ -> lookup_content_type(Rest)
+    end.
 
 %% Issue Method to the URL embedded in Request, drive httpc in
 %% async-self stream mode, collect every stream message until end-
