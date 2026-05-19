@@ -123,35 +123,44 @@ jobs:
           echo "--- gleam"; gleam --version || true
           echo "--- src/aws/services size"; ls src/aws/services 2>/dev/null | wc -l
 
-      - name: Install diagnostics tools
-        run: sudo apt-get update -qq && sudo apt-get install -y strace gdb
-
-      - name: Run tests under strace
-        # 11 stack-side probes failed identically — the SIGSEGV is
-        # not from a thread-stack overflow. This iteration runs
-        # gleam under `strace -f -e trace=signal` so the next
-        # failure log captures the exact signal-delivery syscall
-        # and the PID of the dying process. If we see SIGSEGV
-        # delivered to gleam-the-Rust-binary directly, the bug is
-        # in gleam itself; if it's delivered to a BEAM escript
-        # subprocess, the bug is in the Erlang compile pass.
+      - name: Run tests
+        # ROOT CAUSE FOUND via strace + OTP source:
         #
-        # `--summary-only` would cut noise but we need the
-        # actual signal lines so leave it off and let stderr
-        # capture do its job.
+        # 1. strace under attempt 13 captured the dying signal:
+        #    `SIGSEGV {si_code=SEGV_ACCERR, si_addr=0x7fdf5bb4aec8}`
+        #    si_addr is in the pthread stack region — classic
+        #    stack guard-page hit.
+        #
+        # 2. The earlier probes that tried to fix stack overflow
+        #    (ulimit -s, GLIBC_TUNABLES) had no effect because BEAM
+        #    calls pthread_create with an EXPLICIT stack size —
+        #    GLIBC tunable only applies when attr=NULL.
+        #
+        # 3. OTP 28's actual flags for scheduler-thread stack size
+        #    (from `erts/emulator/beam/erl_init.c` source) are:
+        #      +sss <N>      — normal scheduler stack, in kw
+        #      +sssdcpu <N>  — dirty CPU scheduler stack, in kw
+        #      +sssdio <N>   — dirty IO scheduler stack, in kw
+        #    Defaults: 128 kw (normal, ~1 MB), 40 kw (dirty,
+        #    ~320 KB). Max: 8192 kw (~64 MB) per
+        #    `ERTS_SCHED_THREAD_MAX_STACK_SIZE`.
+        #
+        # 4. My earlier +sss 16384 was rejected as out-of-range
+        #    (the BEAM usage banner dumped and the test silently
+        #    fell back to default 128 kw stacks — explaining why
+        #    every subsequent BEAM-flag attempt also failed).
+        #
+        # Setting all three to the 8192 kw maximum gives every
+        # scheduler thread a 64 MB stack — easily enough for the
+        # Erlang compiler's recursive passes over the largest
+        # generated service (`fis.gleam` ~5K lines).
         run: |
           ulimit -s 131072
           ulimit -c unlimited
-          set +e
-          strace -f -e trace=signal -o /tmp/gleam-strace.log ./scripts/test.sh
-          rc=$?
-          echo "--- test.sh exit: $rc ---"
-          echo "--- strace signal log (tail 80) ---"
-          tail -80 /tmp/gleam-strace.log || true
-          exit "$rc"
+          ./scripts/test.sh
         env:
-          ERL_FLAGS: "+t 16777216 +S 2:2"
-          ERL_AFLAGS: "+t 16777216 +S 2:2"
+          ERL_FLAGS: "+t 16777216 +sss 8192 +sssdcpu 8192 +sssdio 8192"
+          ERL_AFLAGS: "+t 16777216 +sss 8192 +sssdcpu 8192 +sssdio 8192"
 
   # LocalStack end-to-end tests for the v0.1 verification gate
   # (DynamoDB + S3 round-trips). Kept in a separate job so the
