@@ -2,14 +2,16 @@
 //// request / response bodies that may be too large to hold in
 //// memory.
 ////
-//// v1 is **buffered-only**: a `StreamingBody` always carries a
-//// concrete `BitArray` payload internally, and the helpers that
-//// drive it are equivalent to operating on a `BitArray` directly.
-//// The wrapper exists so callers can write code today against
-//// the eventual streaming surface — and the HTTP transport
-//// rewrite that turns this into a real chunked iterator (gated
-//// on a streaming HTTP send + receive path) ships later without
-//// breaking any caller.
+//// The opaque type has two representations:
+////
+//// - **Buffered**: a single `BitArray` materialised up front. The
+////   v1 transport always produces this.
+//// - **Chunked**: an ordered list of byte chunks. Callers building
+////   multipart bodies or feeding a future streaming transport
+////   construct one of these via `from_chunks`. Today the helpers
+////   collapse it back to bytes on demand; once the transport
+////   rewrite lands, `to_chunks` becomes the streaming surface and
+////   nothing else changes.
 ////
 //// Smithy `@streaming` blob members on the request side are
 //// already surfaced as `BitArray` by the codegen; callers
@@ -18,9 +20,11 @@
 //// through.
 
 import gleam/bit_array
+import gleam/list
 
 pub opaque type StreamingBody {
   Buffered(bytes: BitArray)
+  Chunked(chunks: List(BitArray))
 }
 
 /// Build a `StreamingBody` from a `BitArray` already in memory.
@@ -30,14 +34,42 @@ pub fn from_bit_array(bytes: BitArray) -> StreamingBody {
   Buffered(bytes: bytes)
 }
 
+/// Build a `StreamingBody` from an ordered list of byte chunks.
+/// Chunk boundaries are preserved by `to_chunks` and by `append`
+/// when both operands are chunked, so multipart builders and the
+/// future streaming transport see exactly the chunking the caller
+/// produced.
+pub fn from_chunks(chunks: List(BitArray)) -> StreamingBody {
+  Chunked(chunks: chunks)
+}
+
 /// Return the body as a `BitArray`. For the v1 buffered
-/// implementation this is a constant-time operation. Once the
-/// transport rewrite lands, this will materialise the underlying
-/// chunk iterator — code that calls `to_bit_array` then keeps
-/// using the bytes works either way.
+/// implementation this is a constant-time operation. For chunked
+/// bodies this concatenates the chunks. Once the transport rewrite
+/// lands and chunked bodies travel as iterators, this will
+/// materialise the underlying chunk iterator — code that calls
+/// `to_bit_array` then keeps using the bytes works either way.
 pub fn to_bit_array(body: StreamingBody) -> BitArray {
   case body {
     Buffered(bytes: b) -> b
+    Chunked(chunks: cs) -> bit_array.concat(cs)
+  }
+}
+
+/// Return the body as an ordered list of byte chunks. Buffered
+/// bodies surface as a single-element list (or the empty list if
+/// the buffer is empty), so consumers can write one chunk-oriented
+/// loop and have it work uniformly. The future streaming transport
+/// will produce chunked responses directly and pipe them through
+/// this surface without materialising the full payload.
+pub fn to_chunks(body: StreamingBody) -> List(BitArray) {
+  case body {
+    Buffered(bytes: b) ->
+      case bit_array.byte_size(b) {
+        0 -> []
+        _ -> [b]
+      }
+    Chunked(chunks: cs) -> cs
   }
 }
 
@@ -47,6 +79,8 @@ pub fn to_bit_array(body: StreamingBody) -> BitArray {
 pub fn byte_size(body: StreamingBody) -> Int {
   case body {
     Buffered(bytes: b) -> bit_array.byte_size(b)
+    Chunked(chunks: cs) ->
+      list.fold(cs, 0, fn(acc, chunk) { acc + bit_array.byte_size(chunk) })
   }
 }
 
@@ -72,11 +106,16 @@ pub fn from_string(s: String) -> StreamingBody {
   Buffered(bytes: bit_array.from_string(s))
 }
 
-/// Concatenate two streaming bodies. v1 materialises both into
-/// memory and joins; once the transport rewrite lands, this
-/// returns a chunk iterator that yields `a`'s chunks then `b`'s
-/// chunks without buffering either fully. Useful for callers
-/// composing multipart bodies.
+/// Concatenate two streaming bodies. When both sides are chunked
+/// the result preserves chunk boundaries from each operand —
+/// useful for multipart builders that already chose their chunk
+/// shape. Mixing buffered and chunked merges through `to_chunks`
+/// so the result is still walkable chunk-by-chunk by downstream
+/// consumers.
 pub fn append(a: StreamingBody, b: StreamingBody) -> StreamingBody {
-  Buffered(bytes: bit_array.append(to_bit_array(a), to_bit_array(b)))
+  case a, b {
+    Buffered(bytes: ba), Buffered(bytes: bb) ->
+      Buffered(bytes: bit_array.append(ba, bb))
+    _, _ -> Chunked(chunks: list.append(to_chunks(a), to_chunks(b)))
+  }
 }
