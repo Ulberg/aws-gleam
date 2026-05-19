@@ -173,6 +173,10 @@ pub fn emitted_modules_expose_streaming_and_retry_setters_test() {
     r.source,
     "pub fn with_max_attempts(client: Client, n: Int)",
   ))
+  should.be_true(string.contains(
+    r.source,
+    "pub fn with_sigv4a_region_set(client: Client, region_set: List(String))",
+  ))
 }
 
 /// restXml services whose output struct carries a `@streaming` blob

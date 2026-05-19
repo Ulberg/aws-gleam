@@ -1,0 +1,131 @@
+//// Pins for `runtime.with_sigv4a_region_set` and the
+//// `prepare_signed_request` branch that routes through
+//// `sigv4a.sign_with_credentials` when the config carries an
+//// `Sigv4aSigner`. Default behaviour stays on `sigv4.sign`; opt-in
+//// is the entire API surface.
+////
+//// The test uses S3 because that's the canonical SigV4a consumer
+//// (multi-region access points). A stubbed HTTP sender captures
+//// the outgoing `Authorization` header so we can assert the
+//// algorithm string flipped from `AWS4-HMAC-SHA256` to
+//// `AWS4-ECDSA-P256-SHA256` once `with_sigv4a_region_set` is set.
+
+import aws/credentials
+import aws/internal/http_send as aws_http
+import aws/services/s3
+import gleam/erlang/process.{type Subject}
+import gleam/http/request.{type Request}
+import gleam/http/response
+import gleam/list
+import gleam/option.{None}
+import gleam/string
+import gleeunit/should
+
+fn static_credentials() -> credentials.Provider {
+  credentials.static_provider(credentials.Credentials(
+    access_key_id: "AKIDEXAMPLE",
+    secret_access_key: "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY",
+    session_token: None,
+    expires_at: None,
+    source: "Static",
+  ))
+}
+
+/// Records the outgoing request onto `inbox` and returns 200 OK so
+/// the test can inspect the signed headers without involving the
+/// network or any service-specific response shape.
+fn capture_send(inbox: Subject(Request(BitArray))) -> aws_http.Send {
+  fn(req: Request(BitArray)) {
+    process.send(inbox, req)
+    Ok(
+      response.Response(status: 200, headers: [], body: <<
+        "<ListAllMyBucketsResult></ListAllMyBucketsResult>",
+      >>),
+    )
+  }
+}
+
+fn first_authorization_header(inbox: Subject(Request(BitArray))) -> String {
+  let assert Ok(req) = process.receive(inbox, 0)
+  let assert Ok(auth) =
+    list.find_map(req.headers, fn(h) {
+      case string.lowercase(h.0) == "authorization" {
+        True -> Ok(h.1)
+        False -> Error(Nil)
+      }
+    })
+  auth
+}
+
+pub fn default_client_uses_sigv4_authorization_test() {
+  let inbox = process.new_subject()
+  let client =
+    s3.new(region: "us-east-1")
+    |> s3.with_credentials_provider(static_credentials())
+    |> s3.with_http_send(capture_send(inbox))
+    |> s3.with_max_attempts(1)
+  let input =
+    s3.ListBucketsRequest(
+      bucket_region: None,
+      continuation_token: None,
+      max_buckets: None,
+      prefix: None,
+    )
+  let _ = s3.list_buckets(client, input)
+
+  string.starts_with(first_authorization_header(inbox), "AWS4-HMAC-SHA256 ")
+  |> should.be_true
+  s3.shutdown(client)
+}
+
+pub fn with_sigv4a_region_set_flips_authorization_algorithm_test() {
+  let inbox = process.new_subject()
+  let client =
+    s3.new(region: "us-east-1")
+    |> s3.with_credentials_provider(static_credentials())
+    |> s3.with_http_send(capture_send(inbox))
+    |> s3.with_max_attempts(1)
+    |> s3.with_sigv4a_region_set(["us-east-1", "us-west-2"])
+  let input =
+    s3.ListBucketsRequest(
+      bucket_region: None,
+      continuation_token: None,
+      max_buckets: None,
+      prefix: None,
+    )
+  let _ = s3.list_buckets(client, input)
+
+  let auth = first_authorization_header(inbox)
+  string.starts_with(auth, "AWS4-ECDSA-P256-SHA256 Credential=AKIDEXAMPLE/")
+  |> should.be_true
+  s3.shutdown(client)
+}
+
+pub fn with_sigv4a_region_set_emits_region_set_header_test() {
+  let inbox = process.new_subject()
+  let client =
+    s3.new(region: "us-east-1")
+    |> s3.with_credentials_provider(static_credentials())
+    |> s3.with_http_send(capture_send(inbox))
+    |> s3.with_max_attempts(1)
+    |> s3.with_sigv4a_region_set(["us-east-1", "us-west-2"])
+  let input =
+    s3.ListBucketsRequest(
+      bucket_region: None,
+      continuation_token: None,
+      max_buckets: None,
+      prefix: None,
+    )
+  let _ = s3.list_buckets(client, input)
+
+  let assert Ok(req) = process.receive(inbox, 0)
+  let assert Ok(rs) =
+    list.find_map(req.headers, fn(h) {
+      case string.lowercase(h.0) == "x-amz-region-set" {
+        True -> Ok(h.1)
+        False -> Error(Nil)
+      }
+    })
+  rs |> should.equal("us-east-1,us-west-2")
+  s3.shutdown(client)
+}

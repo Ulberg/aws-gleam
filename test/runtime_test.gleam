@@ -95,6 +95,7 @@ fn test_config(
     retry_strategy: strategy,
     endpoint_rule_set: None,
     endpoint_params: dict.new(),
+    sigv4a_signer: None,
   )
 }
 

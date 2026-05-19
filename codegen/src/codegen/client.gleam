@@ -294,6 +294,31 @@ pub fn items(
     ),
     Blank,
     DocComment([
+      "Opt the Client into SigV4a (asymmetric ECDSA P-256) signing",
+      "for every request. `region_set` becomes the `X-Amz-Region-Set`",
+      "header — single-region callers pass `[\"us-east-1\"]`,",
+      "multi-region callers pass the full list. Required for S3",
+      "Multi-Region Access Points and any other endpoint that demands",
+      "AWS4-ECDSA-P256-SHA256 signatures.",
+    ]),
+    Fn(
+      public: True,
+      name: "with_sigv4a_region_set",
+      params: [
+        Param(name: "client", type_: "Client"),
+        Param(name: "region_set", type_: "List(String)"),
+      ],
+      return: CodeSome("Client"),
+      body: client_with(
+        Call(Ident("runtime.with_sigv4a_region_set"), [
+          Ident("client.config"),
+          Ident("region_set"),
+        ]),
+        Ident("client.cache"),
+      ),
+    ),
+    Blank,
+    DocComment([
       "Override the retry attempt budget on the underlying ClientConfig.",
       "The common case for retry tuning — pass `1` to disable retries",
       "entirely (single attempt per request), `5` for long-running batch",

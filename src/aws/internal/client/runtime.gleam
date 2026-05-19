@@ -16,6 +16,7 @@ import aws/internal/http_request as our_http
 import aws/internal/http_send.{type HttpError, type Send, type StreamingSend}
 import aws/internal/http_streaming
 import aws/internal/sigv4.{SigningOptions}
+import aws/internal/sigv4a
 import aws/internal/text_scan
 import aws/retry.{type Strategy}
 import aws/streaming.{type StreamingBody}
@@ -58,7 +59,22 @@ pub type ClientConfig {
     retry_strategy: Strategy,
     endpoint_rule_set: Option(RuleSet),
     endpoint_params: Params,
+    /// SigV4a signing opt-in. When `Some`, `prepare_signed_request`
+    /// derives an EC scalar from the provider's IAM credentials and
+    /// signs via `sigv4a.sign_with_credentials` instead of the
+    /// default `sigv4.sign`. Required for S3 Multi-Region Access
+    /// Points and any other endpoint that demands AWS4-ECDSA-P256.
+    sigv4a_signer: Option(Sigv4aSigner),
   )
+}
+
+/// Per-Client SigV4a opt-in state. Carries the region set the
+/// signature binds to (`X-Amz-Region-Set`); the IAM credentials
+/// themselves still flow through the regular `config.provider`,
+/// so credential rotation / refresh continues to work via the
+/// existing `credentials_cache` path.
+pub type Sigv4aSigner {
+  Sigv4aSigner(region_set: List(String))
 }
 
 /// Errors surfaced from a generated `<op>(client, input)` call.
@@ -94,7 +110,19 @@ pub fn default_config(
     retry_strategy: retry.standard(),
     endpoint_rule_set: None,
     endpoint_params: dict.new(),
+    sigv4a_signer: None,
   )
+}
+
+/// Opt the Client into SigV4a (asymmetric ECDSA P-256) signing for
+/// every request. `region_set` becomes the `X-Amz-Region-Set` header
+/// — single-region callers pass `["us-east-1"]`, multi-region callers
+/// pass the full list. Required for S3 Multi-Region Access Points.
+pub fn with_sigv4a_region_set(
+  config: ClientConfig,
+  region_set: List(String),
+) -> ClientConfig {
+  ClientConfig(..config, sigv4a_signer: Some(Sigv4aSigner(region_set:)))
 }
 
 pub fn default_endpoint(endpoint_prefix: String, region: String) -> String {
@@ -380,6 +408,29 @@ fn prepare_signed_request(
       headers: header_pairs,
       body: body,
     )
+  let signed = case config.sigv4a_signer {
+    Some(signer) -> sign_sigv4a(unsigned, creds, config, signer)
+    None -> sign_sigv4(unsigned, creds, config)
+  }
+
+  let full_url = endpoint_url <> uri
+  let assert Ok(base) = request.to(full_url)
+  let http_req =
+    base
+    |> request.set_method(parse_method(method))
+    |> request.set_body(body)
+  let http_req =
+    list.fold(signed.headers, http_req, fn(r, h) {
+      request.set_header(r, h.name, h.value)
+    })
+  Ok(http_req)
+}
+
+fn sign_sigv4(
+  unsigned: our_http.HttpRequest,
+  creds: credentials.Credentials,
+  config: ClientConfig,
+) -> our_http.HttpRequest {
   let opts =
     SigningOptions(
       timestamp: config.timestamp(),
@@ -395,19 +446,42 @@ fn prepare_signed_request(
       secret_access_key: creds.secret_access_key,
       session_token: creds.session_token,
     )
-  let signed = sigv4.sign(unsigned, signing_creds, opts)
+  sigv4.sign(unsigned, signing_creds, opts)
+}
 
-  let full_url = endpoint_url <> uri
-  let assert Ok(base) = request.to(full_url)
-  let http_req =
-    base
-    |> request.set_method(parse_method(method))
-    |> request.set_body(body)
-  let http_req =
-    list.fold(signed.headers, http_req, fn(r, h) {
-      request.set_header(r, h.name, h.value)
-    })
-  Ok(http_req)
+fn sign_sigv4a(
+  unsigned: our_http.HttpRequest,
+  creds: credentials.Credentials,
+  config: ClientConfig,
+  signer: Sigv4aSigner,
+) -> our_http.HttpRequest {
+  // Derive the EC scalar on every request — `derive_signing_key` is
+  // pure HMAC-SHA256 over the IAM secret, so the cost is one
+  // HMAC per call. Caching the scalar per (akid, secret) tuple is
+  // a separate slice; it'd require a credentials-cache hook so the
+  // cached scalar invalidates when credentials rotate.
+  let private_key =
+    sigv4a.derive_signing_key(creds.access_key_id, creds.secret_access_key)
+  let sigv4a_creds =
+    sigv4a.Sigv4aCredentials(
+      access_key_id: creds.access_key_id,
+      private_key: private_key,
+      session_token: creds.session_token,
+    )
+  let opts =
+    sigv4a.Sigv4aOptions(
+      timestamp: config.timestamp(),
+      region_set: signer.region_set,
+      service: config.signing_name,
+      sign_body: True,
+      // S3 needs `False` here so object keys with `.` / `..` survive.
+      // Default `True` matches every other AWS service; per-service
+      // override can land via `with_sigv4a_path_normalization` if
+      // needed.
+      normalize_path: True,
+      omit_session_token: False,
+    )
+  sigv4a.sign_with_credentials(unsigned, sigv4a_creds, opts)
 }
 
 /// Compute the request URL using the rule set if attached, otherwise fall
