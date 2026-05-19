@@ -40,10 +40,12 @@ pub type Send =
 pub type StreamingSend =
   fn(Request(BitArray)) -> Result(Response(StreamingBody), HttpError)
 
-/// Lift a buffered `Send` into a `StreamingSend`. For v1 this simply
-/// wraps the response body bytes in a `Buffered` `StreamingBody`; once
-/// the transport rewrite lands a real chunked sender replaces this
-/// helper at the call sites that already pass a `StreamingSend`.
+/// Lift a buffered `Send` into a `StreamingSend` by wrapping its
+/// response body as a `Buffered` `StreamingBody`. Use this when a
+/// test wants to stub the streaming transport with a buffered fake,
+/// or when a caller has only a buffered sender available and wants
+/// it to satisfy a `StreamingSend` slot. Production code should
+/// take `http_streaming.default_send` for genuine chunked transfer.
 pub fn lift_to_streaming(send: Send) -> StreamingSend {
   fn(req) {
     case send(req) {
@@ -56,14 +58,6 @@ pub fn lift_to_streaming(send: Send) -> StreamingSend {
       Error(e) -> Error(e)
     }
   }
-}
-
-/// Streaming-aware default sender — same transport defaults as
-/// `default_send`, response body wrapped as a `StreamingBody`.
-pub fn default_streaming_send(
-  req: Request(BitArray),
-) -> Result(Response(StreamingBody), HttpError) {
-  lift_to_streaming(default_send)(req)
 }
 
 /// Default total-request timeout for `default_send`. 30 seconds is the

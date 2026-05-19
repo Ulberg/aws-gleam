@@ -89,7 +89,7 @@ fn test_config(
     signing_name: "service",
     endpoint_url: "https://service.us-east-1.amazonaws.com",
     http_send: send,
-    streaming_http_send: http_send.default_streaming_send,
+    streaming_http_send: http_streaming.default_send,
     timestamp: fixed_timestamp,
     retry_strategy: strategy,
     endpoint_rule_set: None,
@@ -533,10 +533,9 @@ pub fn with_http2_overrides_prior_streaming_sender_test() {
 }
 
 pub fn default_config_uses_non_http2_streaming_sender_test() {
-  // Anchor: the test_config defaults to http_send.default_streaming_send
-  // (the lift_to_streaming wrap around the buffered transport). Pin
-  // that so the `with_http2` test above is meaningfully different from
-  // a no-op.
+  // Anchor: the test_config defaults to http_streaming.default_send
+  // (the genuine chunked transport). Pin that so the `with_http2`
+  // test above is meaningfully different from a no-op.
   let counter = process.new_subject()
   let send = scripted_send([Ok(ok_response(200, <<"":utf8>>))], counter)
   let config = test_config(send, one_attempt_strategy())

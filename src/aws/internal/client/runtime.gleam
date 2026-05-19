@@ -132,9 +132,9 @@ pub fn with_http_send(config: ClientConfig, send: Send) -> ClientConfig {
 }
 
 /// Override the streaming HTTP sender. Use for tests (stub the
-/// transport), for opting into the buffered-wrap path on a per-
-/// service basis (`http_send.default_streaming_send`), or to
-/// inject a future custom transport (proxy, gRPC tunnel, etc.).
+/// transport), for forcing the buffered-then-streamed path via
+/// `http_send.lift_to_streaming(custom_buffered)`, or to inject a
+/// future custom transport (proxy, gRPC tunnel, etc.).
 pub fn with_streaming_http_send(
   config: ClientConfig,
   send: StreamingSend,
