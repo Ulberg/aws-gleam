@@ -23,8 +23,9 @@
 import aws/services/s3
 import aws/streaming.{type StreamingBody}
 import gleam/bit_array
+import gleam/dict.{type Dict}
 import gleam/list
-import gleam/option.{None, Some}
+import gleam/option.{type Option, None, Some}
 import gleam/result
 
 /// Errors a multipart upload surfaces. `CreateFailed` /
@@ -53,6 +54,58 @@ pub type UploadResult {
     key: String,
     upload_id: String,
     parts_uploaded: Int,
+  )
+}
+
+/// Per-object metadata + access-control options applied at
+/// `CreateMultipartUpload` time. Only `content_type`, `metadata`,
+/// `acl`, `cache_control`, `content_encoding`,
+/// `content_disposition`, `storage_class`, and
+/// `server_side_encryption` are surfaced today — they cover the
+/// 90% of S3 PutObject use cases (HTTP-content-metadata, ACL,
+/// storage tier, SSE). Callers needing more exotic options
+/// (object lock, grants, request payer, SSE-C, etc.) should call
+/// `s3.create_multipart_upload` / `s3.upload_part` /
+/// `s3.complete_multipart_upload` directly until / unless those
+/// fields land on `UploadOptions`.
+///
+/// Construct with `default_options()` and override individual
+/// fields via record-update syntax:
+///
+/// ```gleam
+/// let opts = transfer.UploadOptions(
+///   ..transfer.default_options(),
+///   content_type: option.Some("application/json"),
+///   cache_control: option.Some("max-age=3600"),
+/// )
+/// ```
+pub type UploadOptions {
+  UploadOptions(
+    content_type: Option(String),
+    content_encoding: Option(String),
+    content_disposition: Option(String),
+    cache_control: Option(String),
+    metadata: Option(Dict(String, String)),
+    acl: Option(s3.ObjectCannedACL),
+    storage_class: Option(s3.StorageClass),
+    server_side_encryption: Option(s3.ServerSideEncryption),
+  )
+}
+
+/// All-`None` options — what `upload` / `upload_from_stream` pass
+/// when callers don't supply their own. Equivalent to using
+/// `s3.create_multipart_upload` with no metadata overrides; S3
+/// applies its bucket-level defaults.
+pub fn default_options() -> UploadOptions {
+  UploadOptions(
+    content_type: None,
+    content_encoding: None,
+    content_disposition: None,
+    cache_control: None,
+    metadata: None,
+    acl: None,
+    storage_class: None,
+    server_side_encryption: None,
   )
 }
 
@@ -116,10 +169,39 @@ pub fn upload(
   body body: BitArray,
   part_size_bytes part_size_bytes: Int,
 ) -> Result(UploadResult, Error) {
+  upload_with_options(
+    client:,
+    bucket:,
+    key:,
+    body:,
+    part_size_bytes:,
+    options: default_options(),
+  )
+}
+
+/// `upload` with caller-specified per-object metadata — sets HTTP
+/// content metadata (Content-Type, Cache-Control, etc.), the
+/// optional ACL / storage class / SSE choice, and any user
+/// metadata at `CreateMultipartUpload` time. See `UploadOptions`
+/// for the field set.
+pub fn upload_with_options(
+  client client: s3.Client,
+  bucket bucket: String,
+  key key: String,
+  body body: BitArray,
+  part_size_bytes part_size_bytes: Int,
+  options options: UploadOptions,
+) -> Result(UploadResult, Error) {
   case bit_array.byte_size(body) {
     0 -> Error(EmptyBody)
     _ ->
-      coordinate(client, bucket, key, split_into_parts(body, part_size_bytes))
+      coordinate(
+        client,
+        bucket,
+        key,
+        split_into_parts(body, part_size_bytes),
+        options,
+      )
   }
 }
 
@@ -144,10 +226,30 @@ pub fn upload_from_stream(
   body body: StreamingBody,
   part_size_bytes part_size_bytes: Int,
 ) -> Result(UploadResult, Error) {
+  upload_from_stream_with_options(
+    client:,
+    bucket:,
+    key:,
+    body:,
+    part_size_bytes:,
+    options: default_options(),
+  )
+}
+
+/// `upload_from_stream` with caller-specified per-object metadata.
+/// See `UploadOptions`.
+pub fn upload_from_stream_with_options(
+  client client: s3.Client,
+  bucket bucket: String,
+  key key: String,
+  body body: StreamingBody,
+  part_size_bytes part_size_bytes: Int,
+  options options: UploadOptions,
+) -> Result(UploadResult, Error) {
   let parts = rechunk_to_parts(body, part_size_bytes)
   case list.is_empty(parts) {
     True -> Error(EmptyBody)
-    False -> coordinate(client, bucket, key, parts)
+    False -> coordinate(client, bucket, key, parts, options)
   }
 }
 
@@ -156,9 +258,10 @@ fn coordinate(
   bucket: String,
   key: String,
   parts: List(BitArray),
+  options: UploadOptions,
 ) -> Result(UploadResult, Error) {
   use create_out <- result.try(
-    s3.create_multipart_upload(client, empty_create_request(bucket, key))
+    s3.create_multipart_upload(client, create_request(bucket, key, options))
     |> result.map_error(CreateFailed),
   )
   use upload_id <- result.try(option.to_result(
@@ -323,21 +426,22 @@ fn abort_quietly(
 // `None` defaults keeps the call sites above terse and lets the
 // codegen evolve the wire types without dragging this helper.
 
-fn empty_create_request(
+fn create_request(
   bucket: String,
   key: String,
+  options: UploadOptions,
 ) -> s3.CreateMultipartUploadRequest {
   s3.CreateMultipartUploadRequest(
-    acl: None,
+    acl: options.acl,
     bucket: Some(bucket),
     bucket_key_enabled: None,
-    cache_control: None,
+    cache_control: options.cache_control,
     checksum_algorithm: None,
     checksum_type: None,
-    content_disposition: None,
-    content_encoding: None,
+    content_disposition: options.content_disposition,
+    content_encoding: options.content_encoding,
     content_language: None,
-    content_type: None,
+    content_type: options.content_type,
     expected_bucket_owner: None,
     expires: None,
     grant_full_control: None,
@@ -345,7 +449,7 @@ fn empty_create_request(
     grant_read_acp: None,
     grant_write_acp: None,
     key: Some(key),
-    metadata: None,
+    metadata: options.metadata,
     object_lock_legal_hold_status: None,
     object_lock_mode: None,
     object_lock_retain_until_date: None,
@@ -355,8 +459,8 @@ fn empty_create_request(
     sse_customer_key_md5: None,
     ssekms_encryption_context: None,
     ssekms_key_id: None,
-    server_side_encryption: None,
-    storage_class: None,
+    server_side_encryption: options.server_side_encryption,
+    storage_class: options.storage_class,
     tagging: None,
     website_redirect_location: None,
   )

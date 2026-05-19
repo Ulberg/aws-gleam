@@ -30,7 +30,7 @@ import gleeunit/should
 // ---------- request capture + scripted responder ----------
 
 type Captured {
-  Captured(method: http.Method, uri: String)
+  Captured(method: http.Method, uri: String, headers: List(#(String, String)))
 }
 
 fn static_credentials() -> credentials.Provider {
@@ -63,7 +63,7 @@ fn scripted_send(
         option.Some(q) -> "?" <> q
         option.None -> ""
       }
-    let cap = Captured(method: req.method, uri: uri)
+    let cap = Captured(method: req.method, uri: uri, headers: req.headers)
     process.send(captured, cap)
     responder(cap)
   }
@@ -331,6 +331,130 @@ pub fn upload_aborts_on_complete_failure_test() {
     http.Delete -> Nil
     _ ->
       panic as "expected the cleanup call to be a DELETE (AbortMultipartUpload)"
+  }
+}
+
+// ---------- upload_with_options tests ----------
+//
+// Verify caller-supplied UploadOptions reach the wire on the
+// CreateMultipartUpload request. S3's REST codec maps these fields
+// to headers (Content-Type, Cache-Control, x-amz-acl, etc.) so the
+// test inspects the captured request's header list.
+
+fn header_value(cap: Captured, name: String) -> option.Option(String) {
+  case list.find(cap.headers, fn(h) { h.0 == name }) {
+    Ok(#(_, v)) -> option.Some(v)
+    Error(_) -> option.None
+  }
+}
+
+/// Pop the first captured request — always the CreateMultipartUpload
+/// call in these tests, which is the one that carries the
+/// UploadOptions-derived headers. Panics if no calls were captured.
+fn first_create_call(captured: process.Subject(Captured)) -> Captured {
+  case drain(captured, []) {
+    [c, ..] -> c
+    [] -> panic as "no calls captured"
+  }
+}
+
+/// Run `upload_with_options` against a happy responder and return
+/// the captured CreateMultipartUpload. Panics if the upload itself
+/// errors — these tests are about header-threading, not error paths.
+fn run_upload_with_options(
+  opts: transfer.UploadOptions,
+  body: BitArray,
+) -> Captured {
+  let captured = process.new_subject()
+  let send = scripted_send(captured, happy_responder)
+  let client = fresh_client(send)
+
+  case
+    transfer.upload_with_options(
+      client:,
+      bucket: "my-bucket",
+      key: "my-key",
+      body:,
+      part_size_bytes: 5_242_880,
+      options: opts,
+    )
+  {
+    Ok(_) -> Nil
+    Error(e) -> panic as { "expected Ok, got " <> describe_error(e) }
+  }
+  first_create_call(captured)
+}
+
+pub fn upload_with_options_threads_content_type_to_create_test() {
+  let opts =
+    transfer.UploadOptions(
+      ..transfer.default_options(),
+      content_type: option.Some("application/json"),
+    )
+  let create = run_upload_with_options(opts, <<"{\"x\":1}":utf8>>)
+
+  case header_value(create, "content-type") {
+    option.Some("application/json") -> Nil
+    other ->
+      panic as {
+        "expected content-type: application/json on CreateMultipartUpload, got "
+        <> describe_header(other)
+      }
+  }
+}
+
+pub fn upload_with_options_threads_cache_control_test() {
+  let opts =
+    transfer.UploadOptions(
+      ..transfer.default_options(),
+      cache_control: option.Some("max-age=3600, public"),
+    )
+  let create = run_upload_with_options(opts, <<"x":utf8>>)
+
+  case header_value(create, "cache-control") {
+    option.Some("max-age=3600, public") -> Nil
+    other ->
+      panic as {
+        "expected cache-control max-age=3600, public, got "
+        <> describe_header(other)
+      }
+  }
+}
+
+pub fn upload_with_options_default_options_emits_no_overrides_test() {
+  // `upload` delegates to `upload_with_options(.., default_options())`.
+  // The captured CreateMultipartUpload must NOT carry a Cache-Control
+  // header in this baseline — proves `default_options()` is truly
+  // all-None and isn't injecting accidental headers.
+  let captured = process.new_subject()
+  let send = scripted_send(captured, happy_responder)
+  let client = fresh_client(send)
+
+  case
+    transfer.upload(
+      client:,
+      bucket: "my-bucket",
+      key: "my-key",
+      body: <<"x":utf8>>,
+      part_size_bytes: 5_242_880,
+    )
+  {
+    Ok(_) -> Nil
+    Error(e) -> panic as { "expected Ok, got " <> describe_error(e) }
+  }
+
+  let create = first_create_call(captured)
+  case header_value(create, "cache-control") {
+    option.None -> Nil
+    option.Some(v) ->
+      panic as { "default options should not set cache-control; got " <> v }
+  }
+}
+
+fn describe_header(h: option.Option(String)) -> String {
+  case h {
+    option.None -> "<not present>"
+    option.Some(v) -> v
   }
 }
 
