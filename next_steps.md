@@ -18,7 +18,7 @@ deferred to v0.2.
 | M3 — region + endpoints | ✅ both modules exist | ❌ — `runtime.default_config` uses static `<prefix>.<region>.amazonaws.com`; `endpoints.resolve` has zero callers; `region.resolve` not auto-called by `service.new(region:)` | wire-in pending |
 | M4 — retry | ✅ standard + adaptive in `src/aws/retry.gleam` | ❌ — `runtime.invoke` doesn't call the retry loop | wire-in pending |
 | M5 — protocol codecs | ✅ awsJson1_0 / 1_1 / restJson1 / restXml / awsQuery / ec2Query | ✅ | restJson1 has ~30 edge-case failures; restXml + awsQuery + ec2Query have decoder gaps |
-| M6 — typed DynamoDB + S3 | ✅ (full services, not just GetItem/GetObject) | ✅ | response-header binding + restXml error extraction missing |
+| M6 — typed DynamoDB + S3 | ✅ (full services, not just GetItem/GetObject) | ✅ | response-header binding ✅ (2026-05-19); restXml error extraction still missing |
 | M7 — codegen | ✅ 5 protocols | ✅ | only DynamoDB + S3 actually generated |
 
 ## To close v0.1 (within plan scope)
@@ -61,13 +61,18 @@ the table above.
    `x-amzn-errortype` and a JSON `__type`/`code` field. Add the XML
    path. Closes the M6-audit gap; required for typed S3 errors.
 
-6. **Response header binding in the codegen** — `@httpHeader` /
-   `@httpResponseCode` output members currently decode to `None`.
-   The runtime already passes headers + status into
-   `parse_<op>_response`; the generator just doesn't emit code that
-   reads them. Required for S3 outputs to carry `ETag`, `VersionId`,
-   `Content-Length`, `Last-Modified`, `x-amz-server-side-encryption`,
-   etc. Closes the M6-audit gap.
+6. **Response header binding in the codegen** — DONE (2026-05-19).
+   restxml + restjson1 emitters now extract `@httpHeader` and
+   `@httpResponseCode` members on both the no-payload and
+   payload-bearing code paths. String / Int / Bool / Enum target
+   types are wired via `rest.{string_header, int_header, bool_header,
+   enum_header}`; restjson1 also emits a `<enum>_from_wire` helper
+   so the enum-header extractor resolves cleanly. Float / Timestamp
+   / List targets still fall through to `None` (follow-up work; the
+   `header_extractor` match in both protocols is the single place
+   to extend). `test/get_object_headers_test.gleam` and
+   `test/get_export_headers_test.gleam` regression-pin the
+   restxml + restjson1 paths respectively. Closes the M6-audit gap.
 
 7. **STS AssumeRole helper for `source_profile` / `role_arn`** —
    Plan scope-concern #6 calls for a minimal
