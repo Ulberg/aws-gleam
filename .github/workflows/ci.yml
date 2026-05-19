@@ -75,16 +75,39 @@ jobs:
           otp-version: ${{ matrix.otp }}
           gleam-version: ${{ matrix.gleam }}
 
-      - name: Cache Gleam build artifacts and Hex packages
+      # Hex package cache: deps from manifest.toml. Cheap, rarely
+      # invalidates. Split out from `build/` so dep restore survives
+      # build-cache misses.
+      - name: Cache Hex packages
         uses: actions/cache@v4
         with:
           path: |
-            build
             ~/.cache/gleam
             ~/.hex
-          key: gleam-${{ matrix.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ hashFiles('manifest.toml', 'gleam.toml') }}
+          key: hex-${{ matrix.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ hashFiles('manifest.toml', 'gleam.toml') }}
           restore-keys: |
-            gleam-${{ matrix.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-
+            hex-${{ matrix.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-
+
+      # Build artefacts cache. Keyed on every input that affects
+      # what gleam build produces:
+      #   * The codegen output (covered by `subs-key` + the codegen
+      #     hash below — same inputs as the codegen cache)
+      #   * Hand-written src/test source files
+      #   * gleam.toml / manifest.toml (deps + target)
+      # When the key matches exactly, the restored `build/` already
+      # has bit-identical .beam files and gleam test does zero
+      # compile work. When only some source files changed,
+      # `restore-keys` falls back to the most recent build/ for the
+      # same os/otp/gleam triple and gleam's incremental compile
+      # handles the delta.
+      - name: Cache Gleam build artifacts
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: build-${{ matrix.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ steps.subs-key.outputs.key }}-${{ hashFiles('codegen/src/**', 'codegen/gleam.toml', 'codegen/manifest.toml', 'scripts/regen.sh', 'scripts/build-protocol-test-asts.sh', 'scripts/extract-endpoints.sh', 'src/**', 'test/**', 'manifest.toml', 'gleam.toml') }}
+          restore-keys: |
+            build-${{ matrix.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ steps.subs-key.outputs.key }}-
+            build-${{ matrix.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-
 
       # macOS-latest is currently ARM64 (M-series Apple silicon),
       # so we cache the darwin-aarch64 Smithy CLI build to match
