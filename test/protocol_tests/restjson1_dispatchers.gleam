@@ -127,6 +127,10 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(test_post_no_payload_dispatcher())
   |> dispatch.register(timestamp_format_headers_dispatcher())
   |> dispatch.register(unit_input_and_output_dispatcher())
+  |> dispatch.register(service_unavailable_error_dispatcher())
+  |> dispatch.register(complex_error_dispatcher())
+  |> dispatch.register(foo_error_dispatcher())
+  |> dispatch.register(invalid_greeting_dispatcher())
 }
 
 fn all_query_string_types_dispatcher() -> Dispatcher {
@@ -2610,6 +2614,48 @@ fn unit_input_and_output_dispatcher() -> Dispatcher {
       }
     },
     parse_response: response_parser(svc.parse_unit_input_and_output_response),
+  )
+}
+
+fn service_unavailable_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#ServiceUnavailableError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(
+      svc.parse_service_unavailable_error_response,
+    ),
+  )
+}
+
+fn complex_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#ComplexError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_complex_error_response),
+  )
+}
+
+fn foo_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#FooError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_foo_error_response),
+  )
+}
+
+fn invalid_greeting_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#InvalidGreeting",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_invalid_greeting_response),
   )
 }
 

@@ -27,6 +27,7 @@
 import codegen/client
 import codegen/code
 import codegen/dispatcher
+import codegen/error_dispatch
 import codegen/named_shapes
 import codegen/paginator
 import codegen/rest_request
@@ -182,12 +183,21 @@ pub fn emit_service(
         list.map(op_specs, fn(spec) {
           string.concat([emit_error_type(spec), emit_error_translator(spec)])
         })
+      let unique_err_ids =
+        op_specs
+        |> list.flat_map(fn(s) { s.error_ids })
+        |> error_dispatch.dedupe_strings
+      let err_shape_blocks =
+        list.map(unique_err_ids, fn(err_id) {
+          error_dispatch.emit_parse_fn(strip_namespace(err_id))
+        })
       let body_content =
         string.concat([
           client_block,
           preamble,
           string.concat(op_blocks),
           string.concat(error_blocks),
+          string.concat(err_shape_blocks),
           string.concat(invoke_blocks),
           string.concat(paginate_blocks),
           string.concat(waiter_blocks),
@@ -198,7 +208,7 @@ pub fn emit_service(
           "\n",
           body_content,
         ])
-      let dispatcher_specs =
+      let op_dispatcher_specs =
         list.map(op_specs, fn(s) {
           dispatcher.DispatcherSpec(
             op_id: s.op_id,
@@ -208,6 +218,10 @@ pub fn emit_service(
             is_error_shape: False,
           )
         })
+      let err_dispatcher_specs =
+        error_dispatch.dispatcher_specs(unique_err_ids, strip_namespace)
+      let dispatcher_specs =
+        list.append(op_dispatcher_specs, err_dispatcher_specs)
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
@@ -790,7 +804,9 @@ fn service_xmlns_wrapped_body(
   let input_snake = stringutils.pascal_to_snake(input_type)
   let inner_call =
     code.Call(
-      head: code.Ident(name: name_concat(["encode_", input_snake, "_xml_inner"])),
+      head: code.Ident(
+        name: name_concat(["encode_", input_snake, "_xml_inner"]),
+      ),
       args: [code.Ident(name: "input")],
     )
   let xmlns_pair = code.Raw(fragment: xmlns_attr_expr(option.Some(ns)))
@@ -802,8 +818,7 @@ fn service_xmlns_wrapped_body(
       }
     })
   let attrs = case has_xml_attrs {
-    False ->
-      code.ListLit(items: [xmlns_pair], tail: code.CodeNone)
+    False -> code.ListLit(items: [xmlns_pair], tail: code.CodeNone)
     True ->
       code.ListLit(
         items: [xmlns_pair],
@@ -2006,12 +2021,16 @@ fn struct_member_wrapped(
   let target_snake = stringutils.pascal_to_snake(target_name)
   let inner =
     code.Call(
-      head: code.Ident(name: name_concat(["encode_", target_snake, "_xml_inner"])),
+      head: code.Ident(
+        name: name_concat(["encode_", target_snake, "_xml_inner"]),
+      ),
       args: [code.Ident(name: "v")],
     )
   let attrs_call =
     code.Call(
-      head: code.Ident(name: name_concat(["encode_", target_snake, "_xml_attrs"])),
+      head: code.Ident(
+        name: name_concat(["encode_", target_snake, "_xml_attrs"]),
+      ),
       args: [code.Ident(name: "v")],
     )
   let attrs = case mem_ns {
@@ -2898,9 +2917,7 @@ fn emit_parse_with_payload(
       let value = case m.snake_name == payload.snake_name {
         True -> code.Ident(name: "payload")
         False ->
-          case
-            list.find(overrides, fn(o) { o.field == m.snake_name })
-          {
+          case list.find(overrides, fn(o) { o.field == m.snake_name }) {
             Ok(o) -> code.Raw(fragment: o.value_expr)
             Error(_) -> code.Ident(name: "option.None")
           }

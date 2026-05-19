@@ -390,7 +390,18 @@ pub fn translate_service_error(
   }
 }
 
-fn extract_error_type(headers: Dict(String, String), body: BitArray) -> String {
+/// Pull the wire-error-type local name out of a response. Looks at the
+/// `X-Amzn-Errortype` header first (restJson1, awsJson*); falls back to
+/// the body for `__type` / `code` / `<Code>` (covers JSON and XML
+/// error shapes). The returned string is the *local* shape name —
+/// namespace prefix, URI suffix, and Smithy `[Charlie,foo,bar]` suffix
+/// are all stripped. Exposed for codegen-emitted error-shape protocol
+/// test dispatchers; the in-process retry path uses it via the
+/// `ServiceError` discriminator.
+pub fn extract_error_type(
+  headers: Dict(String, String),
+  body: BitArray,
+) -> String {
   case dict.get(headers, "x-amzn-errortype") {
     Ok(v) -> normalise_error_type(v)
     Error(_) ->
@@ -398,6 +409,41 @@ fn extract_error_type(headers: Dict(String, String), body: BitArray) -> String {
         Error(_) -> "Unknown"
         Ok(text) -> error_type_from_body(text)
       }
+  }
+}
+
+/// Discriminator check for protocol-test error-shape dispatchers. Used
+/// by the generated `parse_<err>_response` function: if the wire-side
+/// discriminator (header or body) resolves to `expected_local`, the
+/// response was routed to the right error shape and the dispatcher
+/// reports `Ok(Nil)`. The runner's response-side assertion is binary
+/// — `Ok` vs `Error` — so returning `Nil` is enough.
+///
+/// The runner hands fixture headers through with their literal-case
+/// keys (`X-Amzn-Errortype`), but `extract_error_type` expects the
+/// lowercased form that the real-request path produces via
+/// `headers_to_dict`. We lowercase here so the helper matches HTTP's
+/// case-insensitive header semantics regardless of which call-site
+/// invokes it.
+pub fn check_error_type_matches(
+  headers: Dict(String, String),
+  body: BitArray,
+  expected_local: String,
+) -> Result(Nil, String) {
+  let lower =
+    dict.fold(headers, dict.new(), fn(acc, k, v) {
+      dict.insert(acc, string.lowercase(k), v)
+    })
+  let extracted = extract_error_type(lower, body)
+  case extracted == expected_local {
+    True -> Ok(Nil)
+    False ->
+      Error(
+        "error type mismatch: expected "
+        <> expected_local
+        <> ", got "
+        <> extracted,
+      )
   }
 }
 

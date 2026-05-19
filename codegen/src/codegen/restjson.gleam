@@ -15,6 +15,7 @@
 import codegen/client
 import codegen/code
 import codegen/dispatcher
+import codegen/error_dispatch
 import codegen/named_shapes
 import codegen/paginator
 import codegen/rest_request
@@ -204,12 +205,21 @@ pub fn emit_service(
         list.map(op_specs, fn(spec) {
           string.concat([emit_error_type(spec), emit_error_translator(spec)])
         })
+      let unique_err_ids =
+        op_specs
+        |> list.flat_map(fn(s) { s.error_ids })
+        |> error_dispatch.dedupe_strings
+      let error_shape_blocks =
+        list.map(unique_err_ids, fn(id) {
+          error_dispatch.emit_parse_fn(strip_namespace(id))
+        })
       let body_content =
         string.concat([
           client_block,
           preamble,
           string.concat(op_blocks),
           string.concat(error_blocks),
+          string.concat(error_shape_blocks),
           string.concat(invoke_blocks),
           string.concat(paginate_blocks),
           string.concat(waiter_blocks),
@@ -220,7 +230,7 @@ pub fn emit_service(
           "\n",
           body_content,
         ])
-      let dispatcher_specs =
+      let op_dispatcher_specs =
         list.map(op_specs, fn(s) {
           dispatcher.DispatcherSpec(
             op_id: s.op_id,
@@ -234,6 +244,10 @@ pub fn emit_service(
             is_error_shape: False,
           )
         })
+      let err_dispatcher_specs =
+        error_dispatch.dispatcher_specs(unique_err_ids, strip_namespace)
+      let dispatcher_specs =
+        list.append(op_dispatcher_specs, err_dispatcher_specs)
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
@@ -1457,13 +1471,19 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
         }
       }
       let empty_decode_call =
-        code.Call(head: code.Ident(name: name_concat(["decode_", snake, "_output"])), args: [
-          code.StrLit(value: "{}"),
-        ])
+        code.Call(
+          head: code.Ident(name: name_concat(["decode_", snake, "_output"])),
+          args: [
+            code.StrLit(value: "{}"),
+          ],
+        )
       let text_decode_call =
-        code.Call(head: code.Ident(name: name_concat(["decode_", snake, "_output"])), args: [
-          code.Ident(name: "text"),
-        ])
+        code.Call(
+          head: code.Ident(name: name_concat(["decode_", snake, "_output"])),
+          args: [
+            code.Ident(name: "text"),
+          ],
+        )
       code.render(
         code.Module(items: [
           code.Fn(

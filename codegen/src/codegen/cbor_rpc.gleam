@@ -21,6 +21,7 @@
 
 import codegen/code.{type Code, CodeSome}
 import codegen/dispatcher
+import codegen/error_dispatch
 import gleam/dict
 import gleam/list
 import gleam/string
@@ -259,7 +260,7 @@ fn emit_error_shapes(m: Model, services: List(ServiceCtx)) -> List(EmittedOp) {
   let error_ids =
     services
     |> list.flat_map(fn(svc) { collect_error_ids(m, svc.service_id) })
-    |> dedupe
+    |> error_dispatch.dedupe_strings
   list.filter_map(error_ids, fn(id) {
     case model.lookup(m, id) {
       Ok(shape.Structure(members: members, ..)) ->
@@ -285,16 +286,6 @@ fn collect_error_ids(m: Model, service_id: String) -> List(String) {
       })
     _ -> []
   }
-}
-
-fn dedupe(xs: List(String)) -> List(String) {
-  list.fold(xs, [], fn(acc, x) {
-    case list.contains(acc, x) {
-      True -> acc
-      False -> [x, ..acc]
-    }
-  })
-  |> list.reverse
 }
 
 fn has_member(members: dict.Dict(String, shape.Member), name: String) -> Bool {

@@ -27,6 +27,9 @@ pub fn register_all(registry: Registry) -> Registry {
   )
   |> dispatch.register(query_incompatible_operation_dispatcher())
   |> dispatch.register(simple_scalar_properties_dispatcher())
+  |> dispatch.register(complex_error_dispatcher())
+  |> dispatch.register(foo_error_dispatcher())
+  |> dispatch.register(invalid_greeting_dispatcher())
 }
 
 fn content_type_parameters_dispatcher() -> Dispatcher {
@@ -355,6 +358,36 @@ fn simple_scalar_properties_dispatcher() -> Dispatcher {
       }
     },
     parse_response: response_parser(svc.parse_simple_scalar_properties_response),
+  )
+}
+
+fn complex_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#ComplexError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_complex_error_response),
+  )
+}
+
+fn foo_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#FooError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_foo_error_response),
+  )
+}
+
+fn invalid_greeting_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#InvalidGreeting",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_invalid_greeting_response),
   )
 }
 

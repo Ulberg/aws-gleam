@@ -18,6 +18,7 @@
 import codegen/client
 import codegen/code
 import codegen/dispatcher
+import codegen/error_dispatch
 import codegen/named_shapes
 import codegen/paginator
 import codegen/struct_codec
@@ -169,6 +170,14 @@ pub fn emit_service(
       let invoke_blocks = list.map(op_specs, emit_invoke)
       let paginate_blocks = list.map(op_specs, emit_paginator)
       let waiter_blocks = list.map(op_specs, emit_waiter)
+      let unique_err_ids =
+        op_specs
+        |> list.flat_map(fn(s) { s.error_ids })
+        |> error_dispatch.dedupe_strings
+      let err_shape_blocks =
+        list.map(unique_err_ids, fn(err_id) {
+          error_dispatch.emit_parse_fn(strip_namespace(err_id))
+        })
       let body_content =
         string.concat([
           client_block,
@@ -177,6 +186,7 @@ pub fn emit_service(
           string.concat(invoke_blocks),
           string.concat(paginate_blocks),
           string.concat(waiter_blocks),
+          string.concat(err_shape_blocks),
         ])
       let body =
         string.concat([
@@ -184,7 +194,7 @@ pub fn emit_service(
           "\n",
           body_content,
         ])
-      let dispatcher_specs =
+      let op_dispatcher_specs =
         list.map(op_specs, fn(s) {
           dispatcher.DispatcherSpec(
             op_id: s.op_id,
@@ -194,6 +204,10 @@ pub fn emit_service(
             is_error_shape: False,
           )
         })
+      let err_dispatcher_specs =
+        error_dispatch.dispatcher_specs(unique_err_ids, strip_namespace)
+      let dispatcher_specs =
+        list.append(op_dispatcher_specs, err_dispatcher_specs)
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
