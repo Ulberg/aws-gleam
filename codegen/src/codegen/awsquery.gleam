@@ -124,9 +124,19 @@ pub fn emit_service(
           let wire_code = aws_query_error_code(model, err_id, local)
           error_dispatch.emit_parse_fn(local, wire_code)
         })
+      // Dedupe nested structs by `full_id` across all ops so each
+      // shape gets one type def + one `encode_<snake>_at` helper.
+      let referenced_structs =
+        list.flat_map(emitted_ops, fn(e) { e.referenced_structs })
+        |> dedupe_structs_by_id
+      let nested_struct_blocks =
+        list.map(referenced_structs, fn(rs) {
+          emit_nested_struct_block(model, rs, variant)
+        })
       let body_inner =
         string.concat([
           string.concat(enum_blocks),
+          string.concat(nested_struct_blocks),
           string.concat(list.map(emitted_ops, fn(e) { e.code })),
           string.concat(err_shape_blocks),
         ])
@@ -165,6 +175,11 @@ type EmittedOp {
     code: String,
     has_typed_input: Bool,
     referenced_enums: List(types.Resolved),
+    /// Every nested struct/list shape transitively referenced from
+    /// this op's input. The driver dedupes across ops and emits one
+    /// `encode_<struct>_at(prefix, value)` helper per unique struct
+    /// at the file level.
+    referenced_structs: List(types.Resolved),
   )
 }
 
@@ -195,7 +210,7 @@ fn classify_input(model: Model, ref: shape.Reference) -> InputClass {
             _ -> {
               let members = types.resolve_members(model, id)
               case
-                all_supported(members)
+                all_supported(model, members)
                 && all_body_bound(members)
                 && no_member_traits(model, id)
               {
@@ -209,19 +224,41 @@ fn classify_input(model: Model, ref: shape.Reference) -> InputClass {
   }
 }
 
-fn all_supported(members: List(MemberDef)) -> Bool {
-  list.all(members, fn(m) { is_supported_member(m.target) })
+fn all_supported(model: Model, members: List(MemberDef)) -> Bool {
+  list.all(members, fn(m) { is_supported_deep(model, m.target, set.new()) })
 }
 
-fn is_supported_member(r: types.Resolved) -> Bool {
+/// Recursive supportedness check used by both `classify_input` and
+/// the per-field encoder dispatch. Allows scalars + Blob + Enum +
+/// IntegerEnum + lists (of supported elements) + structs (with
+/// all-supported members; tracked via a visited-set to bottom out
+/// on self-referential shapes). Maps / unions / timestamps /
+/// documents stay unsupported — they land in later slices.
+fn is_supported_deep(
+  model: Model,
+  r: types.Resolved,
+  visited: set.Set(String),
+) -> Bool {
   case r {
     types.RPrim(_) -> True
     types.RBlob -> True
     types.REnum(..) -> True
     types.RIntEnum(..) -> True
+    types.RList(element: e, ..) -> is_supported_deep(model, e, visited)
+    types.RStruct(full_id: sid, ..) ->
+      case set.contains(visited, sid) {
+        True -> True
+        False -> {
+          let nested = types.resolve_members(model, sid)
+          let visited2 = set.insert(visited, sid)
+          list.all(nested, fn(m) { is_supported_deep(model, m.target, visited2) })
+          && no_member_traits(model, sid)
+        }
+      }
     _ -> False
   }
 }
+
 
 fn all_body_bound(members: List(MemberDef)) -> Bool {
   list.all(members, fn(m) {
@@ -279,6 +316,7 @@ fn emit_empty_operation(op_id: String, version: String) -> EmittedOp {
     code: code.render(module),
     has_typed_input: False,
     referenced_enums: [],
+    referenced_structs: [],
   )
 }
 
@@ -340,6 +378,9 @@ fn emit_scalar_typed_operation(
       ),
       code.Blank,
       build_scalar_request_fn(
+        model,
+        input_id,
+        variant,
         snake,
         input_type,
         local,
@@ -350,12 +391,73 @@ fn emit_scalar_typed_operation(
       parse_response_fn(snake, output_type),
       code.Blank,
     ])
+  let referenced_structs = collect_referenced_structs(model, members, set.new())
+  // The structs we surface here include any nested struct's own
+  // referenced enums — pull them out so the file header sees them too.
+  let nested_enums =
+    list.flat_map(referenced_structs, fn(rs) {
+      case rs {
+        types.RStruct(full_id: sid, ..) -> {
+          let inner = types.resolve_members(model, sid)
+          list.filter(list.map(inner, fn(m) { m.target }), fn(r) {
+            case r {
+              types.REnum(..) -> True
+              types.RIntEnum(..) -> True
+              _ -> False
+            }
+          })
+        }
+        _ -> []
+      }
+    })
   EmittedOp(
     operation_id: op_id,
     code: code.render(module),
     has_typed_input: True,
-    referenced_enums: referenced_enums,
+    referenced_enums: list.append(referenced_enums, nested_enums),
+    referenced_structs: referenced_structs,
   )
+}
+
+/// Walk the input struct's member targets and gather every nested
+/// `RStruct` reachable. Visited-set tracks shape IDs already
+/// queued so recursive structs (e.g. `StructArg.RecursiveArg →
+/// StructArg`) don't loop. Lists are not added themselves — their
+/// helper is inlined as a `list.index_fold` at the call site —
+/// but we DO descend into their element type to catch any nested
+/// struct inside.
+fn collect_referenced_structs(
+  model: Model,
+  members: List(MemberDef),
+  visited: set.Set(String),
+) -> List(types.Resolved) {
+  list.flat_map(members, fn(m) {
+    collect_from_target(model, m.target, visited)
+  })
+}
+
+fn collect_from_target(
+  model: Model,
+  target: types.Resolved,
+  visited: set.Set(String),
+) -> List(types.Resolved) {
+  case target {
+    types.RList(element: e, ..) -> collect_from_target(model, e, visited)
+    types.RStruct(full_id: sid, ..) ->
+      case set.contains(visited, sid) {
+        True -> []
+        False -> {
+          let v2 = set.insert(visited, sid)
+          let nested = types.resolve_members(model, sid)
+          let nested_structs =
+            list.flat_map(nested, fn(m) {
+              collect_from_target(model, m.target, v2)
+            })
+          [target, ..nested_structs]
+        }
+      }
+    _ -> []
+  }
 }
 
 /// Resolve a member's wire-form name per the awsQuery / ec2Query
@@ -429,6 +531,94 @@ fn collect_referenced_enums(
 ) -> List(types.Resolved) {
   list.flat_map(emitted, fn(e) { e.referenced_enums })
   |> dedupe_by_name
+}
+
+fn dedupe_structs_by_id(rs: List(types.Resolved)) -> List(types.Resolved) {
+  list.fold(rs, #([], set.new()), fn(acc, r) {
+    let #(out, seen) = acc
+    case r {
+      types.RStruct(full_id: id, ..) ->
+        case set.contains(seen, id) {
+          True -> #(out, seen)
+          False -> #([r, ..out], set.insert(seen, id))
+        }
+      _ -> #(out, seen)
+    }
+  }).0
+  |> list.reverse
+}
+
+/// Emit the record type def + `encode_<snake>_at(prefix, value)`
+/// helper for a single nested struct. The encoder takes the wire
+/// prefix string (e.g. `"Nested"` or `"ComplexListArg.member.1"`)
+/// and an instance of the struct, returns a `&k=v` body fragment
+/// for every `Some(_)` member.
+fn emit_nested_struct_block(
+  model: Model,
+  rs: types.Resolved,
+  variant: Variant,
+) -> String {
+  case rs {
+    types.RStruct(gleam_name: gn, full_id: sid, ..) -> {
+      let snake = stringutils.pascal_to_snake(gn)
+      let members = types.resolve_members(model, sid)
+      let type_def = named_shapes.record_def(gn, members)
+      let field_clauses =
+        list.map(members, fn(m) {
+          let wire = wire_name_for(model, sid, m, variant)
+          let inner =
+            encode_value_expr(
+              m.target,
+              "v",
+              name_concat(["prefix <> \".", wire, "\""]),
+              member_traits(model, sid, m.member_name),
+              variant,
+            )
+          name_concat([
+            "  let acc = case s.",
+            m.snake_name,
+            " { option.None -> acc option.Some(v) -> acc <> ",
+            inner,
+            " }\n",
+          ])
+        })
+        |> string.concat
+      let encoder =
+        name_concat([
+          "pub fn encode_",
+          snake,
+          "_at(prefix: String, s: ",
+          gn,
+          ") -> String {\n",
+          "  let acc = \"\"\n",
+          field_clauses,
+          "  acc\n",
+          "}\n",
+        ])
+      // Decoder for the protocol-test JSON fixture (params side).
+      // Member-keyed, params_nested so nested struct refs call
+      // sibling `decode_<S>_struct_params()` rather than wire-form
+      // `_struct` decoders we don't emit on the awsQuery path.
+      let decoder =
+        struct_codec.decoder(
+          name_concat(["decode_", snake, "_struct_params"]),
+          gn,
+          members,
+          True,
+          True,
+        )
+      string.concat([
+        "\n",
+        code.render(type_def),
+        "\n\n",
+        encoder,
+        "\n",
+        code.render(decoder),
+        "\n",
+      ])
+    }
+    _ -> ""
+  }
 }
 
 fn dedupe_by_name(rs: List(types.Resolved)) -> List(types.Resolved) {
@@ -635,6 +825,9 @@ fn build_empty_request_fn(
 }
 
 fn build_scalar_request_fn(
+  model: Model,
+  struct_id: String,
+  variant: Variant,
   snake: String,
   input_type: String,
   op_name: String,
@@ -648,7 +841,9 @@ fn build_scalar_request_fn(
       let #(m, wire) = pair
       code.Let(
         name: "body",
-        value: code.Raw(fragment: scalar_field_append(m, wire)),
+        value: code.Raw(
+          fragment: scalar_field_append(model, struct_id, m, wire, variant),
+        ),
       )
     })
   let body_bytes =
@@ -685,34 +880,165 @@ fn build_scalar_request_fn(
   )
 }
 
-fn scalar_field_append(m: MemberDef, wire_name: String) -> String {
-  let encode = case m.target {
-    types.RPrim(types.PString) -> "uri.encode_component(v)"
-    types.RPrim(types.PInt) -> "int.to_string(v)"
-    types.RPrim(types.PFloat) -> "format_smithy_float(v)"
+fn scalar_field_append(
+  model: Model,
+  struct_id: String,
+  m: MemberDef,
+  wire_name: String,
+  variant: Variant,
+) -> String {
+  let body_extension =
+    encode_value_expr(
+      m.target,
+      "v",
+      quote_string(wire_name),
+      member_traits(model, struct_id, m.member_name),
+      variant,
+    )
+  name_concat([
+    "case input.",
+    m.snake_name,
+    " { option.None -> body option.Some(v) -> body <> ",
+    body_extension,
+    " }",
+  ])
+}
+
+/// Emit a Gleam expression that produces the wire-body fragment
+/// (`&prefix=value` / `&prefix.member.N=...`) for `value_expr`
+/// (of type `target`), placed under `prefix_expr` (a Gleam
+/// expression that evaluates to the running prefix string,
+/// without leading `&`). `member_traits` carries the struct-
+/// member-level traits (`@xmlFlattened`, `@xmlName` overriding
+/// the wire prefix). `variant` controls awsQuery / ec2Query
+/// wire-name conventions inside nested structs. The model is
+/// not consulted here because struct branches dispatch to
+/// `encode_<snake>_at` helpers emitted at the file level —
+/// recursion into nested struct shape lookup happens there.
+fn encode_value_expr(
+  target: types.Resolved,
+  value_expr: String,
+  prefix_expr: String,
+  m_traits: shape.Traits,
+  variant: Variant,
+) -> String {
+  case target {
+    types.RPrim(_) | types.RBlob | types.REnum(..) | types.RIntEnum(..) ->
+      scalar_kv(target, value_expr, prefix_expr)
+    types.RList(element: et, xml_entry_name: xen, ..) -> {
+      // ec2Query flattens every list per the protocol's "all lists are
+      // flattened" rule (see Ec2Lists in the corpus); awsQuery only
+      // flattens when the struct member carries `@xmlFlattened`.
+      let flat = case variant {
+        Ec2Query -> True
+        AwsQuery ->
+          case dict.get(m_traits, ShapeId("smithy.api#xmlFlattened")) {
+            Ok(_) -> True
+            Error(_) -> False
+          }
+      }
+      let entry_prefix = case flat, xen {
+        True, _ -> prefix_expr <> " <> \".\" <> int.to_string(idx + 1)"
+        False, name ->
+          prefix_expr
+          <> " <> \"."
+          <> name
+          <> ".\" <> int.to_string(idx + 1)"
+      }
+      let elem_encode =
+        encode_value_expr(et, "item", entry_prefix, dict.new(), variant)
+      // Empty-list semantics differ between protocols:
+      //   awsQuery → serialize the bare parameter name `<prefix>=`
+      //     (matches QueryListWriter.finish() in aws_smithy_query).
+      //   ec2Query → do NOT serialize at all (Ec2EmptyQueryLists
+      //     fixture: "Does not serialize empty query lists.").
+      let empty_branch = case variant {
+        AwsQuery ->
+          name_concat(["[] -> \"&\" <> ", prefix_expr, " <> \"=\""])
+        Ec2Query -> "[] -> \"\""
+      }
+      name_concat([
+        "case ",
+        value_expr,
+        " { ",
+        empty_branch,
+        " _ -> list.index_fold(",
+        value_expr,
+        ", \"\", fn(acc, item, idx) { acc <> ",
+        elem_encode,
+        " }) }",
+      ])
+    }
+    types.RStruct(gleam_name: gn, ..) ->
+      name_concat([
+        "encode_",
+        stringutils.pascal_to_snake(gn),
+        "_at(",
+        prefix_expr,
+        ", ",
+        value_expr,
+        ")",
+      ])
+    _ ->
+      // Unsupported (map/union/timestamp/document) — emit a literal
+      // empty string so the build still compiles if the classifier
+      // missed a case. The classifier should prevent this in
+      // practice.
+      "\"\""
+  }
+}
+
+fn scalar_kv(
+  target: types.Resolved,
+  value_expr: String,
+  prefix_expr: String,
+) -> String {
+  let encoded = case target {
+    types.RPrim(types.PString) ->
+      name_concat(["uri.encode_component(", value_expr, ")"])
+    types.RPrim(types.PInt) -> name_concat(["int.to_string(", value_expr, ")"])
+    types.RPrim(types.PFloat) ->
+      name_concat(["format_smithy_float(", value_expr, ")"])
     types.RPrim(types.PBool) ->
-      "case v { True -> \"true\" False -> \"false\" }"
+      name_concat([
+        "case ",
+        value_expr,
+        " { True -> \"true\" False -> \"false\" }",
+      ])
     types.RBlob ->
-      "uri.encode_component(bit_array.base64_encode(v, True))"
+      name_concat([
+        "uri.encode_component(bit_array.base64_encode(",
+        value_expr,
+        ", True))",
+      ])
     types.REnum(gleam_name: en, ..) ->
       name_concat([
         "uri.encode_component(",
         stringutils.pascal_to_snake(en),
-        "_to_wire(v))",
+        "_to_wire(",
+        value_expr,
+        "))",
       ])
     types.RIntEnum(gleam_name: en, ..) ->
-      name_concat(["int.to_string(", stringutils.pascal_to_snake(en), "_to_int(v))"])
-    _ -> "uri.encode_component(string.inspect(v))"
+      name_concat([
+        "int.to_string(",
+        stringutils.pascal_to_snake(en),
+        "_to_int(",
+        value_expr,
+        "))",
+      ])
+    _ ->
+      name_concat([
+        "uri.encode_component(string.inspect(",
+        value_expr,
+        "))",
+      ])
   }
-  name_concat([
-    "case input.",
-    m.snake_name,
-    " { option.None -> body option.Some(v) -> body <> \"&",
-    wire_name,
-    "=\" <> ",
-    encode,
-    " }",
-  ])
+  name_concat(["\"&\" <> ", prefix_expr, " <> \"=\" <> ", encoded])
+}
+
+fn quote_string(s: String) -> String {
+  name_concat(["\"", s, "\""])
 }
 
 fn parse_response_fn(snake: String, output_type: String) -> Code {
@@ -755,6 +1081,7 @@ fn file_header(
     #("gleam/dynamic/decode", "decode."),
     #("gleam/int", "int."),
     #("gleam/json", "json."),
+    #("gleam/list", "list."),
     #("gleam/option", "option."),
     #("gleam/result", "result."),
     #("gleam/string", "string."),

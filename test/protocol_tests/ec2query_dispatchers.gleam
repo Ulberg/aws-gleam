@@ -17,7 +17,9 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(greeting_with_errors_dispatcher())
   |> dispatch.register(host_with_path_operation_dispatcher())
   |> dispatch.register(ignores_wrapping_xml_name_dispatcher())
+  |> dispatch.register(nested_structures_dispatcher())
   |> dispatch.register(no_input_and_output_dispatcher())
+  |> dispatch.register(query_lists_dispatcher())
   |> dispatch.register(recursive_xml_shapes_dispatcher())
   |> dispatch.register(simple_input_params_dispatcher())
   |> dispatch.register(simple_scalar_xml_properties_dispatcher())
@@ -134,6 +136,27 @@ fn ignores_wrapping_xml_name_dispatcher() -> Dispatcher {
   )
 }
 
+fn nested_structures_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#NestedStructures",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_nested_structures_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_nested_structures_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_nested_structures_response),
+  )
+}
+
 fn no_input_and_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.ec2#NoInputAndOutput",
@@ -144,6 +167,27 @@ fn no_input_and_output_dispatcher() -> Dispatcher {
       Ok(BuiltRequest(method:, uri:, headers:, body:))
     },
     parse_response: response_parser(svc.parse_no_input_and_output_response),
+  )
+}
+
+fn query_lists_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#QueryLists",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_query_lists_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_query_lists_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_query_lists_response),
   )
 }
 
