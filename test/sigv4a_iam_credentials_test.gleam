@@ -10,14 +10,15 @@
 //// same IAM pair. A regression in either the key derivation or
 //// the signing pipeline shows up here as a verification failure.
 
-import aws/internal/http_request.{
-  type Header, type HttpRequest, Header, HttpRequest,
-}
+import aws/internal/http_request.{type HttpRequest, Header, HttpRequest}
 import aws/internal/sigv4a
 import gleam/bit_array
-import gleam/list
 import gleam/string
 import gleeunit/should
+import support/sigv4a_test_helpers.{
+  canonical_for_round_trip, crypto_hex_encode, crypto_sha256, decode_hex,
+  extract_signature, find_header,
+}
 
 const access_key_id: String = "AKIDEXAMPLE"
 
@@ -75,7 +76,7 @@ pub fn sign_with_iam_credentials_round_trip_verifies_test() {
   let assert Ok(auth) = find_header(signed.headers, "Authorization")
   let assert Ok(sig_hex) = extract_signature(auth)
   let sig_bytes = decode_hex(sig_hex)
-  let creq = canonical_for_round_trip(signed)
+  let creq = canonical_for_round_trip(signed, signed.path)
   let creq_hash = crypto_hex_encode(crypto_sha256(bit_array.from_string(creq)))
   let sts =
     "AWS4-ECDSA-P256-SHA256\n20150830T123600Z\n20150830/service/aws4_request\n"
@@ -87,64 +88,3 @@ pub fn sign_with_iam_credentials_round_trip_verifies_test() {
   sigv4a.ecdsa_p256_verify(pubkey, bit_array.from_string(sts), sig_bytes)
   |> should.be_true
 }
-
-// ---------- helpers (mirror sigv4a_test.gleam) ----------
-
-fn find_header(headers: List(Header), name: String) -> Result(String, Nil) {
-  case
-    list.find(headers, fn(h) {
-      string.lowercase(h.name) == string.lowercase(name)
-    })
-  {
-    Ok(h) -> Ok(h.value)
-    Error(_) -> Error(Nil)
-  }
-}
-
-fn extract_signature(auth: String) -> Result(String, Nil) {
-  case string.split_once(auth, "Signature=") {
-    Ok(#(_, sig)) -> Ok(sig)
-    Error(_) -> Error(Nil)
-  }
-}
-
-fn canonical_for_round_trip(signed: HttpRequest) -> String {
-  let signing_headers =
-    list.filter(signed.headers, fn(h) {
-      string.lowercase(h.name) != "authorization"
-    })
-  let sorted =
-    signing_headers
-    |> list.map(fn(h) { #(string.lowercase(h.name), string.trim(h.value)) })
-    |> list.sort(by: fn(a, b) { string.compare(a.0, b.0) })
-  let headers_block =
-    sorted
-    |> list.map(fn(p) { p.0 <> ":" <> p.1 <> "\n" })
-    |> string.concat
-  let signed_names =
-    sorted
-    |> list.map(fn(p) { p.0 })
-    |> list.unique
-    |> string.join(";")
-  let payload_hash = crypto_hex_encode(crypto_sha256(bit_array.from_string("")))
-  signed.method
-  <> "\n"
-  <> signed.path
-  <> "\n"
-  <> ""
-  <> "\n"
-  <> headers_block
-  <> "\n"
-  <> signed_names
-  <> "\n"
-  <> payload_hash
-}
-
-@external(erlang, "aws_ffi", "sha256")
-fn crypto_sha256(data: BitArray) -> BitArray
-
-@external(erlang, "aws_ffi", "hex_encode")
-fn crypto_hex_encode(data: BitArray) -> String
-
-@external(erlang, "binary", "decode_hex")
-fn decode_hex(s: String) -> BitArray

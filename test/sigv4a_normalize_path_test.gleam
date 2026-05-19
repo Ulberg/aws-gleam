@@ -8,15 +8,15 @@
 //// percent-encoded). aws-c-auth's `*-unnormalized` fixtures rely
 //// on this.
 
-import aws/internal/http_request.{
-  type Header, type HttpRequest, Header, HttpRequest,
-}
+import aws/internal/http_request.{type HttpRequest, Header, HttpRequest}
 import aws/internal/sigv4a
 import gleam/bit_array
-import gleam/list
 import gleam/option.{None}
-import gleam/string
 import gleeunit/should
+import support/sigv4a_test_helpers.{
+  canonical_for_round_trip, crypto_hex_encode, crypto_sha256, decode_hex,
+  extract_signature, find_header,
+}
 
 fn dotty_request() -> HttpRequest {
   HttpRequest(
@@ -126,67 +126,3 @@ pub fn normalize_true_root_path_stays_slash_test() {
   find_header(signed.headers, "Authorization")
   |> should.be_ok
 }
-
-// ---------- helpers ----------
-
-fn find_header(headers: List(Header), name: String) -> Result(String, Nil) {
-  case
-    list.find(headers, fn(h) {
-      string.lowercase(h.name) == string.lowercase(name)
-    })
-  {
-    Ok(h) -> Ok(h.value)
-    Error(_) -> Error(Nil)
-  }
-}
-
-fn extract_signature(auth: String) -> Result(String, Nil) {
-  case string.split_once(auth, "Signature=") {
-    Ok(#(_, sig)) -> Ok(sig)
-    Error(_) -> Error(Nil)
-  }
-}
-
-fn canonical_for_round_trip(
-  signed: HttpRequest,
-  canonical_uri: String,
-) -> String {
-  let signing_headers =
-    list.filter(signed.headers, fn(h) {
-      string.lowercase(h.name) != "authorization"
-    })
-  let sorted =
-    signing_headers
-    |> list.map(fn(h) { #(string.lowercase(h.name), string.trim(h.value)) })
-    |> list.sort(by: fn(a, b) { string.compare(a.0, b.0) })
-  let headers_block =
-    sorted
-    |> list.map(fn(p) { p.0 <> ":" <> p.1 <> "\n" })
-    |> string.concat
-  let signed_names =
-    sorted
-    |> list.map(fn(p) { p.0 })
-    |> list.unique
-    |> string.join(";")
-  let payload_hash = crypto_hex_encode(crypto_sha256(bit_array.from_string("")))
-  signed.method
-  <> "\n"
-  <> canonical_uri
-  <> "\n"
-  <> ""
-  <> "\n"
-  <> headers_block
-  <> "\n"
-  <> signed_names
-  <> "\n"
-  <> payload_hash
-}
-
-@external(erlang, "aws_ffi", "sha256")
-fn crypto_sha256(data: BitArray) -> BitArray
-
-@external(erlang, "aws_ffi", "hex_encode")
-fn crypto_hex_encode(data: BitArray) -> String
-
-@external(erlang, "binary", "decode_hex")
-fn decode_hex(s: String) -> BitArray
