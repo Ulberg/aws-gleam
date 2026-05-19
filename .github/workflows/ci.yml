@@ -150,7 +150,17 @@ jobs:
         env:
           ERL_FLAGS: "+t 16777216 +S 2:2"
           ERL_AFLAGS: "+t 16777216 +S 2:2"
-          GLIBC_TUNABLES: "glibc.pthread.stacksize=67108864"
+          # 256 MB pthread stack. 64 MB still SIGSEGV'd — bump
+          # again to rule out "stack just barely too small". If
+          # 256 MB still crashes, the bug isn't stack-related at
+          # all and the next move is the architectural fix
+          # (split src/aws/services into its own Gleam package).
+          GLIBC_TUNABLES: "glibc.pthread.stacksize=268435456"
+          # Also force tokio runtime to a single worker thread —
+          # eliminates parallel-Rust-side races as a candidate.
+          # Gleam uses tokio with rt-multi-thread; this caps
+          # concurrent worker count.
+          TOKIO_WORKER_THREADS: "1"
 
   # LocalStack end-to-end tests for the v0.1 verification gate
   # (DynamoDB + S3 round-trips). Kept in a separate job so the
