@@ -30,7 +30,28 @@ import gleam/uri
 pub fn default_send(
   req: Request(BitArray),
 ) -> Result(Response(StreamingBody), HttpError) {
-  send_with(req, timeout_ms: default_timeout_seconds * 1000, verify_tls: True)
+  send_with(
+    req,
+    timeout_ms: default_timeout_seconds * 1000,
+    verify_tls: True,
+    http2: False,
+  )
+}
+
+/// HTTP/2 variant of `default_send`. Adds `{http_version, "HTTP/2"}`
+/// to the httpc option list; servers that don't speak HTTP/2 negotiate
+/// down to HTTP/1.1 via ALPN. Use this for endpoints known to benefit:
+/// S3 multipart uploads, Bedrock streaming responses, Transcribe.
+/// Caller-facing knob lives at `runtime.with_http2`.
+pub fn default_send_http2(
+  req: Request(BitArray),
+) -> Result(Response(StreamingBody), HttpError) {
+  send_with(
+    req,
+    timeout_ms: default_timeout_seconds * 1000,
+    verify_tls: True,
+    http2: True,
+  )
 }
 
 /// Send a `StreamingSend` configurable on timeout and TLS verification.
@@ -41,13 +62,23 @@ pub fn with_timeout_and_tls(
   timeout_ms timeout_ms: Int,
   verify_tls verify_tls: Bool,
 ) -> StreamingSend {
-  fn(req) { send_with(req, timeout_ms, verify_tls) }
+  fn(req) { send_with(req, timeout_ms, verify_tls, False) }
+}
+
+/// HTTP/2 + custom timeout / TLS builder. Same as `with_timeout_and_tls`
+/// but adds the HTTP/2 option to the httpc call.
+pub fn with_timeout_tls_http2(
+  timeout_ms timeout_ms: Int,
+  verify_tls verify_tls: Bool,
+) -> StreamingSend {
+  fn(req) { send_with(req, timeout_ms, verify_tls, True) }
 }
 
 fn send_with(
   req: Request(BitArray),
   timeout_ms timeout_ms: Int,
   verify_tls verify_tls: Bool,
+  http2 http2: Bool,
 ) -> Result(Response(StreamingBody), HttpError) {
   let url = req |> request.to_uri |> uri.to_string
   case
@@ -58,6 +89,7 @@ fn send_with(
       req.body,
       timeout_ms,
       verify_tls,
+      http2,
     )
   {
     Ok(#(status, headers, chunks)) ->
@@ -125,4 +157,5 @@ fn streaming_send(
   body: BitArray,
   timeout_ms: Int,
   verify_tls: Bool,
+  http2: Bool,
 ) -> Result(#(Int, List(#(BitArray, BitArray)), List(BitArray)), Atom)

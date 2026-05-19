@@ -142,6 +142,19 @@ pub fn with_streaming_http_send(
   ClientConfig(..config, streaming_http_send: send)
 }
 
+/// Switch the streaming sender to the HTTP/2 variant. httpc adds
+/// `{http_version, "HTTP/2"}` to its option list; servers that don't
+/// speak HTTP/2 negotiate down to HTTP/1.1 via ALPN, so calls keep
+/// working even when the peer doesn't support it. Buffered requests
+/// (`http_send`) are unaffected — HTTP/2 is for high-throughput
+/// streaming endpoints (S3 multipart, Bedrock streaming, Transcribe).
+///
+/// Pair with `with_streaming_http_send` for finer control (e.g. a
+/// stubbed sender in tests that needs HTTP/2 wiring elsewhere).
+pub fn with_http2(config: ClientConfig) -> ClientConfig {
+  ClientConfig(..config, streaming_http_send: http_streaming.default_send_http2)
+}
+
 /// Override the retry strategy used to wrap `http_send`. Pass
 /// `retry.standard()` for the AWS-standard 3-attempt backoff (the
 /// default), or `retry.adaptive(bucket)` to add the token-bucket gate.

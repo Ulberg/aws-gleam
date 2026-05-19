@@ -7,6 +7,7 @@ import aws/credentials
 import aws/endpoints
 import aws/internal/client/runtime
 import aws/internal/http_send
+import aws/internal/http_streaming
 import aws/retry
 import gleam/bit_array
 import gleam/dict
@@ -486,6 +487,62 @@ pub fn restxml_error_response_wrapper_is_unwrapped_test() {
       panic as {
         "expected ServiceError InvalidParameterValue, got " <> describe(other)
       }
+  }
+}
+
+// ---------- HTTP/2 opt-in tests ----------
+//
+// `with_http2` is the caller-facing knob that swaps the streaming
+// sender to the HTTP/2 variant. We assert two things: the swap
+// reaches the field, and the field replaces whatever was previously
+// installed (so callers can chain it with `with_streaming_http_send`
+// without surprises).
+
+pub fn with_http2_installs_default_http2_streaming_sender_test() {
+  let counter = process.new_subject()
+  let send = scripted_send([Ok(ok_response(200, <<"":utf8>>))], counter)
+  let config =
+    test_config(send, one_attempt_strategy())
+    |> runtime.with_http2
+  // Module-function reference equality: Erlang `=:=` returns true
+  // for two references to the same MFA. Confirms the field is
+  // literally `http_streaming.default_send_http2`.
+  case config.streaming_http_send == http_streaming.default_send_http2 {
+    True -> Nil
+    False ->
+      panic as "with_http2 should install http_streaming.default_send_http2"
+  }
+}
+
+pub fn with_http2_overrides_prior_streaming_sender_test() {
+  // Even if the caller has already installed a custom streaming
+  // sender, calling `with_http2` must replace it. Otherwise users
+  // who pipe `... |> with_streaming_http_send(...) |> with_http2`
+  // get the surprise of their custom sender silently winning.
+  let custom: http_send.StreamingSend = fn(_req) { Error(http_send.Timeout) }
+  let counter = process.new_subject()
+  let send = scripted_send([Ok(ok_response(200, <<"":utf8>>))], counter)
+  let config =
+    test_config(send, one_attempt_strategy())
+    |> runtime.with_streaming_http_send(custom)
+    |> runtime.with_http2
+  case config.streaming_http_send == custom {
+    True -> panic as "with_http2 did not override the prior custom sender"
+    False -> Nil
+  }
+}
+
+pub fn default_config_uses_non_http2_streaming_sender_test() {
+  // Anchor: the test_config defaults to http_send.default_streaming_send
+  // (the lift_to_streaming wrap around the buffered transport). Pin
+  // that so the `with_http2` test above is meaningfully different from
+  // a no-op.
+  let counter = process.new_subject()
+  let send = scripted_send([Ok(ok_response(200, <<"":utf8>>))], counter)
+  let config = test_config(send, one_attempt_strategy())
+  case config.streaming_http_send == http_streaming.default_send_http2 {
+    True -> panic as "default config should not use the HTTP/2 streaming sender"
+    False -> Nil
   }
 }
 
