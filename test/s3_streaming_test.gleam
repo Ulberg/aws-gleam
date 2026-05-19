@@ -1,17 +1,9 @@
 //// Tests for `aws/s3/streaming.get_object_streaming`. The wrapper
 //// routes through the runtime via `s3.config(client)` +
-//// `runtime.invoke_streaming` — these tests verify that wiring on
-//// the prototype level without LocalStack:
-////
-////   - the runtime-side streaming path round-trips a stubbed
-////     StreamingBody response (asserted on the underlying
-////     `invoke_streaming` call to bypass the opaque `s3.Client`
-////     and reach the same config + build pipeline the wrapper
-////     uses);
-////   - the wrapper itself reaches the network for a real call
-////     against an unreachable endpoint, proving it isn't a
-////     no-op and that `s3.config(client)` returns a usable
-////     ClientConfig.
+//// `runtime.invoke_streaming`; these tests swap the streaming
+//// sender on a real `s3.Client` via `s3.with_streaming_http_send`,
+//// so the assertion is on the wrapper's externally observable
+//// behaviour rather than the runtime layer underneath.
 ////
 //// LocalStack-backed end-to-end coverage belongs in a future
 //// `test/aws/s3_streaming_localstack_test.gleam` once the
@@ -45,12 +37,12 @@ fn fixed_streaming_send(
   fn(_req: Request(BitArray)) { resp }
 }
 
-pub fn invoke_streaming_via_s3_config_round_trips_test() {
-  // Verify the runtime layer the wrapper sits on top of: a real
-  // `s3.config(client)` plumbed into `runtime.with_streaming_http_send`,
-  // then `runtime.invoke_streaming` over `s3.build_get_object_request`.
-  // This is exactly what `s3_streaming.get_object_streaming` does
-  // internally minus the result wrapping.
+pub fn get_object_streaming_returns_streaming_body_test() {
+  // Swap the streaming sender on a real Client via the codegen-
+  // emitted `s3.with_streaming_http_send` setter, then call the
+  // wrapper. The body bytes round-trip through `StreamingBody` —
+  // proves the full pipeline (s3.config → runtime.invoke_streaming
+  // → the swapped sender) wires up.
   let body_bytes = <<"hello chunked object":utf8>>
   let streaming_send =
     fixed_streaming_send(
@@ -63,11 +55,10 @@ pub fn invoke_streaming_via_s3_config_round_trips_test() {
   let client =
     s3.new(region: "us-east-1")
     |> s3.with_credentials_provider(static_credentials())
-  let config =
-    runtime.with_streaming_http_send(s3.config(client), streaming_send)
+    |> s3.with_streaming_http_send(streaming_send)
 
   let input = build_get_object_input("bucket", "key")
-  case runtime.invoke_streaming(config, s3.build_get_object_request(input)) {
+  case s3_streaming.get_object_streaming(client, input) {
     Ok(resp) -> {
       resp.status |> should.equal(200)
       streaming.to_bit_array(resp.body) |> should.equal(body_bytes)
@@ -77,28 +68,49 @@ pub fn invoke_streaming_via_s3_config_round_trips_test() {
   s3.shutdown(client)
 }
 
-pub fn get_object_streaming_wrapper_reaches_network_test() {
-  // The s3.Client type is opaque; we can't reach in and swap its
-  // streaming sender post-construction. Instead pin the wrapper's
-  // observable behaviour by pointing it at an unreachable endpoint
-  // — a real network attempt fires (proving the wrapper actually
-  // routes through s3.config + runtime.invoke_streaming + the
-  // configured streaming transport) and surfaces an error result.
+pub fn get_object_streaming_surfaces_typed_error_on_404_test() {
+  // The runtime materialises error bodies via `to_bit_array_max`
+  // (1 MiB cap) and runs typed-error extraction over them on the
+  // streaming path. A 404 with an `x-amzn-errortype` header must
+  // surface as `runtime.ServiceError` with the matching
+  // error_type, identical to the buffered `invoke` semantics.
+  let streaming_send =
+    fixed_streaming_send(
+      Ok(response.Response(
+        status: 404,
+        headers: [#("x-amzn-errortype", "NoSuchKey")],
+        body: streaming.from_bit_array(<<>>),
+      )),
+    )
   let client =
     s3.new(region: "us-east-1")
     |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_endpoint_url("http://127.0.0.1:1")
-  let input = build_get_object_input("bucket", "key")
+    |> s3.with_streaming_http_send(streaming_send)
+
+  let input = build_get_object_input("bucket", "missing-key")
   case s3_streaming.get_object_streaming(client, input) {
-    Error(runtime.TransportError(_)) -> Nil
-    Error(runtime.ServiceError(..)) -> Nil
-    Error(runtime.DecodeError(_)) -> Nil
-    Error(runtime.CredentialsError(_)) ->
-      panic as "static creds should not surface CredentialsError"
-    Ok(_) -> panic as "no server on 127.0.0.1:1, expected error"
+    Error(runtime.ServiceError(status: 404, error_type: et, ..)) ->
+      et |> should.equal("NoSuchKey")
+    other -> panic as { "expected ServiceError(404), got: " <> describe(other) }
   }
   s3.shutdown(client)
 }
+
+fn describe(
+  r: Result(s3_streaming.StreamingResponse, runtime.ClientError),
+) -> String {
+  case r {
+    Ok(_) -> "Ok(_)"
+    Error(runtime.ServiceError(status: s, ..)) ->
+      "ServiceError(" <> int_to_string(s) <> ")"
+    Error(runtime.TransportError(_)) -> "TransportError(_)"
+    Error(runtime.CredentialsError(_)) -> "CredentialsError(_)"
+    Error(runtime.DecodeError(reason: r)) -> "DecodeError(" <> r <> ")"
+  }
+}
+
+@external(erlang, "erlang", "integer_to_binary")
+fn int_to_string(n: Int) -> String
 
 fn build_get_object_input(bucket: String, key: String) -> s3.GetObjectRequest {
   s3.GetObjectRequest(

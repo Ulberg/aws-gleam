@@ -250,6 +250,74 @@ pub fn items(
     ),
     Blank,
     DocComment([
+      "Swap the streaming HTTP transport. Same role as `with_http_send`",
+      "but targets the `@streaming` output path (`runtime.invoke_streaming`).",
+      "Use for canned-response test doubles on streaming ops, or to plug",
+      "in a custom chunked transport (proxy, gRPC tunnel, instrumented",
+      "sender) without disturbing the buffered path.",
+    ]),
+    Fn(
+      public: True,
+      name: "with_streaming_http_send",
+      params: [
+        Param(name: "client", type_: "Client"),
+        Param(name: "send", type_: "http_send.StreamingSend"),
+      ],
+      return: CodeSome("Client"),
+      body: client_with(
+        Call(Ident("runtime.with_streaming_http_send"), [
+          Ident("client.config"),
+          Ident("send"),
+        ]),
+        Ident("client.cache"),
+      ),
+    ),
+    Blank,
+    DocComment([
+      "Switch the streaming sender to the HTTP/2 variant. httpc adds",
+      "`{http_version, \"HTTP/2\"}` to its option list; servers that",
+      "don't speak HTTP/2 negotiate down to HTTP/1.1 via ALPN, so",
+      "calls keep working even when the peer doesn't support it.",
+      "Buffered requests (`with_http_send`) are unaffected — HTTP/2",
+      "is for high-throughput streaming endpoints (S3 multipart,",
+      "Bedrock streaming, Transcribe).",
+    ]),
+    Fn(
+      public: True,
+      name: "with_http2",
+      params: [Param(name: "client", type_: "Client")],
+      return: CodeSome("Client"),
+      body: client_with(
+        Call(Ident("runtime.with_http2"), [Ident("client.config")]),
+        Ident("client.cache"),
+      ),
+    ),
+    Blank,
+    DocComment([
+      "Override the retry attempt budget on the underlying ClientConfig.",
+      "The common case for retry tuning — pass `1` to disable retries",
+      "entirely (single attempt per request), `5` for long-running batch",
+      "workloads. Preserves the other retry knobs (delays, sleep, rng,",
+      "rate-limiter); use `runtime.with_retry_strategy` for full control.",
+    ]),
+    Fn(
+      public: True,
+      name: "with_max_attempts",
+      params: [
+        Param(name: "client", type_: "Client"),
+        Param(name: "n", type_: "Int"),
+      ],
+      return: CodeSome("Client"),
+      body: client_with(
+        Call(Ident("runtime.with_max_attempts"), [
+          Ident("client.config"),
+          Ident("n"),
+        ]),
+        Ident("client.cache"),
+      ),
+    ),
+    Blank,
+    DocComment([
       "Read the underlying `runtime.ClientConfig` out of an existing",
       "`Client`. Use this when you want to dispatch a request through",
       "`runtime.invoke` / `runtime.invoke_streaming` directly — e.g. to",

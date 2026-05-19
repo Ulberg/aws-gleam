@@ -151,6 +151,24 @@ pub fn emitted_modules_expose_config_accessor_test() {
   should.be_true(string.contains(r.source, "  client.config\n"))
 }
 
+/// Streaming-side setters mirror the buffered ones: emit
+/// `with_streaming_http_send`, `with_http2`, and `with_max_attempts`
+/// so callers can swap the chunked transport / opt into HTTP/2 /
+/// tune retry without dropping down to the runtime's ClientConfig.
+/// Pin all three signatures on the same reference fixture.
+pub fn emitted_modules_expose_streaming_and_retry_setters_test() {
+  let m = load(json10_path)
+  let svc = find_service(m, "aws.protocols#awsJson1_0", "JsonRpc10")
+  let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson10)
+  should.be_true(string.contains(r.source, "pub fn with_streaming_http_send("))
+  should.be_true(string.contains(r.source, "send: http_send.StreamingSend"))
+  should.be_true(string.contains(r.source, "pub fn with_http2(client: Client)"))
+  should.be_true(string.contains(
+    r.source,
+    "pub fn with_max_attempts(client: Client, n: Int)",
+  ))
+}
+
 /// Generated services that have a Smithy endpoint rule set on their
 /// service shape MUST embed the JSON as a const + attach the parsed
 /// rule set to the client config. Lock the shape so a future emitter
