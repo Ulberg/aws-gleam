@@ -58,7 +58,7 @@ pub fn get_object_streaming_returns_streaming_body_test() {
     |> s3.with_streaming_http_send(streaming_send)
 
   let input = build_get_object_input("bucket", "key")
-  case s3_streaming.get_object_streaming(client, input) {
+  case s3.get_object_streaming(client, input) {
     Ok(resp) -> {
       resp.status |> should.equal(200)
       streaming.to_bit_array(resp.body) |> should.equal(body_bytes)
@@ -181,7 +181,7 @@ pub fn get_object_streaming_surfaces_typed_error_on_404_test() {
     |> s3.with_streaming_http_send(streaming_send)
 
   let input = build_get_object_input("bucket", "missing-key")
-  case s3_streaming.get_object_streaming(client, input) {
+  case s3.get_object_streaming(client, input) {
     Error(runtime.ServiceError(status: 404, error_type: et, ..)) ->
       et |> should.equal("NoSuchKey")
     other -> panic as { "expected ServiceError(404), got: " <> describe(other) }

@@ -289,16 +289,28 @@ fn emit_waiter(spec: OpSpec) -> String {
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
-  code.render(
-    code.Module(items: [
-      client.invoke_fn(
-        spec.snake,
-        spec.in_info.type_name,
-        spec.out_info.type_name,
-        spec.error_type,
-      ),
+  let base =
+    client.invoke_fn(
+      spec.snake,
+      spec.in_info.type_name,
+      spec.out_info.type_name,
+      spec.error_type,
+    )
+  // Operations whose output carries a `@streaming` blob member get
+  // an extra `<op>_streaming(client, input)` variant routing through
+  // `runtime.invoke_streaming` — the body arrives chunked rather
+  // than buffered. S3.GetObject is the canonical case.
+  let streaming_items = case
+    list.any(spec.out_info.members, fn(m) { m.target == RStreamingBlob })
+  {
+    True -> [
       code.Blank,
-    ]),
+      client.invoke_streaming_fn(spec.snake, spec.in_info.type_name),
+    ]
+    False -> []
+  }
+  code.render(
+    code.Module(items: list.append([base, code.Blank], streaming_items)),
   )
 }
 

@@ -15,7 +15,6 @@
 //// Gated on `INCLUDE_LOCALSTACK=1` so the default `gleam test`
 //// skips this silently. Pattern mirrors `s3_transfer_localstack_test`.
 
-import aws/s3/streaming as s3_streaming
 import aws/s3/transfer
 import aws/services/s3
 import aws/streaming
@@ -122,7 +121,7 @@ pub fn s3_streaming_get_object_round_trips_via_chunked_transport_test() {
   // transport (`runtime.invoke_streaming` → `streaming_http_send`)
   // works against a real S3 implementation, not just the stub.
   let assert Ok(resp) =
-    s3_streaming.get_object_streaming(client, get_object_input(object_key))
+    s3.get_object_streaming(client, get_object_input(object_key))
   resp.status |> should.equal(200)
   streaming.to_bit_array(resp.body) |> should.equal(payload())
 

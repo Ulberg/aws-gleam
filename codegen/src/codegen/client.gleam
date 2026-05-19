@@ -428,3 +428,33 @@ pub fn invoke_fn(
     ),
   )
 }
+
+/// Streaming-side counterpart: emits `pub fn <snake>_streaming(client,
+/// input) -> Result(streaming.Response, runtime.ClientError)` for
+/// operations whose output struct carries a `@streaming` blob member.
+/// Routes through `runtime.invoke_streaming` so the response body
+/// arrives as a chunked `StreamingBody` instead of the buffered
+/// `BitArray` the regular invoker materialises.
+///
+/// Errors surface as untyped `runtime.ClientError` rather than the
+/// per-op `<Op>Error` enum — the typed-error translator is private
+/// to the generated module and the streaming variant is read-only
+/// (response body just passes through, no response decode needed).
+/// Callers that want typed errors fall back to the buffered op.
+pub fn invoke_streaming_fn(snake: String, in_type: String) -> Code {
+  Fn(
+    public: True,
+    name: string.concat([snake, "_streaming"]),
+    params: [
+      Param(name: "client", type_: "Client"),
+      Param(name: "input", type_: in_type),
+    ],
+    return: CodeSome("Result(streaming.Response, runtime.ClientError)"),
+    body: Call(Ident("runtime.invoke_streaming"), [
+      Ident("client.config"),
+      Call(Ident(string.concat(["build_", snake, "_request"])), [
+        Ident("input"),
+      ]),
+    ]),
+  )
+}

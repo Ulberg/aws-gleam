@@ -36,6 +36,8 @@ const restjson1_path = "../test/fixtures/protocol-tests/restJson1.json"
 
 const restxml_path = "../test/fixtures/protocol-tests/restXml.json"
 
+const s3_path = "../vendor/aws-sdk-rust/aws-models/s3.json"
+
 const awsquery_path = "../test/fixtures/protocol-tests/awsQuery.json"
 
 const ec2query_path = "../test/fixtures/protocol-tests/ec2Query.json"
@@ -167,6 +169,29 @@ pub fn emitted_modules_expose_streaming_and_retry_setters_test() {
     r.source,
     "pub fn with_max_attempts(client: Client, n: Int)",
   ))
+}
+
+/// restXml services whose output struct carries a `@streaming` blob
+/// (S3.GetObject is the canonical case) get an extra
+/// `<op>_streaming(client, input) -> Result(streaming.Response,
+/// runtime.ClientError)` variant emitted alongside the buffered op.
+/// Pin its signature on the S3 fixture so the emitter can't drop it.
+pub fn emitted_restxml_modules_expose_streaming_variant_for_streaming_outputs_test() {
+  let m = load(s3_path)
+  let svc = find_service(m, "aws.protocols#restXml", "AmazonS3")
+  let assert Ok(r) = restxml.emit_service(m, svc)
+  should.be_true(string.contains(
+    r.source,
+    "pub fn get_object_streaming(client: Client, input: GetObjectRequest)",
+  ))
+  should.be_true(string.contains(
+    r.source,
+    "-> Result(streaming.Response, runtime.ClientError)",
+  ))
+  should.be_true(string.contains(r.source, "runtime.invoke_streaming("))
+  // ListBuckets has no streaming output — the streaming variant
+  // must NOT appear for it.
+  should.be_false(string.contains(r.source, "pub fn list_buckets_streaming("))
 }
 
 /// Generated services that have a Smithy endpoint rule set on their

@@ -332,10 +332,7 @@ fn streaming_test_config_with_echo() -> runtime.ClientConfig {
 }
 
 fn host_from_streaming_response(
-  result: Result(
-    response.Response(streaming.StreamingBody),
-    runtime.ClientError,
-  ),
+  result: Result(streaming.Response, runtime.ClientError),
 ) -> Result(String, runtime.ClientError) {
   case result {
     Ok(resp) ->
@@ -683,7 +680,7 @@ pub fn invoke_streaming_caps_oversized_error_body_test() {
 }
 
 fn describe_streaming(
-  r: Result(response.Response(streaming.StreamingBody), runtime.ClientError),
+  r: Result(streaming.Response, runtime.ClientError),
 ) -> String {
   case r {
     Ok(_) -> "Ok(_)"

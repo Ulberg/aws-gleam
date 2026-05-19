@@ -285,7 +285,7 @@ pub fn invoke_with_endpoint_params(
 pub fn invoke_streaming(
   config: ClientConfig,
   built: #(String, String, Dict(String, String), BitArray),
-) -> Result(Response(StreamingBody), ClientError) {
+) -> Result(streaming.Response, ClientError) {
   invoke_streaming_with_endpoint_params(config, dict.new(), built)
 }
 
@@ -295,7 +295,7 @@ pub fn invoke_streaming_with_endpoint_params(
   config: ClientConfig,
   op_params: Params,
   built: #(String, String, Dict(String, String), BitArray),
-) -> Result(Response(StreamingBody), ClientError) {
+) -> Result(streaming.Response, ClientError) {
   use http_req <- result.try(prepare_signed_request(config, op_params, built))
 
   use resp <- result.try(
@@ -304,7 +304,12 @@ pub fn invoke_streaming_with_endpoint_params(
   )
 
   case resp.status >= 200 && resp.status < 300 {
-    True -> Ok(resp)
+    True ->
+      Ok(streaming.Response(
+        status: resp.status,
+        headers: resp.headers,
+        body: resp.body,
+      ))
     False -> Error(streaming_error(resp))
   }
 }
