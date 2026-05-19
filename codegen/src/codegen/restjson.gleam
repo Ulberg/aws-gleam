@@ -21,8 +21,9 @@ import codegen/rest_request
 import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
-  type HttpTrait, type MemberDef, type Resolved, HttpTrait, Payload, RDocument,
-  REnum, RIntEnum, RList, RMap, RPrim, RStruct, RUnion,
+  type HttpTrait, type MemberDef, type Resolved, Header, HttpTrait, PBool, PInt,
+  PString, Payload, RDocument, REnum, RIntEnum, RList, RMap, RPrim, RStruct,
+  RUnion, ResponseCode,
 }
 import codegen/waiter
 import gleam/dict
@@ -842,7 +843,41 @@ fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
         enum_decode_lambda(variants, first_ctor),
       ]),
     )
-  code.render(code.Module(items: [enc, code.Blank, dec, code.Blank]))
+  // Wire→Gleam helper for @httpHeader-bound enum members. The
+  // response-parse emitter calls `<snake>_from_wire(s)` so unknown
+  // values can land as `None` rather than crashing the response
+  // decode. Mirrors the restxml emitter's helper of the same name.
+  let from_wire =
+    code.Fn(
+      public: True,
+      name: name_concat([snake, "_from_wire"]),
+      params: [code.Param(name: "s", type_: "String")],
+      return: code.CodeSome(name_concat(["Result(", name, ", String)"])),
+      body: code.Case(
+        scrutinee: code.Ident(name: "s"),
+        branches: list.append(
+          list.map(variants, fn(v) {
+            code.Branch(
+              pattern: name_concat(["\"", v.wire_value, "\""]),
+              body: code.Call(head: code.Ident(name: "Ok"), args: [
+                code.Ident(name: v.gleam_ctor),
+              ]),
+            )
+          }),
+          [
+            code.Branch(
+              pattern: "_",
+              body: code.Call(head: code.Ident(name: "Ok"), args: [
+                code.Ident(name: first_ctor),
+              ]),
+            ),
+          ],
+        ),
+      ),
+    )
+  code.render(
+    code.Module(items: [enc, code.Blank, dec, code.Blank, from_wire, code.Blank]),
+  )
 }
 
 /// `fn(s) { case s { ... } }` lambda body for the decoder. Stays
@@ -1405,13 +1440,39 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
         ]),
       )
     Ok(p), False -> emit_parse_with_payload(out_info, snake, p)
-    Error(_), False ->
+    Error(_), False -> {
+      let overrides = response_overrides(out_info)
+      let full_override =
+        list.length(overrides) == list.length(out_info.members)
+      let with_overrides = fn(call: code.Code) -> code.Code {
+        case overrides {
+          [] -> call
+          _ ->
+            wrap_decode_with_overrides_at(
+              call,
+              output_type,
+              overrides,
+              full_override: full_override,
+            )
+        }
+      }
+      let empty_decode_call =
+        code.Call(head: code.Ident(name: name_concat(["decode_", snake, "_output"])), args: [
+          code.StrLit(value: "{}"),
+        ])
+      let text_decode_call =
+        code.Call(head: code.Ident(name: name_concat(["decode_", snake, "_output"])), args: [
+          code.Ident(name: "text"),
+        ])
       code.render(
         code.Module(items: [
           code.Fn(
             public: True,
             name: name_concat(["parse_", snake, "_response"]),
-            params: parse_response_params("body"),
+            params: response_params(
+              body_param: "body",
+              overrides_used: overrides,
+            ),
             return: code.CodeSome(
               name_concat(["Result(", output_type, ", String)"]),
             ),
@@ -1428,21 +1489,11 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
                     branches: [
                       code.Branch(
                         pattern: "\"\"",
-                        body: code.Call(
-                          head: code.Ident(
-                            name: name_concat(["decode_", snake, "_output"]),
-                          ),
-                          args: [code.StrLit(value: "{}")],
-                        ),
+                        body: with_overrides(empty_decode_call),
                       ),
                       code.Branch(
                         pattern: "_",
-                        body: code.Call(
-                          head: code.Ident(
-                            name: name_concat(["decode_", snake, "_output"]),
-                          ),
-                          args: [code.Ident(name: "text")],
-                        ),
+                        body: with_overrides(text_decode_call),
                       ),
                     ],
                   ),
@@ -1459,7 +1510,118 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
           code.Blank,
         ]),
       )
+    }
   }
+}
+
+/// A single `Output(..decoded, field: header_value)` override produced by
+/// a `@httpHeader` or `@httpResponseCode` member. Mirrors the restxml
+/// version — kept in-protocol because the call-site differs (here the
+/// decoder takes a JSON `String`, in restxml an `xml_decode.Element`).
+type ResponseOverride {
+  ResponseOverride(field: String, value_expr: String)
+}
+
+fn response_overrides(out_info: IOTypeInfo) -> List(ResponseOverride) {
+  list.filter_map(out_info.members, fn(m) {
+    case m.binding {
+      Header(header_name: name) ->
+        case header_extractor(m.target, name) {
+          Some(expr) ->
+            Ok(ResponseOverride(field: m.snake_name, value_expr: expr))
+          None -> Error(Nil)
+        }
+      ResponseCode ->
+        Ok(ResponseOverride(
+          field: m.snake_name,
+          value_expr: "option.Some(code)",
+        ))
+      _ -> Error(Nil)
+    }
+  })
+}
+
+fn header_extractor(target: Resolved, header_name: String) -> Option(String) {
+  case target {
+    RPrim(primitive: PString) ->
+      Some(call_extractor("string_header", header_name))
+    RPrim(primitive: PInt) -> Some(call_extractor("int_header", header_name))
+    RPrim(primitive: PBool) -> Some(call_extractor("bool_header", header_name))
+    REnum(gleam_name: gn, ..) -> Some(call_enum_extractor(header_name, gn))
+    _ -> None
+  }
+}
+
+fn call_extractor(fn_name: String, header_name: String) -> String {
+  name_concat(["rest.", fn_name, "(headers, \"", header_name, "\")"])
+}
+
+fn call_enum_extractor(header_name: String, enum_gleam_name: String) -> String {
+  name_concat([
+    "rest.enum_header(headers, \"",
+    header_name,
+    "\", ",
+    stringutils.pascal_to_snake(enum_gleam_name),
+    "_from_wire)",
+  ])
+}
+
+fn wrap_decode_with_overrides_at(
+  decoder_call: code.Code,
+  output_type: String,
+  overrides: List(ResponseOverride),
+  full_override full_override: Bool,
+) -> code.Code {
+  let overrides_text =
+    overrides
+    |> list.map(fn(o) { name_concat([o.field, ": ", o.value_expr]) })
+    |> string.join(", ")
+  let prefix = case full_override {
+    True -> ""
+    False -> "..decoded, "
+  }
+  let ok_body =
+    code.Call(head: code.Ident(name: "Ok"), args: [
+      code.Raw(
+        fragment: name_concat([output_type, "(", prefix, overrides_text, ")"]),
+      ),
+    ])
+  let pattern = case full_override {
+    True -> "Ok(_)"
+    False -> "Ok(decoded)"
+  }
+  code.Case(scrutinee: decoder_call, branches: [
+    code.Branch(pattern: pattern, body: ok_body),
+    code.Branch(
+      pattern: "Error(r)",
+      body: code.Call(head: code.Ident(name: "Error"), args: [
+        code.Ident(name: "r"),
+      ]),
+    ),
+  ])
+}
+
+fn response_params(
+  body_param body_param: String,
+  overrides_used overrides: List(ResponseOverride),
+) -> List(code.Param) {
+  let uses_code =
+    list.any(overrides, fn(o) { string.contains(o.value_expr, "code") })
+  let uses_headers =
+    list.any(overrides, fn(o) { string.contains(o.value_expr, "headers") })
+  let code_name = case uses_code {
+    True -> "code"
+    False -> "_code"
+  }
+  let headers_name = case uses_headers {
+    True -> "headers"
+    False -> "_headers"
+  }
+  [
+    code.Param(name: code_name, type_: "Int"),
+    code.Param(name: headers_name, type_: "dict.Dict(String, String)"),
+    code.Param(name: body_param, type_: "BitArray"),
+  ]
 }
 
 fn parse_response_params(body_param: String) -> List(code.Param) {
@@ -1480,11 +1642,20 @@ fn emit_parse_with_payload(
   payload: MemberDef,
 ) -> String {
   let output_type = out_info.type_name
+  // Members bound via `@httpHeader` / `@httpResponseCode` get their
+  // value populated from the response headers / status code; the rest
+  // (other than the payload itself) stay `option.None` — they'd live
+  // in the body, but the payload member owns the body here.
+  let overrides = response_overrides(out_info)
   let ctor_args =
     list.map(out_info.members, fn(m) {
       let value = case m.snake_name == payload.snake_name {
         True -> code.Ident(name: "payload")
-        False -> code.Ident(name: "option.None")
+        False ->
+          case list.find(overrides, fn(o) { o.field == m.snake_name }) {
+            Ok(o) -> code.Raw(fragment: o.value_expr)
+            Error(_) -> code.Ident(name: "option.None")
+          }
       }
       code.Labelled(label: m.snake_name, value: value)
     })
@@ -1565,11 +1736,10 @@ fn emit_parse_with_payload(
       code.Fn(
         public: True,
         name: name_concat(["parse_", snake, "_response"]),
-        params: [
-          code.Param(name: "_code", type_: "Int"),
-          code.Param(name: "_headers", type_: "dict.Dict(String, String)"),
-          code.Param(name: body_param, type_: "BitArray"),
-        ],
+        params: response_params(
+          body_param: body_param,
+          overrides_used: overrides,
+        ),
         return: code.CodeSome(
           name_concat(["Result(", output_type, ", String)"]),
         ),
