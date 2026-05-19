@@ -13,27 +13,31 @@ concurrency:
 
 jobs:
   test:
-    name: Format & test (OTP ${{ matrix.otp }} / Gleam ${{ matrix.gleam }} / macOS)
-    # macos-latest. Linux x86_64 GHA runners SIGSEGV at ~2 min into
-    # `Compiling aws` with the 409-service build (16 attempts at
-    # BEAM-flag / pthread-stack / runner-image fixes documented in
-    # the fix/ci branch history). strace localised the crash to a
-    # pthread-stack guard-page hit but BEAM's stack flags reach the
-    # VM without clearing it — likely a BeamAsm or compile-pass
-    # codegen bug specific to Linux x86_64 at this module count.
+    name: Format & test (OTP ${{ matrix.otp }} / Gleam ${{ matrix.gleam }})
+    # ubuntu-latest with an extra 8 GB swap file added before the
+    # build step. The 409-service compile peaks above the 16 GB
+    # RAM ceiling of standard GHA runners (local colima x86_64 VM
+    # with 8 GB OOM-killed at exit 137; CI's 16 GB hits SIGSEGV
+    # because the stack guard page can't be mapped under pressure).
+    # 16 GB RAM + 8 GB swap = 24 GB effective, comfortably covers
+    # the peak. Linux is ~2× faster + ~10× cheaper than macOS for
+    # this workload, hence the route back.
     #
-    # macOS runners build the same workspace cleanly (local dev
-    # is macOS ARM64). Routing CI to macOS ships green without
-    # solving the underlying Linux bug; we re-investigate once
-    # the architectural split lands (`src/aws/services` becomes
-    # a sub-package) and per-package module counts return to sane
-    # numbers.
-    runs-on: ${{ matrix.os }}
+    # If the codegen output cache hits (no codegen / vendor /
+    # script changes), the regen step is a no-op and the build
+    # cache also hits, so neither memory pressure nor the underlying
+    # crash matters on hot runs. The swap is belt-and-braces for the
+    # cold-cache case.
+    #
+    # Long-term: see docs/audits/ci-linux-segfault.md for the
+    # architectural split (move `src/aws/services` into its own
+    # Gleam sub-package) which removes the peak-memory trigger
+    # entirely.
+    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest]
         otp: ["28.0"]
         gleam: ["1.16.0"]
 
@@ -84,9 +88,9 @@ jobs:
           path: |
             ~/.cache/gleam
             ~/.hex
-          key: hex-${{ matrix.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ hashFiles('manifest.toml', 'gleam.toml') }}
+          key: hex-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ hashFiles('manifest.toml', 'gleam.toml') }}
           restore-keys: |
-            hex-${{ matrix.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-
+            hex-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-
 
       # Build artefacts cache. Keyed on every input that affects
       # what gleam build produces:
@@ -104,30 +108,42 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build
-          key: build-${{ matrix.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ steps.subs-key.outputs.key }}-${{ hashFiles('codegen/src/**', 'codegen/gleam.toml', 'codegen/manifest.toml', 'scripts/regen.sh', 'scripts/build-protocol-test-asts.sh', 'scripts/extract-endpoints.sh', 'src/**', 'test/**', 'manifest.toml', 'gleam.toml') }}
+          key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ steps.subs-key.outputs.key }}-${{ hashFiles('codegen/src/**', 'codegen/gleam.toml', 'codegen/manifest.toml', 'scripts/regen.sh', 'scripts/build-protocol-test-asts.sh', 'scripts/extract-endpoints.sh', 'src/**', 'test/**', 'manifest.toml', 'gleam.toml') }}
           restore-keys: |
-            build-${{ matrix.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ steps.subs-key.outputs.key }}-
-            build-${{ matrix.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-
+            build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ steps.subs-key.outputs.key }}-
+            build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-
 
-      # macOS-latest is currently ARM64 (M-series Apple silicon),
-      # so we cache the darwin-aarch64 Smithy CLI build to match
-      # `scripts/build-protocol-test-asts.sh`'s uname-based dispatch.
       - name: Cache Smithy CLI
         id: cache-smithy
         uses: actions/cache@v4
         with:
-          path: .tools/smithy-cli-darwin-aarch64
-          key: smithy-cli-darwin-aarch64-1.70.0
+          path: .tools/smithy-cli-linux-x86_64
+          key: smithy-cli-linux-x86_64-1.70.0
 
       - name: Download Smithy CLI
         if: steps.cache-smithy.outputs.cache-hit != 'true'
         run: |
           mkdir -p .tools
           curl -sSL -o .tools/smithy.zip \
-            https://github.com/smithy-lang/smithy/releases/download/1.70.0/smithy-cli-darwin-aarch64.zip
+            https://github.com/smithy-lang/smithy/releases/download/1.70.0/smithy-cli-linux-x86_64.zip
           unzip -q .tools/smithy.zip -d .tools/
           rm .tools/smithy.zip
-          test -x .tools/smithy-cli-darwin-aarch64/bin/smithy
+          test -x .tools/smithy-cli-linux-x86_64/bin/smithy
+
+      # 16 GB RAM on a standard GHA Linux runner gets overrun by
+      # the 409-service `gleam build` peak. Add 8 GB swap so the
+      # peak doesn't trigger an OOM / SEGV_ACCERR on a stack guard
+      # page (failure modes documented in
+      # docs/audits/ci-linux-segfault.md).
+      - name: Add 8 GB swap
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          echo "--- free -h after swap ---"
+          free -h
 
       - name: Download dependencies
         run: gleam deps download
@@ -169,9 +185,10 @@ jobs:
         run: gleam format --check src test
 
       - name: Run tests
-        # macOS doesn't hit the Linux scheduler-stack SIGSEGV.
-        # scripts/test.sh's hardcoded `+t 16M` atom-table bump is
-        # all we need.
+        # On Linux runners the 8 GB swap added earlier covers the
+        # build peak. scripts/test.sh sets `+t 16M` atom-table bump
+        # which is also required (default 1 M is exhausted by the
+        # 409-service module load).
         run: ./scripts/test.sh
 
   # LocalStack E2E disabled: the underlying `scripts/test.sh` chain
