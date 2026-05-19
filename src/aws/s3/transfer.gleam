@@ -21,7 +21,7 @@
 //// pins the right concurrency knob.
 
 import aws/services/s3
-import aws/streaming
+import aws/streaming.{type StreamingBody}
 import gleam/bit_array
 import gleam/list
 import gleam/option.{None, Some}
@@ -85,16 +85,44 @@ pub fn upload(
 ) -> Result(UploadResult, Error) {
   case bit_array.byte_size(body) {
     0 -> Error(EmptyBody)
-    _ -> do_upload(client, bucket, key, body, part_size_bytes)
+    _ ->
+      coordinate(client, bucket, key, split_into_parts(body, part_size_bytes))
   }
 }
 
-fn do_upload(
+/// Same as `upload`, but takes a `StreamingBody` instead of a buffered
+/// `BitArray`. Walks the body's chunks once, re-aggregating across
+/// chunk boundaries so the wire-side part sizes follow
+/// `part_size_bytes` rather than the source's chunking — useful when
+/// the body comes from a chunked transport or builder that emits
+/// frequent small chunks (request streaming, log ingestion, line-
+/// oriented producers).
+///
+/// Today both `StreamingBody` representations (Buffered / Chunked)
+/// hold their full bytes in memory, so this variant doesn't yet
+/// reduce peak memory vs `upload(buffer_to_bit_array(body), ...)`.
+/// Once `StreamingBody` grows a lazy `Source(...)` variant (file
+/// handles, generators), this path picks up true bounded-memory
+/// streaming for free.
+pub fn upload_from_stream(
+  client client: s3.Client,
+  bucket bucket: String,
+  key key: String,
+  body body: StreamingBody,
+  part_size_bytes part_size_bytes: Int,
+) -> Result(UploadResult, Error) {
+  let parts = rechunk_to_parts(body, part_size_bytes)
+  case list.is_empty(parts) {
+    True -> Error(EmptyBody)
+    False -> coordinate(client, bucket, key, parts)
+  }
+}
+
+fn coordinate(
   client: s3.Client,
   bucket: String,
   key: String,
-  body: BitArray,
-  part_size_bytes: Int,
+  parts: List(BitArray),
 ) -> Result(UploadResult, Error) {
   use create_out <- result.try(
     s3.create_multipart_upload(client, empty_create_request(bucket, key))
@@ -104,7 +132,6 @@ fn do_upload(
     Some(id) -> Ok(id)
     None -> Error(MissingUploadId)
   })
-  let parts = split_into_parts(body, part_size_bytes)
   case upload_all_parts(client, bucket, key, upload_id, parts, 1, []) {
     Error(e) -> {
       abort_quietly(client, bucket, key, upload_id)
@@ -140,6 +167,41 @@ fn split_into_parts(bytes: BitArray, part_size: Int) -> List(BitArray) {
       let assert Ok(tail) = bit_array.slice(bytes, part_size, total - part_size)
       [head, ..split_into_parts(tail, part_size)]
     }
+  }
+}
+
+/// Re-aggregate a `StreamingBody`'s chunks into parts of size
+/// `part_size`. Walks each chunk once, appending to a running
+/// buffer; flushes a part every time the buffer reaches
+/// `part_size`, and flushes any remainder as the final (possibly
+/// undersized) part.
+fn rechunk_to_parts(body: StreamingBody, part_size: Int) -> List(BitArray) {
+  let chunks = streaming.to_chunks(body)
+  let #(parts_rev, leftover) =
+    list.fold(chunks, #([], <<>>), fn(state, chunk) {
+      let #(parts, buf) = state
+      flush_full_parts(bit_array.append(buf, chunk), part_size, parts)
+    })
+  let parts_with_tail = case bit_array.byte_size(leftover) {
+    0 -> parts_rev
+    _ -> [leftover, ..parts_rev]
+  }
+  list.reverse(parts_with_tail)
+}
+
+fn flush_full_parts(
+  buf: BitArray,
+  part_size: Int,
+  acc: List(BitArray),
+) -> #(List(BitArray), BitArray) {
+  let size = bit_array.byte_size(buf)
+  case size >= part_size {
+    True -> {
+      let assert Ok(head) = bit_array.slice(buf, 0, part_size)
+      let assert Ok(tail) = bit_array.slice(buf, part_size, size - part_size)
+      flush_full_parts(tail, part_size, [head, ..acc])
+    }
+    False -> #(acc, buf)
   }
 }
 

@@ -17,6 +17,7 @@ import aws/credentials
 import aws/internal/http_send as aws_http
 import aws/s3/transfer
 import aws/services/s3
+import aws/streaming
 import gleam/erlang/process
 import gleam/http
 import gleam/http/request.{type Request}
@@ -331,6 +332,100 @@ pub fn upload_aborts_on_complete_failure_test() {
     _ ->
       panic as "expected the cleanup call to be a DELETE (AbortMultipartUpload)"
   }
+}
+
+// ---------- upload_from_stream tests ----------
+
+pub fn upload_from_stream_empty_body_returns_empty_body_error_test() {
+  // Streaming variant must also short-circuit before touching HTTP.
+  let captured = process.new_subject()
+  let send = scripted_send(captured, happy_responder)
+  let client = fresh_client(send)
+
+  transfer.upload_from_stream(
+    client: client,
+    bucket: "my-bucket",
+    key: "my-key",
+    body: streaming.empty(),
+    part_size_bytes: transfer.default_part_size_bytes,
+  )
+  |> should.equal(Error(transfer.EmptyBody))
+
+  drain(captured, []) |> list.length |> should.equal(0)
+}
+
+pub fn upload_from_stream_rechunks_to_part_size_test() {
+  // Body arrives as tiny chunks but the wire-side parts must
+  // follow part_size_bytes. 6 chunks of 2 bytes + part_size 5 →
+  // parts of 5, 5, 2 (= 3 parts).
+  let captured = process.new_subject()
+  let send = scripted_send(captured, happy_responder)
+  let client = fresh_client(send)
+
+  let body =
+    streaming.from_chunks([
+      <<"he":utf8>>,
+      <<"ll":utf8>>,
+      <<"o ":utf8>>,
+      <<"wo":utf8>>,
+      <<"rl":utf8>>,
+      <<"d!":utf8>>,
+    ])
+
+  let result =
+    transfer.upload_from_stream(
+      client: client,
+      bucket: "my-bucket",
+      key: "my-key",
+      body: body,
+      part_size_bytes: 5,
+    )
+
+  case result {
+    Ok(out) -> out.parts_uploaded |> should.equal(3)
+    Error(e) -> panic as { "expected Ok, got: " <> describe_error(e) }
+  }
+
+  let calls = drain(captured, [])
+  // create + 3 parts + complete = 5 calls.
+  list.length(calls) |> should.equal(5)
+  case calls {
+    [_create, p1, p2, p3, _complete] -> {
+      string.contains(p1.uri, "partNumber=1") |> should.equal(True)
+      string.contains(p2.uri, "partNumber=2") |> should.equal(True)
+      string.contains(p3.uri, "partNumber=3") |> should.equal(True)
+    }
+    _ -> panic as "expected 5 calls (create + 3 parts + complete)"
+  }
+}
+
+pub fn upload_from_stream_single_chunk_body_path_test() {
+  // Buffered StreamingBody body (single chunk) goes through the
+  // same rechunker — proves the Buffered branch of to_chunks
+  // collapses cleanly. Body = 13 bytes, part_size = 5_242_880 →
+  // exactly one part.
+  let captured = process.new_subject()
+  let send = scripted_send(captured, happy_responder)
+  let client = fresh_client(send)
+
+  let body = streaming.from_bit_array(<<"small payload":utf8>>)
+
+  let result =
+    transfer.upload_from_stream(
+      client: client,
+      bucket: "my-bucket",
+      key: "my-key",
+      body: body,
+      part_size_bytes: 5_242_880,
+    )
+
+  case result {
+    Ok(out) -> out.parts_uploaded |> should.equal(1)
+    Error(e) -> panic as { "expected Ok, got: " <> describe_error(e) }
+  }
+
+  // create + 1 part + complete = 3 calls.
+  drain(captured, []) |> list.length |> should.equal(3)
 }
 
 // ---------- helpers ----------
