@@ -437,14 +437,19 @@ fn do_group_by_name(
 }
 
 fn collapse_spaces(s: String) -> String {
-  do_collapse(string.to_graphemes(s), False, "")
+  // Accumulate into a reversed grapheme list (O(1) prepend) and
+  // join once at the end — keeps the whole pass O(n) instead of
+  // O(n²) from repeated `acc <> c` binary concatenation.
+  do_collapse(string.to_graphemes(s), False, [])
+  |> list.reverse
+  |> string.concat
 }
 
 fn do_collapse(
   chars: List(String),
   last_was_space: Bool,
-  acc: String,
-) -> String {
+  acc: List(String),
+) -> List(String) {
   case chars {
     [] -> acc
     [c, ..rest] ->
@@ -452,9 +457,9 @@ fn do_collapse(
         True ->
           case last_was_space {
             True -> do_collapse(rest, True, acc)
-            False -> do_collapse(rest, True, acc <> " ")
+            False -> do_collapse(rest, True, [" ", ..acc])
           }
-        False -> do_collapse(rest, False, acc <> c)
+        False -> do_collapse(rest, False, [c, ..acc])
       }
   }
 }
