@@ -435,9 +435,9 @@ codegen pass:
 | `Sigv4aOptions.normalize_path` (RFC 3986 dot-segments) | DONE | Ported from `sigv4.normalize_path` (intentional duplication per module docstring). Required for the `get-*-normalized` aws-c-auth v4a fixtures. |
 | `canonical_request` / `string_to_sign` extracted as public | DONE | mirrors `sigv4.CanonicalParts` shape — enables fixture-driven pinning of canonical-request and STS bytes per fixture without re-implementing the pipeline in the test. |
 | Header canonicalization (duplicate-name comma-join + value space-collapse) | DONE | bugs surfaced by the corpus loop on `get-header-key-duplicate`, `get-header-value-order`, `get-header-value-trim`; fixed by porting `sigv4.group_by_name` + `collapse_spaces`. |
-| Fixture-driven loop test (canonical + STS bytes vs `aws-c-auth v4a/*`) | DONE (canonical + STS) | `test/sigv4a_fixtures_test.all_v4a_cases_canonical_and_sts_test` loops the corpus, pins both stages, skips one fixture pending `omit_session_token`. Signature byte-pin still blocked on RFC 6979. |
+| Fixture-driven loop test (canonical + STS bytes vs `aws-c-auth v4a/*`) | DONE (canonical + STS) | `test/sigv4a_fixtures_test.all_v4a_cases_canonical_and_sts_test` loops the corpus and pins both stages with an empty skip-list. Signature byte-pin still blocked on RFC 6979. |
+| `omit_session_token` option on `Sigv4aOptions` | DONE | Mirrors `sigv4.SigningOptions.omit_session_token` + `headers_for_signing` filter; flips the `post-sts-header-after` fixture from skip → pass. |
 | Runtime-side wiring (`<service>.with_sigv4a_...` + `runtime.prepare_signed_request` branch) | OPEN | `prepare_signed_request` is hard-coded to `sigv4.sign`; no op currently routes through SigV4a automatically. |
-| `omit_session_token` option on `Sigv4aOptions` | OPEN | `post-sts-header-after` carries a session token but expects it omitted from the canonical request and added post-signing for delivery. Mirror `sigv4.SigningOptions.omit_session_token`. |
 | RFC 6979 deterministic nonces | OPEN | Erlang's `crypto:sign/4` uses random nonces — signatures verify but won't match aws-c-auth literal bytes; would unblock fixture-driven `header-signature.txt` pinning across the full v4a corpus. |
 
 ## Suggested execution order (historical)
