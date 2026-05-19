@@ -1,11 +1,17 @@
-//// Tests for `aws/internal/codec/event_stream`. Pin the v1 encoder
-//// against hand-crafted byte sequences so any future refactor that
-//// breaks the on-wire framing surfaces immediately. The AWS C-RT
-//// reference codec (`aws-c-event-stream`) accepts what we emit here;
-//// we don't include that fixture suite because v1 covers only two
-//// header types, but the byte-exact assertions match what their
-//// `aws_event_stream_message_to_debug_str` would print for the same
-//// inputs.
+//// Tests for `aws/internal/codec/event_stream`. Three layers:
+////
+//// 1. Encoder byte-level assertions on hand-crafted frames — any
+////    future refactor that breaks the on-wire framing surfaces
+////    immediately. The AWS C-RT reference codec (`aws-c-event-
+////    stream`) accepts what we emit here; the byte-exact pins
+////    match what `aws_event_stream_message_to_debug_str` would
+////    print for the same inputs.
+//// 2. Encoder/decoder round-trips covering every header wire-code
+////    0..9 (Bool true/false, signed 8/16/32/64, binary, string,
+////    timestamp, uuid) plus CRC-corruption detection on both
+////    prelude and message CRC.
+//// 3. `decode_all` / `fold_events` bridges from `StreamingBody`
+////    for buffered and chunked response consumption.
 
 import aws/internal/codec/event_stream.{
   BadMessageCrc, BadPreludeCrc, BinaryValue, BoolFalseValue, BoolTrueValue,
@@ -198,11 +204,12 @@ pub fn decode_detects_corrupted_message_crc_test() {
   }
 }
 
-fn debug_decode_error(err) -> String {
+fn debug_decode_error(err: event_stream.DecodeError) -> String {
   case err {
     BadPreludeCrc -> "BadPreludeCrc"
     BadMessageCrc -> "BadMessageCrc"
-    _ -> "other"
+    event_stream.MalformedFrame(reason: r) -> "MalformedFrame(" <> r <> ")"
+    event_stream.UnknownHeaderType(type_code: _) -> "UnknownHeaderType"
   }
 }
 
@@ -399,18 +406,7 @@ pub fn fold_events_propagates_decode_error_test() {
   case fold_events(body, 0, fn(acc, _) { acc + 1 }) {
     Error(BadPreludeCrc) -> Nil
     Error(other) ->
-      panic as {
-        "expected BadPreludeCrc, got " <> describe_decode_error(other)
-      }
+      panic as { "expected BadPreludeCrc, got " <> debug_decode_error(other) }
     Ok(_) -> panic as "fold_events should not succeed on a corrupted frame"
-  }
-}
-
-fn describe_decode_error(e: event_stream.DecodeError) -> String {
-  case e {
-    BadPreludeCrc -> "BadPreludeCrc"
-    BadMessageCrc -> "BadMessageCrc"
-    event_stream.MalformedFrame(reason: r) -> "MalformedFrame(" <> r <> ")"
-    event_stream.UnknownHeaderType(type_code: _) -> "UnknownHeaderType"
   }
 }

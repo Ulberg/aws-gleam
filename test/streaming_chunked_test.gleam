@@ -2,7 +2,10 @@
 //// either a buffered `BitArray` or a list of byte-chunks; the
 //// existing helpers (`to_bit_array`, `byte_size`, `is_empty`,
 //// `append`) work uniformly across both. These tests pin the
-//// invariants the future streaming transport will rely on.
+//// invariants the chunked transport (`http_streaming.default_send`)
+//// relies on — chunk-order preservation, byte-size summation,
+//// fold semantics — plus the consumer caps (`to_bit_array_max`,
+//// `to_string_max`).
 
 import aws/streaming
 import gleam/bit_array
