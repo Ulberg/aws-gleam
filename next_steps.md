@@ -394,21 +394,25 @@ client beyond DynamoDB + S3 mainline.
 Items still open after the streaming + multipart + event-stream
 codegen pass:
 
-1. **Typed per-event-union decoding** in the event-stream emit
-   (v0.2 item 5, deeper pass). The `<op>_event_stream` wrapper
-   currently dispatches raw frames via `fold_events`; the next
-   slice would decode each frame's `:event-type` header into the
-   union variant. Needs an API-shape call from the user: callback,
-   Iterator, or `Subject(EventOrErr)` consumer.
-2. **Lazy `Source(...)` variant for `StreamingBody`** (no item).
-   File-backed and generator-backed streams so multi-GB uploads
-   stop holding the full payload in memory. ~150 LOC refactor
-   across `streaming.gleam` consumers.
-3. **Parallel multipart upload** (v0.2 item 6 extension). Today's
-   coordinator is sequential; a Task-based fan-out around
-   `transfer.upload_from_stream` would saturate bandwidth. New
-   module (`aws/s3/transfer_parallel.gleam`) — concurrency knob
-   shape is a user-facing API call.
+1. **Pull-based event-stream iterator** — DONE.
+   `event_stream.iter_events(body) -> IterStep` returns Yield /
+   Done / Failed steps callers can drive explicitly. Per-event
+   typed-union decoding (codegen-emitted per-union variant
+   decoders) is the next layer on top of this and lands when a
+   real consumer needs it.
+2. **`Source(...)` variant for `StreamingBody`** — DONE.
+   `from_source(next: fn() -> Result(BitArray, Nil))` constructor;
+   `fold_chunks` / `try_fold_chunks` stream chunk-by-chunk via the
+   callback; `to_chunks` / `byte_size` materialise (consume) the
+   stream. Single-pass — once consumed it's exhausted. File-
+   backed `from_file(path)` helper follows when the smoke-test's
+   upload-from-disk scenario needs it.
+3. **Parallel multipart upload** — DONE.
+   `UploadOptions` gains `max_concurrency: Option(Int)`;
+   `with_max_concurrency(opts, n)` flips the coordinator to fan
+   out via OTP processes capping in-flight `UploadPart` calls to
+   `n`. First failure short-circuits the whole upload with
+   best-effort abort.
 4. **awsQuery / ec2Query typed-input codegen** (corpus snapshot
    above). Emitter only handles empty-input ops today; extending
    to typed inputs (form-urlencoded encoder + decode helper) flips
