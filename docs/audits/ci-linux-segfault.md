@@ -1,9 +1,8 @@
 # CI Linux SIGSEGV — investigation summary
 
-Status: **mitigated, not fixed.** CI runs on standard `ubuntu-latest`
-with an 8 GB swap file added to the build step, which covers the
-peak compile memory of the 409-service `aws` package on 16 GB runners.
-The underlying bug is documented here for future work.
+Status: **mitigated, not fixed.** CI runs on `macos-latest` where
+the workspace builds cleanly. The Linux x86_64 failure remains
+unresolved and is documented here for future work.
 
 ## Symptom
 
@@ -126,3 +125,11 @@ First successful macOS run (commit 343bf4e):
 - Regen: 11m 27s
 - Tests: 14m 15s
 - Setup + cache upload: ~2 min
+
+## Hot-cache validation
+
+After commit 93fb474 (git-ls-tree-based cache keys), the previous
+hashFiles drift between docs-only commits should be gone. This
+commit is the validation push: identical hash-key inputs to
+93fb474, so both codegen + build caches should hit and CI should
+drop to ~3-5 min total.
