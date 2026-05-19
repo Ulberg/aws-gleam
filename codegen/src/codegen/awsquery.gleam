@@ -354,7 +354,11 @@ fn emit_scalar_typed_operation(
   let snake = stringutils.pascal_to_snake(local)
   let input_type = name_concat([local, "Input"])
   let output_type = name_concat([local, "Output"])
-  let members = types.resolve_members(model, input_id)
+  // Wire-form must follow declared member order (per the Smithy
+  // awsQuery spec); the rest of the codegen reads members in
+  // alphabetical order from `resolve_members` so its existing
+  // codec output stays stable across all eight protocols.
+  let members = types.resolve_members_in_order(model, input_id)
   let wire_names =
     list.map(members, fn(m) { wire_name_for(model, input_id, m, variant) })
   let referenced_enums =
@@ -581,7 +585,10 @@ fn emit_nested_struct_block(
   case rs {
     types.RStruct(gleam_name: gn, full_id: sid, ..) -> {
       let snake = stringutils.pascal_to_snake(gn)
-      let members = types.resolve_members(model, sid)
+      // Nested struct wire form, like the top-level input, follows
+      // declared member order — the per-member `encode_<S>_at`
+      // helper appends `&prefix.<field>=<value>` in this sequence.
+      let members = types.resolve_members_in_order(model, sid)
       let type_def = named_shapes.record_def(gn, members)
       let field_clauses =
         list.map(members, fn(m) {

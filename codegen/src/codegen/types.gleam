@@ -767,17 +767,32 @@ pub fn resolve_members(model: Model, full_id: String) -> List(MemberDef) {
   case model.lookup(model, full_id) {
     Ok(shape.Structure(members: m, ..)) | Ok(shape.Union(members: m, ..)) ->
       extract_members(model, m)
-      |> reorder(model.ordered_member_names(model, full_id))
     _ -> []
   }
 }
 
-/// Re-order the alphabetically-sorted `members` list to match the
-/// declared member-name order. Members named in `order` come first
-/// (in their declared sequence), then any stragglers that didn't
-/// appear in the order map keep their alphabetical position. Used
-/// by awsQuery / ec2Query / restXml wire emitters where field
-/// position is part of the protocol-test wire match.
+/// Like `resolve_members` but returns members in the order they were
+/// declared in the Smithy model (via the `member_order.extract`
+/// JSON pre-pass attached to the model). Stragglers — members not
+/// present in the order map — keep their alphabetical position
+/// after the declared-order block.
+///
+/// Required by the awsQuery / ec2Query emitters: the Smithy spec
+/// says request bodies serialize members in declared order, and the
+/// protocol-test fixtures pin byte-exact wire form. Other emitters
+/// (awsJson / restJson / restXml / rpcv2Cbor) are body-content-
+/// agnostic to member position (JSON keys are unordered; XML
+/// elements appear in any order on the wire) and intentionally use
+/// the alphabetical `resolve_members` so the existing per-shape
+/// codec output stays stable.
+pub fn resolve_members_in_order(
+  model: Model,
+  full_id: String,
+) -> List(MemberDef) {
+  resolve_members(model, full_id)
+  |> reorder(model.ordered_member_names(model, full_id))
+}
+
 fn reorder(members: List(MemberDef), order: List(String)) -> List(MemberDef) {
   case order {
     [] -> members
