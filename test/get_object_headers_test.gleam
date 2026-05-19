@@ -7,6 +7,7 @@
 //// `get_object` sees `option.None` for every metadata field and
 //// has to drop down to raw `httpc`.
 
+import aws/internal/codec/json_timestamp
 import aws/services/s3
 import aws/streaming
 import gleam/dict
@@ -21,6 +22,11 @@ fn fake_headers() -> dict.Dict(String, String) {
     #("accept-ranges", "bytes"),
     #("x-amz-version-id", "v-99"),
     #("x-amz-server-side-encryption", "AES256"),
+    // Smithy's default @timestampFormat for header bindings is
+    // http-date (RFC 7231 §7.1.1.1); S3 GetObject's `Last-Modified`
+    // ships in this form. The codegen must dispatch the timestamp
+    // extractor on the member's timestamp_format so this populates.
+    #("last-modified", "Thu, 01 Jan 1970 00:00:42 GMT"),
   ])
 }
 
@@ -35,6 +41,10 @@ pub fn parse_get_object_response_extracts_headers_test() {
   out.version_id |> should.equal(option.Some("v-99"))
   out.server_side_encryption
   |> should.equal(option.Some(s3.ServerSideEncryptionAes256))
+  out.last_modified
+  |> should.equal(
+    option.Some(json_timestamp.Timestamp(seconds: 42, nanoseconds: 0)),
+  )
 }
 
 pub fn parse_get_object_response_payload_still_works_test() {

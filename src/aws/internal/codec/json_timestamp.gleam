@@ -21,6 +21,28 @@ fn parse_iso8601_ffi(t: String) -> Result(Int, Nil)
 @external(erlang, "aws_ffi", "parse_http_date")
 fn parse_http_date_ffi(t: String) -> Result(Int, Nil)
 
+/// Parse an ISO 8601 timestamp string ("2024-01-02T03:04:05Z") into a
+/// `Timestamp` at second precision. `nanoseconds` is always 0 until
+/// the FFI gains fractional-second support. Used by the header
+/// extractor for members carrying `@timestampFormat("date-time")`.
+pub fn parse_iso8601(s: String) -> Result(Timestamp, Nil) {
+  case parse_iso8601_ffi(s) {
+    Ok(n) -> Ok(Timestamp(seconds: n, nanoseconds: 0))
+    Error(_) -> Error(Nil)
+  }
+}
+
+/// Parse an HTTP-date timestamp string ("Tue, 29 Apr 2014 18:30:38 GMT")
+/// into a `Timestamp`. The default `@timestampFormat` for
+/// `@httpHeader` bindings per Smithy core — used by `Last-Modified`,
+/// `Expires`, `Date`, etc.
+pub fn parse_http_date(s: String) -> Result(Timestamp, Nil) {
+  case parse_http_date_ffi(s) {
+    Ok(n) -> Ok(Timestamp(seconds: n, nanoseconds: 0))
+    Error(_) -> Error(Nil)
+  }
+}
+
 /// `2024-01-02T03:04:05Z`. Inverse of `parse_iso8601_ffi`.
 @external(erlang, "aws_ffi", "format_iso8601")
 pub fn format_iso8601(seconds: Int) -> String

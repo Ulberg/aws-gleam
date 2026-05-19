@@ -2718,7 +2718,7 @@ fn response_overrides(out_info: IOTypeInfo) -> List(ResponseOverride) {
   list.filter_map(out_info.members, fn(m) {
     case m.binding {
       Header(header_name: name) ->
-        case header_extractor(m.target, name) {
+        case header_extractor(m, name) {
           option.Some(expr) ->
             Ok(ResponseOverride(field: m.snake_name, value_expr: expr))
           option.None -> Error(Nil)
@@ -2734,12 +2734,12 @@ fn response_overrides(out_info: IOTypeInfo) -> List(ResponseOverride) {
 }
 
 /// Map a Smithy `@httpHeader` target type to the matching extractor
-/// call. Types we don't yet bind (timestamps, lists) fall through
-/// with `None` so the field continues to land as `option.None` —
-/// same behaviour the codegen had before this pass; new binding
-/// support drops into this match without touching anything else.
-fn header_extractor(target: Resolved, header_name: String) -> Option(String) {
-  case target {
+/// call. Lists fall through with `None` so the field continues to
+/// land as `option.None` — same behaviour the codegen had before
+/// this pass; new binding support drops into this match without
+/// touching anything else.
+fn header_extractor(m: MemberDef, header_name: String) -> Option(String) {
+  case m.target {
     RPrim(primitive: PString) ->
       option.Some(call_extractor("string_header", header_name))
     RPrim(primitive: PInt) ->
@@ -2748,16 +2748,36 @@ fn header_extractor(target: Resolved, header_name: String) -> Option(String) {
       option.Some(call_extractor("bool_header", header_name))
     REnum(gleam_name: gn, ..) ->
       option.Some(call_enum_extractor(header_name, gn))
+    RTimestamp ->
+      option.Some(call_timestamp_extractor(
+        header_name,
+        timestamp_header_helper(m.timestamp_format),
+      ))
     // `RPrim(PFloat)` would map to `json_float.SmithyFloat` in the
     // generated record — we don't yet emit the wrap/unwrap glue, so
-    // float-bound headers stay `None` for now. Add the helper plus
-    // a generator case here to close that gap.
+    // float-bound headers stay `None` for now. (No AWS service
+    // actually binds a Float to @httpHeader so this is theoretical.)
     _ -> option.None
+  }
+}
+
+/// Pick the `rest.<helper>` matching the member's `@timestampFormat`.
+/// Defaults to `http_date_header` per Smithy core's
+/// "headers default to HTTP-date" rule.
+fn timestamp_header_helper(format: Option(String)) -> String {
+  case format {
+    option.Some("date-time") -> "iso8601_header"
+    option.Some("epoch-seconds") -> "epoch_seconds_header"
+    _ -> "http_date_header"
   }
 }
 
 fn call_extractor(fn_name: String, header_name: String) -> String {
   name_concat(["rest.", fn_name, "(headers, \"", header_name, "\")"])
+}
+
+fn call_timestamp_extractor(header_name: String, helper: String) -> String {
+  name_concat(["rest.", helper, "(headers, \"", header_name, "\")"])
 }
 
 fn call_enum_extractor(header_name: String, enum_gleam_name: String) -> String {
@@ -2828,10 +2848,17 @@ fn response_params(
   body_param body_param: String,
   overrides_used overrides: List(ResponseOverride),
 ) -> List(code.Param) {
+  // Look for the literal `code` / `headers` *identifiers* the
+  // override expressions use — not just substring matches, which
+  // would false-positive on e.g. an `x-amzn-code-interpreter-…`
+  // header name that contains "code" or a `headers` field accessor.
+  // `code` only appears inside `option.Some(code)` (response-code
+  // override); `headers` only appears as the first argument to a
+  // `rest.<*>_header(headers, ...)` extractor call.
   let uses_code =
-    list.any(overrides, fn(o) { string.contains(o.value_expr, "code") })
+    list.any(overrides, fn(o) { string.contains(o.value_expr, "Some(code)") })
   let uses_headers =
-    list.any(overrides, fn(o) { string.contains(o.value_expr, "headers") })
+    list.any(overrides, fn(o) { string.contains(o.value_expr, "(headers,") })
   let code_name = case uses_code {
     True -> "code"
     False -> "_code"

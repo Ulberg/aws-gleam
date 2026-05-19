@@ -3,6 +3,7 @@
 //// generated `build_*_request` functions call into for each
 //// `@httpLabel`, `@httpQuery`, `@httpHeader` member.
 
+import aws/internal/codec/json_timestamp
 import aws/internal/crypto
 import aws/internal/uri
 import gleam/bit_array
@@ -279,6 +280,54 @@ pub fn enum_header(
         Ok(v) -> Some(v)
         Error(_) -> None
       }
+    None -> None
+  }
+}
+
+/// HTTP-date header — RFC 7231 §7.1.1.1 form
+/// (`Tue, 29 Apr 2014 18:30:38 GMT`). The default `@timestampFormat`
+/// for header bindings per Smithy core — covers `Last-Modified`,
+/// `Expires`, `Date`, etc. Forgiving contract: missing header or
+/// unparseable string → `None`.
+pub fn http_date_header(
+  headers: Dict(String, String),
+  name: String,
+) -> Option(json_timestamp.Timestamp) {
+  case string_header(headers, name) {
+    Some(raw) ->
+      case json_timestamp.parse_http_date(string.trim(raw)) {
+        Ok(t) -> Some(t)
+        Error(_) -> None
+      }
+    None -> None
+  }
+}
+
+/// ISO 8601 timestamp header (`@timestampFormat("date-time")`,
+/// `2024-01-02T03:04:05Z`).
+pub fn iso8601_header(
+  headers: Dict(String, String),
+  name: String,
+) -> Option(json_timestamp.Timestamp) {
+  case string_header(headers, name) {
+    Some(raw) ->
+      case json_timestamp.parse_iso8601(string.trim(raw)) {
+        Ok(t) -> Some(t)
+        Error(_) -> None
+      }
+    None -> None
+  }
+}
+
+/// Epoch-seconds timestamp header
+/// (`@timestampFormat("epoch-seconds")`, integer seconds since 1970
+/// in the header value).
+pub fn epoch_seconds_header(
+  headers: Dict(String, String),
+  name: String,
+) -> Option(json_timestamp.Timestamp) {
+  case int_header(headers, name) {
+    Some(n) -> Some(json_timestamp.Timestamp(seconds: n, nanoseconds: 0))
     None -> None
   }
 }

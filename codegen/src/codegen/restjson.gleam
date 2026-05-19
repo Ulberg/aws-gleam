@@ -23,7 +23,7 @@ import codegen/trait_helpers
 import codegen/types.{
   type HttpTrait, type MemberDef, type Resolved, Header, HttpTrait, PBool, PInt,
   PString, Payload, RDocument, REnum, RIntEnum, RList, RMap, RPrim, RStruct,
-  RUnion, ResponseCode,
+  RTimestamp, RUnion, ResponseCode,
 }
 import codegen/waiter
 import gleam/dict
@@ -1526,7 +1526,7 @@ fn response_overrides(out_info: IOTypeInfo) -> List(ResponseOverride) {
   list.filter_map(out_info.members, fn(m) {
     case m.binding {
       Header(header_name: name) ->
-        case header_extractor(m.target, name) {
+        case header_extractor(m, name) {
           Some(expr) ->
             Ok(ResponseOverride(field: m.snake_name, value_expr: expr))
           None -> Error(Nil)
@@ -1541,14 +1541,30 @@ fn response_overrides(out_info: IOTypeInfo) -> List(ResponseOverride) {
   })
 }
 
-fn header_extractor(target: Resolved, header_name: String) -> Option(String) {
-  case target {
+fn header_extractor(m: MemberDef, header_name: String) -> Option(String) {
+  case m.target {
     RPrim(primitive: PString) ->
       Some(call_extractor("string_header", header_name))
     RPrim(primitive: PInt) -> Some(call_extractor("int_header", header_name))
     RPrim(primitive: PBool) -> Some(call_extractor("bool_header", header_name))
     REnum(gleam_name: gn, ..) -> Some(call_enum_extractor(header_name, gn))
+    RTimestamp ->
+      Some(call_timestamp_extractor(
+        header_name,
+        timestamp_header_helper(m.timestamp_format),
+      ))
     _ -> None
+  }
+}
+
+/// Pick the `rest.<helper>` matching the member's `@timestampFormat`.
+/// Defaults to `http_date_header` per Smithy core's
+/// "headers default to HTTP-date" rule.
+fn timestamp_header_helper(format: Option(String)) -> String {
+  case format {
+    Some("date-time") -> "iso8601_header"
+    Some("epoch-seconds") -> "epoch_seconds_header"
+    _ -> "http_date_header"
   }
 }
 
@@ -1564,6 +1580,10 @@ fn call_enum_extractor(header_name: String, enum_gleam_name: String) -> String {
     stringutils.pascal_to_snake(enum_gleam_name),
     "_from_wire)",
   ])
+}
+
+fn call_timestamp_extractor(header_name: String, helper: String) -> String {
+  name_concat(["rest.", helper, "(headers, \"", header_name, "\")"])
 }
 
 fn wrap_decode_with_overrides_at(
@@ -1605,10 +1625,17 @@ fn response_params(
   body_param body_param: String,
   overrides_used overrides: List(ResponseOverride),
 ) -> List(code.Param) {
+  // Look for the literal `code` / `headers` *identifiers* the
+  // override expressions use — not just substring matches, which
+  // would false-positive on e.g. an `x-amzn-code-interpreter-…`
+  // header name that contains "code" or a `headers` field accessor.
+  // `code` only appears inside `option.Some(code)` (response-code
+  // override); `headers` only appears as the first argument to a
+  // `rest.<*>_header(headers, ...)` extractor call.
   let uses_code =
-    list.any(overrides, fn(o) { string.contains(o.value_expr, "code") })
+    list.any(overrides, fn(o) { string.contains(o.value_expr, "Some(code)") })
   let uses_headers =
-    list.any(overrides, fn(o) { string.contains(o.value_expr, "headers") })
+    list.any(overrides, fn(o) { string.contains(o.value_expr, "(headers,") })
   let code_name = case uses_code {
     True -> "code"
     False -> "_code"
