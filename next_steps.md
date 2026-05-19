@@ -17,9 +17,42 @@ deferred to v0.2.
 | M2 — credential providers + chain | ✅ (env, profile, SSO, web-identity, ECS, IMDS, process) | ✅ via `default_chain` + per-service `credentials_cache` actor on the hot path | profile→AssumeRole auto-chaining (`source_profile` / `role_arn`) still manual via `from_assume_role` |
 | M3 — region + endpoints | ✅ both modules exist | ✅ — every generated service embeds its rule set and threads it through `runtime.with_endpoint_rule_set`; `service.new()` auto-calls `region.resolve` | — |
 | M4 — retry | ✅ standard + adaptive in `src/aws/retry.gleam` | ✅ — `runtime.invoke` wraps via `retry.with_retry(config.http_send, config.retry_strategy)` | — |
-| M5 — protocol codecs | ✅ awsJson1_0 / 1_1 / restJson1 / restXml / awsQuery / ec2Query | ✅ | restJson1 has ~30 edge-case failures; restXml + awsQuery + ec2Query have decoder gaps |
+| M5 — protocol codecs | ✅ awsJson1_0 / 1_1 / restJson1 / restXml / awsQuery / ec2Query / rpcv2Cbor | ✅ | corpus pass-rates per protocol below; failures across all eight = 0 |
 | M6 — typed DynamoDB + S3 | ✅ (full services, not just GetItem/GetObject) | ✅ | response-header binding ✅ (2026-05-19); restXml error extraction ✅ |
-| M7 — codegen | ✅ 5 protocols | ✅ | only DynamoDB + S3 actually generated |
+| M7 — codegen | ✅ 7 protocols | ✅ | all 409 services emitted on full regen; v0.2 codegen flips (streaming-blob + streaming-union) covered |
+
+### Protocol-test corpus snapshot (2026-05-19)
+
+All eight corpora report `fail=0`. The remaining skips are spec-driven
+or codegen-bounded:
+
+| Protocol | pass | fail | skip(no-dispatcher) | skip(server-only) | skip(allowed) | total |
+|---|---|---|---|---|---|---|
+| awsJson1_0 | 64 | 0 | 5 | 6 | 0 | 75 |
+| awsJson1_1 | 115 | 0 | 3 | 4 | 0 | 122 |
+| restJson1 | 241 | 0 | 6 | 25 | 0 | 272 |
+| restXml | 176 | 0 | 13 | 6 | 2 | 197 |
+| restXmlWithNamespace | 2 | 0 | 0 | 0 | 0 | 2 |
+| awsQuery | 44 | 0 | 33 | 0 | 0 | 77 |
+| ec2Query | 33 | 0 | 26 | 0 | 0 | 59 |
+| rpcv2Cbor | 4 | 0 | 0 | 0 | 0 | 4 |
+
+The `no-dispatcher` counts decompose as follows:
+- **awsQuery (33) / ec2Query (26)** — emitter only emits the empty-input
+  variant (`codegen/src/codegen/awsquery.gleam:48-63` filters to
+  `is_unit_or_empty`). Typed-input ops — `SimpleInputParams`, `QueryLists`,
+  `QueryMaps`, `QueryTimestamps`, `NestedStructures`,
+  `QueryIdempotencyTokenAutoFill`, `EndpointWithHostLabelOperation`,
+  `PutWithContentEncoding` (awsQuery) — fall through. Extending requires a
+  form-urlencoded encoder + JSON-to-record decoder per shape.
+- **restJson1 (6)** — three ops live in services we don't emit
+  (`RestJsonValidation.RecursiveStructures`, `BackplaneControlService.GetRestApis`,
+  `Glacier.UploadArchive`/`UploadMultipartPart`); the codegen's `find_service`
+  picks the single service with the most ops per protocol. The remaining
+  skips on `Malformed*` ops carry `httpMalformedRequestTests` only, which
+  the loader doesn't parse (validation/server concern).
+- **restXml (13) / awsJson1_0 (5) / awsJson1_1 (3)** — analogous mix of
+  unsupported-input ops + non-canonical services in the fixture.
 
 ## To close v0.1 (within plan scope)
 
@@ -358,20 +391,32 @@ client beyond DynamoDB + S3 mainline.
 
 ## Current focus (2026-05-19)
 
-Items still open after the streaming + multipart pass:
+Items still open after the streaming + multipart + event-stream
+codegen pass:
 
-1. **Event-stream operation codegen** (v0.2 item 5). The codec is
-   in place; the codegen-side emitter that detects `@streaming` on
-   output unions and routes the body through
-   `event_stream.fold_events` is the next codegen-side piece.
+1. **Typed per-event-union decoding** in the event-stream emit
+   (v0.2 item 5, deeper pass). The `<op>_event_stream` wrapper
+   currently dispatches raw frames via `fold_events`; the next
+   slice would decode each frame's `:event-type` header into the
+   union variant. Needs an API-shape call from the user: callback,
+   Iterator, or `Subject(EventOrErr)` consumer.
 2. **Lazy `Source(...)` variant for `StreamingBody`** (no item).
    File-backed and generator-backed streams so multi-GB uploads
-   stop holding the full payload in memory.
+   stop holding the full payload in memory. ~150 LOC refactor
+   across `streaming.gleam` consumers.
 3. **Parallel multipart upload** (v0.2 item 6 extension). Today's
    coordinator is sequential; a Task-based fan-out around
-   `transfer.upload_from_stream` would saturate bandwidth.
-4. **SigV4a** (v0.2 item 8). Multi-region signing for S3 MRAP.
-5. **Endpoint ruleset coverage beyond S3 + DynamoDB** (v0.2
+   `transfer.upload_from_stream` would saturate bandwidth. New
+   module (`aws/s3/transfer_parallel.gleam`) — concurrency knob
+   shape is a user-facing API call.
+4. **awsQuery / ec2Query typed-input codegen** (corpus snapshot
+   above). Emitter only handles empty-input ops today; extending
+   to typed inputs (form-urlencoded encoder + decode helper) flips
+   59 protocol-test cases from no-dispatcher to dispatched.
+   Multi-slice codegen project: `SimpleInputParams` (scalars) →
+   `QueryLists` (flattened + xmlName) → `QueryMaps` + nesting.
+5. **SigV4a** (v0.2 item 8). Multi-region signing for S3 MRAP.
+6. **Endpoint ruleset coverage beyond S3 + DynamoDB** (v0.2
    item 10). The evaluator is wired; bundling all ~300 rulesets
    at codegen time + per-service builders is remaining.
 
