@@ -244,6 +244,7 @@ fn is_supported_deep(
     types.RBlob -> True
     types.REnum(..) -> True
     types.RIntEnum(..) -> True
+    types.RTimestamp -> True
     types.RList(element: e, ..) -> is_supported_deep(model, e, visited)
     // Maps: slice 3 assumes String keys (every map in the corpus
     // uses `smithy.api#String`); value type is checked recursively.
@@ -588,6 +589,7 @@ fn emit_nested_struct_block(
               name_concat(["prefix <> \".", wire, "\""]),
               member_traits(model, sid, m.member_name),
               variant,
+              m.timestamp_format,
             )
           name_concat([
             "  let acc = case s.",
@@ -909,6 +911,7 @@ fn scalar_field_append(
       quote_string(wire_name),
       member_traits(model, struct_id, m.member_name),
       variant,
+      m.timestamp_format,
     )
   name_concat([
     "case input.",
@@ -936,10 +939,35 @@ fn encode_value_expr(
   prefix_expr: String,
   m_traits: shape.Traits,
   variant: Variant,
+  timestamp_format: option.Option(String),
 ) -> String {
   case target {
     types.RPrim(_) | types.RBlob | types.REnum(..) | types.RIntEnum(..) ->
       scalar_kv(target, value_expr, prefix_expr)
+    types.RTimestamp -> {
+      // awsQuery / ec2Query default timestamp format is `date-time`
+      // (ISO 8601). `@timestampFormat` on the member or the target
+      // shape (e.g. `aws.protocoltests.shared#EpochSeconds`) flips
+      // the wire form.
+      let fmt = case timestamp_format {
+        option.Some(s) -> s
+        option.None -> "date-time"
+      }
+      let formatter = case fmt {
+        "epoch-seconds" -> "json_timestamp.epoch_seconds_text"
+        "http-date" -> "json_timestamp.format_http_date_precise"
+        _ -> "json_timestamp.format_iso8601_precise"
+      }
+      name_concat([
+        "\"&\" <> ",
+        prefix_expr,
+        " <> \"=\" <> uri.encode_component(",
+        formatter,
+        "(",
+        value_expr,
+        "))",
+      ])
+    }
     types.RList(element: et, xml_entry_name: xen, ..) -> {
       // ec2Query flattens every list per the protocol's "all lists are
       // flattened" rule (see Ec2Lists in the corpus); awsQuery only
@@ -961,7 +989,14 @@ fn encode_value_expr(
           <> ".\" <> int.to_string(idx + 1)"
       }
       let elem_encode =
-        encode_value_expr(et, "item", entry_prefix, dict.new(), variant)
+        encode_value_expr(
+          et,
+          "item",
+          entry_prefix,
+          dict.new(),
+          variant,
+          option.None,
+        )
       // Empty-list semantics differ between protocols:
       //   awsQuery → serialize the bare parameter name `<prefix>=`
       //     (matches QueryListWriter.finish() in aws_smithy_query).
@@ -1016,7 +1051,14 @@ fn encode_value_expr(
       let value_prefix = entry_var <> " <> \"." <> vn <> "\""
       let key_enc = scalar_kv(kt, "k", key_prefix)
       let value_enc =
-        encode_value_expr(vt, "v", value_prefix, dict.new(), variant)
+        encode_value_expr(
+          vt,
+          "v",
+          value_prefix,
+          dict.new(),
+          variant,
+          option.None,
+        )
       // Empty maps not serialized (matches QueryEmptyQueryMaps and
       // Ec2EmptyQueryMaps in the corpus). Keys sorted ascending so
       // wire byte-match against fixture is deterministic (matches
@@ -1143,6 +1185,7 @@ fn file_header(
   let candidates = [
     #("aws/internal/client/runtime", "runtime."),
     #("aws/internal/codec/json_float", "json_float."),
+    #("aws/internal/codec/json_timestamp", "json_timestamp."),
     #("aws/internal/uri", "uri."),
     #("gleam/bit_array", "bit_array."),
     #("gleam/dict", "dict."),
