@@ -433,10 +433,12 @@ codegen pass:
 | `ecdsa_p256_public_key/1` FFI | DONE | exposed for tests + anyone surfacing the public side of a derived key. |
 | `Sigv4aCredentials` + `sign_with_credentials` + session token | DONE | `Sigv4aCredentials(access_key_id, private_key, session_token: Option(String))` mirrors `sigv4.SigningCredentials`; `X-Amz-Security-Token` participates in canonical headers + SignedHeaders when present. |
 | `Sigv4aOptions.normalize_path` (RFC 3986 dot-segments) | DONE | Ported from `sigv4.normalize_path` (intentional duplication per module docstring). Required for the `get-*-normalized` aws-c-auth v4a fixtures. |
+| `canonical_request` / `string_to_sign` extracted as public | DONE | mirrors `sigv4.CanonicalParts` shape — enables fixture-driven pinning of canonical-request and STS bytes per fixture without re-implementing the pipeline in the test. |
+| Header canonicalization (duplicate-name comma-join + value space-collapse) | DONE | bugs surfaced by the corpus loop on `get-header-key-duplicate`, `get-header-value-order`, `get-header-value-trim`; fixed by porting `sigv4.group_by_name` + `collapse_spaces`. |
+| Fixture-driven loop test (canonical + STS bytes vs `aws-c-auth v4a/*`) | DONE (canonical + STS) | `test/sigv4a_fixtures_test.all_v4a_cases_canonical_and_sts_test` loops the corpus, pins both stages, skips one fixture pending `omit_session_token`. Signature byte-pin still blocked on RFC 6979. |
 | Runtime-side wiring (`<service>.with_sigv4a_...` + `runtime.prepare_signed_request` branch) | OPEN | `prepare_signed_request` is hard-coded to `sigv4.sign`; no op currently routes through SigV4a automatically. |
-| `normalize_path` option (RFC 3986 dot-segment removal) | OPEN | `sigv4.normalize_path` exists; SigV4a's `encode_path` doesn't normalize, so the `get-*-normalized` v4a fixtures would fail a byte-level pin. |
+| `omit_session_token` option on `Sigv4aOptions` | OPEN | `post-sts-header-after` carries a session token but expects it omitted from the canonical request and added post-signing for delivery. Mirror `sigv4.SigningOptions.omit_session_token`. |
 | RFC 6979 deterministic nonces | OPEN | Erlang's `crypto:sign/4` uses random nonces — signatures verify but won't match aws-c-auth literal bytes; would unblock fixture-driven `header-signature.txt` pinning across the full v4a corpus. |
-| Fixture-driven loop test (canonical + STS bytes vs `aws-c-auth v4a/*`) | OPEN | needs the above three (session-token + normalize-path + an extracted `canonical_request` / `string_to_sign` public surface mirroring `sigv4.gleam`). |
 
 ## Suggested execution order (historical)
 
