@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, ubuntu-24.04]
+        os: [ubuntu-24.04]
         otp: ["28.0"]
         gleam: ["1.16.0"]
 
@@ -123,45 +123,35 @@ jobs:
           echo "--- gleam"; gleam --version || true
           echo "--- src/aws/services size"; ls src/aws/services 2>/dev/null | wc -l
 
-      - name: Run tests
-        # After 9 attempts ruled out OTP version, scheduler flags,
-        # ETS limit, OS stack ulimit, RUST_MIN_STACK, and rayon
-        # parallelism, the SIGSEGV remains hyper-consistent at
-        # ~2:03 in `Compiling aws` with 409 services (vs 0.06 s
-        # with 10 services). The crash is in the BEAM escript
-        # subprocess that gleam spawns to compile `.erl` → `.beam`
-        # (`gleam@@compile.erl` template loaded into a fresh erl
-        # process per package).
+      - name: Install diagnostics tools
+        run: sudo apt-get update -qq && sudo apt-get install -y strace gdb
+
+      - name: Run tests under strace
+        # 11 stack-side probes failed identically — the SIGSEGV is
+        # not from a thread-stack overflow. This iteration runs
+        # gleam under `strace -f -e trace=signal` so the next
+        # failure log captures the exact signal-delivery syscall
+        # and the PID of the dying process. If we see SIGSEGV
+        # delivered to gleam-the-Rust-binary directly, the bug is
+        # in gleam itself; if it's delivered to a BEAM escript
+        # subprocess, the bug is in the Erlang compile pass.
         #
-        # `GLIBC_TUNABLES=glibc.pthread.stacksize=67108864` overrides
-        # the GLIBC pthread default stack (typically 8 MB on Linux)
-        # at the libc level — applies to every `pthread_create` call
-        # in the process, including BEAM scheduler threads which
-        # bypass `ulimit -s` and `+sss`. The escript's BEAM is the
-        # one running the recursive Erlang compiler over hundreds of
-        # generated modules, and on a 64-bit Linux glibc default the
-        # scheduler thread stack ceiling is hit deep into a large
-        # `compile:file/2` invocation.
+        # `--summary-only` would cut noise but we need the
+        # actual signal lines so leave it off and let stderr
+        # capture do its job.
         run: |
           ulimit -s 131072
           ulimit -c unlimited
-          echo "--- pthread stacksize override ---"
-          echo "  GLIBC_TUNABLES=$GLIBC_TUNABLES"
-          ./scripts/test.sh
+          set +e
+          strace -f -e trace=signal -o /tmp/gleam-strace.log ./scripts/test.sh
+          rc=$?
+          echo "--- test.sh exit: $rc ---"
+          echo "--- strace signal log (tail 80) ---"
+          tail -80 /tmp/gleam-strace.log || true
+          exit "$rc"
         env:
           ERL_FLAGS: "+t 16777216 +S 2:2"
           ERL_AFLAGS: "+t 16777216 +S 2:2"
-          # 256 MB pthread stack. 64 MB still SIGSEGV'd — bump
-          # again to rule out "stack just barely too small". If
-          # 256 MB still crashes, the bug isn't stack-related at
-          # all and the next move is the architectural fix
-          # (split src/aws/services into its own Gleam package).
-          GLIBC_TUNABLES: "glibc.pthread.stacksize=268435456"
-          # Also force tokio runtime to a single worker thread —
-          # eliminates parallel-Rust-side races as a candidate.
-          # Gleam uses tokio with rt-multi-thread; this caps
-          # concurrent worker count.
-          TOKIO_WORKER_THREADS: "1"
 
   # LocalStack end-to-end tests for the v0.1 verification gate
   # (DynamoDB + S3 round-trips). Kept in a separate job so the
