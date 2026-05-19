@@ -18,21 +18,8 @@
 
 import aws/internal/client/runtime
 import aws/services/s3
-import aws/streaming.{type StreamingBody}
+import aws/streaming
 import gleam/result
-
-/// What `get_object_streaming` returns on success — the wire-side
-/// status, the raw headers list (preserves case-as-delivered), and
-/// the response body as a `StreamingBody`. Headers as a list of
-/// pairs (rather than a `Dict`) mirrors `gleam/http`'s shape and
-/// keeps duplicate-header semantics observable.
-pub type StreamingResponse {
-  StreamingResponse(
-    status: Int,
-    headers: List(#(String, String)),
-    body: StreamingBody,
-  )
-}
 
 /// Stream the response body of an S3 `GetObject` request. The body
 /// arrives as a `StreamingBody` whose chunks are consumed via
@@ -48,12 +35,12 @@ pub type StreamingResponse {
 pub fn get_object_streaming(
   client: s3.Client,
   input: s3.GetObjectRequest,
-) -> Result(StreamingResponse, runtime.ClientError) {
+) -> Result(streaming.Response, runtime.ClientError) {
   use resp <- result.try(runtime.invoke_streaming(
     s3.config(client),
     s3.build_get_object_request(input),
   ))
-  Ok(StreamingResponse(
+  Ok(streaming.Response(
     status: resp.status,
     headers: resp.headers,
     body: resp.body,

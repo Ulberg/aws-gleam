@@ -189,9 +189,7 @@ pub fn get_object_streaming_surfaces_typed_error_on_404_test() {
   s3.shutdown(client)
 }
 
-fn describe(
-  r: Result(s3_streaming.StreamingResponse, runtime.ClientError),
-) -> String {
+fn describe(r: Result(streaming.Response, runtime.ClientError)) -> String {
   case r {
     Ok(_) -> "Ok(_)"
     Error(runtime.ServiceError(status: s, ..)) ->

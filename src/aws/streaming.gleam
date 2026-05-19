@@ -25,6 +25,21 @@ pub opaque type StreamingBody {
   Chunked(chunks: List(BitArray))
 }
 
+/// Wire-side response shape from a streaming operation — status
+/// code, raw header list (case as delivered, duplicates preserved),
+/// and the body as a `StreamingBody`. Returned by every codegen-
+/// emitted `<op>_streaming(client, input)` wrapper, and by
+/// hand-written wrappers built on `runtime.invoke_streaming` (e.g.
+/// `aws/s3/streaming.get_object_streaming`).
+///
+/// Headers as a list rather than a `Dict` mirrors `gleam/http`'s
+/// shape and keeps duplicate-header semantics observable. Callers
+/// that want case-insensitive lookup can lowercase + insert into a
+/// `Dict` themselves.
+pub type Response {
+  Response(status: Int, headers: List(#(String, String)), body: StreamingBody)
+}
+
 /// Build a `StreamingBody` from a `BitArray` already in memory.
 /// Use this when the body bytes are buffered up front (a UTF-8
 /// payload, the result of a buffered read, a generated XML/JSON
