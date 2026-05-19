@@ -438,7 +438,7 @@ pub fn events_to_streaming_body(events: List(Event)) -> StreamingBody {
 /// messages, handshakes) or the call site wants to handle every
 /// event after the stream terminates. Long-lived subscription
 /// streams (`SubscribeToShard`, `StartStreamTranscription`) want
-/// `decode_yielder` (TODO) so each event surfaces as it arrives.
+/// `fold_events` instead so each event surfaces incrementally.
 ///
 /// The streaming body's chunks are concatenated first; the framing
 /// protocol's length fields make incremental parsing safe across
@@ -458,6 +458,44 @@ fn decode_all_bytes(
       case decode(bytes) {
         Error(e) -> Error(e)
         Ok(#(event, rest)) -> decode_all_bytes(rest, [event, ..acc])
+      }
+  }
+}
+
+/// Reduce a streaming body's event frames left-to-right by
+/// accumulating one decoded event at a time. The natural consumer
+/// API for long-lived subscription streams — the folder can update
+/// running state (counts, partial outputs, signals) without holding
+/// the whole event list in memory.
+///
+/// Returns `Error(DecodeError)` the moment a frame fails CRC or
+/// length checks, preserving the accumulator up to (but not
+/// including) the bad frame. Callers that want to keep going past
+/// a bad frame must do their own resync.
+///
+/// V1 reads the full body up front via `streaming.to_bit_array` so
+/// the fold runs on a single contiguous buffer; a future
+/// chunk-by-chunk consumer that decodes events as bytes arrive
+/// keeps this same surface — only the implementation changes.
+pub fn fold_events(
+  body: StreamingBody,
+  initial: acc,
+  f: fn(acc, Event) -> acc,
+) -> Result(acc, DecodeError) {
+  fold_events_bytes(streaming.to_bit_array(body), initial, f)
+}
+
+fn fold_events_bytes(
+  bytes: BitArray,
+  acc: acc,
+  f: fn(acc, Event) -> acc,
+) -> Result(acc, DecodeError) {
+  case bit_array.byte_size(bytes) {
+    0 -> Ok(acc)
+    _ ->
+      case decode(bytes) {
+        Error(e) -> Error(e)
+        Ok(#(event, rest)) -> fold_events_bytes(rest, f(acc, event), f)
       }
   }
 }

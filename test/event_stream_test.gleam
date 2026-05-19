@@ -10,7 +10,7 @@
 import aws/internal/codec/event_stream.{
   BadMessageCrc, BadPreludeCrc, BinaryValue, BoolFalseValue, BoolTrueValue,
   ByteValue, Event, Header, Int16Value, Int32Value, Int64Value, StringValue,
-  TimestampValue, UuidValue, decode, decode_all, encode,
+  TimestampValue, UuidValue, decode, decode_all, encode, fold_events,
 }
 import aws/streaming
 import gleam/bit_array
@@ -348,5 +348,69 @@ pub fn events_to_streaming_body_with_empty_list_is_empty_test() {
   case decode_all(body) {
     Ok(events) -> events |> should.equal([])
     Error(_) -> panic as "empty event list should produce empty body"
+  }
+}
+
+// ---------- fold_events tests ----------
+//
+// `fold_events` is the incremental-consumer API: walks frames one
+// at a time, updating an accumulator. Pinning the in-order
+// iteration contract here means long-lived subscription streams
+// (`SubscribeToShard`, `StartStreamTranscription`) can drive
+// running-state state machines without buffering every event.
+
+pub fn fold_events_visits_each_event_in_order_test() {
+  let events = [
+    Event(headers: [], payload: <<"a":utf8>>),
+    Event(headers: [], payload: <<"b":utf8>>),
+    Event(headers: [], payload: <<"c":utf8>>),
+  ]
+  let body = event_stream.events_to_streaming_body(events)
+  // Collect payloads in arrival order; reverse the accumulator
+  // for a wire-order assertion.
+  let result = fold_events(body, [], fn(acc, e) { [e.payload, ..acc] })
+  case result {
+    Ok(rev) -> {
+      list.reverse(rev)
+      |> should.equal([<<"a":utf8>>, <<"b":utf8>>, <<"c":utf8>>])
+    }
+    Error(_) -> panic as "fold_events should succeed on a clean frame list"
+  }
+}
+
+pub fn fold_events_returns_initial_on_empty_body_test() {
+  let body = event_stream.events_to_streaming_body([])
+  // The accumulator passes through untouched when no events fire.
+  case fold_events(body, 42, fn(_acc, _e) { 0 }) {
+    Ok(acc) -> acc |> should.equal(42)
+    Error(_) -> panic as "empty body should fold to the initial value"
+  }
+}
+
+pub fn fold_events_propagates_decode_error_test() {
+  // Corrupt the first frame's prelude CRC; fold_events must surface
+  // `BadPreludeCrc` and not touch the accumulator.
+  let frame = encode(Event(headers: [], payload: <<"hello":utf8>>))
+  let assert Ok(head) = bit_array.slice(frame, 0, 8)
+  let assert Ok(tail) =
+    bit_array.slice(frame, 12, bit_array.byte_size(frame) - 12)
+  let corrupted = <<head:bits, 0:big-32, tail:bits>>
+  let body = streaming.from_bit_array(corrupted)
+  case fold_events(body, 0, fn(acc, _) { acc + 1 }) {
+    Error(BadPreludeCrc) -> Nil
+    Error(other) ->
+      panic as {
+        "expected BadPreludeCrc, got " <> describe_decode_error(other)
+      }
+    Ok(_) -> panic as "fold_events should not succeed on a corrupted frame"
+  }
+}
+
+fn describe_decode_error(e: event_stream.DecodeError) -> String {
+  case e {
+    BadPreludeCrc -> "BadPreludeCrc"
+    BadMessageCrc -> "BadMessageCrc"
+    event_stream.MalformedFrame(reason: r) -> "MalformedFrame(" <> r <> ")"
+    event_stream.UnknownHeaderType(type_code: _) -> "UnknownHeaderType"
   }
 }
