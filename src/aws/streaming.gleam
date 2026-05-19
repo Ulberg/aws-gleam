@@ -177,6 +177,41 @@ pub fn to_bit_array_max(
   })
 }
 
+/// Outcome of a size-capped collection of a streaming response.
+/// `Transport(cause)` re-surfaces whatever upstream error type the
+/// caller's transport produced (typically `runtime.ClientError`,
+/// but kept generic so this helper isn't coupled to a specific
+/// runtime). `TooLarge(max_bytes)` fires when the body's
+/// cumulative size would exceed the cap. The two-variant shape
+/// lets callers retry transient transport failures while pursuing
+/// a different code path (ranged GETs, error to user, etc.) for
+/// the cap.
+pub type SizeError(err) {
+  Transport(cause: err)
+  TooLarge(max_bytes: Int)
+}
+
+/// Generic capped-buffered collection: takes the `Result` produced
+/// by a `<op>_streaming` wrapper and materialises the body as a
+/// `BitArray`, refusing if size would exceed `max_bytes`. Works
+/// against any service's streaming wrapper since the wrappers all
+/// return `Result(streaming.Response, _)`.
+///
+/// Typical "download a smallish-bounded object" case: small JSON /
+/// config blobs / log shards where the wire bytes fit in memory
+/// but the caller wants a hard ceiling. For multi-GB objects skip
+/// this helper and consume chunks via `fold_chunks` directly.
+pub fn collect_to_bit_array_max(
+  resp: Result(Response, err),
+  max_bytes: Int,
+) -> Result(BitArray, SizeError(err)) {
+  use r <- result.try(resp |> result.map_error(Transport))
+  case to_bit_array_max(r.body, max_bytes) {
+    Ok(bytes) -> Ok(bytes)
+    Error(_) -> Error(TooLarge(max_bytes: max_bytes))
+  }
+}
+
 /// Materialise the body as a UTF-8 `String`. Returns `Error(Nil)`
 /// if the body exceeds `max_bytes` (via `to_bit_array_max`) OR if
 /// the bytes aren't valid UTF-8. The two-failure-modes-one-error

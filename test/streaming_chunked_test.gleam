@@ -236,3 +236,45 @@ pub fn to_string_max_chunked_text_round_trips_test() {
   |> streaming.to_string_max(100)
   |> should.equal(Ok("héllo world"))
 }
+
+// ---------- collect_to_bit_array_max tests ----------
+//
+// The generic capped-buffered collection over a streaming response
+// result. Exercises both the transport-failure short-circuit and
+// the size-cap short-circuit on synthetic Response values, since
+// the helper itself doesn't touch any transport.
+
+fn make_response(body: BitArray) -> streaming.Response {
+  streaming.Response(
+    status: 200,
+    headers: [],
+    body: streaming.from_bit_array(body),
+  )
+}
+
+pub fn collect_to_bit_array_max_under_cap_returns_bytes_test() {
+  let bytes = <<"payload":utf8>>
+  streaming.collect_to_bit_array_max(Ok(make_response(bytes)), 100)
+  |> should.equal(Ok(bytes))
+}
+
+pub fn collect_to_bit_array_max_over_cap_returns_too_large_test() {
+  let bytes = <<"this is longer than five bytes":utf8>>
+  streaming.collect_to_bit_array_max(Ok(make_response(bytes)), 5)
+  |> should.equal(Error(streaming.TooLarge(max_bytes: 5)))
+}
+
+pub fn collect_to_bit_array_max_propagates_transport_error_test() {
+  // Wraps whatever the upstream transport error type is in
+  // `Transport(cause)` so callers can pattern-match on the
+  // original error without losing typed information.
+  streaming.collect_to_bit_array_max(Error("connection refused"), 1024)
+  |> should.equal(Error(streaming.Transport(cause: "connection refused")))
+}
+
+pub fn collect_to_bit_array_max_zero_cap_accepts_empty_response_test() {
+  // An empty body fits any cap including zero — pinned to make the
+  // edge case explicit.
+  streaming.collect_to_bit_array_max(Ok(make_response(<<>>)), 0)
+  |> should.equal(Ok(<<>>))
+}

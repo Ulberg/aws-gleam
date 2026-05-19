@@ -92,7 +92,9 @@ pub fn download_to_bit_array_max_under_cap_returns_bytes_test() {
 }
 
 pub fn download_to_bit_array_max_over_cap_returns_body_too_large_test() {
-  // Body exceeds the cap → `BodyTooLarge(cap)` surfaces, not a panic.
+  // Body exceeds the cap → `streaming.TooLarge(cap)` surfaces, not
+  // a panic. The error type is the generic `streaming.SizeError`
+  // shape; the S3 wrapper just pins the inner err type.
   let body_bytes = <<"this body is more than ten bytes":utf8>>
   let streaming_send =
     fixed_streaming_send(
@@ -114,17 +116,16 @@ pub fn download_to_bit_array_max_over_cap_returns_body_too_large_test() {
       10,
     )
   {
-    Error(s3_streaming.BodyTooLarge(max_bytes: 10)) -> Nil
-    other ->
-      panic as { "expected BodyTooLarge(10), got: " <> describe_dl(other) }
+    Error(streaming.TooLarge(max_bytes: 10)) -> Nil
+    other -> panic as { "expected TooLarge(10), got: " <> describe_dl(other) }
   }
   s3.shutdown(client)
 }
 
 pub fn download_to_bit_array_max_surfaces_transport_failure_test() {
   // Service errors from the streaming layer route through
-  // `TransportFailed(cause)` so callers can pattern-match on the
-  // underlying runtime.ClientError shape (retry vs. give up).
+  // `streaming.Transport(cause)` so callers can pattern-match on
+  // the underlying runtime.ClientError shape (retry vs. give up).
   let streaming_send =
     fixed_streaming_send(
       Ok(response.Response(
@@ -145,19 +146,20 @@ pub fn download_to_bit_array_max_surfaces_transport_failure_test() {
       1024,
     )
   {
-    Error(s3_streaming.TransportFailed(_)) -> Nil
-    other ->
-      panic as { "expected TransportFailed, got: " <> describe_dl(other) }
+    Error(streaming.Transport(_)) -> Nil
+    other -> panic as { "expected Transport(_), got: " <> describe_dl(other) }
   }
   s3.shutdown(client)
 }
 
-fn describe_dl(r: Result(BitArray, s3_streaming.DownloadError)) -> String {
+fn describe_dl(
+  r: Result(BitArray, streaming.SizeError(runtime.ClientError)),
+) -> String {
   case r {
     Ok(_) -> "Ok(_)"
-    Error(s3_streaming.TransportFailed(_)) -> "TransportFailed(_)"
-    Error(s3_streaming.BodyTooLarge(max_bytes: n)) ->
-      "BodyTooLarge(" <> int_to_string(n) <> ")"
+    Error(streaming.Transport(_)) -> "Transport(_)"
+    Error(streaming.TooLarge(max_bytes: n)) ->
+      "TooLarge(" <> int_to_string(n) <> ")"
   }
 }
 

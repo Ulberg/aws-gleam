@@ -10,38 +10,23 @@
 import aws/internal/client/runtime
 import aws/services/s3
 import aws/streaming
-import gleam/result
-
-/// Errors `download_to_bit_array_max` can surface — splits the
-/// streaming wrapper's transport / service / credentials failures
-/// from the bounded-size cap so callers can react differently
-/// (retry transient, page through ranges for the size cap, etc.).
-pub type DownloadError {
-  TransportFailed(cause: runtime.ClientError)
-  BodyTooLarge(max_bytes: Int)
-}
 
 /// Convenience: stream a GetObject response and materialise its
 /// body as a `BitArray`, refusing if cumulative size would exceed
-/// `max_bytes`. The size check walks chunks lazily on the chunked
-/// path so the cap fires before concatenation — safe to call with
-/// untrusted object sizes.
+/// `max_bytes`. Thin wrapper over `streaming.collect_to_bit_array_max`
+/// pinning the input error type to `runtime.ClientError`.
 ///
-/// Typical "download a smallish-bounded object" case: think small
-/// JSON / config blobs / log shards where the wire bytes fit in
-/// memory but you want a hard ceiling. For multi-GB objects skip
+/// Typical "download a smallish-bounded object" case: small JSON /
+/// config blobs / log shards where the wire bytes fit in memory
+/// but the caller wants a hard ceiling. For multi-GB objects skip
 /// this helper and consume chunks via `streaming.fold_chunks`.
 pub fn download_to_bit_array_max(
   client: s3.Client,
   input: s3.GetObjectRequest,
   max_bytes: Int,
-) -> Result(BitArray, DownloadError) {
-  use resp <- result.try(
-    s3.get_object_streaming(client, input)
-    |> result.map_error(TransportFailed),
+) -> Result(BitArray, streaming.SizeError(runtime.ClientError)) {
+  streaming.collect_to_bit_array_max(
+    s3.get_object_streaming(client, input),
+    max_bytes,
   )
-  case streaming.to_bit_array_max(resp.body, max_bytes) {
-    Ok(bytes) -> Ok(bytes)
-    Error(_) -> Error(BodyTooLarge(max_bytes: max_bytes))
-  }
 }
