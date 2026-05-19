@@ -122,33 +122,42 @@ jobs:
           echo "--- gleam"; gleam --version || true
           echo "--- src/aws/services size"; ls src/aws/services 2>/dev/null | wc -l
 
-      - name: Build (isolate crash to compile)
-        # Run `gleam build` on its own and capture stderr. With
-        # `+S 1` the erlc subprocess uses a single scheduler — if
-        # parallel JIT compilation was the trigger this should clear
-        # it. If the crash repeats, the captured stderr tells us
-        # which module erlc was working on when SIGSEGV hit.
+      # Shrink-test: keep only a handful of generated services and
+      # see if `gleam build` completes. If it does, the SIGSEGV is
+      # volume-dependent (memory / allocator / cumulative heap
+      # pressure). If it still crashes with 10 services, the bug is
+      # in a specific service file or in our hand-written code.
+      - name: Shrink generated services to 10
+        run: |
+          echo "--- before shrink ---"
+          ls src/aws/services | wc -l
+          # Keep dynamodb / s3 (which the test suite directly exercises)
+          # plus a handful of small services to seed the typing graph.
+          # Move the rest aside so gleam doesn't see them.
+          mkdir -p /tmp/aws-services-stash
+          for f in src/aws/services/*.gleam; do
+            base=$(basename "$f")
+            case "$base" in
+              dynamodb.gleam|s3.gleam|sts.gleam|ec2.gleam|iam.gleam|cloudwatch.gleam|sns.gleam|sqs.gleam|kms.gleam|secretsmanager.gleam)
+                continue
+                ;;
+              *)
+                mv "$f" /tmp/aws-services-stash/
+                ;;
+            esac
+          done
+          echo "--- after shrink ---"
+          ls src/aws/services | wc -l
+
+      - name: Build with shrunk service set
         run: |
           ulimit -s 131072
           ulimit -c unlimited
           set +e
-          gleam build --target erlang 2>&1 | tee /tmp/build.log
+          gleam build --target erlang 2>&1 | tail -200
           rc=${PIPESTATUS[0]}
           echo "--- gleam build exit: $rc ---"
-          echo "--- last 40 lines of build log ---"
-          tail -40 /tmp/build.log
           exit "$rc"
-        env:
-          ERL_FLAGS: "+t 16777216 +S 1"
-          ERL_AFLAGS: "+t 16777216 +S 1"
-          GLEAM_LOG: "trace"
-          RUST_BACKTRACE: "1"
-
-      - name: Run tests
-        # Reached only if `gleam build` succeeds (which previously
-        # failed). Splits the chain so we can tell whether the
-        # crash is in compile or in test execution.
-        run: ./scripts/test.sh
         env:
           ERL_FLAGS: "+t 16777216 +S 1"
           ERL_AFLAGS: "+t 16777216 +S 1"
