@@ -1,10 +1,12 @@
-//// Tests for `http_send.lift_to_streaming` — the v1 forward-
-//// compatibility lift that turns a buffered `Send` into a
-//// `StreamingSend`. Until the transport rewrite lands, every
-//// streaming response is a single buffered chunk; these tests
-//// pin that invariant so call sites that switch over today
-//// don't break when the real chunked transport replaces the lift
-//// under the hood.
+//// Tests for `http_send.lift_to_streaming` — the helper that
+//// turns a buffered `Send` into a `StreamingSend` by wrapping
+//// the response body as a `Buffered` `StreamingBody`. The real
+//// chunked transport (`http_streaming.default_send`) is the
+//// production default; `lift_to_streaming` exists for tests that
+//// want a buffered fake to satisfy a `StreamingSend` slot, and
+//// for proxy/middleware shims that only have a buffered sender.
+//// These tests pin the lift semantics so those call sites stay
+//// correct as the runtime evolves.
 
 import aws/internal/http_send
 import aws/streaming
