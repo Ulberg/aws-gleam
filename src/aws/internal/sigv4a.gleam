@@ -166,6 +166,23 @@ pub fn ecdsa_p256_verify(
 @external(erlang, "aws_ffi", "ecdsa_p256_public_key")
 pub fn ecdsa_p256_public_key(private_key: BitArray) -> BitArray
 
+/// One-call SigV4a signing that takes the IAM
+/// (access-key-id, secret-access-key) pair directly. Equivalent
+/// to `sign(req, derive_signing_key(akid, secret), akid, opts)`
+/// — derives the EC private scalar from the IAM secret then
+/// delegates. Use this when you have raw IAM credentials and
+/// don't already need to hold onto the derived key (e.g. for
+/// reuse across many requests with the same identity).
+pub fn sign_with_iam_credentials(
+  req: HttpRequest,
+  access_key_id: String,
+  secret_access_key: String,
+  opts: Sigv4aOptions,
+) -> HttpRequest {
+  let key = derive_signing_key(access_key_id, secret_access_key)
+  sign(req, key, access_key_id, opts)
+}
+
 /// AWS SigV4a deterministic key derivation: turn an IAM
 /// (access-key-id, secret-access-key) pair into the 32-byte
 /// P-256 private scalar that `sign/4` accepts. Matches the
