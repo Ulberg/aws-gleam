@@ -9,14 +9,14 @@
 //// credential scope drops the region because SigV4a is region-
 //// agnostic by design.
 ////
-//// **v1 limitation — non-deterministic nonces.** Erlang's
-//// `crypto:sign/4` generates a fresh random nonce per call. The
-//// resulting signatures verify correctly with the corresponding
-//// public key (which is what AWS does server-side), but they
-//// won't match the aws-c-auth v4a fixture's literal bytes. The
-//// RFC 6979 deterministic-nonce variant that matches the
-//// reference vectors is a follow-up — it needs a pure-Erlang
-//// HMAC-DRBG implementation.
+//// **Deterministic signatures via RFC 6979.** Signing routes
+//// through `aws/internal/ecdsa_deterministic` which derives the
+//// ECDSA nonce `k` from `(d, sha256(sts))` via HMAC-DRBG. Two
+//// calls with the same `(credentials, request)` produce
+//// byte-identical signatures, which makes the aws-c-auth v4a
+//// corpus pinnable at the signature-byte level (see
+//// `test/ecdsa_deterministic_test.gleam` for the RFC 6979 §A.2.5
+//// reference-vector pins).
 ////
 //// **AWS-deterministic key derivation** is wired via
 //// `derive_signing_key/2` — feeds an IAM (access-key-id,
@@ -33,6 +33,7 @@
 //// are shared with the SigV4 module.
 
 import aws/internal/crypto
+import aws/internal/ecdsa_deterministic
 import aws/internal/http_request.{
   type Header, type HttpRequest, Header, HttpRequest,
 }
@@ -212,8 +213,13 @@ pub fn sign_with_credentials(
   let sts = string_to_sign(parts.canonical_request, opts)
   let date = string.slice(opts.timestamp, 0, 8)
   let scope = date <> "/" <> opts.service <> "/aws4_request"
+  // RFC 6979 deterministic ECDSA: the signature is a pure function
+  // of (private_key, sha256(sts)) — same inputs produce the same
+  // signature byte-for-byte, which makes the aws-c-auth v4a corpus
+  // pinnable at the signature level too.
+  let sts_hash = crypto.sha256(bit_array.from_string(sts))
   let sig_der =
-    ecdsa_p256_sign(creds.private_key.scalar, bit_array.from_string(sts))
+    ecdsa_deterministic.sign_p256(creds.private_key.scalar, sts_hash)
   let sig_hex = crypto.hex_encode(sig_der)
   let auth =
     "AWS4-ECDSA-P256-SHA256 Credential="
