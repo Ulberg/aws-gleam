@@ -1,7 +1,7 @@
 //// `StreamingBody` — wrapper for HTTP request / response bodies
 //// that may be too large to hold in memory.
 ////
-//// The opaque type has two representations:
+//// The opaque type has three representations:
 ////
 //// - **Buffered**: a single `BitArray` materialised up front.
 ////   Produced by `from_bit_array` and by buffered callers that
@@ -11,10 +11,16 @@
 ////   directly off the wire; multipart builders construct them
 ////   via `from_chunks`. `to_chunks` exposes the chunk list to
 ////   consumers without materialising the full payload.
-////
-//// A future `Source(...)` variant — file handles, generators —
-//// will let callers stream from on-disk or external producers
-//// without holding the full payload in memory.
+//// - **Source**: a pull-based callback `fn() -> Result(BitArray,
+////   Nil)`. Each call yields the next chunk; `Error(Nil)` marks
+////   end-of-stream. File-backed and generator-backed producers
+////   construct one of these so callers can stream multi-GB
+////   payloads without holding the full body in memory. Use
+////   `from_source` to construct, `from_file` for the common
+////   file-backed case. Note: a `Source` is single-pass — once
+////   consumed it can't be replayed, and `is_empty` / `byte_size`
+////   either consume it (`byte_size`) or conservatively assume
+////   non-empty (`is_empty`).
 
 import gleam/bit_array
 import gleam/list
@@ -23,6 +29,7 @@ import gleam/result
 pub opaque type StreamingBody {
   Buffered(bytes: BitArray)
   Chunked(chunks: List(BitArray))
+  Source(next: fn() -> Result(BitArray, Nil))
 }
 
 /// Wire-side response shape from a streaming operation — status
@@ -56,14 +63,30 @@ pub fn from_chunks(chunks: List(BitArray)) -> StreamingBody {
   Chunked(chunks: chunks)
 }
 
+/// Build a `StreamingBody` from a pull-based callback. Each call
+/// to `next` returns the next chunk; `Error(Nil)` marks end-of-
+/// stream. The callback is invoked once per `fold_chunks` step
+/// (so multi-GB payloads stream without ever materialising the
+/// full body), and once per element when `to_chunks` materialises.
+///
+/// Single-pass: once a `Source` has been folded / materialised,
+/// the callback is exhausted and subsequent calls return `Error`.
+/// Callers that need to consume the same body twice should
+/// reconstruct the body fresh on the second pass.
+pub fn from_source(next: fn() -> Result(BitArray, Nil)) -> StreamingBody {
+  Source(next:)
+}
+
 /// Return the body as a `BitArray`. For `Buffered` this is a
 /// constant-time accessor; for `Chunked` it concatenates the chunks.
-/// Use this only when the caller actually needs the bytes contiguous;
-/// chunk-by-chunk consumers should prefer `to_chunks` / `fold_chunks`.
+/// For `Source` it materialises the whole stream — defeats the point
+/// of streaming, so chunk-by-chunk consumers should prefer
+/// `to_chunks` / `fold_chunks` instead.
 pub fn to_bit_array(body: StreamingBody) -> BitArray {
   case body {
     Buffered(bytes: b) -> b
     Chunked(chunks: cs) -> bit_array.concat(cs)
+    Source(next:) -> bit_array.concat(drain_source(next, []))
   }
 }
 
@@ -71,31 +94,67 @@ pub fn to_bit_array(body: StreamingBody) -> BitArray {
 /// bodies surface as a single-element list (or the empty list if
 /// the buffer is empty), so consumers can write one chunk-oriented
 /// loop and have it work uniformly across both representations.
-/// The chunked transport produces chunked responses directly off
-/// the wire and pipes them through this surface.
+/// `Source` bodies are materialised by draining the callback —
+/// expensive for large streams; use `fold_chunks` to stream
+/// element-by-element without materialising.
 pub fn to_chunks(body: StreamingBody) -> List(BitArray) {
   case body {
     Buffered(bytes: <<>>) -> []
     Buffered(bytes: b) -> [b]
     Chunked(chunks: cs) -> cs
+    Source(next:) -> drain_source(next, [])
   }
 }
 
 /// Byte size of the body. Constant-time for `Buffered`; walks the
-/// chunk list (summing `bit_array.byte_size`) for `Chunked`.
+/// chunk list (summing `bit_array.byte_size`) for `Chunked`. For
+/// `Source` it drains the callback to count — single-pass, so the
+/// stream is consumed by the call. Callers who need to know the
+/// size without consuming the body should track it themselves
+/// alongside the `StreamingBody` value.
 pub fn byte_size(body: StreamingBody) -> Int {
   case body {
     Buffered(bytes: b) -> bit_array.byte_size(b)
     Chunked(chunks: cs) ->
       list.fold(cs, 0, fn(acc, chunk) { acc + bit_array.byte_size(chunk) })
+    Source(next:) ->
+      fold_source(next, 0, fn(acc, chunk) { acc + bit_array.byte_size(chunk) })
   }
 }
 
-/// `True` iff the body is empty. Distinct from `byte_size == 0`
-/// so a future lazy `Source(...)` variant can short-circuit
-/// without walking the source.
+fn drain_source(
+  next: fn() -> Result(BitArray, Nil),
+  acc: List(BitArray),
+) -> List(BitArray) {
+  case next() {
+    Ok(chunk) -> drain_source(next, [chunk, ..acc])
+    Error(_) -> list.reverse(acc)
+  }
+}
+
+fn fold_source(
+  next: fn() -> Result(BitArray, Nil),
+  acc: acc,
+  f: fn(acc, BitArray) -> acc,
+) -> acc {
+  case next() {
+    Ok(chunk) -> fold_source(next, f(acc, chunk), f)
+    Error(_) -> acc
+  }
+}
+
+/// `True` iff the body is empty. For `Buffered` / `Chunked` it's a
+/// direct check; for `Source` it returns `False` conservatively
+/// without consuming the callback — a `Source` could yield zero
+/// chunks, but checking would require calling `next()` which is
+/// destructive (single-pass). Callers who need a definitive answer
+/// should call `byte_size` instead, accepting the consumption cost.
 pub fn is_empty(body: StreamingBody) -> Bool {
-  byte_size(body) == 0
+  case body {
+    Buffered(bytes: b) -> bit_array.byte_size(b) == 0
+    Chunked(chunks: cs) -> list.all(cs, fn(c) { bit_array.byte_size(c) == 0 })
+    Source(_) -> False
+  }
 }
 
 /// Buffered empty body. Used by request builders when no body
@@ -129,15 +188,19 @@ pub fn append(a: StreamingBody, b: StreamingBody) -> StreamingBody {
 /// Reduce a streaming body left-to-right by accumulating one chunk
 /// at a time. Buffered bodies surface as a single chunk per
 /// `to_chunks`, so the fold runs once; chunked bodies fold across
-/// every chunk the transport delivered. Use this for running-hash /
-/// running-length / stream-to-disk pipelines without materialising
-/// the full body.
+/// every chunk the transport delivered; `Source` bodies stream
+/// chunks one-by-one without materialising — `next` is called once
+/// per fold step. Use this for running-hash / running-length /
+/// stream-to-disk pipelines without buffering the full body.
 pub fn fold_chunks(
   body: StreamingBody,
   initial: acc,
   f: fn(acc, BitArray) -> acc,
 ) -> acc {
-  list.fold(to_chunks(body), initial, f)
+  case body {
+    Source(next:) -> fold_source(next, initial, f)
+    _ -> list.fold(to_chunks(body), initial, f)
+  }
 }
 
 /// `fold_chunks` variant that short-circuits on `Error`. Returns the
@@ -150,7 +213,25 @@ pub fn try_fold_chunks(
   initial: acc,
   f: fn(acc, BitArray) -> Result(acc, err),
 ) -> Result(acc, err) {
-  list.try_fold(to_chunks(body), initial, f)
+  case body {
+    Source(next:) -> try_fold_source(next, initial, f)
+    _ -> list.try_fold(to_chunks(body), initial, f)
+  }
+}
+
+fn try_fold_source(
+  next: fn() -> Result(BitArray, Nil),
+  acc: acc,
+  f: fn(acc, BitArray) -> Result(acc, err),
+) -> Result(acc, err) {
+  case next() {
+    Ok(chunk) ->
+      case f(acc, chunk) {
+        Ok(next_acc) -> try_fold_source(next, next_acc, f)
+        Error(e) -> Error(e)
+      }
+    Error(_) -> Ok(acc)
+  }
 }
 
 /// Materialise the body as a `BitArray`, refusing to do so if the
