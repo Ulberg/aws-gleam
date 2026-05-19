@@ -317,3 +317,36 @@ pub fn decode_all_propagates_first_decode_error_test() {
     Error(_) -> Nil
   }
 }
+
+pub fn events_to_streaming_body_round_trips_through_decode_all_test() {
+  // Build a list of events, pack them as a StreamingBody via the
+  // request-side helper, decode_all the body — the result must
+  // equal the original list. This pins the request/response
+  // symmetry across the streaming transport.
+  let events = [
+    event_stream.Event(headers: [], payload: <<"first":utf8>>),
+    event_stream.Event(headers: [], payload: <<"second":utf8>>),
+    event_stream.Event(
+      headers: [
+        Header(name: ":message-type", value: StringValue("event")),
+      ],
+      payload: <<"third":utf8>>,
+    ),
+  ]
+  let body = event_stream.events_to_streaming_body(events)
+  // Chunked variant should preserve one chunk per event.
+  body |> streaming.to_chunks |> list.length |> should.equal(3)
+  case decode_all(body) {
+    Ok(decoded) -> decoded |> should.equal(events)
+    Error(_) -> panic as "round-trip through streaming body failed"
+  }
+}
+
+pub fn events_to_streaming_body_with_empty_list_is_empty_test() {
+  let body = event_stream.events_to_streaming_body([])
+  body |> streaming.is_empty |> should.be_true
+  case decode_all(body) {
+    Ok(events) -> events |> should.equal([])
+    Error(_) -> panic as "empty event list should produce empty body"
+  }
+}

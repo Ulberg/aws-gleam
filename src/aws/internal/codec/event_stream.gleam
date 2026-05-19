@@ -417,6 +417,22 @@ fn bytes_to_int_be(bytes: BitArray) -> Int {
   }
 }
 
+/// Frame a list of events as a single `StreamingBody`. Each event
+/// is `encode`d in turn; the result is the concatenated frames in
+/// list order. Use this on the request side of `@eventStream`
+/// operations to hand the framed bytes to the streaming transport.
+///
+/// The body is a `Chunked` `StreamingBody` carrying one chunk per
+/// event, so the streaming transport can write them on the wire
+/// one frame at a time (`fold_chunks` preserves order). Buffered-
+/// then-streamed callers see the same wire bytes — `to_bit_array`
+/// concatenates in order.
+pub fn events_to_streaming_body(events: List(Event)) -> StreamingBody {
+  events
+  |> list.map(encode)
+  |> streaming.from_chunks
+}
+
 /// Decode every frame from a streaming body. Materialises the full
 /// list of events — appropriate when the response is short (control
 /// messages, handshakes) or the call site wants to handle every
