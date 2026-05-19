@@ -767,7 +767,35 @@ pub fn resolve_members(model: Model, full_id: String) -> List(MemberDef) {
   case model.lookup(model, full_id) {
     Ok(shape.Structure(members: m, ..)) | Ok(shape.Union(members: m, ..)) ->
       extract_members(model, m)
+      |> reorder(model.ordered_member_names(model, full_id))
     _ -> []
+  }
+}
+
+/// Re-order the alphabetically-sorted `members` list to match the
+/// declared member-name order. Members named in `order` come first
+/// (in their declared sequence), then any stragglers that didn't
+/// appear in the order map keep their alphabetical position. Used
+/// by awsQuery / ec2Query / restXml wire emitters where field
+/// position is part of the protocol-test wire match.
+fn reorder(members: List(MemberDef), order: List(String)) -> List(MemberDef) {
+  case order {
+    [] -> members
+    _ -> {
+      let by_name =
+        list.fold(members, dict.new(), fn(acc, m) {
+          dict.insert(acc, m.member_name, m)
+        })
+      let listed =
+        list.filter_map(order, fn(n) { dict.get(by_name, n) })
+      let listed_names =
+        list.fold(listed, dict.new(), fn(acc, m) {
+          dict.insert(acc, m.member_name, Nil)
+        })
+      let stragglers =
+        list.filter(members, fn(m) { !dict.has_key(listed_names, m.member_name) })
+      list.append(listed, stragglers)
+    }
   }
 }
 

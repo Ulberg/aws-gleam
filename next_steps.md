@@ -33,18 +33,30 @@ or codegen-bounded:
 | restJson1 | 241 | 0 | 6 | 25 | 0 | 272 |
 | restXml | 176 | 0 | 13 | 6 | 2 | 197 |
 | restXmlWithNamespace | 2 | 0 | 0 | 0 | 0 | 2 |
-| awsQuery | 44 | 0 | 33 | 0 | 0 | 77 |
-| ec2Query | 33 | 0 | 26 | 0 | 0 | 59 |
+| awsQuery | 55 | 0 | 22 | 0 | 0 | 77 |
+| ec2Query | 47 | 0 | 12 | 0 | 0 | 59 |
 | rpcv2Cbor | 4 | 0 | 0 | 0 | 0 | 4 |
 
 The `no-dispatcher` counts decompose as follows:
-- **awsQuery (33) / ec2Query (26)** — emitter only emits the empty-input
-  variant (`codegen/src/codegen/awsquery.gleam:48-63` filters to
-  `is_unit_or_empty`). Typed-input ops — `SimpleInputParams`, `QueryLists`,
-  `QueryMaps`, `QueryTimestamps`, `NestedStructures`,
-  `QueryIdempotencyTokenAutoFill`, `EndpointWithHostLabelOperation`,
-  `PutWithContentEncoding` (awsQuery) — fall through. Extending requires a
-  form-urlencoded encoder + JSON-to-record decoder per shape.
+- **awsQuery (22) / ec2Query (12)** — slice 1 of typed-input codegen
+  landed (2026-05-19): scalars (String / Int / Bool / Float / Blob)
+  plus enums and integer-enums are now emitted via
+  `codegen/src/codegen/awsquery.gleam:emit_scalar_typed_operation`.
+  `SimpleInputParams` flips fully on both protocols (+25 dispatched
+  cases). Remaining no-dispatcher cases are the aggregate-member ops
+  awaiting slices 2-5: `QueryLists` / `XmlLists` (lists w/
+  `@xmlFlattened` + `@xmlName`), `QueryMaps` / `XmlMaps`, `NestedStructures`,
+  `QueryTimestamps` / `XmlTimestamps`, plus `QueryIdempotencyTokenAutoFill`,
+  `EndpointWithHostLabelOperation`, `PutWithContentEncoding`.
+  Wire format validated against the Rust SDK's
+  `aws_smithy_query::QueryWriter` (see
+  `vendor/aws-sdk-rust/sdk/aws-smithy-query/src/lib.rs`); member
+  declaration order extracted via a new `aws_codegen_ffi.erl`
+  order-preserving JSON pre-pass (Erlang maps lose key order;
+  awsQuery's wire match is byte-exact). ec2Query honours
+  `@aws.protocols#ec2QueryName` > `@xmlName` (with first-letter
+  upper-cased) > Smithy member name (also first-letter upper-cased).
+  awsQuery honours `@xmlName` > Smithy member name as-is.
 - **restJson1 (6)** — three ops live in services we don't emit
   (`RestJsonValidation.RecursiveStructures`, `BackplaneControlService.GetRestApis`,
   `Glacier.UploadArchive`/`UploadMultipartPart`); the codegen's `find_service`
@@ -414,11 +426,21 @@ codegen pass:
    `n`. First failure short-circuits the whole upload with
    best-effort abort.
 4. **awsQuery / ec2Query typed-input codegen** (corpus snapshot
-   above). Emitter only handles empty-input ops today; extending
-   to typed inputs (form-urlencoded encoder + decode helper) flips
-   59 protocol-test cases from no-dispatcher to dispatched.
-   Multi-slice codegen project: `SimpleInputParams` (scalars) →
-   `QueryLists` (flattened + xmlName) → `QueryMaps` + nesting.
+   above). Multi-slice codegen project; slice 1 LANDED 2026-05-19.
+   - Slice 1 (DONE): scalars + Blob + Enum + IntegerEnum +
+     Float-specials + member declaration-order preservation +
+     ec2QueryName / xmlName precedence. +25 dispatched corpus cases
+     across both protocols. See "Protocol-test corpus snapshot" above
+     for the breakdown of remaining no-dispatcher cases.
+   - Slice 2: lists with `@xmlFlattened` + `@xmlName` (matches
+     Rust SDK's `QueryWriter.start_list(flat, member_override)` —
+     non-flattened → `<prefix>.member.N=<value>`; flattened →
+     `<prefix>.N=<value>`; member-override → `<prefix>.<name>.N=<value>`;
+     empty list → `<prefix>=`).
+   - Slice 3: maps (`start_map(flat, key_name, value_name)`).
+   - Slice 4: nested structs (dotted prefix concatenation).
+   - Slice 5: timestamps with `@timestampFormat`
+     (date-time / http-date / epoch-seconds).
 5. **SigV4a** (v0.2 item 8). Algorithm + IAM key derivation are
    in place — see SigV4a sub-status below. Remaining: runtime
    dispatch wiring + session-token + path normalization + RFC

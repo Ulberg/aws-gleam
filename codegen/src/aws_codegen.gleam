@@ -19,6 +19,7 @@ import codegen/awsjson
 import codegen/awsquery
 import codegen/cbor_rpc
 import codegen/dispatcher
+import codegen/member_order
 import codegen/restjson
 import codegen/restxml
 import gleam/dict
@@ -108,6 +109,7 @@ fn run(
       json.parse(text, model.decoder())
       |> result.replace_error("cannot parse Smithy AST"),
     )
+    let m = model.with_member_orders(m, member_order.extract(text))
     use svc_id <- result.try(find_service(m, proto_name))
     use emitted <- result.try(emit(m, svc_id, proto_name))
     use _ <- result.try(

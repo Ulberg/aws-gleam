@@ -23,6 +23,7 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(no_input_and_no_output_dispatcher())
   |> dispatch.register(no_input_and_output_dispatcher())
   |> dispatch.register(recursive_xml_shapes_dispatcher())
+  |> dispatch.register(simple_input_params_dispatcher())
   |> dispatch.register(simple_scalar_xml_properties_dispatcher())
   |> dispatch.register(xml_blobs_dispatcher())
   |> dispatch.register(xml_empty_blobs_dispatcher())
@@ -224,6 +225,27 @@ fn recursive_xml_shapes_dispatcher() -> Dispatcher {
       Ok(BuiltRequest(method:, uri:, headers:, body:))
     },
     parse_response: response_parser(svc.parse_recursive_xml_shapes_response),
+  )
+}
+
+fn simple_input_params_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.query#SimpleInputParams",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_simple_input_params_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_simple_input_params_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_simple_input_params_response),
   )
 }
 
