@@ -38,6 +38,8 @@ const restxml_path = "../test/fixtures/protocol-tests/restXml.json"
 
 const s3_path = "../vendor/aws-sdk-rust/aws-models/s3.json"
 
+const polly_path = "../vendor/aws-sdk-rust/aws-models/polly.json"
+
 const awsquery_path = "../test/fixtures/protocol-tests/awsQuery.json"
 
 const ec2query_path = "../test/fixtures/protocol-tests/ec2Query.json"
@@ -192,6 +194,28 @@ pub fn emitted_restxml_modules_expose_streaming_variant_for_streaming_outputs_te
   // ListBuckets has no streaming output — the streaming variant
   // must NOT appear for it.
   should.be_false(string.contains(r.source, "pub fn list_buckets_streaming("))
+}
+
+/// restJson1 services pick up the same flip. Polly.SynthesizeSpeech
+/// is the canonical example — `audio_stream` is a `@streaming` blob
+/// in the output struct, so the codegen emits both the buffered
+/// `synthesize_speech` and the streaming `synthesize_speech_streaming`
+/// variant. Pin both on the Polly fixture.
+pub fn emitted_restjson_modules_expose_streaming_variant_for_streaming_outputs_test() {
+  let m = load(polly_path)
+  let svc = find_service(m, "aws.protocols#restJson1", "Parrot_v1")
+  let assert Ok(r) = restjson.emit_service(m, svc)
+  should.be_true(string.contains(
+    r.source,
+    "pub fn synthesize_speech_streaming(",
+  ))
+  should.be_true(string.contains(
+    r.source,
+    "-> Result(streaming.Response, runtime.ClientError)",
+  ))
+  should.be_true(string.contains(r.source, "runtime.invoke_streaming("))
+  // `describe_voices` is a non-streaming op — must not get a streaming variant.
+  should.be_false(string.contains(r.source, "pub fn describe_voices_streaming("))
 }
 
 /// Generated services that have a Smithy endpoint rule set on their

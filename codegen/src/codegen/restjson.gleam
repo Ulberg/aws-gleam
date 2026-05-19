@@ -23,8 +23,8 @@ import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
   type HttpTrait, type MemberDef, type Resolved, Header, HttpTrait, PBool, PInt,
-  PString, Payload, RDocument, REnum, RIntEnum, RList, RMap, RPrim, RStruct,
-  RTimestamp, RUnion, ResponseCode,
+  PString, Payload, RDocument, REnum, RIntEnum, RList, RMap, RPrim,
+  RStreamingBlob, RStruct, RTimestamp, RUnion, ResponseCode,
 }
 import codegen/waiter
 import gleam/dict
@@ -316,16 +316,29 @@ fn emit_waiter(spec: OpSpec) -> String {
 }
 
 fn emit_invoke(spec: OpSpec) -> String {
-  code.render(
-    code.Module(items: [
-      client.invoke_fn(
-        spec.snake,
-        spec.in_info.type_name,
-        spec.out_info.type_name,
-        spec.error_type,
-      ),
+  let base =
+    client.invoke_fn(
+      spec.snake,
+      spec.in_info.type_name,
+      spec.out_info.type_name,
+      spec.error_type,
+    )
+  // Operations whose output carries a `@streaming` blob member get an
+  // extra `<op>_streaming(client, input)` variant routing through
+  // `runtime.invoke_streaming` — body arrives chunked rather than
+  // buffered. Examples: Bedrock InvokeModelWithResponseStream
+  // returns a streaming-blob `body`, MediaLive log streams, etc.
+  let streaming_items = case
+    list.any(spec.out_info.members, fn(m) { m.target == RStreamingBlob })
+  {
+    True -> [
       code.Blank,
-    ]),
+      client.invoke_streaming_fn(spec.snake, spec.in_info.type_name),
+    ]
+    False -> []
+  }
+  code.render(
+    code.Module(items: list.append([base, code.Blank], streaming_items)),
   )
 }
 

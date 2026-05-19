@@ -24,7 +24,8 @@ import codegen/paginator
 import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
-  type MemberDef, type Resolved, REnum, RIntEnum, RList, RMap, RStruct, RUnion,
+  type MemberDef, type Resolved, REnum, RIntEnum, RList, RMap, RStreamingBlob,
+  RStruct, RUnion,
 }
 import codegen/waiter
 import gleam/dict
@@ -296,34 +297,46 @@ fn known_error_locals(error_ids: List(String)) -> Set(String) {
 
 fn emit_invoke(spec: OpSpec) -> String {
   let err_type = spec.error_type
-  code.render(
-    code.Module(items: [
-      code.DocComment([
-        name_concat([
-          "Invoke ",
-          spec.local,
-          ". Signs the request with SigV4 and dispatches via the configured",
-        ]),
-        name_concat([
-          "HTTP transport. Service errors come back as typed `",
-          err_type,
-          "`",
-        ]),
-        "variants; transport, decode, and credentials failures all collapse",
-        name_concat([
-          "into the generic `",
-          err_type,
-          "Transport` variant.",
-        ]),
+  let doc =
+    code.DocComment([
+      name_concat([
+        "Invoke ",
+        spec.local,
+        ". Signs the request with SigV4 and dispatches via the configured",
       ]),
-      client.invoke_fn(
-        spec.snake,
-        spec.in_info.type_name,
-        spec.out_info.type_name,
-        spec.error_type,
-      ),
+      name_concat([
+        "HTTP transport. Service errors come back as typed `",
+        err_type,
+        "`",
+      ]),
+      "variants; transport, decode, and credentials failures all collapse",
+      name_concat([
+        "into the generic `",
+        err_type,
+        "Transport` variant.",
+      ]),
+    ])
+  let base =
+    client.invoke_fn(
+      spec.snake,
+      spec.in_info.type_name,
+      spec.out_info.type_name,
+      spec.error_type,
+    )
+  // Same `@streaming` blob detection as restjson/restxml — awsJson
+  // services that carry streaming-blob output members (rare but
+  // possible) get the streaming-side wrapper too.
+  let streaming_items = case
+    list.any(spec.out_info.members, fn(m) { m.target == RStreamingBlob })
+  {
+    True -> [
       code.Blank,
-    ]),
+      client.invoke_streaming_fn(spec.snake, spec.in_info.type_name),
+    ]
+    False -> []
+  }
+  code.render(
+    code.Module(items: list.append([doc, base, code.Blank], streaming_items)),
   )
 }
 
