@@ -88,6 +88,7 @@ fn test_config(
     signing_name: "service",
     endpoint_url: "https://service.us-east-1.amazonaws.com",
     http_send: send,
+    streaming_http_send: http_send.default_streaming_send,
     timestamp: fixed_timestamp,
     retry_strategy: strategy,
     endpoint_rule_set: None,

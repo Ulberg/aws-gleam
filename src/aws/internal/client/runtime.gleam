@@ -13,7 +13,8 @@
 import aws/credentials.{type Provider}
 import aws/endpoints.{type Params, type RuleSet}
 import aws/internal/http_request as our_http
-import aws/internal/http_send.{type HttpError, type Send}
+import aws/internal/http_send.{type HttpError, type Send, type StreamingSend}
+import aws/internal/http_streaming
 import aws/internal/sigv4.{SigningOptions}
 import aws/internal/text_scan
 import aws/retry.{type Strategy}
@@ -44,6 +45,13 @@ pub type ClientConfig {
     signing_name: String,
     endpoint_url: String,
     http_send: Send,
+    /// Streaming HTTP sender used by `@streaming` operations. Buffered
+    /// callers (the majority of AWS APIs) keep using `http_send`; the
+    /// codegen for streaming operations threads this one instead so
+    /// large object GETs (S3) or long-lived subscription streams
+    /// (Kinesis, Bedrock) can consume chunks incrementally without
+    /// the runtime buffering the full response.
+    streaming_http_send: StreamingSend,
     timestamp: fn() -> String,
     retry_strategy: Strategy,
     endpoint_rule_set: Option(RuleSet),
@@ -79,6 +87,7 @@ pub fn default_config(
     signing_name: signing_name,
     endpoint_url: default_endpoint(endpoint_prefix, region),
     http_send: http_send.default_send,
+    streaming_http_send: http_streaming.default_send,
     timestamp: aws_timestamp,
     retry_strategy: retry.standard(),
     endpoint_rule_set: None,
@@ -120,6 +129,17 @@ pub fn with_endpoint_url(config: ClientConfig, url: String) -> ClientConfig {
 
 pub fn with_http_send(config: ClientConfig, send: Send) -> ClientConfig {
   ClientConfig(..config, http_send: send)
+}
+
+/// Override the streaming HTTP sender. Use for tests (stub the
+/// transport), for opting into the buffered-wrap path on a per-
+/// service basis (`http_send.default_streaming_send`), or to
+/// inject a future custom transport (proxy, gRPC tunnel, etc.).
+pub fn with_streaming_http_send(
+  config: ClientConfig,
+  send: StreamingSend,
+) -> ClientConfig {
+  ClientConfig(..config, streaming_http_send: send)
 }
 
 /// Override the retry strategy used to wrap `http_send`. Pass
