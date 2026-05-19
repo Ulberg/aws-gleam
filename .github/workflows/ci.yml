@@ -122,36 +122,30 @@ jobs:
           echo "--- gleam"; gleam --version || true
           echo "--- src/aws/services size"; ls src/aws/services 2>/dev/null | wc -l
 
-      # Volume-dependence narrowing. Previous shrink-to-10-services
-      # build got past "Compiling aws" in 0.06 s — but failed
-      # because tests referenced moved services. This iteration
-      # keeps ALL 409 services but moves tests aside. If `gleam
-      # build` then completes, the SIGSEGV is in test compilation
-      # (where the test file count + service refs explode the
-      # module graph). If it still crashes, the bug is volume of
-      # the `src/aws/services/*.gleam` tree itself.
-      - name: Move tests aside
-        run: |
-          echo "--- before ---"
-          ls test | wc -l
-          mkdir -p /tmp/aws-tests-stash
-          mv test /tmp/aws-tests-stash/test
-          mkdir -p test
-          echo "--- after ---"
-          ls test | wc -l
-
-      - name: Build full src/ without tests
+      - name: Run tests
+        # Volume-dependence confirmed by attempts 6 + 7: full 409
+        # services SIGSEGV at ~2 min regardless of whether tests are
+        # in the build, while a 10-service shrink builds in 0.06 s.
+        # Memory (~14 GB free), scheduler count (+S 1 vs default),
+        # OTP version (27.0 / 27.3.4 / 28.0), OS-level stack ulimit
+        # (16 MB / 128 MB) all ruled out.
+        #
+        # The Erlang compiler heavily uses ETS for the module-info
+        # cache; default `+e 1400` (max ETS tables) may not cover
+        # 517 modules × multiple internal tables per compile. Set
+        # `+e 65536` to give plenty of headroom.
+        #
+        # `+P` (max processes) and `+Q` (max ports) defaults are
+        # already in the millions so they shouldn't be the limit,
+        # but bumping `+P` to 4M is cheap insurance against any
+        # process-table pressure during heavy compilation.
         run: |
           ulimit -s 131072
           ulimit -c unlimited
-          set +e
-          gleam build --target erlang 2>&1 | tail -200
-          rc=${PIPESTATUS[0]}
-          echo "--- gleam build exit: $rc ---"
-          exit "$rc"
+          ./scripts/test.sh
         env:
-          ERL_FLAGS: "+t 16777216 +S 1"
-          ERL_AFLAGS: "+t 16777216 +S 1"
+          ERL_FLAGS: "+t 16777216 +e 65536 +P 4194304 +S 2:2"
+          ERL_AFLAGS: "+t 16777216 +e 65536 +P 4194304 +S 2:2"
 
   # LocalStack end-to-end tests for the v0.1 verification gate
   # (DynamoDB + S3 round-trips). Kept in a separate job so the
