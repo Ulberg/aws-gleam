@@ -289,8 +289,12 @@ fn no_member_traits(model: Model, struct_id: String) -> Bool {
     Ok(shape.Structure(members: m, ..)) ->
       dict.values(m)
       |> list.all(fn(member) {
+        // `@idempotencyToken` is supported via auto-fill: when the
+        // member is `None`, the encoder emits a UUID v4 from
+        // `rest.idempotency_token()`. Trait stays on a member that
+        // also surfaces as a regular `Option(String)` in the input
+        // record, so callers can override the auto-filled token.
         let blockers = [
-          "smithy.api#idempotencyToken",
           "smithy.api#hostLabel",
           "smithy.api#httpHeader",
           "smithy.api#httpQuery",
@@ -913,10 +917,26 @@ fn scalar_field_append(
       variant,
       m.timestamp_format,
     )
+  // `@idempotencyToken`: when `None`, substitute the SDK-generated
+  // UUID and append the field. Otherwise omit the field entirely.
+  // The substitution is the same `rest.idempotency_token/0` FFI
+  // the rest-protocol emitters use — tests pin it to all-zeros
+  // via `application:set_env`.
+  let none_branch = case m.idempotency_token {
+    True ->
+      name_concat([
+        "body <> \"&",
+        wire_name,
+        "=\" <> uri.encode_component(rest.idempotency_token())",
+      ])
+    False -> "body"
+  }
   name_concat([
     "case input.",
     m.snake_name,
-    " { option.None -> body option.Some(v) -> body <> ",
+    " { option.None -> ",
+    none_branch,
+    " option.Some(v) -> body <> ",
     body_extension,
     " }",
   ])
@@ -1186,6 +1206,7 @@ fn file_header(
     #("aws/internal/client/runtime", "runtime."),
     #("aws/internal/codec/json_float", "json_float."),
     #("aws/internal/codec/json_timestamp", "json_timestamp."),
+    #("aws/internal/codec/rest", "rest."),
     #("aws/internal/uri", "uri."),
     #("gleam/bit_array", "bit_array."),
     #("gleam/dict", "dict."),

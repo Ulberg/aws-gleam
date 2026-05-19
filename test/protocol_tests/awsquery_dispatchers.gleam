@@ -23,6 +23,7 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(nested_structures_dispatcher())
   |> dispatch.register(no_input_and_no_output_dispatcher())
   |> dispatch.register(no_input_and_output_dispatcher())
+  |> dispatch.register(query_idempotency_token_auto_fill_dispatcher())
   |> dispatch.register(query_lists_dispatcher())
   |> dispatch.register(query_maps_dispatcher())
   |> dispatch.register(query_timestamps_dispatcher())
@@ -237,6 +238,29 @@ fn no_input_and_output_dispatcher() -> Dispatcher {
       Ok(BuiltRequest(method:, uri:, headers:, body:))
     },
     parse_response: response_parser(svc.parse_no_input_and_output_response),
+  )
+}
+
+fn query_idempotency_token_auto_fill_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.query#QueryIdempotencyTokenAutoFill",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_query_idempotency_token_auto_fill_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_query_idempotency_token_auto_fill_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_query_idempotency_token_auto_fill_response,
+    ),
   )
 }
 
