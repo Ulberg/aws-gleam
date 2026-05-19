@@ -81,18 +81,23 @@ the table above.
    restxml + restjson1 paths respectively. Closes the M6-audit gap.
 
 7. **STS AssumeRole helper for `source_profile` / `role_arn`** —
-   PARTIAL. The minimal `sts.gleam` + `web_identity.gleam` providers
-   are in place, and `credentials.from_assume_role` /
-   `from_assume_role_with` wrap them as composable providers — so
-   programmatic role-chain hops work today. The remaining gap is
-   the *automatic* path: `build_credentials_from_lookup` in
-   `credentials.gleam` only reads `aws_access_key_id` /
-   `aws_secret_access_key` / `aws_session_token` from the profile
-   file; it doesn't yet inspect `role_arn` / `source_profile` and
-   spin up a chained `from_assume_role` provider transparently.
-   That's a small follow-up — add a branch in the profile builder
-   that, when `role_arn` is present, walks to the source profile and
-   composes via `from_assume_role`.
+   DONE (2026-05-19). `credentials.from_profile_assume_role(name,
+   send, region)` honours `role_arn` when present: walks
+   `source_profile`, builds its static credentials, wraps them as a
+   one-shot Provider, then composes via `from_assume_role_with` to
+   hit STS. Falls through to the static-keys path when `role_arn`
+   is absent, so the chained constructor is a strict superset of
+   `from_profile` — chains drop into `default_chain` by just
+   swapping the constructor. Honoured profile keys: `role_arn`
+   (required), `source_profile` (required when role_arn present),
+   `role_session_name` (defaults to `aws-gleam-session`),
+   `external_id` (optional). Only single-hop chains today —
+   multi-hop (A→B→C where source_profile itself has role_arn) is
+   a separate follow-up. Pinned by 4 tests in
+   `test/credentials_test.gleam`: static-fallthrough, chained STS
+   fetch, missing-source-profile → NotConfigured, and the outbound
+   STS request signing assertion (Authorization header carries the
+   source profile's access-key id).
 
 8. **`@xmlFlattened` lists + struct-member `@xmlName`** — DONE.
    `xml_decode.optional_flat_list` and the restxml codegen
