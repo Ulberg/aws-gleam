@@ -248,6 +248,48 @@ pub fn emitted_restjson_modules_expose_event_stream_variant_for_streaming_unions
   ))
 }
 
+/// Same event-stream codegen flip on the restXml side. S3's
+/// `SelectObjectContent` returns a `SelectObjectContentEventStream`
+/// union with `@streaming` — the emitter must produce a
+/// `select_object_content_event_stream` wrapper. Pinning here
+/// guards the restXml emit path against regression independently
+/// of the restJson1 / awsJson tests above.
+pub fn emitted_restxml_modules_expose_event_stream_variant_test() {
+  let m = load(s3_path)
+  let svc = find_service(m, "aws.protocols#restXml", "AmazonS3")
+  let assert Ok(r) = restxml.emit_service(m, svc)
+  should.be_true(string.contains(
+    r.source,
+    "pub fn select_object_content_event_stream(",
+  ))
+  // No streaming-blob variant for the same op — the body is a
+  // union, not a blob.
+  should.be_false(string.contains(
+    r.source,
+    "pub fn select_object_content_streaming(",
+  ))
+}
+
+/// Same event-stream codegen flip on the awsJson side. Kinesis'
+/// `SubscribeToShard` returns a `SubscribeToShardEventStream` union
+/// with `@streaming` — the awsJson emitter must also produce the
+/// wrapper. Three protocol pins (restjson / restxml / awsjson)
+/// catch any per-protocol regression in the shared
+/// `client.invoke_event_stream_fn` plumbing.
+pub fn emitted_awsjson_modules_expose_event_stream_variant_test() {
+  let m = load("../vendor/aws-sdk-rust/aws-models/kinesis.json")
+  let svc = find_service(m, "aws.protocols#awsJson1_1", "Kinesis_20131202")
+  let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson11)
+  should.be_true(string.contains(
+    r.source,
+    "pub fn subscribe_to_shard_event_stream(",
+  ))
+  should.be_false(string.contains(
+    r.source,
+    "pub fn subscribe_to_shard_streaming(",
+  ))
+}
+
 /// Generated services that have a Smithy endpoint rule set on their
 /// service shape MUST embed the JSON as a const + attach the parsed
 /// rule set to the client config. Lock the shape so a future emitter
