@@ -168,8 +168,21 @@ jobs:
           echo "ERL_FLAGS=$ERL_FLAGS"
           gleam test
         env:
-          ERL_FLAGS: "+t 16777216 +sss 8192 +sssdcpu 8192 +sssdio 8192"
-          ERL_AFLAGS: "+t 16777216 +sss 8192 +sssdcpu 8192 +sssdio 8192"
+          # +sss flags reach BEAM (confirmed via CI echo) but SIGSEGV
+          # persists at the same spot. That means the overflowing
+          # thread isn't a normal/dirty scheduler. Two next-most-
+          # likely candidates:
+          #   1. BEAM's async threads (+a, controls those stacks)
+          #   2. BeamAsm JIT-emitted code blowing the stack of
+          #      whichever thread is executing the JIT'd module.
+          #      Linux ships BEAM with JIT enabled by default; macOS
+          #      where the build works locally has its own codegen
+          #      path. `+JMsingle true` keeps JIT only for the boot
+          #      modules and runs user modules interpreted — if
+          #      that clears it, the bug is in BeamAsm on a specific
+          #      generated service.
+          ERL_FLAGS: "+t 16777216 +sss 8192 +sssdcpu 8192 +sssdio 8192 +a 8192 +JMsingle true"
+          ERL_AFLAGS: "+t 16777216 +sss 8192 +sssdcpu 8192 +sssdio 8192 +a 8192 +JMsingle true"
 
   # LocalStack end-to-end tests for the v0.1 verification gate
   # (DynamoDB + S3 round-trips). Kept in a separate job so the
