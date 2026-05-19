@@ -309,6 +309,44 @@ fn host_echo_send() -> http_send.Send {
   }
 }
 
+/// Streaming-side counterpart to `host_echo_send`. Same idea — echo
+/// the request's `host` header into the response — but the response
+/// body is a `StreamingBody` so `invoke_streaming` accepts it.
+fn host_echo_streaming_send() -> http_send.StreamingSend {
+  fn(req: Request(BitArray)) {
+    let host = case list.find(req.headers, fn(h) { h.0 == "host" }) {
+      Ok(#(_, v)) -> v
+      Error(_) -> ""
+    }
+    Ok(response.Response(
+      status: 200,
+      headers: [#("host", host)],
+      body: streaming.empty(),
+    ))
+  }
+}
+
+fn streaming_test_config_with_echo() -> runtime.ClientConfig {
+  test_config(scripted_send([], process.new_subject()), one_attempt_strategy())
+  |> runtime.with_streaming_http_send(host_echo_streaming_send())
+}
+
+fn host_from_streaming_response(
+  result: Result(
+    response.Response(streaming.StreamingBody),
+    runtime.ClientError,
+  ),
+) -> Result(String, runtime.ClientError) {
+  case result {
+    Ok(resp) ->
+      case list.find(resp.headers, fn(h) { h.0 == "host" }) {
+        Ok(#(_, v)) -> Ok(v)
+        Error(_) -> Ok("")
+      }
+    Error(e) -> Error(e)
+  }
+}
+
 pub fn invoke_uses_endpoint_url_when_no_rule_set_test() {
   let counter = process.new_subject()
   let _ = counter
@@ -579,6 +617,42 @@ pub fn invoke_streaming_extracts_typed_error_from_small_body_test() {
     other ->
       panic as { "expected ServiceError, got " <> describe_streaming(other) }
   }
+}
+
+pub fn invoke_streaming_with_endpoint_params_threads_op_params_test() {
+  // Streaming-side counterpart to
+  // `invoke_with_endpoint_params_threads_op_params_test`. Per-op
+  // params must reach the resolver on the streaming path too —
+  // otherwise S3 GetObject of a virtual-hosted bucket wouldn't see
+  // the resolved Bucket-substituted URL.
+  let assert Ok(rs) = endpoints.parse_rule_set(branching_rule_set_json)
+  let config =
+    streaming_test_config_with_echo()
+    |> runtime.with_endpoint_rule_set(rs)
+
+  let op_params =
+    dict.from_list([#("Bucket", endpoints.StringVal("acme-photos"))])
+
+  runtime.invoke_streaming_with_endpoint_params(
+    config,
+    op_params,
+    ddb_request(),
+  )
+  |> host_from_streaming_response
+  |> should.equal(Ok("acme-photos.s3.example.com"))
+}
+
+pub fn invoke_streaming_falls_through_to_default_when_op_params_missing_test() {
+  // Without per-op params, the rule set's default branch wins —
+  // the streaming path resolves to the path-style URL.
+  let assert Ok(rs) = endpoints.parse_rule_set(branching_rule_set_json)
+  let config =
+    streaming_test_config_with_echo()
+    |> runtime.with_endpoint_rule_set(rs)
+
+  runtime.invoke_streaming(config, ddb_request())
+  |> host_from_streaming_response
+  |> should.equal(Ok("s3.example.com"))
 }
 
 pub fn invoke_streaming_caps_oversized_error_body_test() {
