@@ -17,6 +17,24 @@
 # git (`vendor/aws-sdk-rust/aws-models/*.json` and
 # `test/fixtures/protocol-tests/*.json`), so we don't ship the
 # 100k+ LOC of derived code through the repo.
+#
+# Usage:
+#   ./scripts/regen.sh                  # regen everything (full run, ~minute+)
+#   ./scripts/regen.sh s3 polly         # regen ONLY listed services
+#   ./scripts/regen.sh transcribe-streaming
+#
+# Service names are the model basename (e.g. `s3`, `polly`,
+# `transcribe-streaming`) — anything matching
+# `vendor/aws-sdk-rust/aws-models/<name>.json`. Use dashes, NOT
+# underscores (`transcribe-streaming`, not `transcribe_streaming`)
+# — the model filename has dashes and the script maps them to
+# underscores in the output path.
+#
+# Focused mode (positional args supplied) skips the protocol-test
+# fixture regen + the global service-count guard; both presume a
+# full run. Use the no-args form before commits + after fixture
+# changes; use the focused form during iteration on a specific
+# service's codegen.
 
 set -euo pipefail
 
@@ -25,11 +43,18 @@ REPO=$(pwd)
 
 CODEGEN="gleam run -m aws_codegen --"
 
-echo "→ building protocol-test JSON ASTs"
-"$REPO/scripts/build-protocol-test-asts.sh"
+# Positional args become the focused service filter. Empty = full run.
+FOCUS=("$@")
 
-echo "→ extracting endpoint fixtures from vendor models"
-"$REPO/scripts/extract-endpoints.sh"
+if [ ${#FOCUS[@]} -eq 0 ]; then
+  echo "→ building protocol-test JSON ASTs"
+  "$REPO/scripts/build-protocol-test-asts.sh"
+
+  echo "→ extracting endpoint fixtures from vendor models"
+  "$REPO/scripts/extract-endpoints.sh"
+else
+  echo "→ focused mode: regenerating only ${FOCUS[*]}"
+fi
 
 cd "$REPO/codegen"
 
@@ -62,6 +87,19 @@ for f in "$REPO"/vendor/aws-sdk-rust/aws-models/*.json; do
   case "$name" in
     sdk-*) continue ;;
   esac
+  # Focused mode: skip names not in the FOCUS list.
+  if [ ${#FOCUS[@]} -gt 0 ]; then
+    in_focus=0
+    for want in "${FOCUS[@]}"; do
+      if [ "$name" = "$want" ]; then
+        in_focus=1
+        break
+      fi
+    done
+    if [ "$in_focus" -eq 0 ]; then
+      continue
+    fi
+  fi
   # `|| true` because grep exits 1 when there's no match — that's
   # expected for awsQuery / ec2Query / rpcv2Cbor models we're
   # skipping. Without it, `set -e` would terminate the script.
@@ -74,10 +112,30 @@ done
 TOTAL=$(wc -l < "$SERVICES_LIST" | tr -d ' ')
 echo "  $TOTAL services to generate"
 
+# Focused mode: any names that didn't survive the filter (typo, or
+# the service uses a protocol we don't generate yet) surface here
+# so a silent miss doesn't masquerade as "done".
+if [ ${#FOCUS[@]} -gt 0 ]; then
+  missing=()
+  for want in "${FOCUS[@]}"; do
+    if ! grep -q "^${want} " "$SERVICES_LIST"; then
+      missing+=("$want")
+    fi
+  done
+  if [ ${#missing[@]} -gt 0 ]; then
+    echo "  warning: requested services not found in supported-protocol set:"
+    printf '    - %s\n' "${missing[@]}"
+  fi
+fi
+
 echo "→ regenerating service clients"
 FAILURES=()
 ERRLOG=$(mktemp)
 trap 'rm -f $SERVICES_LIST $ERRLOG' EXIT
+
+# Track touched files so focused-mode formatting only re-runs `gleam
+# format` on what changed.
+TOUCHED=()
 
 ITER=0
 # `$CODEGEN` (gleam run -m aws_codegen) reads stdin during BEAM
@@ -107,6 +165,8 @@ while read -r -u 3 name proto; do
       printf '\n'
     } >> "$ERRLOG"
     rm -f "$out"
+  else
+    TOUCHED+=("$out")
   fi
   rm -f "$PER_SERVICE_LOG"
 done 3< "$SERVICES_LIST"
@@ -131,33 +191,65 @@ fi
 # but if some new path slips through, a sample count mismatch
 # surfaces it here instead of as a downstream "Unknown module"
 # at `gleam test` time minutes later.
-WRITTEN=$(find ../src/aws/services -maxdepth 1 -name '*.gleam' | wc -l | tr -d ' ')
-if [ "$WRITTEN" -lt "$TOTAL" ]; then
-  echo
-  echo "  service-count check: expected $TOTAL .gleam files, found $WRITTEN."
-  echo "  the per-service loop reported 0 failures but the directory is short."
-  echo "  one or more codegen calls exited 0 without writing — investigate"
-  echo "  by running ./scripts/regen.sh interactively without stderr suppression."
-  exit 1
+#
+# Skipped in focused mode: the full-run count check expects ~409
+# files on disk; a focused run leaves the rest of the services
+# from the previous full run alongside the freshly-regenerated
+# subset, so the count usually still passes — but if a focused
+# run is the first one ever on a clean repo, the directory is
+# nearly empty and the guard would spuriously fire.
+if [ ${#FOCUS[@]} -eq 0 ]; then
+  WRITTEN=$(find ../src/aws/services -maxdepth 1 -name '*.gleam' | wc -l | tr -d ' ')
+  if [ "$WRITTEN" -lt "$TOTAL" ]; then
+    echo
+    echo "  service-count check: expected $TOTAL .gleam files, found $WRITTEN."
+    echo "  the per-service loop reported 0 failures but the directory is short."
+    echo "  one or more codegen calls exited 0 without writing — investigate"
+    echo "  by running ./scripts/regen.sh interactively without stderr suppression."
+    exit 1
+  fi
 fi
 
-echo "→ regenerating protocol-test client modules + dispatchers"
-$CODEGEN awsJson1_0 ../test/fixtures/protocol-tests/awsJson1_0.json ../src/aws/services/protocoltests/json10.gleam --dispatcher-out ../test/protocol_tests/awsjson10_dispatchers.gleam >/dev/null
-$CODEGEN awsJson1_1 ../test/fixtures/protocol-tests/awsJson1_1.json ../src/aws/services/protocoltests/json11.gleam --dispatcher-out ../test/protocol_tests/awsjson11_dispatchers.gleam >/dev/null
-$CODEGEN restJson1  ../test/fixtures/protocol-tests/restJson1.json  ../src/aws/services/protocoltests/restjson1.gleam --dispatcher-out ../test/protocol_tests/restjson1_dispatchers.gleam >/dev/null
-$CODEGEN restXml    ../test/fixtures/protocol-tests/restXml.json    ../src/aws/services/protocoltests/restxml.gleam   --dispatcher-out ../test/protocol_tests/restxml_dispatchers.gleam >/dev/null
-$CODEGEN restXml    ../test/fixtures/protocol-tests/restXmlWithNamespace.json ../src/aws/services/protocoltests/restxml_with_namespace.gleam --dispatcher-out ../test/protocol_tests/restxml_with_namespace_dispatchers.gleam >/dev/null
-$CODEGEN awsQuery   ../test/fixtures/protocol-tests/awsQuery.json   ../src/aws/services/protocoltests/awsquery.gleam  --dispatcher-out ../test/protocol_tests/awsquery_dispatchers.gleam >/dev/null
-$CODEGEN ec2Query   ../test/fixtures/protocol-tests/ec2Query.json   ../src/aws/services/protocoltests/ec2query.gleam  --dispatcher-out ../test/protocol_tests/ec2query_dispatchers.gleam >/dev/null
-$CODEGEN rpcv2Cbor  ../test/fixtures/protocol-tests/rpcv2Cbor.json  ../src/aws/services/protocoltests/rpcv2cbor.gleam --dispatcher-out ../test/protocol_tests/rpcv2cbor_dispatchers.gleam >/dev/null
+# Protocol-test fixtures regenerate from the smithy-rs corpus and
+# are independent of any single service. Skip in focused mode —
+# they're presumably fresh from a recent full run, and re-running
+# them on every focused iteration defeats the focus.
+if [ ${#FOCUS[@]} -eq 0 ]; then
+  echo "→ regenerating protocol-test client modules + dispatchers"
+  $CODEGEN awsJson1_0 ../test/fixtures/protocol-tests/awsJson1_0.json ../src/aws/services/protocoltests/json10.gleam --dispatcher-out ../test/protocol_tests/awsjson10_dispatchers.gleam >/dev/null
+  $CODEGEN awsJson1_1 ../test/fixtures/protocol-tests/awsJson1_1.json ../src/aws/services/protocoltests/json11.gleam --dispatcher-out ../test/protocol_tests/awsjson11_dispatchers.gleam >/dev/null
+  $CODEGEN restJson1  ../test/fixtures/protocol-tests/restJson1.json  ../src/aws/services/protocoltests/restjson1.gleam --dispatcher-out ../test/protocol_tests/restjson1_dispatchers.gleam >/dev/null
+  $CODEGEN restXml    ../test/fixtures/protocol-tests/restXml.json    ../src/aws/services/protocoltests/restxml.gleam   --dispatcher-out ../test/protocol_tests/restxml_dispatchers.gleam >/dev/null
+  $CODEGEN restXml    ../test/fixtures/protocol-tests/restXmlWithNamespace.json ../src/aws/services/protocoltests/restxml_with_namespace.gleam --dispatcher-out ../test/protocol_tests/restxml_with_namespace_dispatchers.gleam >/dev/null
+  $CODEGEN awsQuery   ../test/fixtures/protocol-tests/awsQuery.json   ../src/aws/services/protocoltests/awsquery.gleam  --dispatcher-out ../test/protocol_tests/awsquery_dispatchers.gleam >/dev/null
+  $CODEGEN ec2Query   ../test/fixtures/protocol-tests/ec2Query.json   ../src/aws/services/protocoltests/ec2query.gleam  --dispatcher-out ../test/protocol_tests/ec2query_dispatchers.gleam >/dev/null
+  $CODEGEN rpcv2Cbor  ../test/fixtures/protocol-tests/rpcv2Cbor.json  ../src/aws/services/protocoltests/rpcv2cbor.gleam --dispatcher-out ../test/protocol_tests/rpcv2cbor_dispatchers.gleam >/dev/null
+fi
 
 cd "$REPO"
 
 # `gleam format` to match the project's check-formatting CI step.
-# Format every generated service module, not just the previous two.
+# Format every generated service module on full runs; in focused
+# mode, format only the freshly-regenerated files so the format
+# step doesn't walk ~410 files for one service.
 echo "→ formatting generated modules"
-gleam format \
-  src/aws/services \
-  test/protocol_tests >/dev/null
+if [ ${#FOCUS[@]} -eq 0 ]; then
+  gleam format \
+    src/aws/services \
+    test/protocol_tests >/dev/null
+else
+  # `${TOUCHED[@]}` paths are codegen-relative (../src/...); strip
+  # the leading `../` so `gleam format` sees them from the repo
+  # root. Guarded against the empty case (`set -u` would otherwise
+  # treat `"${TOUCHED[@]}"` as an unbound-variable expansion when
+  # the focused run produced zero matches).
+  if [ ${#TOUCHED[@]} -gt 0 ]; then
+    REPO_RELATIVE=()
+    for t in "${TOUCHED[@]}"; do
+      REPO_RELATIVE+=("${t#../}")
+    done
+    gleam format "${REPO_RELATIVE[@]}" >/dev/null
+  fi
+fi
 
 echo "done."
