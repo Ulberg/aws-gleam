@@ -177,18 +177,20 @@ pub fn to_bit_array_max(
   })
 }
 
-/// Outcome of a size-capped collection of a streaming response.
+/// Outcome of a capped collection of a streaming response.
 /// `Transport(cause)` re-surfaces whatever upstream error type the
 /// caller's transport produced (typically `runtime.ClientError`,
 /// but kept generic so this helper isn't coupled to a specific
 /// runtime). `TooLarge(max_bytes)` fires when the body's
-/// cumulative size would exceed the cap. The two-variant shape
-/// lets callers retry transient transport failures while pursuing
-/// a different code path (ranged GETs, error to user, etc.) for
-/// the cap.
-pub type SizeError(err) {
+/// cumulative size would exceed the cap. `InvalidUtf8` fires from
+/// `collect_to_string_max` when the bytes-pass succeeded but the
+/// payload isn't valid UTF-8. The single shared error type lets
+/// callers mix-and-match collection helpers without re-deriving
+/// per-helper error shapes.
+pub type CollectError(err) {
   Transport(cause: err)
   TooLarge(max_bytes: Int)
+  InvalidUtf8
 }
 
 /// Generic capped-buffered collection: takes the `Result` produced
@@ -204,12 +206,26 @@ pub type SizeError(err) {
 pub fn collect_to_bit_array_max(
   resp: Result(Response, err),
   max_bytes: Int,
-) -> Result(BitArray, SizeError(err)) {
+) -> Result(BitArray, CollectError(err)) {
   use r <- result.try(resp |> result.map_error(Transport))
   case to_bit_array_max(r.body, max_bytes) {
     Ok(bytes) -> Ok(bytes)
     Error(_) -> Error(TooLarge(max_bytes: max_bytes))
   }
+}
+
+/// Same as `collect_to_bit_array_max` but also runs the bytes
+/// through `bit_array.to_string`, surfacing
+/// `Error(InvalidUtf8)` when the body isn't valid UTF-8. Common
+/// path for streaming text responses (JSON / XML / log shards)
+/// where the caller wants the bytes both size-bounded AND
+/// UTF-8-validated in a single hop.
+pub fn collect_to_string_max(
+  resp: Result(Response, err),
+  max_bytes: Int,
+) -> Result(String, CollectError(err)) {
+  use bytes <- result.try(collect_to_bit_array_max(resp, max_bytes))
+  bit_array.to_string(bytes) |> result.replace_error(InvalidUtf8)
 }
 
 /// Materialise the body as a UTF-8 `String`. Returns `Error(Nil)`

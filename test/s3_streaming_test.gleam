@@ -93,7 +93,7 @@ pub fn download_to_bit_array_max_under_cap_returns_bytes_test() {
 
 pub fn download_to_bit_array_max_over_cap_returns_body_too_large_test() {
   // Body exceeds the cap → `streaming.TooLarge(cap)` surfaces, not
-  // a panic. The error type is the generic `streaming.SizeError`
+  // a panic. The error type is the generic `streaming.CollectError`
   // shape; the S3 wrapper just pins the inner err type.
   let body_bytes = <<"this body is more than ten bytes":utf8>>
   let streaming_send =
@@ -153,13 +153,14 @@ pub fn download_to_bit_array_max_surfaces_transport_failure_test() {
 }
 
 fn describe_dl(
-  r: Result(BitArray, streaming.SizeError(runtime.ClientError)),
+  r: Result(BitArray, streaming.CollectError(runtime.ClientError)),
 ) -> String {
   case r {
     Ok(_) -> "Ok(_)"
     Error(streaming.Transport(_)) -> "Transport(_)"
     Error(streaming.TooLarge(max_bytes: n)) ->
       "TooLarge(" <> int_to_string(n) <> ")"
+    Error(streaming.InvalidUtf8) -> "InvalidUtf8"
   }
 }
 

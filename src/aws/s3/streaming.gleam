@@ -24,7 +24,7 @@ pub fn download_to_bit_array_max(
   client: s3.Client,
   input: s3.GetObjectRequest,
   max_bytes: Int,
-) -> Result(BitArray, streaming.SizeError(runtime.ClientError)) {
+) -> Result(BitArray, streaming.CollectError(runtime.ClientError)) {
   streaming.collect_to_bit_array_max(
     s3.get_object_streaming(client, input),
     max_bytes,

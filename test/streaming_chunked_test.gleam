@@ -278,3 +278,29 @@ pub fn collect_to_bit_array_max_zero_cap_accepts_empty_response_test() {
   streaming.collect_to_bit_array_max(Ok(make_response(<<>>)), 0)
   |> should.equal(Ok(<<>>))
 }
+
+// ---------- collect_to_string_max tests ----------
+
+pub fn collect_to_string_max_utf8_under_cap_returns_string_test() {
+  let bytes = <<"héllo":utf8>>
+  streaming.collect_to_string_max(Ok(make_response(bytes)), 100)
+  |> should.equal(Ok("héllo"))
+}
+
+pub fn collect_to_string_max_over_cap_returns_too_large_test() {
+  let bytes = <<"this is more than five bytes":utf8>>
+  streaming.collect_to_string_max(Ok(make_response(bytes)), 5)
+  |> should.equal(Error(streaming.TooLarge(max_bytes: 5)))
+}
+
+pub fn collect_to_string_max_invalid_utf8_returns_invalid_utf8_test() {
+  // 0xC0 0x80 is invalid UTF-8 — bytes pass the cap (size 2, cap 10)
+  // but the to_string step fails, surfacing as InvalidUtf8.
+  streaming.collect_to_string_max(Ok(make_response(<<0xC0, 0x80>>)), 10)
+  |> should.equal(Error(streaming.InvalidUtf8))
+}
+
+pub fn collect_to_string_max_propagates_transport_error_test() {
+  streaming.collect_to_string_max(Error("conn refused"), 1024)
+  |> should.equal(Error(streaming.Transport(cause: "conn refused")))
+}
