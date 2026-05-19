@@ -77,6 +77,13 @@ pub type Sigv4aOptions {
     /// for most AWS services; S3 is the notable holdout — it needs
     /// `False` so keys with `.` / `..` survive intact.
     normalize_path: Bool,
+    /// `True` ⇒ when `creds.session_token` is `Some`, deliver
+    /// `X-Amz-Security-Token` on the wire but exclude it from the
+    /// canonical request being signed. Used by services that add
+    /// the token *after* signing (the `post-sts-header-after`
+    /// pattern). `False` ⇒ include the token in the canonical
+    /// request alongside the other prepared headers.
+    omit_session_token: Bool,
   )
 }
 
@@ -143,10 +150,11 @@ pub fn canonical_request(
   }
   let prepared =
     prepare_headers(req, opts, creds, payload_hash, region_set_value)
+  let signing_headers = headers_for_signing(prepared, creds, opts)
   let canonical_uri = build_canonical_uri(req.path, opts.normalize_path)
   let canonical_query = canonical_query_string(req.query)
-  let canonical_headers_block = canonical_headers(prepared)
-  let signed_headers_list = signed_headers(prepared)
+  let canonical_headers_block = canonical_headers(signing_headers)
+  let signed_headers_list = signed_headers(signing_headers)
   let creq =
     req.method
     <> "\n"
@@ -234,6 +242,26 @@ fn prepare_headers(
   case opts.sign_body {
     True -> upsert(with_token, "X-Amz-Content-Sha256", payload_hash)
     False -> with_token
+  }
+}
+
+/// Strip `X-Amz-Security-Token` from the header list used for the
+/// canonical request when both a session token is present and
+/// `opts.omit_session_token` is `True`. The token stays in the
+/// outgoing request via `prepared_headers` — it just doesn't
+/// participate in the signature. Mirror of
+/// `sigv4.headers_for_signing`.
+fn headers_for_signing(
+  prepared: List(Header),
+  creds: Sigv4aCredentials,
+  opts: Sigv4aOptions,
+) -> List(Header) {
+  case creds.session_token, opts.omit_session_token {
+    Some(_), True ->
+      list.filter(prepared, fn(h) {
+        string.lowercase(h.name) != "x-amz-security-token"
+      })
+    _, _ -> prepared
   }
 }
 

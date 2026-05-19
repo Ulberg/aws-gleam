@@ -35,6 +35,7 @@ fn example_opts(normalize: Bool) -> sigv4a.Sigv4aOptions {
     service: "service",
     sign_body: False,
     normalize_path: normalize,
+    omit_session_token: False,
   )
 }
 

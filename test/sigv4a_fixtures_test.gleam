@@ -37,6 +37,7 @@ type Context {
     service: String,
     sign_body: Bool,
     normalize: Bool,
+    omit_session_token: Bool,
     timestamp_iso: String,
   )
 }
@@ -59,6 +60,11 @@ fn context_decoder() -> decode.Decoder(Context) {
   use service <- decode.field("service", decode.string)
   use sign_body <- decode.field("sign_body", decode.bool)
   use normalize <- decode.field("normalize", decode.bool)
+  use omit_session_token <- decode.optional_field(
+    "omit_session_token",
+    False,
+    decode.bool,
+  )
   use timestamp_iso <- decode.field("timestamp", decode.string)
   decode.success(Context(
     access_key_id: access_key_id,
@@ -68,6 +74,7 @@ fn context_decoder() -> decode.Decoder(Context) {
     service: service,
     sign_body: sign_body,
     normalize: normalize,
+    omit_session_token: omit_session_token,
     timestamp_iso: timestamp_iso,
   ))
 }
@@ -106,6 +113,7 @@ fn build_opts(ctx: Context) -> sigv4a.Sigv4aOptions {
     service: ctx.service,
     sign_body: ctx.sign_body,
     normalize_path: ctx.normalize,
+    omit_session_token: ctx.omit_session_token,
   )
 }
 
@@ -139,9 +147,7 @@ fn check(
 /// canonical-request pipeline. Each is a known-skip with a reason;
 /// when the feature lands the case should be removed from this list
 /// so the corpus loop pins it.
-const skip_list: List(#(String, String)) = [
-  #("post-sts-header-after", "needs omit_session_token option on Sigv4aOptions"),
-]
+const skip_list: List(#(String, String)) = []
 
 /// Run one fixture through canonical + STS pinning. Returns a list
 /// of diagnostic messages (one per mismatched stage) or empty on
