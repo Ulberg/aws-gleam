@@ -22,7 +22,11 @@ import gleeunit/should
 pub fn streaming_send_round_trips_chunked_response_test() {
   ensure_inets()
   let port =
-    start_chunked_echo([<<"hello ":utf8>>, <<"streaming ":utf8>>, <<"world":utf8>>])
+    start_chunked_echo([
+      <<"hello ":utf8>>,
+      <<"streaming ":utf8>>,
+      <<"world":utf8>>,
+    ])
   let url = "http://127.0.0.1:" <> int.to_string(port) <> "/"
   let assert Ok(req) = request.to(url)
   let req_bits = request.set_body(req, <<>>)
@@ -53,7 +57,9 @@ pub fn streaming_send_round_trips_chunked_response_test() {
     Error(err) -> {
       // Helpful failure context — the err record encodes the
       // category (ConnectFailed / Timeout / etc.).
-      panic as { "expected Ok streaming response, got error: " <> describe(err) }
+      panic as {
+        "expected Ok streaming response, got error: " <> describe(err)
+      }
     }
   }
 }
