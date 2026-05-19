@@ -40,6 +40,8 @@ const s3_path = "../vendor/aws-sdk-rust/aws-models/s3.json"
 
 const polly_path = "../vendor/aws-sdk-rust/aws-models/polly.json"
 
+const transcribe_streaming_path = "../vendor/aws-sdk-rust/aws-models/transcribe-streaming.json"
+
 const awsquery_path = "../test/fixtures/protocol-tests/awsQuery.json"
 
 const ec2query_path = "../test/fixtures/protocol-tests/ec2Query.json"
@@ -216,6 +218,34 @@ pub fn emitted_restjson_modules_expose_streaming_variant_for_streaming_outputs_t
   should.be_true(string.contains(r.source, "runtime.invoke_streaming("))
   // `describe_voices` is a non-streaming op — must not get a streaming variant.
   should.be_false(string.contains(r.source, "pub fn describe_voices_streaming("))
+}
+
+/// Operations whose output carries a `@streaming` union (Smithy's
+/// event-stream shape) get a `<op>_event_stream` variant instead of
+/// `<op>_streaming`. Transcribe Streaming is the canonical case —
+/// `StartStreamTranscription` returns a `TranscriptResultStream`
+/// union tagged with `@streaming`. Same wire shape as the
+/// streaming-blob variant; the distinct name signals the
+/// `application/vnd.amazon.eventstream` framing to callers.
+pub fn emitted_restjson_modules_expose_event_stream_variant_for_streaming_unions_test() {
+  let m = load(transcribe_streaming_path)
+  let svc = find_service(m, "aws.protocols#restJson1", "Transcribe")
+  let assert Ok(r) = restjson.emit_service(m, svc)
+  should.be_true(string.contains(
+    r.source,
+    "pub fn start_stream_transcription_event_stream(",
+  ))
+  should.be_true(string.contains(
+    r.source,
+    "-> Result(streaming.Response, runtime.ClientError)",
+  ))
+  should.be_true(string.contains(r.source, "runtime.invoke_streaming("))
+  // The blob-streaming variant must NOT appear — the output here is
+  // a streaming union, not a streaming blob.
+  should.be_false(string.contains(
+    r.source,
+    "pub fn start_stream_transcription_streaming(",
+  ))
 }
 
 /// Generated services that have a Smithy endpoint rule set on their

@@ -176,7 +176,7 @@ pub fn emit_service(
           )
         })
       let client_block = emit_client(metadata)
-      let invoke_blocks = list.map(op_specs, emit_invoke)
+      let invoke_blocks = list.map(op_specs, fn(s) { emit_invoke(model, s) })
       let paginate_blocks = list.map(op_specs, emit_paginator)
       let waiter_blocks = list.map(op_specs, emit_waiter)
       let error_blocks =
@@ -288,7 +288,7 @@ fn emit_waiter(spec: OpSpec) -> String {
   )
 }
 
-fn emit_invoke(spec: OpSpec) -> String {
+fn emit_invoke(model: Model, spec: OpSpec) -> String {
   let base =
     client.invoke_fn(
       spec.snake,
@@ -300,7 +300,7 @@ fn emit_invoke(spec: OpSpec) -> String {
   // an extra `<op>_streaming(client, input)` variant routing through
   // `runtime.invoke_streaming` — the body arrives chunked rather
   // than buffered. S3.GetObject is the canonical case.
-  let streaming_items = case
+  let streaming_blob_items = case
     list.any(spec.out_info.members, fn(m) { m.target == RStreamingBlob })
   {
     True -> [
@@ -309,8 +309,28 @@ fn emit_invoke(spec: OpSpec) -> String {
     ]
     False -> []
   }
+  // Operations whose output carries a `@streaming` union (Smithy's
+  // event-stream representation — S3.SelectObjectContent in this
+  // protocol) also get a `<op>_event_stream` variant. Same wire
+  // shape as `_streaming`; the distinct name signals the
+  // application/vnd.amazon.eventstream framing to callers.
+  let event_stream_items = case
+    types.has_streaming_union_in_members(model, spec.out_info.members)
+  {
+    True -> [
+      code.Blank,
+      client.invoke_event_stream_fn(spec.snake, spec.in_info.type_name),
+    ]
+    False -> []
+  }
   code.render(
-    code.Module(items: list.append([base, code.Blank], streaming_items)),
+    code.Module(
+      items: list.flatten([
+        [base, code.Blank],
+        streaming_blob_items,
+        event_stream_items,
+      ]),
+    ),
   )
 }
 

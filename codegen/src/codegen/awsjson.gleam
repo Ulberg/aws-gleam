@@ -168,7 +168,7 @@ pub fn emit_service(
           emit_operation_with(spec, service_target, protocol, is_dispatcher)
         })
       let client_block = emit_client(metadata)
-      let invoke_blocks = list.map(op_specs, emit_invoke)
+      let invoke_blocks = list.map(op_specs, fn(s) { emit_invoke(model, s) })
       let paginate_blocks = list.map(op_specs, emit_paginator)
       let waiter_blocks = list.map(op_specs, emit_waiter)
       let unique_err_ids =
@@ -295,7 +295,7 @@ fn known_error_locals(error_ids: List(String)) -> Set(String) {
   })
 }
 
-fn emit_invoke(spec: OpSpec) -> String {
+fn emit_invoke(model: Model, spec: OpSpec) -> String {
   let err_type = spec.error_type
   let doc =
     code.DocComment([
@@ -326,7 +326,7 @@ fn emit_invoke(spec: OpSpec) -> String {
   // Same `@streaming` blob detection as restjson/restxml — awsJson
   // services that carry streaming-blob output members (rare but
   // possible) get the streaming-side wrapper too.
-  let streaming_items = case
+  let streaming_blob_items = case
     list.any(spec.out_info.members, fn(m) { m.target == RStreamingBlob })
   {
     True -> [
@@ -335,8 +335,28 @@ fn emit_invoke(spec: OpSpec) -> String {
     ]
     False -> []
   }
+  // Streaming-union (event-stream) detection — Kinesis
+  // SubscribeToShard, DynamoDB Streams subscribers, etc. all flow
+  // through awsJson. Emit a `<op>_event_stream` variant with the
+  // same wire shape as `_streaming`; the name suffix flags the
+  // application/vnd.amazon.eventstream framing.
+  let event_stream_items = case
+    types.has_streaming_union_in_members(model, spec.out_info.members)
+  {
+    True -> [
+      code.Blank,
+      client.invoke_event_stream_fn(spec.snake, spec.in_info.type_name),
+    ]
+    False -> []
+  }
   code.render(
-    code.Module(items: list.append([doc, base, code.Blank], streaming_items)),
+    code.Module(
+      items: list.flatten([
+        [doc, base, code.Blank],
+        streaming_blob_items,
+        event_stream_items,
+      ]),
+    ),
   )
 }
 

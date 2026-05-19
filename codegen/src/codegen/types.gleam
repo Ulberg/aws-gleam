@@ -807,8 +807,18 @@ pub fn has_streaming_blob_member(model: Model, shape_id: String) -> Bool {
 /// matching union constructor). Returns False for non-struct
 /// shapes and for structs without streaming-union members.
 pub fn has_streaming_union_member(model: Model, shape_id: String) -> Bool {
-  resolve_members(model, shape_id)
-  |> list.any(fn(m) {
+  has_streaming_union_in_members(model, resolve_members(model, shape_id))
+}
+
+/// Same predicate as `has_streaming_union_member` but operates on
+/// an already-resolved member list. The emitters work in terms of
+/// resolved `IOTypeInfo`s (so they don't re-walk the shape) and
+/// want this entry point.
+pub fn has_streaming_union_in_members(
+  model: Model,
+  members: List(MemberDef),
+) -> Bool {
+  list.any(members, fn(m) {
     case m.target {
       RUnion(full_id: union_id, ..) -> is_streaming_shape(model, union_id)
       _ -> False

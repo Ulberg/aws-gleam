@@ -442,9 +442,34 @@ pub fn invoke_fn(
 /// (response body just passes through, no response decode needed).
 /// Callers that want typed errors fall back to the buffered op.
 pub fn invoke_streaming_fn(snake: String, in_type: String) -> Code {
+  invoke_streaming_with_suffix(snake, in_type, "_streaming")
+}
+
+/// Same shape as `invoke_streaming_fn`, named `<snake>_event_stream`
+/// instead, for operations whose output struct carries a
+/// `@streaming` union (Smithy's event-stream representation —
+/// Transcribe.StartStreamTranscription, Kinesis.SubscribeToShard,
+/// S3.SelectObjectContent, Bedrock InvokeModelWithResponseStream).
+///
+/// The wire body comes back as `application/vnd.amazon.eventstream`
+/// frames; callers decode it with
+/// `aws/internal/codec/event_stream.fold_events(resp.body, …)`. The
+/// distinct function-name suffix flags the event-stream framing
+/// without forcing per-op typed-event decoders through the codegen
+/// — that's the next-level pass once a per-service event union
+/// decoder lands.
+pub fn invoke_event_stream_fn(snake: String, in_type: String) -> Code {
+  invoke_streaming_with_suffix(snake, in_type, "_event_stream")
+}
+
+fn invoke_streaming_with_suffix(
+  snake: String,
+  in_type: String,
+  suffix: String,
+) -> Code {
   Fn(
     public: True,
-    name: string.concat([snake, "_streaming"]),
+    name: string.concat([snake, suffix]),
     params: [
       Param(name: "client", type_: "Client"),
       Param(name: "input", type_: in_type),
