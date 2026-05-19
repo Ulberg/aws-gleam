@@ -127,6 +127,20 @@ scripts/init-submodules.sh    # first time only — pins upstream Smithy + AWS m
 ./scripts/test.sh             # gleam test with ERL_FLAGS="+t 4194304"
 ```
 
+`regen.sh` also takes positional service names for focused
+iteration during codegen work:
+
+```
+./scripts/regen.sh s3                  # one service (~3s vs ~minute)
+./scripts/regen.sh s3 polly kinesis    # multiple
+```
+
+The full-run path is what CI uses and what every commit's pre-test
+sequence assumes; focused mode skips the protocol-test fixture
+regen, the global service-count guard, and the all-of-services
+`gleam format` walk so the inner-loop cost shrinks to roughly the
+single-service codegen + a per-file format.
+
 The atom-table bump is required when all ~409 services are generated:
 each service module allocates a few thousand atoms at compile time
 (type names, function names, etc.), which blows past Erlang's default
