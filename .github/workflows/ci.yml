@@ -51,15 +51,35 @@ jobs:
       # the submodule .git pointers reference). Key by the pinned
       # SHAs from the parent tree so a `git submodule update --remote`
       # bump busts the cache automatically.
-      - name: Compute submodule cache key
-        id: subs-key
+      # Compute cache keys deterministically from git tree object IDs.
+      # GitHub Actions' `hashFiles()` reads from disk and turned out
+      # non-deterministic in this repo (codegen + build cache misses
+      # between runs where only docs/ changed). `git ls-tree -r
+      # HEAD <path>` returns sorted blob SHAs that ONLY depend on
+      # tracked file content — same content ⇒ same hash, always.
+      - name: Compute cache keys
+        id: cache-keys
         run: |
-          # `shasum -a 256` works on macOS by default; on Linux it's
-          # the same tool from the `libdigest-perl` package which is
-          # pre-installed on ubuntu-latest. Avoid `sha256sum` so a
-          # later platform swap doesn't require touching this script.
-          key=$(git ls-tree HEAD vendor | awk '{print $3}' | sort | shasum -a 256 | cut -c1-16)
-          echo "key=$key" >> "$GITHUB_OUTPUT"
+          # macOS lacks `sha256sum`; `shasum -a 256` is universal.
+          tree_hash() {
+            git ls-tree -r HEAD -- "$@" | awk '{print $3}' | shasum -a 256 | cut -c1-16
+          }
+
+          subs=$(tree_hash vendor)
+          codegen=$(tree_hash codegen/src codegen/gleam.toml codegen/manifest.toml \
+                              scripts/regen.sh scripts/build-protocol-test-asts.sh scripts/extract-endpoints.sh \
+                              test/protocol_tests/runner.gleam test/protocol_tests/dispatch.gleam \
+                              test/protocol_tests/loader.gleam test/protocol_tests/cases.gleam)
+          build=$(tree_hash codegen/src codegen/gleam.toml codegen/manifest.toml \
+                            scripts/regen.sh scripts/build-protocol-test-asts.sh scripts/extract-endpoints.sh \
+                            src test \
+                            manifest.toml gleam.toml)
+          deps=$(tree_hash manifest.toml gleam.toml)
+
+          echo "subs=$subs"     | tee -a "$GITHUB_OUTPUT"
+          echo "codegen=$codegen" | tee -a "$GITHUB_OUTPUT"
+          echo "build=$build"   | tee -a "$GITHUB_OUTPUT"
+          echo "deps=$deps"     | tee -a "$GITHUB_OUTPUT"
 
       - name: Cache vendor submodules
         id: cache-submodules
@@ -69,7 +89,7 @@ jobs:
             .git/modules/vendor
             vendor/aws-sdk-rust
             vendor/smithy
-          key: vendor-submodules-${{ steps.subs-key.outputs.key }}
+          key: vendor-submodules-${{ steps.cache-keys.outputs.subs }}
 
       - name: Initialise sparse submodules
         if: steps.cache-submodules.outputs.cache-hit != 'true'
@@ -90,7 +110,7 @@ jobs:
           path: |
             ~/.cache/gleam
             ~/.hex
-          key: hex-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ hashFiles('manifest.toml', 'gleam.toml') }}
+          key: hex-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ steps.cache-keys.outputs.deps }}
           restore-keys: |
             hex-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-
 
@@ -110,9 +130,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build
-          key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ steps.subs-key.outputs.key }}-${{ hashFiles('codegen/src/**', 'codegen/gleam.toml', 'codegen/manifest.toml', 'scripts/regen.sh', 'scripts/build-protocol-test-asts.sh', 'scripts/extract-endpoints.sh', 'src/**', 'test/**', 'manifest.toml', 'gleam.toml') }}
+          key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ steps.cache-keys.outputs.subs }}-${{ steps.cache-keys.outputs.build }}
           restore-keys: |
-            build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ steps.subs-key.outputs.key }}-
+            build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ steps.cache-keys.outputs.subs }}-
             build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-
 
       # macos-latest is ARM64 (Apple silicon). scripts/build-protocol-
@@ -151,11 +171,14 @@ jobs:
       #     restore would overwrite them on hit; so they go in the
       #     key so the cache invalidates whenever they're edited).
       #
-      # `hashFiles` over those gives a deterministic key. On cache
-      # hit, the entire regen step is a no-op (literally `if: false`)
-      # and the subsequent gleam test build/ cache lines up with
-      # bit-identical src files — so gleam test skips compilation
-      # too. Expected: ~27 min → ~3-5 min on a hot cache.
+      # Cache key uses `git ls-tree`-based hashing (computed in the
+      # "Compute cache keys" step at the top of the job) to avoid
+      # GHA `hashFiles()` non-determinism that caused cache misses
+      # between docs-only commits. On cache hit, the entire regen
+      # step is a no-op (literally `if: false`) and the subsequent
+      # gleam test build/ cache lines up with bit-identical src
+      # files — so gleam test skips compilation too. Expected:
+      # ~27 min → ~3-5 min on a hot cache.
       - name: Cache codegen output
         id: cache-codegen
         uses: actions/cache@v4
@@ -165,7 +188,7 @@ jobs:
             test/fixtures/protocol-tests
             test/fixtures/endpoints
             test/protocol_tests
-          key: codegen-${{ runner.os }}-${{ steps.subs-key.outputs.key }}-${{ hashFiles('codegen/src/**', 'codegen/gleam.toml', 'codegen/manifest.toml', 'scripts/regen.sh', 'scripts/build-protocol-test-asts.sh', 'scripts/extract-endpoints.sh', 'test/protocol_tests/runner.gleam', 'test/protocol_tests/dispatch.gleam', 'test/protocol_tests/loader.gleam', 'test/protocol_tests/cases.gleam') }}
+          key: codegen-${{ runner.os }}-${{ steps.cache-keys.outputs.subs }}-${{ steps.cache-keys.outputs.codegen }}
 
       - name: Regenerate codegen artefacts
         if: steps.cache-codegen.outputs.cache-hit != 'true'
