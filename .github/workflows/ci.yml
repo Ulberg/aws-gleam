@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        otp: ["26.2.5.4"]
+        otp: ["28.0"]
         gleam: ["1.16.0"]
 
     steps:
@@ -122,34 +122,36 @@ jobs:
           echo "--- gleam"; gleam --version || true
           echo "--- src/aws/services size"; ls src/aws/services 2>/dev/null | wc -l
 
-      - name: Run tests
-        # Investigating a deterministic SIGSEGV at ~2:03 into
-        # `Compiling aws` that survived OTP 27.0 → 27.3.4 → 28.0 and
-        # `ulimit -s 131072`. The ulimit bump didn't help because
-        # BEAM's scheduler threads set their own pthread stack at
-        # creation, ignoring the process ulimit -s.
-        #
-        # This iteration drops to OTP 26.2.5.4 (LTS, JIT optional
-        # rather than default-mandatory). `+S 1` forces a single
-        # scheduler thread — eliminates parallel-JIT races as a
-        # candidate. `GLEAM_LOG=trace` and `RUST_BACKTRACE=1` make
-        # gleam's Rust side print which Erlang source it's about to
-        # invoke right before the crash, so we get a module name out
-        # of the next failure.
+      - name: Build (isolate crash to compile)
+        # Run `gleam build` on its own and capture stderr. With
+        # `+S 1` the erlc subprocess uses a single scheduler — if
+        # parallel JIT compilation was the trigger this should clear
+        # it. If the crash repeats, the captured stderr tells us
+        # which module erlc was working on when SIGSEGV hit.
         run: |
           ulimit -s 131072
           ulimit -c unlimited
-          echo "--- pre-test ulimits ---"
-          echo "  stack: $(ulimit -s) kB"
-          echo "  core:  $(ulimit -c)"
-          echo "--- erlang version ---"
-          erl -eval 'io:format("OTP ~s ERTS ~s~n",[erlang:system_info(otp_release), erlang:system_info(version)]), halt().' -noshell
-          ./scripts/test.sh
+          set +e
+          gleam build --target erlang 2>&1 | tee /tmp/build.log
+          rc=${PIPESTATUS[0]}
+          echo "--- gleam build exit: $rc ---"
+          echo "--- last 40 lines of build log ---"
+          tail -40 /tmp/build.log
+          exit "$rc"
         env:
           ERL_FLAGS: "+t 16777216 +S 1"
           ERL_AFLAGS: "+t 16777216 +S 1"
           GLEAM_LOG: "trace"
           RUST_BACKTRACE: "1"
+
+      - name: Run tests
+        # Reached only if `gleam build` succeeds (which previously
+        # failed). Splits the chain so we can tell whether the
+        # crash is in compile or in test execution.
+        run: ./scripts/test.sh
+        env:
+          ERL_FLAGS: "+t 16777216 +S 1"
+          ERL_AFLAGS: "+t 16777216 +S 1"
 
   # LocalStack end-to-end tests for the v0.1 verification gate
   # (DynamoDB + S3 round-trips). Kept in a separate job so the
@@ -197,7 +199,7 @@ jobs:
       - name: Install OTP and Gleam
         uses: erlef/setup-beam@v1
         with:
-          otp-version: "26.2.5.4"
+          otp-version: "28.0"
           gleam-version: "1.16.0"
 
       - name: Cache Gleam build artifacts and Hex packages
