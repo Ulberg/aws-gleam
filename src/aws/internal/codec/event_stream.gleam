@@ -108,3 +108,210 @@ fn encode_header_value(value: HeaderValue) -> BitArray {
 
 @external(erlang, "erlang", "crc32")
 fn crc32(data: BitArray) -> Int
+
+/// Why decoding can fail. `MalformedFrame` covers any structural
+/// issue (truncated bytes, length fields disagreeing with each
+/// other); `BadPreludeCrc` / `BadMessageCrc` flag exactly which
+/// CRC check failed so callers can distinguish "stream got
+/// corrupted" from "we mis-parsed the framing".
+pub type DecodeError {
+  MalformedFrame(reason: String)
+  BadPreludeCrc
+  BadMessageCrc
+  UnknownHeaderType(type_code: Int)
+}
+
+/// Decode one framed message off the front of `bytes`. Returns the
+/// decoded `Event` plus the trailing bytes (which may hold the next
+/// frame; v1 callers call `decode` again on the rest).
+///
+/// Validates both CRCs end-to-end — partial / corrupted streams
+/// surface as `BadPreludeCrc` / `BadMessageCrc` rather than silently
+/// returning garbage.
+pub fn decode(bytes: BitArray) -> Result(#(Event, BitArray), DecodeError) {
+  case bytes {
+    <<total:big-32, headers_len:big-32, prelude_crc:big-32, rest:bits>> -> {
+      let prelude = <<total:big-32, headers_len:big-32>>
+      case crc32(prelude) == prelude_crc {
+        False -> Error(BadPreludeCrc)
+        True ->
+          decode_after_prelude(total, headers_len, prelude_crc, rest, bytes)
+      }
+    }
+    _ -> Error(MalformedFrame(reason: "shorter than prelude"))
+  }
+}
+
+fn decode_after_prelude(
+  total: Int,
+  headers_len: Int,
+  _prelude_crc: Int,
+  rest_after_prelude: BitArray,
+  original_bytes: BitArray,
+) -> Result(#(Event, BitArray), DecodeError) {
+  // Frame layout sizes: 12 byte prelude, headers_len, payload_len,
+  // 4 byte message-crc. Solve for payload_len.
+  let payload_len = total - 12 - headers_len - 4
+  case payload_len < 0 {
+    True -> Error(MalformedFrame(reason: "negative payload length"))
+    False ->
+      case bit_array.slice(rest_after_prelude, 0, headers_len) {
+        Error(_) -> Error(MalformedFrame(reason: "headers slice failed"))
+        Ok(headers_bytes) ->
+          case bit_array.slice(rest_after_prelude, headers_len, payload_len) {
+            Error(_) -> Error(MalformedFrame(reason: "payload slice failed"))
+            Ok(payload) -> {
+              let trailing_offset = headers_len + payload_len
+              case bit_array.slice(rest_after_prelude, trailing_offset, 4) {
+                Error(_) ->
+                  Error(MalformedFrame(reason: "message crc slice failed"))
+                Ok(msg_crc_bytes) -> {
+                  let actual_msg_crc = bytes_to_int_be(msg_crc_bytes)
+                  let body_len = total - 4
+                  case bit_array.slice(original_bytes, 0, body_len) {
+                    Error(_) ->
+                      Error(MalformedFrame(reason: "body slice failed"))
+                    Ok(body) ->
+                      case crc32(body) == actual_msg_crc {
+                        False -> Error(BadMessageCrc)
+                        True ->
+                          case decode_headers(headers_bytes, []) {
+                            Error(e) -> Error(e)
+                            Ok(headers) -> {
+                              let rest_offset = trailing_offset + 4
+                              let rest = case
+                                bit_array.slice(
+                                  rest_after_prelude,
+                                  rest_offset,
+                                  bit_array.byte_size(rest_after_prelude)
+                                    - rest_offset,
+                                )
+                              {
+                                Ok(b) -> b
+                                Error(_) -> <<>>
+                              }
+                              Ok(#(
+                                Event(headers: headers, payload: payload),
+                                rest,
+                              ))
+                            }
+                          }
+                      }
+                  }
+                }
+              }
+            }
+          }
+      }
+  }
+}
+
+fn decode_headers(
+  bytes: BitArray,
+  acc: List(Header),
+) -> Result(List(Header), DecodeError) {
+  case bit_array.byte_size(bytes) {
+    0 -> Ok(list.reverse(acc))
+    _ ->
+      case bytes {
+        <<name_len:8, rest:bits>> ->
+          case bit_array.slice(rest, 0, name_len) {
+            Error(_) -> Error(MalformedFrame(reason: "header name slice"))
+            Ok(name_bytes) ->
+              case bit_array.to_string(name_bytes) {
+                Error(_) -> Error(MalformedFrame(reason: "header name utf8"))
+                Ok(name) ->
+                  case
+                    bit_array.slice(
+                      rest,
+                      name_len,
+                      bit_array.byte_size(rest) - name_len,
+                    )
+                  {
+                    Error(_) ->
+                      Error(MalformedFrame(reason: "header value rest"))
+                    Ok(value_rest) -> {
+                      case decode_header_value(value_rest) {
+                        Error(e) -> Error(e)
+                        Ok(#(value, after_value)) ->
+                          decode_headers(after_value, [
+                            Header(name: name, value: value),
+                            ..acc
+                          ])
+                      }
+                    }
+                  }
+              }
+          }
+        _ -> Error(MalformedFrame(reason: "header truncated"))
+      }
+  }
+}
+
+fn decode_header_value(
+  bytes: BitArray,
+) -> Result(#(HeaderValue, BitArray), DecodeError) {
+  case bytes {
+    <<type_code:8, rest:bits>> -> decode_header_value_body(type_code, rest)
+    _ -> Error(MalformedFrame(reason: "header value missing type byte"))
+  }
+}
+
+fn decode_header_value_body(
+  type_code: Int,
+  rest: BitArray,
+) -> Result(#(HeaderValue, BitArray), DecodeError) {
+  case type_code {
+    // Type 2 = byte. Read one byte, sign-extend from 8.
+    2 ->
+      case rest {
+        <<n:big-8, after:bits>> -> {
+          let signed = case n >= 128 {
+            True -> n - 256
+            False -> n
+          }
+          Ok(#(ByteValue(signed), after))
+        }
+        _ -> Error(MalformedFrame(reason: "byte header truncated"))
+      }
+    // Type 7 = string. Read 2-byte length, then UTF-8 bytes.
+    7 -> decode_string_header(rest)
+    other -> Error(UnknownHeaderType(type_code: other))
+  }
+}
+
+fn decode_string_header(
+  rest: BitArray,
+) -> Result(#(HeaderValue, BitArray), DecodeError) {
+  case rest {
+    <<len:big-16, value_and_rest:bits>> ->
+      case bit_array.slice(value_and_rest, 0, len) {
+        Error(_) -> Error(MalformedFrame(reason: "string slice"))
+        Ok(value_bytes) ->
+          case bit_array.to_string(value_bytes) {
+            Error(_) -> Error(MalformedFrame(reason: "string utf8"))
+            Ok(s) -> {
+              let after = case
+                bit_array.slice(
+                  value_and_rest,
+                  len,
+                  bit_array.byte_size(value_and_rest) - len,
+                )
+              {
+                Ok(b) -> b
+                Error(_) -> <<>>
+              }
+              Ok(#(StringValue(s), after))
+            }
+          }
+      }
+    _ -> Error(MalformedFrame(reason: "string header truncated"))
+  }
+}
+
+fn bytes_to_int_be(bytes: BitArray) -> Int {
+  case bytes {
+    <<n:big-32>> -> n
+    _ -> 0
+  }
+}

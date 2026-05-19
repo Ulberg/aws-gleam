@@ -8,7 +8,8 @@
 //// inputs.
 
 import aws/internal/codec/event_stream.{
-  ByteValue, Event, Header, StringValue, encode,
+  BadMessageCrc, BadPreludeCrc, ByteValue, Event, Header, StringValue, decode,
+  encode,
 }
 import gleam/bit_array
 import gleeunit/should
@@ -105,3 +106,99 @@ pub fn message_crc_is_last_four_bytes_test() {
 
 @external(erlang, "erlang", "crc32")
 fn crc32(data: BitArray) -> Int
+
+// ---------- decode ----------
+
+pub fn encode_decode_round_trips_string_header_test() {
+  // Build a non-trivial event and verify decode(encode(x)) == x.
+  // The trailing bytes (BitArray) should be empty when only one
+  // frame is in the buffer.
+  let event =
+    Event(
+      headers: [
+        Header(name: ":message-type", value: StringValue("event")),
+        Header(name: ":event-type", value: StringValue("ChunkResult")),
+      ],
+      payload: <<"hello":utf8>>,
+    )
+  case decode(encode(event)) {
+    Ok(#(decoded, rest)) -> {
+      decoded |> should.equal(event)
+      rest |> should.equal(<<>>)
+    }
+    Error(e) -> panic as { "decode failed: " <> debug_decode_error(e) }
+  }
+}
+
+pub fn encode_decode_round_trips_byte_header_with_negative_test() {
+  // -128 is the most-negative signed-8 — exercises the two's-
+  // complement wrap on both encode (n + 256) and decode (n - 256).
+  let event =
+    Event(headers: [Header(name: "n", value: ByteValue(-128))], payload: <<>>)
+  case decode(encode(event)) {
+    Ok(#(decoded, _rest)) -> decoded |> should.equal(event)
+    Error(e) -> panic as { "decode failed: " <> debug_decode_error(e) }
+  }
+}
+
+pub fn decode_surfaces_remaining_bytes_for_next_frame_test() {
+  // Two frames concatenated; the first decode call must return the
+  // second frame as the remaining BitArray so callers can loop.
+  let first = encode(Event(headers: [], payload: <<"a":utf8>>))
+  let second = encode(Event(headers: [], payload: <<"b":utf8>>))
+  case decode(<<first:bits, second:bits>>) {
+    Ok(#(decoded_first, remaining)) -> {
+      decoded_first.payload |> should.equal(<<"a":utf8>>)
+      remaining |> should.equal(second)
+    }
+    Error(_) -> panic as "expected to decode the first frame"
+  }
+}
+
+pub fn decode_detects_corrupted_prelude_crc_test() {
+  // Flip a bit in the prelude (one of the first 8 bytes) without
+  // touching the recorded prelude_crc — must surface BadPreludeCrc.
+  let good = encode(Event(headers: [], payload: <<>>))
+  let assert <<a:big-32, b:big-32, tail:bits>> = good
+  // Bump the headers_len field to something the prelude_crc no
+  // longer matches.
+  let corrupted = <<a:big-32, { b + 1 }:big-32, tail:bits>>
+  case decode(corrupted) {
+    Ok(_) -> panic as "expected BadPreludeCrc, got Ok"
+    Error(BadPreludeCrc) -> Nil
+    Error(other) ->
+      panic as { "expected BadPreludeCrc, got " <> debug_decode_error(other) }
+  }
+}
+
+pub fn decode_detects_corrupted_message_crc_test() {
+  // Flip a byte in the middle of the headers section. Prelude
+  // bytes + their CRC stay intact (so we get past the prelude
+  // check); the body CRC must then fail.
+  let event =
+    Event(headers: [Header(name: "k", value: StringValue("v"))], payload: <<
+      "hi":utf8,
+    >>)
+  let good = encode(event)
+  // Flip the byte at offset 14 (somewhere inside the headers
+  // section, after the 12-byte prelude + 2-byte recovery margin).
+  // Use slice + concat to swap one byte.
+  let assert Ok(prefix) = bit_array.slice(good, 0, 14)
+  let assert Ok(rest) =
+    bit_array.slice(good, 15, bit_array.byte_size(good) - 15)
+  let corrupted = <<prefix:bits, 0xFF, rest:bits>>
+  case decode(corrupted) {
+    Ok(_) -> panic as "expected BadMessageCrc, got Ok"
+    Error(BadMessageCrc) -> Nil
+    Error(other) ->
+      panic as { "expected BadMessageCrc, got " <> debug_decode_error(other) }
+  }
+}
+
+fn debug_decode_error(err) -> String {
+  case err {
+    BadPreludeCrc -> "BadPreludeCrc"
+    BadMessageCrc -> "BadMessageCrc"
+    _ -> "other"
+  }
+}
