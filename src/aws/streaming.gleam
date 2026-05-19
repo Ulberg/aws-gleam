@@ -119,3 +119,30 @@ pub fn append(a: StreamingBody, b: StreamingBody) -> StreamingBody {
     _, _ -> Chunked(chunks: list.append(to_chunks(a), to_chunks(b)))
   }
 }
+
+/// Reduce a streaming body left-to-right by accumulating one chunk
+/// at a time. For v1 (buffered) the body surfaces as a single chunk
+/// per `to_chunks`, so `fold_chunks` collapses to a one-call fold.
+/// Once the chunked transport lands, this becomes the natural
+/// consumer API: callers can do running-hash / running-length /
+/// stream-to-disk without ever materialising the full body.
+pub fn fold_chunks(
+  body: StreamingBody,
+  initial: acc,
+  f: fn(acc, BitArray) -> acc,
+) -> acc {
+  list.fold(to_chunks(body), initial, f)
+}
+
+/// `fold_chunks` variant that short-circuits on `Error`. Returns the
+/// first error the folder produces (or `Ok(acc)` if every chunk
+/// accepted). Useful for streaming decoders that can fail partway
+/// (e.g. UTF-8 validation rejecting a torn multi-byte sequence at a
+/// chunk boundary, or a JSON parser hitting a malformed token).
+pub fn try_fold_chunks(
+  body: StreamingBody,
+  initial: acc,
+  f: fn(acc, BitArray) -> Result(acc, err),
+) -> Result(acc, err) {
+  list.try_fold(to_chunks(body), initial, f)
+}
