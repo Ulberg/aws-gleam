@@ -14,9 +14,9 @@ deferred to v0.2.
 |---|---|---|---|
 | M0 — scaffold | ✅ | n/a | — |
 | M1 — SigV4 | ✅ | ✅ | — |
-| M2 — credential providers + chain | ✅ (env, profile, SSO, web-identity, ECS, IMDS, process) | ✅ via `default_chain` | refresh-actor not on the hot path; STS-AssumeRole combinator missing |
-| M3 — region + endpoints | ✅ both modules exist | ❌ — `runtime.default_config` uses static `<prefix>.<region>.amazonaws.com`; `endpoints.resolve` has zero callers; `region.resolve` not auto-called by `service.new(region:)` | wire-in pending |
-| M4 — retry | ✅ standard + adaptive in `src/aws/retry.gleam` | ❌ — `runtime.invoke` doesn't call the retry loop | wire-in pending |
+| M2 — credential providers + chain | ✅ (env, profile, SSO, web-identity, ECS, IMDS, process) | ✅ via `default_chain` + per-service `credentials_cache` actor on the hot path | profile→AssumeRole auto-chaining (`source_profile` / `role_arn`) still manual via `from_assume_role` |
+| M3 — region + endpoints | ✅ both modules exist | ✅ — every generated service embeds its rule set and threads it through `runtime.with_endpoint_rule_set`; `service.new()` auto-calls `region.resolve` | — |
+| M4 — retry | ✅ standard + adaptive in `src/aws/retry.gleam` | ✅ — `runtime.invoke` wraps via `retry.with_retry(config.http_send, config.retry_strategy)` | — |
 | M5 — protocol codecs | ✅ awsJson1_0 / 1_1 / restJson1 / restXml / awsQuery / ec2Query | ✅ | restJson1 has ~30 edge-case failures; restXml + awsQuery + ec2Query have decoder gaps |
 | M6 — typed DynamoDB + S3 | ✅ (full services, not just GetItem/GetObject) | ✅ | response-header binding ✅ (2026-05-19); restXml error extraction ✅ |
 | M7 — codegen | ✅ 5 protocols | ✅ | only DynamoDB + S3 actually generated |
@@ -26,34 +26,38 @@ deferred to v0.2.
 Ordered cheapest-win first. Each closes a specific milestone gap from
 the table above.
 
-1. **Wire retry into `runtime.invoke`** — `src/aws/retry.gleam`
-   already implements `standard()` / `adaptive()` plus full-jitter
-   backoff per the plan's M4. The runtime just doesn't call it.
-   Should be a small change to `runtime.invoke` to loop via
-   `retry.with_retry(send, strategy)`. Closes M4.
+1. **Wire retry into `runtime.invoke`** — DONE.
+   `runtime.invoke` builds `retry.with_retry(send: config.http_send,
+   strategy: config.retry_strategy)` and dispatches through that, so
+   the standard / adaptive strategy from `ClientConfig.retry_strategy`
+   wraps every request. `ClientConfig` defaults to `retry.standard()`;
+   callers override via `runtime.with_retry_strategy`.
 
 2. **Wire `endpoints.resolve` + per-service ruleset bundling** —
-   `src/aws/endpoints.gleam` parses and evaluates Smithy
-   `endpoint-rule-set-1.json` correctly (passes vendored
-   `endpoint-tests-1.json` cases). Today no service uses it.
-   Need: (a) embed each service's ruleset at codegen time, (b)
-   thread the result into `runtime.invoke`, (c) expose `with_*`
-   builders for ruleset inputs (`bucket`, `useFips`, `useDualStack`,
-   `forcePathStyle` for S3; equivalent on others). Closes M3 and the
-   plan's scope-concern #5.
+   DONE. Each generated service module embeds its Smithy
+   `endpoint-rule-set-1.json` as a literal string and threads it
+   into `ClientConfig` via `runtime.with_endpoint_rule_set`. The
+   runtime evaluates it per call with `endpoints.resolve` and merges
+   the per-op `endpoint_params` (S3's `Bucket` / `Key` / `CopySource`
+   etc. flow in from each op's `invoke_with_endpoint_params` call
+   site). `runtime.with_endpoint_param` is the caller-facing knob
+   for `useFips` / `useDualStack` / `forcePathStyle` — service-
+   specific named wrappers (`with_force_path_style` etc.) are a
+   polish item that would just call this with a known key.
 
-3. **Auto-resolve region when caller omits it** — `region.resolve()`
-   walks env → profile → IMDS already. Add `service.new()` overload
-   (no region arg) that calls it. Lambda's `AWS_REGION` env var then
-   "just works" with no caller code. Closes the plan's
-   "zero-config in each environment" rider on M2.
+3. **Auto-resolve region when caller omits it** — DONE.
+   Every generated service's `service.new()` / `service.new_with_*`
+   calls `region.resolve(profile: "default")` so callers in Lambda /
+   ECS / EC2 hit the env-var / profile / IMDS chain automatically;
+   `service.new_with_region` lets callers pin a region explicitly.
 
-4. **Use the credentials cache on the hot path** —
-   `src/aws/internal/credentials_cache.gleam` implements the M2
-   refresh actor (coalesces concurrent fetches, refreshes ahead of
-   expiry). `runtime.invoke` currently calls `credentials.fetch(provider)`
-   directly, bypassing the cache. Mint each `Client` with a
-   long-lived cache subject and read from it. Closes M2.
+4. **Use the credentials cache on the hot path** — DONE.
+   Each generated service's `Client` carries a `credentials_cache.Cache`
+   minted in `service.new()` via `credentials_cache.start_default(provider)`,
+   exposed to the runtime as `credentials_cache.as_provider(cache)`.
+   The cache actor coalesces concurrent fetches and refreshes ahead
+   of expiry. `shutdown` / `shutdown_sync` helpers per service stop
+   the actor cleanly on teardown.
 
 5. **restXml error extraction** — DONE (earlier).
    `runtime.extract_xml_error_code` is wired as the third fallback
@@ -77,12 +81,18 @@ the table above.
    restxml + restjson1 paths respectively. Closes the M6-audit gap.
 
 7. **STS AssumeRole helper for `source_profile` / `role_arn`** —
-   Plan scope-concern #6 calls for a minimal
-   `src/aws/internal/providers/sts.gleam` covering `AssumeRole` +
-   `AssumeRoleWithWebIdentity` so the profile parser's
-   `source_profile` chains resolve. The web-identity flow is in
-   `sts_web_identity.gleam`; adding plain `AssumeRole` makes the
-   profile parser's role-chain support real.
+   PARTIAL. The minimal `sts.gleam` + `web_identity.gleam` providers
+   are in place, and `credentials.from_assume_role` /
+   `from_assume_role_with` wrap them as composable providers — so
+   programmatic role-chain hops work today. The remaining gap is
+   the *automatic* path: `build_credentials_from_lookup` in
+   `credentials.gleam` only reads `aws_access_key_id` /
+   `aws_secret_access_key` / `aws_session_token` from the profile
+   file; it doesn't yet inspect `role_arn` / `source_profile` and
+   spin up a chained `from_assume_role` provider transparently.
+   That's a small follow-up — add a branch in the profile builder
+   that, when `role_arn` is present, walks to the source profile and
+   composes via `from_assume_role`.
 
 8. **`@xmlFlattened` lists + struct-member `@xmlName`** — DONE.
    `xml_decode.optional_flat_list` and the restxml codegen
