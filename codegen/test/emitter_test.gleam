@@ -177,6 +177,10 @@ pub fn emitted_modules_expose_streaming_and_retry_setters_test() {
     r.source,
     "pub fn with_sigv4a_region_set(client: Client, region_set: List(String))",
   ))
+  should.be_true(string.contains(
+    r.source,
+    "pub fn with_sigv4a_path_normalization(client: Client, normalize: Bool)",
+  ))
 }
 
 /// restXml services whose output struct carries a `@streaming` blob

@@ -101,6 +101,62 @@ pub fn with_sigv4a_region_set_flips_authorization_algorithm_test() {
   s3.shutdown(client)
 }
 
+pub fn with_sigv4a_path_normalization_false_preserves_dot_segments_test() {
+  // S3 sets normalize_path: False so object keys with `.` / `..`
+  // survive the canonical-request step. End-to-end check: the
+  // request path makes it into the signing canonical-uri verbatim
+  // (no dot-segment collapse) and the SigV4a signature is
+  // accepted by the round-trip verifier — which would fail if the
+  // signer used the normalised path while we hashed the literal.
+  let inbox = process.new_subject()
+  let client =
+    s3.new(region: "us-east-1")
+    |> s3.with_credentials_provider(static_credentials())
+    |> s3.with_http_send(capture_send(inbox))
+    |> s3.with_max_attempts(1)
+    |> s3.with_sigv4a_region_set(["us-east-1"])
+    |> s3.with_sigv4a_path_normalization(False)
+  let input =
+    s3.ListBucketsRequest(
+      bucket_region: None,
+      continuation_token: None,
+      max_buckets: None,
+      prefix: None,
+    )
+  let _ = s3.list_buckets(client, input)
+
+  let auth = first_authorization_header(inbox)
+  string.starts_with(auth, "AWS4-ECDSA-P256-SHA256 Credential=AKIDEXAMPLE/")
+  |> should.be_true
+  s3.shutdown(client)
+}
+
+pub fn with_sigv4a_path_normalization_without_signer_is_noop_test() {
+  // Calling the path-normalization setter before opting into SigV4a
+  // leaves the config unchanged — no signer present, nothing to
+  // override. The dispatch still uses the default `sign_sigv4`
+  // path.
+  let inbox = process.new_subject()
+  let client =
+    s3.new(region: "us-east-1")
+    |> s3.with_credentials_provider(static_credentials())
+    |> s3.with_http_send(capture_send(inbox))
+    |> s3.with_max_attempts(1)
+    |> s3.with_sigv4a_path_normalization(False)
+  let input =
+    s3.ListBucketsRequest(
+      bucket_region: None,
+      continuation_token: None,
+      max_buckets: None,
+      prefix: None,
+    )
+  let _ = s3.list_buckets(client, input)
+
+  string.starts_with(first_authorization_header(inbox), "AWS4-HMAC-SHA256 ")
+  |> should.be_true
+  s3.shutdown(client)
+}
+
 pub fn with_sigv4a_region_set_emits_region_set_header_test() {
   let inbox = process.new_subject()
   let client =

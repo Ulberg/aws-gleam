@@ -72,9 +72,11 @@ pub type ClientConfig {
 /// signature binds to (`X-Amz-Region-Set`); the IAM credentials
 /// themselves still flow through the regular `config.provider`,
 /// so credential rotation / refresh continues to work via the
-/// existing `credentials_cache` path.
+/// existing `credentials_cache` path. `normalize_path` defaults to
+/// `True` (the typical AWS service); S3 callers need `False` so
+/// object keys with `.` / `..` survive the canonical-request step.
 pub type Sigv4aSigner {
-  Sigv4aSigner(region_set: List(String))
+  Sigv4aSigner(region_set: List(String), normalize_path: Bool)
 }
 
 /// Errors surfaced from a generated `<op>(client, input)` call.
@@ -118,11 +120,37 @@ pub fn default_config(
 /// every request. `region_set` becomes the `X-Amz-Region-Set` header
 /// — single-region callers pass `["us-east-1"]`, multi-region callers
 /// pass the full list. Required for S3 Multi-Region Access Points.
+///
+/// `normalize_path` defaults to `True`; S3 callers should follow up
+/// with `with_sigv4a_path_normalization(client, False)` so keys
+/// containing `.` / `..` survive the canonical-request step.
 pub fn with_sigv4a_region_set(
   config: ClientConfig,
   region_set: List(String),
 ) -> ClientConfig {
-  ClientConfig(..config, sigv4a_signer: Some(Sigv4aSigner(region_set:)))
+  ClientConfig(
+    ..config,
+    sigv4a_signer: Some(Sigv4aSigner(region_set:, normalize_path: True)),
+  )
+}
+
+/// Override the SigV4a `normalize_path` knob. No-op when the client
+/// hasn't opted into SigV4a yet (`with_sigv4a_region_set` not
+/// called). Pass `False` for S3 — its object-key paths can carry
+/// `.` / `..` that the RFC 3986 dot-segment removal would otherwise
+/// strip.
+pub fn with_sigv4a_path_normalization(
+  config: ClientConfig,
+  normalize: Bool,
+) -> ClientConfig {
+  case config.sigv4a_signer {
+    Some(s) ->
+      ClientConfig(
+        ..config,
+        sigv4a_signer: Some(Sigv4aSigner(..s, normalize_path: normalize)),
+      )
+    None -> config
+  }
 }
 
 pub fn default_endpoint(endpoint_prefix: String, region: String) -> String {
@@ -474,11 +502,7 @@ fn sign_sigv4a(
       region_set: signer.region_set,
       service: config.signing_name,
       sign_body: True,
-      // S3 needs `False` here so object keys with `.` / `..` survive.
-      // Default `True` matches every other AWS service; per-service
-      // override can land via `with_sigv4a_path_normalization` if
-      // needed.
-      normalize_path: True,
+      normalize_path: signer.normalize_path,
       omit_session_token: False,
     )
   sigv4a.sign_with_credentials(unsigned, sigv4a_creds, opts)

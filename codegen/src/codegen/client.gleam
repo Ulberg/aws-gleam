@@ -319,6 +319,30 @@ pub fn items(
     ),
     Blank,
     DocComment([
+      "Override SigV4a's `normalize_path` (RFC 3986 dot-segment removal).",
+      "No-op when `with_sigv4a_region_set` has not been called yet — the",
+      "knob lives on the per-Client SigV4a state, not on the underlying",
+      "transport. S3 callers need `False` so object keys with `.` / `..`",
+      "survive the canonical-request step.",
+    ]),
+    Fn(
+      public: True,
+      name: "with_sigv4a_path_normalization",
+      params: [
+        Param(name: "client", type_: "Client"),
+        Param(name: "normalize", type_: "Bool"),
+      ],
+      return: CodeSome("Client"),
+      body: client_with(
+        Call(Ident("runtime.with_sigv4a_path_normalization"), [
+          Ident("client.config"),
+          Ident("normalize"),
+        ]),
+        Ident("client.cache"),
+      ),
+    ),
+    Blank,
+    DocComment([
       "Override the retry attempt budget on the underlying ClientConfig.",
       "The common case for retry tuning — pass `1` to disable retries",
       "entirely (single attempt per request), `5` for long-running batch",
