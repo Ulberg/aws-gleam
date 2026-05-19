@@ -123,29 +123,34 @@ jobs:
           echo "--- src/aws/services size"; ls src/aws/services 2>/dev/null | wc -l
 
       - name: Run tests
-        # Volume-dependence confirmed by attempts 6 + 7: full 409
-        # services SIGSEGV at ~2 min regardless of whether tests are
-        # in the build, while a 10-service shrink builds in 0.06 s.
-        # Memory (~14 GB free), scheduler count (+S 1 vs default),
-        # OTP version (27.0 / 27.3.4 / 28.0), OS-level stack ulimit
-        # (16 MB / 128 MB) all ruled out.
+        # Hypothesis after 8 attempts: the SIGSEGV is in the Gleam
+        # Rust binary's worker threads, not in BEAM. Gleam
+        # parallelises type analysis over a thread pool; default
+        # pthread stack on Linux is 8 MB and ulimit -s on the main
+        # bash does NOT propagate to pthread_create. With 517
+        # modules and deep recursive type checks, a worker stack
+        # overflows → SIGSEGV looks indistinguishable from a BEAM
+        # crash because the parent shell just reports exit 139.
         #
-        # The Erlang compiler heavily uses ETS for the module-info
-        # cache; default `+e 1400` (max ETS tables) may not cover
-        # 517 modules × multiple internal tables per compile. Set
-        # `+e 65536` to give plenty of headroom.
+        # Fix probes:
+        #   * `RUST_MIN_STACK=67108864` raises the default stack
+        #     for any `thread::spawn` call to 64 MB.
+        #   * `RAYON_NUM_THREADS=1` forces the rayon pool (if used)
+        #     into the main thread, where the 128 MB ulimit -s
+        #     actually applies.
         #
-        # `+P` (max processes) and `+Q` (max ports) defaults are
-        # already in the millions so they shouldn't be the limit,
-        # but bumping `+P` to 4M is cheap insurance against any
-        # process-table pressure during heavy compilation.
+        # If this clears the crash, both env vars get pinned. If
+        # not, the next move is to split the 409 services into
+        # their own Gleam sub-package.
         run: |
           ulimit -s 131072
           ulimit -c unlimited
           ./scripts/test.sh
         env:
-          ERL_FLAGS: "+t 16777216 +e 65536 +P 4194304 +S 2:2"
-          ERL_AFLAGS: "+t 16777216 +e 65536 +P 4194304 +S 2:2"
+          ERL_FLAGS: "+t 16777216 +S 2:2"
+          ERL_AFLAGS: "+t 16777216 +S 2:2"
+          RUST_MIN_STACK: "67108864"
+          RAYON_NUM_THREADS: "1"
 
   # LocalStack end-to-end tests for the v0.1 verification gate
   # (DynamoDB + S3 round-trips). Kept in a separate job so the
