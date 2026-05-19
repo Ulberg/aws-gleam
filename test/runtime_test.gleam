@@ -9,6 +9,7 @@ import aws/internal/client/runtime
 import aws/internal/http_send
 import aws/internal/http_streaming
 import aws/retry
+import aws/streaming
 import gleam/bit_array
 import gleam/dict
 import gleam/erlang/process
@@ -489,6 +490,119 @@ pub fn restxml_error_response_wrapper_is_unwrapped_test() {
       }
   }
 }
+
+// ---------- invoke_streaming tests ----------
+//
+// `invoke_streaming` shares the credential/endpoint/sign pipeline
+// with `invoke` but dispatches through `streaming_http_send` and
+// returns the response body as a `StreamingBody`. These tests pin
+// the success-path passthrough, the small-body error extraction,
+// and the >1 MiB error-body cap that prevents OOM on misbehaving
+// servers.
+
+/// Streaming-side scripted send that always returns the canned
+/// response — useful when the test only cares about whether the
+/// streaming sender was reached, not about per-call sequencing.
+fn fixed_streaming_send(
+  resp: Result(response.Response(streaming.StreamingBody), http_send.HttpError),
+) -> http_send.StreamingSend {
+  fn(_req: Request(BitArray)) { resp }
+}
+
+fn streaming_test_config(
+  streaming_send: http_send.StreamingSend,
+) -> runtime.ClientConfig {
+  let buffered = scripted_send([], process.new_subject())
+  test_config(buffered, one_attempt_strategy())
+  |> runtime.with_streaming_http_send(streaming_send)
+}
+
+pub fn invoke_streaming_returns_streaming_body_on_success_test() {
+  let body_bytes = <<"hello chunked world":utf8>>
+  let streaming_send =
+    fixed_streaming_send(
+      Ok(response.Response(
+        status: 200,
+        headers: [#("content-type", "application/octet-stream")],
+        body: streaming.from_bit_array(body_bytes),
+      )),
+    )
+  let config = streaming_test_config(streaming_send)
+
+  case runtime.invoke_streaming(config, ddb_request()) {
+    Ok(resp) -> {
+      resp.status |> should.equal(200)
+      streaming.to_bit_array(resp.body) |> should.equal(body_bytes)
+    }
+    Error(_) -> panic as "expected Ok, got Error"
+  }
+}
+
+pub fn invoke_streaming_extracts_typed_error_from_small_body_test() {
+  // Error response body fits well under the 1 MiB cap; the typed-
+  // error extraction must surface the x-amzn-errortype header as
+  // ServiceError.error_type.
+  let error_body = <<"":utf8>>
+  let streaming_send =
+    fixed_streaming_send(
+      Ok(response.Response(
+        status: 400,
+        headers: [#("x-amzn-errortype", "ResourceNotFoundException")],
+        body: streaming.from_bit_array(error_body),
+      )),
+    )
+  let config = streaming_test_config(streaming_send)
+
+  case runtime.invoke_streaming(config, ddb_request()) {
+    Error(runtime.ServiceError(status: 400, error_type: et, ..)) ->
+      et |> should.equal("ResourceNotFoundException")
+    other ->
+      panic as { "expected ServiceError, got " <> describe_streaming(other) }
+  }
+}
+
+pub fn invoke_streaming_caps_oversized_error_body_test() {
+  // 2 MiB error body — the helper must refuse to materialise and
+  // surface DecodeError instead of OOMing or extracting from a
+  // truncated buffer. We use a single 2 MiB chunk; the buffered
+  // branch of StreamingBody walks once and bails on size.
+  let two_mib = 2 * 1_048_576
+  let huge_body = binary_copy(<<0>>, two_mib)
+  let streaming_send =
+    fixed_streaming_send(
+      Ok(response.Response(
+        status: 500,
+        headers: [],
+        body: streaming.from_bit_array(huge_body),
+      )),
+    )
+  let config = streaming_test_config(streaming_send)
+
+  case runtime.invoke_streaming(config, ddb_request()) {
+    Error(runtime.DecodeError(_)) -> Nil
+    other ->
+      panic as {
+        "expected DecodeError on oversized body, got "
+        <> describe_streaming(other)
+      }
+  }
+}
+
+fn describe_streaming(
+  r: Result(response.Response(streaming.StreamingBody), runtime.ClientError),
+) -> String {
+  case r {
+    Ok(_) -> "Ok(_)"
+    Error(runtime.ServiceError(status: s, ..)) ->
+      "ServiceError(" <> int_to_string(s) <> ")"
+    Error(runtime.TransportError(_)) -> "TransportError(_)"
+    Error(runtime.CredentialsError(_)) -> "CredentialsError(_)"
+    Error(runtime.DecodeError(reason: r)) -> "DecodeError(" <> r <> ")"
+  }
+}
+
+@external(erlang, "binary", "copy")
+fn binary_copy(b: BitArray, n: Int) -> BitArray
 
 // ---------- HTTP/2 opt-in tests ----------
 //

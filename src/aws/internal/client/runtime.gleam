@@ -18,10 +18,12 @@ import aws/internal/http_streaming
 import aws/internal/sigv4.{SigningOptions}
 import aws/internal/text_scan
 import aws/retry.{type Strategy}
+import aws/streaming.{type StreamingBody}
 import gleam/bit_array
 import gleam/dict.{type Dict}
 import gleam/http
-import gleam/http/request
+import gleam/http/request.{type Request}
+import gleam/http/response.{type Response}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
@@ -216,6 +218,118 @@ pub fn invoke_with_endpoint_params(
   built: #(String, String, Dict(String, String), BitArray),
   parse: fn(Int, Dict(String, String), BitArray) -> Result(output, String),
 ) -> Result(output, ClientError) {
+  use http_req <- result.try(prepare_signed_request(config, op_params, built))
+
+  let send =
+    retry.with_retry(send: config.http_send, strategy: config.retry_strategy)
+  use resp <- result.try(
+    send(http_req)
+    |> result.map_error(TransportError),
+  )
+
+  let resp_headers = headers_to_dict(resp.headers)
+  case resp.status >= 200 && resp.status < 300 {
+    True ->
+      parse(resp.status, resp_headers, resp.body)
+      |> result.map_error(fn(reason) { DecodeError(reason: reason) })
+    False -> {
+      let error_type = extract_error_type(resp_headers, resp.body)
+      Error(ServiceError(
+        status: resp.status,
+        error_type: error_type,
+        body: resp.body,
+      ))
+    }
+  }
+}
+
+/// Streaming-response variant of `invoke`. Builds + signs the
+/// request exactly like `invoke`, but dispatches through
+/// `streaming_http_send` (chunked transport) and returns the raw
+/// `Response(StreamingBody)` so callers can consume the body
+/// incrementally — fold chunk-by-chunk via `streaming.fold_chunks`,
+/// decode event-stream frames via `event_stream.fold_events`, or
+/// stream-to-disk without buffering.
+///
+/// Used by generated codegen for operations whose output carries
+/// `@streaming` — `S3.GetObject` for multi-GB downloads,
+/// `Transcribe.StartStreamTranscription` and `Kinesis.SubscribeToShard`
+/// for event-stream responses, etc.
+///
+/// Error responses (non-2xx) are materialised via
+/// `streaming.to_bit_array_max(body, 1 MiB)` so `error_type`
+/// extraction works on the JSON/XML error body the same way as
+/// `invoke`. A response body that exceeds the 1 MiB cap on the
+/// error path surfaces as `DecodeError` since we can't safely
+/// extract a typed error from an oversized error body.
+///
+/// Retry is intentionally NOT wrapped around `streaming_http_send`
+/// at this layer — replaying a streaming request after a transient
+/// failure is op-specific (idempotent vs. mutating). Callers that
+/// want retry on a streaming op should layer it themselves or
+/// drop down to the buffered `invoke`.
+pub fn invoke_streaming(
+  config: ClientConfig,
+  built: #(String, String, Dict(String, String), BitArray),
+) -> Result(Response(StreamingBody), ClientError) {
+  invoke_streaming_with_endpoint_params(config, dict.new(), built)
+}
+
+/// `invoke_streaming` with per-op endpoint-rule-set parameters (the
+/// streaming-side counterpart to `invoke_with_endpoint_params`).
+pub fn invoke_streaming_with_endpoint_params(
+  config: ClientConfig,
+  op_params: Params,
+  built: #(String, String, Dict(String, String), BitArray),
+) -> Result(Response(StreamingBody), ClientError) {
+  use http_req <- result.try(prepare_signed_request(config, op_params, built))
+
+  use resp <- result.try(
+    config.streaming_http_send(http_req)
+    |> result.map_error(TransportError),
+  )
+
+  case resp.status >= 200 && resp.status < 300 {
+    True -> Ok(resp)
+    False -> Error(streaming_error(resp))
+  }
+}
+
+// Cap error-response bodies at 1 MiB on the streaming path. Real
+// AWS error bodies are always small (a few KB XML / JSON); anything
+// larger is server misbehaviour and we surface DecodeError rather
+// than risk an OOM on a hot retry path.
+const streaming_error_body_cap_bytes: Int = 1_048_576
+
+fn streaming_error(resp: Response(StreamingBody)) -> ClientError {
+  let resp_headers = headers_to_dict(resp.headers)
+  case streaming.to_bit_array_max(resp.body, streaming_error_body_cap_bytes) {
+    Ok(body) ->
+      ServiceError(
+        status: resp.status,
+        error_type: extract_error_type(resp_headers, body),
+        body: body,
+      )
+    Error(_) ->
+      DecodeError(
+        reason: "streaming error body exceeded "
+        <> int_to_decimal(streaming_error_body_cap_bytes)
+        <> " bytes — refusing to materialise for typed-error extraction",
+      )
+  }
+}
+
+@external(erlang, "erlang", "integer_to_binary")
+fn int_to_decimal(n: Int) -> String
+
+// Build, sign, and assemble the gleam_http `Request(BitArray)` for
+// the operation. Shared by `invoke` (buffered) and `invoke_streaming`
+// (chunked) — the only divergence is which `Send` dispatches it.
+fn prepare_signed_request(
+  config: ClientConfig,
+  op_params: Params,
+  built: #(String, String, Dict(String, String), BitArray),
+) -> Result(Request(BitArray), ClientError) {
   let #(method, uri, headers, body) = built
 
   use creds <- result.try(
@@ -274,28 +388,7 @@ pub fn invoke_with_endpoint_params(
     list.fold(signed.headers, http_req, fn(r, h) {
       request.set_header(r, h.name, h.value)
     })
-
-  let send =
-    retry.with_retry(send: config.http_send, strategy: config.retry_strategy)
-  use resp <- result.try(
-    send(http_req)
-    |> result.map_error(TransportError),
-  )
-
-  let resp_headers = headers_to_dict(resp.headers)
-  case resp.status >= 200 && resp.status < 300 {
-    True ->
-      parse(resp.status, resp_headers, resp.body)
-      |> result.map_error(fn(reason) { DecodeError(reason: reason) })
-    False -> {
-      let error_type = extract_error_type(resp_headers, resp.body)
-      Error(ServiceError(
-        status: resp.status,
-        error_type: error_type,
-        body: resp.body,
-      ))
-    }
-  }
+  Ok(http_req)
 }
 
 /// Compute the request URL using the rule set if attached, otherwise fall
