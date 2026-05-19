@@ -250,6 +250,23 @@ pub fn items(
     ),
     Blank,
     DocComment([
+      "Read the underlying `runtime.ClientConfig` out of an existing",
+      "`Client`. Use this when you want to dispatch a request through",
+      "`runtime.invoke` / `runtime.invoke_streaming` directly — e.g. to",
+      "build a service-specific streaming wrapper around a `@streaming`",
+      "output operation that the per-op codegen hasn't surfaced yet.",
+      "The returned config is a value (Gleam records are immutable);",
+      "callers cannot mutate the Client through it.",
+    ]),
+    Fn(
+      public: True,
+      name: "config",
+      params: [Param(name: "client", type_: "Client")],
+      return: CodeSome("runtime.ClientConfig"),
+      body: Ident("client.config"),
+    ),
+    Blank,
+    DocComment([
       "Release the per-Client credentials cache actor. Call this when a",
       "Client value is no longer needed — long-running processes that",
       "build many Clients (tests, scripts, multi-tenant servers) will",

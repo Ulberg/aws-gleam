@@ -133,6 +133,24 @@ pub fn emitted_modules_wire_credentials_cache_lifecycle_test() {
   should.be_true(string.contains(r.source, "credentials_cache.shutdown_sync"))
 }
 
+/// Every generated service exposes a `pub fn config(client) ->
+/// runtime.ClientConfig` accessor so callers can build streaming
+/// wrappers (or any other custom dispatch flow) on top of the same
+/// configured Client. Lock its presence on a representative emitted
+/// service so the codegen can't drop it without surfacing a test
+/// failure here.
+pub fn emitted_modules_expose_config_accessor_test() {
+  let m = load(json10_path)
+  let svc = find_service(m, "aws.protocols#awsJson1_0", "JsonRpc10")
+  let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson10)
+  // Signature line + body — both must be present and read straight.
+  should.be_true(string.contains(
+    r.source,
+    "pub fn config(client: Client) -> runtime.ClientConfig",
+  ))
+  should.be_true(string.contains(r.source, "  client.config\n"))
+}
+
 /// Generated services that have a Smithy endpoint rule set on their
 /// service shape MUST embed the JSON as a const + attach the parsed
 /// rule set to the client config. Lock the shape so a future emitter
