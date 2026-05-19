@@ -109,7 +109,37 @@ jobs:
       - name: Download dependencies
         run: gleam deps download
 
+      # The 409-service regen takes ~11 min on macOS (each `gleam run
+      # -m aws_codegen` is a fresh BEAM start). Its output is a pure
+      # function of:
+      #   * vendor/aws-sdk-rust submodule HEAD (the source data)
+      #   * codegen/** (the codegen logic + deps)
+      #   * scripts/regen.sh + scripts/build-protocol-test-asts.sh
+      #     + scripts/extract-endpoints.sh
+      #   * The hand-written test/protocol_tests/*.gleam files
+      #     (runner, dispatch, loader, cases — they share a directory
+      #     with the generated `_dispatchers.gleam` and the cache
+      #     restore would overwrite them on hit; so they go in the
+      #     key so the cache invalidates whenever they're edited).
+      #
+      # `hashFiles` over those gives a deterministic key. On cache
+      # hit, the entire regen step is a no-op (literally `if: false`)
+      # and the subsequent gleam test build/ cache lines up with
+      # bit-identical src files — so gleam test skips compilation
+      # too. Expected: ~27 min → ~3-5 min on a hot cache.
+      - name: Cache codegen output
+        id: cache-codegen
+        uses: actions/cache@v4
+        with:
+          path: |
+            src/aws/services
+            test/fixtures/protocol-tests
+            test/fixtures/endpoints
+            test/protocol_tests
+          key: codegen-${{ runner.os }}-${{ steps.subs-key.outputs.key }}-${{ hashFiles('codegen/src/**', 'codegen/gleam.toml', 'codegen/manifest.toml', 'scripts/regen.sh', 'scripts/build-protocol-test-asts.sh', 'scripts/extract-endpoints.sh', 'test/protocol_tests/runner.gleam', 'test/protocol_tests/dispatch.gleam', 'test/protocol_tests/loader.gleam', 'test/protocol_tests/cases.gleam') }}
+
       - name: Regenerate codegen artefacts
+        if: steps.cache-codegen.outputs.cache-hit != 'true'
         run: ./scripts/regen.sh
 
       - name: Check formatting
