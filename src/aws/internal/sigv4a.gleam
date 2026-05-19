@@ -34,6 +34,7 @@ import aws/internal/http_request.{
 import aws/internal/uri
 import gleam/bit_array
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/order
 import gleam/string
 
@@ -73,14 +74,46 @@ pub type Sigv4aOptions {
   )
 }
 
-/// Sign `req` with `private_key` and `access_key_id`, returning
-/// the request with `Authorization`, `X-Amz-Date`,
-/// `X-Amz-Region-Set`, and (when `sign_body`) `X-Amz-Content-Sha256`
-/// headers added.
+/// IAM identity that signs a SigV4a request. Carries the same
+/// fields as `sigv4.SigningCredentials` plus the EC private scalar
+/// that SigV4a's ECDSA step needs. `session_token` is `Some` for
+/// STS / IRSA / SSO-issued credentials and triggers the
+/// `X-Amz-Security-Token` header on the canonical request.
+pub type Sigv4aCredentials {
+  Sigv4aCredentials(
+    access_key_id: String,
+    private_key: EcdsaPrivateKey,
+    session_token: Option(String),
+  )
+}
+
+/// Sign `req` with `private_key` and `access_key_id`. Always
+/// excludes a session token. For credentials that carry an STS
+/// token use `sign_with_credentials` instead.
 pub fn sign(
   req: HttpRequest,
   private_key: EcdsaPrivateKey,
   access_key_id: String,
+  opts: Sigv4aOptions,
+) -> HttpRequest {
+  sign_with_credentials(
+    req,
+    Sigv4aCredentials(
+      access_key_id: access_key_id,
+      private_key: private_key,
+      session_token: None,
+    ),
+    opts,
+  )
+}
+
+/// Sign `req` with the bundled `creds`. Adds `Authorization`,
+/// `X-Amz-Date`, `X-Amz-Region-Set`, and (when `creds.session_token`
+/// is `Some`) `X-Amz-Security-Token`. `X-Amz-Content-Sha256` is
+/// emitted when `opts.sign_body` is set.
+pub fn sign_with_credentials(
+  req: HttpRequest,
+  creds: Sigv4aCredentials,
   opts: Sigv4aOptions,
 ) -> HttpRequest {
   let date = string.slice(opts.timestamp, 0, 8)
@@ -89,17 +122,8 @@ pub fn sign(
     True -> crypto.hex_encode(crypto.sha256(req.body))
     False -> crypto.hex_encode(crypto.sha256(bit_array.from_string("")))
   }
-  let prepared = case opts.sign_body {
-    True ->
-      req.headers
-      |> upsert("X-Amz-Date", opts.timestamp)
-      |> upsert("X-Amz-Region-Set", region_set_value)
-      |> upsert("X-Amz-Content-Sha256", payload_hash)
-    False ->
-      req.headers
-      |> upsert("X-Amz-Date", opts.timestamp)
-      |> upsert("X-Amz-Region-Set", region_set_value)
-  }
+  let prepared =
+    prepare_headers(req, opts, creds, payload_hash, region_set_value)
   let canonical_uri = encode_path(req.path)
   let canonical_query = canonical_query_string(req.query)
   let canonical_headers_block = canonical_headers(prepared)
@@ -127,11 +151,12 @@ pub fn sign(
     <> scope
     <> "\n"
     <> creq_hash
-  let sig_der = ecdsa_p256_sign(private_key.scalar, bit_array.from_string(sts))
+  let sig_der =
+    ecdsa_p256_sign(creds.private_key.scalar, bit_array.from_string(sts))
   let sig_hex = crypto.hex_encode(sig_der)
   let auth =
     "AWS4-ECDSA-P256-SHA256 Credential="
-    <> access_key_id
+    <> creds.access_key_id
     <> "/"
     <> scope
     <> ", SignedHeaders="
@@ -141,6 +166,27 @@ pub fn sign(
   let final_headers =
     list.append(prepared, [Header(name: "Authorization", value: auth)])
   HttpRequest(..req, headers: final_headers)
+}
+
+fn prepare_headers(
+  req: HttpRequest,
+  opts: Sigv4aOptions,
+  creds: Sigv4aCredentials,
+  payload_hash: String,
+  region_set_value: String,
+) -> List(Header) {
+  let base =
+    req.headers
+    |> upsert("X-Amz-Date", opts.timestamp)
+    |> upsert("X-Amz-Region-Set", region_set_value)
+  let with_token = case creds.session_token {
+    Some(t) -> upsert(base, "X-Amz-Security-Token", t)
+    None -> base
+  }
+  case opts.sign_body {
+    True -> upsert(with_token, "X-Amz-Content-Sha256", payload_hash)
+    False -> with_token
+  }
 }
 
 /// ECDSA P-256 signature over `data`, returning the DER-encoded
