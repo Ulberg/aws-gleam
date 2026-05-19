@@ -261,6 +261,28 @@ pub fn float_header(
   parse_float(string.trim(raw))
 }
 
+/// Enum header — looks up a string header, then runs the supplied
+/// `<enum>_from_wire` decoder. Falls through to `None` if the
+/// header is missing or the wire value doesn't match a known
+/// variant (forgiving contract — unknown variants don't crash
+/// the response parse). The codegen passes the generated
+/// `<enum>_from_wire` function directly so this stays
+/// enum-agnostic.
+pub fn enum_header(
+  headers: Dict(String, String),
+  name: String,
+  from_wire: fn(String) -> Result(t, String),
+) -> Option(t) {
+  case string_header(headers, name) {
+    Some(s) ->
+      case from_wire(s) {
+        Ok(v) -> Some(v)
+        Error(_) -> None
+      }
+    None -> None
+  }
+}
+
 // ---------- @httpChecksumRequired ----------
 
 /// Set the `Content-MD5` header to `base64(md5(body))`. Used by the

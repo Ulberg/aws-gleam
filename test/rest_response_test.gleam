@@ -120,3 +120,38 @@ pub fn with_content_md5_header_overwrites_existing_value_test() {
   |> should.equal(Ok("1B2M2Y8AsgTpgAmY7PhCfg=="))
   dict.get(with_md5, "X-Other") |> should.equal(Ok("keep"))
 }
+
+// ---------- enum_header ----------
+
+type FakeEnum {
+  Alpha
+  Beta
+}
+
+fn fake_enum_from_wire(s: String) -> Result(FakeEnum, String) {
+  case s {
+    "alpha" -> Ok(Alpha)
+    "beta" -> Ok(Beta)
+    other -> Error("unknown enum value: " <> other)
+  }
+}
+
+pub fn enum_header_decodes_known_wire_value_test() {
+  let h = dict.from_list([#("x-enum", "alpha")])
+  rest.enum_header(h, "X-Enum", fake_enum_from_wire)
+  |> should.equal(Some(Alpha))
+}
+
+pub fn enum_header_returns_none_for_missing_header_test() {
+  rest.enum_header(headers(), "X-Missing", fake_enum_from_wire)
+  |> should.equal(None)
+}
+
+pub fn enum_header_returns_none_for_unknown_wire_value_test() {
+  // Forgiving contract: unknown enum wire values land as `None`,
+  // not as a crash. Matches int/bool header semantics — the parse
+  // never blows up because a server added a new variant.
+  let h = dict.from_list([#("x-enum", "gamma")])
+  rest.enum_header(h, "X-Enum", fake_enum_from_wire)
+  |> should.equal(None)
+}
