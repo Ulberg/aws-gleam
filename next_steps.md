@@ -118,12 +118,20 @@ These are listed in `docs/v0.1-plan.md` § "Out of scope for v0.1".
 They're the bulk of what turns the SDK into a general-purpose AWS
 client beyond DynamoDB + S3 mainline.
 
-1. **Streaming bodies** (`@streaming`). Required for `S3.GetObject`
-   of large objects without OOMing the process, all of
-   `S3.PutObject`, S3 multipart, Bedrock streaming responses,
-   Kinesis. Runtime needs streaming HTTP send + recv; emitter then
-   unskips `@streaming` shapes. v0.1 plan scope-concern #3 says
-   GetObject buffers to `BitArray` for v0.1.
+1. **Streaming bodies** (`@streaming`) — DONE (2026-05-19).
+   `aws/streaming.gleam` defines the opaque `StreamingBody` with
+   `Buffered` / `Chunked` variants; `aws_streaming_ffi.erl` drives
+   `httpc:request` in `{sync, false}, {stream, self}` async-self
+   mode and assembles chunks via `collect_stream/2`. The Gleam
+   wrapper at `aws/internal/http_streaming.gleam` exposes
+   `default_send` (the runtime's `streaming_http_send` default)
+   plus `default_send_http2` for the HTTP/2 variant. Codegen-side
+   `@streaming` blob members surface as `StreamingBody` end-to-end
+   (`RStreamingBlob` → `streaming.from_bit_array`). Consumer
+   helpers (`fold_chunks`, `try_fold_chunks`, `to_bit_array_max`,
+   `to_string_max`) cover both buffered and chunked consumption.
+   The planned lazy `Source(...)` variant for file-backed streaming
+   is the next extension when a use case pins the API shape.
 
 2. **Codegen-driven additional services** — DONE (2026-05-18).
    `./scripts/regen.sh` now auto-discovers every `awsJson1_0 /
@@ -172,8 +180,29 @@ client beyond DynamoDB + S3 mainline.
 
 5. **Event streams** — `@streaming` on unions. DynamoDB Streams,
    Kinesis, S3 Select, Bedrock `invoke-with-response-stream`.
+   PARTIAL (2026-05-19). Framing codec landed at
+   `aws/internal/codec/event_stream.gleam` — encode/decode of the
+   `application/vnd.amazon.eventstream` wire format including all
+   ten header wire-codes (0..9), prelude + message CRC validation,
+   plus `decode_all` and `fold_events` consumers that bridge from
+   `StreamingBody`. Remaining: codegen-side emitter that detects
+   operations whose output union carries `@streaming` and threads
+   the response body through `event_stream.fold_events` to surface
+   each event as the appropriate union variant. The codec is
+   protocol-agnostic; the codegen pass is what wires it into the
+   per-service `parse_<op>_response`.
 
-6. **S3 transfer manager / multipart upload** — built on streaming.
+6. **S3 transfer manager / multipart upload** — DONE (2026-05-19).
+   `aws/s3/transfer.upload(client, bucket, key, body, part_size_bytes)`
+   runs `CreateMultipartUpload` → `UploadPart` × N →
+   `CompleteMultipartUpload`, with best-effort `AbortMultipartUpload`
+   on any failure. `upload_from_stream` accepts a `StreamingBody`
+   and rechunks across chunk boundaries so wire-side part sizes
+   follow `part_size_bytes`. `part_size_for(total_bytes)` picks a
+   safe part size for any total inside S3's 10,000-parts cap.
+   5 + 3 + 6 unit tests cover the happy paths, abort-on-failure
+   paths, and the size-scaler edges. Parallel upload (Task-based
+   fan-out) is the next extension; today's coordinator is sequential.
 
 7. **Presigned URLs** — DONE (2026-05-18). `sigv4.presigned_url`
    builds the query-string-auth variant of SigV4 — the auth fields
@@ -194,7 +223,12 @@ client beyond DynamoDB + S3 mainline.
 
 8. **SigV4a** — multi-region signing for S3 MRAP.
 
-9. **rpcv2Cbor protocol** — needed by a few newer services.
+9. **rpcv2Cbor protocol** — DONE (2026-05-19). CBOR codec at
+   `aws/internal/codec/cbor.gleam` covers RFC 8949 with canonical
+   bytewise key sort (16 round-trip tests from RFC App. A).
+   `codegen/src/codegen/cbor_rpc.gleam` emits build_request +
+   parse_response for every rpcv2Cbor operation in the corpus.
+   Protocol-test corpus reports 4/4 passing.
 
 10. **Endpoint ruleset coverage beyond S3 + DynamoDB** — every
     service ships its own `endpoint-rule-set-1.json`. v0.1 wires the
@@ -213,24 +247,64 @@ client beyond DynamoDB + S3 mainline.
     covering all four `aws.protocols#httpChecksum` algorithms
     (`sha256` / `sha1` / `crc32` / `crc32c`). CRC32C uses a
     pure-Erlang Castagnoli implementation (OTP's stdlib has no
-    built-in for it). The middleware that wires these into
-    operations carrying the multi-algorithm trait — picking
-    the algorithm from request options + service config,
-    computing the digest, and verifying the response header
-    — is the next codegen-side piece.
+    built-in for it).
 
-12. **Timestamp fractional seconds + offsets** — currently `Int`
-    epoch seconds. CloudWatch / EventBridge / metric APIs lose
-    sub-second precision.
+    Codegen middleware landed (2026-05-19, M18): algorithm-member
+    dispatch for `aws.protocols#httpChecksum`. The codegen now
+    emits `build_checksum_step` per operation that reads the
+    request's algorithm-member, picks the matching digest
+    function, computes the body hash, and sets the
+    `x-amz-checksum-<algo>` header before SigV4 signing. End-to-
+    end smoke test uses `S3.put_bucket_accelerate_configuration`.
 
-13. **HTTP/2** — for services that need it.
+12. **Timestamp fractional seconds + offsets** — DONE (2026-05-19).
+    `json_timestamp.Timestamp(seconds, nanoseconds)` with
+    `decoder_precise()` is wired through the codegen for awsJson,
+    restJson, and restXml type emission, plus the rest-side
+    header / query / URI formatters
+    (`format_iso8601_precise`, `format_http_date_precise`,
+    `epoch_seconds_text`). CloudWatch / EventBridge / metric APIs
+    preserve sub-second precision through the type. Note: the
+    ISO 8601 + HTTP-date FFI parsers only emit second-level
+    precision today; sub-second on the receive side from those
+    formats lands when the FFI gains fractional-second parsing.
+
+13. **HTTP/2** — DONE (2026-05-19). `aws_streaming_ffi.streaming_send/7`
+    threads `{http_version, "HTTP/2"}` into the httpc option list.
+    Gleam side surfaces as `http_streaming.default_send_http2` +
+    `with_timeout_tls_http2`; `runtime.with_http2(config)` is the
+    caller-facing knob that swaps `streaming_http_send` to the
+    HTTP/2 variant. Buffered path stays HTTP/1.1 (gleam_httpc
+    doesn't expose the option); HTTP/2 is for high-throughput
+    streaming endpoints (S3 multipart, Bedrock streaming,
+    Transcribe). Build-option count tests + runtime setter tests
+    pin the wiring.
 
 14. **JavaScript target** — explicitly out per the plan and
     `CLAUDE.md`.
 
-## Suggested execution order
+## Current focus (2026-05-19)
 
-The cheapest wins for the largest user-visible improvement, in order:
+Items still open after the streaming + multipart pass:
+
+1. **Event-stream operation codegen** (v0.2 item 5). The codec is
+   in place; the codegen-side emitter that detects `@streaming` on
+   output unions and routes the body through
+   `event_stream.fold_events` is the next codegen-side piece.
+2. **Lazy `Source(...)` variant for `StreamingBody`** (no item).
+   File-backed and generator-backed streams so multi-GB uploads
+   stop holding the full payload in memory.
+3. **Parallel multipart upload** (v0.2 item 6 extension). Today's
+   coordinator is sequential; a Task-based fan-out around
+   `transfer.upload_from_stream` would saturate bandwidth.
+4. **SigV4a** (v0.2 item 8). Multi-region signing for S3 MRAP.
+5. **Endpoint ruleset coverage beyond S3 + DynamoDB** (v0.2
+   item 10). The evaluator is wired; bundling all ~300 rulesets
+   at codegen time + per-service builders is remaining.
+
+## Suggested execution order (historical)
+
+The order v0.1 was shipped in, kept for context:
 
 1. Wire retry (v0.1 item 1) — hours, transforms reliability.
 2. Wire endpoints + auto-region (v0.1 items 2, 3) — small surface
@@ -245,9 +319,6 @@ The cheapest wins for the largest user-visible improvement, in order:
 7. Streaming bodies (v0.2 item 1) — gates real-world S3 use.
 8. Generate two or three more services (v0.2 item 2) — proves the
    codegen claim end-to-end on services that aren't restXml.
-
-After that, the v0.2 long tail (paginators, waiters, event streams,
-SigV4a, etc.) becomes the productisation backlog.
 
 ## Related working docs
 

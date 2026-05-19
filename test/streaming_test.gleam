@@ -1,7 +1,9 @@
-//// Tests for the v1 buffered `StreamingBody` wrapper. The whole
-//// purpose of the type is forward-compatibility — these tests
-//// pin the surface so future streaming-transport changes don't
-//// break call sites that assume the buffered semantics.
+//// Tests for the `StreamingBody` buffered branch (`Buffered(bytes)`).
+//// Pinned here so any future addition to the opaque type — the
+//// planned lazy `Source(...)` variant for file-backed inputs — can
+//// only extend behaviour, not change what existing buffered call
+//// sites observe. Chunked-branch tests live in
+//// `streaming_chunked_test.gleam`.
 
 import aws/streaming
 import gleeunit/should
