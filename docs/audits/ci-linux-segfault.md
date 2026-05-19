@@ -118,3 +118,11 @@ becomes annoying enough. Not blocking anything today.
   the single-declaration level.
 - gleam-lang/gleam#5653 — support for shared build directory across
   packages. Would make the split cleaner once it lands.
+
+## Cold-cache CI baseline
+
+First successful macOS run (commit 343bf4e):
+- Total: 28 min
+- Regen: 11m 27s
+- Tests: 14m 15s
+- Setup + cache upload: ~2 min
