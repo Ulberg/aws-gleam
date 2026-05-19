@@ -68,6 +68,99 @@ pub fn get_object_streaming_returns_streaming_body_test() {
   s3.shutdown(client)
 }
 
+pub fn download_to_bit_array_max_under_cap_returns_bytes_test() {
+  // Convenience that wraps `get_object_streaming` + `to_bit_array_max`.
+  // Under cap: surfaces the raw bytes.
+  let body_bytes = <<"small payload":utf8>>
+  let streaming_send =
+    fixed_streaming_send(
+      Ok(response.Response(
+        status: 200,
+        headers: [],
+        body: streaming.from_bit_array(body_bytes),
+      )),
+    )
+  let client =
+    s3.new(region: "us-east-1")
+    |> s3.with_credentials_provider(static_credentials())
+    |> s3.with_streaming_http_send(streaming_send)
+
+  let input = build_get_object_input("bucket", "key")
+  s3_streaming.download_to_bit_array_max(client, input, 1024)
+  |> should.equal(Ok(body_bytes))
+  s3.shutdown(client)
+}
+
+pub fn download_to_bit_array_max_over_cap_returns_body_too_large_test() {
+  // Body exceeds the cap → `BodyTooLarge(cap)` surfaces, not a panic.
+  let body_bytes = <<"this body is more than ten bytes":utf8>>
+  let streaming_send =
+    fixed_streaming_send(
+      Ok(response.Response(
+        status: 200,
+        headers: [],
+        body: streaming.from_bit_array(body_bytes),
+      )),
+    )
+  let client =
+    s3.new(region: "us-east-1")
+    |> s3.with_credentials_provider(static_credentials())
+    |> s3.with_streaming_http_send(streaming_send)
+
+  case
+    s3_streaming.download_to_bit_array_max(
+      client,
+      build_get_object_input("bucket", "key"),
+      10,
+    )
+  {
+    Error(s3_streaming.BodyTooLarge(max_bytes: 10)) -> Nil
+    other ->
+      panic as { "expected BodyTooLarge(10), got: " <> describe_dl(other) }
+  }
+  s3.shutdown(client)
+}
+
+pub fn download_to_bit_array_max_surfaces_transport_failure_test() {
+  // Service errors from the streaming layer route through
+  // `TransportFailed(cause)` so callers can pattern-match on the
+  // underlying runtime.ClientError shape (retry vs. give up).
+  let streaming_send =
+    fixed_streaming_send(
+      Ok(response.Response(
+        status: 500,
+        headers: [],
+        body: streaming.from_bit_array(<<"":utf8>>),
+      )),
+    )
+  let client =
+    s3.new(region: "us-east-1")
+    |> s3.with_credentials_provider(static_credentials())
+    |> s3.with_streaming_http_send(streaming_send)
+
+  case
+    s3_streaming.download_to_bit_array_max(
+      client,
+      build_get_object_input("bucket", "key"),
+      1024,
+    )
+  {
+    Error(s3_streaming.TransportFailed(_)) -> Nil
+    other ->
+      panic as { "expected TransportFailed, got: " <> describe_dl(other) }
+  }
+  s3.shutdown(client)
+}
+
+fn describe_dl(r: Result(BitArray, s3_streaming.DownloadError)) -> String {
+  case r {
+    Ok(_) -> "Ok(_)"
+    Error(s3_streaming.TransportFailed(_)) -> "TransportFailed(_)"
+    Error(s3_streaming.BodyTooLarge(max_bytes: n)) ->
+      "BodyTooLarge(" <> int_to_string(n) <> ")"
+  }
+}
+
 pub fn get_object_streaming_surfaces_typed_error_on_404_test() {
   // The runtime materialises error bodies via `to_bit_array_max`
   // (1 MiB cap) and runs typed-error extraction over them on the
