@@ -134,18 +134,34 @@ client beyond DynamoDB + S3 mainline.
    Per-op routing through the chunked transport landed via
    `runtime.invoke_streaming` — same credential / endpoint / SigV4
    pipeline as `invoke`, but dispatches through
-   `streaming_http_send` and returns the raw
-   `Response(StreamingBody)`. Error responses materialise via
+   `streaming_http_send` and returns `streaming.Response` (the
+   shared `status + headers + StreamingBody` shape every wrapper
+   returns). Error responses materialise via
    `streaming.to_bit_array_max(body, 1 MiB)` so typed-error
-   extraction works identically to `invoke`. Codegen now emits
-   `pub fn config(client)`, `with_streaming_http_send`,
-   `with_http2`, and `with_max_attempts` on every Client so user-
-   land streaming wrappers compose cleanly — see
-   `aws/s3/streaming.get_object_streaming` for the prototype +
-   `test/aws/s3_streaming_localstack_test` for the round-trip.
+   extraction works identically to `invoke`.
 
-   The planned lazy `Source(...)` variant for file-backed streaming
-   is the next extension when a use case pins the API shape.
+   The codegen now flips `@streaming`-output ops automatically —
+   `types.has_streaming_blob_member(model, shape_id)` detects which
+   operations qualify, and `restxml` / `restjson` / `awsjson`
+   emitters all append a
+   `<op>_streaming(client, input) -> Result(streaming.Response,
+   runtime.ClientError)` wrapper alongside the buffered op. 16
+   services across the SDK now expose codegen-emitted streaming
+   wrappers (S3.GetObject, Polly.SynthesizeSpeech, Bedrock
+   InvokeModelWithResponseStream, MediaLive log streams, Kinesis
+   Video Media, Lex Runtime, EBS GetSnapshotBlock, Glacier,
+   MediaStore Data, Translate, WorkMail, etc.). Per-service Client
+   setters (`config`, `with_streaming_http_send`, `with_http2`,
+   `with_max_attempts`) are emitted on every Client. End-to-end
+   LocalStack round-trip exercises `s3.get_object_streaming`.
+
+   Event-stream operations (Smithy `@streaming` on a union, not a
+   blob — Transcribe StartStreamTranscription, Kinesis
+   SubscribeToShard, S3 SelectObjectContent, etc.) are detected by
+   `types.has_streaming_union_member` but not yet emitted; that's
+   the next codegen pass. The planned lazy `Source(...)` variant
+   for file-backed streaming arrives when a use case pins the
+   ergonomics.
 
 2. **Codegen-driven additional services** — DONE (2026-05-18).
    `./scripts/regen.sh` now auto-discovers every `awsJson1_0 /
@@ -193,18 +209,32 @@ client beyond DynamoDB + S3 mainline.
    `table_active`, `function_active`.
 
 5. **Event streams** — `@streaming` on unions. DynamoDB Streams,
-   Kinesis, S3 Select, Bedrock `invoke-with-response-stream`.
+   Kinesis, S3 Select, Bedrock `invoke-with-response-stream`,
+   Transcribe Streaming, CloudWatch Logs Live Tail.
    PARTIAL (2026-05-19). Framing codec landed at
    `aws/internal/codec/event_stream.gleam` — encode/decode of the
    `application/vnd.amazon.eventstream` wire format including all
    ten header wire-codes (0..9), prelude + message CRC validation,
    plus `decode_all` and `fold_events` consumers that bridge from
-   `StreamingBody`. Remaining: codegen-side emitter that detects
-   operations whose output union carries `@streaming` and threads
+   `StreamingBody`.
+
+   Codegen detection landed via `types.has_streaming_union_member`
+   (the sibling of `has_streaming_blob_member` that drove the
+   streaming-blob codegen flip). Walks an output struct's members
+   for any that target a union shape tagged with
+   `smithy.api#streaming`. Catches both response-side event
+   streams (Transcribe.StartStreamTranscriptionResponse →
+   TranscriptResultStream) and request-side ones
+   (StartStreamTranscriptionRequest → AudioStream, used for HTTP/2
+   bidirectional audio streaming).
+
+   Remaining: codegen-side emitter that, given the detection, threads
    the response body through `event_stream.fold_events` to surface
-   each event as the appropriate union variant. The codec is
-   protocol-agnostic; the codegen pass is what wires it into the
-   per-service `parse_<op>_response`.
+   each decoded frame as the matching union variant. The exact
+   user-facing API shape (callback vs Iterator vs Process subject)
+   is the design step before the emit. The codec is protocol-
+   agnostic; the emit pass is what wires it into the per-service
+   `parse_<op>_response`.
 
 6. **S3 transfer manager / multipart upload** — DONE (2026-05-19).
    `aws/s3/transfer.upload(client, bucket, key, body, part_size_bytes)`
