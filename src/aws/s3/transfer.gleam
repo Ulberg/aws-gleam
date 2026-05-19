@@ -6,15 +6,15 @@
 //// abort them, and large numbers of orphaned uploads slow down
 //// `ListObjects`).
 ////
-//// V1 takes a `BitArray` input so the helper composes with the
-//// existing typed `s3.Client` without a streaming-source plumbing
-//// pass — callers that already have the bytes (assembled from a
-//// file read, an HTTP response body, etc.) can drive multipart
-//// directly. A future pass adds a `StreamingBody` input variant
-//// that reads parts lazily off disk, suitable for multi-GB
-//// uploads where the body can't all fit in memory at once.
+//// Two entry points: `upload` for callers that already have the
+//// bytes in a `BitArray`, and `upload_from_stream` for callers
+//// holding a `StreamingBody`. The streaming variant rechunks across
+//// chunk boundaries so wire-side part sizes follow `part_size_bytes`
+//// rather than the source's chunking. Both today hold the full body
+//// in memory; bounded-memory streaming arrives when `StreamingBody`
+//// grows a lazy `Source(...)` variant (file handles, generators).
 ////
-//// The upload-coordination logic is sequential: parts upload one
+//// The upload-coordination logic is sequential — parts upload one
 //// at a time. Parallel uploads (the bandwidth-saturating common
 //// case) want a Task-based fan-out around this helper; building
 //// that lives in `aws/s3/transfer_parallel.gleam` once a use case
@@ -61,6 +61,39 @@ pub type UploadResult {
 /// at `CompleteMultipartUpload` time; larger sizes cut down on
 /// per-part round trips but raise outstanding-request memory.
 pub const default_part_size_bytes: Int = 5_242_880
+
+/// S3's hard cap on parts per multipart upload. Past 10,000 the
+/// `Complete` call returns `InvalidArgument` regardless of total
+/// size, so `part_size_for` scales `part_size_bytes` up for large
+/// totals to stay inside this limit.
+pub const max_parts_per_upload: Int = 10_000
+
+/// Pick a part size large enough to fit `total_bytes` inside S3's
+/// 10,000-parts-per-upload cap. Always returns at least
+/// `default_part_size_bytes` (5 MiB, the S3 minimum). Use this to
+/// drive `upload` / `upload_from_stream` when the body could be
+/// arbitrarily large — under 50 GB it returns the 5 MiB default,
+/// past 50 GB it scales up so the part count stays at or under
+/// 10,000.
+///
+/// For zero or negative `total_bytes` the helper returns the
+/// default — callers that don't know the size up front can pass 0
+/// and accept the 5 MiB part size until they have a better estimate.
+pub fn part_size_for(total_bytes: Int) -> Int {
+  case total_bytes <= 0 {
+    True -> default_part_size_bytes
+    False -> {
+      // ceil(total_bytes / max_parts_per_upload), so that
+      // ceil(total_bytes / part_size) <= max_parts_per_upload.
+      let needed =
+        { total_bytes + max_parts_per_upload - 1 } / max_parts_per_upload
+      case needed < default_part_size_bytes {
+        True -> default_part_size_bytes
+        False -> needed
+      }
+    }
+  }
+}
 
 /// Upload `body` as `bucket/key` via S3's multipart API. Splits the
 /// body into parts of `part_size_bytes` (the last part may be

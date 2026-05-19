@@ -334,6 +334,52 @@ pub fn upload_aborts_on_complete_failure_test() {
   }
 }
 
+// ---------- part_size_for tests ----------
+//
+// Pure-function tests on the part-size scaler; no HTTP needed.
+// 50 GB / 10000 = 5 MiB exactly, so anything <= 50 GB returns the
+// default. Past 50 GB the helper scales to keep part count <= 10000.
+
+pub fn part_size_for_zero_returns_default_test() {
+  transfer.part_size_for(0) |> should.equal(transfer.default_part_size_bytes)
+}
+
+pub fn part_size_for_negative_returns_default_test() {
+  transfer.part_size_for(-1)
+  |> should.equal(transfer.default_part_size_bytes)
+}
+
+pub fn part_size_for_small_body_returns_default_test() {
+  // 1 MB body → default (1 MB / 10000 = 100 bytes, far below 5 MiB).
+  transfer.part_size_for(1_000_000)
+  |> should.equal(transfer.default_part_size_bytes)
+}
+
+pub fn part_size_for_at_50gb_boundary_returns_default_test() {
+  // 10_000 * 5_242_880 = 52_428_800_000 bytes — the largest total
+  // that still needs exactly 5 MiB parts.
+  transfer.part_size_for(52_428_800_000)
+  |> should.equal(transfer.default_part_size_bytes)
+}
+
+pub fn part_size_for_above_50gb_scales_up_test() {
+  // 60 GB total → ceil(60_000_000_000 / 10000) = 6_000_000 bytes.
+  // Larger than the 5 MiB default, so the helper returns the
+  // computed value verbatim.
+  transfer.part_size_for(60_000_000_000)
+  |> should.equal(6_000_000)
+}
+
+pub fn part_size_for_5tib_returns_under_5gib_test() {
+  // 5 TiB / 10_000 ≈ 549 MiB. The helper must stay under the 5 GiB
+  // per-part cap; pinning ~549 MB anchors that.
+  let result = transfer.part_size_for(5_497_558_138_880)
+  // Result should be ceil(5_497_558_138_880 / 10000) = 549_755_813_888 / 1000
+  // = exact divide: 5_497_558_138_880 / 10000 = 549_755_813.888, so the
+  // ceiling is 549_755_814.
+  result |> should.equal(549_755_814)
+}
+
 // ---------- upload_from_stream tests ----------
 
 pub fn upload_from_stream_empty_body_returns_empty_body_error_test() {
