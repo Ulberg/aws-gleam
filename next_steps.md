@@ -18,7 +18,7 @@ deferred to v0.2.
 | M3 — region + endpoints | ✅ both modules exist | ❌ — `runtime.default_config` uses static `<prefix>.<region>.amazonaws.com`; `endpoints.resolve` has zero callers; `region.resolve` not auto-called by `service.new(region:)` | wire-in pending |
 | M4 — retry | ✅ standard + adaptive in `src/aws/retry.gleam` | ❌ — `runtime.invoke` doesn't call the retry loop | wire-in pending |
 | M5 — protocol codecs | ✅ awsJson1_0 / 1_1 / restJson1 / restXml / awsQuery / ec2Query | ✅ | restJson1 has ~30 edge-case failures; restXml + awsQuery + ec2Query have decoder gaps |
-| M6 — typed DynamoDB + S3 | ✅ (full services, not just GetItem/GetObject) | ✅ | response-header binding ✅ (2026-05-19); restXml error extraction still missing |
+| M6 — typed DynamoDB + S3 | ✅ (full services, not just GetItem/GetObject) | ✅ | response-header binding ✅ (2026-05-19); restXml error extraction ✅ |
 | M7 — codegen | ✅ 5 protocols | ✅ | only DynamoDB + S3 actually generated |
 
 ## To close v0.1 (within plan scope)
@@ -55,11 +55,13 @@ the table above.
    directly, bypassing the cache. Mint each `Client` with a
    long-lived cache subject and read from it. Closes M2.
 
-5. **restXml error extraction** —
-   `<Error><Code>NoSuchBucket</Code>...</Error>` currently lands in
-   `<Op>ErrorUnknown`. The runtime's `extract_error_type` only reads
-   `x-amzn-errortype` and a JSON `__type`/`code` field. Add the XML
-   path. Closes the M6-audit gap; required for typed S3 errors.
+5. **restXml error extraction** — DONE (earlier).
+   `runtime.extract_xml_error_code` is wired as the third fallback
+   in `error_type_from_body` (after JSON `__type` and `code`). It
+   handles both S3-style `<Error><Code>NoSuchBucket</Code>...</Error>`
+   and SQS/SNS-style `<ErrorResponse><Error><Code>X</Code>...</Error>...`
+   via the same `xml_tag_text` text-scan, no full XML decoder needed.
+   Pinned by `test/runtime_test.gleam`'s NoSuchBucket case.
 
 6. **Response header binding in the codegen** — DONE (2026-05-19).
    restxml + restjson1 emitters now extract `@httpHeader` and
