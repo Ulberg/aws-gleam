@@ -7,7 +7,39 @@
 %% stdout text. Teardown is unconditional via `try ... after`.
 
 -module(aws_test_support_ffi).
--export([with_teardown/1, capture_new/0, capture_put/1, capture_get/1]).
+-export([
+    with_teardown/1,
+    capture_new/0, capture_put/1, capture_get/1,
+    send_stream_start/2, send_stream_chunk/2, send_stream_end/2,
+    send_sync_response/4, send_stream_error/2
+]).
+
+%% Synthetic httpc stream messages addressed to `self()`. The
+%% Gleam-side `aws_streaming_ffi:collect_stream/2` test then drains
+%% those messages without a real HTTP server, asserting the loop's
+%% message-shape contract.
+send_stream_start(ReqId, Headers) ->
+    self() ! {http, {ReqId, stream_start, Headers}},
+    nil.
+
+send_stream_chunk(ReqId, Chunk) ->
+    self() ! {http, {ReqId, stream, Chunk}},
+    nil.
+
+send_stream_end(ReqId, Trailers) ->
+    self() ! {http, {ReqId, stream_end, Trailers}},
+    nil.
+
+%% Non-streaming response path — what httpc sends for 4xx / 5xx
+%% even when the request asked for `{stream, self}` (per OTP docs,
+%% it only streams 2xx).
+send_sync_response(ReqId, Status, Headers, Body) ->
+    self() ! {http, {ReqId, {{"HTTP/1.1", Status, "Reason"}, Headers, Body}}},
+    nil.
+
+send_stream_error(ReqId, Reason) ->
+    self() ! {http, {ReqId, {error, Reason}}},
+    nil.
 
 %% Trivial per-test request capture — lets a Gleam test that hands a
 %% stub `Send` to provider code retrieve the dispatched request after
