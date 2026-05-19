@@ -24,6 +24,7 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(no_input_and_no_output_dispatcher())
   |> dispatch.register(no_input_and_output_dispatcher())
   |> dispatch.register(query_lists_dispatcher())
+  |> dispatch.register(query_maps_dispatcher())
   |> dispatch.register(recursive_xml_shapes_dispatcher())
   |> dispatch.register(simple_input_params_dispatcher())
   |> dispatch.register(simple_scalar_xml_properties_dispatcher())
@@ -256,6 +257,27 @@ fn query_lists_dispatcher() -> Dispatcher {
       }
     },
     parse_response: response_parser(svc.parse_query_lists_response),
+  )
+}
+
+fn query_maps_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.query#QueryMaps",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_query_maps_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_query_maps_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_query_maps_response),
   )
 }
 

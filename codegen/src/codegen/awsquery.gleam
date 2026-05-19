@@ -245,6 +245,12 @@ fn is_supported_deep(
     types.REnum(..) -> True
     types.RIntEnum(..) -> True
     types.RList(element: e, ..) -> is_supported_deep(model, e, visited)
+    // Maps: slice 3 assumes String keys (every map in the corpus
+    // uses `smithy.api#String`); value type is checked recursively.
+    // Sparse maps surface as `Dict(K, Option(V))` from the existing
+    // type pipeline — handled in encode_value_expr's RMap branch.
+    types.RMap(key: k, value: v, ..) ->
+      is_supported_map_key(k) && is_supported_deep(model, v, visited)
     types.RStruct(full_id: sid, ..) ->
       case set.contains(visited, sid) {
         True -> True
@@ -255,6 +261,14 @@ fn is_supported_deep(
           && no_member_traits(model, sid)
         }
       }
+    _ -> False
+  }
+}
+
+fn is_supported_map_key(k: types.Resolved) -> Bool {
+  case k {
+    types.RPrim(types.PString) -> True
+    types.REnum(..) -> True
     _ -> False
   }
 }
@@ -443,6 +457,7 @@ fn collect_from_target(
 ) -> List(types.Resolved) {
   case target {
     types.RList(element: e, ..) -> collect_from_target(model, e, visited)
+    types.RMap(value: v, ..) -> collect_from_target(model, v, visited)
     types.RStruct(full_id: sid, ..) ->
       case set.contains(visited, sid) {
         True -> []
@@ -969,6 +984,59 @@ fn encode_value_expr(
         " }) }",
       ])
     }
+    types.RMap(
+      key: kt,
+      value: vt,
+      xml_key_name: kn,
+      xml_value_name: vn,
+      ..
+    ) -> {
+      // awsQuery: flat when the struct member has `@xmlFlattened`;
+      // ec2Query: maps follow the same flat-by-default rule as lists.
+      let flat = case variant {
+        Ec2Query -> True
+        AwsQuery ->
+          case dict.get(m_traits, ShapeId("smithy.api#xmlFlattened")) {
+            Ok(_) -> True
+            Error(_) -> False
+          }
+      }
+      // Bind the entry's wire prefix to a unique local name before
+      // recursing so the inner list/struct/map closures don't pick
+      // up our outer `idx` via shadowing. `entry_prefix_<n>` is a
+      // plain `String` Gleam expression at runtime.
+      let entry_var = "entry_prefix"
+      let entry_init = case flat {
+        True ->
+          prefix_expr <> " <> \".\" <> int.to_string(idx + 1)"
+        False ->
+          prefix_expr <> " <> \".entry.\" <> int.to_string(idx + 1)"
+      }
+      let key_prefix = entry_var <> " <> \"." <> kn <> "\""
+      let value_prefix = entry_var <> " <> \"." <> vn <> "\""
+      let key_enc = scalar_kv(kt, "k", key_prefix)
+      let value_enc =
+        encode_value_expr(vt, "v", value_prefix, dict.new(), variant)
+      // Empty maps not serialized (matches QueryEmptyQueryMaps and
+      // Ec2EmptyQueryMaps in the corpus). Keys sorted ascending so
+      // wire byte-match against fixture is deterministic (matches
+      // the Rust SDK convention — its callers explicitly sort).
+      name_concat([
+        "case dict.size(",
+        value_expr,
+        ") { 0 -> \"\" _ -> { let entries = dict.to_list(",
+        value_expr,
+        ") |> list.sort(fn(a, b) { string.compare(a.0, b.0) }) list.index_fold(entries, \"\", fn(acc, pair, idx) { let #(k, v) = pair let ",
+        entry_var,
+        " = ",
+        entry_init,
+        " acc <> ",
+        key_enc,
+        " <> ",
+        value_enc,
+        " }) } }",
+      ])
+    }
     types.RStruct(gleam_name: gn, ..) ->
       name_concat([
         "encode_",
@@ -980,7 +1048,7 @@ fn encode_value_expr(
         ")",
       ])
     _ ->
-      // Unsupported (map/union/timestamp/document) — emit a literal
+      // Unsupported (union/timestamp/document) — emit a literal
       // empty string so the build still compiles if the classifier
       // missed a case. The classifier should prevent this in
       // practice.

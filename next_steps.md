@@ -33,7 +33,7 @@ or codegen-bounded:
 | restJson1 | 241 | 0 | 6 | 25 | 0 | 272 |
 | restXml | 176 | 0 | 13 | 6 | 2 | 197 |
 | restXmlWithNamespace | 2 | 0 | 0 | 0 | 0 | 2 |
-| awsQuery | 62 | 0 | 15 | 0 | 0 | 77 |
+| awsQuery | 71 | 0 | 6 | 0 | 0 | 77 |
 | ec2Query | 53 | 0 | 6 | 0 | 0 | 59 |
 | rpcv2Cbor | 4 | 0 | 0 | 0 | 0 | 4 |
 
