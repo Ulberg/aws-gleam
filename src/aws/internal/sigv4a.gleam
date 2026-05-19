@@ -18,7 +18,7 @@
 //// reference vectors is a follow-up — it needs a pure-Erlang
 //// HMAC-DRBG implementation.
 ////
-//// **AWS-deterministic key derivation** is now wired via
+//// **AWS-deterministic key derivation** is wired via
 //// `derive_signing_key/2` — feeds an IAM (access-key-id,
 //// secret-access-key) pair through AWS's HMAC-SHA256 + P-256
 //// modular-reduction KDF and returns the 32-byte EC private
@@ -144,10 +144,11 @@ pub fn canonical_request(
   opts: Sigv4aOptions,
 ) -> CanonicalParts {
   let region_set_value = string.join(opts.region_set, ",")
-  let payload_hash = case opts.sign_body {
-    True -> crypto.hex_encode(crypto.sha256(req.body))
-    False -> crypto.hex_encode(crypto.sha256(bit_array.from_string("")))
+  let body_to_hash = case opts.sign_body {
+    True -> req.body
+    False -> bit_array.from_string("")
   }
+  let payload_hash = crypto.hex_encode(crypto.sha256(body_to_hash))
   let prepared =
     prepare_headers(req, opts, creds, payload_hash, region_set_value)
   let signing_headers = headers_for_signing(prepared, creds, opts)
@@ -400,7 +401,7 @@ fn canonical_headers(headers: List(Header)) -> String {
     |> list.map(fn(h) {
       #(string.lowercase(h.name), collapse_spaces(string.trim(h.value)))
     })
-    |> group_by_name
+    |> do_group_by_name([])
     |> list.sort(by: fn(a, b) { string.compare(a.0, b.0) })
 
   prepared
@@ -414,12 +415,6 @@ fn signed_headers(headers: List(Header)) -> String {
   |> list.unique
   |> list.sort(by: string.compare)
   |> string.join(";")
-}
-
-fn group_by_name(
-  pairs: List(#(String, String)),
-) -> List(#(String, List(String))) {
-  do_group_by_name(pairs, [])
 }
 
 fn do_group_by_name(
@@ -512,7 +507,7 @@ fn build_canonical_uri(path: String, normalize: Bool) -> String {
 fn normalize_path(path: String) -> String {
   let trailing_slash = string.ends_with(path, "/") && path != "/"
   let segments = case string.starts_with(path, "/") {
-    True -> string.split(path, "/") |> drop_first
+    True -> string.split(path, "/") |> list.drop(1)
     False -> string.split(path, "/")
   }
   let processed = process_segments(segments, [])
@@ -520,13 +515,6 @@ fn normalize_path(path: String) -> String {
     [], _ -> "/"
     parts, True -> "/" <> string.join(parts, "/") <> "/"
     parts, False -> "/" <> string.join(parts, "/")
-  }
-}
-
-fn drop_first(xs: List(a)) -> List(a) {
-  case xs {
-    [] -> []
-    [_, ..rest] -> rest
   }
 }
 
