@@ -176,7 +176,8 @@ pub fn emit_service(
         |> error_dispatch.dedupe_strings
       let err_shape_blocks =
         list.map(unique_err_ids, fn(err_id) {
-          error_dispatch.emit_parse_fn(strip_namespace(err_id))
+          let local = strip_namespace(err_id)
+          error_dispatch.emit_parse_fn(local, local)
         })
       let body_content =
         string.concat([

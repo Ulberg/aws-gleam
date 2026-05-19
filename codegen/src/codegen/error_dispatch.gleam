@@ -37,7 +37,14 @@ pub fn dedupe_strings(xs: List(String)) -> List(String) {
 /// → `<Code>` XML element). Returning `Result(Nil, String)` matches
 /// the runner's binary Ok/Error contract — the per-op error decoder
 /// path still owns field-level decoding for real callers.
-pub fn emit_parse_fn(local: String) -> String {
+///
+/// `local` names the function (`parse_<errsnake>_response`).
+/// `wire_code` is what the runtime discriminator must match against
+/// the response. They're almost always the same string; awsQuery
+/// errors carrying `@aws.protocols#awsQueryError { code: ... }`
+/// pass a different `wire_code` so the body's `<Code>` element
+/// (e.g. `Customized`) routes correctly.
+pub fn emit_parse_fn(local: String, wire_code: String) -> String {
   let snake = stringutils.pascal_to_snake(local)
   string.concat([
     "\npub fn parse_",
@@ -48,7 +55,7 @@ pub fn emit_parse_fn(local: String) -> String {
     "  body: BitArray,\n",
     ") -> Result(Nil, String) {\n",
     "  runtime.check_error_type_matches(headers, body, \"",
-    local,
+    wire_code,
     "\")\n",
     "}\n",
   ])

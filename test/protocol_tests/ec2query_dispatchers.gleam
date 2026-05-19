@@ -28,6 +28,8 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(xml_lists_dispatcher())
   |> dispatch.register(xml_namespaces_dispatcher())
   |> dispatch.register(xml_timestamps_dispatcher())
+  |> dispatch.register(complex_error_dispatcher())
+  |> dispatch.register(invalid_greeting_dispatcher())
 }
 
 fn datetime_offsets_dispatcher() -> Dispatcher {
@@ -275,6 +277,26 @@ fn xml_timestamps_dispatcher() -> Dispatcher {
       Ok(BuiltRequest(method:, uri:, headers:, body:))
     },
     parse_response: response_parser(svc.parse_xml_timestamps_response),
+  )
+}
+
+fn complex_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#ComplexError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_complex_error_response),
+  )
+}
+
+fn invalid_greeting_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#InvalidGreeting",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_invalid_greeting_response),
   )
 }
 

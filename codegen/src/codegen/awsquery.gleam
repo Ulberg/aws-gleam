@@ -8,6 +8,8 @@
 
 import codegen/code.{type Code, CodeSome}
 import codegen/dispatcher
+import codegen/error_dispatch
+import codegen/trait_helpers
 import gleam/dict
 import gleam/list
 import gleam/option.{None, Some}
@@ -47,7 +49,6 @@ pub fn emit_service(
         Some(v) -> v
         None -> "unknown"
       }
-      let header = file_header(service_id, variant)
       let emitted_ops =
         list.filter_map(refs, fn(ref) {
           let ShapeId(target) = ref.target
@@ -60,17 +61,42 @@ pub fn emit_service(
             _ -> Error(Nil)
           }
         })
+      // Walk every operation (even ones whose inputs we don't emit
+      // yet) to gather error refs. `@httpResponseTests` on the error
+      // structures themselves get dispatched independent of whether
+      // the parent operation has a typed request side.
+      let unique_err_ids =
+        list.flat_map(refs, fn(ref) {
+          let ShapeId(target) = ref.target
+          case model.lookup(model, target) {
+            Ok(shape.Operation(errors: errs, ..)) ->
+              list.map(errs, fn(e) {
+                let ShapeId(eid) = e.target
+                eid
+              })
+            _ -> []
+          }
+        })
+        |> error_dispatch.dedupe_strings
+      let err_shape_blocks =
+        list.map(unique_err_ids, fn(err_id) {
+          let local = strip_namespace(err_id)
+          let wire_code = aws_query_error_code(model, err_id, local)
+          error_dispatch.emit_parse_fn(local, wire_code)
+        })
+      let header = file_header(service_id, variant, unique_err_ids)
       let body =
         string.concat([
           header,
           "\n",
           string.concat(list.map(emitted_ops, fn(e) { e.code })),
+          string.concat(err_shape_blocks),
         ])
       // The awsQuery / ec2Query emitter today only handles
       // empty-input operations and never emits a `decode_<op>_input`
       // helper, so dispatchers built from these specs go through
       // the singleton-input path.
-      let dispatcher_specs =
+      let op_dispatcher_specs =
         list.map(emitted_ops, fn(e) {
           let local = strip_namespace(e.operation_id)
           let snake = stringutils.pascal_to_snake(local)
@@ -82,6 +108,10 @@ pub fn emit_service(
             is_error_shape: False,
           )
         })
+      let err_dispatcher_specs =
+        error_dispatch.dispatcher_specs(unique_err_ids, strip_namespace)
+      let dispatcher_specs =
+        list.append(op_dispatcher_specs, err_dispatcher_specs)
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
@@ -176,10 +206,31 @@ fn parse_response_fn(snake: String, output_type: String) -> Code {
   )
 }
 
-fn file_header(service_id: String, variant: Variant) -> String {
+fn file_header(
+  service_id: String,
+  variant: Variant,
+  unique_err_ids: List(String),
+) -> String {
   let proto = case variant {
     AwsQuery -> "awsQuery"
     Ec2Query -> "ec2Query"
+  }
+  let base_imports = [
+    code.Import(path: "gleam/dict", alias: code.CodeNone, unqualified: []),
+  ]
+  // The error-shape parse functions reference `runtime.
+  // check_error_type_matches`; emit the import only when at least one
+  // error shape is present, otherwise gleam flags it as unused.
+  let imports = case unique_err_ids {
+    [] -> base_imports
+    _ ->
+      list.append(base_imports, [
+        code.Import(
+          path: "aws/internal/client/runtime",
+          alias: code.CodeNone,
+          unqualified: [],
+        ),
+      ])
   }
   code.render(
     code.Module(items: [
@@ -188,7 +239,7 @@ fn file_header(service_id: String, variant: Variant) -> String {
         "DO NOT EDIT. Re-generate via the codegen subproject.",
       ]),
       code.Blank,
-      code.Import(path: "gleam/dict", alias: code.CodeNone, unqualified: []),
+      ..imports
     ]),
   )
   |> fn(s) { string.concat([s, "\n"]) }
@@ -216,4 +267,30 @@ fn strip_namespace(id: String) -> String {
 fn derive_module_name(service_id: String) -> String {
   let local = strip_namespace(service_id)
   stringutils.pascal_to_snake(local)
+}
+
+/// Awsquery-specific: respect `@aws.protocols#awsQueryError(code:
+/// "Customized")` when present on an error structure. The wire `<Code>`
+/// element carries that string verbatim, so the discriminator must
+/// compare against it rather than the Smithy shape local name. Returns
+/// the shape local name when the trait is absent.
+fn aws_query_error_code(
+  model: Model,
+  err_id: String,
+  default: String,
+) -> String {
+  case model.lookup(model, err_id) {
+    Ok(shape.Structure(traits: t, ..)) ->
+      case
+        trait_helpers.string_field_under(
+          t,
+          "aws.protocols#awsQueryError",
+          "code",
+        )
+      {
+        Ok(code) -> code
+        Error(_) -> default
+      }
+    _ -> default
+  }
 }
