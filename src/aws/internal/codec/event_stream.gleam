@@ -41,12 +41,30 @@ pub type Header {
   Header(name: String, value: HeaderValue)
 }
 
-/// Header-value shapes the v1 codec handles. The on-wire type
-/// discriminator (`Byte = 2`, `String = 7`, etc.) is owned by the
-/// encoder; callers construct these by variant name.
+/// Header-value shapes. The on-wire type discriminator is owned by
+/// the encoder; callers construct these by variant name.
+///
+/// Coverage (wire-code in parens):
+///   - `BoolTrueValue` (0), `BoolFalseValue` (1) — no payload
+///   - `ByteValue` (2) — signed 8-bit
+///   - `Int16Value` (3) — signed 16-bit
+///   - `Int32Value` (4) — signed 32-bit
+///   - `Int64Value` (5) — signed 64-bit
+///   - `BinaryValue` (6) — 2-byte length prefix + bytes
+///   - `StringValue` (7) — 2-byte length prefix + UTF-8
+///   - `TimestampValue` (8) — millis since epoch (signed 64-bit)
+///   - `UuidValue` (9) — exactly 16 bytes
 pub type HeaderValue {
+  BoolTrueValue
+  BoolFalseValue
   ByteValue(Int)
+  Int16Value(Int)
+  Int32Value(Int)
+  Int64Value(Int)
+  BinaryValue(BitArray)
   StringValue(String)
+  TimestampValue(Int)
+  UuidValue(BitArray)
 }
 
 /// Frame an `Event` for transmission. Computes both CRC32s (prelude
@@ -85,24 +103,44 @@ fn encode_header(header: Header) -> BitArray {
 }
 
 fn encode_header_value(value: HeaderValue) -> BitArray {
+  // Gleam BitArray value segments don't have a `signed` option, so
+  // negative values map into the unsigned range via two's
+  // complement (`wrap(n, bits)`) before writing.
   case value {
-    // Type 2 = byte (signed 8-bit int). Gleam BitArray value
-    // segments don't have a `signed` option, so we map negative
-    // values into the unsigned 8-bit range via two's complement
-    // (-1 → 255, -128 → 128) before writing.
-    ByteValue(n) -> {
-      let wrapped = case n < 0 {
-        True -> n + 256
-        False -> n
-      }
-      <<2:8, wrapped:big-8>>
+    BoolTrueValue -> <<0:8>>
+    BoolFalseValue -> <<1:8>>
+    ByteValue(n) -> <<2:8, { wrap(n, 8) }:big-8>>
+    Int16Value(n) -> <<3:8, { wrap(n, 16) }:big-16>>
+    Int32Value(n) -> <<4:8, { wrap(n, 32) }:big-32>>
+    Int64Value(n) -> <<5:8, { wrap(n, 64) }:big-64>>
+    BinaryValue(bytes) -> {
+      let len = bit_array.byte_size(bytes)
+      <<6:8, len:big-16, bytes:bits>>
     }
-    // Type 7 = string. Two-byte BE length prefix, then UTF-8 bytes.
     StringValue(s) -> {
       let bytes = bit_array.from_string(s)
       let len = bit_array.byte_size(bytes)
       <<7:8, len:big-16, bytes:bits>>
     }
+    TimestampValue(millis) -> <<8:8, { wrap(millis, 64) }:big-64>>
+    UuidValue(bytes) -> <<9:8, bytes:bits>>
+  }
+}
+
+fn wrap(n: Int, bits: Int) -> Int {
+  case n < 0 {
+    True -> n + pow2(bits)
+    False -> n
+  }
+}
+
+fn pow2(bits: Int) -> Int {
+  case bits {
+    8 -> 256
+    16 -> 65_536
+    32 -> 4_294_967_296
+    64 -> 18_446_744_073_709_551_616
+    _ -> 0
   }
 }
 
@@ -262,21 +300,83 @@ fn decode_header_value_body(
   rest: BitArray,
 ) -> Result(#(HeaderValue, BitArray), DecodeError) {
   case type_code {
-    // Type 2 = byte. Read one byte, sign-extend from 8.
-    2 ->
-      case rest {
-        <<n:big-8, after:bits>> -> {
-          let signed = case n >= 128 {
-            True -> n - 256
-            False -> n
-          }
-          Ok(#(ByteValue(signed), after))
-        }
-        _ -> Error(MalformedFrame(reason: "byte header truncated"))
-      }
-    // Type 7 = string. Read 2-byte length, then UTF-8 bytes.
+    0 -> Ok(#(BoolTrueValue, rest))
+    1 -> Ok(#(BoolFalseValue, rest))
+    2 -> decode_int_header(rest, 8, fn(n) { ByteValue(n) })
+    3 -> decode_int_header(rest, 16, fn(n) { Int16Value(n) })
+    4 -> decode_int_header(rest, 32, fn(n) { Int32Value(n) })
+    5 -> decode_int_header(rest, 64, fn(n) { Int64Value(n) })
+    6 -> decode_binary_header(rest)
     7 -> decode_string_header(rest)
+    8 -> decode_int_header(rest, 64, fn(n) { TimestampValue(n) })
+    9 -> decode_uuid_header(rest)
     other -> Error(UnknownHeaderType(type_code: other))
+  }
+}
+
+fn decode_int_header(
+  rest: BitArray,
+  bits: Int,
+  wrap_in: fn(Int) -> HeaderValue,
+) -> Result(#(HeaderValue, BitArray), DecodeError) {
+  case bits, rest {
+    8, <<n:big-8, after:bits>> -> Ok(#(wrap_in(unsign(n, 8)), after))
+    16, <<n:big-16, after:bits>> -> Ok(#(wrap_in(unsign(n, 16)), after))
+    32, <<n:big-32, after:bits>> -> Ok(#(wrap_in(unsign(n, 32)), after))
+    64, <<n:big-64, after:bits>> -> Ok(#(wrap_in(unsign(n, 64)), after))
+    _, _ -> Error(MalformedFrame(reason: "int header truncated"))
+  }
+}
+
+// Two's-complement decode: if the high bit is set, value is
+// negative when read as signed. `wrap` is the encoder counterpart.
+fn unsign(n: Int, bits: Int) -> Int {
+  let half = pow2(bits) / 2
+  case n >= half {
+    True -> n - pow2(bits)
+    False -> n
+  }
+}
+
+fn decode_binary_header(
+  rest: BitArray,
+) -> Result(#(HeaderValue, BitArray), DecodeError) {
+  case rest {
+    <<len:big-16, value_and_rest:bits>> ->
+      case bit_array.slice(value_and_rest, 0, len) {
+        Error(_) -> Error(MalformedFrame(reason: "binary slice"))
+        Ok(value_bytes) -> {
+          let after = case
+            bit_array.slice(
+              value_and_rest,
+              len,
+              bit_array.byte_size(value_and_rest) - len,
+            )
+          {
+            Ok(b) -> b
+            Error(_) -> <<>>
+          }
+          Ok(#(BinaryValue(value_bytes), after))
+        }
+      }
+    _ -> Error(MalformedFrame(reason: "binary header truncated"))
+  }
+}
+
+fn decode_uuid_header(
+  rest: BitArray,
+) -> Result(#(HeaderValue, BitArray), DecodeError) {
+  case bit_array.slice(rest, 0, 16) {
+    Error(_) -> Error(MalformedFrame(reason: "uuid header truncated"))
+    Ok(uuid_bytes) -> {
+      let after = case
+        bit_array.slice(rest, 16, bit_array.byte_size(rest) - 16)
+      {
+        Ok(b) -> b
+        Error(_) -> <<>>
+      }
+      Ok(#(UuidValue(uuid_bytes), after))
+    }
   }
 }
 

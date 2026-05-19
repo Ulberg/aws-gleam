@@ -8,8 +8,9 @@
 //// inputs.
 
 import aws/internal/codec/event_stream.{
-  BadMessageCrc, BadPreludeCrc, ByteValue, Event, Header, StringValue, decode,
-  encode,
+  BadMessageCrc, BadPreludeCrc, BinaryValue, BoolFalseValue, BoolTrueValue,
+  ByteValue, Event, Header, Int16Value, Int32Value, Int64Value, StringValue,
+  TimestampValue, UuidValue, decode, encode,
 }
 import gleam/bit_array
 import gleeunit/should
@@ -201,4 +202,75 @@ fn debug_decode_error(err) -> String {
     BadMessageCrc -> "BadMessageCrc"
     _ -> "other"
   }
+}
+
+// ---------- round-trips for every header value type ----------
+//
+// Each test runs a single header value through encode→decode and
+// pins the bytes back. Together they cover the wire-codes 0..9
+// the codec advertises.
+
+fn assert_round_trip(name: String, value) -> Nil {
+  let event = Event(headers: [Header(name: name, value: value)], payload: <<>>)
+  case decode(encode(event)) {
+    Ok(#(decoded, _rest)) -> decoded |> should.equal(event)
+    Error(e) ->
+      panic as {
+        "round-trip failed for " <> name <> ": " <> debug_decode_error(e)
+      }
+  }
+}
+
+pub fn round_trips_bool_true_test() {
+  assert_round_trip("b", BoolTrueValue)
+}
+
+pub fn round_trips_bool_false_test() {
+  assert_round_trip("b", BoolFalseValue)
+}
+
+pub fn round_trips_int16_negative_test() {
+  // -32768 = minimum signed 16-bit. Pins the wrap edge.
+  assert_round_trip("i16", Int16Value(-32_768))
+}
+
+pub fn round_trips_int32_min_test() {
+  assert_round_trip("i32", Int32Value(-2_147_483_648))
+}
+
+pub fn round_trips_int64_large_test() {
+  // ~max int64; exercises the 64-bit wrap path.
+  assert_round_trip("i64", Int64Value(9_223_372_036_854_775_000))
+}
+
+pub fn round_trips_binary_payload_test() {
+  assert_round_trip("bin", BinaryValue(<<0, 1, 2, 3, 255>>))
+}
+
+pub fn round_trips_timestamp_test() {
+  // Smithy timestamps as event-stream headers are millis-since-epoch.
+  assert_round_trip("ts", TimestampValue(1_705_453_200_000))
+}
+
+pub fn round_trips_uuid_test() {
+  // Exactly 16 bytes; the encoder doesn't add a length prefix
+  // (UUIDs are fixed-width).
+  let uuid = <<
+    0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89,
+    0xAB, 0xCD, 0xEF,
+  >>
+  assert_round_trip("u", UuidValue(uuid))
+}
+
+pub fn round_trips_byte_value_zero_test() {
+  // The trivially-positive boundary — pins that encode/decode of
+  // a 0 byte doesn't get confused with bool/false (wire-code 1).
+  assert_round_trip("b0", ByteValue(0))
+}
+
+pub fn round_trips_string_with_multibyte_utf8_test() {
+  // UTF-8 multibyte characters use 4 raw bytes for a single
+  // codepoint. Ensures the byte-length prefix counts bytes, not
+  // characters.
+  assert_round_trip("emoji", StringValue("🦀 crab"))
 }
