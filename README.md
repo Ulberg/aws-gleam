@@ -22,13 +22,15 @@ shipped earlier on PR #7 and merged. v0.2 work continues on
   endpoints) — algorithm, IAM key derivation
   (`derive_signing_key(akid, secret)`), one-call
   `sign_with_iam_credentials`, session-token + `omit_session_token`,
-  `normalize_path`. Fixture-driven corpus loop pins canonical
-  request + string-to-sign byte-for-byte across the aws-c-auth
-  `aws-signing-test-suite/v4a/*` set. Runtime auto-routing
-  (`<service>.with_sigv4a_*` setters + `runtime.prepare_signed_request`
-  branch) and RFC 6979 deterministic nonces (which would unblock
-  signature-bytes pinning too) are the remaining pieces — see
-  `next_steps.md` "SigV4a sub-status."
+  `normalize_path`, plus per-Client opt-in via
+  `<service>.with_sigv4a_region_set(client, region_set)` — every
+  generated service has the setter, and `runtime.prepare_signed_request`
+  routes through `sigv4a.sign_with_credentials` when present. Fixture-
+  driven corpus loop pins canonical request + string-to-sign byte-
+  for-byte across the aws-c-auth `aws-signing-test-suite/v4a/*` set.
+  RFC 6979 deterministic nonces (which would unblock signature-byte
+  pinning too) are the remaining piece — see `next_steps.md` "SigV4a
+  sub-status."
 - Eight-stage credential chain: env → IRSA → SSO (modern + legacy
   profile shapes) → shared credentials → `credential_process` →
   `aws configure export-credentials` → ECS metadata → EC2 IMDSv2.
