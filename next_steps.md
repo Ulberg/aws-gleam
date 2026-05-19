@@ -219,22 +219,42 @@ client beyond DynamoDB + S3 mainline.
    `StreamingBody`.
 
    Codegen detection landed via `types.has_streaming_union_member`
-   (the sibling of `has_streaming_blob_member` that drove the
-   streaming-blob codegen flip). Walks an output struct's members
-   for any that target a union shape tagged with
-   `smithy.api#streaming`. Catches both response-side event
-   streams (Transcribe.StartStreamTranscriptionResponse →
+   + `has_streaming_union_in_members` (the resolved-members
+   variant that the protocol emitters call directly). Catches
+   both response-side event streams
+   (Transcribe.StartStreamTranscriptionResponse →
    TranscriptResultStream) and request-side ones
    (StartStreamTranscriptionRequest → AudioStream, used for HTTP/2
    bidirectional audio streaming).
 
-   Remaining: codegen-side emitter that, given the detection, threads
-   the response body through `event_stream.fold_events` to surface
-   each decoded frame as the matching union variant. The exact
-   user-facing API shape (callback vs Iterator vs Process subject)
-   is the design step before the emit. The codec is protocol-
-   agnostic; the emit pass is what wires it into the per-service
-   `parse_<op>_response`.
+   Codegen emit landed across all three http-shaped protocols
+   (restxml / restjson / awsjson). Operations with a `@streaming`
+   union output get an extra
+   `<op>_event_stream(client, input) -> Result(streaming.Response,
+   runtime.ClientError)` wrapper via the shared
+   `client.invoke_event_stream_fn` AST builder. Same wire shape as
+   the streaming-blob `<op>_streaming` variant; the distinct
+   function-name suffix signals the
+   `application/vnd.amazon.eventstream` framing to callers.
+   Services with codegen-emitted event-stream wrappers include
+   S3.SelectObjectContent (restXml), Transcribe Streaming
+   StartStreamTranscription (restJson1), Kinesis SubscribeToShard
+   (awsJson1_1), Bedrock AgentCore InvokeAgentRuntime,
+   CloudWatch Logs StartLiveTail, Lex Runtime V2 StartConversation,
+   IoT SiteWise, Pinpoint, SageMaker Runtime HTTP/2.
+
+   End-to-end pipeline test
+   (`test/transcribe_streaming_event_stream_test.gleam`) verifies
+   the wrapper passes framed bytes through unchanged and the
+   `event_stream.fold_events` consumer round-trips them.
+
+   Remaining: typed per-event-union decoding — instead of returning
+   the raw `streaming.Response` for callers to dispatch on, future
+   codegen could emit a `parse_<op>_event(event) -> Result(<Op>Event,
+   _)` helper that decodes each frame into the matching union
+   variant. Needs a user-facing API-shape call first (callback /
+   Iterator / Process subject) since BEAM concurrency idioms differ
+   from the Rust SDK's `Stream` and the JS SDK's `AsyncIterable`.
 
 6. **S3 transfer manager / multipart upload** — DONE (2026-05-19).
    `aws/s3/transfer.upload(client, bucket, key, body, part_size_bytes)`
