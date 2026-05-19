@@ -415,10 +415,27 @@ codegen pass:
    59 protocol-test cases from no-dispatcher to dispatched.
    Multi-slice codegen project: `SimpleInputParams` (scalars) →
    `QueryLists` (flattened + xmlName) → `QueryMaps` + nesting.
-5. **SigV4a** (v0.2 item 8). Multi-region signing for S3 MRAP.
+5. **SigV4a** (v0.2 item 8). Algorithm + IAM key derivation are
+   in place — see SigV4a sub-status below. Remaining: runtime
+   dispatch wiring + session-token + path normalization + RFC
+   6979 deterministic nonces (each its own slice).
 6. **Endpoint ruleset coverage beyond S3 + DynamoDB** (v0.2
    item 10). The evaluator is wired; bundling all ~300 rulesets
    at codegen time + per-service builders is remaining.
+
+### SigV4a sub-status (2026-05-19)
+
+| Piece | Status | Notes |
+|---|---|---|
+| `sigv4a.sign` (canonical req, STS, ECDSA P-256 signing) | DONE | `src/aws/internal/sigv4a.gleam`; round-trip verified via `sigv4a_test`. |
+| `derive_signing_key(akid, secret)` — IAM → P-256 scalar | DONE | matches `aws-sigv4::sign::v4a::generate_signing_key`; public key pinned against `aws-c-auth v4a/*/public-key.json`. |
+| `sign_with_iam_credentials(req, akid, secret, opts)` | DONE | one-call wrapper; round-trip-verified. |
+| `ecdsa_p256_public_key/1` FFI | DONE | exposed for tests + anyone surfacing the public side of a derived key. |
+| Runtime-side wiring (`<service>.with_sigv4a_...` + `runtime.prepare_signed_request` branch) | OPEN | `prepare_signed_request` is hard-coded to `sigv4.sign`; no op currently routes through SigV4a automatically. |
+| `X-Amz-Security-Token` (session token) | OPEN | `Sigv4aOptions` doesn't carry a token field today; v4a fixtures with `credentials.token` will need it. |
+| `normalize_path` option (RFC 3986 dot-segment removal) | OPEN | `sigv4.normalize_path` exists; SigV4a's `encode_path` doesn't normalize, so the `get-*-normalized` v4a fixtures would fail a byte-level pin. |
+| RFC 6979 deterministic nonces | OPEN | Erlang's `crypto:sign/4` uses random nonces — signatures verify but won't match aws-c-auth literal bytes; would unblock fixture-driven `header-signature.txt` pinning across the full v4a corpus. |
+| Fixture-driven loop test (canonical + STS bytes vs `aws-c-auth v4a/*`) | OPEN | needs the above three (session-token + normalize-path + an extracted `canonical_request` / `string_to_sign` public surface mirroring `sigv4.gleam`). |
 
 ## Suggested execution order (historical)
 
