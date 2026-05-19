@@ -2734,9 +2734,9 @@ fn response_overrides(out_info: IOTypeInfo) -> List(ResponseOverride) {
 }
 
 /// Map a Smithy `@httpHeader` target type to the matching extractor
-/// call. Types we don't yet bind (enums, timestamps, lists) fall
-/// through with `None` so the field continues to land as `option.None`
-/// — same behaviour the codegen had before this pass; new binding
+/// call. Types we don't yet bind (timestamps, lists) fall through
+/// with `None` so the field continues to land as `option.None` —
+/// same behaviour the codegen had before this pass; new binding
 /// support drops into this match without touching anything else.
 fn header_extractor(target: Resolved, header_name: String) -> Option(String) {
   case target {
@@ -2746,6 +2746,8 @@ fn header_extractor(target: Resolved, header_name: String) -> Option(String) {
       option.Some(call_extractor("int_header", header_name))
     RPrim(primitive: PBool) ->
       option.Some(call_extractor("bool_header", header_name))
+    REnum(gleam_name: gn, ..) ->
+      option.Some(call_enum_extractor(header_name, gn))
     // `RPrim(PFloat)` would map to `json_float.SmithyFloat` in the
     // generated record — we don't yet emit the wrap/unwrap glue, so
     // float-bound headers stay `None` for now. Add the helper plus
@@ -2756,6 +2758,20 @@ fn header_extractor(target: Resolved, header_name: String) -> Option(String) {
 
 fn call_extractor(fn_name: String, header_name: String) -> String {
   name_concat(["rest.", fn_name, "(headers, \"", header_name, "\")"])
+}
+
+fn call_enum_extractor(header_name: String, enum_gleam_name: String) -> String {
+  // The codegen emits `<snake>_from_wire(s) -> Result(Enum, String)`
+  // for every enum (see `types.gleam`); pass it directly to the
+  // forgiving `rest.enum_header` helper so unknown wire values land
+  // as `None` rather than crashing the response parse.
+  name_concat([
+    "rest.enum_header(headers, \"",
+    header_name,
+    "\", ",
+    stringutils.pascal_to_snake(enum_gleam_name),
+    "_from_wire)",
+  ])
 }
 
 /// `full_override = True` produces `Output(field: ..., ...)` without
@@ -2845,11 +2861,22 @@ fn emit_parse_with_payload(
   payload: MemberDef,
 ) -> String {
   let output_type = out_info.type_name
+  // Members bound via `@httpHeader` / `@httpResponseCode` get their
+  // value populated from the response headers / status; everything
+  // that isn't the payload and isn't a header/code stays `option.None`
+  // (it'd live in the body, but the payload member owns the body here).
+  let overrides = response_overrides(out_info)
   let ctor_args =
     list.map(out_info.members, fn(m) {
       let value = case m.snake_name == payload.snake_name {
         True -> code.Ident(name: "payload")
-        False -> code.Ident(name: "option.None")
+        False ->
+          case
+            list.find(overrides, fn(o) { o.field == m.snake_name })
+          {
+            Ok(o) -> code.Raw(fragment: o.value_expr)
+            Error(_) -> code.Ident(name: "option.None")
+          }
       }
       code.Labelled(label: m.snake_name, value: value)
     })
@@ -2909,7 +2936,10 @@ fn emit_parse_with_payload(
       code.Fn(
         public: True,
         name: name_concat(["parse_", snake, "_response"]),
-        params: parse_response_params(body_param),
+        params: response_params(
+          body_param: body_param,
+          overrides_used: overrides,
+        ),
         return: code.CodeSome(
           name_concat(["Result(", output_type, ", String)"]),
         ),
