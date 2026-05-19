@@ -84,10 +84,13 @@ the table above.
    `sts_web_identity.gleam`; adding plain `AssumeRole` makes the
    profile parser's role-chain support real.
 
-8. **`@xmlFlattened` lists + struct-member `@xmlName`** — Some S3
-   response shapes use flattened lists or per-member XML name
-   overrides. Both are flagged in M6-audit; both block some S3 ops
-   from decoding cleanly.
+8. **`@xmlFlattened` lists + struct-member `@xmlName`** — DONE.
+   `xml_decode.optional_flat_list` and the restxml codegen
+   (`xml.flat_list` / `xml.flat_list_ns`) handle flattened-list
+   members; `@xmlName` on struct members is consumed via
+   `member.xml_name` in the encoder/decoder emit. Pinned by
+   `test/xml_decode_test.gleam::decode_flattened_list_test`
+   (S3 `ListObjects` `Contents` + `CommonPrefixes`).
 
 When items 1–8 are done the v0.1 plan's gate is met: a binary deployed
 to Lambda / ECS / EC2 / EKS can call DynamoDB and S3 (within v0.1's
