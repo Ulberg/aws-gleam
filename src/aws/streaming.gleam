@@ -208,10 +208,8 @@ pub fn collect_to_bit_array_max(
   max_bytes: Int,
 ) -> Result(BitArray, CollectError(err)) {
   use r <- result.try(resp |> result.map_error(Transport))
-  case to_bit_array_max(r.body, max_bytes) {
-    Ok(bytes) -> Ok(bytes)
-    Error(_) -> Error(TooLarge(max_bytes: max_bytes))
-  }
+  to_bit_array_max(r.body, max_bytes)
+  |> result.replace_error(TooLarge(max_bytes: max_bytes))
 }
 
 /// Same as `collect_to_bit_array_max` but also runs the bytes
