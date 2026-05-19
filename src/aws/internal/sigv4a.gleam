@@ -113,16 +113,29 @@ pub fn sign(
   )
 }
 
-/// Sign `req` with the bundled `creds`. Adds `Authorization`,
-/// `X-Amz-Date`, `X-Amz-Region-Set`, and (when `creds.session_token`
-/// is `Some`) `X-Amz-Security-Token`. `X-Amz-Content-Sha256` is
-/// emitted when `opts.sign_body` is set.
-pub fn sign_with_credentials(
+/// Pieces produced when building a SigV4a canonical request. Mirrors
+/// `sigv4.CanonicalParts` so test harnesses can pin individual
+/// stages (`canonical_request`, `signed_headers`, `payload_hash`)
+/// against AWS reference fixtures.
+pub type CanonicalParts {
+  CanonicalParts(
+    canonical_request: String,
+    signed_headers: String,
+    payload_hash: String,
+    prepared_headers: List(Header),
+  )
+}
+
+/// Build the SigV4a canonical request bytes from `req` + `creds` +
+/// `opts`. Returns the canonical request, the semicolon-joined
+/// signed-headers line, the payload-hash hex, and the prepared
+/// header list (which the signing step appends `Authorization` to).
+/// Pure function — no signing, no network.
+pub fn canonical_request(
   req: HttpRequest,
   creds: Sigv4aCredentials,
   opts: Sigv4aOptions,
-) -> HttpRequest {
-  let date = string.slice(opts.timestamp, 0, 8)
+) -> CanonicalParts {
   let region_set_value = string.join(opts.region_set, ",")
   let payload_hash = case opts.sign_body {
     True -> crypto.hex_encode(crypto.sha256(req.body))
@@ -146,17 +159,44 @@ pub fn sign_with_credentials(
     <> signed_headers_list
     <> "\n"
     <> payload_hash
-  // Credential scope drops the region — `X-Amz-Region-Set`
-  // carries it instead.
+  CanonicalParts(
+    canonical_request: creq,
+    signed_headers: signed_headers_list,
+    payload_hash: payload_hash,
+    prepared_headers: prepared,
+  )
+}
+
+/// Build the SigV4a string-to-sign (`AWS4-ECDSA-P256-SHA256\n<ts>\n<scope>\n<creq_hash>`).
+/// The scope drops the region — `X-Amz-Region-Set` carries it
+/// instead — so only `opts.timestamp` (which holds the YYYYMMDD
+/// date in its first 8 chars) and `opts.service` contribute.
+pub fn string_to_sign(canonical: String, opts: Sigv4aOptions) -> String {
+  let date = string.slice(opts.timestamp, 0, 8)
   let scope = date <> "/" <> opts.service <> "/aws4_request"
-  let creq_hash = crypto.hex_encode(crypto.sha256(bit_array.from_string(creq)))
-  let sts =
-    "AWS4-ECDSA-P256-SHA256\n"
-    <> opts.timestamp
-    <> "\n"
-    <> scope
-    <> "\n"
-    <> creq_hash
+  let creq_hash =
+    crypto.hex_encode(crypto.sha256(bit_array.from_string(canonical)))
+  "AWS4-ECDSA-P256-SHA256\n"
+  <> opts.timestamp
+  <> "\n"
+  <> scope
+  <> "\n"
+  <> creq_hash
+}
+
+/// Sign `req` with the bundled `creds`. Adds `Authorization`,
+/// `X-Amz-Date`, `X-Amz-Region-Set`, and (when `creds.session_token`
+/// is `Some`) `X-Amz-Security-Token`. `X-Amz-Content-Sha256` is
+/// emitted when `opts.sign_body` is set.
+pub fn sign_with_credentials(
+  req: HttpRequest,
+  creds: Sigv4aCredentials,
+  opts: Sigv4aOptions,
+) -> HttpRequest {
+  let parts = canonical_request(req, creds, opts)
+  let sts = string_to_sign(parts.canonical_request, opts)
+  let date = string.slice(opts.timestamp, 0, 8)
+  let scope = date <> "/" <> opts.service <> "/aws4_request"
   let sig_der =
     ecdsa_p256_sign(creds.private_key.scalar, bit_array.from_string(sts))
   let sig_hex = crypto.hex_encode(sig_der)
@@ -166,11 +206,13 @@ pub fn sign_with_credentials(
     <> "/"
     <> scope
     <> ", SignedHeaders="
-    <> signed_headers_list
+    <> parts.signed_headers
     <> ", Signature="
     <> sig_hex
   let final_headers =
-    list.append(prepared, [Header(name: "Authorization", value: auth)])
+    list.append(parts.prepared_headers, [
+      Header(name: "Authorization", value: auth),
+    ])
   HttpRequest(..req, headers: final_headers)
 }
 
@@ -320,10 +362,21 @@ fn upsert(headers: List(Header), name: String, value: String) -> List(Header) {
 }
 
 fn canonical_headers(headers: List(Header)) -> String {
-  headers
-  |> list.map(fn(h) { #(string.lowercase(h.name), string.trim(h.value)) })
-  |> list.sort(by: fn(a, b) { string.compare(a.0, b.0) })
-  |> list.map(fn(p) { p.0 <> ":" <> p.1 <> "\n" })
+  // Per SigV4 spec: lowercase names, trim + collapse internal runs of
+  // ASCII whitespace in values, group duplicate header names with
+  // comma-joined values, sort by name. Direct port of
+  // `sigv4.canonical_headers` so SigV4a + SigV4 emit identical
+  // canonical header blocks for equivalent inputs.
+  let prepared =
+    headers
+    |> list.map(fn(h) {
+      #(string.lowercase(h.name), collapse_spaces(string.trim(h.value)))
+    })
+    |> group_by_name
+    |> list.sort(by: fn(a, b) { string.compare(a.0, b.0) })
+
+  prepared
+  |> list.map(fn(p) { p.0 <> ":" <> string.join(p.1, ",") <> "\n" })
   |> string.concat
 }
 
@@ -333,6 +386,54 @@ fn signed_headers(headers: List(Header)) -> String {
   |> list.unique
   |> list.sort(by: string.compare)
   |> string.join(";")
+}
+
+fn group_by_name(
+  pairs: List(#(String, String)),
+) -> List(#(String, List(String))) {
+  do_group_by_name(pairs, [])
+}
+
+fn do_group_by_name(
+  pairs: List(#(String, String)),
+  acc: List(#(String, List(String))),
+) -> List(#(String, List(String))) {
+  case pairs {
+    [] -> list.reverse(list.map(acc, fn(p) { #(p.0, list.reverse(p.1)) }))
+    [#(name, value), ..rest] -> {
+      let updated = case list.key_find(acc, name) {
+        Ok(existing) -> {
+          let new_values = [value, ..existing]
+          list.key_set(acc, name, new_values)
+        }
+        Error(_) -> [#(name, [value]), ..acc]
+      }
+      do_group_by_name(rest, updated)
+    }
+  }
+}
+
+fn collapse_spaces(s: String) -> String {
+  do_collapse(string.to_graphemes(s), False, "")
+}
+
+fn do_collapse(
+  chars: List(String),
+  last_was_space: Bool,
+  acc: String,
+) -> String {
+  case chars {
+    [] -> acc
+    [c, ..rest] ->
+      case c == " " || c == "\t" {
+        True ->
+          case last_was_space {
+            True -> do_collapse(rest, True, acc)
+            False -> do_collapse(rest, True, acc <> " ")
+          }
+        False -> do_collapse(rest, False, acc <> c)
+      }
+  }
 }
 
 fn canonical_query_string(query: String) -> String {
