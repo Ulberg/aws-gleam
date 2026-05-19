@@ -130,6 +130,20 @@ client beyond DynamoDB + S3 mainline.
    (`RStreamingBlob` → `streaming.from_bit_array`). Consumer
    helpers (`fold_chunks`, `try_fold_chunks`, `to_bit_array_max`,
    `to_string_max`) cover both buffered and chunked consumption.
+
+   Per-op routing through the chunked transport landed via
+   `runtime.invoke_streaming` — same credential / endpoint / SigV4
+   pipeline as `invoke`, but dispatches through
+   `streaming_http_send` and returns the raw
+   `Response(StreamingBody)`. Error responses materialise via
+   `streaming.to_bit_array_max(body, 1 MiB)` so typed-error
+   extraction works identically to `invoke`. Codegen now emits
+   `pub fn config(client)`, `with_streaming_http_send`,
+   `with_http2`, and `with_max_attempts` on every Client so user-
+   land streaming wrappers compose cleanly — see
+   `aws/s3/streaming.get_object_streaming` for the prototype +
+   `test/aws/s3_streaming_localstack_test` for the round-trip.
+
    The planned lazy `Source(...)` variant for file-backed streaming
    is the next extension when a use case pins the API shape.
 
@@ -200,9 +214,17 @@ client beyond DynamoDB + S3 mainline.
    and rechunks across chunk boundaries so wire-side part sizes
    follow `part_size_bytes`. `part_size_for(total_bytes)` picks a
    safe part size for any total inside S3's 10,000-parts cap.
-   5 + 3 + 6 unit tests cover the happy paths, abort-on-failure
-   paths, and the size-scaler edges. Parallel upload (Task-based
-   fan-out) is the next extension; today's coordinator is sequential.
+   `upload_with_options` + `upload_from_stream_with_options` thread
+   `UploadOptions` (content_type, content_encoding,
+   content_disposition, cache_control, metadata, acl, storage_class,
+   server_side_encryption) into the CreateMultipartUpload request.
+   `aws/s3/streaming.get_object_streaming` exposes the read-side
+   counterpart on the chunked transport. End-to-end LocalStack tests
+   cover both the multipart upload round-trip and the streaming
+   GetObject round-trip; unit suite at 8 transfer tests + 2
+   s3_streaming tests + the size-scaler edges. Parallel upload
+   (Task-based fan-out) is the next extension; today's coordinator
+   is sequential.
 
 7. **Presigned URLs** — DONE (2026-05-18). `sigv4.presigned_url`
    builds the query-string-auth variant of SigV4 — the auth fields
@@ -272,13 +294,14 @@ client beyond DynamoDB + S3 mainline.
 13. **HTTP/2** — DONE (2026-05-19). `aws_streaming_ffi.streaming_send/7`
     threads `{http_version, "HTTP/2"}` into the httpc option list.
     Gleam side surfaces as `http_streaming.default_send_http2` +
-    `with_timeout_tls_http2`; `runtime.with_http2(config)` is the
-    caller-facing knob that swaps `streaming_http_send` to the
-    HTTP/2 variant. Buffered path stays HTTP/1.1 (gleam_httpc
-    doesn't expose the option); HTTP/2 is for high-throughput
-    streaming endpoints (S3 multipart, Bedrock streaming,
-    Transcribe). Build-option count tests + runtime setter tests
-    pin the wiring.
+    `with_timeout_tls_http2`; `runtime.with_http2(config)` and the
+    codegen-emitted `s3.with_http2(client)` (and every other
+    service's `with_http2`) are the caller-facing knobs that swap
+    `streaming_http_send` to the HTTP/2 variant. Buffered path
+    stays HTTP/1.1 (gleam_httpc doesn't expose the option); HTTP/2
+    is for high-throughput streaming endpoints (S3 multipart,
+    Bedrock streaming, Transcribe). Build-option count tests +
+    runtime setter tests pin the wiring.
 
 14. **JavaScript target** — explicitly out per the plan and
     `CLAUDE.md`.
