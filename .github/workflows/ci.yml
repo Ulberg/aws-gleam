@@ -122,39 +122,35 @@ jobs:
           echo "--- gleam"; gleam --version || true
           echo "--- src/aws/services size"; ls src/aws/services 2>/dev/null | wc -l
 
-      # Localise the SIGSEGV. The previous failure mode was "Compiling
-      # aws → segfault at ~2:05" with nothing else logged. Running
-      # `gleam build` as a separate step from `gleam test` tells us
-      # whether the crash is in the compile or load-modules-into-test
-      # phase. If build passes here but test crashes below, the
-      # culprit is module loading (JIT codegen on a generated module);
-      # if build crashes here, the culprit is the .erl compiler.
-      - name: Build (compile only)
-        run: gleam build
-        env:
-          # Same atom-table headroom as test.sh; `+sss 16384` gives
-          # scheduler threads a 16M-kiloword (64 MB) stack so a
-          # deeply-recursive compiler pass on a multi-thousand-line
-          # generated service can't blow the OS stack and trip a
-          # SIGSEGV that looks identical to a JIT crash.
-          ERL_FLAGS: "+t 16777216 +S 2:2 +sss 16384"
-          ERL_AFLAGS: "+t 16777216 +S 2:2 +sss 16384"
-
       - name: Run tests
         # Use scripts/test.sh so ERL_FLAGS="+t 16M" is set — generating
         # 409 services blows past the BEAM's default 1M-atom ceiling
         # and the BEAM segfaults during compile without the bump.
         # Local `gleam test` runs go through the same wrapper.
         #
+        # `ulimit -s 131072` raises the per-thread stack from the
+        # runner default (16 MB) to 128 MB. The BEAM compiler is
+        # deeply recursive; on multi-thousand-line generated services
+        # like `fis.gleam` and `healthlake.gleam` it blows past 16 MB
+        # and segfaults indistinguishably from a JIT crash. The
+        # earlier "consistent 2:05" timing across OTP 27.0 / 27.3.4
+        # / 28.0 was the compiler reaching the same module each time.
+        # `ulimit -c unlimited` enables core dumps so the next
+        # surprise crash leaves diagnostic state on disk.
+        #
         # Belt-and-braces: also expose ERL_FLAGS at the step env
         # level so the bump applies even if `gleam test`'s child
         # processes don't inherit it through the script's `export`
         # (we hit a segfault in CI where the in-script export
         # apparently didn't make it to the erlc subprocess).
-        run: ./scripts/test.sh
+        run: |
+          ulimit -s 131072
+          ulimit -c unlimited
+          echo "ulimit -s: $(ulimit -s) kB"
+          ./scripts/test.sh
         env:
-          ERL_FLAGS: "+t 16777216 +S 2:2 +sss 16384"
-          ERL_AFLAGS: "+t 16777216 +S 2:2 +sss 16384"
+          ERL_FLAGS: "+t 16777216 +S 2:2"
+          ERL_AFLAGS: "+t 16777216 +S 2:2"
 
   # LocalStack end-to-end tests for the v0.1 verification gate
   # (DynamoDB + S3 round-trips). Kept in a separate job so the
