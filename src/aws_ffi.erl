@@ -1,7 +1,7 @@
 -module(aws_ffi).
 -include_lib("xmerl/include/xmerl.hrl").
 -export([sha256/1, sha1/1, md5/1, crc32c/1, hmac_sha256/2, hex_encode/1,
-         ecdsa_p256_sign/2, ecdsa_p256_verify/3, get_env/1,
+         ecdsa_p256_sign/2, ecdsa_p256_verify/3, ecdsa_p256_public_key/1, get_env/1,
          read_file/1, unix_seconds/0, parse_iso8601/1, run_process/2,
          sha1_hex/1, aws_timestamp/0, random_float/0,
          encode_dynamic_to_json/1, float_nan/0, float_infinity/0,
@@ -124,6 +124,15 @@ ecdsa_p256_sign(PrivateKey, Data) when is_binary(PrivateKey), is_binary(Data) ->
 ecdsa_p256_verify(PublicKey, Data, Signature)
   when is_binary(PublicKey), is_binary(Data), is_binary(Signature) ->
     crypto:verify(ecdsa, sha256, Data, Signature, [PublicKey, secp256r1]).
+
+%% Derive the uncompressed SEC1 public key (`<<4, X:32/binary, Y:32/binary>>`)
+%% for a given P-256 private scalar. Used by the SigV4a key-derivation
+%% tests and by anyone who wants to surface the public counterpart of a
+%% derived signing key. `crypto:generate_key/3` with an explicit private
+%% scalar leaves the scalar untouched and only fills in the public side.
+ecdsa_p256_public_key(PrivateKey) when is_binary(PrivateKey) ->
+    {PubKey, PrivateKey} = crypto:generate_key(ecdh, secp256r1, PrivateKey),
+    PubKey.
 
 %% CRC-32C (Castagnoli polynomial 0x1EDC6F41, reflected 0x82F63B78).
 %% Used by AWS multi-algorithm checksum (`crc32c` variant) — base64

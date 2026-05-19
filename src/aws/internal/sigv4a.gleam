@@ -18,12 +18,14 @@
 //// reference vectors is a follow-up — it needs a pure-Erlang
 //// HMAC-DRBG implementation.
 ////
-//// **v1 limitation — caller-supplied EC private key.** AWS's
-//// deterministic key-derivation algorithm (turning an IAM secret
-//// + access key into an EC private scalar) is also deferred —
-//// it requires HMAC-SHA256 composition with modular reduction
-//// onto the P-256 curve. v1 accepts an already-derived 32-byte
-//// scalar; callers wire in their own key derivation.
+//// **AWS-deterministic key derivation** is now wired via
+//// `derive_signing_key/2` — feeds an IAM (access-key-id,
+//// secret-access-key) pair through AWS's HMAC-SHA256 + P-256
+//// modular-reduction KDF and returns the 32-byte EC private
+//// scalar the SigV4a spec requires. Pinned by
+//// `test/sigv4a_key_derivation_test.gleam` against the aws-c-auth
+//// v4a fixture's `public-key.json` (X / Y derived from the
+//// canonical `AKIDEXAMPLE` / `wJalrXUtnFEMI...` pair).
 
 import aws/internal/crypto
 import aws/internal/http_request.{
@@ -156,6 +158,75 @@ pub fn ecdsa_p256_verify(
   data: BitArray,
   signature: BitArray,
 ) -> Bool
+
+/// Uncompressed SEC1 public key (`04 || X || Y`, 65 bytes) for a
+/// given 32-byte P-256 private scalar. Surfaced so callers can pin
+/// derived keys against AWS test fixtures (which ship the public
+/// counterpart) without re-implementing curve arithmetic.
+@external(erlang, "aws_ffi", "ecdsa_p256_public_key")
+pub fn ecdsa_p256_public_key(private_key: BitArray) -> BitArray
+
+/// AWS SigV4a deterministic key derivation: turn an IAM
+/// (access-key-id, secret-access-key) pair into the 32-byte
+/// P-256 private scalar that `sign/4` accepts. Matches the
+/// algorithm in `aws-sigv4::sign::v4a::generate_signing_key`:
+///   1. `input_key = "AWS4A" || secret_access_key` (UTF-8)
+///   2. Loop counter `c = 1, 2, …`:
+///        `kdf_context = access_key_id || c`
+///        `fis = "AWS4-ECDSA-P256-SHA256" || 0x00 || kdf_context || 256:i32-be`
+///        `buf = 1:i32-be || fis`
+///        `tag = HMAC-SHA256(input_key, buf)` (32 bytes)
+///        `k0 = U256(tag)` — big-endian
+///        if `k0 ≤ N-2` (with `N` = P-256 order): return `k0 + 1`.
+///   3. Otherwise `c += 1` and retry. The counter loop almost
+///      always terminates on `c = 1`; the probability of rejection
+///      per iteration is `(2^256 - (N-2)) / 2^256 ≈ 2^-128`.
+pub fn derive_signing_key(
+  access_key_id: String,
+  secret_access_key: String,
+) -> EcdsaPrivateKey {
+  let input_key = bit_array.from_string("AWS4A" <> secret_access_key)
+  let access_key_bytes = bit_array.from_string(access_key_id)
+  derive_loop(input_key, access_key_bytes, 1)
+}
+
+fn derive_loop(
+  input_key: BitArray,
+  access_key_bytes: BitArray,
+  counter: Int,
+) -> EcdsaPrivateKey {
+  case counter > 254 {
+    True ->
+      // Per RFC + AWS spec, the rejection branch has probability ~2^-128
+      // per iteration. 254 tries means a probability of ~2^-120 of
+      // reaching here for a single key — astronomically below any
+      // realistic credential. If this ever fires, the input is
+      // corrupted, the implementation is wrong, or the IAM secret is
+      // adversarial; in any case, panicking beats silently looping.
+      panic as "SigV4a key derivation: counter exceeded 254 — IAM secret may be malformed"
+    False -> {
+      let kdf_context = <<access_key_bytes:bits, counter:size(8)>>
+      let fis = <<
+        "AWS4-ECDSA-P256-SHA256":utf8, 0:size(8), kdf_context:bits,
+        256:size(32)-big,
+      >>
+      let buf = <<1:size(32)-big, fis:bits>>
+      let tag = crypto.hmac_sha256(input_key, buf)
+      let assert <<k0:size(256)-big>> = tag
+      case k0 <= p256_order_minus_two {
+        True -> EcdsaPrivateKey(scalar: <<{ k0 + 1 }:size(256)-big>>)
+        False -> derive_loop(input_key, access_key_bytes, counter + 1)
+      }
+    }
+  }
+}
+
+/// `N − 2` where `N` is the P-256 curve order
+/// (`ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551`).
+/// The KDF rejects candidates strictly greater than this; the `+1`
+/// step on the survivor keeps the result in `[1, N-1]`, which is
+/// the valid private-scalar range for ECDSA over P-256.
+const p256_order_minus_two: Int = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc63254f
 
 // ---------- canonical-request helpers ----------
 //
