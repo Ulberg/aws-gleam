@@ -24,6 +24,8 @@ import aws/services/s3
 import aws/streaming.{type StreamingBody}
 import gleam/bit_array
 import gleam/dict.{type Dict}
+import gleam/erlang/process
+import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
@@ -89,13 +91,23 @@ pub type UploadOptions {
     acl: Option(s3.ObjectCannedACL),
     storage_class: Option(s3.StorageClass),
     server_side_encryption: Option(s3.ServerSideEncryption),
+    /// Upper bound on outstanding `UploadPart` calls. `None`
+    /// (default) keeps the sequential one-part-at-a-time
+    /// coordinator. `Some(n)` fans out via OTP processes, capping
+    /// in-flight parts to `n` — typical values 4-16 saturate a
+    /// single Lambda's bandwidth without overwhelming S3's per-
+    /// bucket rate limits. Errors short-circuit the whole batch
+    /// (one failed part aborts the multipart upload).
+    max_concurrency: Option(Int),
   )
 }
 
 /// All-`None` options — what `upload` / `upload_from_stream` pass
 /// when callers don't supply their own. Equivalent to using
 /// `s3.create_multipart_upload` with no metadata overrides; S3
-/// applies its bucket-level defaults.
+/// applies its bucket-level defaults. `max_concurrency: None`
+/// keeps the sequential coordinator — `with_max_concurrency` flips
+/// it to the parallel path.
 pub fn default_options() -> UploadOptions {
   UploadOptions(
     content_type: None,
@@ -106,7 +118,20 @@ pub fn default_options() -> UploadOptions {
     acl: None,
     storage_class: None,
     server_side_encryption: None,
+    max_concurrency: None,
   )
+}
+
+/// Override the parallel-upload concurrency cap on an existing
+/// `UploadOptions`. `n` must be ≥ 1 — values ≤ 0 are coerced to
+/// sequential (None) so callers can pass a derived count without
+/// guarding it.
+pub fn with_max_concurrency(opts: UploadOptions, n: Int) -> UploadOptions {
+  let capped = case n >= 1 {
+    True -> Some(n)
+    False -> None
+  }
+  UploadOptions(..opts, max_concurrency: capped)
 }
 
 /// S3's documented minimum part size (5 MiB) for all parts except
@@ -272,13 +297,19 @@ fn coordinate(
   // From here on, any failure must trigger a best-effort abort so the
   // bucket doesn't accumulate dangling multipart uploads. `abort_on_error`
   // wraps both fallible steps with that cleanup.
-  use completed_parts <- result.try(abort_on_error(
-    client,
-    bucket,
-    key,
-    upload_id,
-    upload_all_parts(client, bucket, key, upload_id, parts, 1, []),
-  ))
+  use completed_parts <- result.try(
+    abort_on_error(
+      client,
+      bucket,
+      key,
+      upload_id,
+      case options.max_concurrency {
+        None -> upload_all_parts(client, bucket, key, upload_id, parts, 1, [])
+        Some(n) ->
+          upload_all_parts_parallel(client, bucket, key, upload_id, parts, n)
+      },
+    ),
+  )
   use _ <- result.try(abort_on_error(
     client,
     bucket,
@@ -402,6 +433,144 @@ fn upload_all_parts(
         [completed, ..acc],
       )
     }
+  }
+}
+
+/// Parallel coordinator. Processes `parts` in batches of at most
+/// `max_concurrency` simultaneously-in-flight `UploadPart` calls.
+/// Each batch spawns a worker per part, awaits all results, then
+/// the outer loop moves on to the next batch. Results are sorted
+/// by part-number at the end so the `CompleteMultipartUpload`
+/// request sees parts in ascending order (S3 requires it).
+///
+/// First failure in any batch short-circuits the whole upload —
+/// the outer `coordinate` then issues a best-effort
+/// `AbortMultipartUpload`.
+fn upload_all_parts_parallel(
+  client: s3.Client,
+  bucket: String,
+  key: String,
+  upload_id: String,
+  parts: List(BitArray),
+  max_concurrency: Int,
+) -> Result(List(s3.CompletedPart), Error) {
+  let numbered = list.index_map(parts, fn(p, i) { #(i + 1, p) })
+  upload_batches(client, bucket, key, upload_id, numbered, max_concurrency, [])
+}
+
+fn upload_batches(
+  client: s3.Client,
+  bucket: String,
+  key: String,
+  upload_id: String,
+  remaining: List(#(Int, BitArray)),
+  max_concurrency: Int,
+  acc: List(s3.CompletedPart),
+) -> Result(List(s3.CompletedPart), Error) {
+  case remaining {
+    [] ->
+      Ok(
+        list.sort(acc, by: fn(a, b) {
+          int.compare(
+            option.unwrap(a.part_number, 0),
+            option.unwrap(b.part_number, 0),
+          )
+        }),
+      )
+    _ -> {
+      let #(batch, rest) = take_split(remaining, max_concurrency)
+      use batch_done <- result.try(upload_one_batch(
+        client,
+        bucket,
+        key,
+        upload_id,
+        batch,
+      ))
+      upload_batches(
+        client,
+        bucket,
+        key,
+        upload_id,
+        rest,
+        max_concurrency,
+        list.append(batch_done, acc),
+      )
+    }
+  }
+}
+
+fn upload_one_batch(
+  client: s3.Client,
+  bucket: String,
+  key: String,
+  upload_id: String,
+  batch: List(#(Int, BitArray)),
+) -> Result(List(s3.CompletedPart), Error) {
+  let inbox = process.new_subject()
+  list.each(batch, fn(numbered) {
+    let #(part_number, part) = numbered
+    let _pid =
+      process.spawn(fn() {
+        let result = case
+          s3.upload_part(
+            client,
+            empty_upload_part_request(bucket, key, upload_id, part_number, part),
+          )
+        {
+          Ok(out) -> Ok(empty_completed_part(part_number, out.e_tag))
+          Error(e) -> Error(UploadPartFailed(part_number:, cause: e))
+        }
+        process.send(inbox, result)
+      })
+    Nil
+  })
+  collect_batch_results(inbox, list.length(batch), [])
+}
+
+fn collect_batch_results(
+  inbox: process.Subject(Result(s3.CompletedPart, Error)),
+  remaining: Int,
+  acc: List(s3.CompletedPart),
+) -> Result(List(s3.CompletedPart), Error) {
+  case remaining {
+    0 -> Ok(acc)
+    _ ->
+      case process.receive_forever(inbox) {
+        Ok(part) -> collect_batch_results(inbox, remaining - 1, [part, ..acc])
+        Error(e) -> {
+          // Drain remaining workers so they don't leak; we still
+          // return the first error.
+          drain_remaining(inbox, remaining - 1)
+          Error(e)
+        }
+      }
+  }
+}
+
+fn drain_remaining(
+  inbox: process.Subject(Result(s3.CompletedPart, Error)),
+  remaining: Int,
+) -> Nil {
+  case remaining {
+    0 -> Nil
+    _ -> {
+      let _ = process.receive_forever(inbox)
+      drain_remaining(inbox, remaining - 1)
+    }
+  }
+}
+
+/// Take the first `n` elements; return `(taken, rest)`. Used to
+/// chunk the work-list into bounded-concurrency batches.
+fn take_split(xs: List(a), n: Int) -> #(List(a), List(a)) {
+  do_take_split(xs, n, [])
+}
+
+fn do_take_split(xs: List(a), n: Int, acc: List(a)) -> #(List(a), List(a)) {
+  case xs, n {
+    [], _ -> #(list.reverse(acc), [])
+    _, 0 -> #(list.reverse(acc), xs)
+    [x, ..rest], _ -> do_take_split(rest, n - 1, [x, ..acc])
   }
 }
 
