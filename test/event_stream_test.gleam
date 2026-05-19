@@ -10,9 +10,11 @@
 import aws/internal/codec/event_stream.{
   BadMessageCrc, BadPreludeCrc, BinaryValue, BoolFalseValue, BoolTrueValue,
   ByteValue, Event, Header, Int16Value, Int32Value, Int64Value, StringValue,
-  TimestampValue, UuidValue, decode, encode,
+  TimestampValue, UuidValue, decode, decode_all, encode,
 }
+import aws/streaming
 import gleam/bit_array
+import gleam/list
 import gleeunit/should
 
 pub fn encodes_empty_message_test() {
@@ -273,4 +275,45 @@ pub fn round_trips_string_with_multibyte_utf8_test() {
   // codepoint. Ensures the byte-length prefix counts bytes, not
   // characters.
   assert_round_trip("emoji", StringValue("🦀 crab"))
+}
+
+// ---------- decode_all over a streaming body ----------
+
+pub fn decode_all_returns_all_frames_in_order_test() {
+  // Pack three frames into one buffered StreamingBody. decode_all
+  // must surface them in the same order they appear in the bytes.
+  let f1 = encode(Event(headers: [], payload: <<"one":utf8>>))
+  let f2 = encode(Event(headers: [], payload: <<"two":utf8>>))
+  let f3 = encode(Event(headers: [], payload: <<"three":utf8>>))
+  let all = streaming.from_bit_array(<<f1:bits, f2:bits, f3:bits>>)
+  case decode_all(all) {
+    Ok(events) -> {
+      list.length(events) |> should.equal(3)
+      list.map(events, fn(e) { bit_array.to_string(e.payload) })
+      |> should.equal([Ok("one"), Ok("two"), Ok("three")])
+    }
+    Error(_) -> panic as "decode_all unexpectedly failed"
+  }
+}
+
+pub fn decode_all_on_empty_body_returns_empty_list_test() {
+  case decode_all(streaming.empty()) {
+    Ok(events) -> events |> should.equal([])
+    Error(_) -> panic as "empty body should decode to []"
+  }
+}
+
+pub fn decode_all_propagates_first_decode_error_test() {
+  // Append two valid frames, then a few junk bytes (clearly not
+  // a valid frame prelude). decode_all should return the error
+  // from the third decode attempt — and NOT return a partial list
+  // of the two valid events (that would be silently dropping data).
+  let f1 = encode(Event(headers: [], payload: <<>>))
+  let f2 = encode(Event(headers: [], payload: <<>>))
+  let junk = <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+  let mixed = streaming.from_bit_array(<<f1:bits, f2:bits, junk:bits>>)
+  case decode_all(mixed) {
+    Ok(_) -> panic as "expected an error on the junk-tail frame"
+    Error(_) -> Nil
+  }
 }

@@ -27,6 +27,7 @@
 //// types — bool, short, int, long, byte array, timestamp, uuid —
 //// land when a service we generate against actually needs them.
 
+import aws/streaming.{type StreamingBody}
 import gleam/bit_array
 import gleam/list
 
@@ -413,5 +414,34 @@ fn bytes_to_int_be(bytes: BitArray) -> Int {
   case bytes {
     <<n:big-32>> -> n
     _ -> 0
+  }
+}
+
+/// Decode every frame from a streaming body. Materialises the full
+/// list of events — appropriate when the response is short (control
+/// messages, handshakes) or the call site wants to handle every
+/// event after the stream terminates. Long-lived subscription
+/// streams (`SubscribeToShard`, `StartStreamTranscription`) want
+/// `decode_yielder` (TODO) so each event surfaces as it arrives.
+///
+/// The streaming body's chunks are concatenated first; the framing
+/// protocol's length fields make incremental parsing safe across
+/// chunk boundaries, but materialising-then-parsing is simpler and
+/// equally correct for buffer-bounded responses.
+pub fn decode_all(body: StreamingBody) -> Result(List(Event), DecodeError) {
+  decode_all_bytes(streaming.to_bit_array(body), [])
+}
+
+fn decode_all_bytes(
+  bytes: BitArray,
+  acc: List(Event),
+) -> Result(List(Event), DecodeError) {
+  case bit_array.byte_size(bytes) {
+    0 -> Ok(list.reverse(acc))
+    _ ->
+      case decode(bytes) {
+        Error(e) -> Error(e)
+        Ok(#(event, rest)) -> decode_all_bytes(rest, [event, ..acc])
+      }
   }
 }
