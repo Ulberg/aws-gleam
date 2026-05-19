@@ -491,6 +491,26 @@ pub fn restxml_error_response_wrapper_is_unwrapped_test() {
   }
 }
 
+// ---------- with_max_attempts tests ----------
+
+pub fn with_max_attempts_overrides_strategy_attempt_budget_test() {
+  // The convenience setter must thread through to retry.with_max_attempts
+  // on the underlying strategy, so a 503 + max_attempts=1 surfaces
+  // immediately as ServiceError(503) with exactly one HTTP attempt.
+  let counter = process.new_subject()
+  let send = scripted_send([Ok(ok_response(503, <<"":utf8>>))], counter)
+  let config =
+    test_config(send, no_wait_strategy(5))
+    |> runtime.with_max_attempts(1)
+
+  let result = runtime.invoke(config, ddb_request(), echo_parse)
+  case result {
+    Error(runtime.ServiceError(status: 503, ..)) -> Nil
+    other -> panic as { "expected ServiceError(503), got: " <> describe(other) }
+  }
+  count_messages(counter, 0) |> should.equal(1)
+}
+
 // ---------- invoke_streaming tests ----------
 //
 // `invoke_streaming` shares the credential/endpoint/sign pipeline

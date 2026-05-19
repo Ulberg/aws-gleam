@@ -167,6 +167,20 @@ pub fn with_retry_strategy(
   ClientConfig(..config, retry_strategy: strategy)
 }
 
+/// Tune just the retry attempt budget without replacing the whole
+/// strategy. Equivalent to
+/// `with_retry_strategy(config, retry.with_max_attempts(config.retry_strategy, n))`,
+/// but reads as a single knob — the common case for production
+/// tuning. Pass `1` to disable retries entirely (single attempt
+/// per request), `5` for long-running batch workloads that tolerate
+/// extra wait, etc.
+pub fn with_max_attempts(config: ClientConfig, n: Int) -> ClientConfig {
+  ClientConfig(
+    ..config,
+    retry_strategy: retry.with_max_attempts(config.retry_strategy, n),
+  )
+}
+
 /// Attach a Smithy endpoint rule set. When set, the runtime walks the rule
 /// set per request to compute the endpoint URL — the value passed in via
 /// `with_endpoint_url` (or `default_endpoint`) is then ignored except as a
