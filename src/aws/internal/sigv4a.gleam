@@ -71,6 +71,12 @@ pub type Sigv4aOptions {
     /// `True` ⇒ canonical-request payload-hash line carries
     /// `sha256(req.body)`; `False` ⇒ `sha256("")`.
     sign_body: Bool,
+    /// `True` ⇒ apply RFC 3986 dot-segment removal to the request
+    /// path before percent-encoding (`/foo/./bar/../baz` → `/baz`);
+    /// `False` ⇒ pass the path through unchanged. Default is `True`
+    /// for most AWS services; S3 is the notable holdout — it needs
+    /// `False` so keys with `.` / `..` survive intact.
+    normalize_path: Bool,
   )
 }
 
@@ -124,7 +130,7 @@ pub fn sign_with_credentials(
   }
   let prepared =
     prepare_headers(req, opts, creds, payload_hash, region_set_value)
-  let canonical_uri = encode_path(req.path)
+  let canonical_uri = build_canonical_uri(req.path, opts.normalize_path)
   let canonical_query = canonical_query_string(req.query)
   let canonical_headers_block = canonical_headers(prepared)
   let signed_headers_list = signed_headers(prepared)
@@ -358,4 +364,56 @@ fn encode_path(path: String) -> String {
   string.split(path, "/")
   |> list.map(uri.encode_segment)
   |> string.join("/")
+}
+
+/// Compose dot-segment removal (when requested) with percent
+/// encoding. Mirrors `sigv4.build_canonical_uri` so SigV4a and
+/// SigV4 produce identical canonical URIs given the same inputs.
+fn build_canonical_uri(path: String, normalize: Bool) -> String {
+  case normalize {
+    True -> encode_path(normalize_path(path))
+    False -> encode_path(path)
+  }
+}
+
+/// RFC 3986 §5.2.4 dot-segment removal. Direct port of
+/// `sigv4.normalize_path` — duplication is intentional while
+/// SigV4a stabilises; both can call into a neutral
+/// `aws/internal/sigv4_canonical` later.
+fn normalize_path(path: String) -> String {
+  let trailing_slash = string.ends_with(path, "/") && path != "/"
+  let segments = case string.starts_with(path, "/") {
+    True -> string.split(path, "/") |> drop_first
+    False -> string.split(path, "/")
+  }
+  let processed = process_segments(segments, [])
+  case processed, trailing_slash {
+    [], _ -> "/"
+    parts, True -> "/" <> string.join(parts, "/") <> "/"
+    parts, False -> "/" <> string.join(parts, "/")
+  }
+}
+
+fn drop_first(xs: List(a)) -> List(a) {
+  case xs {
+    [] -> []
+    [_, ..rest] -> rest
+  }
+}
+
+fn process_segments(
+  segments: List(String),
+  stack: List(String),
+) -> List(String) {
+  case segments {
+    [] -> list.reverse(stack)
+    ["", ..rest] -> process_segments(rest, stack)
+    [".", ..rest] -> process_segments(rest, stack)
+    ["..", ..rest] ->
+      case stack {
+        [_, ..tail] -> process_segments(rest, tail)
+        [] -> process_segments(rest, stack)
+      }
+    [seg, ..rest] -> process_segments(rest, [seg, ..stack])
+  }
 }

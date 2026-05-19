@@ -39,6 +39,7 @@ fn example_opts() -> sigv4a.Sigv4aOptions {
     region_set: ["us-east-1"],
     service: "service",
     sign_body: False,
+    normalize_path: True,
   )
 }
 

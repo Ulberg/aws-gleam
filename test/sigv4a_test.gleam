@@ -54,6 +54,7 @@ fn example_opts() -> sigv4a.Sigv4aOptions {
     region_set: ["us-east-1"],
     service: "service",
     sign_body: False,
+    normalize_path: True,
   )
 }
 
@@ -79,6 +80,7 @@ pub fn sign_adds_region_set_header_test() {
         region_set: ["us-east-1", "us-west-2"],
         service: "service",
         sign_body: False,
+        normalize_path: True,
       ),
     )
   find_header(signed.headers, "X-Amz-Region-Set")
