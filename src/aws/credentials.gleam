@@ -203,6 +203,53 @@ pub fn from_profile(name profile_name: String) -> Provider {
   )
 }
 
+/// Profile provider that auto-chains via STS AssumeRole when the
+/// requested profile carries `role_arn` / `source_profile`. The
+/// source profile must hold static keys; multi-hop chains are
+/// deferred. Falls through to the same static-keys path as
+/// `from_profile` when `role_arn` is absent, so a single chain
+/// entry covers both forms.
+pub fn from_profile_assume_role(
+  name profile_name: String,
+  send send: HttpSend,
+  region region: String,
+) -> Provider {
+  from_profile_assume_role_with(
+    name: profile_name,
+    send: send,
+    region: region,
+    endpoint: sts.default_endpoint,
+    credentials_reader: read_default_profile_file,
+    config_reader: read_default_config_file,
+    timestamp: aws_timestamp,
+  )
+}
+
+/// Fully-explicit form — used by tests and callers that need a
+/// regional STS endpoint, custom file readers, or a pinned
+/// timestamp source for the SigV4 signer.
+pub fn from_profile_assume_role_with(
+  name profile_name: String,
+  send send: HttpSend,
+  region region: String,
+  endpoint endpoint: String,
+  credentials_reader credentials_reader: fn() -> Result(String, Nil),
+  config_reader config_reader: fn() -> Result(String, Nil),
+  timestamp timestamp: fn() -> String,
+) -> Provider {
+  Provider(name: "ProfileAssumeRole(" <> profile_name <> ")", fetch: fn() {
+    fetch_from_profile_with_assume_role(
+      profile_name,
+      credentials_reader,
+      config_reader,
+      send,
+      region,
+      endpoint,
+      timestamp,
+    )
+  })
+}
+
 @external(erlang, "aws_ffi", "read_file")
 fn read_file(path: String) -> Result(BitArray, Nil)
 
@@ -339,6 +386,102 @@ fn build_credentials_from_lookup(
     expires_at: None,
     source: "Profile(" <> profile_name <> ")",
   ))
+}
+
+/// Profile-builder variant that honours `role_arn` / `source_profile`:
+/// when the requested profile carries `role_arn`, this resolves the
+/// bootstrap credentials from `source_profile` (which must hold static
+/// keys), wraps them as a Provider, and chains via `from_assume_role`
+/// to fetch the role's temporary credentials. When `role_arn` is
+/// absent it falls through to the static-keys path identical to
+/// `fetch_from_profile`.
+///
+/// `send` is the HTTP transport STS signs against. `region` is what
+/// STS signs as — the global STS endpoint accepts any region, so
+/// `"us-east-1"` is a safe default. `timestamp` is the wall-clock
+/// source for the SigV4 signer (injected so tests can pin it).
+///
+/// Only a single chain hop is honoured today: `source_profile` must
+/// itself carry static keys, not another `role_arn`. Multi-hop chains
+/// (A → assumes B → assumes C) are a follow-up.
+fn fetch_from_profile_with_assume_role(
+  profile_name: String,
+  credentials_reader: fn() -> Result(String, Nil),
+  config_reader: fn() -> Result(String, Nil),
+  send: HttpSend,
+  region: String,
+  endpoint: String,
+  timestamp: fn() -> String,
+) -> Result(Credentials, ProviderError) {
+  let parsed_creds = parse_profile_file(credentials_reader)
+  let parsed_config = parse_profile_file(config_reader)
+  case parsed_creds, parsed_config {
+    Error(NotConfigured(_)), Error(NotConfigured(_)) ->
+      Error(NotConfigured(
+        reason: "no AWS shared credentials or config file readable",
+      ))
+    Error(FetchFailed(reason: r)), _ -> Error(FetchFailed(reason: r))
+    _, Error(FetchFailed(reason: r)) -> Error(FetchFailed(reason: r))
+    _, _ -> {
+      let lookup_for = fn(name: String) {
+        let creds_section = name
+        let config_section = case name {
+          "default" -> "default"
+          other -> "profile " <> other
+        }
+        merged_lookup(
+          parsed_creds,
+          parsed_config,
+          creds_section,
+          config_section,
+        )
+      }
+      let our_lookup = lookup_for(profile_name)
+      case our_lookup("role_arn") {
+        Error(_) -> build_credentials_from_lookup(profile_name, our_lookup)
+        Ok(role_arn) -> {
+          use source_name <- result.try(
+            our_lookup("source_profile")
+            |> result.replace_error(NotConfigured(
+              reason: "profile '"
+              <> profile_name
+              <> "' has role_arn but no source_profile",
+            )),
+          )
+          let source_lookup = lookup_for(source_name)
+          use source_creds <- result.try(build_credentials_from_lookup(
+            source_name,
+            source_lookup,
+          ))
+          let source_provider =
+            Provider(name: "ProfileSource(" <> source_name <> ")", fetch: fn() {
+              Ok(source_creds)
+            })
+          let session_name = case our_lookup("role_session_name") {
+            Ok(n) -> n
+            Error(_) -> "aws-gleam-session"
+          }
+          let external_id = case our_lookup("external_id") {
+            Ok(eid) -> Some(eid)
+            Error(_) -> None
+          }
+          let provider =
+            from_assume_role_with(
+              source: source_provider,
+              send: send,
+              region: region,
+              role_arn: role_arn,
+              role_session_name: session_name,
+              external_id: external_id,
+              endpoint: endpoint,
+              duration_seconds: sts.default_duration_seconds,
+              timestamp: timestamp,
+            )
+          provider.fetch()
+        }
+      }
+    }
+  }
 }
 
 // ----- IMDSv2 (EC2 instance metadata) provider -----

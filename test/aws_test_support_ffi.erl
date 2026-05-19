@@ -7,7 +7,22 @@
 %% stdout text. Teardown is unconditional via `try ... after`.
 
 -module(aws_test_support_ffi).
--export([with_teardown/1]).
+-export([with_teardown/1, capture_new/0, capture_put/1, capture_get/1]).
+
+%% Trivial per-test request capture — lets a Gleam test that hands a
+%% stub `Send` to provider code retrieve the dispatched request after
+%% the fact, to assert e.g. that the right SigV4 signing key was
+%% used. Backed by the process dictionary because gleeunit runs each
+%% test in its own process, so the key namespace doesn't leak across
+%% tests. capture_new returns 0 because the protocol only supports
+%% one in-flight capture per test process.
+capture_new() -> 0.
+capture_put(Req) -> erlang:put(aws_capture, Req), nil.
+capture_get(_Ref) ->
+    case erlang:get(aws_capture) of
+        undefined -> erlang:error(no_captured_request);
+        Req -> Req
+    end.
 
 -define(COMPOSE_FILE, "test/support/docker-compose.yml").
 
