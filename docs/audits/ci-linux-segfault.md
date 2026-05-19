@@ -48,15 +48,28 @@ the peak fit.
 
 ## Current mitigation
 
-`.github/workflows/ci.yml` adds an 8 GB swap file before `gleam build`
-runs, plus the codegen-output and build-artefact caches that mean
-the slow compile only happens on a true cache miss (commits touching
+CI runs on `macos-latest`, which builds the same workspace cleanly.
+The codegen-output and build-artefact caches mean the slow regen +
+compile only happens on a true cache miss (commits touching
 `vendor/`, `codegen/`, `scripts/regen.sh` & friends, or hand-written
 src/test code).
 
-Effective memory ceiling: 16 GB RAM + 8 GB swap = 24 GB. Empirical
-peak observed under colima is ~8 GB, so plenty of headroom — but it
-relies on swap pages being available on the runner's 14 GB disk.
+## What didn't work
+
+Adding 8 GB swap to a Linux runner (commit `80cfbb4` on fix/ci) was
+the cheapest first try after the colima OOM evidence. It did NOT
+clear the SIGSEGV — same crash at the same 2:08 wall-clock mark.
+So either:
+
+- Peak memory exceeds 24 GB effective (16 RAM + 8 swap), OR
+- Memory isn't the actual root cause and the colima OOM was a
+  coincidence — both crashes happen at the point in the compile
+  pipeline where the workspace would naturally peak on whatever
+  resource the runner is short on
+
+Going to a paid GHA larger-runner tier (32+ GB RAM) might clear it
+but the org would have to enable that label and pay per-minute.
+macOS works today, no extra setup, so we're routing there.
 
 ## Real fix: architectural split
 

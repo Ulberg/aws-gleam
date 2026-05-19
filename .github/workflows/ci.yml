@@ -14,26 +14,24 @@ concurrency:
 jobs:
   test:
     name: Format & test (OTP ${{ matrix.otp }} / Gleam ${{ matrix.gleam }})
-    # ubuntu-latest with an extra 8 GB swap file added before the
-    # build step. The 409-service compile peaks above the 16 GB
-    # RAM ceiling of standard GHA runners (local colima x86_64 VM
-    # with 8 GB OOM-killed at exit 137; CI's 16 GB hits SIGSEGV
-    # because the stack guard page can't be mapped under pressure).
-    # 16 GB RAM + 8 GB swap = 24 GB effective, comfortably covers
-    # the peak. Linux is ~2× faster + ~10× cheaper than macOS for
-    # this workload, hence the route back.
+    # macos-latest. 8 GB swap on a 16 GB ubuntu runner did NOT
+    # clear the SIGSEGV (commit 80cfbb4 still hit exit 139 at the
+    # same 2:08 mark). So the failure isn't a simple memory
+    # ceiling — there's something deterministic in the BEAM
+    # compile pipeline at this module count that 24 GB effective
+    # memory doesn't help with. macOS runs the same workspace
+    # cleanly, so we route there.
     #
-    # If the codegen output cache hits (no codegen / vendor /
-    # script changes), the regen step is a no-op and the build
-    # cache also hits, so neither memory pressure nor the underlying
-    # crash matters on hot runs. The swap is belt-and-braces for the
-    # cold-cache case.
+    # On a hot codegen + build cache (no changes to vendor,
+    # codegen, scripts, src, or test), the regen + compile steps
+    # are no-ops — so the macOS runtime overhead per build is the
+    # tax we pay only on the first run after a codegen-touching
+    # commit.
     #
-    # Long-term: see docs/audits/ci-linux-segfault.md for the
-    # architectural split (move `src/aws/services` into its own
-    # Gleam sub-package) which removes the peak-memory trigger
-    # entirely.
-    runs-on: ubuntu-latest
+    # See docs/audits/ci-linux-segfault.md for the full triage
+    # history and the architectural-split fix that would let us
+    # route back to Linux.
+    runs-on: macos-latest
 
     strategy:
       fail-fast: false
@@ -56,6 +54,10 @@ jobs:
       - name: Compute submodule cache key
         id: subs-key
         run: |
+          # `shasum -a 256` works on macOS by default; on Linux it's
+          # the same tool from the `libdigest-perl` package which is
+          # pre-installed on ubuntu-latest. Avoid `sha256sum` so a
+          # later platform swap doesn't require touching this script.
           key=$(git ls-tree HEAD vendor | awk '{print $3}' | sort | shasum -a 256 | cut -c1-16)
           echo "key=$key" >> "$GITHUB_OUTPUT"
 
@@ -113,37 +115,25 @@ jobs:
             build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-${{ steps.subs-key.outputs.key }}-
             build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.gleam }}-
 
+      # macos-latest is ARM64 (Apple silicon). scripts/build-protocol-
+      # test-asts.sh dispatches on uname -m and picks the matching
+      # smithy-cli archive automatically.
       - name: Cache Smithy CLI
         id: cache-smithy
         uses: actions/cache@v4
         with:
-          path: .tools/smithy-cli-linux-x86_64
-          key: smithy-cli-linux-x86_64-1.70.0
+          path: .tools/smithy-cli-darwin-aarch64
+          key: smithy-cli-darwin-aarch64-1.70.0
 
       - name: Download Smithy CLI
         if: steps.cache-smithy.outputs.cache-hit != 'true'
         run: |
           mkdir -p .tools
           curl -sSL -o .tools/smithy.zip \
-            https://github.com/smithy-lang/smithy/releases/download/1.70.0/smithy-cli-linux-x86_64.zip
+            https://github.com/smithy-lang/smithy/releases/download/1.70.0/smithy-cli-darwin-aarch64.zip
           unzip -q .tools/smithy.zip -d .tools/
           rm .tools/smithy.zip
-          test -x .tools/smithy-cli-linux-x86_64/bin/smithy
-
-      # 16 GB RAM on a standard GHA Linux runner gets overrun by
-      # the 409-service `gleam build` peak. Add 8 GB swap so the
-      # peak doesn't trigger an OOM / SEGV_ACCERR on a stack guard
-      # page (failure modes documented in
-      # docs/audits/ci-linux-segfault.md).
-      - name: Add 8 GB swap
-        run: |
-          sudo swapoff -a
-          sudo fallocate -l 8G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          echo "--- free -h after swap ---"
-          free -h
+          test -x .tools/smithy-cli-darwin-aarch64/bin/smithy
 
       - name: Download dependencies
         run: gleam deps download
@@ -185,10 +175,6 @@ jobs:
         run: gleam format --check src test
 
       - name: Run tests
-        # On Linux runners the 8 GB swap added earlier covers the
-        # build peak. scripts/test.sh sets `+t 16M` atom-table bump
-        # which is also required (default 1 M is exhausted by the
-        # 409-service module load).
         run: ./scripts/test.sh
 
   # LocalStack E2E disabled: the underlying `scripts/test.sh` chain
