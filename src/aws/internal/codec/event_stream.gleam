@@ -439,3 +439,45 @@ fn fold_events_bytes(
     }
   }
 }
+
+/// One pull-based step of an event-stream iterator. `Yield` carries
+/// the next decoded event plus the iterator's remaining state for
+/// the subsequent call; `Done` marks normal end-of-stream; `Failed`
+/// surfaces the decode error encountered partway through (the
+/// stream is dead at that point — no further events recoverable).
+pub type IterStep {
+  Yield(event: Event, next: fn() -> IterStep)
+  Done
+  Failed(error: DecodeError)
+}
+
+/// Wrap a streaming body as a pull-based event iterator. Each call
+/// to `next` returns either `Yield(event, next)` — the next decoded
+/// event plus a continuation for the rest of the stream — or `Done`
+/// at clean end-of-stream, or `Failed(err)` if the wire bytes don't
+/// parse.
+///
+/// Useful for callers that want to drive consumption explicitly
+/// rather than handing the whole stream to `fold_events`. The
+/// codegen-emitted `<op>_event_stream(client, input)` wrappers
+/// return a `streaming.Response`; pipe `resp.body` through this
+/// helper to get a typed iterator without buffering the full event
+/// list in memory.
+///
+/// Today materialises the body up front (same as `fold_events` —
+/// `streaming.to_bit_array`); a follow-up that streams chunk-by-
+/// chunk lands when the wire transport surfaces partial frames.
+pub fn iter_events(body: StreamingBody) -> IterStep {
+  iter_step(streaming.to_bit_array(body))
+}
+
+fn iter_step(remaining: BitArray) -> IterStep {
+  case remaining {
+    <<>> -> Done
+    _ ->
+      case decode(remaining) {
+        Ok(#(event, rest)) -> Yield(event:, next: fn() { iter_step(rest) })
+        Error(err) -> Failed(error: err)
+      }
+  }
+}
