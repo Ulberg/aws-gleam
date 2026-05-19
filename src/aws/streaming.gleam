@@ -139,3 +139,27 @@ pub fn try_fold_chunks(
 ) -> Result(acc, err) {
   list.try_fold(to_chunks(body), initial, f)
 }
+
+/// Materialise the body as a `BitArray`, refusing to do so if the
+/// cumulative size would exceed `max_bytes`. Walks chunks lazily
+/// on the chunked path so the cap fires before concatenation. Use
+/// this when a caller wants buffered access but must guard against
+/// OOM on pathologically-large responses (event-stream control-
+/// message buffers, downloads of unknown size, server bugs).
+///
+/// `Error(Nil)` means the body exceeded the cap; the caller can
+/// fall back to chunk-by-chunk processing or surface a typed
+/// error to its own callers. A `max_bytes` of 0 still accepts the
+/// empty body (`Ok(<<>>)`).
+pub fn to_bit_array_max(
+  body: StreamingBody,
+  max_bytes: Int,
+) -> Result(BitArray, Nil) {
+  try_fold_chunks(body, <<>>, fn(acc, chunk) {
+    let combined = bit_array.append(acc, chunk)
+    case bit_array.byte_size(combined) > max_bytes {
+      True -> Error(Nil)
+      False -> Ok(combined)
+    }
+  })
+}
