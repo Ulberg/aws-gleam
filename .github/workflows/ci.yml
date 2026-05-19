@@ -107,6 +107,21 @@ jobs:
       - name: Check formatting
         run: gleam format --check src test
 
+      - name: Pre-test diagnostics
+        # If the BEAM segfaults during the test step, the post-mortem
+        # log line tells us little. Snapshot memory / cpu / ulimit /
+        # OTP build details here so the prior step's logs contain
+        # everything needed to triage a crash.
+        run: |
+          echo "--- uname"; uname -a
+          echo "--- free"; free -h || true
+          echo "--- /proc/meminfo summary"; grep -E "^(MemTotal|MemFree|MemAvailable|SwapTotal)" /proc/meminfo || true
+          echo "--- nproc"; nproc
+          echo "--- ulimit"; ulimit -a || true
+          echo "--- erlang"; erl -eval 'io:format("OTP ~s ERTS ~s schedulers ~p~n",[erlang:system_info(otp_release), erlang:system_info(version), erlang:system_info(schedulers_online)]), halt().' -noshell || true
+          echo "--- gleam"; gleam --version || true
+          echo "--- src/aws/services size"; ls src/aws/services 2>/dev/null | wc -l
+
       - name: Run tests
         # Use scripts/test.sh so ERL_FLAGS="+t 4194304" is set —
         # generating 409 services blows past the BEAM's default
