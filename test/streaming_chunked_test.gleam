@@ -197,3 +197,39 @@ pub fn to_bit_array_max_zero_cap_rejects_nonempty_test() {
   |> streaming.to_bit_array_max(0)
   |> should.equal(Error(Nil))
 }
+
+// ---------- to_string_max tests ----------
+
+pub fn to_string_max_buffered_utf8_under_cap_test() {
+  streaming.from_string("hello")
+  |> streaming.to_string_max(100)
+  |> should.equal(Ok("hello"))
+}
+
+pub fn to_string_max_buffered_over_cap_returns_error_test() {
+  streaming.from_string("hello world")
+  |> streaming.to_string_max(5)
+  |> should.equal(Error(Nil))
+}
+
+pub fn to_string_max_invalid_utf8_returns_error_test() {
+  // 0xC0 0x80 is an invalid UTF-8 byte pair. Bit array survives
+  // to_bit_array_max (size 2, cap 10), but bit_array.to_string
+  // rejects it.
+  streaming.from_bit_array(<<0xC0, 0x80>>)
+  |> streaming.to_string_max(10)
+  |> should.equal(Error(Nil))
+}
+
+pub fn to_string_max_chunked_text_round_trips_test() {
+  // Source body chunked at random boundaries (including mid-grapheme)
+  // — to_string_max concatenates first, then UTF-8 decodes, so this
+  // should round-trip cleanly regardless of chunk boundaries.
+  streaming.from_chunks([
+    <<"héll":utf8>>,
+    <<"o wo":utf8>>,
+    <<"rld":utf8>>,
+  ])
+  |> streaming.to_string_max(100)
+  |> should.equal(Ok("héllo world"))
+}

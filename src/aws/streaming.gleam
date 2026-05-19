@@ -163,3 +163,24 @@ pub fn to_bit_array_max(
     }
   })
 }
+
+/// Materialise the body as a UTF-8 `String`. Returns `Error(Nil)`
+/// if the body exceeds `max_bytes` (via `to_bit_array_max`) OR if
+/// the bytes aren't valid UTF-8. The two-failure-modes-one-error
+/// shape mirrors `bit_array.to_string` so callers can keep their
+/// existing `result.try` chains.
+///
+/// Common path for text response bodies — JSON-as-text, XML-as-
+/// text, log files — where the caller wants both size-safety and
+/// a `String` result. Equivalent to `to_bit_array_max` followed by
+/// `bit_array.to_string`, kept here as a single entry point so
+/// call sites read as one operation.
+pub fn to_string_max(
+  body: StreamingBody,
+  max_bytes: Int,
+) -> Result(String, Nil) {
+  case to_bit_array_max(body, max_bytes) {
+    Ok(bytes) -> bit_array.to_string(bytes)
+    Error(_) -> Error(Nil)
+  }
+}
