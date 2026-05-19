@@ -773,21 +773,54 @@ pub fn resolve_members(model: Model, full_id: String) -> List(MemberDef) {
 
 /// `True` iff `shape_id` resolves to a struct that has at least one
 /// member targeting a `@streaming` blob. The detection-side hook the
-/// codegen will eventually use to emit a `<op>_streaming(client,
-/// input)` variant for operations whose output struct carries a
-/// streaming-blob payload (S3.GetObject, MediaLive log streams,
-/// Lambda InvokeWithResponseStream, etc.). Today the existing per-
-/// op wrapper buffers the body — the streaming variant routes
+/// codegen uses to emit a `<op>_streaming(client, input)` variant
+/// for operations whose output struct carries a streaming-blob
+/// payload (S3.GetObject, MediaLive log streams, Lambda
+/// InvokeWithResponseStream, etc.). The buffered wrapper materialises
+/// the body via `runtime.invoke`; the streaming variant routes
 /// through `runtime.invoke_streaming` so the body arrives as a
 /// chunked `StreamingBody`.
 ///
 /// Returns False for non-struct shapes (unions, enums, primitives)
 /// and for structs that have no streaming-blob members. The check
 /// is purely structural; `@streaming` on union members signals
-/// event-stream operations and is detected separately.
+/// event-stream operations — use `has_streaming_union_member` for
+/// those.
 pub fn has_streaming_blob_member(model: Model, shape_id: String) -> Bool {
   resolve_members(model, shape_id)
   |> list.any(fn(m) { m.target == RStreamingBlob })
+}
+
+/// `True` iff `shape_id` resolves to a struct that has at least one
+/// member targeting a `@streaming` union — Smithy's representation
+/// of an event-stream operation. Examples: Transcribe's
+/// `StartStreamTranscription` output carries a
+/// `TranscriptResultStream` member; Kinesis's `SubscribeToShard`
+/// output carries a `SubscribeToShardEventStream` member; S3's
+/// `SelectObjectContent` output carries a
+/// `SelectObjectContentEventStream` member. The union shape itself
+/// is tagged with `smithy.api#streaming`.
+///
+/// The detection-side hook the codegen will use to emit an event-
+/// stream-aware variant (routes the response body through
+/// `event_stream.fold_events` to surface each decoded event as the
+/// matching union constructor). Returns False for non-struct
+/// shapes and for structs without streaming-union members.
+pub fn has_streaming_union_member(model: Model, shape_id: String) -> Bool {
+  resolve_members(model, shape_id)
+  |> list.any(fn(m) {
+    case m.target {
+      RUnion(full_id: union_id, ..) -> is_streaming_shape(model, union_id)
+      _ -> False
+    }
+  })
+}
+
+fn is_streaming_shape(model: Model, shape_id: String) -> Bool {
+  case model.lookup(model, shape_id) {
+    Ok(s) -> dict.has_key(shape_traits(s), ShapeId("smithy.api#streaming"))
+    Error(_) -> False
+  }
 }
 
 fn resolve_enum(
