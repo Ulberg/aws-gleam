@@ -771,6 +771,25 @@ pub fn resolve_members(model: Model, full_id: String) -> List(MemberDef) {
   }
 }
 
+/// `True` iff `shape_id` resolves to a struct that has at least one
+/// member targeting a `@streaming` blob. The detection-side hook the
+/// codegen will eventually use to emit a `<op>_streaming(client,
+/// input)` variant for operations whose output struct carries a
+/// streaming-blob payload (S3.GetObject, MediaLive log streams,
+/// Lambda InvokeWithResponseStream, etc.). Today the existing per-
+/// op wrapper buffers the body — the streaming variant routes
+/// through `runtime.invoke_streaming` so the body arrives as a
+/// chunked `StreamingBody`.
+///
+/// Returns False for non-struct shapes (unions, enums, primitives)
+/// and for structs that have no streaming-blob members. The check
+/// is purely structural; `@streaming` on union members signals
+/// event-stream operations and is detected separately.
+pub fn has_streaming_blob_member(model: Model, shape_id: String) -> Bool {
+  resolve_members(model, shape_id)
+  |> list.any(fn(m) { m.target == RStreamingBlob })
+}
+
 fn resolve_enum(
   target_id: String,
   members: Dict(String, shape.Member),

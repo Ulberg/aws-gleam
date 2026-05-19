@@ -1,3 +1,4 @@
+import codegen/types
 import gleam/dict
 import gleam/json
 import gleam/list
@@ -42,6 +43,27 @@ pub fn parses_s3_model_test() {
     }
     _ -> should.fail()
   }
+}
+
+/// `types.has_streaming_blob_member` is the detection hook the
+/// codegen will eventually use to emit a `<op>_streaming(client,
+/// input)` variant for operations whose output struct carries a
+/// `@streaming` blob. Pin its return on two reference S3 shapes:
+///   - GetObjectOutput has a `body: StreamingBody` member → True
+///   - ListBucketsOutput is header-only → False
+/// Other shape kinds (the GetObjectRequest struct, a non-existent
+/// shape) also return False so emitters can call this directly
+/// without first narrowing to Structure shapes.
+pub fn detects_streaming_blob_member_on_s3_outputs_test() {
+  let m = load(s3_model_path)
+  types.has_streaming_blob_member(m, "com.amazonaws.s3#GetObjectOutput")
+  |> should.equal(True)
+  types.has_streaming_blob_member(m, "com.amazonaws.s3#ListBucketsOutput")
+  |> should.equal(False)
+  types.has_streaming_blob_member(m, "com.amazonaws.s3#GetObjectRequest")
+  |> should.equal(False)
+  types.has_streaming_blob_member(m, "com.amazonaws.s3#NotARealShape")
+  |> should.equal(False)
 }
 
 pub fn parses_every_shape_kind_test() {
