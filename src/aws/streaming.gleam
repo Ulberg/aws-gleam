@@ -18,6 +18,7 @@
 
 import gleam/bit_array
 import gleam/list
+import gleam/result
 
 pub opaque type StreamingBody {
   Buffered(bytes: BitArray)
@@ -59,11 +60,8 @@ pub fn to_bit_array(body: StreamingBody) -> BitArray {
 /// the wire and pipes them through this surface.
 pub fn to_chunks(body: StreamingBody) -> List(BitArray) {
   case body {
-    Buffered(bytes: b) ->
-      case bit_array.byte_size(b) {
-        0 -> []
-        _ -> [b]
-      }
+    Buffered(bytes: <<>>) -> []
+    Buffered(bytes: b) -> [b]
     Chunked(chunks: cs) -> cs
   }
 }
@@ -179,8 +177,6 @@ pub fn to_string_max(
   body: StreamingBody,
   max_bytes: Int,
 ) -> Result(String, Nil) {
-  case to_bit_array_max(body, max_bytes) {
-    Ok(bytes) -> bit_array.to_string(bytes)
-    Error(_) -> Error(Nil)
-  }
+  use bytes <- result.try(to_bit_array_max(body, max_bytes))
+  bit_array.to_string(bytes)
 }

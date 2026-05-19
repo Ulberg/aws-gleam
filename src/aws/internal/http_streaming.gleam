@@ -20,6 +20,7 @@ import gleam/erlang/atom.{type Atom}
 import gleam/http.{type Method}
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
+import gleam/list
 import gleam/uri
 
 /// Default streaming sender. Same TLS / timeout defaults as
@@ -109,23 +110,9 @@ fn send_with(
 fn list_decode_headers(
   raw: List(#(BitArray, BitArray)),
 ) -> List(#(String, String)) {
-  raw
-  |> list_decode_headers_loop([])
-  |> list_reverse
-}
-
-fn list_decode_headers_loop(
-  input: List(#(BitArray, BitArray)),
-  acc: List(#(String, String)),
-) -> List(#(String, String)) {
-  case input {
-    [] -> acc
-    [#(name, value), ..rest] ->
-      list_decode_headers_loop(rest, [
-        #(to_string_or_empty(name), to_string_or_empty(value)),
-        ..acc
-      ])
-  }
+  list.map(raw, fn(pair) {
+    #(to_string_or_empty(pair.0), to_string_or_empty(pair.1))
+  })
 }
 
 fn to_string_or_empty(b: BitArray) -> String {
@@ -134,9 +121,6 @@ fn to_string_or_empty(b: BitArray) -> String {
     Error(_) -> ""
   }
 }
-
-@external(erlang, "lists", "reverse")
-fn list_reverse(xs: List(a)) -> List(a)
 
 fn translate_error(reason: Atom) -> HttpError {
   case atom.to_string(reason) {

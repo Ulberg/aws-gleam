@@ -21,15 +21,15 @@
 //// ```
 ////
 //// Each Header is `name_len[1] | name[name_len] | type[1] | value[...]`
-//// where `type` selects the header-value shape. v1 here implements
-//// the two shapes that cover all framing-only use cases (handshake
-//// + control messages): `byte` (7) and `string` (7). Richer header
-//// types — bool, short, int, long, byte array, timestamp, uuid —
-//// land when a service we generate against actually needs them.
+//// where `type` selects the header-value shape. All ten header-value
+//// shapes the protocol defines (bool true/false, byte, short, int,
+//// long, binary, string, timestamp, uuid) are implemented — see
+//// `HeaderValue` for the wire-code mapping.
 
 import aws/streaming.{type StreamingBody}
 import gleam/bit_array
 import gleam/list
+import gleam/result
 
 /// One framed message: zero or more typed headers plus an opaque
 /// payload. The payload is uninterpreted at this level — protocol
@@ -162,7 +162,7 @@ pub type DecodeError {
 
 /// Decode one framed message off the front of `bytes`. Returns the
 /// decoded `Event` plus the trailing bytes (which may hold the next
-/// frame; v1 callers call `decode` again on the rest).
+/// frame; callers call `decode` again on the rest).
 ///
 /// Validates both CRCs end-to-end — partial / corrupted streams
 /// surface as `BadPreludeCrc` / `BadMessageCrc` rather than silently
@@ -173,8 +173,7 @@ pub fn decode(bytes: BitArray) -> Result(#(Event, BitArray), DecodeError) {
       let prelude = <<total:big-32, headers_len:big-32>>
       case crc32(prelude) == prelude_crc {
         False -> Error(BadPreludeCrc)
-        True ->
-          decode_after_prelude(total, headers_len, prelude_crc, rest, bytes)
+        True -> decode_after_prelude(total, headers_len, rest, bytes)
       }
     }
     _ -> Error(MalformedFrame(reason: "shorter than prelude"))
@@ -184,7 +183,6 @@ pub fn decode(bytes: BitArray) -> Result(#(Event, BitArray), DecodeError) {
 fn decode_after_prelude(
   total: Int,
   headers_len: Int,
-  _prelude_crc: Int,
   rest_after_prelude: BitArray,
   original_bytes: BitArray,
 ) -> Result(#(Event, BitArray), DecodeError) {
@@ -193,55 +191,34 @@ fn decode_after_prelude(
   let payload_len = total - 12 - headers_len - 4
   case payload_len < 0 {
     True -> Error(MalformedFrame(reason: "negative payload length"))
-    False ->
-      case bit_array.slice(rest_after_prelude, 0, headers_len) {
-        Error(_) -> Error(MalformedFrame(reason: "headers slice failed"))
-        Ok(headers_bytes) ->
-          case bit_array.slice(rest_after_prelude, headers_len, payload_len) {
-            Error(_) -> Error(MalformedFrame(reason: "payload slice failed"))
-            Ok(payload) -> {
-              let trailing_offset = headers_len + payload_len
-              case bit_array.slice(rest_after_prelude, trailing_offset, 4) {
-                Error(_) ->
-                  Error(MalformedFrame(reason: "message crc slice failed"))
-                Ok(msg_crc_bytes) -> {
-                  let actual_msg_crc = bytes_to_int_be(msg_crc_bytes)
-                  let body_len = total - 4
-                  case bit_array.slice(original_bytes, 0, body_len) {
-                    Error(_) ->
-                      Error(MalformedFrame(reason: "body slice failed"))
-                    Ok(body) ->
-                      case crc32(body) == actual_msg_crc {
-                        False -> Error(BadMessageCrc)
-                        True ->
-                          case decode_headers(headers_bytes, []) {
-                            Error(e) -> Error(e)
-                            Ok(headers) -> {
-                              let rest_offset = trailing_offset + 4
-                              let rest = case
-                                bit_array.slice(
-                                  rest_after_prelude,
-                                  rest_offset,
-                                  bit_array.byte_size(rest_after_prelude)
-                                    - rest_offset,
-                                )
-                              {
-                                Ok(b) -> b
-                                Error(_) -> <<>>
-                              }
-                              Ok(#(
-                                Event(headers: headers, payload: payload),
-                                rest,
-                              ))
-                            }
-                          }
-                      }
-                  }
-                }
-              }
-            }
-          }
+    False -> {
+      use headers_bytes <- result.try(
+        bit_array.slice(rest_after_prelude, 0, headers_len)
+        |> result.replace_error(MalformedFrame("headers slice failed")),
+      )
+      use payload <- result.try(
+        bit_array.slice(rest_after_prelude, headers_len, payload_len)
+        |> result.replace_error(MalformedFrame("payload slice failed")),
+      )
+      let trailing_offset = headers_len + payload_len
+      use msg_crc_bytes <- result.try(
+        bit_array.slice(rest_after_prelude, trailing_offset, 4)
+        |> result.replace_error(MalformedFrame("message crc slice failed")),
+      )
+      let body_len = total - 4
+      use body <- result.try(
+        bit_array.slice(original_bytes, 0, body_len)
+        |> result.replace_error(MalformedFrame("body slice failed")),
+      )
+      case crc32(body) == bytes_to_int_be(msg_crc_bytes) {
+        False -> Error(BadMessageCrc)
+        True -> {
+          use headers <- result.try(decode_headers(headers_bytes, []))
+          let rest = slice_after(rest_after_prelude, trailing_offset + 4)
+          Ok(#(Event(headers: headers, payload: payload), rest))
+        }
       }
+    }
   }
 }
 
@@ -249,41 +226,22 @@ fn decode_headers(
   bytes: BitArray,
   acc: List(Header),
 ) -> Result(List(Header), DecodeError) {
-  case bit_array.byte_size(bytes) {
-    0 -> Ok(list.reverse(acc))
-    _ ->
-      case bytes {
-        <<name_len:8, rest:bits>> ->
-          case bit_array.slice(rest, 0, name_len) {
-            Error(_) -> Error(MalformedFrame(reason: "header name slice"))
-            Ok(name_bytes) ->
-              case bit_array.to_string(name_bytes) {
-                Error(_) -> Error(MalformedFrame(reason: "header name utf8"))
-                Ok(name) ->
-                  case
-                    bit_array.slice(
-                      rest,
-                      name_len,
-                      bit_array.byte_size(rest) - name_len,
-                    )
-                  {
-                    Error(_) ->
-                      Error(MalformedFrame(reason: "header value rest"))
-                    Ok(value_rest) -> {
-                      case decode_header_value(value_rest) {
-                        Error(e) -> Error(e)
-                        Ok(#(value, after_value)) ->
-                          decode_headers(after_value, [
-                            Header(name: name, value: value),
-                            ..acc
-                          ])
-                      }
-                    }
-                  }
-              }
-          }
-        _ -> Error(MalformedFrame(reason: "header truncated"))
-      }
+  case bytes {
+    <<>> -> Ok(list.reverse(acc))
+    <<name_len:8, rest:bits>> -> {
+      use name_bytes <- result.try(
+        bit_array.slice(rest, 0, name_len)
+        |> result.replace_error(MalformedFrame("header name slice")),
+      )
+      use name <- result.try(
+        bit_array.to_string(name_bytes)
+        |> result.replace_error(MalformedFrame("header name utf8")),
+      )
+      let value_rest = slice_after(rest, name_len)
+      use #(value, after_value) <- result.try(decode_header_value(value_rest))
+      decode_headers(after_value, [Header(name: name, value: value), ..acc])
+    }
+    _ -> Error(MalformedFrame(reason: "header truncated"))
   }
 }
 
@@ -343,23 +301,13 @@ fn decode_binary_header(
   rest: BitArray,
 ) -> Result(#(HeaderValue, BitArray), DecodeError) {
   case rest {
-    <<len:big-16, value_and_rest:bits>> ->
-      case bit_array.slice(value_and_rest, 0, len) {
-        Error(_) -> Error(MalformedFrame(reason: "binary slice"))
-        Ok(value_bytes) -> {
-          let after = case
-            bit_array.slice(
-              value_and_rest,
-              len,
-              bit_array.byte_size(value_and_rest) - len,
-            )
-          {
-            Ok(b) -> b
-            Error(_) -> <<>>
-          }
-          Ok(#(BinaryValue(value_bytes), after))
-        }
-      }
+    <<len:big-16, value_and_rest:bits>> -> {
+      use value_bytes <- result.try(
+        bit_array.slice(value_and_rest, 0, len)
+        |> result.replace_error(MalformedFrame("binary slice")),
+      )
+      Ok(#(BinaryValue(value_bytes), slice_after(value_and_rest, len)))
+    }
     _ -> Error(MalformedFrame(reason: "binary header truncated"))
   }
 }
@@ -367,46 +315,40 @@ fn decode_binary_header(
 fn decode_uuid_header(
   rest: BitArray,
 ) -> Result(#(HeaderValue, BitArray), DecodeError) {
-  case bit_array.slice(rest, 0, 16) {
-    Error(_) -> Error(MalformedFrame(reason: "uuid header truncated"))
-    Ok(uuid_bytes) -> {
-      let after = case
-        bit_array.slice(rest, 16, bit_array.byte_size(rest) - 16)
-      {
-        Ok(b) -> b
-        Error(_) -> <<>>
-      }
-      Ok(#(UuidValue(uuid_bytes), after))
-    }
-  }
+  use uuid_bytes <- result.try(
+    bit_array.slice(rest, 0, 16)
+    |> result.replace_error(MalformedFrame("uuid header truncated")),
+  )
+  Ok(#(UuidValue(uuid_bytes), slice_after(rest, 16)))
 }
 
 fn decode_string_header(
   rest: BitArray,
 ) -> Result(#(HeaderValue, BitArray), DecodeError) {
   case rest {
-    <<len:big-16, value_and_rest:bits>> ->
-      case bit_array.slice(value_and_rest, 0, len) {
-        Error(_) -> Error(MalformedFrame(reason: "string slice"))
-        Ok(value_bytes) ->
-          case bit_array.to_string(value_bytes) {
-            Error(_) -> Error(MalformedFrame(reason: "string utf8"))
-            Ok(s) -> {
-              let after = case
-                bit_array.slice(
-                  value_and_rest,
-                  len,
-                  bit_array.byte_size(value_and_rest) - len,
-                )
-              {
-                Ok(b) -> b
-                Error(_) -> <<>>
-              }
-              Ok(#(StringValue(s), after))
-            }
-          }
-      }
+    <<len:big-16, value_and_rest:bits>> -> {
+      use value_bytes <- result.try(
+        bit_array.slice(value_and_rest, 0, len)
+        |> result.replace_error(MalformedFrame("string slice")),
+      )
+      use s <- result.try(
+        bit_array.to_string(value_bytes)
+        |> result.replace_error(MalformedFrame("string utf8")),
+      )
+      Ok(#(StringValue(s), slice_after(value_and_rest, len)))
+    }
     _ -> Error(MalformedFrame(reason: "string header truncated"))
+  }
+}
+
+// Return the tail of `bytes` starting at `offset`; falls back to an
+// empty BitArray when the slice is out of range. The three header
+// decoders all need the same "everything past this many bytes"
+// computation; centralising it keeps each call site readable.
+fn slice_after(bytes: BitArray, offset: Int) -> BitArray {
+  case bit_array.slice(bytes, offset, bit_array.byte_size(bytes) - offset) {
+    Ok(b) -> b
+    Error(_) -> <<>>
   }
 }
 
@@ -452,13 +394,12 @@ fn decode_all_bytes(
   bytes: BitArray,
   acc: List(Event),
 ) -> Result(List(Event), DecodeError) {
-  case bit_array.byte_size(bytes) {
-    0 -> Ok(list.reverse(acc))
-    _ ->
-      case decode(bytes) {
-        Error(e) -> Error(e)
-        Ok(#(event, rest)) -> decode_all_bytes(rest, [event, ..acc])
-      }
+  case bytes {
+    <<>> -> Ok(list.reverse(acc))
+    _ -> {
+      use #(event, rest) <- result.try(decode(bytes))
+      decode_all_bytes(rest, [event, ..acc])
+    }
   }
 }
 
@@ -473,10 +414,10 @@ fn decode_all_bytes(
 /// including) the bad frame. Callers that want to keep going past
 /// a bad frame must do their own resync.
 ///
-/// V1 reads the full body up front via `streaming.to_bit_array` so
-/// the fold runs on a single contiguous buffer; a future
-/// chunk-by-chunk consumer that decodes events as bytes arrive
-/// keeps this same surface — only the implementation changes.
+/// Reads the full body up front via `streaming.to_bit_array` so the
+/// fold runs on a single contiguous buffer; a future chunk-by-chunk
+/// consumer that decodes events as bytes arrive can keep this same
+/// surface — only the implementation changes.
 pub fn fold_events(
   body: StreamingBody,
   initial: acc,
@@ -490,12 +431,11 @@ fn fold_events_bytes(
   acc: acc,
   f: fn(acc, Event) -> acc,
 ) -> Result(acc, DecodeError) {
-  case bit_array.byte_size(bytes) {
-    0 -> Ok(acc)
-    _ ->
-      case decode(bytes) {
-        Error(e) -> Error(e)
-        Ok(#(event, rest)) -> fold_events_bytes(rest, f(acc, event), f)
-      }
+  case bytes {
+    <<>> -> Ok(acc)
+    _ -> {
+      use #(event, rest) <- result.try(decode(bytes))
+      fold_events_bytes(rest, f(acc, event), f)
+    }
   }
 }

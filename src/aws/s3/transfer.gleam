@@ -161,31 +161,55 @@ fn coordinate(
     s3.create_multipart_upload(client, empty_create_request(bucket, key))
     |> result.map_error(CreateFailed),
   )
-  use upload_id <- result.try(case create_out.upload_id {
-    Some(id) -> Ok(id)
-    None -> Error(MissingUploadId)
-  })
-  case upload_all_parts(client, bucket, key, upload_id, parts, 1, []) {
+  use upload_id <- result.try(option.to_result(
+    create_out.upload_id,
+    MissingUploadId,
+  ))
+
+  // From here on, any failure must trigger a best-effort abort so the
+  // bucket doesn't accumulate dangling multipart uploads. `abort_on_error`
+  // wraps both fallible steps with that cleanup.
+  use completed_parts <- result.try(abort_on_error(
+    client,
+    bucket,
+    key,
+    upload_id,
+    upload_all_parts(client, bucket, key, upload_id, parts, 1, []),
+  ))
+  use _ <- result.try(abort_on_error(
+    client,
+    bucket,
+    key,
+    upload_id,
+    s3.complete_multipart_upload(
+      client,
+      empty_complete_request(bucket, key, upload_id, completed_parts),
+    )
+      |> result.map_error(CompleteFailed),
+  ))
+  Ok(UploadResult(
+    bucket: bucket,
+    key: key,
+    upload_id: upload_id,
+    parts_uploaded: list.length(completed_parts),
+  ))
+}
+
+// Pass-through on `Ok`; on `Error` fire a best-effort `AbortMultipartUpload`
+// before propagating the error. Used post-create to clean up dangling
+// uploads when a part upload or complete call fails.
+fn abort_on_error(
+  client: s3.Client,
+  bucket: String,
+  key: String,
+  upload_id: String,
+  result: Result(a, Error),
+) -> Result(a, Error) {
+  case result {
+    Ok(value) -> Ok(value)
     Error(e) -> {
       abort_quietly(client, bucket, key, upload_id)
       Error(e)
-    }
-    Ok(completed_parts) -> {
-      let complete_req =
-        empty_complete_request(bucket, key, upload_id, completed_parts)
-      case s3.complete_multipart_upload(client, complete_req) {
-        Ok(_) ->
-          Ok(UploadResult(
-            bucket: bucket,
-            key: key,
-            upload_id: upload_id,
-            parts_uploaded: list.length(completed_parts),
-          ))
-        Error(e) -> {
-          abort_quietly(client, bucket, key, upload_id)
-          Error(CompleteFailed(e))
-        }
-      }
     }
   }
 }
@@ -258,22 +282,22 @@ fn upload_all_parts(
           next_part_number,
           part,
         )
-      case s3.upload_part(client, req) {
-        Error(e) ->
-          Error(UploadPartFailed(part_number: next_part_number, cause: e))
-        Ok(out) -> {
-          let completed = empty_completed_part(next_part_number, out.e_tag)
-          upload_all_parts(
-            client,
-            bucket,
-            key,
-            upload_id,
-            rest,
-            next_part_number + 1,
-            [completed, ..acc],
-          )
-        }
-      }
+      use out <- result.try(
+        s3.upload_part(client, req)
+        |> result.map_error(fn(e) {
+          UploadPartFailed(part_number: next_part_number, cause: e)
+        }),
+      )
+      let completed = empty_completed_part(next_part_number, out.e_tag)
+      upload_all_parts(
+        client,
+        bucket,
+        key,
+        upload_id,
+        rest,
+        next_part_number + 1,
+        [completed, ..acc],
+      )
     }
   }
 }
