@@ -161,6 +161,22 @@ pub fn maybe_set_header(
   dict.insert(headers, name, value)
 }
 
+/// Insert a service-level default header only when the caller hasn't
+/// already provided one with the same name. Mirrors `set_default_header`
+/// in the Rust SDK and the `contains_key` guard inside Glacier's
+/// `add_checksum_treehash` so caller `@httpHeader`-bound values win on
+/// collision.
+pub fn set_default_header(
+  headers: Dict(String, String),
+  name: String,
+  value: String,
+) -> Dict(String, String) {
+  case dict.has_key(headers, name) {
+    True -> headers
+    False -> dict.insert(headers, name, value)
+  }
+}
+
 /// Iterate `@httpPrefixHeaders` map members: for each entry,
 /// emit a header `<prefix><key>: <value>`.
 pub fn add_prefix_headers(
@@ -356,31 +372,85 @@ pub fn with_content_md5_header(
 }
 
 /// Glacier's tree-hash + content-sha256 headers. Both end up as the
-/// same SHA-256 of the body when the payload is a single chunk
-/// (≤ 1 MiB); larger payloads recurse, pairing 1 MiB chunk hashes
-/// (see https://docs.aws.amazon.com/amazonglacier/latest/dev/checksum-
-/// calculations.html). The protocol-test corpus only exercises the
-/// single-chunk case, and real-world Glacier callers chunk their
-/// uploads before they reach this point — the chunked tree-hash is
-/// a follow-up if a caller surfaces a multi-MB body.
+/// Computed against the recursive 1 MiB chunk algorithm at
+/// https://docs.aws.amazon.com/amazonglacier/latest/dev/checksum-
+/// calculations.html: split the body into 1 MiB chunks, SHA-256 each,
+/// then pair-hash adjacent digests until one remains. Single-chunk
+/// bodies degenerate to plain SHA-256 (tree-hash == content-sha256),
+/// which is what every Glacier protocol-test fixture happens to use,
+/// but the recursive form is required for the > 1 MiB upload archive
+/// path used by real callers.
 ///
-/// Headers are case-insensitive on the wire; we use the title-case
-/// forms (`X-Amz-Sha256-Tree-Hash`, `X-Amz-Content-Sha256`) so the
-/// Smithy `httpRequestTests` assertions match without a case-fold.
-/// Both headers are skipped if already present (the caller might
-/// pass them explicitly).
+/// `X-Amz-Sha256-Tree-Hash` carries the tree-hash digest;
+/// `X-Amz-Content-Sha256` carries the full-body SHA-256. The Rust SDK
+/// uses the same pair of headers in `glacier_interceptors::
+/// add_checksum_treehash`. Both are skipped when already present so a
+/// caller-supplied value wins.
 pub fn with_glacier_tree_hash_headers(
   headers: Dict(String, String),
   body: BitArray,
 ) -> Dict(String, String) {
-  let digest = crypto.hex_encode(crypto.sha256(body))
-  let headers = case dict.has_key(headers, "X-Amz-Sha256-Tree-Hash") {
-    True -> headers
-    False -> dict.insert(headers, "X-Amz-Sha256-Tree-Hash", digest)
+  let content_sha256 = crypto.hex_encode(crypto.sha256(body))
+  let tree_hash = crypto.hex_encode(glacier_tree_hash(body))
+  headers
+  |> set_default_header("X-Amz-Sha256-Tree-Hash", tree_hash)
+  |> set_default_header("X-Amz-Content-Sha256", content_sha256)
+}
+
+const glacier_chunk_size = 1_048_576
+
+/// Compute the Glacier tree hash of `body` as raw bytes (caller
+/// hex-encodes for the wire). Empty body degenerates to
+/// `SHA-256("")` so the function is total. Matches
+/// `glacier_interceptors::compute_hash_tree` in the Rust SDK.
+pub fn glacier_tree_hash(body: BitArray) -> BitArray {
+  case bit_array.byte_size(body) {
+    0 -> crypto.sha256(<<>>)
+    _ -> {
+      let chunks = chunk_hashes(body, glacier_chunk_size, [])
+      combine_tree_hashes(chunks)
+    }
   }
-  case dict.has_key(headers, "X-Amz-Content-Sha256") {
-    True -> headers
-    False -> dict.insert(headers, "X-Amz-Content-Sha256", digest)
+}
+
+fn chunk_hashes(
+  body: BitArray,
+  chunk_size: Int,
+  acc: List(BitArray),
+) -> List(BitArray) {
+  case bit_array.byte_size(body) {
+    0 -> list.reverse(acc)
+    size -> {
+      let take = case size > chunk_size {
+        True -> chunk_size
+        False -> size
+      }
+      // `bit_array.slice` is the only call here that can fail (out-of-
+      // range), and we've just guarded `take` against `size`, so the
+      // assertions below are total.
+      let assert Ok(chunk) = bit_array.slice(body, 0, take)
+      let rest_size = size - take
+      let assert Ok(rest) = bit_array.slice(body, take, rest_size)
+      chunk_hashes(rest, chunk_size, [crypto.sha256(chunk), ..acc])
+    }
+  }
+}
+
+fn combine_tree_hashes(hashes: List(BitArray)) -> BitArray {
+  case hashes {
+    [single] -> single
+    _ -> combine_tree_hashes(pair_hash(hashes))
+  }
+}
+
+fn pair_hash(hashes: List(BitArray)) -> List(BitArray) {
+  case hashes {
+    [] -> []
+    [single] -> [single]
+    [left, right, ..rest] -> [
+      crypto.sha256(bit_array.append(to: left, suffix: right)),
+      ..pair_hash(rest)
+    ]
   }
 }
 

@@ -94,11 +94,14 @@ pub fn for_service_id(service_id: String) -> ServiceCustomization {
         glacier_treehash: True,
       )
 
-    // S3: `{Bucket}` is a `@httpLabel` in the Smithy model, but the
-    // real SDK routes the bucket into the Host header (virtual-host
-    // addressing) and serves an empty bucket segment in the URI path.
-    // For the protocol-test runner — which only inspects the path —
-    // dropping `{Bucket}` from the URI template is sufficient.
+    // S3: `{Bucket}` is a `@httpLabel` in the Smithy model but also
+    // carries a `smithy.rules#contextParam` that wires it into the
+    // endpoint rule set. The rule set then places the bucket in the
+    // resolved URL (virtual-host subdomain, path prefix, or
+    // accesspoint host — see `s3-tests.json`), so the URI template
+    // must NOT also include `{Bucket}` or we'd double-place it.
+    // Mirrors Rust SDK codegen: `aws-sdk-rust/sdk/s3/src/operation/
+    // get_object.rs::uri_base` emits `/{Key}` without `{Bucket}`.
     "com.amazonaws.s3#AmazonS3" ->
       ServiceCustomization(
         default_headers: [],

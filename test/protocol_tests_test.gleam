@@ -28,17 +28,20 @@ import protocol_tests/runner
 fn skip_allow_list() -> Dict(String, String) {
   dict.new()
   // S3 path-style addressing (`vendorParams.scopedConfig.client.s3.
-  // addressing_style: 'path'`) keeps the bucket in the URI. Default
-  // addressing is virtual-host (bucket in subdomain, stripped from
-  // URI), which the codegen now emits via the `omit_uri_labels`
-  // customization. The protocol-test runner currently ignores
-  // `vendorParams`; threading client-config through the dispatcher
-  // would let this case flip back to passing. Until then it's the
-  // only case the bucket-strip customization regresses (closes 10
-  // virtual-host cases at the cost of this one).
+  // addressing_style: 'path'`). The SDK now supports path-style at
+  // runtime via the codegen-emitted endpoint params dict (the
+  // `@contextParam` Bucket binding flows into `endpoints.resolve`)
+  // combined with `client.with_endpoint_param(client, "ForcePathStyle",
+  // endpoints.BoolVal(True))`. What's missing is the protocol-test
+  // runner side: dispatchers only call `build_*_request` (URI
+  // template substitution), they don't invoke the endpoint resolver,
+  // so the expected `/mybucket` path the rule set would prepend
+  // never lands in `BuiltRequest.uri`. Closing this case is a runner
+  // change (run the resolver, join with the URI template) — out of
+  // scope for the HACK.md sweep.
   |> dict.insert(
     "S3PathAddressing",
-    "needs vendorParams.addressing_style=path threading through the dispatcher — `force_path_style` interceptor would override `omit_uri_labels`",
+    "SDK supports path-style via endpoint params; runner needs to invoke the endpoint resolver to assemble the full URL before assertion",
   )
 }
 

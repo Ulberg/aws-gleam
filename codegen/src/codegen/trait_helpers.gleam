@@ -11,6 +11,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/set.{type Set}
 import gleam/string
+import internal/stringutils
 import smithy/model.{type Model}
 import smithy/shape
 import smithy/shape_id.{type ShapeId, ShapeId}
@@ -188,6 +189,73 @@ pub fn host_label_member_names(
     case dict.has_key(mem.traits, ShapeId("smithy.api#hostLabel")) {
       True -> Ok(name)
       False -> Error(Nil)
+    }
+  })
+}
+
+/// One op-input member to endpoint-rule-set parameter binding,
+/// expressed by the `smithy.rules#contextParam` trait. S3 uses these
+/// to wire `Bucket` / `Key` / `CopySource` / `Prefix` input fields
+/// into the per-call endpoint params dict so the rule set picks
+/// virtual-host vs path-style addressing on a per-bucket basis.
+/// Without this binding the rule set runs with only `Region` set and
+/// can't place the bucket anywhere in the resolved URL.
+pub type ContextParamBinding {
+  ContextParamBinding(member_snake: String, param_name: String)
+}
+
+/// Convenience: resolve an operation's input struct and pull its
+/// `@contextParam` bindings in one go. Returns `[]` for non-struct
+/// inputs (e.g. `smithy.api#Unit` for the no-input operations) so
+/// callers can branch on emptiness alone.
+pub fn context_params_for_op(
+  model: Model,
+  in_id: String,
+) -> List(ContextParamBinding) {
+  case model.lookup(model, in_id) {
+    Ok(shape.Structure(members: m, ..)) -> context_param_bindings(m)
+    _ -> []
+  }
+}
+
+/// Same as `context_params_for_op` but taking the operation shape ID
+/// — looks up the op, finds its input shape, then delegates. Lets
+/// emit_invoke skip the extra plumbing of carrying `in_id` in OpSpec.
+pub fn context_params_for_op_by_id(
+  model: Model,
+  op_id: String,
+) -> List(ContextParamBinding) {
+  case model.lookup(model, op_id) {
+    Ok(shape.Operation(input: in_ref, ..)) -> {
+      let ShapeId(in_id) = in_ref.target
+      context_params_for_op(model, in_id)
+    }
+    _ -> []
+  }
+}
+
+/// Pull `smithy.rules#contextParam.name` off every input member.
+/// Output keeps the member name in snake_case (matches the codegen-
+/// emitted record field) and the endpoint param name verbatim (used as
+/// the `Dict` key fed to `runtime.invoke_with_endpoint_params`).
+pub fn context_param_bindings(
+  members: dict.Dict(String, shape.Member),
+) -> List(ContextParamBinding) {
+  dict.to_list(members)
+  |> list.sort(fn(a, b) { string.compare(a.0, b.0) })
+  |> list.filter_map(fn(pair) {
+    let #(name, mem) = pair
+    case dict.get(mem.traits, ShapeId("smithy.rules#contextParam")) {
+      Ok(Some(trait.Dict(d))) ->
+        case string_field(d, "name") {
+          Some(param_name) ->
+            Ok(ContextParamBinding(
+              member_snake: stringutils.pascal_to_snake(name),
+              param_name: param_name,
+            ))
+          None -> Error(Nil)
+        }
+      _ -> Error(Nil)
     }
   })
 }

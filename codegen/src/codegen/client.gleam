@@ -12,7 +12,9 @@ import codegen/code.{
   type Code, Blank, Call, CodeSome, Const, DocComment, Fn, Ident, LabelledParam,
   Let, LetAssert, Module, Param, StrLit, TypeDef, Use, Variant,
 }
-import codegen/trait_helpers.{type EndpointParam, BoolParam, StringParam}
+import codegen/trait_helpers.{
+  type ContextParamBinding, type EndpointParam, BoolParam, StringParam,
+}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
@@ -539,9 +541,14 @@ pub fn invoke_fn(
   out_type: String,
   err_type: String,
   host_prefix: Option(HostPrefixInfo),
+  context_params: List(ContextParamBinding),
 ) -> Code {
-  let invoke_call = case host_prefix {
-    None ->
+  let params_expr = case context_params {
+    [] -> Call(Ident("dict.new"), [])
+    _ -> Ident(string.concat(["build_", snake, "_endpoint_params(input)"]))
+  }
+  let invoke_call = case host_prefix, context_params {
+    None, [] ->
       Call(Ident("runtime.invoke"), [
         Ident("client.config"),
         Call(Ident(string.concat(["build_", snake, "_request"])), [
@@ -549,10 +556,19 @@ pub fn invoke_fn(
         ]),
         Ident(string.concat(["parse_", snake, "_response"])),
       ])
-    Some(_) ->
+    None, _ ->
+      Call(Ident("runtime.invoke_with_endpoint_params"), [
+        Ident("client.config"),
+        params_expr,
+        Call(Ident(string.concat(["build_", snake, "_request"])), [
+          Ident("input"),
+        ]),
+        Ident(string.concat(["parse_", snake, "_response"])),
+      ])
+    Some(_), _ ->
       Call(Ident("runtime.invoke_with_endpoint_params_and_host_prefix"), [
         Ident("client.config"),
-        Call(Ident("dict.new"), []),
+        params_expr,
         Ident("option.Some(host_prefix)"),
         Call(Ident(string.concat(["build_", snake, "_request"])), [
           Ident("input"),
@@ -693,6 +709,54 @@ fn render_host_prefix_validator_body(info: HostPrefixInfo) -> String {
       ])
     })
   string.concat([validate_steps, "  Ok(", substitutions, ")\n"])
+}
+
+/// Build the `fn build_<snake>_endpoint_params(input)` helper. For
+/// each `smithy.rules#contextParam`-tagged input member, emits a
+/// `dict.insert(_, "<param>", v)` step that unwraps the field if
+/// optional. Result is the per-call endpoint params dict fed into
+/// `runtime.invoke_with_endpoint_params`. Mirrors the Rust SDK's
+/// `ContextParam`-driven `endpoint_resolver_params` population in
+/// the operation orchestrator.
+pub fn endpoint_params_builder_fn(
+  snake: String,
+  in_type: String,
+  bindings: List(ContextParamBinding),
+) -> Code {
+  let body = code.Raw(fragment: render_endpoint_params_builder_body(bindings))
+  Fn(
+    public: False,
+    name: string.concat(["build_", snake, "_endpoint_params"]),
+    params: [Param(name: "input", type_: in_type)],
+    return: CodeSome("dict.Dict(String, endpoints.Value)"),
+    body: body,
+  )
+}
+
+fn render_endpoint_params_builder_body(
+  bindings: List(ContextParamBinding),
+) -> String {
+  // Wrap each string value in `endpoints.StringVal(_)` so the
+  // resulting dict is compatible with `runtime.invoke_with_endpoint_
+  // params`'s `Params = Dict(String, endpoints.Value)` type. Maps to
+  // the same shape the rule-set evaluator's other inputs use
+  // (Region, UseFips, UseDualStack flow in as `StringVal` / `BoolVal`
+  // via `endpoints.params_from`).
+  let inserts =
+    list.map(bindings, fn(b) {
+      string.concat([
+        "  let params = case input.",
+        b.member_snake,
+        " {\n",
+        "    option.Some(v) -> dict.insert(params, \"",
+        b.param_name,
+        "\", endpoints.StringVal(v))\n",
+        "    option.None -> params\n",
+        "  }\n",
+      ])
+    })
+    |> string.concat
+  string.concat(["  let params = dict.new()\n", inserts, "  params\n"])
 }
 
 /// Streaming-side counterpart: emits `pub fn <snake>_streaming(client,

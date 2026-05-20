@@ -412,6 +412,8 @@ fn emit_invoke(
   spec: OpSpec,
   emitted_type_names: Set(String),
 ) -> String {
+  let context_params =
+    trait_helpers.context_params_for_op_by_id(model, spec.op_id)
   let base =
     client.invoke_fn(
       spec.snake,
@@ -419,12 +421,24 @@ fn emit_invoke(
       spec.out_info.type_name,
       spec.error_type,
       spec.host_prefix_info,
+      context_params,
     )
   let host_prefix_validator = case spec.host_prefix_info {
     option.None -> []
     option.Some(info) -> [
       code.Blank,
       client.host_prefix_validator_fn(spec.snake, spec.in_info.type_name, info),
+    ]
+  }
+  let endpoint_params_builder = case context_params {
+    [] -> []
+    _ -> [
+      code.Blank,
+      client.endpoint_params_builder_fn(
+        spec.snake,
+        spec.in_info.type_name,
+        context_params,
+      ),
     ]
   }
   // Operations whose output carries a `@streaming` blob member get an
@@ -484,6 +498,7 @@ fn emit_invoke(
     code.Module(
       items: list.flatten([
         [base, code.Blank],
+        endpoint_params_builder,
         host_prefix_validator,
         streaming_blob_items,
         event_stream_items,

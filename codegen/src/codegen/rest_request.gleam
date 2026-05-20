@@ -12,7 +12,8 @@ import codegen/service_customizations.{type ServiceCustomization}
 import codegen/trait_helpers
 import codegen/types.{
   type BindingCategories, type HttpTrait, type MemberDef, type Resolved, Header,
-  PrefixHeaders, Query, REnum, RIntEnum, RList, RMap, RPrim, RTimestamp,
+  PrefixHeaders, Query, RBlob, REnum, RIntEnum, RList, RMap, RPrim,
+  RStreamingBlob, RTimestamp,
 }
 import gleam/dict
 import gleam/list
@@ -108,8 +109,26 @@ pub fn build_request_module(
   // `glacier/src/glacier_interceptors.rs`).
   let customization_default_headers_step =
     emit_default_headers_step(customization.default_headers)
-  let customization_tree_hash_step = case customization.glacier_treehash {
-    True -> [
+  // Tree-hash only fires on ops that carry an `@httpPayload`-bound
+  // **blob** body member. Struct-payload ops (Glacier's InitiateJob,
+  // SetVaultAccessPolicy, etc.) serialise JSON and don't need a body-
+  // bytes tree-hash. The Rust SDK registers
+  // `GlacierTreeHashHeaderInterceptor` on exactly the two blob-payload
+  // ops via codegen — see
+  // `glacier/src/operation/upload_archive.rs` and
+  // `glacier/src/operation/upload_multipart_part.rs`.
+  let has_blob_payload = case cats.payload {
+    Ok(m) ->
+      case m.target {
+        RBlob | RStreamingBlob -> True
+        _ -> False
+      }
+    Error(_) -> False
+  }
+  let customization_tree_hash_step = case
+    customization.glacier_treehash, has_blob_payload
+  {
+    True, True -> [
       code.Let(
         name: "headers",
         value: code.Call(
@@ -118,7 +137,7 @@ pub fn build_request_module(
         ),
       ),
     ]
-    False -> []
+    _, _ -> []
   }
   // URI-label substitution: replace `{Bucket}` (and friends) with empty
   // when the customization omits them, OR replace the per-label value
@@ -273,10 +292,10 @@ fn find_algorithm_member(
 
 /// Insert each service-level default header via `dict.insert`, one
 /// `let headers = ...` per pair. Empty list ⇒ no step. Service-level
-/// defaults go in *before* any `@httpHeader`-bound member overrides;
-/// `dict.insert` is last-write-wins so an op's own header wins on
-/// collision (e.g. Glacier's `Content-Type` doesn't shadow the
-/// service-default `X-Amz-Glacier-Version`).
+/// defaults are *insert-when-absent* — so a caller's `@httpHeader`-
+/// bound member value wins on name collision. Mirrors the Rust SDK's
+/// `set_default_header` (and the `if !contains_key(...)` guard inside
+/// `glacier_interceptors::add_checksum_treehash`).
 fn emit_default_headers_step(
   headers: List(#(String, String)),
 ) -> List(code.Code) {
@@ -284,7 +303,7 @@ fn emit_default_headers_step(
     let #(name, value) = h
     code.Let(
       name: "headers",
-      value: code.Call(head: code.Ident(name: "dict.insert"), args: [
+      value: code.Call(head: code.Ident(name: "rest.set_default_header"), args: [
         code.Ident(name: "headers"),
         code.StrLit(value: name),
         code.StrLit(value: value),
