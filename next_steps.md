@@ -40,11 +40,20 @@ no-dispatcher dropped 27 → 0; allow-list shrank from 18 entries to 1.
 | ec2Query | 59 | 0 | 0 | 0 | 0 | 59 |
 | rpcv2Cbor | 4 | 0 | 0 | 0 | 0 | 4 |
 
-The 1 remaining `skip(allowed)` is `S3PathAddressing` — sets
-`vendorParams.scopedConfig.client.s3.addressing_style: 'path'` to
-keep the bucket in the URI. The protocol-test runner ignores
-`vendorParams` today; a `force_path_style` Client knob threaded
-through the dispatcher would let this case flip back to passing.
+The 1 remaining `skip(allowed)` is `S3PathAddressing`. Note that the
+codegen path that closes the other 10 S3 cases — `omit_uri_labels:
+["Bucket"]` in `service_customizations.gleam` — is a **protocol-test
+shortcut, not production-correct S3 endpoint resolution**. It strips
+`{Bucket}` from the URI template unconditionally; in production that
+would yield URLs like `/?list-type=2` with no bucket anywhere, since
+nothing puts the bucket into the Host header. The real fix is to
+drive bucket placement off the S3 `endpointRuleSet` (already wired
+in `endpoints.resolve`): the resolver outputs a URL with the bucket
+in the right place — subdomain for virtual-host, path for
+`force_path_style`, special `s3express-` host for directory buckets,
+and so on. When that lands, the codegen stops touching the URI
+template for S3 and the `S3PathAddressing` case becomes a question
+of caller config rather than a runner refactor.
 Every other case in every corpus either passes or is the official
 Smithy `appliesTo: "server"` skip.
 
@@ -425,8 +434,7 @@ client beyond DynamoDB + S3 mainline.
     Bedrock streaming, Transcribe). Build-option count tests +
     runtime setter tests pin the wiring.
 
-14. **JavaScript target** — explicitly out per the plan and
-    `CLAUDE.md`.
+14. **JavaScript target** — out, not planned. Erlang-target only.
 
 ## Current focus (2026-05-19)
 
@@ -478,6 +486,35 @@ codegen pass:
 6. **Endpoint ruleset coverage beyond S3 + DynamoDB** (v0.2
    item 10). The evaluator is wired; bundling all ~300 rulesets
    at codegen time + per-service builders is remaining.
+
+7. **S3 production-correct endpoint resolution.** The codegen's
+   `service_customizations.gleam` strips `{Bucket}` from S3 URI
+   templates unconditionally — sufficient for the protocol-test
+   corpus runner (which checks the URI path), broken for any real
+   S3 call (no bucket goes into the Host header subdomain, no
+   `force_path_style` toggle, no S3 Express directory bucket
+   support, no MRAP). The fix is to drive S3 URI assembly through
+   the `endpointRuleSet` evaluator (`endpoints.resolve`) rather
+   than the codegen template-substitution path. Once that lands,
+   `S3PathAddressing` and any future S3 addressing-mode test
+   becomes a question of Client config rather than codegen
+   conditionals.
+
+8. **Selective-service compilation.** All 409 services compile
+   into every deploy. The 1M-atom default Erlang ceiling overflows
+   at startup, hence the `ERL_FLAGS="+t 4194304"` workaround in
+   `scripts/test.sh`. The cost is real: compile time, BEAM disk
+   footprint, atom table memory, cold-load latency. AWS SDK for
+   Rust solves this with cargo features (opt-in per service);
+   Gleam has no analogous in-package mechanism. Two viable shapes:
+   (a) split into one library per service (`aws_dynamodb`,
+   `aws_s3`, …) with shared internal/runtime crates — matches
+   the Rust SDK layout but multiplies the number of Hex packages;
+   (b) keep a single package but expose a `scripts/strip.sh`
+   that prunes unused services from `src/aws/services/` before
+   `gleam build`. (a) is the better long-term shape; (b) is
+   cheap to add now and unblocks the same use case for callers
+   who only need a few services.
 
 ### SigV4a sub-status (2026-05-19)
 
