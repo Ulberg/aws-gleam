@@ -39,8 +39,13 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "zip_path" {
-  description = "Path to the Lambda zip built by ../build.sh."
-  type        = string
-  default     = "../build/aws-gleam-smoke.zip"
+variable "image_tag" {
+  description = <<-EOT
+    ECR image tag the Lambda functions point at. The build script
+    pushes `latest` by default and the function pins to the digest
+    behind whichever tag is set here, so a new push automatically
+    rolls the Lambda forward.
+  EOT
+  type    = string
+  default = "latest"
 }

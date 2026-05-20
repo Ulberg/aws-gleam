@@ -1,0 +1,24 @@
+# Gleam build artefacts + the deploy zip / OTP shipment produced by
+# build.sh. The build/packages/gleam.lock that lives one level down
+# is checked in (it pins the dep set); everything else under build/
+# is derived.
+build/dev/
+build/lsp/
+build/erlang-shipment/
+build/aws-gleam-smoke.zip
+build/gleam-*.lock
+build/packages/aws.config_fingerprint
+build/packages/aws/
+build/packages/gleam_*/
+build/packages/gleeunit/
+build/packages/simplifile/
+build/packages/packages.toml
+
+# tofu state + provider plugins live under infra/
+infra/.terraform/
+infra/.terraform.lock.hcl
+infra/terraform.tfstate*
+infra/terraform.tfvars
+
+# Erlang crash dumps land in the working dir
+erl_crash.dump

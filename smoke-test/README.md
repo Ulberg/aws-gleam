@@ -36,39 +36,50 @@ smoke-test/
 │   ├── writer_handler.gleam         PutObject + SendMessage
 │   ├── reader_handler.gleam         SQS event decode + GetObject
 │   └── list_buckets_handler.gleam   proof-of-life ListBuckets
-├── bootstrap                        provided.al2023 entrypoint
-├── build.sh                         builds build/aws-gleam-smoke.zip
-└── infra/                           OpenTofu (writer + reader + bucket
+├── Dockerfile                       container image (erlang:27-slim + shipment)
+├── build.sh                         builds image + pushes to ECR + tofu apply
+└── infra/                           OpenTofu (ECR + writer + reader + bucket
                                      + queue + IAM)
 ```
 
-## Build
+## Why a container image
+
+Lambda's `provided.al2023` base ships no language runtime. The
+Gleam-produced OTP shipment expects `erl` on the system PATH; running
+the zip on `provided.al2023` produces `exec: erl: not found` at cold
+start. The container image bundles ERTS via `erlang:27-slim` so the
+BEAM starts cleanly.
+
+## Build + deploy (one command)
+
+`build.sh` does everything: deps, codegen, OTP-shipment, slim,
+docker build, ECR push, `tofu apply`.
 
 ```
+# AWS credentials in the env that's running tofu + docker:
+eval "$(aws configure export-credentials --format env)"
+export AWS_REGION=us-east-1
+
 ./build.sh
 ```
 
-Produces `build/aws-gleam-smoke.zip` ready to upload. First run will
-pull deps + regenerate the SDK's 409 services (a minute or two);
-subsequent runs are incremental. `KEEP_SERVICES` defaults to
-`s3 sqs` — set to anything else if adding scenarios.
+First run pulls Gleam deps + regenerates the SDK's ~409 services (a
+minute or two) + builds the container image. Subsequent runs are
+incremental — set `SKIP_REGEN=1` to skip the regen step when only
+the handler code changed.
 
-## Deploy
+`KEEP_SERVICES` defaults to `s3 sqs`; bump it if adding scenarios
+that use more services.
 
-```
-cd infra
-tofu init
-tofu apply
-```
-
-(Or `terraform` if you don't have OpenTofu installed — the module is
-HCL and works either way.)
+`SKIP_INFRA=1 ./build.sh` stops after the ECR push, useful when
+debugging the image with `docker run -it <repo>:latest /bin/sh`.
 
 The OpenTofu module creates:
+- An ECR repository for the container image
 - An S3 bucket both Lambdas read + write
 - An SQS queue
-- A writer Lambda function (HTTP-invokable)
-- A reader Lambda function (SQS-triggered via event-source mapping)
+- A writer Lambda function (HTTP-invokable, container image)
+- A reader Lambda function (SQS-triggered, same container image)
 - Two IAM roles, one per Lambda, with scoped permissions
 - Two CloudWatch log groups, both with 7-day retention
 
@@ -93,13 +104,14 @@ aws logs tail "$READER_LOG" --follow
 
 ## Known limitations of this iteration
 
-- **Cold-start cost.** First invocation compiles 409 SDK service
-  modules into the BEAM. The build.sh slim step keeps only the
-  ones in `KEEP_SERVICES`, so the deployed zip ships just S3 + SQS
-  by default.
-- **Atom table.** `bootstrap` sets `ERL_FLAGS="+t 16777216"` to
+- **Cold-start cost.** First invocation compiles the BEAM modules
+  the slim step kept. `KEEP_SERVICES` defaults to `s3 sqs` so the
+  cold start touches only those clients.
+- **Atom table.** The Dockerfile sets `ERL_FLAGS="+t 16777216"` to
   raise the BEAM atom-table ceiling for the SDK; if you trim
   further than `s3 sqs` you can drop this.
 - **No DLQ.** The SQS queue has no dead-letter — a poison message
   re-drives forever (up to the queue's retention). Add a DLQ in
   `infra/main.tf` if running for more than a smoke test.
+- **No image vulnerability scanning.** The ECR repo's
+  `scan_on_push` is `false`. Flip it for any longer-lived deploy.

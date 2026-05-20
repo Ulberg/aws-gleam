@@ -12,6 +12,35 @@ provider "aws" {
   region = var.region
 }
 
+# ---- ECR repo for the Lambda container image ----
+#
+# Created up-front by `tofu apply -target=aws_ecr_repository.smoke`
+# before the build script pushes the image. The Lambda function
+# below references the pushed digest, so this resource must exist
+# before the first full apply.
+
+resource "aws_ecr_repository" "smoke" {
+  name                 = var.function_name
+  force_delete         = true # let tofu destroy clean residual images
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = false
+  }
+}
+
+# Resolves to whatever digest is currently behind `var.image_tag`
+# in the ECR repo. Re-evaluating this on every plan picks up new
+# pushes automatically — the Lambda functions pin to the digest, so
+# a new tag value (or the same tag pointing at a new sha) forces
+# `aws_lambda_function` to roll forward.
+data "aws_ecr_image" "smoke" {
+  repository_name = aws_ecr_repository.smoke.name
+  image_tag       = var.image_tag
+
+  depends_on = [aws_ecr_repository.smoke]
+}
+
 # ---- S3 bucket the function reads + writes against ----
 
 resource "aws_s3_bucket" "smoke" {
@@ -166,25 +195,29 @@ resource "aws_cloudwatch_log_group" "lambda" {
 
 # ---- Lambda functions ----
 #
-# Both functions deploy the same zip artifact; the `SMOKE_ROLE` env
-# var picks which handler `aws_gleam_smoke:main/0` dispatches to.
+# Both functions deploy the same container image; the `SMOKE_ROLE`
+# env var picks which handler `aws_gleam_smoke:main/0` dispatches
+# to. `provided.al2023` ships no Erlang runtime, so the image (built
+# from `erlang:27-slim` in ../Dockerfile) bundles ERTS itself.
 
 resource "aws_cloudwatch_log_group" "reader" {
   name              = "/aws/lambda/${var.reader_function_name}"
   retention_in_days = 7
 }
 
+# Repository URI + digest the build script pushed. Pinning to the
+# digest (rather than the mutable `:latest` tag) means each push
+# triggers a Lambda update without ambiguity.
+locals {
+  image_uri = "${aws_ecr_repository.smoke.repository_url}@${data.aws_ecr_image.smoke.image_digest}"
+}
+
 resource "aws_lambda_function" "smoke" {
   function_name = var.function_name
   role          = aws_iam_role.lambda.arn
 
-  # provided.al2023 is the BEAM-on-AL2023 custom-runtime route: the
-  # zip's `bootstrap` script is the entry point.
-  runtime  = "provided.al2023"
-  handler  = "bootstrap"
-  filename = var.zip_path
-  # tofu apply re-uploads when the zip changes.
-  source_code_hash = filebase64sha256(var.zip_path)
+  package_type = "Image"
+  image_uri    = local.image_uri
 
   memory_size = 512
   timeout     = 30
@@ -212,10 +245,8 @@ resource "aws_lambda_function" "reader" {
   function_name = var.reader_function_name
   role          = aws_iam_role.reader.arn
 
-  runtime          = "provided.al2023"
-  handler          = "bootstrap"
-  filename         = var.zip_path
-  source_code_hash = filebase64sha256(var.zip_path)
+  package_type = "Image"
+  image_uri    = local.image_uri
 
   memory_size = 512
   timeout     = 30

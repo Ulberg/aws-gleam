@@ -1,63 +1,95 @@
 #!/bin/sh
-# Build the Lambda deployment zip:
-#   1. Resolve + download deps (including the path-dep SDK).
-#   2. Run the SDK's codegen so all 409 services compile.
+# Build + push the Lambda container image for the smoke test.
+#
+#   1. Resolve + download deps (incl. the path-dep SDK).
+#   2. Run the SDK's codegen so all ~409 services compile.
 #   3. `gleam export erlang-shipment` builds a self-contained OTP
-#      release under build/erlang-shipment/.
+#      release under build/erlang-shipment/. The shipment doesn't
+#      include the Erlang runtime itself — the Dockerfile pulls
+#      that from `erlang:27-slim`.
 #   4. Slim the shipment: drop compile-time-only `.hrl` includes
 #      and any `aws@services@*.beam` we don't actually use. The
-#      `KEEP_SERVICES` env var (space-separated, defaults to `s3`)
-#      controls which service modules survive — set to `s3 dynamodb`
-#      (etc.) when adding scenarios that exercise more services.
-#   5. Drop `bootstrap` at the release root and zip the lot.
+#      `KEEP_SERVICES` env var (space-separated, defaults to
+#      `s3 sqs`) controls which service modules survive.
+#   5. `docker buildx build` the image for `linux/amd64` (Lambda's
+#      x86_64 architecture — change to arm64 if you change the
+#      Lambda function's `architectures` in main.tf).
+#   6. Ensure the ECR repo exists (`tofu apply -target=...`),
+#      docker-login, push.
+#   7. Final `tofu apply` so the Lambda picks up the new image
+#      digest. The function depends on the data.aws_ecr_image
+#      data source so a fresh push forces a Lambda update.
 #
-# Output: build/aws-gleam-smoke.zip — under 50 MB so it fits Lambda's
-# direct-upload limit. Pre-slim, the shipment is ~800 MB; the trim
-# step brings it to ~2 MB (the BEAM bytecode for one S3 client +
-# SDK runtime + stdlib is genuinely that small).
+# Set `SKIP_REGEN=1` to skip step 2 once the SDK is generated.
+# Set `SKIP_INFRA=1` to stop after the push (useful for `docker run`
+# locally).
+#
+# Prereqs: gleam, docker, tofu (or terraform), AWS CLI v2,
+# AWS credentials in env vars (`aws configure export-credentials
+# --format env | eval`).
 
 set -eu
 HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE"
 
-# Writer needs S3 (PutObject) + SQS (SendMessage); reader needs S3
-# (GetObject). Both ship in the same zip, the slim step keeps both
-# service beams.
 KEEP_SERVICES="${KEEP_SERVICES:-s3 sqs}"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 echo "→ resolving Gleam deps"
 gleam deps download >/dev/null
 
-echo "→ generating SDK services (one-shot via the path dep)"
-( cd ../ && ./scripts/regen.sh )
+if [ "${SKIP_REGEN:-0}" != "1" ]; then
+  echo "→ generating SDK services (one-shot via the path dep)"
+  ( cd ../ && ./scripts/regen.sh )
+fi
 
-echo "→ building OTP release"
+echo "→ building OTP release (no ERTS — the container provides Erlang)"
 rm -rf build/erlang-shipment
-# Lift Erlang's default 1 MiB atom table — the codegen-emitted
-# 409-service SDK allocates several million atoms during type-
-# checking, the same as the SDK's own scripts/test.sh.
 ERL_FLAGS="${ERL_FLAGS:-+t 4194304}" gleam export erlang-shipment >/dev/null
 
 SHIPMENT="build/erlang-shipment"
-cp bootstrap "$SHIPMENT/bootstrap"
-chmod +x "$SHIPMENT/bootstrap"
 
 echo "→ slimming shipment (keep services: $KEEP_SERVICES)"
-# Compile-time-only Erlang record headers — ~500 MB of `.hrl`
-# files Lambda never reads at runtime.
 rm -rf "$SHIPMENT/aws/include"
-# Build a `\|`-separated alternation of service BEAMs to keep
-# (e.g. 's3\|dynamodb' → keep aws@services@s3.beam +
-# aws@services@dynamodb.beam, delete the rest).
 KEEP_ALT=$(echo "$KEEP_SERVICES" | tr ' ' '|')
 find "$SHIPMENT/aws/ebin" -name 'aws@services@*.beam' \
   -not -regex ".*aws@services@\\($KEEP_ALT\\)\\.beam" \
   -delete
 
-echo "→ zipping Lambda artifact"
-ZIP="$HERE/build/aws-gleam-smoke.zip"
-rm -f "$ZIP"
-( cd "$SHIPMENT" && zip -qr "$ZIP" . )
+echo "→ ensuring ECR repo exists"
+( cd infra && tofu init -upgrade=false >/dev/null && \
+  tofu apply -auto-approve -target=aws_ecr_repository.smoke >/dev/null )
 
-echo "done → $ZIP"
-ls -lh "$ZIP"
+REPO_URL=$( cd infra && tofu output -raw ecr_repo_url )
+REGION=$( cd infra && tofu output -raw region 2>/dev/null || echo us-east-1 )
+
+echo "→ building container image for linux/amd64"
+docker buildx build \
+  --platform linux/amd64 \
+  --provenance=false \
+  --load \
+  -t "${REPO_URL}:${IMAGE_TAG}" \
+  .
+
+echo "→ docker login to ECR ($REGION)"
+aws ecr get-login-password --region "$REGION" | \
+  docker login --username AWS --password-stdin "$REPO_URL"
+
+echo "→ docker push"
+docker push "${REPO_URL}:${IMAGE_TAG}"
+
+if [ "${SKIP_INFRA:-0}" = "1" ]; then
+  echo "done → image pushed; skipping tofu apply (SKIP_INFRA=1)"
+  exit 0
+fi
+
+echo "→ tofu apply (Lambda functions pick up the new image digest)"
+( cd infra && tofu apply -auto-approve )
+
+echo
+echo "done. Try:"
+WRITER=$( cd infra && tofu output -raw writer_function_name )
+echo "  aws lambda invoke --function-name $WRITER \\"
+echo "    --payload '{\"hello\":\"smoke\"}' \\"
+echo "    --cli-binary-format raw-in-base64-out /tmp/response.json"
+echo "  cat /tmp/response.json"

@@ -1,3 +1,13 @@
+output "ecr_repo_url" {
+  value       = aws_ecr_repository.smoke.repository_url
+  description = "ECR repo the build script tags + pushes images to."
+}
+
+output "region" {
+  value       = var.region
+  description = "Region everything is deployed in. Re-exported so the build script can `aws ecr get-login-password --region ...`."
+}
+
 output "writer_function_name" {
   value       = aws_lambda_function.smoke.function_name
   description = "Pass to `aws lambda invoke --function-name`."
