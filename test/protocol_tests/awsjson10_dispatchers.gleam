@@ -25,6 +25,7 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(
     operation_with_required_members_with_defaults_dispatcher(),
   )
+  |> dispatch.register(put_with_content_encoding_dispatcher())
   |> dispatch.register(query_incompatible_operation_dispatcher())
   |> dispatch.register(simple_scalar_properties_dispatcher())
   |> dispatch.register(query_compatible_operation_dispatcher())
@@ -316,6 +317,29 @@ fn operation_with_required_members_with_defaults_dispatcher() -> Dispatcher {
     },
     parse_response: response_parser(
       svc.parse_operation_with_required_members_with_defaults_response,
+    ),
+  )
+}
+
+fn put_with_content_encoding_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#PutWithContentEncoding",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_put_with_content_encoding_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_put_with_content_encoding_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_put_with_content_encoding_response,
     ),
   )
 }

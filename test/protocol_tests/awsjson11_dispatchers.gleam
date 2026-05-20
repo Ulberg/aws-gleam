@@ -25,6 +25,7 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(null_operation_dispatcher())
   |> dispatch.register(operation_with_optional_input_output_dispatcher())
   |> dispatch.register(put_and_get_inline_documents_dispatcher())
+  |> dispatch.register(put_with_content_encoding_dispatcher())
   |> dispatch.register(simple_scalar_properties_dispatcher())
   |> dispatch.register(sparse_nulls_operation_dispatcher())
   |> dispatch.register(predict_dispatcher())
@@ -357,6 +358,29 @@ fn put_and_get_inline_documents_dispatcher() -> Dispatcher {
     },
     parse_response: response_parser(
       svc.parse_put_and_get_inline_documents_response,
+    ),
+  )
+}
+
+fn put_with_content_encoding_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#PutWithContentEncoding",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_put_with_content_encoding_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_put_with_content_encoding_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_put_with_content_encoding_response,
     ),
   )
 }
