@@ -140,6 +140,37 @@ pub fn adaptive_with(
   )
 }
 
+/// Override the per-request max attempt count on an existing
+/// `Strategy`, preserving the other knobs (delays, sleep / rng /
+/// rate-limiter). The common case for tuning retry behaviour —
+/// callers usually want the AWS-recommended backoff curve but a
+/// different attempt budget (1 for fail-fast tests, 5 for
+/// long-running batch workloads, etc.).
+///
+/// Strategy is opaque so this setter lives here; the runtime
+/// re-exports a `with_max_attempts(config, n)` convenience that
+/// threads through to this setter.
+pub fn with_max_attempts(strategy: Strategy, max_attempts: Int) -> Strategy {
+  Strategy(..strategy, max_attempts: max_attempts)
+}
+
+/// Override the initial-retry-backoff base on an existing
+/// `Strategy`. The first retry sleeps roughly `base_delay_ms` with
+/// full jitter; each subsequent attempt doubles the cap up to
+/// `max_delay_ms`. Set to 0 (paired with `with_max_delay_ms(0)`)
+/// for tests that want zero-delay retries.
+pub fn with_base_delay_ms(strategy: Strategy, base_delay_ms: Int) -> Strategy {
+  Strategy(..strategy, base_delay_ms: base_delay_ms)
+}
+
+/// Override the maximum-backoff cap on an existing `Strategy`.
+/// Pairs with `with_base_delay_ms` for tests that need zero or
+/// very short delays; production callers usually keep the AWS-
+/// recommended default.
+pub fn with_max_delay_ms(strategy: Strategy, max_delay_ms: Int) -> Strategy {
+  Strategy(..strategy, max_delay_ms: max_delay_ms)
+}
+
 /// Wrap a `Send` with retry semantics.
 pub fn with_retry(send send: Send, strategy strategy: Strategy) -> Send {
   fn(req) { do_attempt(send, strategy, req, 1, None) }

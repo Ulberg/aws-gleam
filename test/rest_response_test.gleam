@@ -7,6 +7,7 @@
 //// caller-supplied name as well — generators emit the wire spelling
 //// verbatim, so `"ETag"` and `"etag"` must both resolve.
 
+import aws/internal/codec/json_timestamp
 import aws/internal/codec/rest
 import gleam/dict
 import gleam/option.{None, Some}
@@ -119,4 +120,81 @@ pub fn with_content_md5_header_overwrites_existing_value_test() {
   dict.get(with_md5, "Content-MD5")
   |> should.equal(Ok("1B2M2Y8AsgTpgAmY7PhCfg=="))
   dict.get(with_md5, "X-Other") |> should.equal(Ok("keep"))
+}
+
+// ---------- enum_header ----------
+
+type FakeEnum {
+  Alpha
+  Beta
+}
+
+fn fake_enum_from_wire(s: String) -> Result(FakeEnum, String) {
+  case s {
+    "alpha" -> Ok(Alpha)
+    "beta" -> Ok(Beta)
+    other -> Error("unknown enum value: " <> other)
+  }
+}
+
+pub fn enum_header_decodes_known_wire_value_test() {
+  let h = dict.from_list([#("x-enum", "alpha")])
+  rest.enum_header(h, "X-Enum", fake_enum_from_wire)
+  |> should.equal(Some(Alpha))
+}
+
+pub fn enum_header_returns_none_for_missing_header_test() {
+  rest.enum_header(headers(), "X-Missing", fake_enum_from_wire)
+  |> should.equal(None)
+}
+
+pub fn enum_header_returns_none_for_unknown_wire_value_test() {
+  // Forgiving contract: unknown enum wire values land as `None`,
+  // not as a crash. Matches int/bool header semantics — the parse
+  // never blows up because a server added a new variant.
+  let h = dict.from_list([#("x-enum", "gamma")])
+  rest.enum_header(h, "X-Enum", fake_enum_from_wire)
+  |> should.equal(None)
+}
+
+// ---------- timestamp headers ----------
+
+pub fn http_date_header_decodes_rfc7231_timestamp_test() {
+  // S3 GetObject's Last-Modified header ships in HTTP-date form
+  // per the Smithy core default for @httpHeader bindings.
+  let h = dict.from_list([#("last-modified", "Thu, 01 Jan 1970 00:00:42 GMT")])
+  rest.http_date_header(h, "Last-Modified")
+  |> should.equal(Some(json_timestamp.Timestamp(seconds: 42, nanoseconds: 0)))
+}
+
+pub fn http_date_header_returns_none_for_missing_test() {
+  rest.http_date_header(headers(), "Last-Modified")
+  |> should.equal(None)
+}
+
+pub fn http_date_header_returns_none_for_unparseable_test() {
+  // Forgiving contract: garbage strings land as None, not a crash.
+  let h = dict.from_list([#("last-modified", "not-a-date")])
+  rest.http_date_header(h, "Last-Modified")
+  |> should.equal(None)
+}
+
+pub fn iso8601_header_decodes_date_time_format_test() {
+  let h = dict.from_list([#("x-amz-when", "1970-01-01T00:00:42Z")])
+  rest.iso8601_header(h, "X-Amz-When")
+  |> should.equal(Some(json_timestamp.Timestamp(seconds: 42, nanoseconds: 0)))
+}
+
+pub fn epoch_seconds_header_decodes_integer_test() {
+  let h = dict.from_list([#("x-amz-when", "1234567890")])
+  rest.epoch_seconds_header(h, "X-Amz-When")
+  |> should.equal(
+    Some(json_timestamp.Timestamp(seconds: 1_234_567_890, nanoseconds: 0)),
+  )
+}
+
+pub fn epoch_seconds_header_returns_none_for_non_integer_test() {
+  let h = dict.from_list([#("x-amz-when", "1234.5")])
+  rest.epoch_seconds_header(h, "X-Amz-When")
+  |> should.equal(None)
 }

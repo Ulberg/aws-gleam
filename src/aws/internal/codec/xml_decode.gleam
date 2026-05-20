@@ -12,6 +12,7 @@
 //// for `@xmlFlattened` lists) are surfaced by `find_children`.
 
 import aws/internal/codec/json_float
+import aws/internal/codec/json_timestamp
 import gleam/float
 import gleam/int
 import gleam/list
@@ -212,6 +213,20 @@ pub fn timestamp_text(e: Element) -> Result(Int, String) {
   |> result.lazy_or(fn() { parse_http_date_ffi(t) })
   |> result.lazy_or(fn() { int.parse(t) })
   |> result.map_error(fn(_) { "xml: invalid timestamp: " <> t })
+}
+
+/// Decode a Smithy `@timestamp` XML element into the precise
+/// `Timestamp` shape (seconds + nanoseconds). The FFI ISO 8601
+/// parser is currently whole-second precision so `nanoseconds`
+/// will be 0 — once the parser learns fractional seconds we
+/// flip that here without breaking the API.
+pub fn timestamp_text_precise(
+  e: Element,
+) -> Result(json_timestamp.Timestamp, String) {
+  case timestamp_text(e) {
+    Ok(secs) -> Ok(json_timestamp.Timestamp(seconds: secs, nanoseconds: 0))
+    Error(msg) -> Error(msg)
+  }
 }
 
 @external(erlang, "aws_ffi", "parse_iso8601")

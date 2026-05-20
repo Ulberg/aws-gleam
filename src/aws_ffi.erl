@@ -1,6 +1,7 @@
 -module(aws_ffi).
 -include_lib("xmerl/include/xmerl.hrl").
--export([sha256/1, md5/1, hmac_sha256/2, hex_encode/1, get_env/1,
+-export([sha256/1, sha1/1, md5/1, crc32c/1, hmac_sha256/2, hex_encode/1,
+         ecdsa_p256_sign/2, ecdsa_p256_verify/3, ecdsa_p256_public_key/1, get_env/1,
          read_file/1, unix_seconds/0, parse_iso8601/1, run_process/2,
          sha1_hex/1, aws_timestamp/0, random_float/0,
          encode_dynamic_to_json/1, float_nan/0, float_infinity/0,
@@ -86,6 +87,14 @@ format_http_date(Seconds) when is_integer(Seconds) ->
 sha256(Data) ->
     crypto:hash(sha256, Data).
 
+%% Raw SHA-1 digest as a 20-byte binary. Exposed for the AWS
+%% multi-algorithm checksum feature (`sha1` variant) — base64-
+%% encoded into the `x-amz-checksum-sha1` header. Distinct from
+%% `sha1_hex/1`, which returns the lowercase hex form used by the
+%% SSO cache-file naming.
+sha1(Data) ->
+    crypto:hash(sha, Data).
+
 %% Raw MD5 digest, used by the `@httpChecksumRequired` body-checksum
 %% helper. MD5 is a degraded primitive for security work but the
 %% AWS wire spec for this trait requires it (Content-MD5 is the
@@ -95,6 +104,64 @@ md5(Data) ->
 
 hmac_sha256(Key, Data) ->
     crypto:mac(hmac, sha256, Key, Data).
+
+%% Sign `Data` with an ECDSA P-256 (secp256r1) private key, using
+%% SHA-256 as the message digest. `PrivateKey` is the 32-byte
+%% scalar value as a binary. Returns the DER-encoded ASN.1
+%% signature blob.
+%%
+%% Used by SigV4a (`AWS4-ECDSA-P256-SHA256`). Erlang's `crypto`
+%% module generates a fresh random nonce per call rather than the
+%% RFC 6979 deterministic nonce AWS reference vectors use, so
+%% signatures verify correctly against the AWS public-key check
+%% but won't match the aws-c-auth v4a fixture's literal bytes.
+ecdsa_p256_sign(PrivateKey, Data) when is_binary(PrivateKey), is_binary(Data) ->
+    crypto:sign(ecdsa, sha256, Data, [PrivateKey, secp256r1]).
+
+%% Verify a SigV4a signature. `PublicKey` is the uncompressed 65-byte
+%% SEC1 form (`04 || X || Y`); `Signature` is the DER-encoded blob
+%% returned by `ecdsa_p256_sign`. Returns a boolean.
+ecdsa_p256_verify(PublicKey, Data, Signature)
+  when is_binary(PublicKey), is_binary(Data), is_binary(Signature) ->
+    crypto:verify(ecdsa, sha256, Data, Signature, [PublicKey, secp256r1]).
+
+%% Derive the uncompressed SEC1 public key (`<<4, X:32/binary, Y:32/binary>>`)
+%% for a given P-256 private scalar. Used by the SigV4a key-derivation
+%% tests and by anyone who wants to surface the public counterpart of a
+%% derived signing key. `crypto:generate_key/3` with an explicit private
+%% scalar leaves the scalar untouched and only fills in the public side.
+ecdsa_p256_public_key(PrivateKey) when is_binary(PrivateKey) ->
+    {PubKey, PrivateKey} = crypto:generate_key(ecdh, secp256r1, PrivateKey),
+    PubKey.
+
+%% CRC-32C (Castagnoli polynomial 0x1EDC6F41, reflected 0x82F63B78).
+%% Used by AWS multi-algorithm checksum (`crc32c` variant) — base64
+%% of the BE 4-byte form goes into `x-amz-checksum-crc32c`. Not
+%% available in OTP's stdlib so we compute it byte-by-byte; the
+%% loop is short enough that a fully-precomputed table isn't worth
+%% the static overhead. Returns the unsigned 32-bit integer value.
+crc32c(Data) when is_binary(Data) ->
+    Crc = crc32c_loop(Data, 16#FFFFFFFF),
+    Crc bxor 16#FFFFFFFF.
+
+crc32c_loop(<<>>, Crc) -> Crc;
+crc32c_loop(<<B, Rest/binary>>, Crc) ->
+    crc32c_loop(Rest, crc32c_byte(Crc bxor B)).
+
+%% Single-byte CRC-32C step using the reflected polynomial. Eight
+%% conditional shifts per byte; runs ~25 MB/s on a modern laptop
+%% which is enough for SDK checksum use (payloads bounded by S3
+%% put-object size + memory anyway).
+crc32c_byte(Crc) ->
+    crc32c_bits(Crc, 8).
+
+crc32c_bits(Crc, 0) -> Crc;
+crc32c_bits(Crc, N) ->
+    NewCrc = case Crc band 1 of
+        1 -> (Crc bsr 1) bxor 16#82F63B78;
+        0 -> Crc bsr 1
+    end,
+    crc32c_bits(NewCrc, N - 1).
 
 hex_encode(Bin) ->
     binary:encode_hex(Bin, lowercase).

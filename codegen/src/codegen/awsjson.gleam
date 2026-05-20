@@ -18,13 +18,17 @@
 import codegen/client
 import codegen/code
 import codegen/dispatcher
+import codegen/error_dispatch
 import codegen/named_shapes
+import codegen/paginator
+import codegen/rest_request
 import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
-  type MemberDef, type Resolved, REnum, RIntEnum, RList, RMap, RStruct, RUnion,
+  type MemberDef, type Resolved, REnum, RIntEnum, RList, RMap, RStreamingBlob,
+  RStruct, RUnion,
 }
-import gleam/dict
+import codegen/waiter
 import gleam/list
 import gleam/option
 import gleam/set.{type Set}
@@ -69,12 +73,35 @@ pub fn emit_service(
     Ok(shape.Service(operations: refs, traits: svc_traits, ..)) -> {
       let service_target = strip_namespace(service_id)
       let metadata = trait_helpers.service_metadata(svc_traits, service_target)
+      // Protocol-test corpora declare multiple service shapes per
+      // file (e.g. awsJson1_0 carries `JsonRpc10` + the secondary
+      // `QueryCompatibleJsonRpc10`). Union the secondary services'
+      // ops in so the dispatcher table covers every
+      // `httpRequestTests` case — no-op for real-world models which
+      // have exactly one service per file. Each pair carries the
+      // op's source service ID so X-Amz-Target (which prefixes the
+      // service shape name) + `x-amzn-query-mode` resolve against
+      // the op's own service rather than the dominant.
+      let protocol_trait_id = case protocol {
+        AwsJson10 -> "aws.protocols#awsJson1_0"
+        AwsJson11 -> "aws.protocols#awsJson1_1"
+      }
+      let annotated_refs =
+        list.append(
+          list.map(refs, fn(r) { #(r, service_id) }),
+          trait_helpers.secondary_service_op_refs(
+            model,
+            service_id,
+            protocol_trait_id,
+          ),
+        )
       // Walk each operation's input / output; keep only ops whose
       // shapes resolve cleanly (no Unsupported anywhere). Each entry
       // also carries the operation's `errors` list (Smithy error
       // shape IDs) so the per-op typed-error enum can be emitted.
       let resolved_ops =
-        list.filter_map(refs, fn(ref) {
+        list.filter_map(annotated_refs, fn(pair) {
+          let #(ref, src_service_id) = pair
           let ShapeId(target) = ref.target
           case model.lookup(model, target) {
             Ok(shape.Operation(
@@ -96,9 +123,26 @@ pub fn emit_service(
                       t
                     })
                   let requires_md5 = trait_helpers.op_requires_md5(ts)
+                  let paginated = trait_helpers.paginated_trait(ts)
+                  let waiters = trait_helpers.waitable_traits(ts)
+                  let host_prefix_info =
+                    extract_host_prefix_info(model, ts, in_id)
+                  let compression_encodings =
+                    trait_helpers.request_compression_encodings(ts)
                   case types.is_supported(in_r), types.is_supported(out_r) {
                     True, True ->
-                      Ok(#(target, in_r, out_r, err_ids, requires_md5))
+                      Ok(#(
+                        target,
+                        in_r,
+                        out_r,
+                        err_ids,
+                        requires_md5,
+                        paginated,
+                        waiters,
+                        host_prefix_info,
+                        src_service_id,
+                        compression_encodings,
+                      ))
                     _, _ -> Error(Nil)
                   }
                 }
@@ -119,15 +163,38 @@ pub fn emit_service(
       let preamble =
         emit_named_shapes(model, named_shapes, is_dispatcher, encoder_reachable)
 
+      let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, in_r, out_r, err_ids, requires_md5) = t
+          let #(
+            op_id,
+            in_r,
+            out_r,
+            err_ids,
+            requires_md5,
+            paginated,
+            waiters,
+            host_prefix_info,
+            src_service_id,
+            compression_encodings,
+          ) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info =
             resolve_io_type(model, name_concat([local, "Input"]), in_r)
           let out_info =
             resolve_io_type(model, name_concat([local, "Output"]), out_r)
+          let pagination_info =
+            paginator.info_for(
+              members_in: in_info.members,
+              members_out: out_info.members,
+              trait: paginated,
+            )
+          let query_compatible =
+            trait_helpers.awsjson_query_compatible_for_service(
+              model,
+              src_service_id,
+            )
           OpSpec(
             op_id: op_id,
             local: local,
@@ -136,6 +203,13 @@ pub fn emit_service(
             out_info: out_info,
             error_ids: err_ids,
             requires_md5: requires_md5,
+            error_type: trait_helpers.op_error_type(local, emitted_type_names),
+            pagination_info: pagination_info,
+            waiters: waiters,
+            host_prefix_info: host_prefix_info,
+            source_service_local: strip_namespace(src_service_id),
+            query_compatible: query_compatible,
+            compression_encodings: compression_encodings,
           )
         })
       let op_blocks =
@@ -143,13 +217,28 @@ pub fn emit_service(
           emit_operation_with(spec, service_target, protocol, is_dispatcher)
         })
       let client_block = emit_client(metadata)
-      let invoke_blocks = list.map(op_specs, emit_invoke)
+      let invoke_blocks =
+        list.map(op_specs, fn(s) { emit_invoke(model, s, emitted_type_names) })
+      let paginate_blocks = list.map(op_specs, emit_paginator)
+      let waiter_blocks = list.map(op_specs, emit_waiter)
+      let unique_err_ids =
+        op_specs
+        |> list.flat_map(fn(s) { s.error_ids })
+        |> error_dispatch.dedupe_strings
+      let err_shape_blocks =
+        list.map(unique_err_ids, fn(err_id) {
+          let local = strip_namespace(err_id)
+          error_dispatch.emit_parse_fn(local, local)
+        })
       let body_content =
         string.concat([
           client_block,
           preamble,
           string.concat(op_blocks),
           string.concat(invoke_blocks),
+          string.concat(paginate_blocks),
+          string.concat(waiter_blocks),
+          string.concat(err_shape_blocks),
         ])
       let body =
         string.concat([
@@ -157,20 +246,25 @@ pub fn emit_service(
           "\n",
           body_content,
         ])
-      let dispatcher_specs =
+      let op_dispatcher_specs =
         list.map(op_specs, fn(s) {
           dispatcher.DispatcherSpec(
             op_id: s.op_id,
             snake: s.snake,
             input_type: s.in_info.type_name,
             has_typed_input: is_dispatcher,
+            is_error_shape: False,
           )
         })
+      let err_dispatcher_specs =
+        error_dispatch.dispatcher_specs(unique_err_ids, strip_namespace)
+      let dispatcher_specs =
+        list.append(op_dispatcher_specs, err_dispatcher_specs)
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
         operations_emitted: list.map(resolved_ops, fn(t) {
-          let #(op_id, _, _, _, _) = t
+          let #(op_id, _, _, _, _, _, _, _, _, _) = t
           op_id
         }),
         dispatcher_specs: dispatcher_specs,
@@ -195,7 +289,70 @@ type OpSpec {
     /// The emitter appends a `Content-MD5: base64(md5(body))` step
     /// at the end of the generated `build_<op>_request`.
     requires_md5: Bool,
+    /// The Gleam type name to use for this operation's typed error
+    /// sum. Normally `<OpLocal>Error`, but if a Smithy structure with
+    /// that exact name already exists in the service, falls back to
+    /// `<OpLocal>OperationError` to avoid duplicate type definitions.
+    error_type: String,
+    /// Pagination plumbing extracted from `smithy.api#paginated`.
+    /// `Some(_)` ⇒ emit a `paginate_<op>` wrapper; `None` ⇒ skip.
+    pagination_info: option.Option(paginator.PaginationInfo),
+    /// Waiters extracted from `smithy.waiters#waitable`. Empty when
+    /// the op carries no waiter or every declared waiter used a
+    /// matcher the v1 codegen doesn't support (dropped at trait-
+    /// parse time).
+    waiters: List(trait_helpers.WaiterDef),
+    /// `@smithy.api#endpoint.hostPrefix` template + the input's
+    /// `@hostLabel` members. `Some(_)` ⇒ emit a validator + route
+    /// through `runtime.invoke_with_endpoint_params_and_host_prefix`.
+    host_prefix_info: option.Option(client.HostPrefixInfo),
+    /// Local name of the service this op declares membership in.
+    /// Distinct from the *dominant* service's local name only inside
+    /// protocol-test corpora that merge multiple services per file —
+    /// real-world models always match. Used as the X-Amz-Target
+    /// shape-name prefix; awsJson dispatches `<source>.<Op>`.
+    source_service_local: String,
+    /// `True` iff the source service carries
+    /// `aws.protocols#awsQueryCompatible`. When set, the emitted
+    /// `build_<op>_request` adds `x-amzn-query-mode: true` to the
+    /// request headers — required for the QueryCompatible test
+    /// service in awsJson1_0's corpus and would also fire on any
+    /// production query-compat service.
+    query_compatible: Bool,
+    /// Encodings from `smithy.api#requestCompression.encodings`. When
+    /// non-empty, `emit_build` threads them through
+    /// `rest_request.emit_content_encoding` so the body is gzipped
+    /// (above the 10 KiB threshold) and the `Content-Encoding` /
+    /// recomputed `Content-Length` headers are set. Mirrors the
+    /// restJson / restXml path landed in commit 1fda7ff.
+    compression_encodings: List(String),
   )
+}
+
+/// Read `@smithy.api#endpoint.hostPrefix` + the input's `@hostLabel`
+/// members. Mirrors the helper in the restxml emitter.
+fn extract_host_prefix_info(
+  model: Model,
+  op_traits: shape.Traits,
+  in_id: String,
+) -> option.Option(client.HostPrefixInfo) {
+  case trait_helpers.endpoint_host_prefix(op_traits) {
+    option.None -> option.None
+    option.Some(template) -> {
+      let labels = case model.lookup(model, in_id) {
+        Ok(shape.Structure(members: m, ..)) ->
+          trait_helpers.host_label_member_names(m)
+          |> list.map(fn(name) {
+            client.HostLabelBinding(
+              member_pascal: name,
+              member_snake: stringutils.pascal_to_snake(name),
+            )
+          })
+        _ -> []
+      }
+      option.Some(client.HostPrefixInfo(template: template, labels: labels))
+    }
+  }
 }
 
 // `Metadata`, `service_metadata`, `string_field_under` live in
@@ -206,39 +363,136 @@ fn emit_client(metadata: trait_helpers.Metadata) -> String {
     metadata.endpoint_prefix,
     metadata.signing_name,
     metadata.endpoint_rule_set_json,
+    metadata.endpoint_param_setters,
   )
 }
 
-fn emit_invoke(spec: OpSpec) -> String {
-  let err_type = name_concat([spec.local, "Error"])
-  code.render(
-    code.Module(items: [
-      code.DocComment([
-        name_concat([
-          "Invoke ",
-          spec.local,
-          ". Signs the request with SigV4 and dispatches via the configured",
-        ]),
-        name_concat([
-          "HTTP transport. Service errors come back as typed `",
-          err_type,
-          "`",
-        ]),
-        "variants; transport, decode, and credentials failures all collapse",
-        name_concat([
-          "into the generic `",
-          err_type,
-          "Transport` variant.",
-        ]),
-      ]),
-      client.invoke_fn(
-        spec.snake,
+fn emit_paginator(spec: OpSpec) -> String {
+  paginator.emit(
+    snake: spec.snake,
+    input_type: spec.in_info.type_name,
+    error_type: spec.error_type,
+    info: spec.pagination_info,
+  )
+}
+
+fn emit_waiter(spec: OpSpec) -> String {
+  waiter.emit(
+    op_snake: spec.snake,
+    input_type: spec.in_info.type_name,
+    error_type: spec.error_type,
+    waiters: spec.waiters,
+    known_error_locals: known_error_locals(spec.error_ids),
+  )
+}
+
+/// Set of stripped-namespace locals for every error shape the op
+/// declared. Used by the waiter emitter to decide whether an
+/// `errorType` acceptor maps to a typed variant or the
+/// `<Op>ErrorUnknown` fall-through.
+fn known_error_locals(error_ids: List(String)) -> Set(String) {
+  list.fold(error_ids, set.new(), fn(acc, id) {
+    set.insert(acc, strip_namespace(id))
+  })
+}
+
+fn emit_invoke(
+  model: Model,
+  spec: OpSpec,
+  emitted_type_names: Set(String),
+) -> String {
+  let err_type = spec.error_type
+  let doc =
+    code.DocComment([
+      name_concat([
+        "Invoke ",
         spec.local,
-        spec.in_info.type_name,
-        spec.out_info.type_name,
-      ),
+        ". Signs the request with SigV4 and dispatches via the configured",
+      ]),
+      name_concat([
+        "HTTP transport. Service errors come back as typed `",
+        err_type,
+        "`",
+      ]),
+      "variants; transport, decode, and credentials failures all collapse",
+      name_concat([
+        "into the generic `",
+        err_type,
+        "Transport` variant.",
+      ]),
+    ])
+  let base =
+    client.invoke_fn(
+      spec.snake,
+      spec.in_info.type_name,
+      spec.out_info.type_name,
+      spec.error_type,
+      spec.host_prefix_info,
+    )
+  let host_prefix_validator = case spec.host_prefix_info {
+    option.None -> []
+    option.Some(info) -> [
       code.Blank,
-    ]),
+      client.host_prefix_validator_fn(spec.snake, spec.in_info.type_name, info),
+    ]
+  }
+  // Same `@streaming` blob detection as restjson/restxml — awsJson
+  // services that carry streaming-blob output members (rare but
+  // possible) get the streaming-side wrapper too.
+  let streaming_blob_items = case
+    list.any(spec.out_info.members, fn(m) { m.target == RStreamingBlob })
+  {
+    True -> [
+      code.Blank,
+      client.invoke_streaming_fn(spec.snake, spec.in_info.type_name),
+    ]
+    False -> []
+  }
+  // Streaming-union (event-stream) detection — Kinesis
+  // SubscribeToShard, DynamoDB Streams subscribers, etc. all flow
+  // through awsJson. Emit a `<op>_event_stream` framing wrapper
+  // and a typed `parse_<op>_event(event)` that dispatches on the
+  // `:event-type` header into the matching union variant.
+  let event_stream_items = case
+    types.streaming_union_in_members(model, spec.out_info.members)
+  {
+    option.Some(#(union_local, _union_id, union_members)) -> {
+      let variants =
+        list.map(union_members, fn(m) {
+          let target_local = case m.target {
+            RStruct(local_name: ln, ..) -> ln
+            _ -> ""
+          }
+          client.EventParserVariant(
+            wire_name: m.member_name,
+            variant_ctor: stringutils.union_variant_ctor(
+              union_local,
+              m.member_name,
+              emitted_type_names,
+            ),
+            decoder_fn: "decode_"
+              <> stringutils.pascal_to_snake(target_local)
+              <> "_struct",
+          )
+        })
+      [
+        code.Blank,
+        client.invoke_event_stream_fn(spec.snake, spec.in_info.type_name),
+        code.Blank,
+        client.event_parser_fn(spec.snake, union_local, variants),
+      ]
+    }
+    option.None -> []
+  }
+  code.render(
+    code.Module(
+      items: list.flatten([
+        [doc, base, code.Blank],
+        host_prefix_validator,
+        streaming_blob_items,
+        event_stream_items,
+      ]),
+    ),
   )
 }
 
@@ -268,12 +522,25 @@ fn resolve_or_unit(model: Model, id: String) -> Resolved {
 /// detection via a seen-set keyed on the local Gleam name.
 fn collect_named_shapes(
   model: Model,
-  ops: List(#(String, Resolved, Resolved, List(String), Bool)),
+  ops: List(
+    #(
+      String,
+      Resolved,
+      Resolved,
+      List(String),
+      Bool,
+      option.Option(trait_helpers.PaginatedTrait),
+      List(trait_helpers.WaiterDef),
+      option.Option(client.HostPrefixInfo),
+      String,
+      List(String),
+    ),
+  ),
 ) -> List(Resolved) {
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_op_id, in_r, out_r, err_ids, _) = t
+      let #(_op_id, in_r, out_r, err_ids, _, _, _, _, _, _) = t
       let acc = walk(model, acc, in_r)
       let acc = walk(model, acc, out_r)
       list.fold(err_ids, acc, fn(a, err_id) {
@@ -336,10 +603,23 @@ fn remember(
 /// targets, since the dispatcher round-trips through encoders too.
 fn input_reachable_structs(
   model: Model,
-  resolved_ops: List(#(String, Resolved, Resolved, List(String), Bool)),
+  resolved_ops: List(
+    #(
+      String,
+      Resolved,
+      Resolved,
+      List(String),
+      Bool,
+      option.Option(trait_helpers.PaginatedTrait),
+      List(trait_helpers.WaiterDef),
+      option.Option(client.HostPrefixInfo),
+      String,
+      List(String),
+    ),
+  ),
 ) -> Set(String) {
   list.fold(resolved_ops, set.new(), fn(acc, t) {
-    let #(_, in_r, _, _, _) = t
+    let #(_, in_r, _, _, _, _, _, _, _, _) = t
     walk_for_structs(model, acc, in_r)
   })
 }
@@ -391,6 +671,7 @@ fn emit_named_shapes(
   is_dispatcher: Bool,
   encoder_reachable: Set(String),
 ) -> String {
+  let emitted_type_names = named_shapes.emitted_type_names(shapes)
   shapes
   |> list.flat_map(fn(r) {
     case r {
@@ -403,23 +684,42 @@ fn emit_named_shapes(
         emit_int_enum_codec(n, vs),
       ]
       RStruct(gleam_name: n, full_id: id, local_name: ln, ..) ->
-        case ln == "Unit" {
-          // The synthetic Unit struct is per-operation, not a top-level
-          // named type — skip in the preamble.
-          True -> []
+        case id == "smithy.api#Unit" {
+          // The synthetic Unit struct stands in for `smithy.api#Unit`
+          // at operation input/output position and is materialised
+          // per-op (as `<OpName>Input` / `<OpName>Output`), not as a
+          // top-level type. User-defined shapes that happen to be
+          // named `Unit` (e.g. `com.amazonaws.datazone#Unit`) must
+          // still emit normally — that's why we key the sentinel on
+          // the full Smithy ID, not just `local_name`.
+          True -> {
+            let _ = #(n, ln)
+            []
+          }
           False -> {
             let ms = types.resolve_members(model, id)
-            let emit_encoder =
-              is_dispatcher || set.contains(encoder_reachable, ln)
+            // Always emit the encoder when the struct appears as a
+            // top-level named shape. Output-only structs that don't
+            // appear in any union variant still get one — the cost is
+            // a handful of dead encoders, but the previous
+            // input-reachable gating produced dangling
+            // `encode_<X>_struct` references whenever a union variant
+            // wrapped an output-only struct (e.g. SSM's
+            // `ExecutionPreview` union over
+            // `AutomationExecutionPreview`).
+            let _ = encoder_reachable
             [
               emit_record_def(n, ms),
-              emit_struct_codec(n, ms, is_dispatcher, emit_encoder),
+              emit_struct_codec(n, ms, is_dispatcher, True),
             ]
           }
         }
       RUnion(gleam_name: n, full_id: id, ..) -> {
         let ms = types.resolve_members(model, id)
-        [emit_union_def(n, ms), emit_union_codec(n, ms, is_dispatcher)]
+        [
+          emit_union_def(n, ms, emitted_type_names),
+          emit_union_codec(n, ms, is_dispatcher, emitted_type_names),
+        ]
       }
       _ -> []
     }
@@ -431,13 +731,16 @@ fn emit_named_shapes(
 
 fn emit_operation_with(
   spec: OpSpec,
-  service_target: String,
+  _service_target: String,
   protocol: Protocol,
   is_dispatcher: Bool,
 ) -> String {
   let snake = spec.snake
   let local_name = spec.local
-  let target_value = name_concat([service_target, ".", local_name])
+  // X-Amz-Target uses the *source* service's shape name, not the
+  // dominant's — secondary-service ops merged into the dominant
+  // module still dispatch against their own service prefix.
+  let target_value = name_concat([spec.source_service_local, ".", local_name])
   let ct = content_type(protocol)
   let in_info = spec.in_info
   let out_info = spec.out_info
@@ -450,6 +753,8 @@ fn emit_operation_with(
       out_info,
       is_dispatcher,
       spec.requires_md5,
+      spec.query_compatible,
+      spec.compression_encodings,
     ),
     emit_error_type(spec),
     emit_error_translator(spec),
@@ -462,7 +767,7 @@ fn emit_operation_with(
 /// `Unknown(error_type, status, body)` for service errors we don't
 /// have a typed variant for.
 fn emit_error_type(spec: OpSpec) -> String {
-  let name = name_concat([spec.local, "Error"])
+  let name = spec.error_type
   let typed_variants =
     list.map(spec.error_ids, fn(err_id) {
       let local = strip_namespace(err_id)
@@ -506,7 +811,7 @@ fn emit_error_type(spec: OpSpec) -> String {
 /// identical across protocols, since the translator helper lives in
 /// the shared runtime.
 fn emit_error_translator(spec: OpSpec) -> String {
-  let name = name_concat([spec.local, "Error"])
+  let name = spec.error_type
   let snake = spec.snake
   let decoder_entries =
     list.map(spec.error_ids, fn(err_id) {
@@ -588,6 +893,8 @@ fn emit_operation_body(
   out_info: IOTypeInfo,
   is_dispatcher: Bool,
   requires_md5: Bool,
+  query_compatible: Bool,
+  compression_encodings: List(String),
 ) -> String {
   // For Unit input/output we synthesise a singleton type + codec at
   // the op level. The synth input encoder is wire-live (called via
@@ -714,7 +1021,15 @@ fn emit_operation_body(
     )
 
   let build =
-    emit_build(in_info.type_name, snake, target_value, ct, requires_md5)
+    emit_build(
+      in_info.type_name,
+      snake,
+      target_value,
+      ct,
+      requires_md5,
+      query_compatible,
+      compression_encodings,
+    )
   let parse = emit_parse(out_info.type_name, snake)
   string.concat([
     "\n",
@@ -809,8 +1124,15 @@ fn emit_int_enum_def(
   string.concat([code.render(named_shapes.int_enum_def(name, variants)), "\n"])
 }
 
-fn emit_union_def(name: String, members: List(MemberDef)) -> String {
-  string.concat([code.render(named_shapes.union_def(name, members)), "\n"])
+fn emit_union_def(
+  name: String,
+  members: List(MemberDef),
+  emitted: Set(String),
+) -> String {
+  string.concat([
+    code.render(named_shapes.union_def(name, members, emitted)),
+    "\n",
+  ])
 }
 
 // ---------- encoder helpers ----------
@@ -1026,6 +1348,7 @@ fn emit_union_codec(
   name: String,
   members: List(MemberDef),
   is_dispatcher: Bool,
+  emitted: Set(String),
 ) -> String {
   let snake = stringutils.pascal_to_snake(name)
   let enc =
@@ -1038,7 +1361,7 @@ fn emit_union_codec(
         scrutinee: code.Ident(name: "v"),
         branches: list.map(members, fn(m) {
           let ctor =
-            name_concat([name, stringutils.pascalize_member(m.member_name)])
+            stringutils.union_variant_ctor(name, m.member_name, emitted)
           code.Branch(
             pattern: name_concat([ctor, "(x)"]),
             body: code.Call(head: code.Ident(name: "json.object"), args: [
@@ -1069,7 +1392,9 @@ fn emit_union_codec(
       name: name_concat(["decode_", snake, "_union"]),
       params: [],
       return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-      body: union_decoder_body(name, members, emit_union_branch),
+      body: union_decoder_body(name, members, fn(union_name, m) {
+        emit_union_branch(union_name, m, emitted)
+      }),
     )
   let dec_params_items = case is_dispatcher {
     True -> [
@@ -1079,7 +1404,9 @@ fn emit_union_codec(
         name: name_concat(["decode_", snake, "_union_params"]),
         params: [],
         return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-        body: union_decoder_body(name, members, emit_union_branch_params),
+        body: union_decoder_body(name, members, fn(union_name, m) {
+          emit_union_branch_params(union_name, m, emitted)
+        }),
       ),
       code.Blank,
     ]
@@ -1123,9 +1450,12 @@ fn union_decoder_body(
   }
 }
 
-fn emit_union_branch(union_name: String, m: MemberDef) -> code.Code {
-  let ctor =
-    name_concat([union_name, stringutils.pascalize_member(m.member_name)])
+fn emit_union_branch(
+  union_name: String,
+  m: MemberDef,
+  emitted: Set(String),
+) -> code.Code {
+  let ctor = stringutils.union_variant_ctor(union_name, m.member_name, emitted)
   code.Call(head: code.Ident(name: "decode.field"), args: [
     code.StrLit(value: m.member_name),
     code.Raw(fragment: types.json_decoder(m.target)),
@@ -1139,9 +1469,12 @@ fn emit_union_branch(union_name: String, m: MemberDef) -> code.Code {
   ])
 }
 
-fn emit_union_branch_params(union_name: String, m: MemberDef) -> code.Code {
-  let ctor =
-    name_concat([union_name, stringutils.pascalize_member(m.member_name)])
+fn emit_union_branch_params(
+  union_name: String,
+  m: MemberDef,
+  emitted: Set(String),
+) -> code.Code {
+  let ctor = stringutils.union_variant_ctor(union_name, m.member_name, emitted)
   code.Call(head: code.Ident(name: "decode.field"), args: [
     code.StrLit(value: m.member_name),
     code.Raw(fragment: types.json_decoder_params(m.target)),
@@ -1161,6 +1494,8 @@ fn emit_build(
   target_value: String,
   ct: String,
   requires_md5: Bool,
+  query_compatible: Bool,
+  compression_encodings: List(String),
 ) -> String {
   let body_str_let =
     code.Let(
@@ -1177,27 +1512,39 @@ fn emit_build(
         code.Ident(name: "body_str"),
       ]),
     )
+  let base_header_items = [
+    code.Tuple(items: [
+      code.StrLit(value: "Content-Type"),
+      code.StrLit(value: ct),
+    ]),
+    code.Tuple(items: [
+      code.StrLit(value: "Content-Length"),
+      code.Raw(fragment: "int.to_string(bit_array.byte_size(body))"),
+    ]),
+    code.Tuple(items: [
+      code.StrLit(value: "X-Amz-Target"),
+      code.StrLit(value: target_value),
+    ]),
+  ]
+  // `aws.protocols#awsQueryCompatible` services flip every request
+  // into `x-amzn-query-mode: true` so the server's query-compat
+  // dispatcher routes the body. Mirrors the cbor_rpc emitter's
+  // handling at the rpcv2Cbor protocol level.
+  let header_items = case query_compatible {
+    True ->
+      list.append(base_header_items, [
+        code.Tuple(items: [
+          code.StrLit(value: "x-amzn-query-mode"),
+          code.StrLit(value: "true"),
+        ]),
+      ])
+    False -> base_header_items
+  }
   let headers_let =
     code.Let(
       name: "headers",
       value: code.Call(head: code.Ident(name: "dict.from_list"), args: [
-        code.ListLit(
-          items: [
-            code.Tuple(items: [
-              code.StrLit(value: "Content-Type"),
-              code.StrLit(value: ct),
-            ]),
-            code.Tuple(items: [
-              code.StrLit(value: "Content-Length"),
-              code.Raw(fragment: "int.to_string(bit_array.byte_size(body))"),
-            ]),
-            code.Tuple(items: [
-              code.StrLit(value: "X-Amz-Target"),
-              code.StrLit(value: target_value),
-            ]),
-          ],
-          tail: code.CodeNone,
-        ),
+        code.ListLit(items: header_items, tail: code.CodeNone),
       ]),
     )
   // `@httpChecksumRequired` operations land a final `let headers =
@@ -1220,6 +1567,13 @@ fn emit_build(
     ]
     False -> []
   }
+  // `smithy.api#requestCompression` — same plumbing the rest emitters
+  // use (commit 1fda7ff). `rest_request.emit_content_encoding` returns
+  // a chain of lets that re-bind `body` to the (possibly gzipped)
+  // BitArray and update `Content-Encoding` / `Content-Length` headers
+  // only when compression actually applied (body ≥ 10 KiB).
+  let compression_step =
+    rest_request.emit_content_encoding(compression_encodings)
   let return_tuple =
     code.Tuple(items: [
       code.StrLit(value: "POST"),
@@ -1240,6 +1594,7 @@ fn emit_build(
           items: list.flatten([
             [body_str_let, body_let, headers_let],
             md5_step,
+            compression_step,
             [return_tuple],
           ]),
         ),
@@ -1310,14 +1665,17 @@ fn name_concat(parts: List(String)) -> String {
 
 /// Operation-level traits the emitter doesn't yet honour. Emitting code
 /// for these would produce wrong-on-the-wire requests.
-fn op_uses_unsupported_trait(traits: shape.Traits) -> Bool {
-  // `smithy.api#httpChecksumRequired` is no longer in the skip list —
-  // `emit_build` appends a `rest.with_content_md5_header` step when
-  // the trait is present. `smithy.api#requestCompression` is
-  // genuinely unsupported (no gzip middleware yet).
-  dict.has_key(traits, ShapeId("smithy.api#requestCompression"))
+///
+/// `smithy.api#httpChecksumRequired` is no longer here — `emit_build`
+/// appends a `rest.with_content_md5_header` step when the trait is
+/// present. `smithy.api#requestCompression` is no longer here either:
+/// `emit_build` threads the encodings through `rest_request.emit_
+/// content_encoding`, which mirrors the rest-protocol path
+/// (commit 1fda7ff). awsJson uses the same `compression.maybe_compress`
+/// helper that gzips bodies above the 10 KiB threshold.
+fn op_uses_unsupported_trait(_traits: shape.Traits) -> Bool {
+  False
 }
-
 
 /// Build the module-doc + import block as a `code.Module` AST. The
 /// body itself is still raw string concatenation (each
@@ -1334,12 +1692,18 @@ fn file_header(service_id: String, protocol: Protocol, body: String) -> String {
     #("aws/credentials", "credentials.", code.CodeNone),
     #("aws/endpoints", "endpoints.", code.CodeNone),
     #("aws/internal/credentials_cache", "credentials_cache.", code.CodeNone),
+    #("aws/pagination", "pagination.", code.CodeNone),
+    #("aws/waiter", "waiter.", code.CodeNone),
     #("aws/region", "region.", code.CodeNone),
     #("aws/internal/client/runtime", "runtime.", code.CodeSome("runtime")),
+    #("aws/internal/codec/compression", "compression.", code.CodeNone),
+    #("aws/internal/codec/event_stream", "event_stream.", code.CodeNone),
     #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
+    #("aws/internal/codec/rest", "rest.", code.CodeNone),
     #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
     #("aws/internal/codec/json_timestamp", "json_timestamp.", code.CodeNone),
     #("aws/internal/http_send", "http_send.", code.CodeNone),
+    #("aws/streaming", "streaming.", code.CodeNone),
     #("gleam/bit_array", "bit_array.", code.CodeNone),
     #("gleam/dict", "dict.", code.CodeNone),
     #("gleam/dynamic/decode", "decode.", code.CodeNone),
@@ -1348,6 +1712,7 @@ fn file_header(service_id: String, protocol: Protocol, body: String) -> String {
     #("gleam/list", "list.", code.CodeNone),
     #("gleam/option", "option.", code.CodeNone),
     #("gleam/result", "result.", code.CodeNone),
+    #("gleam/string", "string.", code.CodeNone),
   ]
   let used =
     candidates

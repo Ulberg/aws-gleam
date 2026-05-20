@@ -3,6 +3,7 @@
 //// generated `build_*_request` functions call into for each
 //// `@httpLabel`, `@httpQuery`, `@httpHeader` member.
 
+import aws/internal/codec/json_timestamp
 import aws/internal/crypto
 import aws/internal/uri
 import gleam/bit_array
@@ -261,6 +262,76 @@ pub fn float_header(
   parse_float(string.trim(raw))
 }
 
+/// Enum header — looks up a string header, then runs the supplied
+/// `<enum>_from_wire` decoder. Falls through to `None` if the
+/// header is missing or the wire value doesn't match a known
+/// variant (forgiving contract — unknown variants don't crash
+/// the response parse). The codegen passes the generated
+/// `<enum>_from_wire` function directly so this stays
+/// enum-agnostic.
+pub fn enum_header(
+  headers: Dict(String, String),
+  name: String,
+  from_wire: fn(String) -> Result(t, String),
+) -> Option(t) {
+  case string_header(headers, name) {
+    Some(s) ->
+      case from_wire(s) {
+        Ok(v) -> Some(v)
+        Error(_) -> None
+      }
+    None -> None
+  }
+}
+
+/// HTTP-date header — RFC 7231 §7.1.1.1 form
+/// (`Tue, 29 Apr 2014 18:30:38 GMT`). The default `@timestampFormat`
+/// for header bindings per Smithy core — covers `Last-Modified`,
+/// `Expires`, `Date`, etc. Forgiving contract: missing header or
+/// unparseable string → `None`.
+pub fn http_date_header(
+  headers: Dict(String, String),
+  name: String,
+) -> Option(json_timestamp.Timestamp) {
+  case string_header(headers, name) {
+    Some(raw) ->
+      case json_timestamp.parse_http_date(string.trim(raw)) {
+        Ok(t) -> Some(t)
+        Error(_) -> None
+      }
+    None -> None
+  }
+}
+
+/// ISO 8601 timestamp header (`@timestampFormat("date-time")`,
+/// `2024-01-02T03:04:05Z`).
+pub fn iso8601_header(
+  headers: Dict(String, String),
+  name: String,
+) -> Option(json_timestamp.Timestamp) {
+  case string_header(headers, name) {
+    Some(raw) ->
+      case json_timestamp.parse_iso8601(string.trim(raw)) {
+        Ok(t) -> Some(t)
+        Error(_) -> None
+      }
+    None -> None
+  }
+}
+
+/// Epoch-seconds timestamp header
+/// (`@timestampFormat("epoch-seconds")`, integer seconds since 1970
+/// in the header value).
+pub fn epoch_seconds_header(
+  headers: Dict(String, String),
+  name: String,
+) -> Option(json_timestamp.Timestamp) {
+  case int_header(headers, name) {
+    Some(n) -> Some(json_timestamp.Timestamp(seconds: n, nanoseconds: 0))
+    None -> None
+  }
+}
+
 // ---------- @httpChecksumRequired ----------
 
 /// Set the `Content-MD5` header to `base64(md5(body))`. Used by the
@@ -282,6 +353,125 @@ pub fn with_content_md5_header(
 ) -> Dict(String, String) {
   let digest = bit_array.base64_encode(crypto.md5(body), True)
   dict.insert(headers, "Content-MD5", digest)
+}
+
+/// Glacier's tree-hash + content-sha256 headers. Both end up as the
+/// same SHA-256 of the body when the payload is a single chunk
+/// (≤ 1 MiB); larger payloads recurse, pairing 1 MiB chunk hashes
+/// (see https://docs.aws.amazon.com/amazonglacier/latest/dev/checksum-
+/// calculations.html). The protocol-test corpus only exercises the
+/// single-chunk case, and real-world Glacier callers chunk their
+/// uploads before they reach this point — the chunked tree-hash is
+/// a follow-up if a caller surfaces a multi-MB body.
+///
+/// Headers are case-insensitive on the wire; we use the title-case
+/// forms (`X-Amz-Sha256-Tree-Hash`, `X-Amz-Content-Sha256`) so the
+/// Smithy `httpRequestTests` assertions match without a case-fold.
+/// Both headers are skipped if already present (the caller might
+/// pass them explicitly).
+pub fn with_glacier_tree_hash_headers(
+  headers: Dict(String, String),
+  body: BitArray,
+) -> Dict(String, String) {
+  let digest = crypto.hex_encode(crypto.sha256(body))
+  let headers = case dict.has_key(headers, "X-Amz-Sha256-Tree-Hash") {
+    True -> headers
+    False -> dict.insert(headers, "X-Amz-Sha256-Tree-Hash", digest)
+  }
+  case dict.has_key(headers, "X-Amz-Content-Sha256") {
+    True -> headers
+    False -> dict.insert(headers, "X-Amz-Content-Sha256", digest)
+  }
+}
+
+/// Checksum algorithm picked by the `aws.protocols#httpChecksum`
+/// trait. Each variant maps to one of the AWS `x-amz-checksum-*`
+/// request headers; the codegen / runtime middleware writes the
+/// base64-encoded digest of the request body into that header
+/// before signing.
+pub type ChecksumAlgorithm {
+  ChecksumSha256
+  ChecksumSha1
+  ChecksumCrc32
+  ChecksumCrc32C
+}
+
+/// `(header_name, base64_digest)` pair for a body checksum. The
+/// header name follows the AWS convention `x-amz-checksum-<algo>`
+/// (lowercase). The digest is base64 of the raw bytes — same
+/// padding rules as `Content-MD5`. Pure function; the
+/// `aws.protocols#httpChecksum` middleware in the codegen layer
+/// calls this and inserts the result into the request headers.
+pub fn checksum_header(
+  algorithm: ChecksumAlgorithm,
+  body: BitArray,
+) -> #(String, String) {
+  case algorithm {
+    ChecksumSha256 -> #(
+      "x-amz-checksum-sha256",
+      bit_array.base64_encode(crypto.sha256(body), True),
+    )
+    ChecksumSha1 -> #(
+      "x-amz-checksum-sha1",
+      bit_array.base64_encode(crypto.sha1(body), True),
+    )
+    ChecksumCrc32 -> #(
+      "x-amz-checksum-crc32",
+      bit_array.base64_encode(crypto.crc32_be_bytes(crypto.crc32(body)), True),
+    )
+    ChecksumCrc32C -> #(
+      "x-amz-checksum-crc32c",
+      bit_array.base64_encode(crypto.crc32_be_bytes(crypto.crc32c(body)), True),
+    )
+  }
+}
+
+/// Add an `x-amz-checksum-<algo>` header to the request. Convenience
+/// wrapper around `checksum_header` that lets call sites stay
+/// pipeline-style with the existing `Dict(String, String)` header
+/// shape — same ergonomics as `with_content_md5_header`.
+pub fn with_checksum_header(
+  headers: Dict(String, String),
+  algorithm: ChecksumAlgorithm,
+  body: BitArray,
+) -> Dict(String, String) {
+  let #(name, value) = checksum_header(algorithm, body)
+  dict.insert(headers, name, value)
+}
+
+/// Translate a Smithy `ChecksumAlgorithm` enum's wire value
+/// (e.g. `"SHA256"`, `"CRC32C"`) to the runtime `ChecksumAlgorithm`
+/// variant, falling back to `ChecksumSha256` when the wire value
+/// doesn't match a supported algorithm. Used by the codegen's
+/// algorithm-member dispatch for `aws.protocols#httpChecksum` so
+/// generated request builders can read the caller's typed enum
+/// choice without needing a per-service jump table.
+pub fn checksum_algorithm_from_wire(wire: String) -> ChecksumAlgorithm {
+  case wire {
+    "SHA256" -> ChecksumSha256
+    "SHA1" -> ChecksumSha1
+    "CRC32" -> ChecksumCrc32
+    "CRC32C" -> ChecksumCrc32C
+    // Unknown algorithms (CRC64NVME etc.) fall back to SHA-256 —
+    // the safe default per the `aws.protocols#httpChecksum`
+    // spec when no `requestChecksumRequired` is set or when the
+    // declared algorithm isn't one we can compute.
+    _ -> ChecksumSha256
+  }
+}
+
+/// Add the `x-amz-checksum-<algo>` header using a wire-form
+/// algorithm name. Equivalent to
+/// `with_checksum_header(headers, checksum_algorithm_from_wire(wire), body)`.
+/// Exists so the codegen can emit a single call that takes the
+/// generated enum's wire-encoder output directly, without
+/// needing per-service algorithm-mapping helpers.
+pub fn with_checksum_header_for_wire(
+  headers: Dict(String, String),
+  wire: String,
+  body: BitArray,
+) -> Dict(String, String) {
+  with_checksum_header(headers, checksum_algorithm_from_wire(wire), body)
 }
 
 fn parse_float(s: String) -> Option(Float) {

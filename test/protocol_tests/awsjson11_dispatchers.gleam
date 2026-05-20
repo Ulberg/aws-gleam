@@ -25,8 +25,20 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(null_operation_dispatcher())
   |> dispatch.register(operation_with_optional_input_output_dispatcher())
   |> dispatch.register(put_and_get_inline_documents_dispatcher())
+  |> dispatch.register(put_with_content_encoding_dispatcher())
   |> dispatch.register(simple_scalar_properties_dispatcher())
   |> dispatch.register(sparse_nulls_operation_dispatcher())
+  |> dispatch.register(predict_dispatcher())
+  |> dispatch.register(complex_error_dispatcher())
+  |> dispatch.register(foo_error_dispatcher())
+  |> dispatch.register(invalid_greeting_dispatcher())
+  |> dispatch.register(error_with_members_dispatcher())
+  |> dispatch.register(error_without_members_dispatcher())
+  |> dispatch.register(internal_server_exception_dispatcher())
+  |> dispatch.register(invalid_input_exception_dispatcher())
+  |> dispatch.register(limit_exceeded_exception_dispatcher())
+  |> dispatch.register(predictor_not_mounted_exception_dispatcher())
+  |> dispatch.register(resource_not_found_exception_dispatcher())
 }
 
 fn content_type_parameters_dispatcher() -> Dispatcher {
@@ -350,6 +362,29 @@ fn put_and_get_inline_documents_dispatcher() -> Dispatcher {
   )
 }
 
+fn put_with_content_encoding_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#PutWithContentEncoding",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_put_with_content_encoding_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_put_with_content_encoding_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_put_with_content_encoding_response,
+    ),
+  )
+}
+
 fn simple_scalar_properties_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.json#SimpleScalarProperties",
@@ -389,6 +424,132 @@ fn sparse_nulls_operation_dispatcher() -> Dispatcher {
       }
     },
     parse_response: response_parser(svc.parse_sparse_nulls_operation_response),
+  )
+}
+
+fn predict_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.machinelearning#Predict",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_predict_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) = svc.build_predict_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_predict_response),
+  )
+}
+
+fn complex_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#ComplexError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_complex_error_response),
+  )
+}
+
+fn foo_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#FooError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_foo_error_response),
+  )
+}
+
+fn invalid_greeting_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#InvalidGreeting",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_invalid_greeting_response),
+  )
+}
+
+fn error_with_members_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#ErrorWithMembers",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_error_with_members_response),
+  )
+}
+
+fn error_without_members_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json#ErrorWithoutMembers",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_error_without_members_response),
+  )
+}
+
+fn internal_server_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.machinelearning#InternalServerException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(
+      svc.parse_internal_server_exception_response,
+    ),
+  )
+}
+
+fn invalid_input_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.machinelearning#InvalidInputException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_invalid_input_exception_response),
+  )
+}
+
+fn limit_exceeded_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.machinelearning#LimitExceededException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_limit_exceeded_exception_response),
+  )
+}
+
+fn predictor_not_mounted_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.machinelearning#PredictorNotMountedException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(
+      svc.parse_predictor_not_mounted_exception_response,
+    ),
+  )
+}
+
+fn resource_not_found_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.machinelearning#ResourceNotFoundException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(
+      svc.parse_resource_not_found_exception_response,
+    ),
   )
 }
 

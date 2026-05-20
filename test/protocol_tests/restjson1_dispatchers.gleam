@@ -127,6 +127,34 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(test_post_no_payload_dispatcher())
   |> dispatch.register(timestamp_format_headers_dispatcher())
   |> dispatch.register(unit_input_and_output_dispatcher())
+  |> dispatch.register(malformed_enum_dispatcher())
+  |> dispatch.register(malformed_length_dispatcher())
+  |> dispatch.register(malformed_length_override_dispatcher())
+  |> dispatch.register(malformed_length_query_string_dispatcher())
+  |> dispatch.register(malformed_pattern_dispatcher())
+  |> dispatch.register(malformed_pattern_override_dispatcher())
+  |> dispatch.register(malformed_range_dispatcher())
+  |> dispatch.register(malformed_range_override_dispatcher())
+  |> dispatch.register(malformed_required_dispatcher())
+  |> dispatch.register(malformed_unique_items_dispatcher())
+  |> dispatch.register(recursive_structures_dispatcher())
+  |> dispatch.register(sensitive_validation_dispatcher())
+  |> dispatch.register(upload_archive_dispatcher())
+  |> dispatch.register(upload_multipart_part_dispatcher())
+  |> dispatch.register(get_rest_apis_dispatcher())
+  |> dispatch.register(service_unavailable_error_dispatcher())
+  |> dispatch.register(complex_error_dispatcher())
+  |> dispatch.register(foo_error_dispatcher())
+  |> dispatch.register(invalid_greeting_dispatcher())
+  |> dispatch.register(validation_exception_dispatcher())
+  |> dispatch.register(invalid_parameter_value_exception_dispatcher())
+  |> dispatch.register(missing_parameter_value_exception_dispatcher())
+  |> dispatch.register(request_timeout_exception_dispatcher())
+  |> dispatch.register(resource_not_found_exception_dispatcher())
+  |> dispatch.register(service_unavailable_exception_dispatcher())
+  |> dispatch.register(bad_request_exception_dispatcher())
+  |> dispatch.register(too_many_requests_exception_dispatcher())
+  |> dispatch.register(unauthorized_exception_dispatcher())
 }
 
 fn all_query_string_types_dispatcher() -> Dispatcher {
@@ -2610,6 +2638,471 @@ fn unit_input_and_output_dispatcher() -> Dispatcher {
       }
     },
     parse_response: response_parser(svc.parse_unit_input_and_output_response),
+  )
+}
+
+fn malformed_enum_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson.validation#MalformedEnum",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_enum_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_enum_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_malformed_enum_response),
+  )
+}
+
+fn malformed_length_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson.validation#MalformedLength",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_length_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_length_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_malformed_length_response),
+  )
+}
+
+fn malformed_length_override_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson.validation#MalformedLengthOverride",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_length_override_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_length_override_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_malformed_length_override_response,
+    ),
+  )
+}
+
+fn malformed_length_query_string_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson.validation#MalformedLengthQueryString",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_length_query_string_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_length_query_string_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_malformed_length_query_string_response,
+    ),
+  )
+}
+
+fn malformed_pattern_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson.validation#MalformedPattern",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_pattern_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_pattern_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_malformed_pattern_response),
+  )
+}
+
+fn malformed_pattern_override_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson.validation#MalformedPatternOverride",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_pattern_override_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_pattern_override_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_malformed_pattern_override_response,
+    ),
+  )
+}
+
+fn malformed_range_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson.validation#MalformedRange",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_range_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_range_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_malformed_range_response),
+  )
+}
+
+fn malformed_range_override_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson.validation#MalformedRangeOverride",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_range_override_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_range_override_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_malformed_range_override_response),
+  )
+}
+
+fn malformed_required_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson.validation#MalformedRequired",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_required_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_required_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_malformed_required_response),
+  )
+}
+
+fn malformed_unique_items_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson.validation#MalformedUniqueItems",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_unique_items_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_unique_items_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_malformed_unique_items_response),
+  )
+}
+
+fn recursive_structures_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson.validation#RecursiveStructures",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_recursive_structures_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_recursive_structures_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_recursive_structures_response),
+  )
+}
+
+fn sensitive_validation_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson.validation#SensitiveValidation",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_sensitive_validation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_sensitive_validation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_sensitive_validation_response),
+  )
+}
+
+fn upload_archive_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.glacier#UploadArchive",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_upload_archive_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_upload_archive_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_upload_archive_response),
+  )
+}
+
+fn upload_multipart_part_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.glacier#UploadMultipartPart",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_upload_multipart_part_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_upload_multipart_part_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_upload_multipart_part_response),
+  )
+}
+
+fn get_rest_apis_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.apigateway#GetRestApis",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_get_rest_apis_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_get_rest_apis_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_get_rest_apis_response),
+  )
+}
+
+fn service_unavailable_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#ServiceUnavailableError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(
+      svc.parse_service_unavailable_error_response,
+    ),
+  )
+}
+
+fn complex_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#ComplexError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_complex_error_response),
+  )
+}
+
+fn foo_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#FooError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_foo_error_response),
+  )
+}
+
+fn invalid_greeting_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#InvalidGreeting",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_invalid_greeting_response),
+  )
+}
+
+fn validation_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "smithy.framework#ValidationException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_validation_exception_response),
+  )
+}
+
+fn invalid_parameter_value_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.glacier#InvalidParameterValueException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(
+      svc.parse_invalid_parameter_value_exception_response,
+    ),
+  )
+}
+
+fn missing_parameter_value_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.glacier#MissingParameterValueException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(
+      svc.parse_missing_parameter_value_exception_response,
+    ),
+  )
+}
+
+fn request_timeout_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.glacier#RequestTimeoutException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(
+      svc.parse_request_timeout_exception_response,
+    ),
+  )
+}
+
+fn resource_not_found_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.glacier#ResourceNotFoundException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(
+      svc.parse_resource_not_found_exception_response,
+    ),
+  )
+}
+
+fn service_unavailable_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.glacier#ServiceUnavailableException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(
+      svc.parse_service_unavailable_exception_response,
+    ),
+  )
+}
+
+fn bad_request_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.apigateway#BadRequestException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_bad_request_exception_response),
+  )
+}
+
+fn too_many_requests_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.apigateway#TooManyRequestsException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(
+      svc.parse_too_many_requests_exception_response,
+    ),
+  )
+}
+
+fn unauthorized_exception_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.apigateway#UnauthorizedException",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_unauthorized_exception_response),
   )
 }
 

@@ -9,6 +9,7 @@
 //// can pattern-match on category without depending on `httpc`'s shape
 //// directly.
 
+import aws/streaming.{type StreamingBody}
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/httpc
@@ -29,6 +30,35 @@ pub type HttpError {
 /// UTF-8 decoding decisions on the transport.
 pub type Send =
   fn(Request(BitArray)) -> Result(Response(BitArray), HttpError)
+
+/// Streaming variant of `Send`. The response body is a `StreamingBody`,
+/// which v1 carries as a single buffered chunk and the eventual chunked
+/// transport delivers as a true byte stream. Object-streaming GETs
+/// (S3 `GetObject`, MediaLive, etc.) take this shape so call sites can
+/// migrate today and pick up the real streaming path later without an
+/// API change.
+pub type StreamingSend =
+  fn(Request(BitArray)) -> Result(Response(StreamingBody), HttpError)
+
+/// Lift a buffered `Send` into a `StreamingSend` by wrapping its
+/// response body as a `Buffered` `StreamingBody`. Use this when a
+/// test wants to stub the streaming transport with a buffered fake,
+/// or when a caller has only a buffered sender available and wants
+/// it to satisfy a `StreamingSend` slot. Production code should
+/// take `http_streaming.default_send` for genuine chunked transfer.
+pub fn lift_to_streaming(send: Send) -> StreamingSend {
+  fn(req) {
+    case send(req) {
+      Ok(resp) ->
+        Ok(response.Response(
+          status: resp.status,
+          headers: resp.headers,
+          body: streaming.from_bit_array(resp.body),
+        ))
+      Error(e) -> Error(e)
+    }
+  }
+}
 
 /// Default total-request timeout for `default_send`. 30 seconds is the
 /// gleam_httpc default and a reasonable upper bound for control-plane and

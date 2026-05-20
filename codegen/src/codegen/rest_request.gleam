@@ -8,10 +8,13 @@
 //// fully-rendered `pub fn build_<op>_request(...)` module fragment.
 
 import codegen/code
+import codegen/service_customizations.{type ServiceCustomization}
+import codegen/trait_helpers
 import codegen/types.{
   type BindingCategories, type HttpTrait, type MemberDef, type Resolved, Header,
   PrefixHeaders, Query, REnum, RIntEnum, RList, RMap, RPrim, RTimestamp,
 }
+import gleam/dict
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
@@ -34,6 +37,13 @@ fn name_concat(parts: List(String)) -> String {
 /// headers, body)` step after the body is fully assembled, so the
 /// Content-MD5 header is computed from the exact bytes about to be
 /// sent on the wire (not before query / label substitution).
+///
+/// `http_checksum` reflects `aws.protocols#httpChecksum`. When
+/// `request_required` is set the emitter appends a sha256
+/// checksum (v1 behaviour — algorithm-member dispatch is a
+/// follow-up). Mutually compatible with `requires_md5`: AWS
+/// services don't apply both, but the emitter doesn't enforce
+/// the constraint.
 pub fn build_request_module(
   input_type: String,
   is_unit: Bool,
@@ -41,10 +51,20 @@ pub fn build_request_module(
   http: HttpTrait,
   members: List(MemberDef),
   requires_md5: Bool,
+  http_checksum: option.Option(trait_helpers.HttpChecksumInfo),
+  customization: ServiceCustomization,
   body_setup: fn(BindingCategories) -> List(code.Code),
 ) -> String {
   let cats = types.categorize_bindings(members)
-  let header_or_input = case !is_unit && types.has_any_binding(cats) {
+  let touches_input = case
+    !is_unit && types.has_any_binding(cats),
+    customization.glacier_treehash,
+    !list.is_empty(customization.label_defaults |> dict.to_list)
+  {
+    False, False, False -> False
+    _, _, _ -> True
+  }
+  let header_or_input = case touches_input {
     True -> "input"
     False -> "_input"
   }
@@ -78,15 +98,55 @@ pub fn build_request_module(
     ]
     False -> []
   }
+  let checksum_step = build_checksum_step(http_checksum, members)
+  // Per-service customization steps applied after the base header /
+  // body blocks. Service-level default headers go in first so an op's
+  // own `@httpHeader`-bound value still wins; Glacier's tree-hash is
+  // computed from the assembled body bytes; URI-label defaults
+  // substitute the canonical value when the caller leaves the label
+  // empty. Order matches the Rust SDK interceptor sequence (see
+  // `glacier/src/glacier_interceptors.rs`).
+  let customization_default_headers_step =
+    emit_default_headers_step(customization.default_headers)
+  let customization_tree_hash_step = case customization.glacier_treehash {
+    True -> [
+      code.Let(
+        name: "headers",
+        value: code.Call(
+          head: code.Ident(name: "rest.with_glacier_tree_hash_headers"),
+          args: [code.Ident(name: "headers"), code.Ident(name: "body")],
+        ),
+      ),
+    ]
+    False -> []
+  }
+  // URI-label substitution: replace `{Bucket}` (and friends) with empty
+  // when the customization omits them, OR replace the per-label value
+  // with the configured default when the caller passes an empty string.
+  let path_template =
+    rewrite_uri_template(http.uri, customization.omit_uri_labels)
+  let effective_labels =
+    list.filter(cats.labels, fn(m) {
+      !list.contains(customization.omit_uri_labels, m.member_name)
+    })
+  let path_steps =
+    emit_path_setup_with_defaults(
+      path_template,
+      effective_labels,
+      customization.label_defaults,
+    )
   let body_items =
     list.flatten([
-      emit_path_setup(http.uri, cats.labels),
+      path_steps,
       emit_query_setup(cats.queries, cats.query_maps),
       emit_header_setup(cats.headers, cats.prefix_headers),
       body_setup(cats),
       [content_type_let_block(), content_length_let_block()],
       emit_content_encoding(http.compression),
+      customization_default_headers_step,
       md5_step,
+      checksum_step,
+      customization_tree_hash_step,
       [path_assign, result_tuple],
     ])
   code.render(
@@ -103,6 +163,234 @@ pub fn build_request_module(
       code.Blank,
     ]),
   )
+}
+
+/// Generate the `aws.protocols#httpChecksum` middleware step
+/// that adds the right `x-amz-checksum-<algo>` header before
+/// signing. Three cases:
+///
+/// 1. `request_algorithm_member` is set AND points to a real
+///    enum member on the input — emit a `case` that reads the
+///    caller's typed enum choice, pulls its wire value via
+///    `rest.enum_wire_value`, and calls
+///    `rest.with_checksum_header_for_wire`. Falls back to
+///    `ChecksumSha256` when the field is `option.None`.
+/// 2. `request_required` is set with no algorithm member — emit
+///    an unconditional SHA-256 header. This matches the v1
+///    behaviour from M10.
+/// 3. Otherwise — emit nothing.
+fn build_checksum_step(
+  http_checksum: option.Option(trait_helpers.HttpChecksumInfo),
+  members: List(MemberDef),
+) -> List(code.Code) {
+  case http_checksum {
+    option.None -> []
+    option.Some(trait_helpers.HttpChecksumInfo(
+      request_required: required,
+      request_algorithm_member: alg_member,
+    )) ->
+      case alg_member {
+        option.Some(name) ->
+          case find_algorithm_member(members, name) {
+            option.Some(m) -> [build_dispatched_checksum_step(m)]
+            option.None ->
+              case required {
+                True -> [default_sha256_checksum_step()]
+                False -> []
+              }
+          }
+        option.None ->
+          case required {
+            True -> [default_sha256_checksum_step()]
+            False -> []
+          }
+      }
+  }
+}
+
+fn default_sha256_checksum_step() -> code.Code {
+  code.Let(
+    name: "headers",
+    value: code.Call(head: code.Ident(name: "rest.with_checksum_header"), args: [
+      code.Ident(name: "headers"),
+      code.Ident(name: "rest.ChecksumSha256"),
+      code.Ident(name: "body"),
+    ]),
+  )
+}
+
+fn build_dispatched_checksum_step(member: MemberDef) -> code.Code {
+  // Read the caller's enum value via the JSON encoder (which
+  // returns the wire-form string wrapped in a json.Json) and
+  // pass that to the wire-form helper. SHA-256 fallback when
+  // the field is None.
+  let snake = member.snake_name
+  let encoder = types.json_encoder(member.target)
+  let some_branch =
+    code.Call(
+      head: code.Ident(name: "rest.with_checksum_header_for_wire"),
+      args: [
+        code.Ident(name: "headers"),
+        code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
+          code.Call(head: code.Ident(name: encoder), args: [
+            code.Ident(name: "v"),
+          ]),
+        ]),
+        code.Ident(name: "body"),
+      ],
+    )
+  code.Let(
+    name: "headers",
+    value: code.Case(
+      scrutinee: code.Ident(name: name_concat(["input.", snake])),
+      branches: [
+        code.Branch(pattern: "option.Some(v)", body: some_branch),
+        code.Branch(
+          pattern: "option.None",
+          body: code.Call(
+            head: code.Ident(name: "rest.with_checksum_header"),
+            args: [
+              code.Ident(name: "headers"),
+              code.Ident(name: "rest.ChecksumSha256"),
+              code.Ident(name: "body"),
+            ],
+          ),
+        ),
+      ],
+    ),
+  )
+}
+
+fn find_algorithm_member(
+  members: List(MemberDef),
+  member_name: String,
+) -> option.Option(MemberDef) {
+  case list.find(members, fn(m) { m.member_name == member_name }) {
+    Ok(m) -> option.Some(m)
+    Error(_) -> option.None
+  }
+}
+
+/// Insert each service-level default header via `dict.insert`, one
+/// `let headers = ...` per pair. Empty list ⇒ no step. Service-level
+/// defaults go in *before* any `@httpHeader`-bound member overrides;
+/// `dict.insert` is last-write-wins so an op's own header wins on
+/// collision (e.g. Glacier's `Content-Type` doesn't shadow the
+/// service-default `X-Amz-Glacier-Version`).
+fn emit_default_headers_step(
+  headers: List(#(String, String)),
+) -> List(code.Code) {
+  list.map(headers, fn(h) {
+    let #(name, value) = h
+    code.Let(
+      name: "headers",
+      value: code.Call(head: code.Ident(name: "dict.insert"), args: [
+        code.Ident(name: "headers"),
+        code.StrLit(value: name),
+        code.StrLit(value: value),
+      ]),
+    )
+  })
+}
+
+/// Drop `{<label>}` (and `{<label>+}`) placeholders from a URI
+/// template for each label in `omits`. Used by S3 customization so
+/// `{Bucket}` is removed from `/{Bucket}/{Key+}` even though the
+/// `Bucket` member still appears in the input record (callers pass
+/// it, the runtime would route it through the Host header — out of
+/// scope for the protocol-test runner which only inspects the path).
+///
+/// Replacement order matters: try the `{name}/` form first so we
+/// don't leave a double-slash, then the bare `{name}` (handles end-
+/// of-URI and `?`-adjacent forms).
+fn rewrite_uri_template(uri_template: String, omits: List(String)) -> String {
+  list.fold(omits, uri_template, fn(acc, name) {
+    let g_with_slash = name_concat(["{", name, "+}/"])
+    let plain_with_slash = name_concat(["{", name, "}/"])
+    let g_alone = name_concat(["{", name, "+}"])
+    let plain_alone = name_concat(["{", name, "}"])
+    acc
+    |> string.replace(g_with_slash, "")
+    |> string.replace(plain_with_slash, "")
+    |> string.replace(g_alone, "")
+    |> string.replace(plain_alone, "")
+  })
+}
+
+/// `emit_path_setup` extended with a per-label default-value table.
+/// When a label has an entry in `label_defaults`, the substitute step
+/// becomes a three-way match:
+///   * `option.Some("")` ⇒ substitute the default (Glacier interprets
+///     the empty `accountId` as "use my own account", written as the
+///     literal `-` on the wire),
+///   * `option.Some(v)` ⇒ substitute v as usual,
+///   * `option.None` ⇒ substitute the default (same justification).
+/// Labels with no default fall back to the existing two-branch shape
+/// (`Some` substitutes, `None` leaves the path unchanged).
+fn emit_path_setup_with_defaults(
+  uri_template: String,
+  labels: List(MemberDef),
+  label_defaults: dict.Dict(String, String),
+) -> List(code.Code) {
+  let initial = code.Let(name: "path", value: code.StrLit(value: uri_template))
+  let updates =
+    list.map(labels, fn(m) {
+      let greedy =
+        string.contains(uri_template, name_concat(["{", m.json_name, "+}"]))
+      let greedy_ident = case greedy {
+        True -> code.Ident(name: "True")
+        False -> code.Ident(name: "False")
+      }
+      let value_expr =
+        code.Raw(fragment: value_to_string_with_format(
+          m.target,
+          m.timestamp_format,
+        ))
+      let some_branch =
+        code.Call(head: code.Ident(name: "rest.substitute_label"), args: [
+          code.Ident(name: "path"),
+          code.StrLit(value: m.json_name),
+          value_expr,
+          greedy_ident,
+        ])
+      case dict.get(label_defaults, m.member_name) {
+        Ok(default_value) -> {
+          let default_call =
+            code.Call(head: code.Ident(name: "rest.substitute_label"), args: [
+              code.Ident(name: "path"),
+              code.StrLit(value: m.json_name),
+              code.StrLit(value: default_value),
+              greedy_ident,
+            ])
+          code.Let(
+            name: "path",
+            value: code.Case(
+              scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
+              branches: [
+                code.Branch(pattern: "option.Some(\"\")", body: default_call),
+                code.Branch(pattern: "option.Some(v)", body: some_branch),
+                code.Branch(pattern: "option.None", body: default_call),
+              ],
+            ),
+          )
+        }
+        Error(_) ->
+          code.Let(
+            name: "path",
+            value: code.Case(
+              scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
+              branches: [
+                code.Branch(pattern: "option.Some(v)", body: some_branch),
+                code.Branch(
+                  pattern: "option.None",
+                  body: code.Ident(name: "path"),
+                ),
+              ],
+            ),
+          )
+      }
+    })
+  [initial, ..updates]
 }
 
 // ---------- path / query / header setup ----------
@@ -439,15 +727,35 @@ pub fn content_length_let_block() -> code.Code {
   )
 }
 
+/// `@smithy.api#requestCompression` body wrap. For each declared
+/// encoding the emitter inserts a `compression.maybe_compress` step
+/// that gzips the body when its size is at least
+/// `default_min_compression_size_bytes` (10 KiB by default,
+/// matching the Rust SDK). When the wrap is applied — and ONLY
+/// then — the `Content-Encoding` header gets the encoding appended
+/// and `Content-Length` is recomputed against the compressed
+/// bytes. Sub-threshold bodies pass through untouched, no header,
+/// no wrap, so AWS doesn't reject the mismatch.
 pub fn emit_content_encoding(encodings: List(String)) -> List(code.Code) {
-  list.map(encodings, fn(enc) {
-    code.Let(
-      name: "headers",
-      value: code.Call(
-        head: code.Ident(name: "rest.append_content_encoding"),
-        args: [code.Ident(name: "headers"), code.StrLit(value: enc)],
+  list.flat_map(encodings, fn(enc) {
+    [
+      code.Let(
+        name: "#(body, applied)",
+        value: code.Raw(
+          fragment: "compression.maybe_compress(body, \""
+          <> enc
+          <> "\", compression.default_min_compression_size_bytes)",
+        ),
       ),
-    )
+      code.Let(
+        name: "headers",
+        value: code.Raw(
+          fragment: "case applied { True -> dict.insert(rest.append_content_encoding(headers, \""
+          <> enc
+          <> "\"), \"Content-Length\", int.to_string(bit_array.byte_size(body))) False -> headers }",
+        ),
+      ),
+    ]
   })
 }
 
@@ -485,7 +793,7 @@ fn value_to_string(
     RPrim(primitive: types.PBool) -> "rest.bool_to_query(v)"
     REnum(local_name: _, ..) ->
       name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
-    RIntEnum(local_name: n, ..) ->
+    RIntEnum(gleam_name: n, ..) ->
       name_concat([
         "rest.int_to_query(",
         stringutils.pascal_to_snake(n),
@@ -497,9 +805,9 @@ fn value_to_string(
         None -> default_ts_format
       }
       case chosen {
-        "epoch-seconds" -> "rest.int_to_query(v)"
-        "http-date" -> "json_timestamp.format_http_date(v)"
-        _ -> "json_timestamp.format_iso8601(v)"
+        "epoch-seconds" -> "json_timestamp.epoch_seconds_text(v)"
+        "http-date" -> "json_timestamp.format_http_date_precise(v)"
+        _ -> "json_timestamp.format_iso8601_precise(v)"
       }
     }
     _ -> "\"\""

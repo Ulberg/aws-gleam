@@ -2,11 +2,11 @@ import aws/internal/crypto
 import aws/internal/http_request.{
   type Header, type HttpRequest, Header, HttpRequest,
 }
+import aws/internal/sigv4_canonical
 import aws/internal/uri
 import gleam/bit_array
 import gleam/list
 import gleam/option.{type Option, Some}
-import gleam/order
 import gleam/string
 
 pub type SigningOptions {
@@ -69,26 +69,22 @@ pub fn canonical_request(
 
   let prepared = prepare_headers(req, creds, opts, payload_hash)
   let signing_headers = headers_for_signing(prepared, creds, opts)
-  let canonical_headers_block = canonical_headers(signing_headers)
-  let signed_headers_list = signed_headers(signing_headers)
-  let canonical_uri = case opts.normalize_path {
-    True -> encode_path(normalize_path(req.path))
-    False -> encode_path(req.path)
-  }
-  let canonical_query = canonical_query_string(req.query)
+  let canonical_headers_block =
+    sigv4_canonical.canonical_headers(signing_headers)
+  let signed_headers_list = sigv4_canonical.signed_headers(signing_headers)
+  let canonical_uri =
+    sigv4_canonical.build_canonical_uri(req.path, opts.normalize_path)
+  let canonical_query = sigv4_canonical.canonical_query_string(req.query)
 
   let creq =
-    req.method
-    <> "\n"
-    <> canonical_uri
-    <> "\n"
-    <> canonical_query
-    <> "\n"
-    <> canonical_headers_block
-    <> "\n"
-    <> signed_headers_list
-    <> "\n"
-    <> payload_hash
+    build_creq(
+      req.method,
+      canonical_uri,
+      canonical_query,
+      canonical_headers_block,
+      signed_headers_list,
+      payload_hash,
+    )
 
   CanonicalParts(
     canonical_request: creq,
@@ -188,6 +184,178 @@ pub fn sign(
   HttpRequest(..req, headers: final_headers)
 }
 
+/// Build a SigV4 presigned URL — the "query-string auth" variant
+/// callers reach for to share short-lived links to S3 objects, etc.
+/// The auth components (`X-Amz-Algorithm`, `X-Amz-Credential`,
+/// `X-Amz-Date`, `X-Amz-Expires`, `X-Amz-SignedHeaders`,
+/// `X-Amz-Security-Token` when present, and `X-Amz-Signature`) land
+/// in the URL query string rather than headers. Only the `Host`
+/// header is signed.
+///
+/// `payload_hash` controls the canonical-request payload line:
+///   * `Some("UNSIGNED-PAYLOAD")` — the S3 convention for shared
+///     download URLs (the caller doesn't get to choose the body).
+///   * `Some(hex)` — caller-provided body hash; matches a known
+///     request body that will be sent against the signed URL.
+///   * `None` — the standard SigV4 path, honouring `opts.sign_body`:
+///     `True` ⇒ `sha256(req.body)`, `False` ⇒ `sha256("")` (the
+///     hash of the empty body). The v4 test suite uses this path.
+///
+/// `expires_seconds` is bounded by SigV4 to `[1, 604800]` (1 second
+/// to 7 days). The function doesn't enforce the bound; AWS rejects
+/// out-of-range values at the server side.
+///
+/// Returns the full URL (`https://<host><path>?<signed-query>`)
+/// ready to hand to a caller. Existing `req.query` entries are
+/// preserved and merged with the auth params.
+pub fn presigned_url(
+  req: HttpRequest,
+  creds: SigningCredentials,
+  opts: SigningOptions,
+  expires_seconds: Int,
+  payload_hash payload_hash: Option(String),
+) -> String {
+  let host = host_from_headers(req.headers)
+  let date = string.slice(opts.timestamp, 0, 8)
+  let credential_scope =
+    creds.access_key_id
+    <> "/"
+    <> date
+    <> "/"
+    <> opts.region
+    <> "/"
+    <> opts.service
+    <> "/aws4_request"
+  // Sign every header the request carries (lowercased, sorted).
+  // For URL-only flows the caller typically passes only `Host`,
+  // but the v4 conformance suite covers cases where additional
+  // headers (custom `My-Header*`, `Content-Type`, etc.) ride
+  // along — they must all appear in `SignedHeaders` and the
+  // canonical-headers block.
+  let signed_headers_list = sigv4_canonical.signed_headers(req.headers)
+  let canonical_headers_block = sigv4_canonical.canonical_headers(req.headers)
+  // Auth params other than X-Amz-Signature. Credential scope goes
+  // in unencoded; `canonical_query_string` (idempotent over
+  // pre-encoded values via `uri.encode_component`'s decode-then-
+  // encode) handles encoding when we merge.
+  let auth_params = [
+    #("X-Amz-Algorithm", "AWS4-HMAC-SHA256"),
+    #("X-Amz-Credential", credential_scope),
+    #("X-Amz-Date", opts.timestamp),
+    #("X-Amz-Expires", int_to_string(expires_seconds)),
+    #("X-Amz-SignedHeaders", signed_headers_list),
+  ]
+  // When `omit_session_token` is true, the token rides in the
+  // final URL but is NOT part of what's signed — same semantics as
+  // the header path's omit_session_token. When false, the token
+  // is included in `auth_params` and signed along with everything
+  // else.
+  let auth_params_for_signing = case
+    creds.session_token,
+    opts.omit_session_token
+  {
+    Some(token), False ->
+      list.append(auth_params, [#("X-Amz-Security-Token", token)])
+    _, _ -> auth_params
+  }
+  let merged_query = merge_query(req.query, auth_params_for_signing)
+  let canonical_uri =
+    sigv4_canonical.build_canonical_uri(req.path, opts.normalize_path)
+  let canonical_query = sigv4_canonical.canonical_query_string(merged_query)
+  let payload_hash = case payload_hash {
+    Some(h) -> h
+    _ ->
+      case opts.sign_body {
+        True -> crypto.hex_encode(crypto.sha256(req.body))
+        False -> crypto.hex_encode(crypto.sha256(bit_array.from_string("")))
+      }
+  }
+  let creq =
+    build_creq(
+      req.method,
+      canonical_uri,
+      canonical_query,
+      canonical_headers_block,
+      signed_headers_list,
+      payload_hash,
+    )
+  let sts = string_to_sign(creq, opts.timestamp, opts.region, opts.service)
+  let key =
+    signing_key(creds.secret_access_key, date, opts.region, opts.service)
+  let sig = signature(key, sts)
+  // Final URL: canonical query stays sorted; the signature is
+  // appended after, since signing the request with the signature
+  // already inside the query would be circular. When the caller
+  // asked to omit the session token from the signed inputs, it
+  // still rides in the URL after signing — same shape as the v4
+  // suite's `post-sts-header-after` query-signed-request fixture.
+  let url_with_signature =
+    "https://"
+    <> host
+    <> canonical_uri
+    <> "?"
+    <> canonical_query
+    <> "&X-Amz-Signature="
+    <> sig
+  case creds.session_token, opts.omit_session_token {
+    Some(token), True ->
+      url_with_signature
+      <> "&X-Amz-Security-Token="
+      <> uri.encode_component(token)
+    _, _ -> url_with_signature
+  }
+}
+
+/// Assemble the canonical-request line block both header-auth and
+/// query-auth need. The five `\n`-joined parts are identical
+/// between the two flows; only the inputs differ (header-auth
+/// signs in-headers, query-auth signs an auth-augmented query
+/// string).
+fn build_creq(
+  method: String,
+  canonical_uri: String,
+  canonical_query: String,
+  canonical_headers_block: String,
+  signed_headers_list: String,
+  payload_hash: String,
+) -> String {
+  method
+  <> "\n"
+  <> canonical_uri
+  <> "\n"
+  <> canonical_query
+  <> "\n"
+  <> canonical_headers_block
+  <> "\n"
+  <> signed_headers_list
+  <> "\n"
+  <> payload_hash
+}
+
+fn host_from_headers(headers: List(Header)) -> String {
+  case list.find(headers, fn(h) { string.lowercase(h.name) == "host" }) {
+    Ok(h) -> h.value
+    Error(_) -> ""
+  }
+}
+
+fn merge_query(
+  existing: String,
+  auth_params: List(#(String, String)),
+) -> String {
+  let auth_pairs =
+    auth_params
+    |> list.map(fn(p) { p.0 <> "=" <> uri.encode_component(p.1) })
+    |> string.join("&")
+  case existing {
+    "" -> auth_pairs
+    _ -> existing <> "&" <> auth_pairs
+  }
+}
+
+@external(erlang, "erlang", "integer_to_binary")
+fn int_to_string(n: Int) -> String
+
 fn prepare_headers(
   req: HttpRequest,
   creds: SigningCredentials,
@@ -246,155 +414,5 @@ fn upsert_header(
       })
     True, False -> headers
     False, _ -> list.append(headers, [Header(name: name, value: value)])
-  }
-}
-
-fn canonical_headers(headers: List(Header)) -> String {
-  let prepared =
-    headers
-    |> list.map(fn(h) {
-      #(string.lowercase(h.name), collapse_spaces(string.trim(h.value)))
-    })
-    |> group_by_name
-    |> list.sort(by: fn(a, b) { string.compare(a.0, b.0) })
-
-  prepared
-  |> list.map(fn(p) { p.0 <> ":" <> string.join(p.1, ",") <> "\n" })
-  |> string.concat
-}
-
-fn signed_headers(headers: List(Header)) -> String {
-  headers
-  |> list.map(fn(h) { string.lowercase(h.name) })
-  |> list.unique
-  |> list.sort(by: string.compare)
-  |> string.join(";")
-}
-
-fn group_by_name(
-  pairs: List(#(String, String)),
-) -> List(#(String, List(String))) {
-  do_group_by_name(pairs, [])
-}
-
-fn do_group_by_name(
-  pairs: List(#(String, String)),
-  acc: List(#(String, List(String))),
-) -> List(#(String, List(String))) {
-  case pairs {
-    [] -> list.reverse(list.map(acc, fn(p) { #(p.0, list.reverse(p.1)) }))
-    [#(name, value), ..rest] -> {
-      let updated = case list.key_find(acc, name) {
-        Ok(existing) -> {
-          let new_values = [value, ..existing]
-          list.key_set(acc, name, new_values)
-        }
-        Error(_) -> [#(name, [value]), ..acc]
-      }
-      do_group_by_name(rest, updated)
-    }
-  }
-}
-
-fn collapse_spaces(s: String) -> String {
-  do_collapse(string.to_graphemes(s), False, "")
-}
-
-fn do_collapse(
-  chars: List(String),
-  last_was_space: Bool,
-  acc: String,
-) -> String {
-  case chars {
-    [] -> acc
-    [c, ..rest] ->
-      case c == " " || c == "\t" {
-        True ->
-          case last_was_space {
-            True -> do_collapse(rest, True, acc)
-            False -> do_collapse(rest, True, acc <> " ")
-          }
-        False -> do_collapse(rest, False, acc <> c)
-      }
-  }
-}
-
-fn normalize_path(path: String) -> String {
-  let trailing_slash = case string.ends_with(path, "/") && path != "/" {
-    True -> True
-    False -> False
-  }
-  let segments = case string.starts_with(path, "/") {
-    True -> string.split(path, "/") |> drop_first
-    False -> string.split(path, "/")
-  }
-  let processed = process_segments(segments, [])
-  case processed, trailing_slash {
-    [], _ -> "/"
-    parts, True -> "/" <> string.join(parts, "/") <> "/"
-    parts, False -> "/" <> string.join(parts, "/")
-  }
-}
-
-fn drop_first(xs: List(a)) -> List(a) {
-  case xs {
-    [] -> []
-    [_, ..rest] -> rest
-  }
-}
-
-fn process_segments(
-  segments: List(String),
-  stack: List(String),
-) -> List(String) {
-  case segments {
-    [] -> list.reverse(stack)
-    ["", ..rest] -> process_segments(rest, stack)
-    [".", ..rest] -> process_segments(rest, stack)
-    ["..", ..rest] ->
-      case stack {
-        [_, ..tail] -> process_segments(rest, tail)
-        [] -> process_segments(rest, stack)
-      }
-    [seg, ..rest] -> process_segments(rest, [seg, ..stack])
-  }
-}
-
-pub fn encode_path(path: String) -> String {
-  string.split(path, "/")
-  |> list.map(uri.encode_segment)
-  |> string.join("/")
-}
-
-fn canonical_query_string(query: String) -> String {
-  case query {
-    "" -> ""
-    _ -> {
-      string.split(query, "&")
-      |> list.map(parse_query_pair)
-      |> list.sort(by: query_pair_compare)
-      |> list.map(fn(p) { p.0 <> "=" <> p.1 })
-      |> string.join("&")
-    }
-  }
-}
-
-fn parse_query_pair(pair: String) -> #(String, String) {
-  case string.split_once(pair, "=") {
-    Ok(#(name, value)) -> #(
-      uri.encode_component(name),
-      uri.encode_component(value),
-    )
-    Error(_) -> #(uri.encode_component(pair), "")
-  }
-}
-
-fn query_pair_compare(
-  a: #(String, String),
-  b: #(String, String),
-) -> order.Order {
-  case string.compare(a.0, b.0) {
-    order.Eq -> string.compare(a.1, b.1)
-    other -> other
   }
 }

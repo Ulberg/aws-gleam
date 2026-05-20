@@ -13,12 +13,19 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(datetime_offsets_dispatcher())
   |> dispatch.register(empty_input_and_empty_output_dispatcher())
   |> dispatch.register(endpoint_operation_dispatcher())
+  |> dispatch.register(endpoint_with_host_label_operation_dispatcher())
   |> dispatch.register(fractional_seconds_dispatcher())
   |> dispatch.register(greeting_with_errors_dispatcher())
   |> dispatch.register(host_with_path_operation_dispatcher())
   |> dispatch.register(ignores_wrapping_xml_name_dispatcher())
+  |> dispatch.register(nested_structures_dispatcher())
   |> dispatch.register(no_input_and_output_dispatcher())
+  |> dispatch.register(put_with_content_encoding_dispatcher())
+  |> dispatch.register(query_idempotency_token_auto_fill_dispatcher())
+  |> dispatch.register(query_lists_dispatcher())
+  |> dispatch.register(query_timestamps_dispatcher())
   |> dispatch.register(recursive_xml_shapes_dispatcher())
+  |> dispatch.register(simple_input_params_dispatcher())
   |> dispatch.register(simple_scalar_xml_properties_dispatcher())
   |> dispatch.register(xml_blobs_dispatcher())
   |> dispatch.register(xml_empty_blobs_dispatcher())
@@ -28,6 +35,8 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(xml_lists_dispatcher())
   |> dispatch.register(xml_namespaces_dispatcher())
   |> dispatch.register(xml_timestamps_dispatcher())
+  |> dispatch.register(complex_error_dispatcher())
+  |> dispatch.register(invalid_greeting_dispatcher())
 }
 
 fn datetime_offsets_dispatcher() -> Dispatcher {
@@ -70,6 +79,29 @@ fn endpoint_operation_dispatcher() -> Dispatcher {
       Ok(BuiltRequest(method:, uri:, headers:, body:))
     },
     parse_response: response_parser(svc.parse_endpoint_operation_response),
+  )
+}
+
+fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#EndpointWithHostLabelOperation",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_endpoint_with_host_label_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_endpoint_with_host_label_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_endpoint_with_host_label_operation_response,
+    ),
   )
 }
 
@@ -131,6 +163,27 @@ fn ignores_wrapping_xml_name_dispatcher() -> Dispatcher {
   )
 }
 
+fn nested_structures_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#NestedStructures",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_nested_structures_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_nested_structures_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_nested_structures_response),
+  )
+}
+
 fn no_input_and_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.ec2#NoInputAndOutput",
@@ -144,6 +197,94 @@ fn no_input_and_output_dispatcher() -> Dispatcher {
   )
 }
 
+fn put_with_content_encoding_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#PutWithContentEncoding",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_put_with_content_encoding_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_put_with_content_encoding_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_put_with_content_encoding_response,
+    ),
+  )
+}
+
+fn query_idempotency_token_auto_fill_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#QueryIdempotencyTokenAutoFill",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_query_idempotency_token_auto_fill_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_query_idempotency_token_auto_fill_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_query_idempotency_token_auto_fill_response,
+    ),
+  )
+}
+
+fn query_lists_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#QueryLists",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_query_lists_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_query_lists_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_query_lists_response),
+  )
+}
+
+fn query_timestamps_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#QueryTimestamps",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_query_timestamps_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_query_timestamps_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_query_timestamps_response),
+  )
+}
+
 fn recursive_xml_shapes_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.ec2#RecursiveXmlShapes",
@@ -154,6 +295,27 @@ fn recursive_xml_shapes_dispatcher() -> Dispatcher {
       Ok(BuiltRequest(method:, uri:, headers:, body:))
     },
     parse_response: response_parser(svc.parse_recursive_xml_shapes_response),
+  )
+}
+
+fn simple_input_params_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#SimpleInputParams",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_simple_input_params_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_simple_input_params_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_simple_input_params_response),
   )
 }
 
@@ -275,6 +437,26 @@ fn xml_timestamps_dispatcher() -> Dispatcher {
       Ok(BuiltRequest(method:, uri:, headers:, body:))
     },
     parse_response: response_parser(svc.parse_xml_timestamps_response),
+  )
+}
+
+fn complex_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#ComplexError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_complex_error_response),
+  )
+}
+
+fn invalid_greeting_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.ec2#InvalidGreeting",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_invalid_greeting_response),
   )
 }
 
