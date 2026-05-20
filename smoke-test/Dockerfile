@@ -18,20 +18,19 @@ WORKDIR /build/aws-gleam/smoke-test
 # regen.sh is a bash pipeline; alpine ships ash as /bin/sh.
 RUN apk add --no-cache bash coreutils findutils grep sed
 
-# `+t` lifts the BEAM atom-table for the 409-service codegen run.
-ENV ERL_FLAGS="+t 4194304"
-
 RUN gleam deps download \
-    && bash -c '(cd .. && ./scripts/regen.sh)' \
+    && bash -c '(cd .. && ./scripts/regen.sh s3 sqs)' \
     && gleam export erlang-shipment \
     && mv build/erlang-shipment /app \
     && rm -rf /build
 
 WORKDIR /app
 
-# Same atom-table headroom at runtime — defense in depth in case
-# of a future case where more services are loaded.
-ENV ERL_FLAGS="+t 16777216"
+# Headroom for the BEAM atom table. With only s3 + sqs generated,
+# the actual count is comfortably under 1 M, but raising the cap
+# costs nothing and keeps the door open for `KEEP_SERVICES`-style
+# expansion later.
+ENV ERL_FLAGS="+t 4194304"
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["run"]
