@@ -13,6 +13,7 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(datetime_offsets_dispatcher())
   |> dispatch.register(empty_input_and_empty_output_dispatcher())
   |> dispatch.register(endpoint_operation_dispatcher())
+  |> dispatch.register(endpoint_with_host_label_operation_dispatcher())
   |> dispatch.register(flattened_xml_map_dispatcher())
   |> dispatch.register(flattened_xml_map_with_xml_name_dispatcher())
   |> dispatch.register(flattened_xml_map_with_xml_namespace_dispatcher())
@@ -86,6 +87,29 @@ fn endpoint_operation_dispatcher() -> Dispatcher {
       Ok(BuiltRequest(method:, uri:, headers:, body:))
     },
     parse_response: response_parser(svc.parse_endpoint_operation_response),
+  )
+}
+
+fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.query#EndpointWithHostLabelOperation",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_endpoint_with_host_label_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_endpoint_with_host_label_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_endpoint_with_host_label_operation_response,
+    ),
   )
 }
 

@@ -194,7 +194,13 @@ fn name_concat(parts: List(String)) -> String {
 }
 
 fn has_op_level_blocker(traits: dict.Dict(ShapeId, a)) -> Bool {
-  let blockers = ["aws.protocols#requestCompression", "smithy.api#endpoint"]
+  // `smithy.api#endpoint` (hostPrefix substitution) is *not* a blocker
+  // here — it only affects the request's Host header, which the
+  // runtime/transport sets, not the body bytes the awsquery emitter
+  // produces. `@hostLabel` members participate in the body too (the
+  // EndpointWithHostLabelOperation fixture's expected body includes
+  // `&label=bar`), so they fall out of `no_member_traits` likewise.
+  let blockers = ["aws.protocols#requestCompression"]
   list.any(blockers, fn(t) { dict.has_key(traits, ShapeId(t)) })
 }
 
@@ -294,8 +300,11 @@ fn no_member_traits(model: Model, struct_id: String) -> Bool {
         // `rest.idempotency_token()`. Trait stays on a member that
         // also surfaces as a regular `Option(String)` in the input
         // record, so callers can override the auto-filled token.
+        // `@hostLabel` is NOT a blocker — hostLabel members appear
+        // in the body verbatim and additionally participate in the
+        // op's hostPrefix substitution (handled by the
+        // transport/runtime, not the body emitter).
         let blockers = [
-          "smithy.api#hostLabel",
           "smithy.api#httpHeader",
           "smithy.api#httpQuery",
           "smithy.api#httpLabel",
