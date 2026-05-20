@@ -77,8 +77,13 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(xml_namespaces_dispatcher())
   |> dispatch.register(xml_timestamps_dispatcher())
   |> dispatch.register(xml_unions_dispatcher())
+  |> dispatch.register(delete_object_tagging_dispatcher())
+  |> dispatch.register(get_bucket_location_dispatcher())
+  |> dispatch.register(get_object_dispatcher())
+  |> dispatch.register(list_objects_v2_dispatcher())
   |> dispatch.register(complex_error_dispatcher())
   |> dispatch.register(invalid_greeting_dispatcher())
+  |> dispatch.register(no_such_bucket_dispatcher())
 }
 
 fn all_query_string_types_dispatcher() -> Dispatcher {
@@ -1498,6 +1503,90 @@ fn xml_unions_dispatcher() -> Dispatcher {
   )
 }
 
+fn delete_object_tagging_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.s3#DeleteObjectTagging",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_delete_object_tagging_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_delete_object_tagging_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_delete_object_tagging_response),
+  )
+}
+
+fn get_bucket_location_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.s3#GetBucketLocation",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_get_bucket_location_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_get_bucket_location_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_get_bucket_location_response),
+  )
+}
+
+fn get_object_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.s3#GetObject",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_get_object_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_get_object_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_get_object_response),
+  )
+}
+
+fn list_objects_v2_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.s3#ListObjectsV2",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_list_objects_v2_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_list_objects_v2_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_list_objects_v2_response),
+  )
+}
+
 fn complex_error_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restxml#ComplexError",
@@ -1515,6 +1604,16 @@ fn invalid_greeting_dispatcher() -> Dispatcher {
       Error("error-shape dispatcher has no request side")
     },
     parse_response: response_parser(svc.parse_invalid_greeting_response),
+  )
+}
+
+fn no_such_bucket_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "com.amazonaws.s3#NoSuchBucket",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_no_such_bucket_response),
   )
 }
 

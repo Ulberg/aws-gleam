@@ -11,6 +11,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/set.{type Set}
 import gleam/string
+import smithy/model.{type Model}
 import smithy/shape
 import smithy/shape_id.{type ShapeId, ShapeId}
 import smithy/trait.{type Trait}
@@ -76,9 +77,7 @@ pub fn service_metadata(
 /// is `{"uri": "...", "prefix": "..."}` — `prefix` defaults to
 /// empty (the default namespace, emitted as `xmlns="..."` not
 /// `xmlns:foo="..."`).
-pub fn xml_namespace_trait(
-  traits: shape.Traits,
-) -> Option(#(String, String)) {
+pub fn xml_namespace_trait(traits: shape.Traits) -> Option(#(String, String)) {
   case dict.get(traits, ShapeId("smithy.api#xmlNamespace")) {
     Ok(Some(trait.Dict(d))) -> {
       case string_field(d, "uri") {
@@ -201,8 +200,7 @@ fn extract_endpoint_param(
     trait.Dict(fields) -> {
       let built_in = string_field(fields, "builtIn")
       let type_ = string_field(fields, "type")
-      let doc =
-        string_field(fields, "documentation") |> option.unwrap("")
+      let doc = string_field(fields, "documentation") |> option.unwrap("")
       // Filter to the typed-setter candidate set: must have a
       // `builtIn` (otherwise it's op-scoped); skip Region + Endpoint
       // since they have first-class plumbing already.
@@ -210,17 +208,9 @@ fn extract_endpoint_param(
         Some("AWS::Region"), _ -> Error(Nil)
         Some("SDK::Endpoint"), _ -> Error(Nil)
         Some(_), Some("boolean") ->
-          Ok(EndpointParam(
-            name: name,
-            kind: BoolParam,
-            documentation: doc,
-          ))
+          Ok(EndpointParam(name: name, kind: BoolParam, documentation: doc))
         Some(_), Some("string") ->
-          Ok(EndpointParam(
-            name: name,
-            kind: StringParam,
-            documentation: doc,
-          ))
+          Ok(EndpointParam(name: name, kind: StringParam, documentation: doc))
         _, _ -> Error(Nil)
       }
     }
@@ -494,6 +484,39 @@ fn parse_matcher(body: Dict(ShapeId, Trait)) -> Option(WaiterMatcher) {
     // drops the entire waiter.
     _ -> None
   }
+}
+
+/// For protocol-test corpora the same JSON file declares multiple
+/// service shapes carrying the same protocol trait — restJson1's
+/// corpus carries `RestJson` (113 ops, dominant), `RestJsonValidation`
+/// (12 ops), `BackplaneControlService` (1 op) and `Glacier` (2 ops).
+/// The codegen entrypoint picks the dominant one and feeds it to the
+/// emitter; this helper returns the *other* services' operation refs
+/// so the emitter can union them into one combined module and the
+/// dispatcher table can cover their `httpRequestTests` /
+/// `httpResponseTests` cases instead of skipping them as
+/// "no-dispatcher".
+///
+/// Real-world AWS service models declare exactly one service shape,
+/// so this returns `[]` outside the protocol-test corpora.
+pub fn secondary_service_op_refs(
+  model: Model,
+  dominant_service_id: String,
+  protocol_trait_id: String,
+) -> List(shape.Reference) {
+  dict.to_list(model.shapes)
+  |> list.flat_map(fn(pair) {
+    let #(sid, sh) = pair
+    let sid_str = shape_id.to_string(sid)
+    case sid_str == dominant_service_id, sh {
+      False, shape.Service(operations: ops, traits: t, ..) ->
+        case dict.has_key(t, ShapeId(protocol_trait_id)) {
+          True -> ops
+          False -> []
+        }
+      _, _ -> []
+    }
+  })
 }
 
 /// Extract the `encodings` list from `@requestCompression`. Returns

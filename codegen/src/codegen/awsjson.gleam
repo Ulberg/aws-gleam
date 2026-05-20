@@ -73,6 +73,25 @@ pub fn emit_service(
     Ok(shape.Service(operations: refs, traits: svc_traits, ..)) -> {
       let service_target = strip_namespace(service_id)
       let metadata = trait_helpers.service_metadata(svc_traits, service_target)
+      // Protocol-test corpora declare multiple service shapes per
+      // file (e.g. awsJson1_0 carries `JsonRpc10` + the secondary
+      // `QueryCompatibleJsonRpc10`). Union the secondary services'
+      // ops in so the dispatcher table covers every
+      // `httpRequestTests` case — no-op for real-world models which
+      // have exactly one service per file.
+      let protocol_trait_id = case protocol {
+        AwsJson10 -> "aws.protocols#awsJson1_0"
+        AwsJson11 -> "aws.protocols#awsJson1_1"
+      }
+      let refs =
+        list.append(
+          refs,
+          trait_helpers.secondary_service_op_refs(
+            model,
+            service_id,
+            protocol_trait_id,
+          ),
+        )
       // Walk each operation's input / output; keep only ops whose
       // shapes resolve cleanly (no Unsupported anywhere). Each entry
       // also carries the operation's `errors` list (Smithy error

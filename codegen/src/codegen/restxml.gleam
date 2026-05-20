@@ -72,6 +72,20 @@ pub fn emit_service(
     Ok(shape.Service(operations: refs, traits: svc_traits, ..)) -> {
       let service_local = strip_namespace(service_id)
       let metadata = trait_helpers.service_metadata(svc_traits, service_local)
+      // Protocol-test corpora declare multiple service shapes per
+      // file (`RestXml` + the secondary `AmazonS3`). Union the
+      // secondary services' ops in so the dispatcher table covers
+      // every `httpRequestTests` case — no-op for real-world models
+      // which have exactly one service per file.
+      let refs =
+        list.append(
+          refs,
+          trait_helpers.secondary_service_op_refs(
+            model,
+            service_id,
+            "aws.protocols#restXml",
+          ),
+        )
       let resolved_ops =
         list.filter_map(refs, fn(ref) {
           let ShapeId(target) = ref.target
