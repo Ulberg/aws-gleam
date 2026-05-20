@@ -903,24 +903,40 @@ fn build_scalar_request_fn(
         fragment: "dict.from_list([#(\"Content-Type\", \"application/x-www-form-urlencoded\"), #(\"Content-Length\", int.to_string(bit_array.byte_size(body_bytes)))])",
       ),
     )
-  // `@smithy.api#requestCompression` — append every advertised
-  // encoding to the Content-Encoding header. The wire body stays
-  // uncompressed (the protocol-test fixtures pin the pre-compression
-  // body bytes; production-side compression is a transport
-  // middleware concern, not a body emitter one).
+  // `@smithy.api#requestCompression` — actually gzip the body via
+  // `compression.maybe_compress` and append `Content-Encoding: gzip`
+  // when the wrap was applied. Mirrors the Rust SDK's
+  // `RequestCompressionInterceptor.modify_before_retry_loop`
+  // (vendor/aws-sdk-rust/sdk/cloudwatch/src/client_request_compression.rs):
+  // bodies smaller than `default_min_compression_size_bytes` skip
+  // BOTH the gzip wrap AND the header (compressing tiny payloads
+  // tends to bloat them; AWS rejects `Content-Encoding` headers
+  // that don't match the body bytes).
   let encodings = trait_helpers.request_compression_encodings(op_traits)
   let encoding_steps =
-    list.map(encodings, fn(enc) {
-      code.Let(
-        name: "headers",
-        value: code.Raw(
-          fragment: name_concat([
-            "rest.append_content_encoding(headers, \"",
-            enc,
-            "\")",
-          ]),
+    list.flat_map(encodings, fn(enc) {
+      [
+        code.Let(
+          name: "#(body_bytes, applied)",
+          value: code.Raw(
+            fragment: name_concat([
+              "compression.maybe_compress(body_bytes, \"",
+              enc,
+              "\", compression.default_min_compression_size_bytes)",
+            ]),
+          ),
         ),
-      )
+        code.Let(
+          name: "headers",
+          value: code.Raw(
+            fragment: name_concat([
+              "case applied { True -> dict.insert(rest.append_content_encoding(headers, \"",
+              enc,
+              "\"), \"Content-Length\", int.to_string(bit_array.byte_size(body_bytes))) False -> headers }",
+            ]),
+          ),
+        ),
+      ]
     })
   let tuple_expr =
     code.Tuple(items: [
@@ -1249,6 +1265,7 @@ fn file_header(
   }
   let candidates = [
     #("aws/internal/client/runtime", "runtime."),
+    #("aws/internal/codec/compression", "compression."),
     #("aws/internal/codec/json_float", "json_float."),
     #("aws/internal/codec/json_timestamp", "json_timestamp."),
     #("aws/internal/codec/rest", "rest."),

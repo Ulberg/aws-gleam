@@ -1924,6 +1924,7 @@ fn file_header(service_id: String, body: String) -> String {
     #("gleam/option", "option.", code.CodeNone),
     #("gleam/result", "result.", code.CodeNone),
     #("gleam/string", "string.", code.CodeNone),
+    #("aws/internal/codec/compression", "compression.", code.CodeNone),
   ]
   let used =
     candidates

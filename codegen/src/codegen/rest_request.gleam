@@ -556,15 +556,35 @@ pub fn content_length_let_block() -> code.Code {
   )
 }
 
+/// `@smithy.api#requestCompression` body wrap. For each declared
+/// encoding the emitter inserts a `compression.maybe_compress` step
+/// that gzips the body when its size is at least
+/// `default_min_compression_size_bytes` (10 KiB by default,
+/// matching the Rust SDK). When the wrap is applied — and ONLY
+/// then — the `Content-Encoding` header gets the encoding appended
+/// and `Content-Length` is recomputed against the compressed
+/// bytes. Sub-threshold bodies pass through untouched, no header,
+/// no wrap, so AWS doesn't reject the mismatch.
 pub fn emit_content_encoding(encodings: List(String)) -> List(code.Code) {
-  list.map(encodings, fn(enc) {
-    code.Let(
-      name: "headers",
-      value: code.Call(
-        head: code.Ident(name: "rest.append_content_encoding"),
-        args: [code.Ident(name: "headers"), code.StrLit(value: enc)],
+  list.flat_map(encodings, fn(enc) {
+    [
+      code.Let(
+        name: "#(body, applied)",
+        value: code.Raw(
+          fragment: "compression.maybe_compress(body, \""
+            <> enc
+            <> "\", compression.default_min_compression_size_bytes)",
+        ),
       ),
-    )
+      code.Let(
+        name: "headers",
+        value: code.Raw(
+          fragment: "case applied { True -> dict.insert(rest.append_content_encoding(headers, \""
+            <> enc
+            <> "\"), \"Content-Length\", int.to_string(bit_array.byte_size(body))) False -> headers }",
+        ),
+      ),
+    ]
   })
 }
 
