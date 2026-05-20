@@ -801,14 +801,15 @@ fn reorder(members: List(MemberDef), order: List(String)) -> List(MemberDef) {
         list.fold(members, dict.new(), fn(acc, m) {
           dict.insert(acc, m.member_name, m)
         })
-      let listed =
-        list.filter_map(order, fn(n) { dict.get(by_name, n) })
+      let listed = list.filter_map(order, fn(n) { dict.get(by_name, n) })
       let listed_names =
         list.fold(listed, dict.new(), fn(acc, m) {
           dict.insert(acc, m.member_name, Nil)
         })
       let stragglers =
-        list.filter(members, fn(m) { !dict.has_key(listed_names, m.member_name) })
+        list.filter(members, fn(m) {
+          !dict.has_key(listed_names, m.member_name)
+        })
       list.append(listed, stragglers)
     }
   }
@@ -873,6 +874,33 @@ fn is_streaming_shape(model: Model, shape_id: String) -> Bool {
   case model.lookup(model, shape_id) {
     Ok(s) -> dict.has_key(shape_traits(s), ShapeId("smithy.api#streaming"))
     Error(_) -> False
+  }
+}
+
+/// Return the `@streaming`-union member from a struct's resolved
+/// members along with its Gleam local-name. Used by the event-stream
+/// typed-decoder emitter to walk the union shape's variants.
+pub fn streaming_union_in_members(
+  model: Model,
+  members: List(MemberDef),
+) -> option.Option(#(String, String, List(MemberDef))) {
+  case
+    list.find(members, fn(m) {
+      case m.target {
+        RUnion(full_id: union_id, ..) -> is_streaming_shape(model, union_id)
+        _ -> False
+      }
+    })
+  {
+    Ok(m) ->
+      case m.target {
+        RUnion(local_name: local, full_id: id, ..) -> {
+          let variants = resolve_members(model, id)
+          option.Some(#(local, id, variants))
+        }
+        _ -> option.None
+      }
+    Error(_) -> option.None
   }
 }
 

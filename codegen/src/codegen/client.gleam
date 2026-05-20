@@ -724,13 +724,82 @@ pub fn invoke_streaming_fn(snake: String, in_type: String) -> Code {
 ///
 /// The wire body comes back as `application/vnd.amazon.eventstream`
 /// frames; callers decode it with
-/// `aws/internal/codec/event_stream.fold_events(resp.body, …)`. The
-/// distinct function-name suffix flags the event-stream framing
-/// without forcing per-op typed-event decoders through the codegen
-/// — that's the next-level pass once a per-service event union
-/// decoder lands.
+/// `aws/internal/codec/event_stream.fold_events(resp.body, …)` and
+/// then dispatch each frame through the codegen-emitted
+/// `parse_<snake>_event(event)` (see `event_parser_fn`).
 pub fn invoke_event_stream_fn(snake: String, in_type: String) -> Code {
   invoke_streaming_with_suffix(snake, in_type, "_event_stream")
+}
+
+/// One variant of an event-stream union — the codegen builds these
+/// from the union shape's members and threads them into
+/// `event_parser_fn` so the emitter has everything it needs to
+/// dispatch on `:event-type`.
+pub type EventParserVariant {
+  EventParserVariant(
+    /// Wire-form name as it appears in the `:event-type` header
+    /// (the Smithy member name, e.g. `"TranscriptEvent"`).
+    wire_name: String,
+    /// Variant constructor on the Gleam union type (e.g.
+    /// `TranscriptResultStreamTranscriptEvent`).
+    variant_ctor: String,
+    /// JSON struct decoder fn for the variant's payload, called as
+    /// `<decoder_fn>()` to get the `decode.Decoder(T)`.
+    decoder_fn: String,
+  )
+}
+
+/// Emit `pub fn parse_<snake>_event(event: event_stream.Event) ->
+/// Result(<UnionLocal>, String)` for an op whose output carries a
+/// `@streaming` union. Dispatches on the `:event-type` header,
+/// decodes each variant's payload as JSON via the variant's
+/// existing struct decoder, and wraps in the matching union
+/// constructor. Mirrors the Rust SDK's `UnmarshallMessage`
+/// implementation (vendor/aws-sdk-rust/sdk/transcribestreaming/
+/// src/event_stream_serde.rs).
+///
+/// JSON-only today — services on awsjson + restjson1 are covered.
+/// restxml's event-stream variant decoding (S3 SelectObjectContent)
+/// would need an XML payload path here; deferred until a user
+/// surfaces it.
+pub fn event_parser_fn(
+  snake: String,
+  union_local: String,
+  variants: List(EventParserVariant),
+) -> Code {
+  let arms =
+    list.map(variants, fn(v) {
+      string.concat([
+        "    Ok(\"",
+        v.wire_name,
+        "\") ->\n",
+        "      json.parse_bits(event.payload, ",
+        v.decoder_fn,
+        "())\n",
+        "      |> result.map(",
+        v.variant_ctor,
+        ")\n",
+        "      |> result.map_error(fn(_) { \"decode ",
+        v.wire_name,
+        " payload failed\" })\n",
+      ])
+    })
+    |> string.concat
+  let body =
+    string.concat([
+      "case event_stream.string_header(event, \":event-type\") {\n",
+      arms,
+      "    Ok(other) -> Error(\"unknown :event-type: \" <> other)\n",
+      "    Error(_) -> Error(\"missing :event-type header\")\n",
+      "  }",
+    ])
+  Fn(
+    public: True,
+    name: string.concat(["parse_", snake, "_event"]),
+    params: [Param(name: "event", type_: "event_stream.Event")],
+    return: CodeSome(string.concat(["Result(", union_local, ", String)"])),
+    body: code.Raw(fragment: body),
+  )
 }
 
 fn invoke_streaming_with_suffix(

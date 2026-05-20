@@ -42,6 +42,17 @@ pub type Header {
   Header(name: String, value: HeaderValue)
 }
 
+/// Look up the first `StringValue` header on `event` matching `name`.
+/// Used by codegen-emitted `parse_<op>_event` functions to dispatch
+/// on `:event-type` / `:message-type` (both are string-valued per the
+/// event-stream spec).
+pub fn string_header(event: Event, name: String) -> Result(String, Nil) {
+  case list.find(event.headers, fn(h) { h.name == name }) {
+    Ok(Header(value: StringValue(v), ..)) -> Ok(v)
+    _ -> Error(Nil)
+  }
+}
+
 /// Header-value shapes. The on-wire type discriminator is owned by
 /// the encoder; callers construct these by variant name.
 ///

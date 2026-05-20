@@ -180,7 +180,8 @@ pub fn emit_service(
           emit_operation_with(spec, service_target, protocol, is_dispatcher)
         })
       let client_block = emit_client(metadata)
-      let invoke_blocks = list.map(op_specs, fn(s) { emit_invoke(model, s) })
+      let invoke_blocks =
+        list.map(op_specs, fn(s) { emit_invoke(model, s, emitted_type_names) })
       let paginate_blocks = list.map(op_specs, emit_paginator)
       let waiter_blocks = list.map(op_specs, emit_waiter)
       let unique_err_ids =
@@ -338,7 +339,11 @@ fn known_error_locals(error_ids: List(String)) -> Set(String) {
   })
 }
 
-fn emit_invoke(model: Model, spec: OpSpec) -> String {
+fn emit_invoke(
+  model: Model,
+  spec: OpSpec,
+  emitted_type_names: Set(String),
+) -> String {
   let err_type = spec.error_type
   let doc =
     code.DocComment([
@@ -388,17 +393,39 @@ fn emit_invoke(model: Model, spec: OpSpec) -> String {
   }
   // Streaming-union (event-stream) detection — Kinesis
   // SubscribeToShard, DynamoDB Streams subscribers, etc. all flow
-  // through awsJson. Emit a `<op>_event_stream` variant with the
-  // same wire shape as `_streaming`; the name suffix flags the
-  // application/vnd.amazon.eventstream framing.
+  // through awsJson. Emit a `<op>_event_stream` framing wrapper
+  // and a typed `parse_<op>_event(event)` that dispatches on the
+  // `:event-type` header into the matching union variant.
   let event_stream_items = case
-    types.has_streaming_union_in_members(model, spec.out_info.members)
+    types.streaming_union_in_members(model, spec.out_info.members)
   {
-    True -> [
-      code.Blank,
-      client.invoke_event_stream_fn(spec.snake, spec.in_info.type_name),
-    ]
-    False -> []
+    option.Some(#(union_local, _union_id, union_members)) -> {
+      let variants =
+        list.map(union_members, fn(m) {
+          let target_local = case m.target {
+            RStruct(local_name: ln, ..) -> ln
+            _ -> ""
+          }
+          client.EventParserVariant(
+            wire_name: m.member_name,
+            variant_ctor: stringutils.union_variant_ctor(
+              union_local,
+              m.member_name,
+              emitted_type_names,
+            ),
+            decoder_fn: "decode_"
+              <> stringutils.pascal_to_snake(target_local)
+              <> "_struct",
+          )
+        })
+      [
+        code.Blank,
+        client.invoke_event_stream_fn(spec.snake, spec.in_info.type_name),
+        code.Blank,
+        client.event_parser_fn(spec.snake, union_local, variants),
+      ]
+    }
+    option.None -> []
   }
   code.render(
     code.Module(
@@ -1567,6 +1594,7 @@ fn file_header(service_id: String, protocol: Protocol, body: String) -> String {
     #("aws/waiter", "waiter.", code.CodeNone),
     #("aws/region", "region.", code.CodeNone),
     #("aws/internal/client/runtime", "runtime.", code.CodeSome("runtime")),
+    #("aws/internal/codec/event_stream", "event_stream.", code.CodeNone),
     #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
     #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
     #("aws/internal/codec/json_timestamp", "json_timestamp.", code.CodeNone),

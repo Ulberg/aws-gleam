@@ -225,7 +225,8 @@ pub fn emit_service(
           )
         })
       let client_block = emit_client(metadata)
-      let invoke_blocks = list.map(op_specs, fn(s) { emit_invoke(model, s) })
+      let invoke_blocks =
+        list.map(op_specs, fn(s) { emit_invoke(model, s, emitted_type_names) })
       let paginate_blocks = list.map(op_specs, emit_paginator)
       let waiter_blocks = list.map(op_specs, emit_waiter)
       let error_blocks =
@@ -372,7 +373,11 @@ fn emit_waiter(spec: OpSpec) -> String {
   )
 }
 
-fn emit_invoke(model: Model, spec: OpSpec) -> String {
+fn emit_invoke(
+  model: Model,
+  spec: OpSpec,
+  emitted_type_names: Set(String),
+) -> String {
   let base =
     client.invoke_fn(
       spec.snake,
@@ -404,17 +409,42 @@ fn emit_invoke(model: Model, spec: OpSpec) -> String {
   }
   // Operations whose output carries a `@streaming` union (event
   // streams — Transcribe StartStreamTranscription, Lex Runtime
-  // V2 StartConversation, etc.) get a `<op>_event_stream` variant.
-  // Same wire shape as `_streaming`; the distinct name signals the
-  // application/vnd.amazon.eventstream framing to callers.
+  // V2 StartConversation, etc.) get a `<op>_event_stream` variant
+  // plus a typed `parse_<op>_event(event)` decoder. The framing
+  // wrapper hands callers the raw `event_stream.Response`; the
+  // parser dispatches on `:event-type` into the matching union
+  // variant. Mirrors the Rust SDK's `UnmarshallMessage` impl in
+  // vendor/aws-sdk-rust/sdk/transcribestreaming/src/event_stream_serde.rs
   let event_stream_items = case
-    types.has_streaming_union_in_members(model, spec.out_info.members)
+    types.streaming_union_in_members(model, spec.out_info.members)
   {
-    True -> [
-      code.Blank,
-      client.invoke_event_stream_fn(spec.snake, spec.in_info.type_name),
-    ]
-    False -> []
+    option.Some(#(union_local, _union_id, union_members)) -> {
+      let variants =
+        list.map(union_members, fn(m) {
+          let target_local = case m.target {
+            RStruct(local_name: ln, ..) -> ln
+            _ -> ""
+          }
+          client.EventParserVariant(
+            wire_name: m.member_name,
+            variant_ctor: stringutils.union_variant_ctor(
+              union_local,
+              m.member_name,
+              emitted_type_names,
+            ),
+            decoder_fn: "decode_"
+              <> stringutils.pascal_to_snake(target_local)
+              <> "_struct",
+          )
+        })
+      [
+        code.Blank,
+        client.invoke_event_stream_fn(spec.snake, spec.in_info.type_name),
+        code.Blank,
+        client.event_parser_fn(spec.snake, union_local, variants),
+      ]
+    }
+    option.None -> []
   }
   code.render(
     code.Module(
@@ -1909,6 +1939,7 @@ fn file_header(service_id: String, body: String) -> String {
     #("aws/waiter", "waiter.", code.CodeNone),
     #("aws/region", "region.", code.CodeNone),
     #("aws/internal/client/runtime", "runtime.", code.CodeSome("runtime")),
+    #("aws/internal/codec/event_stream", "event_stream.", code.CodeNone),
     #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
     #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
     #("aws/internal/codec/json_timestamp", "json_timestamp.", code.CodeNone),
