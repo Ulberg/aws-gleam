@@ -87,6 +87,7 @@ pub fn emit_service(
                         version,
                         input_id,
                         variant,
+                        op_traits,
                       ))
                   }
                 UnsupportedInput -> Error(Nil)
@@ -215,11 +216,13 @@ fn classify_input(model: Model, ref: shape.Reference) -> InputClass {
             0 -> EmptyInput
             _ -> {
               let members = types.resolve_members(model, id)
-              case
-                all_supported(model, members)
-                && all_body_bound(members)
-                && no_member_traits(model, id)
-              {
+              case all_supported(model, members) {
+                // awsQuery / ec2Query body builders skip non-Body
+                // members at emission time (per the Smithy spec —
+                // HTTP bindings are ignored for these protocols),
+                // so the supportedness check no longer needs the
+                // legacy `all_body_bound` / `no_member_traits`
+                // guards.
                 True -> ScalarTypedInput(input_id: id)
                 False -> UnsupportedInput
               }
@@ -281,39 +284,32 @@ fn is_supported_map_key(k: types.Resolved) -> Bool {
 }
 
 
-fn all_body_bound(members: List(MemberDef)) -> Bool {
-  list.all(members, fn(m) {
-    case m.binding {
-      types.Body -> True
-      _ -> False
-    }
-  })
+fn no_member_traits(_model: Model, _struct_id: String) -> Bool {
+  // awsQuery / ec2Query ignore every HTTP binding trait
+  // (`@httpHeader`, `@httpQuery`, `@httpLabel`, `@httpPayload`),
+  // per the Smithy spec — the wire is form-urlencoded body only.
+  // `@idempotencyToken` (auto-fill via `rest.idempotency_token()`)
+  // and `@hostLabel` (member also lands in the body verbatim)
+  // both run through the same encoder paths.
+  // → No struct-level blockers; per-member filtering happens at
+  // body-emission time via `is_body_bound_member`.
+  True
 }
 
-fn no_member_traits(model: Model, struct_id: String) -> Bool {
-  case model.lookup(model, struct_id) {
-    Ok(shape.Structure(members: m, ..)) ->
-      dict.values(m)
-      |> list.all(fn(member) {
-        // `@idempotencyToken` is supported via auto-fill: when the
-        // member is `None`, the encoder emits a UUID v4 from
-        // `rest.idempotency_token()`. Trait stays on a member that
-        // also surfaces as a regular `Option(String)` in the input
-        // record, so callers can override the auto-filled token.
-        // `@hostLabel` is NOT a blocker — hostLabel members appear
-        // in the body verbatim and additionally participate in the
-        // op's hostPrefix substitution (handled by the
-        // transport/runtime, not the body emitter).
-        let blockers = [
-          "smithy.api#httpHeader",
-          "smithy.api#httpQuery",
-          "smithy.api#httpLabel",
-          "smithy.api#httpPayload",
-        ]
-        list.all(blockers, fn(t) { !dict.has_key(member.traits, ShapeId(t)) })
-      })
-    _ -> True
-  }
+/// Members carrying HTTP binding traits don't contribute to the
+/// awsQuery / ec2Query wire body — the protocol spec says HTTP
+/// bindings are ignored. The field still exists in the Gleam input
+/// record (so the API matches the model), but the body builder
+/// skips it.
+fn is_body_bound_member(model: Model, struct_id: String, name: String) -> Bool {
+  let traits = member_traits(model, struct_id, name)
+  let http_traits = [
+    "smithy.api#httpHeader",
+    "smithy.api#httpQuery",
+    "smithy.api#httpLabel",
+    "smithy.api#httpPayload",
+  ]
+  list.all(http_traits, fn(t) { !dict.has_key(traits, ShapeId(t)) })
 }
 
 fn emit_empty_operation(op_id: String, version: String) -> EmittedOp {
@@ -358,6 +354,7 @@ fn emit_scalar_typed_operation(
   version: String,
   input_id: String,
   variant: Variant,
+  op_traits: shape.Traits,
 ) -> EmittedOp {
   let local = strip_namespace(op_id)
   let snake = stringutils.pascal_to_snake(local)
@@ -417,6 +414,7 @@ fn emit_scalar_typed_operation(
         input_type,
         local,
         version,
+        op_traits,
         list.zip(members, wire_names),
       ),
       code.Blank,
@@ -869,12 +867,22 @@ fn build_scalar_request_fn(
   input_type: String,
   op_name: String,
   version: String,
+  op_traits: shape.Traits,
   members: List(#(MemberDef, String)),
 ) -> Code {
   let prefix = name_concat(["Action=", op_name, "&Version=", version])
   let body_init = code.Let(name: "body", value: code.StrLit(value: prefix))
+  // Skip non-body-bound members (HTTP header / query / label /
+  // payload). awsQuery / ec2Query ignore those traits per the
+  // Smithy spec — the field stays on the input record so the API
+  // matches the model, but the wire body doesn't carry it.
+  let body_members =
+    list.filter(members, fn(pair) {
+      let #(m, _) = pair
+      is_body_bound_member(model, struct_id, m.member_name)
+    })
   let field_steps =
-    list.map(members, fn(pair) {
+    list.map(body_members, fn(pair) {
       let #(m, wire) = pair
       code.Let(
         name: "body",
@@ -895,6 +903,25 @@ fn build_scalar_request_fn(
         fragment: "dict.from_list([#(\"Content-Type\", \"application/x-www-form-urlencoded\"), #(\"Content-Length\", int.to_string(bit_array.byte_size(body_bytes)))])",
       ),
     )
+  // `@smithy.api#requestCompression` — append every advertised
+  // encoding to the Content-Encoding header. The wire body stays
+  // uncompressed (the protocol-test fixtures pin the pre-compression
+  // body bytes; production-side compression is a transport
+  // middleware concern, not a body emitter one).
+  let encodings = trait_helpers.request_compression_encodings(op_traits)
+  let encoding_steps =
+    list.map(encodings, fn(enc) {
+      code.Let(
+        name: "headers",
+        value: code.Raw(
+          fragment: name_concat([
+            "rest.append_content_encoding(headers, \"",
+            enc,
+            "\")",
+          ]),
+        ),
+      )
+    })
   let tuple_expr =
     code.Tuple(items: [
       code.StrLit(value: "POST"),
@@ -911,7 +938,9 @@ fn build_scalar_request_fn(
       items: list.flatten([
         [body_init],
         field_steps,
-        [body_bytes, headers_assign, tuple_expr],
+        [body_bytes, headers_assign],
+        encoding_steps,
+        [tuple_expr],
       ]),
     ),
   )

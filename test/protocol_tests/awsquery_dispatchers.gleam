@@ -24,6 +24,7 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(nested_structures_dispatcher())
   |> dispatch.register(no_input_and_no_output_dispatcher())
   |> dispatch.register(no_input_and_output_dispatcher())
+  |> dispatch.register(put_with_content_encoding_dispatcher())
   |> dispatch.register(query_idempotency_token_auto_fill_dispatcher())
   |> dispatch.register(query_lists_dispatcher())
   |> dispatch.register(query_maps_dispatcher())
@@ -262,6 +263,29 @@ fn no_input_and_output_dispatcher() -> Dispatcher {
       Ok(BuiltRequest(method:, uri:, headers:, body:))
     },
     parse_response: response_parser(svc.parse_no_input_and_output_response),
+  )
+}
+
+fn put_with_content_encoding_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.query#PutWithContentEncoding",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_put_with_content_encoding_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_put_with_content_encoding_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_put_with_content_encoding_response,
+    ),
   )
 }
 
