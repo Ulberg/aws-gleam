@@ -27,9 +27,18 @@ echo "→ ensuring ECR repo exists"
 REPO_URL=$( cd "$HERE/infra" && tofu output -raw ecr_repo_url )
 REGION=$( cd "$HERE/infra" && tofu output -raw region 2>/dev/null || echo us-east-1 )
 
-echo "→ building container image for linux/amd64"
+# `linux/arm64` on purpose:
+#   * matches Fargate's arm64 platform (cheaper vCPU, no emulation
+#     overhead vs x86_64),
+#   * matches an Apple-silicon dev host so no Rosetta layer,
+#   * avoids https://github.com/erlang/otp/issues/10355 (escript
+#     crashes with `failed_to_start_child,user,nouser` when running
+#     an x86 OTP under QEMU/Rosetta on an arm64 host).
+# infra/main.tf must keep `runtime_platform.cpu_architecture = "ARM64"`
+# in lockstep with this.
+echo "→ building container image for linux/arm64"
 docker buildx build \
-  --platform linux/amd64 \
+  --platform linux/arm64 \
   --provenance=false \
   --load \
   -t "${REPO_URL}:${IMAGE_TAG}" \
