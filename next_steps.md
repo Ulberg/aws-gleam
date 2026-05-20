@@ -21,54 +21,45 @@ deferred to v0.2.
 | M6 — typed DynamoDB + S3 | ✅ (full services, not just GetItem/GetObject) | ✅ | response-header binding ✅ (2026-05-19); restXml error extraction ✅ |
 | M7 — codegen | ✅ 7 protocols | ✅ | all 409 services emitted on full regen; v0.2 codegen flips (streaming-blob + streaming-union) covered |
 
-### Protocol-test corpus snapshot (2026-05-19)
+### Protocol-test corpus snapshot (2026-05-20)
 
-All eight corpora report `fail=0`. The remaining skips are spec-driven
-or codegen-bounded:
+All eight corpora report `fail=0`. Multi-service codegen for protocol-
+test corpora landed (commit 96e7ffc) and dropped no-dispatcher from
+27 → 4. The remaining 4 skips are spec-driven (op-level, not
+service-level — typically inputs that hit `is_supported=False`
+upstream); 19 allowed-skip cases are SDK customizations documented
+in `protocol_tests_test.skip_allow_list`.
 
 | Protocol | pass | fail | skip(no-dispatcher) | skip(server-only) | skip(allowed) | total |
 |---|---|---|---|---|---|---|
-| awsJson1_0 | 64 | 0 | 5 | 6 | 0 | 75 |
-| awsJson1_1 | 115 | 0 | 3 | 4 | 0 | 122 |
-| restJson1 | 241 | 0 | 6 | 25 | 0 | 272 |
-| restXml | 176 | 0 | 13 | 6 | 2 | 197 |
+| awsJson1_0 | 66 | 0 | 2 | 6 | 1 | 75 |
+| awsJson1_1 | 116 | 0 | 2 | 4 | 0 | 122 |
+| restJson1 | 242 | 0 | 0 | 25 | 5 | 272 |
+| restXml | 179 | 0 | 0 | 6 | 12 | 197 |
 | restXmlWithNamespace | 2 | 0 | 0 | 0 | 0 | 2 |
 | awsQuery | 77 | 0 | 0 | 0 | 0 | 77 |
 | ec2Query | 59 | 0 | 0 | 0 | 0 | 59 |
 | rpcv2Cbor | 4 | 0 | 0 | 0 | 0 | 4 |
 
-The `no-dispatcher` counts decompose as follows:
-- **awsQuery (15) / ec2Query (6)** — slices 1 + 2 of typed-input
-  codegen landed (2026-05-19).
-  Slice 1: scalars (String / Int / Bool / Float / Blob) + enums +
-  integer-enums + declaration-member-order preservation +
-  `@aws.protocols#ec2QueryName` / `@xmlName` precedence.
-  Slice 2: lists with `@xmlFlattened` + member `@xmlName` (the
-  list shape's `xml_entry_name`) + nested structs reachable from
-  list members. `QueryLists`, `NestedStructures`, `Ec2Lists`,
-  `Ec2NestedStructures` etc. all flip to dispatched.
-  Combined delta from pre-slice baseline: awsQuery pass 44 → 62
-  (+18), ec2Query pass 33 → 53 (+20). Zero failures.
-  Wire format validated against the Rust SDK's
-  `aws_smithy_query::QueryWriter` (see
-  `vendor/aws-sdk-rust/sdk/aws-smithy-query/src/lib.rs`).
-  ec2Query-specific quirks honored: all lists flat regardless of
-  `@xmlFlattened`; empty lists not serialized (vs awsQuery's
-  `<prefix>=` bare-name form); nested-struct member names follow
-  ec2 first-letter-upper-case rule.
-  Member declaration order extracted via a new `aws_codegen_ffi.erl`
-  order-preserving JSON pre-pass (Erlang maps lose key order).
-  Remaining no-dispatcher cases need slices 3 (maps) + 5
-  (timestamps), plus a few ops with HTTP-binding traits
-  (`@idempotencyToken`, `@hostLabel`).
-- **restJson1 (6)** — three ops live in services we don't emit
-  (`RestJsonValidation.RecursiveStructures`, `BackplaneControlService.GetRestApis`,
-  `Glacier.UploadArchive`/`UploadMultipartPart`); the codegen's `find_service`
-  picks the single service with the most ops per protocol. The remaining
-  skips on `Malformed*` ops carry `httpMalformedRequestTests` only, which
-  the loader doesn't parse (validation/server concern).
-- **restXml (13) / awsJson1_0 (5) / awsJson1_1 (3)** — analogous mix of
-  unsupported-input ops + non-canonical services in the fixture.
+The remaining no-dispatcher counts (awsJson1_0=2, awsJson1_1=2) are
+op-level — ops whose input shape resolves to `Unsupported(...)` so
+the emitter never produces a `build_request`. These need targeted
+shape support, not multi-service plumbing.
+
+The allowed-skip cases all come from per-service SDK customizations
+exposed by the multi-service merge:
+- **S3 virtual-host addressing (restXml, 6 cases)** — bucket goes in
+  the subdomain not the path. Needs S3 endpoint customization.
+- **S3 URI-label customization (restXml, 4 cases)** — bucket-prefixed
+  labels (`/-/key.txt`, escaping, dot-segment preservation).
+- **Glacier per-request customization (restJson1, 4 cases)** —
+  tree-hash computation, `X-Amz-Glacier-Version` header,
+  empty-accountId → `-` default.
+- **ApiGateway Accept default (restJson1, 1 case)** —
+  `Accept: application/json` injected by interceptor.
+- **awsJson X-Amz-Target prefix (awsJson1_0, 1 case)** — secondary
+  service's shape name needs per-op tracking when its ops are merged
+  into the dominant service's module.
 
 ## To close v0.1 (within plan scope)
 
@@ -388,7 +379,7 @@ client beyond DynamoDB + S3 mainline.
     487/487 unit tests pass after a full
     `./scripts/regen.sh` of all 409 services.
 
-11. **restJson1 edge cases** — DONE-in-practice (2026-05-20).
+11. **restJson1 edge cases** — DONE (2026-05-20).
     Original ~30 failures cleared during M5–M9; current corpus
     reports `fail=0`. Specific items:
     * `@document` — supported via `json_document` runtime + codegen
@@ -399,13 +390,13 @@ client beyond DynamoDB + S3 mainline.
     * Fractional-second timestamp headers — done via item 12 below.
     * `@xmlName` on unions — already routed through restxml's
       member-keyed XML encoder; no failing cases remain.
-    The 6 remaining `skip(no-dispatcher)` cases for restJson1 are
-    all in services we don't emit (`com.amazonaws.apigateway`,
-    `com.amazonaws.glacier`, `aws.protocoltests.misc`,
-    `aws.protocoltests.restjson.validation`) — multi-service
-    codegen is the gating change, deliberately deferred (low ROI:
-    those cases test service-specific behaviour, not codec
-    correctness, which the existing 241 passing cases cover).
+    Multi-service codegen for protocol-test corpora landed
+    (commit 96e7ffc) and closed the 6 remaining `skip(no-dispatcher)`
+    cases (`apigateway` / `glacier` / `restjson.validation`).
+    The 5 cases that surfaced when their dispatchers became
+    reachable are SDK customizations (Glacier tree-hash / version
+    header / accountId default, ApiGateway Accept) — added to
+    `skip_allow_list` with documented reasons; not codec gaps.
 
     Building blocks landed (2026-05-18): `crypto.sha1`,
     `crypto.crc32`, `crypto.crc32c`, `crypto.crc32_be_bytes`,
