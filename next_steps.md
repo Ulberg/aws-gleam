@@ -24,42 +24,38 @@ deferred to v0.2.
 ### Protocol-test corpus snapshot (2026-05-20)
 
 All eight corpora report `fail=0`. Multi-service codegen for protocol-
-test corpora landed (commit 96e7ffc) and dropped no-dispatcher from
-27 → 4. The remaining 4 skips are spec-driven (op-level, not
-service-level — typically inputs that hit `is_supported=False`
-upstream); 19 allowed-skip cases are SDK customizations documented
-in `protocol_tests_test.skip_allow_list`.
+test corpora landed (commit 96e7ffc), per-service customizations
+landed (commit 7f1fad0), and union XML decoder landed (commit e2d45d0).
+no-dispatcher dropped 27 → 4; allow-list shrank from 18 entries to 1.
 
 | Protocol | pass | fail | skip(no-dispatcher) | skip(server-only) | skip(allowed) | total |
 |---|---|---|---|---|---|---|
-| awsJson1_0 | 66 | 0 | 2 | 6 | 1 | 75 |
+| awsJson1_0 | 67 | 0 | 2 | 6 | 0 | 75 |
 | awsJson1_1 | 116 | 0 | 2 | 4 | 0 | 122 |
-| restJson1 | 242 | 0 | 0 | 25 | 5 | 272 |
-| restXml | 179 | 0 | 0 | 6 | 12 | 197 |
+| restJson1 | 247 | 0 | 0 | 25 | 0 | 272 |
+| restXml | 190 | 0 | 0 | 6 | 1 | 197 |
 | restXmlWithNamespace | 2 | 0 | 0 | 0 | 0 | 2 |
 | awsQuery | 77 | 0 | 0 | 0 | 0 | 77 |
 | ec2Query | 59 | 0 | 0 | 0 | 0 | 59 |
 | rpcv2Cbor | 4 | 0 | 0 | 0 | 0 | 4 |
 
-The remaining no-dispatcher counts (awsJson1_0=2, awsJson1_1=2) are
-op-level — ops whose input shape resolves to `Unsupported(...)` so
-the emitter never produces a `build_request`. These need targeted
-shape support, not multi-service plumbing.
+The remaining 4 no-dispatcher counts (awsJson1_0=2, awsJson1_1=2) all
+target `PutWithContentEncoding` ops — `aws.protocols#awsJson1_0` /
+`_1_1` corpus has these with `smithy.api#requestCompression` traits.
+The awsjson emitter currently lists `@requestCompression` in
+`op_uses_unsupported_trait` because awsJson never had a body-
+compression path (rest emitters got one via commit 1fda7ff). The
+test fixtures' `body: ""` field + the `@httpHeader`-bound `encoding`
+input member (intended to be SDK-overridden) make this a multi-step
+slice: drop the trait from the skip list, exclude
+`@httpHeader`-bound members from the body encoder, emit the
+compression step in `emit_build`. Documented; not yet implemented.
 
-The allowed-skip cases all come from per-service SDK customizations
-exposed by the multi-service merge:
-- **S3 virtual-host addressing (restXml, 6 cases)** — bucket goes in
-  the subdomain not the path. Needs S3 endpoint customization.
-- **S3 URI-label customization (restXml, 4 cases)** — bucket-prefixed
-  labels (`/-/key.txt`, escaping, dot-segment preservation).
-- **Glacier per-request customization (restJson1, 4 cases)** —
-  tree-hash computation, `X-Amz-Glacier-Version` header,
-  empty-accountId → `-` default.
-- **ApiGateway Accept default (restJson1, 1 case)** —
-  `Accept: application/json` injected by interceptor.
-- **awsJson X-Amz-Target prefix (awsJson1_0, 1 case)** — secondary
-  service's shape name needs per-op tracking when its ops are merged
-  into the dominant service's module.
+The 1 remaining `skip(allowed)` is `S3PathAddressing` — sets
+`vendorParams.scopedConfig.client.s3.addressing_style: 'path'` to
+keep the bucket in the URI. The protocol-test runner ignores
+`vendorParams` today; a `force_path_style` Client knob threaded
+through the dispatcher would let this case flip back to passing.
 
 ## To close v0.1 (within plan scope)
 
