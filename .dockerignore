@@ -1,0 +1,37 @@
+# Trim the docker build context for the smoke-test image. Keeps the
+# build under ~10 s of `COPY .` instead of ~minute for a fresh clone
+# of the full tree.
+#
+# What's NOT excluded (kept on purpose):
+#   - codegen/                — needed by scripts/regen.sh
+#   - scripts/                — regen.sh runs in-image
+#   - src/                    — runtime helpers the codegen emits into
+#   - gleam.toml / manifest.toml — at repo root for the SDK package
+#   - vendor/aws-sdk-rust/aws-models/ — Smithy models the codegen
+#                                       reads from
+#   - vendor/smithy/          — protocol-test fixtures (small)
+#   - smoke-test/             — the smoke test itself
+
+# Heavy local-only state
+.git
+build
+*/build
+smoke-test/build
+codegen/build
+
+# Test fixtures + erlang crash dumps + LSP caches
+test/fixtures/protocol-tests
+test/fixtures/endpoints
+erl_crash.dump
+*/erl_crash.dump
+.tools
+.claude
+
+# Vendored aws-sdk-rust subtree we don't need at codegen time:
+# the SDK source itself (~600 MB). Only the aws-models/ JSON files
+# under it are read by ./scripts/regen.sh.
+vendor/aws-sdk-rust/sdk
+vendor/aws-sdk-rust/tools
+vendor/aws-sdk-rust/tests
+vendor/aws-sdk-rust/examples
+vendor/aws-sdk-rust/.git*

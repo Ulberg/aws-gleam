@@ -1,45 +1,61 @@
-# AWS Lambda container image for the aws-gleam smoke test.
+# Multi-stage Lambda container image for the aws-gleam smoke test.
 #
-# Lambda's `provided.al2023` base ships no language runtime — just
-# the AL2023 OS + the runtime interface — so the OTP-release zip
-# approach fails with `exec: erl: not found` at cold start. The
-# container-image deploy fixes that by bundling Erlang/OTP inside
-# the image.
+# Stage 1 (`builder`) installs Gleam on top of erlang:27, copies the
+# repo in, regenerates the SDK services, and runs
+# `gleam export erlang-shipment` so the BEAM bytecode is produced
+# with the same OTP version that will run it. Skipping this step
+# (i.e. compiling on the host and copying the shipment in) gives
+# `undef` errors at boot when the host's OTP version differs from
+# the image's, because BEAM bytecode is not fully cross-OTP-version
+# compatible.
 #
-# We use the official `erlang:27-slim` debian-slim image rather than
-# layering Erlang onto `public.ecr.aws/lambda/provided:al2023` —
-# Lambda accepts any container image as long as the entrypoint
-# polls the Runtime API, which our Gleam handler already does
-# (see `src/runtime_api.gleam`).
-#
-# Build with `./build.sh` (which also handles the ECR push +
-# `tofu apply`); locally you can `docker run -it <tag> /bin/sh` to
-# poke around.
+# Stage 2 (the runtime image) starts fresh from erlang:27-slim and
+# copies just the slimmed shipment over. Lambda accepts any
+# container image whose entrypoint polls the Runtime API, which our
+# Gleam handler does via runtime_api.gleam.
 
+FROM erlang:27 AS builder
+
+# --- Install Gleam ---
+ARG GLEAM_VERSION=1.7.0
+RUN curl -fsSL "https://github.com/gleam-lang/gleam/releases/download/v${GLEAM_VERSION}/gleam-v${GLEAM_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+      | tar xz -C /usr/local/bin gleam \
+    && chmod +x /usr/local/bin/gleam
+
+# --- Build the shipment ---
+WORKDIR /build
+
+# Bring the SDK in so the smoke test's `aws = { path = "../" }`
+# dep resolves. The .dockerignore keeps the build context tight.
+COPY . /build/aws-gleam/
+
+WORKDIR /build/aws-gleam/smoke-test
+
+# `regen.sh` produces src/aws/services/<service>.gleam from the
+# Smithy models bundled under vendor/. `+t` lifts the BEAM atom
+# table for the 409-service codegen.
+ENV ERL_FLAGS="+t 4194304"
+RUN gleam deps download
+RUN ( cd .. && ./scripts/regen.sh )
+RUN gleam export erlang-shipment
+
+# Slim — drop service beams the smoke test doesn't use + compile-
+# time-only Erlang record headers.
+ARG KEEP_SERVICES="s3 sqs"
+RUN set -eu \
+    && rm -rf build/erlang-shipment/aws/include \
+    && KEEP_ALT=$(echo "$KEEP_SERVICES" | tr ' ' '|') \
+    && find build/erlang-shipment/aws/ebin -name 'aws@services@*.beam' \
+        -not -regex ".*aws@services@\\($KEEP_ALT\\)\\.beam" -delete
+
+# --- Runtime image ---
 FROM erlang:27-slim
 
-# Lambda mounts /tmp as the only writeable directory at runtime;
-# everything under /var/task is read-only. Put the OTP release there
-# so file paths match the zip-deploy convention `LAMBDA_TASK_ROOT`
-# points at.
 WORKDIR /var/task
+COPY --from=builder /build/aws-gleam/smoke-test/build/erlang-shipment/ /var/task/
 
-# Copy the `gleam export erlang-shipment` output: one `<dep>/ebin/`
-# directory per Gleam dependency plus the entrypoint script that
-# boots the BEAM with all of them on the code path.
-COPY build/erlang-shipment/ /var/task/
-
-# Generating ~409 SDK service modules at compile time pushes past
-# Erlang's default 1M-atom ceiling. The slim step in `build.sh`
-# trims to KEEP_SERVICES so the runtime atom count is well below
-# this in practice, but the headroom is cheap.
+# Atom-table headroom (the slim step trims to s3 + sqs; this is
+# defense-in-depth in case anyone bumps KEEP_SERVICES).
 ENV ERL_FLAGS="+t 16777216"
 
-# `entrypoint.sh run` runs `exec erl -pa ./*/ebin -eval
-# 'aws_gleam_smoke@@main:run(aws_gleam_smoke)'`, which enters
-# `aws_gleam_smoke:main/0` and from there the Lambda Runtime API
-# polling loop in runtime_api.gleam. The `run` argument's positional
-# tail is irrelevant — Lambda's container-image contract passes the
-# handler name as $1, which our dispatch (via `SMOKE_ROLE` env var)
-# ignores.
 ENTRYPOINT ["/var/task/entrypoint.sh", "run"]
