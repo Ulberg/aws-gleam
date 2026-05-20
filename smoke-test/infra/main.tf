@@ -12,16 +12,31 @@ provider "aws" {
   region = var.region
 }
 
-# ---- ECR repo for the Lambda container image ----
+# Default VPC / subnets — fine for a smoke test. Production would
+# pass in dedicated networking via vars; we keep the module
+# self-contained so `tofu apply` works against any AWS account
+# with a default VPC.
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+# ---- ECR repo for the container image ----
 #
-# Created up-front by `tofu apply -target=aws_ecr_repository.smoke`
-# before the build script pushes the image. The Lambda function
-# below references the pushed digest, so this resource must exist
-# before the first full apply.
+# Created via a -target apply before build.sh pushes; the
+# data.aws_ecr_image source below resolves on the second apply
+# (after the push) and pins the task definition to the pushed
+# digest so re-pushes roll the ECS service forward unambiguously.
 
 resource "aws_ecr_repository" "smoke" {
-  name                 = var.function_name
-  force_delete         = true # let tofu destroy clean residual images
+  name                 = var.service_name
+  force_delete         = true
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -29,11 +44,6 @@ resource "aws_ecr_repository" "smoke" {
   }
 }
 
-# Resolves to whatever digest is currently behind `var.image_tag`
-# in the ECR repo. Re-evaluating this on every plan picks up new
-# pushes automatically — the Lambda functions pin to the digest, so
-# a new tag value (or the same tag pointing at a new sha) forces
-# `aws_lambda_function` to roll forward.
 data "aws_ecr_image" "smoke" {
   repository_name = aws_ecr_repository.smoke.name
   image_tag       = var.image_tag
@@ -41,11 +51,15 @@ data "aws_ecr_image" "smoke" {
   depends_on = [aws_ecr_repository.smoke]
 }
 
-# ---- S3 bucket the function reads + writes against ----
+locals {
+  image_uri = "${aws_ecr_repository.smoke.repository_url}@${data.aws_ecr_image.smoke.image_digest}"
+}
+
+# ---- S3 bucket the writer writes + reader reads ----
 
 resource "aws_s3_bucket" "smoke" {
   bucket        = var.bucket_name
-  force_destroy = true # ok for a smoke-test bucket; do not copy to prod
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_public_access_block" "smoke" {
@@ -65,111 +79,81 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "smoke" {
   }
 }
 
-# ---- IAM role for the Lambda function ----
+# ---- SQS queue: writer publishes, reader long-polls ----
 
-data "aws_iam_policy_document" "lambda_assume" {
+resource "aws_sqs_queue" "smoke" {
+  name                       = var.service_name
+  message_retention_seconds  = 3600
+  visibility_timeout_seconds = 60
+  # Reader long-polls with wait_time_seconds=20 on the receive
+  # side; the queue's own ReceiveMessageWaitTimeSeconds is for
+  # callers that don't override per-call, so we leave it default.
+}
+
+# ---- IAM ----
+#
+# Two roles each, matching ECS task convention:
+#   * execution role  — used by the ECS agent to pull the image
+#                       from ECR and write logs to CloudWatch.
+#   * task role       — used by the container's process for
+#                       calls to AWS (S3 / SQS via the SDK).
+
+data "aws_iam_policy_document" "ecs_assume" {
   statement {
     actions = ["sts:AssumeRole"]
     principals {
       type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
+      identifiers = ["ecs-tasks.amazonaws.com"]
     }
   }
 }
 
-resource "aws_iam_role" "lambda" {
-  name               = "${var.function_name}-exec"
-  assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
+resource "aws_iam_role" "execution" {
+  name               = "${var.service_name}-execution"
+  assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
 }
 
-# Basic execution: CloudWatch Logs.
-resource "aws_iam_role_policy_attachment" "lambda_basic" {
-  role       = aws_iam_role.lambda.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+resource "aws_iam_role_policy_attachment" "execution" {
+  role       = aws_iam_role.execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Scoped S3 access — only the smoke-test bucket, all object-level
-# operations the scenarios need. Both Lambda roles attach this
-# (writer needs Put, reader needs Get) — the list is small enough
-# that splitting per-role isn't worth the duplication.
-data "aws_iam_policy_document" "bucket_access" {
+# Writer task role — S3 PutObject + SQS SendMessage.
+
+resource "aws_iam_role" "writer" {
+  name               = "${var.service_name}-writer"
+  assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
+}
+
+data "aws_iam_policy_document" "writer_perms" {
   statement {
-    actions = [
-      "s3:ListBucket",
-      "s3:GetBucketLocation",
-    ]
-    resources = [aws_s3_bucket.smoke.arn]
-  }
-  statement {
-    actions = [
-      "s3:GetObject",
-      "s3:PutObject",
-      "s3:DeleteObject",
-      "s3:AbortMultipartUpload",
-      "s3:ListMultipartUploadParts",
-    ]
+    actions   = ["s3:PutObject"]
     resources = ["${aws_s3_bucket.smoke.arn}/*"]
   }
-  # ListBuckets needs account-level — scoped to this caller via the
-  # role's principal, so still safe.
-  statement {
-    actions   = ["s3:ListAllMyBuckets"]
-    resources = ["*"]
-  }
-}
-
-resource "aws_iam_role_policy" "bucket_access" {
-  name   = "${var.function_name}-bucket-access"
-  role   = aws_iam_role.lambda.id
-  policy = data.aws_iam_policy_document.bucket_access.json
-}
-
-# ---- SQS queue: the writer Lambda sends to, the reader Lambda
-# subscribes. `visibility_timeout_seconds` must be ≥ the reader's
-# Lambda timeout so a slow GetObject doesn't surface the same
-# message to a second consumer.
-
-resource "aws_sqs_queue" "smoke" {
-  name                       = "${var.function_name}-queue"
-  message_retention_seconds  = 3600
-  visibility_timeout_seconds = 60
-}
-
-# Writer needs SQS SendMessage on the queue.
-data "aws_iam_policy_document" "queue_send" {
   statement {
     actions   = ["sqs:SendMessage", "sqs:GetQueueAttributes"]
     resources = [aws_sqs_queue.smoke.arn]
   }
 }
 
-resource "aws_iam_role_policy" "queue_send" {
-  name   = "${var.function_name}-queue-send"
-  role   = aws_iam_role.lambda.id
-  policy = data.aws_iam_policy_document.queue_send.json
+resource "aws_iam_role_policy" "writer" {
+  name   = "${var.service_name}-writer-policy"
+  role   = aws_iam_role.writer.id
+  policy = data.aws_iam_policy_document.writer_perms.json
 }
 
-# ---- Reader-role IAM (separate role so its scoped permissions
-# stay minimal). The Lambda event-source mapping needs
-# Receive/Delete/GetAttributes on the queue.
+# Reader task role — S3 GetObject + SQS Receive/Delete.
 
 resource "aws_iam_role" "reader" {
-  name               = "${var.reader_function_name}-exec"
-  assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
+  name               = "${var.service_name}-reader"
+  assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
 }
 
-resource "aws_iam_role_policy_attachment" "reader_basic" {
-  role       = aws_iam_role.reader.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
-
-resource "aws_iam_role_policy" "reader_bucket_access" {
-  name   = "${var.reader_function_name}-bucket-access"
-  role   = aws_iam_role.reader.id
-  policy = data.aws_iam_policy_document.bucket_access.json
-}
-
-data "aws_iam_policy_document" "queue_consume" {
+data "aws_iam_policy_document" "reader_perms" {
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.smoke.arn}/*"]
+  }
   statement {
     actions = [
       "sqs:ReceiveMessage",
@@ -180,96 +164,118 @@ data "aws_iam_policy_document" "queue_consume" {
   }
 }
 
-resource "aws_iam_role_policy" "queue_consume" {
-  name   = "${var.reader_function_name}-queue-consume"
+resource "aws_iam_role_policy" "reader" {
+  name   = "${var.service_name}-reader-policy"
   role   = aws_iam_role.reader.id
-  policy = data.aws_iam_policy_document.queue_consume.json
+  policy = data.aws_iam_policy_document.reader_perms.json
 }
 
-# ---- CloudWatch log group (retention) ----
+# ---- CloudWatch log group, shared by both tasks ----
 
-resource "aws_cloudwatch_log_group" "lambda" {
-  name              = "/aws/lambda/${var.function_name}"
+resource "aws_cloudwatch_log_group" "smoke" {
+  name              = "/ecs/${var.service_name}"
   retention_in_days = 7
 }
 
-# ---- Lambda functions ----
-#
-# Both functions deploy the same container image; the `SMOKE_ROLE`
-# env var picks which handler `aws_gleam_smoke:main/0` dispatches
-# to. `provided.al2023` ships no Erlang runtime, so the image (built
-# from `erlang:27-slim` in ../Dockerfile) bundles ERTS itself.
+# ---- ECS cluster + writer task def + reader service ----
 
-resource "aws_cloudwatch_log_group" "reader" {
-  name              = "/aws/lambda/${var.reader_function_name}"
-  retention_in_days = 7
+resource "aws_ecs_cluster" "smoke" {
+  name = var.service_name
 }
 
-# Repository URI + digest the build script pushed. Pinning to the
-# digest (rather than the mutable `:latest` tag) means each push
-# triggers a Lambda update without ambiguity.
-locals {
-  image_uri = "${aws_ecr_repository.smoke.repository_url}@${data.aws_ecr_image.smoke.image_digest}"
-}
+resource "aws_security_group" "tasks" {
+  name        = "${var.service_name}-tasks"
+  description = "Egress-only — Fargate tasks call out to S3 / SQS / ECR"
+  vpc_id      = data.aws_vpc.default.id
 
-resource "aws_lambda_function" "smoke" {
-  function_name = var.function_name
-  role          = aws_iam_role.lambda.arn
-
-  package_type = "Image"
-  image_uri    = local.image_uri
-
-  memory_size = 512
-  timeout     = 30
-
-  environment {
-    variables = {
-      # `SMOKE_ROLE` decides which handler runs: writer / reader /
-      # list_buckets (default). The writer role does PutObject +
-      # SQS SendMessage on each invocation event.
-      SMOKE_ROLE      = var.writer_role
-      SMOKE_BUCKET    = aws_s3_bucket.smoke.bucket
-      SMOKE_QUEUE_URL = aws_sqs_queue.smoke.url
-    }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.lambda_basic,
-    aws_iam_role_policy.bucket_access,
-    aws_iam_role_policy.queue_send,
-    aws_cloudwatch_log_group.lambda,
-  ]
 }
 
-resource "aws_lambda_function" "reader" {
-  function_name = var.reader_function_name
-  role          = aws_iam_role.reader.arn
+resource "aws_ecs_task_definition" "writer" {
+  family                   = "${var.service_name}-writer"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.execution.arn
+  task_role_arn            = aws_iam_role.writer.arn
 
-  package_type = "Image"
-  image_uri    = local.image_uri
-
-  memory_size = 512
-  timeout     = 30
-
-  environment {
-    variables = {
-      SMOKE_ROLE   = "reader"
-      SMOKE_BUCKET = aws_s3_bucket.smoke.bucket
+  container_definitions = jsonencode([
+    {
+      name      = "writer"
+      image     = local.image_uri
+      essential = true
+      environment = [
+        { name = "SMOKE_ROLE", value = "writer" },
+        { name = "SMOKE_BUCKET", value = aws_s3_bucket.smoke.bucket },
+        { name = "SMOKE_QUEUE_URL", value = aws_sqs_queue.smoke.url },
+        { name = "AWS_REGION", value = var.region },
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.smoke.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "writer"
+        }
+      }
     }
-  }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.reader_basic,
-    aws_iam_role_policy.reader_bucket_access,
-    aws_iam_role_policy.queue_consume,
-    aws_cloudwatch_log_group.reader,
-  ]
+  ])
 }
 
-# Wire SQS → reader Lambda. Each message's body (an S3 key) lands in
-# `Records[*].body` of the JSON envelope the runtime delivers.
-resource "aws_lambda_event_source_mapping" "reader" {
-  event_source_arn = aws_sqs_queue.smoke.arn
-  function_name    = aws_lambda_function.reader.arn
-  batch_size       = 10
+resource "aws_ecs_task_definition" "reader" {
+  family                   = "${var.service_name}-reader"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.execution.arn
+  task_role_arn            = aws_iam_role.reader.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "reader"
+      image     = local.image_uri
+      essential = true
+      environment = [
+        { name = "SMOKE_ROLE", value = "reader" },
+        { name = "SMOKE_BUCKET", value = aws_s3_bucket.smoke.bucket },
+        { name = "SMOKE_QUEUE_URL", value = aws_sqs_queue.smoke.url },
+        { name = "AWS_REGION", value = var.region },
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.smoke.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "reader"
+        }
+      }
+    }
+  ])
+}
+
+# Reader as a long-running ECS service. desired_count = 1 keeps
+# exactly one task alive; if it crashes ECS restarts it. The
+# writer is *not* a service — it's a one-shot, started on demand
+# via `aws ecs run-task` (see ../README.md).
+
+resource "aws_ecs_service" "reader" {
+  name            = "${var.service_name}-reader"
+  cluster         = aws_ecs_cluster.smoke.id
+  task_definition = aws_ecs_task_definition.reader.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = data.aws_subnets.default.ids
+    security_groups  = [aws_security_group.tasks.id]
+    assign_public_ip = true # Fargate in default-VPC public subnets
+                            # needs this to reach ECR + S3 + SQS
+  }
 }

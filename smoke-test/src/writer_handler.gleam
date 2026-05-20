@@ -1,53 +1,68 @@
-//// Writer-role handler. For each invocation event, writes the raw
-//// payload bytes to S3 under `events/<request_id>.bin`, then sends
-//// the S3 key as an SQS message body to `SMOKE_QUEUE_URL`. The
-//// reader-role Lambda picks the message up via the standard
-//// Lambda → SQS event source mapping and fetches the object.
+//// Writer-role one-shot task. Reads a payload, writes it to S3
+//// under a per-run key, sends the key on to SQS, then exits.
 ////
-//// Together with `reader_handler.gleam` this exercises both
-//// restXml (S3 PutObject) and awsJson1_0 (SQS SendMessage) from
-//// the same OTP release, so a single smoke deploy validates the
-//// SigV4 / endpoint resolver / HTTP transport across two protocol
-//// codecs.
-////
-//// Environment variables:
-////   - SMOKE_BUCKET    — destination bucket (set by Terraform)
-////   - SMOKE_QUEUE_URL — destination queue URL (set by Terraform)
-////   - AWS_REGION      — Lambda's runtime sets this automatically
+//// `SMOKE_PAYLOAD` is the canonical input — Fargate's RunTask
+//// passes it via the task's `environment` overrides. When unset
+//// the writer falls back to a default string so a bare
+//// `run-task` invocation still produces a verifiable round-trip.
 
 import aws/services/s3
 import aws/services/sqs
 import aws/streaming
 import gleam/bit_array
+import gleam/int
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
-import runtime_api.{type Invocation, Invocation}
 
-pub fn handle(inv: Invocation) -> Result(BitArray, String) {
+const default_payload: String = "hello from aws-gleam fargate smoke test"
+
+pub fn run() -> Result(String, String) {
   use bucket <- env_required("SMOKE_BUCKET")
   use queue_url <- env_required("SMOKE_QUEUE_URL")
 
   use s3_client <- try_step("s3_client_init", s3.new_with_auto_region())
   use sqs_client <- try_step("sqs_client_init", sqs.new_with_auto_region())
 
-  let Invocation(request_id: request_id, payload: payload, ..) = inv
-  // Deterministic per-invocation key so a Lambda retry of the same
-  // invocation re-uses the same object; the reader is idempotent on
-  // GetObject either way.
-  let key = "events/" <> request_id <> ".bin"
+  let payload = case os_getenv("SMOKE_PAYLOAD") {
+    Ok(p) if p != "" -> p
+    _ -> default_payload
+  }
+  let key = "events/" <> mint_key_suffix() <> ".bin"
+  let body = bit_array.from_string(payload)
 
-  let put_result = put_payload(s3_client, bucket, key, payload)
+  let put_outcome = put_payload(s3_client, bucket, key, body)
   s3.shutdown(s3_client)
-  use _ <- result.try(put_result)
+  use _ <- result.try(put_outcome)
 
-  let send_result = send_key(sqs_client, queue_url, key)
+  let send_outcome = send_key(sqs_client, queue_url, key)
   sqs.shutdown(sqs_client)
-  use _ <- result.try(send_result)
+  use _ <- result.try(send_outcome)
 
-  Ok(bit_array.from_string(
-    "{\"status\":\"ok\",\"s3_key\":\"" <> key <> "\"}",
-  ))
+  Ok(
+    "writer ok: wrote s3://"
+    <> bucket
+    <> "/"
+    <> key
+    <> " ("
+    <> int.to_string(bit_array.byte_size(body))
+    <> " bytes), enqueued to "
+    <> queue_url,
+  )
+}
+
+fn mint_key_suffix() -> String {
+  // `erlang:unique_integer/0` is guaranteed unique within this BEAM
+  // node's lifetime. Negative values are possible in some OTP
+  // versions; abs them out so the key looks tidy.
+  int.to_string(int_abs(unique_integer()))
+}
+
+fn int_abs(n: Int) -> Int {
+  case n < 0 {
+    True -> -n
+    False -> n
+  }
 }
 
 fn put_payload(
@@ -107,7 +122,7 @@ fn put_payload(
     )
   case s3.put_object(client, input) {
     Ok(_) -> Ok(Nil)
-    Error(e) -> Error("put_object: " <> string.inspect(e))
+    Error(e) -> Error("s3.put_object: " <> string.inspect(e))
   }
 }
 
@@ -128,7 +143,7 @@ fn send_key(
     )
   case sqs.send_message(client, input) {
     Ok(_) -> Ok(Nil)
-    Error(e) -> Error("send_message: " <> string.inspect(e))
+    Error(e) -> Error("sqs.send_message: " <> string.inspect(e))
   }
 }
 
@@ -137,8 +152,8 @@ fn env_required(
   k: fn(String) -> Result(a, String),
 ) -> Result(a, String) {
   case os_getenv(name) {
-    Ok(v) -> k(v)
-    Error(_) -> Error("missing required env var: " <> name)
+    Ok(v) if v != "" -> k(v)
+    _ -> Error("missing required env var: " <> name)
   }
 }
 
@@ -155,3 +170,6 @@ fn try_step(
 
 @external(erlang, "os", "getenv")
 fn os_getenv(name: String) -> Result(String, Nil)
+
+@external(erlang, "erlang", "unique_integer")
+fn unique_integer() -> Int

@@ -1,53 +1,49 @@
+output "region" {
+  value       = var.region
+  description = "Region everything is deployed in."
+}
+
 output "ecr_repo_url" {
   value       = aws_ecr_repository.smoke.repository_url
   description = "ECR repo the build script tags + pushes images to."
 }
 
-output "region" {
-  value       = var.region
-  description = "Region everything is deployed in. Re-exported so the build script can `aws ecr get-login-password --region ...`."
+output "cluster_arn" {
+  value       = aws_ecs_cluster.smoke.arn
+  description = "ECS cluster ARN — pass to `aws ecs run-task --cluster`."
 }
 
-output "writer_function_name" {
-  value       = aws_lambda_function.smoke.function_name
-  description = "Pass to `aws lambda invoke --function-name`."
+output "writer_task_definition" {
+  value       = aws_ecs_task_definition.writer.family
+  description = "Task family — pass to `aws ecs run-task --task-definition`."
 }
 
-output "writer_function_arn" {
-  value       = aws_lambda_function.smoke.arn
-  description = "Full ARN, useful for X-Ray / cross-account references."
-}
-
-output "reader_function_name" {
-  value       = aws_lambda_function.reader.function_name
-  description = "SQS-triggered reader; observe via CloudWatch logs."
-}
-
-output "reader_function_arn" {
-  value = aws_lambda_function.reader.arn
+output "reader_service_name" {
+  value       = aws_ecs_service.reader.name
+  description = "Reader service. `aws ecs describe-services` to inspect."
 }
 
 output "bucket_name" {
   value       = aws_s3_bucket.smoke.bucket
-  description = "S3 bucket both Lambdas read + write."
+  description = "S3 bucket the writer writes + reader reads."
 }
 
 output "queue_url" {
   value       = aws_sqs_queue.smoke.url
-  description = "SQS queue the writer publishes to and the reader subscribes to."
+  description = "SQS queue the writer publishes to and the reader long-polls."
 }
 
-output "log_group_writer" {
-  value       = aws_cloudwatch_log_group.lambda.name
-  description = "Writer logs. Tail with `aws logs tail <this> --follow`."
+output "log_group" {
+  value       = aws_cloudwatch_log_group.smoke.name
+  description = "Shared log group. `aws logs tail <this> --follow` to watch both writer + reader."
 }
 
-output "log_group_reader" {
-  value       = aws_cloudwatch_log_group.reader.name
-  description = "Reader logs. Look here after invoking the writer."
+output "subnets" {
+  value       = data.aws_subnets.default.ids
+  description = "Subnets the writer run-task command needs in --network-configuration."
 }
 
-output "invoke_command" {
-  value       = "aws lambda invoke --function-name ${aws_lambda_function.smoke.function_name} --payload '{\"hello\":\"smoke\"}' --cli-binary-format raw-in-base64-out /tmp/aws-gleam-smoke-response.json && cat /tmp/aws-gleam-smoke-response.json"
-  description = "Copy-paste invoke command for the writer Lambda."
+output "security_group_id" {
+  value       = aws_security_group.tasks.id
+  description = "SG the writer run-task command needs in --network-configuration."
 }

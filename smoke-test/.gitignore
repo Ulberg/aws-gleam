@@ -4,6 +4,7 @@
 # is derived.
 build/dev/
 build/lsp/
+build/prod/
 build/erlang-shipment/
 build/aws-gleam-smoke.zip
 build/gleam-*.lock

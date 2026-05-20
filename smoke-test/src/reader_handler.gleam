@@ -1,67 +1,118 @@
-//// Reader-role handler. SQS-triggered: the Lambda → SQS event
-//// source mapping delivers the standard JSON envelope
+//// Reader-role long-running service. Polls SQS with a 20s
+//// long-poll, fetches each S3 object whose key arrives as a
+//// message body, logs the byte count, deletes the message.
+//// Re-enters the poll on success and on transient failure;
+//// only a `panic` (config missing) ends the process — ECS then
+//// restarts the task per the service's `desired_count = 1`.
 ////
-////   { "Records": [ { "body": "<s3-key>", ... }, ... ] }
-////
-//// where each `body` is the S3 key the writer-role Lambda wrote
-//// in `writer_handler.gleam`. For each record we fetch the object
-//// from `SMOKE_BUCKET` and log its byte count. Success deletes the
-//// SQS message via the integration's auto-ack; a returned `Error(_)`
-//// reports back to the runtime and Lambda re-drives the message.
-////
-//// Exercises S3 restXml `get_object` end-to-end through the SDK's
-//// endpoint resolver (the new `@contextParam` Bucket / Key bindings
-//// flow into the rule set, so the resolved URL places the bucket
-//// in the virtual-host subdomain).
+//// Logs land in CloudWatch via the task definition's awslogs
+//// driver — `aws logs tail /ecs/aws-gleam-smoke --follow` is
+//// the live-view command.
 
 import aws/services/s3
+import aws/services/sqs
 import aws/streaming
-import gleam/bit_array
-import gleam/dynamic/decode
 import gleam/int
 import gleam/io
-import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
-import gleam/result
 import gleam/string
-import runtime_api.{type Invocation, Invocation}
 
-pub fn handle(inv: Invocation) -> Result(BitArray, String) {
-  use bucket <- env_required("SMOKE_BUCKET")
-  use client <- try_step("s3_client_init", s3.new_with_auto_region())
-
-  let Invocation(payload: payload, ..) = inv
-  let payload_result = bit_array.to_string(payload)
-  let process_result = case payload_result {
-    Error(_) -> Error("payload was not UTF-8 — SQS event JSON expected")
-    Ok(envelope) -> process_envelope(client, bucket, envelope)
+pub fn run_forever() -> Nil {
+  let bucket = env_or_die("SMOKE_BUCKET")
+  let queue_url = env_or_die("SMOKE_QUEUE_URL")
+  let s3_client = case s3.new_with_auto_region() {
+    Ok(c) -> c
+    Error(e) -> panic as { "s3_client_init: " <> string.inspect(e) }
   }
-  s3.shutdown(client)
-  process_result
+  let sqs_client = case sqs.new_with_auto_region() {
+    Ok(c) -> c
+    Error(e) -> panic as { "sqs_client_init: " <> string.inspect(e) }
+  }
+  io.println("reader: started, polling " <> queue_url)
+  loop(s3_client, sqs_client, bucket, queue_url)
 }
 
-fn process_envelope(
-  client: s3.Client,
+fn loop(
+  s3_client: s3.Client,
+  sqs_client: sqs.Client,
   bucket: String,
-  envelope: String,
-) -> Result(BitArray, String) {
-  use keys <- result.try(decode_keys(envelope))
-  use _ <- result.try(
-    list.try_each(keys, fn(key) { fetch_and_log(client, bucket, key) }),
-  )
-  Ok(bit_array.from_string(
-    "{\"status\":\"ok\",\"processed\":"
-    <> int.to_string(list.length(keys))
-    <> "}",
-  ))
+  queue_url: String,
+) -> Nil {
+  let messages = receive_batch(sqs_client, queue_url)
+  list.each(messages, fn(m) {
+    case process(s3_client, sqs_client, bucket, queue_url, m) {
+      Ok(_) -> Nil
+      Error(reason) ->
+        // Don't delete on failure — SQS will re-deliver after
+        // visibility-timeout. Log so CloudWatch shows the cause.
+        io.println_error("reader: skip " <> short_id(m) <> ": " <> reason)
+    }
+  })
+  loop(s3_client, sqs_client, bucket, queue_url)
 }
 
-fn fetch_and_log(
-  client: s3.Client,
+fn receive_batch(client: sqs.Client, queue_url: String) -> List(sqs.Message) {
+  let req =
+    sqs.ReceiveMessageRequest(
+      attribute_names: None,
+      max_number_of_messages: Some(10),
+      message_attribute_names: None,
+      message_system_attribute_names: None,
+      queue_url: Some(queue_url),
+      receive_request_attempt_id: None,
+      visibility_timeout: None,
+      // Long-poll: cuts empty-queue API spend by ~25x at idle, also
+      // lower latency than a sleep-poll loop.
+      wait_time_seconds: Some(20),
+    )
+  case sqs.receive_message(client, req) {
+    Ok(result) ->
+      case result.messages {
+        Some(msgs) -> msgs
+        None -> []
+      }
+    Error(e) -> {
+      io.println_error("reader: receive_message: " <> string.inspect(e))
+      []
+    }
+  }
+}
+
+fn process(
+  s3_client: s3.Client,
+  sqs_client: sqs.Client,
   bucket: String,
-  key: String,
+  queue_url: String,
+  message: sqs.Message,
 ) -> Result(Nil, String) {
+  let key = case message.body {
+    Some(k) -> k
+    None -> ""
+  }
+  case key {
+    "" -> Error("empty message body")
+    _ -> {
+      case fetch(s3_client, bucket, key) {
+        Ok(size) -> {
+          io.println(
+            "reader: fetched s3://"
+            <> bucket
+            <> "/"
+            <> key
+            <> " ("
+            <> int.to_string(size)
+            <> " bytes)",
+          )
+          delete(sqs_client, queue_url, message)
+        }
+        Error(reason) -> Error(reason)
+      }
+    }
+  }
+}
+
+fn fetch(client: s3.Client, bucket: String, key: String) -> Result(Int, String) {
   let input =
     s3.GetObjectRequest(
       bucket: Some(bucket),
@@ -87,56 +138,47 @@ fn fetch_and_log(
       version_id: None,
     )
   case s3.get_object(client, input) {
-    Ok(out) -> {
-      let size = case out.body {
-        None -> 0
+    Ok(out) ->
+      Ok(case out.body {
         Some(body) -> streaming.byte_size(body)
+        None -> 0
+      })
+    Error(e) -> Error("s3.get_object: " <> string.inspect(e))
+  }
+}
+
+fn delete(
+  client: sqs.Client,
+  queue_url: String,
+  message: sqs.Message,
+) -> Result(Nil, String) {
+  case message.receipt_handle {
+    None -> Error("missing receipt_handle on message")
+    Some(handle) -> {
+      let req =
+        sqs.DeleteMessageRequest(
+          queue_url: Some(queue_url),
+          receipt_handle: Some(handle),
+        )
+      case sqs.delete_message(client, req) {
+        Ok(_) -> Ok(Nil)
+        Error(e) -> Error("sqs.delete_message: " <> string.inspect(e))
       }
-      io.println(
-        "fetched s3://" <> bucket <> "/" <> key <> " (" <> int.to_string(size)
-        <> " bytes)",
-      )
-      Ok(Nil)
     }
-    Error(e) -> Error("get_object(" <> key <> "): " <> string.inspect(e))
   }
 }
 
-fn decode_keys(envelope: String) -> Result(List(String), String) {
-  let decoder = {
-    use records <- decode.field(
-      "Records",
-      decode.list({
-        use body <- decode.field("body", decode.string)
-        decode.success(body)
-      }),
-    )
-    decode.success(records)
+fn short_id(m: sqs.Message) -> String {
+  case m.message_id {
+    Some(id) -> id
+    None -> "<no-id>"
   }
-  json.parse(envelope, decoder)
-  |> result.map_error(fn(e) {
-    "SQS event JSON decode failed: " <> string.inspect(e)
-  })
 }
 
-fn env_required(
-  name: String,
-  k: fn(String) -> Result(a, String),
-) -> Result(a, String) {
+fn env_or_die(name: String) -> String {
   case os_getenv(name) {
-    Ok(v) -> k(v)
-    Error(_) -> Error("missing required env var: " <> name)
-  }
-}
-
-fn try_step(
-  step: String,
-  res: Result(a, e),
-  k: fn(a) -> Result(b, String),
-) -> Result(b, String) {
-  case res {
-    Ok(v) -> k(v)
-    Error(e) -> Error(step <> ": " <> string.inspect(e))
+    Ok(v) if v != "" -> v
+    _ -> panic as { "missing required env var: " <> name }
   }
 }
 

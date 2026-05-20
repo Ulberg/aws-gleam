@@ -1,29 +1,45 @@
 # aws-gleam-smoke
 
-Real-world Lambda smoke test for the [aws-gleam](../) SDK. Two
-Lambda functions (writer + reader) share a single OTP release zip
-and split into roles via a `SMOKE_ROLE` env var:
+Real-world end-to-end test for the [aws-gleam](../) SDK. Deploys two
+ECS Fargate workloads that exercise S3 + SQS from inside the container,
+with credentials coming from the task role via the standard ECS
+metadata endpoint — same path real production workloads use.
 
-* **`writer`** (HTTP-invoked) — for each invocation event, writes
-  the raw payload to S3 under `events/<request_id>.bin`, then sends
-  the key as an SQS message body. Exercises S3 restXml `PutObject`
-  and SQS awsJson1_0 `SendMessage` from the same Client config.
-* **`reader`** (SQS-triggered) — decodes the standard Lambda → SQS
-  event envelope (`{ "Records": [{ "body": "<key>", ... }, ...] }`)
-  and `GetObject`-s each key from the bucket. Logs the byte count
-  per fetched object.
-* **`list_buckets`** (default) — the original proof-of-life scenario.
-  Set `var.writer_role = "list_buckets"` on the writer Lambda to
-  drop the SQS hop.
+* **`writer`** — one-shot Fargate task. Reads a payload from
+  `SMOKE_PAYLOAD`, writes it to S3 under `events/<unique>.bin`, then
+  sends the key as an SQS message body. Triggered on demand via
+  `aws ecs run-task` (see `run-smoke.sh`).
+* **`reader`** — long-running Fargate service (`desired_count = 1`).
+  Long-polls SQS (20 s), fetches each S3 object whose key arrives
+  in a message body, logs the byte count, deletes the message.
+  Stays alive across many writer runs.
 
-The same `bootstrap` + same zip artefact deploys to both functions;
-the only deploy-time difference is the env vars Terraform sets on
-each.
+Both deploy from the **same container image** — `SMOKE_ROLE` env var
+selects the entry point. Same OTP release, same `gleam export
+erlang-shipment` build.
 
-See [../docs/smoke-test-plan.md](../docs/smoke-test-plan.md) for the
-original design + open decisions. The infra under `infra/` is
-OpenTofu — pinned defaults are `us-east-1`, `provided.al2023`,
-512 MB / 30 s timeout.
+## Why Fargate, not Lambda
+
+The smoke test originally targeted Lambda. Five problems pushed us
+to Fargate:
+
+1. `provided.al2023` ships no Erlang runtime; zip deploys fail at
+   cold start with `exec: erl: not found`.
+2. Mixing OTP versions between host-side `gleam export` and the
+   runtime image gives `undef` on every module load. Forces a
+   same-image build chain.
+3. ~1-2 s cold start per invocation is fine on Fargate (amortized
+   across hours), prohibitive on Lambda for chatty workloads.
+4. The SDK's `credentials_cache` actor, retry `rate_limiter`, and
+   endpoint rule-set evaluator assume a long-lived process. Lambda
+   resets them per cold start.
+5. The Lambda Runtime API polling loop (`runtime_api.gleam`, ~200
+   LOC) only exists to satisfy Lambda's invoke contract. On Fargate
+   the BEAM just runs — the file goes away.
+
+For callers who **do** want Gleam-on-Lambda, see
+[`../docs/lambda-gleam.md`](../docs/lambda-gleam.md) — it documents
+three working approaches with pros/cons.
 
 ## Layout
 
@@ -31,87 +47,93 @@ OpenTofu — pinned defaults are `us-east-1`, `provided.al2023`,
 smoke-test/
 ├── gleam.toml                       path dep: aws = { path = "../" }
 ├── src/
-│   ├── aws_gleam_smoke.gleam        Lambda main: SMOKE_ROLE dispatch
-│   ├── runtime_api.gleam            AWS Lambda Runtime API client
-│   ├── writer_handler.gleam         PutObject + SendMessage
-│   ├── reader_handler.gleam         SQS event decode + GetObject
-│   └── list_buckets_handler.gleam   proof-of-life ListBuckets
-├── Dockerfile                       container image (erlang:27-slim + shipment)
-├── build.sh                         builds image + pushes to ECR + tofu apply
-└── infra/                           OpenTofu (ECR + writer + reader + bucket
-                                     + queue + IAM)
+│   ├── aws_gleam_smoke.gleam        Entry: SMOKE_ROLE dispatch
+│   ├── writer_handler.gleam         PutObject + SendMessage, exit(0)
+│   └── reader_handler.gleam         Long-poll SQS → GetObject → log
+├── Dockerfile                       gleam-lang:erlang-alpine base
+├── build.sh                         build image → push ECR → tofu apply
+├── run-smoke.sh                     run a writer task + tail logs
+└── infra/                           OpenTofu: cluster + task defs +
+                                     reader service + bucket + queue
 ```
 
-## Why a container image
+## One-time setup
 
-Lambda's `provided.al2023` base ships no language runtime. The
-Gleam-produced OTP shipment expects `erl` on the system PATH; running
-the zip on `provided.al2023` produces `exec: erl: not found` at cold
-start. The container image bundles ERTS via `erlang:27-slim` so the
-BEAM starts cleanly.
-
-## Build + deploy (one command)
-
-`build.sh` does everything: deps, codegen, OTP-shipment, slim,
-docker build, ECR push, `tofu apply`.
-
-```
-# AWS credentials in the env that's running tofu + docker:
+```sh
+# Configure AWS creds (any working profile is fine)
 eval "$(aws configure export-credentials --format env)"
 export AWS_REGION=us-east-1
 
+# Pin a globally-unique bucket name based on your account
+cd smoke-test/infra
+cat > terraform.tfvars <<EOF
+bucket_name = "$(aws sts get-caller-identity --query Account --output text)-aws-gleam-smoke"
+EOF
+```
+
+## Build + deploy
+
+`build.sh` does everything: ECR repo, docker build, push, apply.
+
+```sh
+cd smoke-test
 ./build.sh
 ```
 
-First run pulls Gleam deps + regenerates the SDK's ~409 services (a
-minute or two) + builds the container image. Subsequent runs are
-incremental — set `SKIP_REGEN=1` to skip the regen step when only
-the handler code changed.
+First run takes ~5-10 min (pulls the gleam-lang base image, runs
+the SDK's 409-service codegen inside the container, builds the
+OTP shipment). Subsequent runs hit Docker's layer cache and are
+near-instant unless the SDK source changed.
 
-`KEEP_SERVICES` defaults to `s3 sqs`; bump it if adding scenarios
-that use more services.
+## Run a smoke iteration
 
-`SKIP_INFRA=1 ./build.sh` stops after the ECR push, useful when
-debugging the image with `docker run -it <repo>:latest /bin/sh`.
-
-The OpenTofu module creates:
-- An ECR repository for the container image
-- An S3 bucket both Lambdas read + write
-- An SQS queue
-- A writer Lambda function (HTTP-invokable, container image)
-- A reader Lambda function (SQS-triggered, same container image)
-- Two IAM roles, one per Lambda, with scoped permissions
-- Two CloudWatch log groups, both with 7-day retention
-
-## Invoke
-
-```
-WRITER_FN=$(tofu output -raw writer_function_name)
-READER_LOG=$(tofu output -raw log_group_reader)
-
-aws lambda invoke \
-  --function-name "$WRITER_FN" \
-  --payload '{"hello":"smoke"}' \
-  --cli-binary-format raw-in-base64-out \
-  /tmp/response.json
-cat /tmp/response.json
-# → {"status":"ok","s3_key":"events/<request_id>.bin"}
-
-# Watch the reader pick up the SQS message + fetch the object.
-aws logs tail "$READER_LOG" --follow
-# → fetched s3://<bucket>/events/<request_id>.bin (17 bytes)
+```sh
+./run-smoke.sh                       # default payload
+./run-smoke.sh "custom payload"      # any string
 ```
 
-## Known limitations of this iteration
+The script starts a one-shot writer task with `SMOKE_PAYLOAD`
+overridden, then `aws logs tail`s the shared log group. Expected
+output:
 
-- **Cold-start cost.** First invocation compiles the BEAM modules
-  the slim step kept. `KEEP_SERVICES` defaults to `s3 sqs` so the
-  cold start touches only those clients.
-- **Atom table.** The Dockerfile sets `ERL_FLAGS="+t 16777216"` to
-  raise the BEAM atom-table ceiling for the SDK; if you trim
-  further than `s3 sqs` you can drop this.
-- **No DLQ.** The SQS queue has no dead-letter — a poison message
-  re-drives forever (up to the queue's retention). Add a DLQ in
-  `infra/main.tf` if running for more than a smoke test.
-- **No image vulnerability scanning.** The ECR repo's
-  `scan_on_push` is `false`. Flip it for any longer-lived deploy.
+```
+2026-… writer/<task-id> writer ok: wrote s3://…/events/…bin (NN bytes), enqueued to https://sqs…/queue
+2026-… reader/<task-id> reader: fetched s3://…/events/…bin (NN bytes)
+```
+
+Reader log appears within ~5-25 s of the writer's (long-poll
+latency). The reader service is always running, so this is just
+an SQS round-trip — no cold start on the read side.
+
+## What it proves
+
+| Code path | Exercised by |
+|---|---|
+| Credentials chain (Fargate task role → ECS metadata endpoint) | both tasks at boot |
+| Region resolution from `AWS_REGION` | both tasks |
+| S3 endpoint rule set with `@contextParam Bucket` | writer.PutObject + reader.GetObject |
+| restXml encoder/decoder | S3 PutObject/GetObject |
+| awsJson1_0 codec | SQS SendMessage/ReceiveMessage/DeleteMessage |
+| SigV4 signing against live AWS endpoints | every call |
+| Per-Client credentials cache + retry rate limiter | reader (alive across many messages) |
+
+## Tear down
+
+```sh
+cd smoke-test/infra
+tofu destroy -auto-approve
+```
+
+`force_destroy = true` on the S3 bucket means objects are removed
+with the bucket. ECR images go with the repo.
+
+## Known limitations
+
+- **No DLQ.** A poison message re-drives until it ages out
+  (1-hour message retention by default).
+- **Public subnets only.** The default-VPC layout uses public
+  subnets + `assign_public_ip` so Fargate can pull from ECR and
+  reach S3/SQS without VPC endpoints. Production would use
+  private subnets + a NAT or VPC endpoints.
+- **No image vulnerability scanning.** `scan_on_push = false` on
+  the ECR repo. Flip it for any longer-lived deploy.
