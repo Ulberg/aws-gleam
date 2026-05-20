@@ -27,10 +27,6 @@ import protocol_tests/runner
 /// disagreement.
 fn skip_allow_list() -> Dict(String, String) {
   dict.new()
-  |> dict.insert(
-    "XmlUnionsWithUnionMember",
-    "self-referential union — decoder needs `decode.recursive` plumbing",
-  )
   // S3 path-style addressing (`vendorParams.scopedConfig.client.s3.
   // addressing_style: 'path'`) keeps the bucket in the URI. Default
   // addressing is virtual-host (bucket in subdomain, stripped from

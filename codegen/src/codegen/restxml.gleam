@@ -657,6 +657,7 @@ fn emit_named_shapes(
         [
           emit_union_def(n, ms, emitted_type_names),
           emit_union_codec(n, ms, is_dispatcher, emitted_type_names),
+          emit_union_xml_decoder(n, ms, emitted_type_names),
         ]
       }
       _ -> []
@@ -1430,7 +1431,11 @@ fn emit_struct_xml_decoder(
           case m.target {
             REnum(..) -> False
             RIntEnum(..) -> False
-            RUnion(..) -> False
+            // Union members now route through the typed
+            // `decode_<u>_union_xml` decoder which DOES read from
+            // `elem` (via `xml_decode.optional_child`), so they count
+            // as a real body read.
+            RUnion(..) -> True
             RMap(..) -> False
             RDocument -> False
             RUnit -> False
@@ -1574,7 +1579,14 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
       optional_child_via(
         name_concat(["decode_", stringutils.pascal_to_snake(name), "_xml"]),
       )
-    RUnion(gleam_name: gn, ..) -> emit_unsupported_decoder(gn)
+    RUnion(gleam_name: gn, ..) ->
+      optional_child_via(
+        name_concat([
+          "decode_",
+          stringutils.pascal_to_snake(gn),
+          "_union_xml",
+        ]),
+      )
     RList(element: e, xml_entry_name: entry, ..) -> {
       let inner_decoder = list_element_decoder(e)
       code.Call(head: code.Ident(name: "xml_decode.optional_list"), args: [
@@ -1644,6 +1656,126 @@ fn emit_unsupported_decoder(gleam_type: String) -> code.Code {
       "), String) = Ok(option.None)\n    r }",
     ]),
   )
+}
+
+/// Emit `decode_<u>_union_xml(elem) -> Result(<U>, String)` for a
+/// Smithy union shape. The XML wire form has exactly one variant
+/// element nested inside the union's wrapper; we dispatch by trying
+/// each variant's wire name in turn, returning the matching variant
+/// constructor wrapped around the decoded value.
+///
+/// Recursive unions (the canonical Smithy case is `XmlUnionShape`
+/// whose `unionValue` member targets itself) emit as direct
+/// recursive calls — Gleam supports self-recursion natively, no
+/// `decode.recursive` plumbing needed.
+fn emit_union_xml_decoder(
+  name: String,
+  members: List(MemberDef),
+  emitted: Set(String),
+) -> String {
+  let snake = stringutils.pascal_to_snake(name)
+  let body = union_xml_decoder_body(name, members, emitted)
+  let f =
+    code.Fn(
+      public: True,
+      name: name_concat(["decode_", snake, "_union_xml"]),
+      params: [code.Param(name: "elem", type_: "xml_decode.Element")],
+      return: code.CodeSome(name_concat(["Result(", name, ", String)"])),
+      body: code.Raw(fragment: body),
+    )
+  code.render(code.Module(items: [f, code.Blank]))
+}
+
+fn union_xml_decoder_body(
+  name: String,
+  members: List(MemberDef),
+  emitted: Set(String),
+) -> String {
+  // Right-associative nested `case`. Each member tries `find_child`
+  // on its wire name; if Some, decode that element and wrap in the
+  // variant constructor; if None, fall through to the next member.
+  // Final fall-through returns Error.
+  case members {
+    [] -> "Error(\"xml: empty union shape\")"
+    _ -> {
+      list.fold_right(
+        members,
+        "Error(\"xml: no union variant present\")",
+        fn(else_branch, m) {
+          let ctor =
+            stringutils.union_variant_ctor(name, m.member_name, emitted)
+          let inner = union_variant_xml_inner_decoder(m.target, name)
+          name_concat([
+            "case xml_decode.find_child(elem, \"",
+            m.json_name,
+            "\") {\n",
+            "    option.Some(c) -> ",
+            inner,
+            " |> result.map(",
+            ctor,
+            ")\n",
+            "    option.None -> ",
+            else_branch,
+            "\n",
+            "  }",
+          ])
+        },
+      )
+    }
+  }
+}
+
+/// Per-variant inner decoder call, used inside the union XML decoder
+/// body. `recurse_name` is the union being decoded; when the variant
+/// target IS that same union the call is a direct recursive
+/// `decode_<u>_union_xml(c)`.
+fn union_variant_xml_inner_decoder(
+  target: Resolved,
+  recurse_name: String,
+) -> String {
+  case target {
+    RPrim(primitive: types.PString) -> "xml_decode.string_text(c)"
+    RPrim(primitive: types.PInt) -> "xml_decode.int_text(c)"
+    RPrim(primitive: types.PBool) -> "xml_decode.bool_text(c)"
+    RPrim(primitive: types.PFloat) -> "xml_decode.smithy_float_text(c)"
+    RTimestamp -> "xml_decode.timestamp_text_precise(c)"
+    RBlob ->
+      "case xml_decode.string_text(c) { Ok(s) -> case bit_array.base64_decode(s) { Ok(b) -> Ok(b) Error(_) -> Error(\"xml: bad base64\") } Error(r) -> Error(r) }"
+    REnum(gleam_name: gn, ..) ->
+      name_concat([
+        "case xml_decode.string_text(c) { Ok(s) -> ",
+        stringutils.pascal_to_snake(gn),
+        "_from_wire(s) Error(r) -> Error(r) }",
+      ])
+    RIntEnum(gleam_name: gn, ..) ->
+      name_concat([
+        "case xml_decode.int_text(c) { Ok(i) -> ",
+        stringutils.pascal_to_snake(gn),
+        "_from_int(i) Error(r) -> Error(r) }",
+      ])
+    RStruct(gleam_name: gn, ..) ->
+      name_concat(["decode_", stringutils.pascal_to_snake(gn), "_xml(c)"])
+    RUnion(gleam_name: gn, ..) ->
+      // Direct recursion — for self-referential unions (XmlUnionShape's
+      // `unionValue` -> XmlUnionShape) this is the same fn name we're
+      // currently emitting. Cross-union references are similarly handled
+      // (each union has its own decoder fn).
+      case gn == recurse_name {
+        True ->
+          name_concat([
+            "decode_",
+            stringutils.pascal_to_snake(gn),
+            "_union_xml(c)",
+          ])
+        False ->
+          name_concat([
+            "decode_",
+            stringutils.pascal_to_snake(gn),
+            "_union_xml(c)",
+          ])
+      }
+    _ -> "Error(\"xml: unsupported union variant target\")"
+  }
 }
 
 /// Emit `encode_<snake>_xml(input, root)` — wraps the struct's inner
