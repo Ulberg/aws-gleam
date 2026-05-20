@@ -19,9 +19,15 @@ build
 smoke-test/build
 codegen/build
 
-# Test fixtures + erlang crash dumps + LSP caches
-test/fixtures/protocol-tests
-test/fixtures/endpoints
+# Generated SDK services. These are gitignored and are regenerated
+# inside the image by `./scripts/regen.sh s3 sqs` (Dockerfile RUN
+# step). If the host's prior full-regen output COPYed in, Gleam
+# would compile all 409 services and OOM the docker build.
+src/aws/services
+src/aws/services/protocoltests
+test/protocol_tests
+test/fixtures
+
 erl_crash.dump
 */erl_crash.dump
 .tools
