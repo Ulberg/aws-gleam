@@ -28,6 +28,12 @@ src/aws/services/protocoltests
 test/protocol_tests
 test/fixtures
 
+# Standalone usage examples — they `import aws/services/dynamodb`
+# etc., which the focused-regen doesn't produce, so they'd fail
+# the in-image compile.
+src/aws/examples
+test
+
 erl_crash.dump
 */erl_crash.dump
 .tools
