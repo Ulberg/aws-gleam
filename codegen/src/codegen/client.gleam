@@ -12,9 +12,11 @@ import codegen/code.{
   type Code, Blank, Call, CodeSome, Const, DocComment, Fn, Ident, LabelledParam,
   Let, LetAssert, Module, Param, StrLit, TypeDef, Use, Variant,
 }
+import codegen/trait_helpers.{type EndpointParam, BoolParam, StringParam}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
+import internal/stringutils
 
 /// Build the AST nodes for the per-service Client section. Pairs with
 /// `code.render(code.Module(items))` at the emit site.
@@ -29,6 +31,7 @@ pub fn items(
   endpoint_prefix: String,
   signing_name: String,
   endpoint_rule_set_json: Option(String),
+  endpoint_param_setters: List(EndpointParam),
 ) -> List(Code) {
   // Common preamble for every Client constructor: build the default
   // config and start a per-Client credentials cache so the seven-stage
@@ -366,6 +369,12 @@ pub fn items(
       ),
     ),
     Blank,
+  ]
+  let endpoint_setters =
+    list.flat_map(endpoint_param_setters, fn(p) {
+      emit_endpoint_param_setter(p, client_with)
+    })
+  let tail = [
     DocComment([
       "Read the underlying `runtime.ClientConfig` out of an existing",
       "`Client`. Use this when you want to dispatch a request through",
@@ -420,7 +429,64 @@ pub fn items(
     ),
     Blank,
   ]
-  list.flatten([header, rule_set_constant, new_section, withers])
+  list.flatten([
+    header,
+    rule_set_constant,
+    new_section,
+    withers,
+    endpoint_setters,
+    tail,
+  ])
+}
+
+/// Emit the doc comment + setter `Fn` for a single endpoint-rule-set
+/// param. Booleans and strings each follow the same pattern: pass
+/// the supplied value through `runtime.with_endpoint_param` using the
+/// `endpoints.BoolVal` / `endpoints.StringVal` constructor for the
+/// `Value` wrapper, keep the credentials cache intact.
+fn emit_endpoint_param_setter(
+  param: EndpointParam,
+  client_with: fn(Code, Code) -> Code,
+) -> List(Code) {
+  let snake = stringutils.pascal_to_snake(param.name)
+  let #(type_, ctor) = case param.kind {
+    BoolParam -> #("Bool", "endpoints.BoolVal")
+    StringParam -> #("String", "endpoints.StringVal")
+  }
+  // Doc-comment: lift the trait's `documentation` field verbatim when
+  // present; fall back to a generic one-liner. Either way pin the
+  // wire-form name so callers can correlate with the Smithy rule
+  // set if needed.
+  let header_doc = case param.documentation {
+    "" ->
+      "Set the `" <> param.name <> "` endpoint-rule-set parameter."
+    other -> other
+  }
+  let trailer_doc =
+    "Wire form: `runtime.with_endpoint_param(config, \""
+    <> param.name
+    <> "\", ...)`."
+  [
+    DocComment([header_doc, trailer_doc]),
+    Fn(
+      public: True,
+      name: "with_" <> snake,
+      params: [
+        Param(name: "client", type_: "Client"),
+        Param(name: "value", type_: type_),
+      ],
+      return: CodeSome("Client"),
+      body: client_with(
+        Call(Ident("runtime.with_endpoint_param"), [
+          Ident("client.config"),
+          StrLit(param.name),
+          Call(Ident(ctor), [Ident("value")]),
+        ]),
+        Ident("client.cache"),
+      ),
+    ),
+    Blank,
+  ]
 }
 
 /// Convenience: build + render in one call.
@@ -428,10 +494,16 @@ pub fn render(
   endpoint_prefix: String,
   signing_name: String,
   endpoint_rule_set_json: Option(String),
+  endpoint_param_setters: List(EndpointParam),
 ) -> String {
   string.concat([
     code.render(
-      Module(items(endpoint_prefix, signing_name, endpoint_rule_set_json)),
+      Module(items(
+        endpoint_prefix,
+        signing_name,
+        endpoint_rule_set_json,
+        endpoint_param_setters,
+      )),
     ),
     "\n",
   ])

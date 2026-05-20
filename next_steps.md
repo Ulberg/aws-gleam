@@ -351,11 +351,27 @@ client beyond DynamoDB + S3 mainline.
    parse_response for every rpcv2Cbor operation in the corpus.
    Protocol-test corpus reports 4/4 passing.
 
-10. **Endpoint ruleset coverage beyond S3 + DynamoDB** — every
-    service ships its own `endpoint-rule-set-1.json`. v0.1 wires the
-    evaluator (item 2 above); v0.2 bundles all ~300 rulesets at
-    codegen time and exposes their parameters via per-service
-    builders.
+10. **Endpoint ruleset coverage beyond S3 + DynamoDB** — DONE
+    (2026-05-20). v0.1 already bundled every service's
+    `endpoint-rule-set-1.json` and wired the evaluator. v0.2 closed
+    the parameter-builder gap: each builtIn-flagged param in the
+    rule-set trait now emits a typed
+    `with_<param>(client, value: Bool|String) -> Client` setter
+    in the per-service module. `trait_helpers.endpoint_param_setters`
+    extracts the list (Bool / String params with a `builtIn` field,
+    excluding `AWS::Region` + `SDK::Endpoint` since those already
+    have first-class plumbing); `client.gleam` emits one setter per
+    param, threading through `runtime.with_endpoint_param` with the
+    right `endpoints.BoolVal` / `endpoints.StringVal` wrapper. Doc
+    comments lifted verbatim from the trait's `documentation` field.
+    S3 picks up `with_force_path_style`, `with_use_fips`,
+    `with_use_dual_stack`, `with_use_arn_region`, `with_accelerate`,
+    `with_disable_multi_region_access_points`,
+    `with_use_global_endpoint`. Pinned by 5 tests in
+    `test/endpoint_param_setters_test.gleam` covering Bool round-
+    trip, last-call-wins, and independence of distinct keys.
+    487/487 unit tests pass after a full
+    `./scripts/regen.sh` of all 409 services.
 
 11. **restJson1 edge cases** — `@document`, `@mediaType` streaming,
     fractional-second timestamp headers, `@xmlName` on unions

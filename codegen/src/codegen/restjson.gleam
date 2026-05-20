@@ -291,6 +291,7 @@ fn emit_client(metadata: trait_helpers.Metadata) -> String {
     metadata.endpoint_prefix,
     metadata.signing_name,
     metadata.endpoint_rule_set_json,
+    metadata.endpoint_param_setters,
   )
 }
 
