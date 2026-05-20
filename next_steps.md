@@ -25,13 +25,14 @@ deferred to v0.2.
 
 All eight corpora report `fail=0`. Multi-service codegen for protocol-
 test corpora landed (commit 96e7ffc), per-service customizations
-landed (commit 7f1fad0), and union XML decoder landed (commit e2d45d0).
-no-dispatcher dropped 27 → 4; allow-list shrank from 18 entries to 1.
+landed (commit 7f1fad0), union XML decoder landed (commit e2d45d0),
+and awsJson `@requestCompression` support landed (commit c9330bd).
+no-dispatcher dropped 27 → 0; allow-list shrank from 18 entries to 1.
 
 | Protocol | pass | fail | skip(no-dispatcher) | skip(server-only) | skip(allowed) | total |
 |---|---|---|---|---|---|---|
-| awsJson1_0 | 67 | 0 | 2 | 6 | 0 | 75 |
-| awsJson1_1 | 116 | 0 | 2 | 4 | 0 | 122 |
+| awsJson1_0 | 69 | 0 | 0 | 6 | 0 | 75 |
+| awsJson1_1 | 118 | 0 | 0 | 4 | 0 | 122 |
 | restJson1 | 247 | 0 | 0 | 25 | 0 | 272 |
 | restXml | 190 | 0 | 0 | 6 | 1 | 197 |
 | restXmlWithNamespace | 2 | 0 | 0 | 0 | 0 | 2 |
@@ -39,23 +40,13 @@ no-dispatcher dropped 27 → 4; allow-list shrank from 18 entries to 1.
 | ec2Query | 59 | 0 | 0 | 0 | 0 | 59 |
 | rpcv2Cbor | 4 | 0 | 0 | 0 | 0 | 4 |
 
-The remaining 4 no-dispatcher counts (awsJson1_0=2, awsJson1_1=2) all
-target `PutWithContentEncoding` ops — `aws.protocols#awsJson1_0` /
-`_1_1` corpus has these with `smithy.api#requestCompression` traits.
-The awsjson emitter currently lists `@requestCompression` in
-`op_uses_unsupported_trait` because awsJson never had a body-
-compression path (rest emitters got one via commit 1fda7ff). The
-test fixtures' `body: ""` field + the `@httpHeader`-bound `encoding`
-input member (intended to be SDK-overridden) make this a multi-step
-slice: drop the trait from the skip list, exclude
-`@httpHeader`-bound members from the body encoder, emit the
-compression step in `emit_build`. Documented; not yet implemented.
-
 The 1 remaining `skip(allowed)` is `S3PathAddressing` — sets
 `vendorParams.scopedConfig.client.s3.addressing_style: 'path'` to
 keep the bucket in the URI. The protocol-test runner ignores
 `vendorParams` today; a `force_path_style` Client knob threaded
 through the dispatcher would let this case flip back to passing.
+Every other case in every corpus either passes or is the official
+Smithy `appliesTo: "server"` skip.
 
 ## To close v0.1 (within plan scope)
 
