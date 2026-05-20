@@ -355,6 +355,35 @@ pub fn with_content_md5_header(
   dict.insert(headers, "Content-MD5", digest)
 }
 
+/// Glacier's tree-hash + content-sha256 headers. Both end up as the
+/// same SHA-256 of the body when the payload is a single chunk
+/// (≤ 1 MiB); larger payloads recurse, pairing 1 MiB chunk hashes
+/// (see https://docs.aws.amazon.com/amazonglacier/latest/dev/checksum-
+/// calculations.html). The protocol-test corpus only exercises the
+/// single-chunk case, and real-world Glacier callers chunk their
+/// uploads before they reach this point — the chunked tree-hash is
+/// a follow-up if a caller surfaces a multi-MB body.
+///
+/// Headers are case-insensitive on the wire; we use the title-case
+/// forms (`X-Amz-Sha256-Tree-Hash`, `X-Amz-Content-Sha256`) so the
+/// Smithy `httpRequestTests` assertions match without a case-fold.
+/// Both headers are skipped if already present (the caller might
+/// pass them explicitly).
+pub fn with_glacier_tree_hash_headers(
+  headers: Dict(String, String),
+  body: BitArray,
+) -> Dict(String, String) {
+  let digest = crypto.hex_encode(crypto.sha256(body))
+  let headers = case dict.has_key(headers, "X-Amz-Sha256-Tree-Hash") {
+    True -> headers
+    False -> dict.insert(headers, "X-Amz-Sha256-Tree-Hash", digest)
+  }
+  case dict.has_key(headers, "X-Amz-Content-Sha256") {
+    True -> headers
+    False -> dict.insert(headers, "X-Amz-Content-Sha256", digest)
+  }
+}
+
 /// Checksum algorithm picked by the `aws.protocols#httpChecksum`
 /// trait. Each variant maps to one of the AWS `x-amz-checksum-*`
 /// request headers; the codegen / runtime middleware writes the

@@ -78,14 +78,17 @@ pub fn emit_service(
       // `QueryCompatibleJsonRpc10`). Union the secondary services'
       // ops in so the dispatcher table covers every
       // `httpRequestTests` case — no-op for real-world models which
-      // have exactly one service per file.
+      // have exactly one service per file. Each pair carries the
+      // op's source service ID so X-Amz-Target (which prefixes the
+      // service shape name) + `x-amzn-query-mode` resolve against
+      // the op's own service rather than the dominant.
       let protocol_trait_id = case protocol {
         AwsJson10 -> "aws.protocols#awsJson1_0"
         AwsJson11 -> "aws.protocols#awsJson1_1"
       }
-      let refs =
+      let annotated_refs =
         list.append(
-          refs,
+          list.map(refs, fn(r) { #(r, service_id) }),
           trait_helpers.secondary_service_op_refs(
             model,
             service_id,
@@ -97,7 +100,8 @@ pub fn emit_service(
       // also carries the operation's `errors` list (Smithy error
       // shape IDs) so the per-op typed-error enum can be emitted.
       let resolved_ops =
-        list.filter_map(refs, fn(ref) {
+        list.filter_map(annotated_refs, fn(pair) {
+          let #(ref, src_service_id) = pair
           let ShapeId(target) = ref.target
           case model.lookup(model, target) {
             Ok(shape.Operation(
@@ -134,6 +138,7 @@ pub fn emit_service(
                         paginated,
                         waiters,
                         host_prefix_info,
+                        src_service_id,
                       ))
                     _, _ -> Error(Nil)
                   }
@@ -167,6 +172,7 @@ pub fn emit_service(
             paginated,
             waiters,
             host_prefix_info,
+            src_service_id,
           ) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
@@ -180,6 +186,11 @@ pub fn emit_service(
               members_out: out_info.members,
               trait: paginated,
             )
+          let query_compatible =
+            trait_helpers.awsjson_query_compatible_for_service(
+              model,
+              src_service_id,
+            )
           OpSpec(
             op_id: op_id,
             local: local,
@@ -192,6 +203,8 @@ pub fn emit_service(
             pagination_info: pagination_info,
             waiters: waiters,
             host_prefix_info: host_prefix_info,
+            source_service_local: strip_namespace(src_service_id),
+            query_compatible: query_compatible,
           )
         })
       let op_blocks =
@@ -246,7 +259,7 @@ pub fn emit_service(
         module_name: derive_module_name(service_id),
         source: body,
         operations_emitted: list.map(resolved_ops, fn(t) {
-          let #(op_id, _, _, _, _, _, _, _) = t
+          let #(op_id, _, _, _, _, _, _, _, _) = t
           op_id
         }),
         dispatcher_specs: dispatcher_specs,
@@ -288,6 +301,19 @@ type OpSpec {
     /// `@hostLabel` members. `Some(_)` ⇒ emit a validator + route
     /// through `runtime.invoke_with_endpoint_params_and_host_prefix`.
     host_prefix_info: option.Option(client.HostPrefixInfo),
+    /// Local name of the service this op declares membership in.
+    /// Distinct from the *dominant* service's local name only inside
+    /// protocol-test corpora that merge multiple services per file —
+    /// real-world models always match. Used as the X-Amz-Target
+    /// shape-name prefix; awsJson dispatches `<source>.<Op>`.
+    source_service_local: String,
+    /// `True` iff the source service carries
+    /// `aws.protocols#awsQueryCompatible`. When set, the emitted
+    /// `build_<op>_request` adds `x-amzn-query-mode: true` to the
+    /// request headers — required for the QueryCompatible test
+    /// service in awsJson1_0's corpus and would also fire on any
+    /// production query-compat service.
+    query_compatible: Bool,
   )
 }
 
@@ -494,13 +520,14 @@ fn collect_named_shapes(
       option.Option(trait_helpers.PaginatedTrait),
       List(trait_helpers.WaiterDef),
       option.Option(client.HostPrefixInfo),
+      String,
     ),
   ),
 ) -> List(Resolved) {
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_op_id, in_r, out_r, err_ids, _, _, _, _) = t
+      let #(_op_id, in_r, out_r, err_ids, _, _, _, _, _) = t
       let acc = walk(model, acc, in_r)
       let acc = walk(model, acc, out_r)
       list.fold(err_ids, acc, fn(a, err_id) {
@@ -573,11 +600,12 @@ fn input_reachable_structs(
       option.Option(trait_helpers.PaginatedTrait),
       List(trait_helpers.WaiterDef),
       option.Option(client.HostPrefixInfo),
+      String,
     ),
   ),
 ) -> Set(String) {
   list.fold(resolved_ops, set.new(), fn(acc, t) {
-    let #(_, in_r, _, _, _, _, _, _) = t
+    let #(_, in_r, _, _, _, _, _, _, _) = t
     walk_for_structs(model, acc, in_r)
   })
 }
@@ -689,13 +717,16 @@ fn emit_named_shapes(
 
 fn emit_operation_with(
   spec: OpSpec,
-  service_target: String,
+  _service_target: String,
   protocol: Protocol,
   is_dispatcher: Bool,
 ) -> String {
   let snake = spec.snake
   let local_name = spec.local
-  let target_value = name_concat([service_target, ".", local_name])
+  // X-Amz-Target uses the *source* service's shape name, not the
+  // dominant's — secondary-service ops merged into the dominant
+  // module still dispatch against their own service prefix.
+  let target_value = name_concat([spec.source_service_local, ".", local_name])
   let ct = content_type(protocol)
   let in_info = spec.in_info
   let out_info = spec.out_info
@@ -708,6 +739,7 @@ fn emit_operation_with(
       out_info,
       is_dispatcher,
       spec.requires_md5,
+      spec.query_compatible,
     ),
     emit_error_type(spec),
     emit_error_translator(spec),
@@ -846,6 +878,7 @@ fn emit_operation_body(
   out_info: IOTypeInfo,
   is_dispatcher: Bool,
   requires_md5: Bool,
+  query_compatible: Bool,
 ) -> String {
   // For Unit input/output we synthesise a singleton type + codec at
   // the op level. The synth input encoder is wire-live (called via
@@ -972,7 +1005,14 @@ fn emit_operation_body(
     )
 
   let build =
-    emit_build(in_info.type_name, snake, target_value, ct, requires_md5)
+    emit_build(
+      in_info.type_name,
+      snake,
+      target_value,
+      ct,
+      requires_md5,
+      query_compatible,
+    )
   let parse = emit_parse(out_info.type_name, snake)
   string.concat([
     "\n",
@@ -1437,6 +1477,7 @@ fn emit_build(
   target_value: String,
   ct: String,
   requires_md5: Bool,
+  query_compatible: Bool,
 ) -> String {
   let body_str_let =
     code.Let(
@@ -1453,27 +1494,39 @@ fn emit_build(
         code.Ident(name: "body_str"),
       ]),
     )
+  let base_header_items = [
+    code.Tuple(items: [
+      code.StrLit(value: "Content-Type"),
+      code.StrLit(value: ct),
+    ]),
+    code.Tuple(items: [
+      code.StrLit(value: "Content-Length"),
+      code.Raw(fragment: "int.to_string(bit_array.byte_size(body))"),
+    ]),
+    code.Tuple(items: [
+      code.StrLit(value: "X-Amz-Target"),
+      code.StrLit(value: target_value),
+    ]),
+  ]
+  // `aws.protocols#awsQueryCompatible` services flip every request
+  // into `x-amzn-query-mode: true` so the server's query-compat
+  // dispatcher routes the body. Mirrors the cbor_rpc emitter's
+  // handling at the rpcv2Cbor protocol level.
+  let header_items = case query_compatible {
+    True ->
+      list.append(base_header_items, [
+        code.Tuple(items: [
+          code.StrLit(value: "x-amzn-query-mode"),
+          code.StrLit(value: "true"),
+        ]),
+      ])
+    False -> base_header_items
+  }
   let headers_let =
     code.Let(
       name: "headers",
       value: code.Call(head: code.Ident(name: "dict.from_list"), args: [
-        code.ListLit(
-          items: [
-            code.Tuple(items: [
-              code.StrLit(value: "Content-Type"),
-              code.StrLit(value: ct),
-            ]),
-            code.Tuple(items: [
-              code.StrLit(value: "Content-Length"),
-              code.Raw(fragment: "int.to_string(bit_array.byte_size(body))"),
-            ]),
-            code.Tuple(items: [
-              code.StrLit(value: "X-Amz-Target"),
-              code.StrLit(value: target_value),
-            ]),
-          ],
-          tail: code.CodeNone,
-        ),
+        code.ListLit(items: header_items, tail: code.CodeNone),
       ]),
     )
   // `@httpChecksumRequired` operations land a final `let headers =

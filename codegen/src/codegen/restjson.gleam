@@ -19,6 +19,7 @@ import codegen/error_dispatch
 import codegen/named_shapes
 import codegen/paginator
 import codegen/rest_request
+import codegen/service_customizations
 import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
@@ -64,10 +65,14 @@ pub fn emit_service(
       // file (RestJsonValidation, BackplaneControlService, Glacier
       // alongside the dominant RestJson). Union their ops in so the
       // dispatcher table covers every `httpRequestTests` case —
-      // no-op for real-world models (one service per file).
-      let refs =
+      // no-op for real-world models (one service per file). Each
+      // pair carries the op's source service ID so per-service
+      // customizations (Glacier's version header + tree-hash +
+      // accountId default, ApiGateway's Accept default) target the
+      // right ops in the merged module.
+      let annotated_refs =
         list.append(
-          refs,
+          list.map(refs, fn(r) { #(r, service_id) }),
           trait_helpers.secondary_service_op_refs(
             model,
             service_id,
@@ -75,7 +80,8 @@ pub fn emit_service(
           ),
         )
       let resolved_ops =
-        list.filter_map(refs, fn(ref) {
+        list.filter_map(annotated_refs, fn(pair) {
+          let #(ref, src_service_id) = pair
           let ShapeId(target) = ref.target
           case model.lookup(model, target) {
             Ok(shape.Operation(
@@ -119,6 +125,7 @@ pub fn emit_service(
                         waiters,
                         http_checksum,
                         host_prefix_info,
+                        src_service_id,
                       ))
                     _, _, _ -> Error(Nil)
                   }
@@ -148,6 +155,7 @@ pub fn emit_service(
             waiters,
             http_checksum,
             host_prefix_info,
+            src_service_id,
           ) = t
           #(
             op_id,
@@ -160,6 +168,7 @@ pub fn emit_service(
             waiters,
             http_checksum,
             host_prefix_info,
+            src_service_id,
           )
         })
       let named_shapes = collect_named_shapes(model, resolved_ops)
@@ -181,6 +190,7 @@ pub fn emit_service(
             waiters,
             _,
             host_prefix_info,
+            src_service_id,
           ) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
@@ -210,6 +220,7 @@ pub fn emit_service(
             pagination_info: pagination_info,
             waiters: waiters,
             host_prefix_info: host_prefix_info,
+            source_service_id: src_service_id,
           )
         })
 
@@ -226,6 +237,7 @@ pub fn emit_service(
             _,
             http_checksum,
             _,
+            src_service_id,
           ) = t
           emit_operation(
             model,
@@ -236,6 +248,7 @@ pub fn emit_service(
             rename,
             requires_md5,
             http_checksum,
+            src_service_id,
           )
         })
       let client_block = emit_client(metadata)
@@ -295,7 +308,7 @@ pub fn emit_service(
         module_name: derive_module_name(service_id),
         source: body,
         operations_emitted: list.map(resolved_ops, fn(t) {
-          let #(op_id, _, _, _, _, _, _, _, _, _) = t
+          let #(op_id, _, _, _, _, _, _, _, _, _, _) = t
           op_id
         }),
         dispatcher_specs: dispatcher_specs,
@@ -325,6 +338,13 @@ type OpSpec {
     /// `@smithy.api#endpoint.hostPrefix` template + the input's
     /// `@hostLabel` members.
     host_prefix_info: option.Option(client.HostPrefixInfo),
+    /// Full Smithy ID of the service this op declares membership in
+    /// — distinct from the dominant service only inside protocol-test
+    /// corpora that merge multiple services per file. Used by the
+    /// build-request emitter to look up per-service customizations
+    /// (Glacier's tree-hash + version header + accountId default,
+    /// ApiGateway's `Accept: application/json` default).
+    source_service_id: String,
   )
 }
 
@@ -626,6 +646,7 @@ fn collect_named_shapes(
       List(trait_helpers.WaiterDef),
       option.Option(trait_helpers.HttpChecksumInfo),
       option.Option(client.HostPrefixInfo),
+      String,
     ),
   ),
 ) -> List(Resolved) {
@@ -636,7 +657,7 @@ fn collect_named_shapes(
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_, _, in_r, out_r, err_ids, _, _, _, _, _) = t
+      let #(_, _, in_r, out_r, err_ids, _, _, _, _, _, _) = t
       let acc = walk(model, acc, in_r)
       let acc = walk(model, acc, out_r)
       list.fold(err_ids, acc, fn(a, err_id) {
@@ -740,6 +761,7 @@ fn emit_operation(
   rename: dict.Dict(String, String),
   requires_md5: Bool,
   http_checksum: Option(trait_helpers.HttpChecksumInfo),
+  source_service_id: String,
 ) -> String {
   let local = strip_namespace(op_id)
   let pascal = local
@@ -807,6 +829,7 @@ fn emit_operation(
       in_members,
       requires_md5,
       http_checksum,
+      service_customizations.for_service_id(source_service_id),
     )
   let parse = emit_parse(out_info, snake)
   string.concat([
@@ -1349,6 +1372,7 @@ fn emit_build(
   members: List(MemberDef),
   requires_md5: Bool,
   http_checksum: Option(trait_helpers.HttpChecksumInfo),
+  customization: service_customizations.ServiceCustomization,
 ) -> String {
   rest_request.build_request_module(
     input_type,
@@ -1358,6 +1382,7 @@ fn emit_build(
     members,
     requires_md5,
     http_checksum,
+    customization,
     fn(cats: types.BindingCategories) {
       case cats.payload {
         Ok(p) -> emit_payload_body(p)

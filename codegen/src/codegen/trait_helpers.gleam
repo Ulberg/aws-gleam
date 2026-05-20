@@ -497,13 +497,19 @@ fn parse_matcher(body: Dict(ShapeId, Trait)) -> Option(WaiterMatcher) {
 /// `httpResponseTests` cases instead of skipping them as
 /// "no-dispatcher".
 ///
+/// Each entry pairs the ref with its source service's full ID so the
+/// emitter can apply per-service customizations (Glacier's tree-hash
+/// + version header, ApiGateway's default `Accept`, awsJson's
+/// `X-Amz-Target` shape-name prefix that needs to match the op's
+/// declaring service rather than the dominant's) when ops merge.
+///
 /// Real-world AWS service models declare exactly one service shape,
 /// so this returns `[]` outside the protocol-test corpora.
 pub fn secondary_service_op_refs(
   model: Model,
   dominant_service_id: String,
   protocol_trait_id: String,
-) -> List(shape.Reference) {
+) -> List(#(shape.Reference, String)) {
   dict.to_list(model.shapes)
   |> list.flat_map(fn(pair) {
     let #(sid, sh) = pair
@@ -511,12 +517,26 @@ pub fn secondary_service_op_refs(
     case sid_str == dominant_service_id, sh {
       False, shape.Service(operations: ops, traits: t, ..) ->
         case dict.has_key(t, ShapeId(protocol_trait_id)) {
-          True -> ops
+          True -> list.map(ops, fn(ref) { #(ref, sid_str) })
           False -> []
         }
       _, _ -> []
     }
   })
+}
+
+/// `True` iff the service carries `aws.protocols#awsQueryCompatible`.
+/// awsJson + rpcv2Cbor honour this by emitting `x-amzn-query-mode:
+/// true` on every request; rest* protocols ignore it.
+pub fn awsjson_query_compatible_for_service(
+  model: Model,
+  service_id: String,
+) -> Bool {
+  case model.lookup(model, service_id) {
+    Ok(shape.Service(traits: t, ..)) ->
+      dict.has_key(t, ShapeId("aws.protocols#awsQueryCompatible"))
+    _ -> False
+  }
 }
 
 /// Extract the `encodings` list from `@requestCompression`. Returns
