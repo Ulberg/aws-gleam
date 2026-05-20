@@ -21,6 +21,7 @@ import codegen/dispatcher
 import codegen/error_dispatch
 import codegen/named_shapes
 import codegen/paginator
+import codegen/rest_request
 import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
@@ -28,7 +29,6 @@ import codegen/types.{
   RStruct, RUnion,
 }
 import codegen/waiter
-import gleam/dict
 import gleam/list
 import gleam/option
 import gleam/set.{type Set}
@@ -127,6 +127,8 @@ pub fn emit_service(
                   let waiters = trait_helpers.waitable_traits(ts)
                   let host_prefix_info =
                     extract_host_prefix_info(model, ts, in_id)
+                  let compression_encodings =
+                    trait_helpers.request_compression_encodings(ts)
                   case types.is_supported(in_r), types.is_supported(out_r) {
                     True, True ->
                       Ok(#(
@@ -139,6 +141,7 @@ pub fn emit_service(
                         waiters,
                         host_prefix_info,
                         src_service_id,
+                        compression_encodings,
                       ))
                     _, _ -> Error(Nil)
                   }
@@ -173,6 +176,7 @@ pub fn emit_service(
             waiters,
             host_prefix_info,
             src_service_id,
+            compression_encodings,
           ) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
@@ -205,6 +209,7 @@ pub fn emit_service(
             host_prefix_info: host_prefix_info,
             source_service_local: strip_namespace(src_service_id),
             query_compatible: query_compatible,
+            compression_encodings: compression_encodings,
           )
         })
       let op_blocks =
@@ -259,7 +264,7 @@ pub fn emit_service(
         module_name: derive_module_name(service_id),
         source: body,
         operations_emitted: list.map(resolved_ops, fn(t) {
-          let #(op_id, _, _, _, _, _, _, _, _) = t
+          let #(op_id, _, _, _, _, _, _, _, _, _) = t
           op_id
         }),
         dispatcher_specs: dispatcher_specs,
@@ -314,6 +319,13 @@ type OpSpec {
     /// service in awsJson1_0's corpus and would also fire on any
     /// production query-compat service.
     query_compatible: Bool,
+    /// Encodings from `smithy.api#requestCompression.encodings`. When
+    /// non-empty, `emit_build` threads them through
+    /// `rest_request.emit_content_encoding` so the body is gzipped
+    /// (above the 10 KiB threshold) and the `Content-Encoding` /
+    /// recomputed `Content-Length` headers are set. Mirrors the
+    /// restJson / restXml path landed in commit 1fda7ff.
+    compression_encodings: List(String),
   )
 }
 
@@ -521,13 +533,14 @@ fn collect_named_shapes(
       List(trait_helpers.WaiterDef),
       option.Option(client.HostPrefixInfo),
       String,
+      List(String),
     ),
   ),
 ) -> List(Resolved) {
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_op_id, in_r, out_r, err_ids, _, _, _, _, _) = t
+      let #(_op_id, in_r, out_r, err_ids, _, _, _, _, _, _) = t
       let acc = walk(model, acc, in_r)
       let acc = walk(model, acc, out_r)
       list.fold(err_ids, acc, fn(a, err_id) {
@@ -601,11 +614,12 @@ fn input_reachable_structs(
       List(trait_helpers.WaiterDef),
       option.Option(client.HostPrefixInfo),
       String,
+      List(String),
     ),
   ),
 ) -> Set(String) {
   list.fold(resolved_ops, set.new(), fn(acc, t) {
-    let #(_, in_r, _, _, _, _, _, _, _) = t
+    let #(_, in_r, _, _, _, _, _, _, _, _) = t
     walk_for_structs(model, acc, in_r)
   })
 }
@@ -740,6 +754,7 @@ fn emit_operation_with(
       is_dispatcher,
       spec.requires_md5,
       spec.query_compatible,
+      spec.compression_encodings,
     ),
     emit_error_type(spec),
     emit_error_translator(spec),
@@ -879,6 +894,7 @@ fn emit_operation_body(
   is_dispatcher: Bool,
   requires_md5: Bool,
   query_compatible: Bool,
+  compression_encodings: List(String),
 ) -> String {
   // For Unit input/output we synthesise a singleton type + codec at
   // the op level. The synth input encoder is wire-live (called via
@@ -1012,6 +1028,7 @@ fn emit_operation_body(
       ct,
       requires_md5,
       query_compatible,
+      compression_encodings,
     )
   let parse = emit_parse(out_info.type_name, snake)
   string.concat([
@@ -1478,6 +1495,7 @@ fn emit_build(
   ct: String,
   requires_md5: Bool,
   query_compatible: Bool,
+  compression_encodings: List(String),
 ) -> String {
   let body_str_let =
     code.Let(
@@ -1549,6 +1567,13 @@ fn emit_build(
     ]
     False -> []
   }
+  // `smithy.api#requestCompression` — same plumbing the rest emitters
+  // use (commit 1fda7ff). `rest_request.emit_content_encoding` returns
+  // a chain of lets that re-bind `body` to the (possibly gzipped)
+  // BitArray and update `Content-Encoding` / `Content-Length` headers
+  // only when compression actually applied (body ≥ 10 KiB).
+  let compression_step =
+    rest_request.emit_content_encoding(compression_encodings)
   let return_tuple =
     code.Tuple(items: [
       code.StrLit(value: "POST"),
@@ -1569,6 +1594,7 @@ fn emit_build(
           items: list.flatten([
             [body_str_let, body_let, headers_let],
             md5_step,
+            compression_step,
             [return_tuple],
           ]),
         ),
@@ -1639,12 +1665,16 @@ fn name_concat(parts: List(String)) -> String {
 
 /// Operation-level traits the emitter doesn't yet honour. Emitting code
 /// for these would produce wrong-on-the-wire requests.
-fn op_uses_unsupported_trait(traits: shape.Traits) -> Bool {
-  // `smithy.api#httpChecksumRequired` is no longer in the skip list —
-  // `emit_build` appends a `rest.with_content_md5_header` step when
-  // the trait is present. `smithy.api#requestCompression` is
-  // genuinely unsupported (no gzip middleware yet).
-  dict.has_key(traits, ShapeId("smithy.api#requestCompression"))
+///
+/// `smithy.api#httpChecksumRequired` is no longer here — `emit_build`
+/// appends a `rest.with_content_md5_header` step when the trait is
+/// present. `smithy.api#requestCompression` is no longer here either:
+/// `emit_build` threads the encodings through `rest_request.emit_
+/// content_encoding`, which mirrors the rest-protocol path
+/// (commit 1fda7ff). awsJson uses the same `compression.maybe_compress`
+/// helper that gzips bodies above the 10 KiB threshold.
+fn op_uses_unsupported_trait(_traits: shape.Traits) -> Bool {
+  False
 }
 
 /// Build the module-doc + import block as a `code.Module` AST. The
@@ -1666,8 +1696,10 @@ fn file_header(service_id: String, protocol: Protocol, body: String) -> String {
     #("aws/waiter", "waiter.", code.CodeNone),
     #("aws/region", "region.", code.CodeNone),
     #("aws/internal/client/runtime", "runtime.", code.CodeSome("runtime")),
+    #("aws/internal/codec/compression", "compression.", code.CodeNone),
     #("aws/internal/codec/event_stream", "event_stream.", code.CodeNone),
     #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
+    #("aws/internal/codec/rest", "rest.", code.CodeNone),
     #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
     #("aws/internal/codec/json_timestamp", "json_timestamp.", code.CodeNone),
     #("aws/internal/http_send", "http_send.", code.CodeNone),
