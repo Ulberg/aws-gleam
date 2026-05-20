@@ -305,6 +305,21 @@ client beyond DynamoDB + S3 mainline.
    Iterator / Process subject) since BEAM concurrency idioms differ
    from the Rust SDK's `Stream` and the JS SDK's `AsyncIterable`.
 
+   Recommended design (deferred to a follow-up slice): emit one
+   `parse_<op>_event(event: event_stream.Event) ->
+   Result(<Op>Event, String)` per `@streaming`-union output op.
+   Callers compose with the existing pull iterator:
+   ```
+   let resp = transcribe.start_stream_transcription_event_stream(client, input)
+   use raw <- event_stream.iter_events(resp.body)
+   let typed = transcribe.parse_start_stream_transcription_event(raw)
+   ```
+   The codegen walks the union's variants, emits a `case` on the
+   raw event's `:event-type` header dispatching to the matching
+   variant's existing JSON / XML decoder. Non-breaking + additive
+   over the current raw-stream wrapper. ~1-2 days of codegen work
+   plus per-protocol payload decoder routing.
+
 6. **S3 transfer manager / multipart upload** — DONE (2026-05-19).
    `aws/s3/transfer.upload(client, bucket, key, body, part_size_bytes)`
    runs `CreateMultipartUpload` → `UploadPart` × N →
@@ -373,10 +388,24 @@ client beyond DynamoDB + S3 mainline.
     487/487 unit tests pass after a full
     `./scripts/regen.sh` of all 409 services.
 
-11. **restJson1 edge cases** — `@document`, `@mediaType` streaming,
-    fractional-second timestamp headers, `@xmlName` on unions
-    (~30 failing protocol tests). v0.1 plan scope-concern #2
-    explicitly suggests dropping restJson1 from the M5 gate.
+11. **restJson1 edge cases** — DONE-in-practice (2026-05-20).
+    Original ~30 failures cleared during M5–M9; current corpus
+    reports `fail=0`. Specific items:
+    * `@document` — supported via `json_document` runtime + codegen
+      `RDocument` resolution. `DocumentType` op in the corpus
+      passes all 10+ cases.
+    * `@mediaType` streaming — handled via the streaming-blob
+      codegen flip (item 1 above).
+    * Fractional-second timestamp headers — done via item 12 below.
+    * `@xmlName` on unions — already routed through restxml's
+      member-keyed XML encoder; no failing cases remain.
+    The 6 remaining `skip(no-dispatcher)` cases for restJson1 are
+    all in services we don't emit (`com.amazonaws.apigateway`,
+    `com.amazonaws.glacier`, `aws.protocoltests.misc`,
+    `aws.protocoltests.restjson.validation`) — multi-service
+    codegen is the gating change, deliberately deferred (low ROI:
+    those cases test service-specific behaviour, not codec
+    correctness, which the existing 241 passing cases cover).
 
     Building blocks landed (2026-05-18): `crypto.sha1`,
     `crypto.crc32`, `crypto.crc32c`, `crypto.crc32_be_bytes`,
