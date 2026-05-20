@@ -1,0 +1,22 @@
+#!/bin/sh
+# AWS Lambda `provided.al2023` calls this script on every cold start.
+# We exec into Gleam's `entrypoint.sh` (produced by `gleam export
+# erlang-shipment`), which boots the Erlang VM with our release on
+# the code path and runs `aws_gleam_smoke:main/0` — that enters the
+# Lambda Runtime API polling loop in `runtime_api.gleam`.
+#
+# Lambda sets:
+#   - LAMBDA_TASK_ROOT — where our zip got unpacked (typically /var/task)
+#   - AWS_LAMBDA_RUNTIME_API — host:port of the Runtime API endpoint
+#   - AWS_REGION / AWS_DEFAULT_REGION — function region
+#   - AWS_ACCESS_KEY_ID / _SECRET_ACCESS_KEY / _SESSION_TOKEN —
+#     execution-role credentials, picked up automatically by the
+#     SDK's `default_chain` credentials provider.
+#
+# `+t` raises the BEAM atom-table ceiling (the SDK allocates ~3M
+# atoms across the 409 generated services).
+
+set -eu
+export ERL_FLAGS="${ERL_FLAGS:-} +t 16777216"
+cd "$LAMBDA_TASK_ROOT"
+exec ./entrypoint.sh run

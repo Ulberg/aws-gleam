@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars (gitignored) and edit before `tofu apply`.
+#
+# `bucket_name` MUST be globally unique across all of S3 — prefix
+# with your AWS account id or personal handle.
+
+bucket_name = "aws-gleam-smoke-<your-account-id>-us-east-1"
+# region        = "us-east-1"          # default
+# function_name = "aws-gleam-smoke"    # default
+# zip_path      = "../build/aws-gleam-smoke.zip"  # default
