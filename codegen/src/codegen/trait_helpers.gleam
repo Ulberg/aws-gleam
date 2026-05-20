@@ -163,6 +163,36 @@ pub fn endpoint_param_setters(traits: shape.Traits) -> List(EndpointParam) {
   }
 }
 
+/// `@smithy.api#endpoint.hostPrefix` template, e.g. `"{RequestRoute}."`.
+/// Placeholders like `{Foo}` correspond to input members tagged with
+/// `@hostLabel`. The generated op wrapper expands the template against
+/// those members and passes the result to
+/// `runtime.invoke_with_endpoint_params_and_host_prefix`. Mirrors the
+/// Rust SDK's `read_before_execution` interceptor which builds an
+/// `EndpointPrefix(String)` from the input shape.
+pub fn endpoint_host_prefix(traits: shape.Traits) -> Option(String) {
+  case dict.get(traits, ShapeId("smithy.api#endpoint")) {
+    Ok(Some(trait.Dict(d))) -> string_field(d, "hostPrefix")
+    _ -> None
+  }
+}
+
+/// Names of `@hostLabel`-tagged members on a struct. Used by the op
+/// wrapper to validate inputs (non-empty) and substitute `{Label}`
+/// placeholders in the hostPrefix template.
+pub fn host_label_member_names(
+  members: dict.Dict(String, shape.Member),
+) -> List(String) {
+  dict.to_list(members)
+  |> list.filter_map(fn(pair) {
+    let #(name, mem) = pair
+    case dict.has_key(mem.traits, ShapeId("smithy.api#hostLabel")) {
+      True -> Ok(name)
+      False -> Error(Nil)
+    }
+  })
+}
+
 fn extract_endpoint_param(
   name: String,
   body: Trait,

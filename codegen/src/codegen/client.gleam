@@ -509,16 +509,88 @@ pub fn render(
   ])
 }
 
+/// `@smithy.api#endpoint.hostPrefix` plumbing the op wrapper needs to
+/// expand the template against the input's `@hostLabel` members at
+/// call time. `template` is the trait value verbatim (e.g.
+/// `"{RequestRoute}."`); `labels` lists every `@hostLabel`-tagged
+/// input member's snake_case name (the placeholder text inside `{...}`
+/// is the original PascalCase member name).
+pub type HostPrefixInfo {
+  HostPrefixInfo(template: String, labels: List(HostLabelBinding))
+}
+
+pub type HostLabelBinding {
+  HostLabelBinding(member_pascal: String, member_snake: String)
+}
+
 /// Build the AST node for the per-op `pub fn <snake>(client, input)
 /// -> Result(<Out>, <Op>Error)` invoker. Identical across the three
 /// protocol emitters; lifted here so they share the implementation
 /// instead of each carrying a copy.
+///
+/// When `host_prefix` is `Some(_)`, the emitted body first validates
+/// the `@hostLabel` input members (must be `Some(non-empty)`),
+/// substitutes them into the prefix template, and routes through
+/// `runtime.invoke_with_endpoint_params_and_host_prefix` so the
+/// resolved Host header carries the substituted prefix. Mirrors the
+/// Rust SDK's `read_before_execution` interceptor pattern.
 pub fn invoke_fn(
   snake: String,
   in_type: String,
   out_type: String,
   err_type: String,
+  host_prefix: Option(HostPrefixInfo),
 ) -> Code {
+  let invoke_call = case host_prefix {
+    None ->
+      Call(Ident("runtime.invoke"), [
+        Ident("client.config"),
+        Call(Ident(string.concat(["build_", snake, "_request"])), [
+          Ident("input"),
+        ]),
+        Ident(string.concat(["parse_", snake, "_response"])),
+      ])
+    Some(_) ->
+      Call(Ident("runtime.invoke_with_endpoint_params_and_host_prefix"), [
+        Ident("client.config"),
+        Call(Ident("dict.new"), []),
+        Ident("option.Some(host_prefix)"),
+        Call(Ident(string.concat(["build_", snake, "_request"])), [
+          Ident("input"),
+        ]),
+        Ident(string.concat(["parse_", snake, "_response"])),
+      ])
+  }
+  let body = case host_prefix {
+    None ->
+      code.Case(
+        scrutinee: invoke_call,
+        branches: [
+          code.Branch(
+            pattern: "Ok(out)",
+            body: Call(Ident("Ok"), [Ident("out")]),
+          ),
+          code.Branch(
+            pattern: "Error(err)",
+            body: Call(Ident("Error"), [
+              Call(Ident(string.concat(["translate_", snake, "_error"])), [
+                Ident("err"),
+              ]),
+            ]),
+          ),
+        ],
+      )
+    Some(info) ->
+      code.Block(items: [
+        // `case build_<snake>_host_prefix(input) { ... }` —
+        // validation surfaces as `Error(reason)` and gets wrapped
+        // in a `runtime.DecodeError` so the typed-error translator
+        // sees it as a normal client-side failure.
+        code.Raw(
+          fragment: build_host_prefix_case(snake, info, err_type, invoke_call),
+        ),
+      ])
+  }
   Fn(
     public: True,
     name: snake,
@@ -527,27 +599,105 @@ pub fn invoke_fn(
       Param(name: "input", type_: in_type),
     ],
     return: CodeSome(string.concat(["Result(", out_type, ", ", err_type, ")"])),
-    body: code.Case(
-      scrutinee: Call(Ident("runtime.invoke"), [
-        Ident("client.config"),
-        Call(Ident(string.concat(["build_", snake, "_request"])), [
-          Ident("input"),
-        ]),
-        Ident(string.concat(["parse_", snake, "_response"])),
-      ]),
-      branches: [
-        code.Branch(pattern: "Ok(out)", body: Call(Ident("Ok"), [Ident("out")])),
-        code.Branch(
-          pattern: "Error(err)",
-          body: Call(Ident("Error"), [
-            Call(Ident(string.concat(["translate_", snake, "_error"])), [
-              Ident("err"),
-            ]),
-          ]),
-        ),
-      ],
-    ),
+    body: body,
   )
+}
+
+/// Emit the inline `case build_<snake>_host_prefix(input) { ... }`
+/// wrapper that validates the `@hostLabel` members and, on success,
+/// passes the substituted prefix to the host-prefix-aware invoker.
+fn build_host_prefix_case(
+  snake: String,
+  _info: HostPrefixInfo,
+  err_type: String,
+  invoke_call: Code,
+) -> String {
+  let prefix_fn = string.concat(["build_", snake, "_host_prefix"])
+  let invoke_src = code.render(invoke_call)
+  let translator = string.concat(["translate_", snake, "_error"])
+  string.concat([
+    "case ",
+    prefix_fn,
+    "(input) {\n",
+    "    Error(reason) ->\n",
+    "      Error(",
+    translator,
+    "(runtime.DecodeError(reason: reason)))\n",
+    "    Ok(host_prefix) ->\n",
+    "      case ",
+    invoke_src,
+    " {\n",
+    "        Ok(out) -> Ok(out)\n",
+    "        Error(err) -> Error(",
+    translator,
+    "(err))\n",
+    "      }\n",
+    "  }",
+    // Silence the unused-binding warning if `host_prefix` slips
+    // out of scope (it doesn't — invoke_src consumes it — but
+    // explicit binding is clearer).
+    case err_type {
+      _ -> ""
+    },
+  ])
+}
+
+/// Build the `fn build_<snake>_host_prefix(input)` validator that
+/// the codegen emits alongside each `@endpoint.hostPrefix` op. Each
+/// `@hostLabel` member must be `Some(non-empty)`; otherwise return
+/// `Error(reason)` matching the Rust SDK's message format. On
+/// success returns `Ok(<substituted prefix>)`.
+pub fn host_prefix_validator_fn(
+  snake: String,
+  in_type: String,
+  info: HostPrefixInfo,
+) -> Code {
+  let body =
+    code.Raw(fragment: render_host_prefix_validator_body(info))
+  Fn(
+    public: False,
+    name: string.concat(["build_", snake, "_host_prefix"]),
+    params: [Param(name: "input", type_: in_type)],
+    return: CodeSome("Result(String, String)"),
+    body: body,
+  )
+}
+
+fn render_host_prefix_validator_body(info: HostPrefixInfo) -> String {
+  let validate_steps =
+    list.map(info.labels, fn(lb) {
+      string.concat([
+        "  use ",
+        lb.member_snake,
+        " <- result.try(case input.",
+        lb.member_snake,
+        " {\n",
+        "    option.Some(v) -> case v {\n",
+        "      \"\" -> Error(\"",
+        lb.member_snake,
+        " was unset or empty but must be set as part of the endpoint prefix\")\n",
+        "      _ -> Ok(v)\n",
+        "    }\n",
+        "    option.None -> Error(\"",
+        lb.member_snake,
+        " was unset or empty but must be set as part of the endpoint prefix\")\n",
+        "  })\n",
+      ])
+    })
+    |> string.concat
+  let substitutions =
+    list.fold(info.labels, "\"" <> info.template <> "\"", fn(acc, lb) {
+      string.concat([
+        "string.replace(",
+        acc,
+        ", \"{",
+        lb.member_pascal,
+        "}\", ",
+        lb.member_snake,
+        ")",
+      ])
+    })
+  string.concat([validate_steps, "  Ok(", substitutions, ")\n"])
 }
 
 /// Streaming-side counterpart: emits `pub fn <snake>_streaming(client,

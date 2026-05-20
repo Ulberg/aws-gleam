@@ -288,7 +288,34 @@ pub fn invoke_with_endpoint_params(
   built: #(String, String, Dict(String, String), BitArray),
   parse: fn(Int, Dict(String, String), BitArray) -> Result(output, String),
 ) -> Result(output, ClientError) {
-  use http_req <- result.try(prepare_signed_request(config, op_params, built))
+  invoke_with_endpoint_params_and_host_prefix(
+    config,
+    op_params,
+    None,
+    built,
+    parse,
+  )
+}
+
+/// `invoke_with_endpoint_params` with an already-substituted host
+/// prefix. Codegen passes `Some(prefix)` for ops carrying
+/// `@smithy.api#endpoint.hostPrefix` — the template (e.g.
+/// `"{RequestRoute}."`) is expanded against the input's `@hostLabel`
+/// members in the generated wrapper, mirroring the Rust SDK's
+/// `read_before_execution` interceptor.
+pub fn invoke_with_endpoint_params_and_host_prefix(
+  config: ClientConfig,
+  op_params: Params,
+  host_prefix: Option(String),
+  built: #(String, String, Dict(String, String), BitArray),
+  parse: fn(Int, Dict(String, String), BitArray) -> Result(output, String),
+) -> Result(output, ClientError) {
+  use http_req <- result.try(prepare_signed_request(
+    config,
+    op_params,
+    host_prefix,
+    built,
+  ))
 
   let send =
     retry.with_retry(send: config.http_send, strategy: config.retry_strategy)
@@ -352,7 +379,12 @@ pub fn invoke_streaming_with_endpoint_params(
   op_params: Params,
   built: #(String, String, Dict(String, String), BitArray),
 ) -> Result(streaming.Response, ClientError) {
-  use http_req <- result.try(prepare_signed_request(config, op_params, built))
+  use http_req <- result.try(prepare_signed_request(
+    config,
+    op_params,
+    None,
+    built,
+  ))
 
   use resp <- result.try(
     config.streaming_http_send(http_req)
@@ -400,9 +432,17 @@ fn int_to_decimal(n: Int) -> String
 // Build, sign, and assemble the gleam_http `Request(BitArray)` for
 // the operation. Shared by `invoke` (buffered) and `invoke_streaming`
 // (chunked) — the only divergence is which `Send` dispatches it.
+//
+// `host_prefix` (e.g. `Some("foo.")`) corresponds to the Rust SDK's
+// `EndpointPrefix(String)` — already substituted, with no `{Label}`
+// placeholders left. Template-expansion + `@hostLabel` value
+// validation happens in the generated op wrapper, mirroring the
+// Rust SDK's `read_before_execution` interceptor that builds the
+// EndpointPrefix from the input shape before calling out.
 fn prepare_signed_request(
   config: ClientConfig,
   op_params: Params,
+  host_prefix: Option(String),
   built: #(String, String, Dict(String, String), BitArray),
 ) -> Result(Request(BitArray), ClientError) {
   let #(method, uri, headers, body) = built
@@ -414,7 +454,19 @@ fn prepare_signed_request(
 
   use endpoint_url <- result.try(resolve_endpoint_url(config, op_params))
 
-  let host = host_from_endpoint(endpoint_url)
+  // Apply hostPrefix to both the URL and the Host header so the
+  // transport's DNS resolver and SigV4 canonicalisation see the
+  // prefixed host. Matches the Rust SDK's `apply_endpoint_to_request`
+  // (vendor/aws-sdk-rust/sdk/aws-smithy-runtime/src/client/
+  // orchestrator/endpoints.rs) — prepend the prefix to the
+  // authority, leave scheme + path untouched.
+  let #(endpoint_url, host) = case host_prefix {
+    None -> #(endpoint_url, host_from_endpoint(endpoint_url))
+    Some(prefix) -> {
+      let prefixed_url = inject_host_prefix(endpoint_url, prefix)
+      #(prefixed_url, host_from_endpoint(prefixed_url))
+    }
+  }
   let header_pairs =
     [#("host", host), ..dict.to_list(headers)]
     |> list.map(fn(p) { our_http.Header(name: p.0, value: p.1) })
@@ -561,6 +613,26 @@ fn host_from_endpoint(url: String) -> String {
     Ok(#(host, _)) -> host
     Error(_) -> after
   }
+}
+
+/// Prepend `prefix` to the authority portion of `url`. Scheme + path +
+/// query are preserved. `prefix` is already-substituted (e.g. `"foo."`
+/// — no `{Label}` placeholders left). Mirrors the Rust SDK's
+/// `apply_endpoint_to_request` (`format!("{scheme}://{prefix}{authority}{path_and_query}")`).
+///
+/// Examples:
+///   `inject_host_prefix("https://s3.us-east-1.amazonaws.com/", "foo.")`
+///   → `"https://foo.s3.us-east-1.amazonaws.com/"`
+fn inject_host_prefix(url: String, prefix: String) -> String {
+  let #(scheme, rest) = case string.split_once(url, "://") {
+    Ok(#(s, r)) -> #(s <> "://", r)
+    Error(_) -> #("", url)
+  }
+  let #(authority, path_and_query) = case string.split_once(rest, "/") {
+    Ok(#(a, p)) -> #(a, "/" <> p)
+    Error(_) -> #(rest, "")
+  }
+  scheme <> prefix <> authority <> path_and_query
 }
 
 fn parse_method(method: String) -> http.Method {

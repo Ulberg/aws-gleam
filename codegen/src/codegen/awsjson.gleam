@@ -102,6 +102,8 @@ pub fn emit_service(
                   let requires_md5 = trait_helpers.op_requires_md5(ts)
                   let paginated = trait_helpers.paginated_trait(ts)
                   let waiters = trait_helpers.waitable_traits(ts)
+                  let host_prefix_info =
+                    extract_host_prefix_info(model, ts, in_id)
                   case types.is_supported(in_r), types.is_supported(out_r) {
                     True, True ->
                       Ok(#(
@@ -112,6 +114,7 @@ pub fn emit_service(
                         requires_md5,
                         paginated,
                         waiters,
+                        host_prefix_info,
                       ))
                     _, _ -> Error(Nil)
                   }
@@ -136,8 +139,16 @@ pub fn emit_service(
       let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, in_r, out_r, err_ids, requires_md5, paginated, waiters) =
-            t
+          let #(
+            op_id,
+            in_r,
+            out_r,
+            err_ids,
+            requires_md5,
+            paginated,
+            waiters,
+            host_prefix_info,
+          ) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info =
@@ -161,6 +172,7 @@ pub fn emit_service(
             error_type: trait_helpers.op_error_type(local, emitted_type_names),
             pagination_info: pagination_info,
             waiters: waiters,
+            host_prefix_info: host_prefix_info,
           )
         })
       let op_blocks =
@@ -214,7 +226,7 @@ pub fn emit_service(
         module_name: derive_module_name(service_id),
         source: body,
         operations_emitted: list.map(resolved_ops, fn(t) {
-          let #(op_id, _, _, _, _, _, _) = t
+          let #(op_id, _, _, _, _, _, _, _) = t
           op_id
         }),
         dispatcher_specs: dispatcher_specs,
@@ -252,7 +264,37 @@ type OpSpec {
     /// matcher the v1 codegen doesn't support (dropped at trait-
     /// parse time).
     waiters: List(trait_helpers.WaiterDef),
+    /// `@smithy.api#endpoint.hostPrefix` template + the input's
+    /// `@hostLabel` members. `Some(_)` ⇒ emit a validator + route
+    /// through `runtime.invoke_with_endpoint_params_and_host_prefix`.
+    host_prefix_info: option.Option(client.HostPrefixInfo),
   )
+}
+
+/// Read `@smithy.api#endpoint.hostPrefix` + the input's `@hostLabel`
+/// members. Mirrors the helper in the restxml emitter.
+fn extract_host_prefix_info(
+  model: Model,
+  op_traits: shape.Traits,
+  in_id: String,
+) -> option.Option(client.HostPrefixInfo) {
+  case trait_helpers.endpoint_host_prefix(op_traits) {
+    option.None -> option.None
+    option.Some(template) -> {
+      let labels = case model.lookup(model, in_id) {
+        Ok(shape.Structure(members: m, ..)) ->
+          trait_helpers.host_label_member_names(m)
+          |> list.map(fn(name) {
+            client.HostLabelBinding(
+              member_pascal: name,
+              member_snake: stringutils.pascal_to_snake(name),
+            )
+          })
+        _ -> []
+      }
+      option.Some(client.HostPrefixInfo(template: template, labels: labels))
+    }
+  }
 }
 
 // `Metadata`, `service_metadata`, `string_field_under` live in
@@ -323,7 +365,15 @@ fn emit_invoke(model: Model, spec: OpSpec) -> String {
       spec.in_info.type_name,
       spec.out_info.type_name,
       spec.error_type,
+      spec.host_prefix_info,
     )
+  let host_prefix_validator = case spec.host_prefix_info {
+    option.None -> []
+    option.Some(info) -> [
+      code.Blank,
+      client.host_prefix_validator_fn(spec.snake, spec.in_info.type_name, info),
+    ]
+  }
   // Same `@streaming` blob detection as restjson/restxml — awsJson
   // services that carry streaming-blob output members (rare but
   // possible) get the streaming-side wrapper too.
@@ -354,6 +404,7 @@ fn emit_invoke(model: Model, spec: OpSpec) -> String {
     code.Module(
       items: list.flatten([
         [doc, base, code.Blank],
+        host_prefix_validator,
         streaming_blob_items,
         event_stream_items,
       ]),
@@ -396,13 +447,14 @@ fn collect_named_shapes(
       Bool,
       option.Option(trait_helpers.PaginatedTrait),
       List(trait_helpers.WaiterDef),
+      option.Option(client.HostPrefixInfo),
     ),
   ),
 ) -> List(Resolved) {
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_op_id, in_r, out_r, err_ids, _, _, _) = t
+      let #(_op_id, in_r, out_r, err_ids, _, _, _, _) = t
       let acc = walk(model, acc, in_r)
       let acc = walk(model, acc, out_r)
       list.fold(err_ids, acc, fn(a, err_id) {
@@ -474,11 +526,12 @@ fn input_reachable_structs(
       Bool,
       option.Option(trait_helpers.PaginatedTrait),
       List(trait_helpers.WaiterDef),
+      option.Option(client.HostPrefixInfo),
     ),
   ),
 ) -> Set(String) {
   list.fold(resolved_ops, set.new(), fn(acc, t) {
-    let #(_, in_r, _, _, _, _, _) = t
+    let #(_, in_r, _, _, _, _, _, _) = t
     walk_for_structs(model, acc, in_r)
   })
 }
@@ -1527,6 +1580,7 @@ fn file_header(service_id: String, protocol: Protocol, body: String) -> String {
     #("gleam/list", "list.", code.CodeNone),
     #("gleam/option", "option.", code.CodeNone),
     #("gleam/result", "result.", code.CodeNone),
+    #("gleam/string", "string.", code.CodeNone),
   ]
   let used =
     candidates

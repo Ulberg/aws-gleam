@@ -86,6 +86,8 @@ pub fn emit_service(
                   let waiters = trait_helpers.waitable_traits(op_traits)
                   let http_checksum =
                     trait_helpers.http_checksum_trait(op_traits)
+                  let host_prefix_info =
+                    extract_host_prefix_info(model, op_traits, in_id)
                   case
                     members_have_no_http_bindings(in_r),
                     types.is_supported(in_r),
@@ -102,6 +104,7 @@ pub fn emit_service(
                         paginated,
                         waiters,
                         http_checksum,
+                        host_prefix_info,
                       ))
                     _, _, _ -> Error(Nil)
                   }
@@ -130,6 +133,7 @@ pub fn emit_service(
             paginated,
             waiters,
             http_checksum,
+            host_prefix_info,
           ) = t
           #(
             op_id,
@@ -141,6 +145,7 @@ pub fn emit_service(
             paginated,
             waiters,
             http_checksum,
+            host_prefix_info,
           )
         })
       let named_shapes = collect_named_shapes(model, resolved_ops)
@@ -151,7 +156,18 @@ pub fn emit_service(
       let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, _, in_r, out_r, err_ids, _, paginated, waiters, _) = t
+          let #(
+            op_id,
+            _,
+            in_r,
+            out_r,
+            err_ids,
+            _,
+            paginated,
+            waiters,
+            _,
+            host_prefix_info,
+          ) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info =
@@ -179,13 +195,24 @@ pub fn emit_service(
             error_type: trait_helpers.op_error_type(local, emitted_type_names),
             pagination_info: pagination_info,
             waiters: waiters,
+            host_prefix_info: host_prefix_info,
           )
         })
 
       let op_blocks =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, http, in_r, out_r, _, requires_md5, _, _, http_checksum) =
-            t
+          let #(
+            op_id,
+            http,
+            in_r,
+            out_r,
+            _,
+            requires_md5,
+            _,
+            _,
+            http_checksum,
+            _,
+          ) = t
           emit_operation(
             model,
             op_id,
@@ -253,7 +280,7 @@ pub fn emit_service(
         module_name: derive_module_name(service_id),
         source: body,
         operations_emitted: list.map(resolved_ops, fn(t) {
-          let #(op_id, _, _, _, _, _, _, _, _) = t
+          let #(op_id, _, _, _, _, _, _, _, _, _) = t
           op_id
         }),
         dispatcher_specs: dispatcher_specs,
@@ -280,7 +307,36 @@ type OpSpec {
     pagination_info: option.Option(paginator.PaginationInfo),
     /// Waiters extracted from `smithy.waiters#waitable`.
     waiters: List(trait_helpers.WaiterDef),
+    /// `@smithy.api#endpoint.hostPrefix` template + the input's
+    /// `@hostLabel` members.
+    host_prefix_info: option.Option(client.HostPrefixInfo),
   )
+}
+
+/// Read `@smithy.api#endpoint.hostPrefix` + the input's `@hostLabel`
+/// members. Same shape as the helpers in awsjson + restxml.
+fn extract_host_prefix_info(
+  model: Model,
+  op_traits: shape.Traits,
+  in_id: String,
+) -> option.Option(client.HostPrefixInfo) {
+  case trait_helpers.endpoint_host_prefix(op_traits) {
+    option.None -> option.None
+    option.Some(template) -> {
+      let labels = case model.lookup(model, in_id) {
+        Ok(shape.Structure(members: m, ..)) ->
+          trait_helpers.host_label_member_names(m)
+          |> list.map(fn(name) {
+            client.HostLabelBinding(
+              member_pascal: name,
+              member_snake: stringutils.pascal_to_snake(name),
+            )
+          })
+        _ -> []
+      }
+      option.Some(client.HostPrefixInfo(template: template, labels: labels))
+    }
+  }
 }
 
 // `Metadata`, `service_metadata`, `string_field_under` live in
@@ -323,7 +379,15 @@ fn emit_invoke(model: Model, spec: OpSpec) -> String {
       spec.in_info.type_name,
       spec.out_info.type_name,
       spec.error_type,
+      spec.host_prefix_info,
     )
+  let host_prefix_validator = case spec.host_prefix_info {
+    option.None -> []
+    option.Some(info) -> [
+      code.Blank,
+      client.host_prefix_validator_fn(spec.snake, spec.in_info.type_name, info),
+    ]
+  }
   // Operations whose output carries a `@streaming` blob member get an
   // extra `<op>_streaming(client, input)` variant routing through
   // `runtime.invoke_streaming` — body arrives chunked rather than
@@ -356,6 +420,7 @@ fn emit_invoke(model: Model, spec: OpSpec) -> String {
     code.Module(
       items: list.flatten([
         [base, code.Blank],
+        host_prefix_validator,
         streaming_blob_items,
         event_stream_items,
       ]),
@@ -516,6 +581,7 @@ fn collect_named_shapes(
       option.Option(trait_helpers.PaginatedTrait),
       List(trait_helpers.WaiterDef),
       option.Option(trait_helpers.HttpChecksumInfo),
+      option.Option(client.HostPrefixInfo),
     ),
   ),
 ) -> List(Resolved) {
@@ -526,7 +592,7 @@ fn collect_named_shapes(
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_, _, in_r, out_r, err_ids, _, _, _, _) = t
+      let #(_, _, in_r, out_r, err_ids, _, _, _, _, _) = t
       let acc = walk(model, acc, in_r)
       let acc = walk(model, acc, out_r)
       list.fold(err_ids, acc, fn(a, err_id) {
