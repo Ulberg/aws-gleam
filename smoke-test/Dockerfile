@@ -18,6 +18,13 @@ WORKDIR /build/aws-gleam/smoke-test
 # regen.sh is a bash pipeline; alpine ships ash as /bin/sh.
 RUN apk add --no-cache bash coreutils findutils grep sed
 
+# `docker buildx` doesn't allocate a TTY; on OTP 27+ the kernel
+# tries to attach the `user` IO process and crashes with
+# `failed_to_start_child,user,nouser`. `-noinput` skips the
+# attach. Implies -noshell. Safe for compile-time `gleam build`
+# / `gleam export` which never read stdin.
+ENV ERL_AFLAGS="-noinput"
+
 RUN gleam deps download \
     && bash -c '(cd .. && ./scripts/regen.sh s3 sqs)' \
     && gleam export erlang-shipment \
