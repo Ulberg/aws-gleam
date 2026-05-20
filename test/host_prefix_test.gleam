@@ -79,12 +79,7 @@ pub fn host_prefix_prepends_to_authority_and_host_header_test() {
 pub fn host_prefix_none_leaves_authority_unchanged_test() {
   let inbox = process.new_subject()
   let config = fresh_config(capture_send(inbox))
-  let built = #(
-    "GET",
-    "/",
-    dict.new(),
-    <<>>,
-  )
+  let built = #("GET", "/", dict.new(), <<>>)
   let _ =
     runtime.invoke_with_endpoint_params_and_host_prefix(
       config,

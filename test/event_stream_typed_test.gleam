@@ -42,11 +42,7 @@ pub fn parses_transcript_event_into_typed_variant_test() {
 }
 
 pub fn parses_bad_request_exception_into_typed_variant_test() {
-  let event =
-    evt(
-      "BadRequestException",
-      <<"{\"Message\":\"oops\"}":utf8>>,
-    )
+  let event = evt("BadRequestException", <<"{\"Message\":\"oops\"}":utf8>>)
   case ts.parse_start_stream_transcription_event(event) {
     Ok(ts.TranscriptResultStreamBadRequestException(e)) -> {
       e.message |> should.equal(Some("oops"))

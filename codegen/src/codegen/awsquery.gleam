@@ -267,7 +267,9 @@ fn is_supported_deep(
         False -> {
           let nested = types.resolve_members(model, sid)
           let visited2 = set.insert(visited, sid)
-          list.all(nested, fn(m) { is_supported_deep(model, m.target, visited2) })
+          list.all(nested, fn(m) {
+            is_supported_deep(model, m.target, visited2)
+          })
           && no_member_traits(model, sid)
         }
       }
@@ -282,7 +284,6 @@ fn is_supported_map_key(k: types.Resolved) -> Bool {
     _ -> False
   }
 }
-
 
 fn no_member_traits(_model: Model, _struct_id: String) -> Bool {
   // awsQuery / ec2Query ignore every HTTP binding trait
@@ -461,9 +462,7 @@ fn collect_referenced_structs(
   members: List(MemberDef),
   visited: set.Set(String),
 ) -> List(types.Resolved) {
-  list.flat_map(members, fn(m) {
-    collect_from_target(model, m.target, visited)
-  })
+  list.flat_map(members, fn(m) { collect_from_target(model, m.target, visited) })
 }
 
 fn collect_from_target(
@@ -886,9 +885,13 @@ fn build_scalar_request_fn(
       let #(m, wire) = pair
       code.Let(
         name: "body",
-        value: code.Raw(
-          fragment: scalar_field_append(model, struct_id, m, wire, variant),
-        ),
+        value: code.Raw(fragment: scalar_field_append(
+          model,
+          struct_id,
+          m,
+          wire,
+          variant,
+        )),
       )
     })
   let body_bytes =
@@ -1064,10 +1067,7 @@ fn encode_value_expr(
       let entry_prefix = case flat, xen {
         True, _ -> prefix_expr <> " <> \".\" <> int.to_string(idx + 1)"
         False, name ->
-          prefix_expr
-          <> " <> \"."
-          <> name
-          <> ".\" <> int.to_string(idx + 1)"
+          prefix_expr <> " <> \"." <> name <> ".\" <> int.to_string(idx + 1)"
       }
       let elem_encode =
         encode_value_expr(
@@ -1084,8 +1084,7 @@ fn encode_value_expr(
       //   ec2Query → do NOT serialize at all (Ec2EmptyQueryLists
       //     fixture: "Does not serialize empty query lists.").
       let empty_branch = case variant {
-        AwsQuery ->
-          name_concat(["[] -> \"&\" <> ", prefix_expr, " <> \"=\""])
+        AwsQuery -> name_concat(["[] -> \"&\" <> ", prefix_expr, " <> \"=\""])
         Ec2Query -> "[] -> \"\""
       }
       name_concat([
@@ -1100,13 +1099,7 @@ fn encode_value_expr(
         " }) }",
       ])
     }
-    types.RMap(
-      key: kt,
-      value: vt,
-      xml_key_name: kn,
-      xml_value_name: vn,
-      ..
-    ) -> {
+    types.RMap(key: kt, value: vt, xml_key_name: kn, xml_value_name: vn, ..) -> {
       // awsQuery: flat when the struct member has `@xmlFlattened`;
       // ec2Query: maps follow the same flat-by-default rule as lists.
       let flat = case variant {
@@ -1123,10 +1116,8 @@ fn encode_value_expr(
       // plain `String` Gleam expression at runtime.
       let entry_var = "entry_prefix"
       let entry_init = case flat {
-        True ->
-          prefix_expr <> " <> \".\" <> int.to_string(idx + 1)"
-        False ->
-          prefix_expr <> " <> \".entry.\" <> int.to_string(idx + 1)"
+        True -> prefix_expr <> " <> \".\" <> int.to_string(idx + 1)"
+        False -> prefix_expr <> " <> \".entry.\" <> int.to_string(idx + 1)"
       }
       let key_prefix = entry_var <> " <> \"." <> kn <> "\""
       let value_prefix = entry_var <> " <> \"." <> vn <> "\""
@@ -1254,11 +1245,7 @@ fn parse_response_fn(snake: String, output_type: String) -> Code {
 /// `format_float` helper + supporting FFI for the AWS-spec float
 /// short-form / NaN / Infinity wire shape, included only when the
 /// body actually references it.
-fn file_header(
-  service_id: String,
-  variant: Variant,
-  body: String,
-) -> String {
+fn file_header(service_id: String, variant: Variant, body: String) -> String {
   let proto = case variant {
     AwsQuery -> "awsQuery"
     Ec2Query -> "ec2Query"

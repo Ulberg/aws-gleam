@@ -458,8 +458,7 @@ fn emit_endpoint_param_setter(
   // wire-form name so callers can correlate with the Smithy rule
   // set if needed.
   let header_doc = case param.documentation {
-    "" ->
-      "Set the `" <> param.name <> "` endpoint-rule-set parameter."
+    "" -> "Set the `" <> param.name <> "` endpoint-rule-set parameter."
     other -> other
   }
   let trailer_doc =
@@ -563,32 +562,29 @@ pub fn invoke_fn(
   }
   let body = case host_prefix {
     None ->
-      code.Case(
-        scrutinee: invoke_call,
-        branches: [
-          code.Branch(
-            pattern: "Ok(out)",
-            body: Call(Ident("Ok"), [Ident("out")]),
-          ),
-          code.Branch(
-            pattern: "Error(err)",
-            body: Call(Ident("Error"), [
-              Call(Ident(string.concat(["translate_", snake, "_error"])), [
-                Ident("err"),
-              ]),
+      code.Case(scrutinee: invoke_call, branches: [
+        code.Branch(pattern: "Ok(out)", body: Call(Ident("Ok"), [Ident("out")])),
+        code.Branch(
+          pattern: "Error(err)",
+          body: Call(Ident("Error"), [
+            Call(Ident(string.concat(["translate_", snake, "_error"])), [
+              Ident("err"),
             ]),
-          ),
-        ],
-      )
+          ]),
+        ),
+      ])
     Some(info) ->
       code.Block(items: [
         // `case build_<snake>_host_prefix(input) { ... }` —
         // validation surfaces as `Error(reason)` and gets wrapped
         // in a `runtime.DecodeError` so the typed-error translator
         // sees it as a normal client-side failure.
-        code.Raw(
-          fragment: build_host_prefix_case(snake, info, err_type, invoke_call),
-        ),
+        code.Raw(fragment: build_host_prefix_case(
+          snake,
+          info,
+          err_type,
+          invoke_call,
+        )),
       ])
   }
   Fn(
@@ -652,8 +648,7 @@ pub fn host_prefix_validator_fn(
   in_type: String,
   info: HostPrefixInfo,
 ) -> Code {
-  let body =
-    code.Raw(fragment: render_host_prefix_validator_body(info))
+  let body = code.Raw(fragment: render_host_prefix_validator_body(info))
   Fn(
     public: False,
     name: string.concat(["build_", snake, "_host_prefix"]),

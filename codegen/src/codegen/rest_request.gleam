@@ -572,16 +572,16 @@ pub fn emit_content_encoding(encodings: List(String)) -> List(code.Code) {
         name: "#(body, applied)",
         value: code.Raw(
           fragment: "compression.maybe_compress(body, \""
-            <> enc
-            <> "\", compression.default_min_compression_size_bytes)",
+          <> enc
+          <> "\", compression.default_min_compression_size_bytes)",
         ),
       ),
       code.Let(
         name: "headers",
         value: code.Raw(
           fragment: "case applied { True -> dict.insert(rest.append_content_encoding(headers, \""
-            <> enc
-            <> "\"), \"Content-Length\", int.to_string(bit_array.byte_size(body))) False -> headers }",
+          <> enc
+          <> "\"), \"Content-Length\", int.to_string(bit_array.byte_size(body))) False -> headers }",
         ),
       ),
     ]

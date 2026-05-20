@@ -74,12 +74,15 @@ pub fn paginated_trait_picks_up_page_size_test() {
   case trait_helpers.paginated_trait(t) {
     Some(PaginatedTrait(page_size: Some("MaxKeys"), ..)) -> Nil
     other -> {
-      other |> should.equal(Some(PaginatedTrait(
-        input_token: "Marker",
-        output_token: "NextMarker",
-        items: "Buckets",
-        page_size: Some("MaxKeys"),
-      )))
+      other
+      |> should.equal(
+        Some(PaginatedTrait(
+          input_token: "Marker",
+          output_token: "NextMarker",
+          items: "Buckets",
+          page_size: Some("MaxKeys"),
+        )),
+      )
       Nil
     }
   }
@@ -138,9 +141,11 @@ pub fn waitable_traits_parses_success_and_error_type_test() {
   let success_matcher =
     trait.Dict(dict.from_list([#(ShapeId("success"), trait.Bool(True))]))
   let not_found_matcher =
-    trait.Dict(dict.from_list([
-      #(ShapeId("errorType"), trait.String("NotFound")),
-    ]))
+    trait.Dict(
+      dict.from_list([
+        #(ShapeId("errorType"), trait.String("NotFound")),
+      ]),
+    )
   let t =
     traits([
       #(
@@ -175,14 +180,18 @@ pub fn waitable_traits_drops_waiter_with_unsupported_matcher_test() {
   let success_matcher =
     trait.Dict(dict.from_list([#(ShapeId("success"), trait.Bool(True))]))
   let output_matcher =
-    trait.Dict(dict.from_list([
-      #(
-        ShapeId("output"),
-        trait.Dict(dict.from_list([
-          #(ShapeId("path"), trait.String("Status")),
-        ])),
-      ),
-    ]))
+    trait.Dict(
+      dict.from_list([
+        #(
+          ShapeId("output"),
+          trait.Dict(
+            dict.from_list([
+              #(ShapeId("path"), trait.String("Status")),
+            ]),
+          ),
+        ),
+      ]),
+    )
   let t =
     traits([
       #(
@@ -198,9 +207,11 @@ pub fn waitable_traits_drops_waiter_with_unsupported_matcher_test() {
 
 pub fn waitable_traits_parses_failure_state_test() {
   let error_matcher =
-    trait.Dict(dict.from_list([
-      #(ShapeId("errorType"), trait.String("FatalError")),
-    ]))
+    trait.Dict(
+      dict.from_list([
+        #(ShapeId("errorType"), trait.String("FatalError")),
+      ]),
+    )
   let t =
     traits([
       #(

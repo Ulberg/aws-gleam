@@ -18,7 +18,8 @@ fn make_body(byte_count: Int) -> BitArray {
   let unit = <<"abcdefghijklmnopqrstuvwxyz012345":utf8>>
   let unit_size = bit_array.byte_size(unit)
   let n = byte_count / unit_size + 1
-  build(unit, n, <<>>) |> bit_array.slice(at: 0, take: byte_count)
+  build(unit, n, <<>>)
+  |> bit_array.slice(at: 0, take: byte_count)
   |> result.unwrap(<<>>)
 }
 
