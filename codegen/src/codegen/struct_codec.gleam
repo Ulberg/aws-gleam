@@ -181,7 +181,7 @@ fn decoder_body(
     Call(
       Ident(type_name),
       list.map(members, fn(m) {
-        code.Raw(fragment: name_concat([m.snake_name, ": ", m.snake_name]))
+        code.Labelled(label: m.snake_name, value: Ident(m.snake_name))
       }),
     )
   let tail = Call(Ident("decode.success"), [constructor])

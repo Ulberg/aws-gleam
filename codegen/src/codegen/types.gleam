@@ -103,10 +103,22 @@ pub type Resolved {
   )
   /// Reference to a Smithy union, same as RStruct.
   RUnion(local_name: String, gleam_name: String, full_id: String)
-  /// Smithy `@timestamp`. Default representation: Int (epoch seconds).
+  /// Smithy `@timestamp`. Surfaces as `json_timestamp.Timestamp`
+  /// (seconds + nanoseconds). Wire encoding matches the prior
+  /// `Int` API for `nanoseconds=0` — `encode_epoch_seconds`
+  /// emits JSON Int when the nanos slot is zero, so existing
+  /// protocol-test fixtures keep passing without a wire-form
+  /// change.
   RTimestamp
   /// Smithy `@blob` → Gleam `BitArray`.
   RBlob
+  /// Smithy `@blob` carrying `smithy.api#streaming` → Gleam
+  /// `streaming.StreamingBody`. Wire form is identical (the
+  /// runtime materialises the buffered payload in / out), but
+  /// the public record field surfaces the forward-compatible
+  /// wrapper so callers can drop in a chunked iterator later
+  /// without an API break.
+  RStreamingBlob
   /// Smithy `@document` → free-form JSON.
   RDocument
   /// `smithy.api#Unit` used as a target. In unions this becomes a
@@ -635,7 +647,10 @@ pub fn resolve(model: Model, target_id: String) -> Resolved {
     "smithy.api#Timestamp" -> RTimestamp
     "smithy.api#Blob" -> RBlob
     "smithy.api#Document" -> RDocument
-    "smithy.api#BigInteger" -> Unsupported(reason: "bigInteger")
+    // Erlang Int is arbitrary precision via BEAM bignums, so Smithy
+    // `bigInteger` maps cleanly to our `PInt` — no overflow risk
+    // even at hundreds of digits. Wire form stays JSON Int.
+    "smithy.api#BigInteger" -> RPrim(primitive: PInt)
     "smithy.api#BigDecimal" -> Unsupported(reason: "bigDecimal")
     "smithy.api#Unit" -> RUnit
     _ -> resolve_user_defined(model, target_id)
@@ -658,7 +673,13 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
     shape.Float(..) | shape.Double(..) -> RPrim(primitive: PFloat)
     shape.Bool(..) -> RPrim(primitive: PBool)
     shape.Timestamp(..) -> RTimestamp
-    shape.Blob(..) -> RBlob
+    shape.Blob(traits: bt) -> {
+      let streaming = dict.has_key(bt, ShapeId("smithy.api#streaming"))
+      case streaming {
+        True -> RStreamingBlob
+        False -> RBlob
+      }
+    }
     shape.Document(..) -> RDocument
 
     shape.Enum(members: m, ..) -> resolve_enum(target_id, m)
@@ -705,24 +726,35 @@ fn resolve_shape(model: Model, target_id: String, s: shape.Shape) -> Resolved {
         xml_value_name: value_name,
       )
     }
-    shape.Structure(traits: t, ..) ->
+    shape.Structure(traits: t, ..) -> {
+      let local = strip_namespace(target_id)
       RStruct(
-        local_name: strip_namespace(target_id),
-        gleam_name: strip_namespace(target_id),
+        local_name: local,
+        // Gleam type names MUST start with an uppercase letter. Smithy
+        // shape names are PascalCase by convention but a handful (e.g.
+        // `com.amazonaws.finspacedata#locationType`) sneak through
+        // lower-cased; pascalize unconditionally so the generated
+        // source compiles.
+        gleam_name: stringutils.gleam_type_name(local),
         full_id: target_id,
         xml_name: xml_name_of(t),
         xml_namespace: xml_namespace_of(t),
       )
-    shape.Union(..) ->
+    }
+    shape.Union(..) -> {
+      let local = strip_namespace(target_id)
       RUnion(
-        local_name: strip_namespace(target_id),
-        gleam_name: strip_namespace(target_id),
+        local_name: local,
+        gleam_name: stringutils.gleam_type_name(local),
         full_id: target_id,
       )
+    }
 
     shape.Service(..) | shape.Resource(..) | shape.Operation(..) ->
       Unsupported(reason: "service/resource/operation shape as field target")
-    shape.BigInteger(..) -> Unsupported(reason: "bigInteger")
+    // See note on the `smithy.api#BigInteger` case above — Erlang
+    // Int is arbitrary-precision so no conversion overhead.
+    shape.BigInteger(..) -> RPrim(primitive: PInt)
     shape.BigDecimal(..) -> Unsupported(reason: "bigDecimal")
   }
 }
@@ -739,11 +771,145 @@ pub fn resolve_members(model: Model, full_id: String) -> List(MemberDef) {
   }
 }
 
+/// Like `resolve_members` but returns members in the order they were
+/// declared in the Smithy model (via the `member_order.extract`
+/// JSON pre-pass attached to the model). Stragglers — members not
+/// present in the order map — keep their alphabetical position
+/// after the declared-order block.
+///
+/// Required by the awsQuery / ec2Query emitters: the Smithy spec
+/// says request bodies serialize members in declared order, and the
+/// protocol-test fixtures pin byte-exact wire form. Other emitters
+/// (awsJson / restJson / restXml / rpcv2Cbor) are body-content-
+/// agnostic to member position (JSON keys are unordered; XML
+/// elements appear in any order on the wire) and intentionally use
+/// the alphabetical `resolve_members` so the existing per-shape
+/// codec output stays stable.
+pub fn resolve_members_in_order(
+  model: Model,
+  full_id: String,
+) -> List(MemberDef) {
+  resolve_members(model, full_id)
+  |> reorder(model.ordered_member_names(model, full_id))
+}
+
+fn reorder(members: List(MemberDef), order: List(String)) -> List(MemberDef) {
+  case order {
+    [] -> members
+    _ -> {
+      let by_name =
+        list.fold(members, dict.new(), fn(acc, m) {
+          dict.insert(acc, m.member_name, m)
+        })
+      let listed = list.filter_map(order, fn(n) { dict.get(by_name, n) })
+      let listed_names =
+        list.fold(listed, dict.new(), fn(acc, m) {
+          dict.insert(acc, m.member_name, Nil)
+        })
+      let stragglers =
+        list.filter(members, fn(m) {
+          !dict.has_key(listed_names, m.member_name)
+        })
+      list.append(listed, stragglers)
+    }
+  }
+}
+
+/// `True` iff `shape_id` resolves to a struct that has at least one
+/// member targeting a `@streaming` blob. The detection-side hook the
+/// codegen uses to emit a `<op>_streaming(client, input)` variant
+/// for operations whose output struct carries a streaming-blob
+/// payload (S3.GetObject, MediaLive log streams, Lambda
+/// InvokeWithResponseStream, etc.). The buffered wrapper materialises
+/// the body via `runtime.invoke`; the streaming variant routes
+/// through `runtime.invoke_streaming` so the body arrives as a
+/// chunked `StreamingBody`.
+///
+/// Returns False for non-struct shapes (unions, enums, primitives)
+/// and for structs that have no streaming-blob members. The check
+/// is purely structural; `@streaming` on union members signals
+/// event-stream operations — use `has_streaming_union_member` for
+/// those.
+pub fn has_streaming_blob_member(model: Model, shape_id: String) -> Bool {
+  resolve_members(model, shape_id)
+  |> list.any(fn(m) { m.target == RStreamingBlob })
+}
+
+/// `True` iff `shape_id` resolves to a struct that has at least one
+/// member targeting a `@streaming` union — Smithy's representation
+/// of an event-stream operation. Examples: Transcribe's
+/// `StartStreamTranscription` output carries a
+/// `TranscriptResultStream` member; Kinesis's `SubscribeToShard`
+/// output carries a `SubscribeToShardEventStream` member; S3's
+/// `SelectObjectContent` output carries a
+/// `SelectObjectContentEventStream` member. The union shape itself
+/// is tagged with `smithy.api#streaming`.
+///
+/// The detection-side hook the codegen will use to emit an event-
+/// stream-aware variant (routes the response body through
+/// `event_stream.fold_events` to surface each decoded event as the
+/// matching union constructor). Returns False for non-struct
+/// shapes and for structs without streaming-union members.
+pub fn has_streaming_union_member(model: Model, shape_id: String) -> Bool {
+  has_streaming_union_in_members(model, resolve_members(model, shape_id))
+}
+
+/// Same predicate as `has_streaming_union_member` but operates on
+/// an already-resolved member list. The emitters work in terms of
+/// resolved `IOTypeInfo`s (so they don't re-walk the shape) and
+/// want this entry point.
+pub fn has_streaming_union_in_members(
+  model: Model,
+  members: List(MemberDef),
+) -> Bool {
+  list.any(members, fn(m) {
+    case m.target {
+      RUnion(full_id: union_id, ..) -> is_streaming_shape(model, union_id)
+      _ -> False
+    }
+  })
+}
+
+fn is_streaming_shape(model: Model, shape_id: String) -> Bool {
+  case model.lookup(model, shape_id) {
+    Ok(s) -> dict.has_key(shape_traits(s), ShapeId("smithy.api#streaming"))
+    Error(_) -> False
+  }
+}
+
+/// Return the `@streaming`-union member from a struct's resolved
+/// members along with its Gleam local-name. Used by the event-stream
+/// typed-decoder emitter to walk the union shape's variants.
+pub fn streaming_union_in_members(
+  model: Model,
+  members: List(MemberDef),
+) -> option.Option(#(String, String, List(MemberDef))) {
+  case
+    list.find(members, fn(m) {
+      case m.target {
+        RUnion(full_id: union_id, ..) -> is_streaming_shape(model, union_id)
+        _ -> False
+      }
+    })
+  {
+    Ok(m) ->
+      case m.target {
+        RUnion(local_name: local, full_id: id, ..) -> {
+          let variants = resolve_members(model, id)
+          option.Some(#(local, id, variants))
+        }
+        _ -> option.None
+      }
+    Error(_) -> option.None
+  }
+}
+
 fn resolve_enum(
   target_id: String,
   members: Dict(String, shape.Member),
 ) -> Resolved {
   let local = strip_namespace(target_id)
+  let gleam_name = stringutils.gleam_type_name(local)
   let variants =
     dict.to_list(members)
     |> list.sort(fn(a, b) { string.compare(a.0, b.0) })
@@ -754,11 +920,11 @@ fn resolve_enum(
         _ -> member_name
       }
       EnumVariant(
-        gleam_ctor: variant_constructor(local, member_name),
+        gleam_ctor: variant_constructor(gleam_name, member_name),
         wire_value: wire,
       )
     })
-  REnum(local_name: local, gleam_name: local, variants: variants)
+  REnum(local_name: local, gleam_name: gleam_name, variants: variants)
 }
 
 fn resolve_int_enum(
@@ -766,6 +932,7 @@ fn resolve_int_enum(
   members: Dict(String, shape.Member),
 ) -> Resolved {
   let local = strip_namespace(target_id)
+  let gleam_name = stringutils.gleam_type_name(local)
   let variants =
     dict.to_list(members)
     |> list.sort(fn(a, b) { string.compare(a.0, b.0) })
@@ -776,11 +943,11 @@ fn resolve_int_enum(
         _ -> 0
       }
       IntEnumVariant(
-        gleam_ctor: variant_constructor(local, member_name),
+        gleam_ctor: variant_constructor(gleam_name, member_name),
         wire_value: wire,
       )
     })
-  RIntEnum(local_name: local, gleam_name: local, variants: variants)
+  RIntEnum(local_name: local, gleam_name: gleam_name, variants: variants)
 }
 
 fn extract_members(
@@ -948,8 +1115,13 @@ pub fn gleam_type(r: Resolved) -> String {
     RMap(key: _k, value: v, sparse: False, ..) ->
       name_concat(["dict.Dict(String, ", gleam_type(v), ")"])
     RStruct(gleam_name: n, ..) | RUnion(gleam_name: n, ..) -> n
-    RTimestamp -> "Int"
+    // Codegen surfaces `@timestamp` as `json_timestamp.Timestamp`
+    // (seconds + nanoseconds). The Int-only API is still callable
+    // via `int_to_timestamp` / `timestamp_to_int` from
+    // `aws/internal/codec/json_timestamp`.
+    RTimestamp -> "json_timestamp.Timestamp"
     RBlob -> "BitArray"
+    RStreamingBlob -> "streaming.StreamingBody"
     RDocument -> "json.Json"
     RUnit -> "Nil"
     Unsupported(reason: _) -> "Nil"
@@ -968,9 +1140,9 @@ pub fn json_encoder_member(
 ) -> String {
   case r, format {
     RTimestamp, option.Some("date-time") ->
-      "fn(v) { json.string(json_timestamp.format_iso8601(v)) }"
+      "fn(v) { json.string(json_timestamp.format_iso8601_precise(v)) }"
     RTimestamp, option.Some("http-date") ->
-      "fn(v) { json.string(json_timestamp.format_http_date(v)) }"
+      "fn(v) { json.string(json_timestamp.format_http_date_precise(v)) }"
     _, _ -> json_encoder(r)
   }
 }
@@ -980,7 +1152,7 @@ pub fn json_decoder_member(
   format: option.Option(String),
 ) -> String {
   case r, format {
-    RTimestamp, _ -> "json_timestamp.decoder()"
+    RTimestamp, _ -> "json_timestamp.decoder_precise()"
     _, _ -> json_decoder(r)
   }
 }
@@ -990,7 +1162,7 @@ pub fn json_decoder_member_params(
   format: option.Option(String),
 ) -> String {
   case r, format {
-    RTimestamp, _ -> "json_timestamp.decoder()"
+    RTimestamp, _ -> "json_timestamp.decoder_precise()"
     _, _ -> json_decoder_params(r)
   }
 }
@@ -1003,9 +1175,9 @@ pub fn json_encoder(r: Resolved) -> String {
     RPrim(primitive: PInt) -> "json.int"
     RPrim(primitive: PFloat) -> "json_float.encode"
     RPrim(primitive: PBool) -> "json.bool"
-    REnum(local_name: n, ..) ->
+    REnum(gleam_name: n, ..) ->
       name_concat(["encode_", stringutils.pascal_to_snake(n), "_enum"])
-    RIntEnum(local_name: n, ..) ->
+    RIntEnum(gleam_name: n, ..) ->
       name_concat(["encode_", stringutils.pascal_to_snake(n), "_int_enum"])
     RList(element: e, sparse: True, ..) ->
       name_concat([
@@ -1027,12 +1199,14 @@ pub fn json_encoder(r: Resolved) -> String {
         json_encoder(v),
         "(pair.1)) })) }",
       ])
-    RStruct(local_name: n, ..) ->
+    RStruct(gleam_name: n, ..) ->
       name_concat(["encode_", stringutils.pascal_to_snake(n), "_struct"])
-    RUnion(local_name: n, ..) ->
+    RUnion(gleam_name: n, ..) ->
       name_concat(["encode_", stringutils.pascal_to_snake(n), "_union"])
-    RTimestamp -> "json.int"
+    RTimestamp -> "json_timestamp.encode_epoch_seconds"
     RBlob -> "fn(b) { json.string(bit_array.base64_encode(b, True)) }"
+    RStreamingBlob ->
+      "fn(b) { json.string(bit_array.base64_encode(streaming.to_bit_array(b), True)) }"
     RDocument -> "fn(j) { j }"
     RUnit -> "fn(_) { json.object([]) }"
     Unsupported(..) -> "fn(_) { json.null() }"
@@ -1054,13 +1228,13 @@ fn name_concat(parts: List(String)) -> String {
 /// function so the member-keyed convention reaches the leaves.
 pub fn json_decoder_params(r: Resolved) -> String {
   case r {
-    RStruct(local_name: n, ..) ->
+    RStruct(gleam_name: n, ..) ->
       name_concat([
         "decode_",
         stringutils.pascal_to_snake(n),
         "_struct_params()",
       ])
-    RUnion(local_name: n, ..) ->
+    RUnion(gleam_name: n, ..) ->
       name_concat([
         "decode_",
         stringutils.pascal_to_snake(n),
@@ -1089,9 +1263,9 @@ pub fn json_decoder(r: Resolved) -> String {
     RPrim(primitive: PInt) -> "decode.int"
     RPrim(primitive: PFloat) -> "json_float.decoder()"
     RPrim(primitive: PBool) -> "decode.bool"
-    REnum(local_name: n, ..) ->
+    REnum(gleam_name: n, ..) ->
       name_concat(["decode_", stringutils.pascal_to_snake(n), "_enum()"])
-    RIntEnum(local_name: n, ..) ->
+    RIntEnum(gleam_name: n, ..) ->
       name_concat(["decode_", stringutils.pascal_to_snake(n), "_int_enum()"])
     RList(element: e, sparse: True, ..) ->
       name_concat(["decode.list(decode.optional(", json_decoder(e), "))"])
@@ -1105,16 +1279,23 @@ pub fn json_decoder(r: Resolved) -> String {
       ])
     RMap(value: v, sparse: False, ..) ->
       name_concat(["decode.dict(decode.string, ", json_decoder(v), ")"])
-    RStruct(local_name: n, ..) ->
+    RStruct(gleam_name: n, ..) ->
       name_concat(["decode_", stringutils.pascal_to_snake(n), "_struct()"])
-    RUnion(local_name: n, ..) ->
+    RUnion(gleam_name: n, ..) ->
       name_concat(["decode_", stringutils.pascal_to_snake(n), "_union()"])
-    RTimestamp -> "json_timestamp.decoder()"
+    RTimestamp -> "json_timestamp.decoder_precise()"
     RBlob ->
       // Smithy protocol-test params encode blobs as UTF-8 strings, not
       // base64. The on-the-wire response form IS base64 — a wire-side
       // decoder lands when real-response tests do.
       "decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })"
+    RStreamingBlob ->
+      // Protocol-test params surface a streaming blob as a UTF-8
+      // string too (the corpus doesn't distinguish — `@streaming`
+      // is purely a wire / runtime concern). Wrap the raw bytes
+      // in `streaming.from_bit_array` so the public field stays
+      // typed as `StreamingBody`.
+      "decode.then(decode.string, fn(s) { decode.success(streaming.from_bit_array(bit_array.from_string(s))) })"
     RDocument -> "json_document.decoder()"
     RUnit -> "decode.success(Nil)"
     Unsupported(..) -> "decode.success(Nil)"

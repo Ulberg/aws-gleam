@@ -36,6 +36,12 @@ const restjson1_path = "../test/fixtures/protocol-tests/restJson1.json"
 
 const restxml_path = "../test/fixtures/protocol-tests/restXml.json"
 
+const s3_path = "../vendor/aws-sdk-rust/aws-models/s3.json"
+
+const polly_path = "../vendor/aws-sdk-rust/aws-models/polly.json"
+
+const transcribe_streaming_path = "../vendor/aws-sdk-rust/aws-models/transcribe-streaming.json"
+
 const awsquery_path = "../test/fixtures/protocol-tests/awsQuery.json"
 
 const ec2query_path = "../test/fixtures/protocol-tests/ec2Query.json"
@@ -105,6 +111,210 @@ pub fn emitted_modules_expose_canonical_function_names_test() {
   should.be_true(string.contains(r.source, "_request("))
   should.be_true(string.contains(r.source, "pub fn parse_"))
   should.be_true(string.contains(r.source, "_response("))
+}
+
+/// Cache lifecycle is wired through three call sites in every
+/// generated service: `new` starts the cache, `with_credentials_provider`
+/// shuts the old one before swapping, and `shutdown` /
+/// `shutdown_sync` release the actor at teardown. Locking the
+/// emitted calls keeps the contract observable from the codegen
+/// tests rather than the consumer-side integration suite alone.
+pub fn emitted_modules_wire_credentials_cache_lifecycle_test() {
+  let m = load(json10_path)
+  let svc = find_service(m, "aws.protocols#awsJson1_0", "JsonRpc10")
+  let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson10)
+  // Construction: cache started on `new`.
+  should.be_true(string.contains(r.source, "credentials_cache.start_default"))
+  // Swap: old cache stopped before the new one starts.
+  should.be_true(string.contains(
+    r.source,
+    "let _ = credentials_cache.shutdown(client.cache)",
+  ))
+  // Teardown: both modes exposed on the typed API.
+  should.be_true(string.contains(r.source, "pub fn shutdown(client: Client)"))
+  should.be_true(string.contains(
+    r.source,
+    "pub fn shutdown_sync(client: Client",
+  ))
+  should.be_true(string.contains(r.source, "credentials_cache.shutdown_sync"))
+}
+
+/// Every generated service exposes a `pub fn config(client) ->
+/// runtime.ClientConfig` accessor so callers can build streaming
+/// wrappers (or any other custom dispatch flow) on top of the same
+/// configured Client. Lock its presence on a representative emitted
+/// service so the codegen can't drop it without surfacing a test
+/// failure here.
+pub fn emitted_modules_expose_config_accessor_test() {
+  let m = load(json10_path)
+  let svc = find_service(m, "aws.protocols#awsJson1_0", "JsonRpc10")
+  let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson10)
+  // Signature line + body — both must be present and read straight.
+  should.be_true(string.contains(
+    r.source,
+    "pub fn config(client: Client) -> runtime.ClientConfig",
+  ))
+  should.be_true(string.contains(r.source, "  client.config\n"))
+}
+
+/// Streaming-side setters mirror the buffered ones: emit
+/// `with_streaming_http_send`, `with_http2`, and `with_max_attempts`
+/// so callers can swap the chunked transport / opt into HTTP/2 /
+/// tune retry without dropping down to the runtime's ClientConfig.
+/// Pin all three signatures on the same reference fixture.
+pub fn emitted_modules_expose_streaming_and_retry_setters_test() {
+  let m = load(json10_path)
+  let svc = find_service(m, "aws.protocols#awsJson1_0", "JsonRpc10")
+  let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson10)
+  should.be_true(string.contains(r.source, "pub fn with_streaming_http_send("))
+  should.be_true(string.contains(r.source, "send: http_send.StreamingSend"))
+  should.be_true(string.contains(r.source, "pub fn with_http2(client: Client)"))
+  should.be_true(string.contains(
+    r.source,
+    "pub fn with_max_attempts(client: Client, n: Int)",
+  ))
+  should.be_true(string.contains(
+    r.source,
+    "pub fn with_sigv4a_region_set(client: Client, region_set: List(String))",
+  ))
+  should.be_true(string.contains(
+    r.source,
+    "pub fn with_sigv4a_path_normalization(client: Client, normalize: Bool)",
+  ))
+}
+
+/// restXml services whose output struct carries a `@streaming` blob
+/// (S3.GetObject is the canonical case) get an extra
+/// `<op>_streaming(client, input) -> Result(streaming.Response,
+/// runtime.ClientError)` variant emitted alongside the buffered op.
+/// Pin its signature on the S3 fixture so the emitter can't drop it.
+pub fn emitted_restxml_modules_expose_streaming_variant_for_streaming_outputs_test() {
+  let m = load(s3_path)
+  let svc = find_service(m, "aws.protocols#restXml", "AmazonS3")
+  let assert Ok(r) = restxml.emit_service(m, svc)
+  should.be_true(string.contains(
+    r.source,
+    "pub fn get_object_streaming(client: Client, input: GetObjectRequest)",
+  ))
+  should.be_true(string.contains(
+    r.source,
+    "-> Result(streaming.Response, runtime.ClientError)",
+  ))
+  should.be_true(string.contains(r.source, "runtime.invoke_streaming("))
+  // ListBuckets has no streaming output — the streaming variant
+  // must NOT appear for it.
+  should.be_false(string.contains(r.source, "pub fn list_buckets_streaming("))
+}
+
+/// restJson1 services pick up the same flip. Polly.SynthesizeSpeech
+/// is the canonical example — `audio_stream` is a `@streaming` blob
+/// in the output struct, so the codegen emits both the buffered
+/// `synthesize_speech` and the streaming `synthesize_speech_streaming`
+/// variant. Pin both on the Polly fixture.
+pub fn emitted_restjson_modules_expose_streaming_variant_for_streaming_outputs_test() {
+  let m = load(polly_path)
+  let svc = find_service(m, "aws.protocols#restJson1", "Parrot_v1")
+  let assert Ok(r) = restjson.emit_service(m, svc)
+  should.be_true(string.contains(
+    r.source,
+    "pub fn synthesize_speech_streaming(",
+  ))
+  should.be_true(string.contains(
+    r.source,
+    "-> Result(streaming.Response, runtime.ClientError)",
+  ))
+  should.be_true(string.contains(r.source, "runtime.invoke_streaming("))
+  // `describe_voices` is a non-streaming op — must not get a streaming variant.
+  should.be_false(string.contains(r.source, "pub fn describe_voices_streaming("))
+}
+
+/// Operations whose output carries a `@streaming` union (Smithy's
+/// event-stream shape) get a `<op>_event_stream` variant instead of
+/// `<op>_streaming`. Transcribe Streaming is the canonical case —
+/// `StartStreamTranscription` returns a `TranscriptResultStream`
+/// union tagged with `@streaming`. Same wire shape as the
+/// streaming-blob variant; the distinct name signals the
+/// `application/vnd.amazon.eventstream` framing to callers.
+pub fn emitted_restjson_modules_expose_event_stream_variant_for_streaming_unions_test() {
+  let m = load(transcribe_streaming_path)
+  let svc = find_service(m, "aws.protocols#restJson1", "Transcribe")
+  let assert Ok(r) = restjson.emit_service(m, svc)
+  should.be_true(string.contains(
+    r.source,
+    "pub fn start_stream_transcription_event_stream(",
+  ))
+  should.be_true(string.contains(
+    r.source,
+    "-> Result(streaming.Response, runtime.ClientError)",
+  ))
+  should.be_true(string.contains(r.source, "runtime.invoke_streaming("))
+  // The blob-streaming variant must NOT appear — the output here is
+  // a streaming union, not a streaming blob.
+  should.be_false(string.contains(
+    r.source,
+    "pub fn start_stream_transcription_streaming(",
+  ))
+}
+
+/// Same event-stream codegen flip on the restXml side. S3's
+/// `SelectObjectContent` returns a `SelectObjectContentEventStream`
+/// union with `@streaming` — the emitter must produce a
+/// `select_object_content_event_stream` wrapper. Pinning here
+/// guards the restXml emit path against regression independently
+/// of the restJson1 / awsJson tests above.
+pub fn emitted_restxml_modules_expose_event_stream_variant_test() {
+  let m = load(s3_path)
+  let svc = find_service(m, "aws.protocols#restXml", "AmazonS3")
+  let assert Ok(r) = restxml.emit_service(m, svc)
+  should.be_true(string.contains(
+    r.source,
+    "pub fn select_object_content_event_stream(",
+  ))
+  // No streaming-blob variant for the same op — the body is a
+  // union, not a blob.
+  should.be_false(string.contains(
+    r.source,
+    "pub fn select_object_content_streaming(",
+  ))
+}
+
+/// Same event-stream codegen flip on the awsJson side. Kinesis'
+/// `SubscribeToShard` returns a `SubscribeToShardEventStream` union
+/// with `@streaming` — the awsJson emitter must also produce the
+/// wrapper. Three protocol pins (restjson / restxml / awsjson)
+/// catch any per-protocol regression in the shared
+/// `client.invoke_event_stream_fn` plumbing.
+pub fn emitted_awsjson_modules_expose_event_stream_variant_test() {
+  let m = load("../vendor/aws-sdk-rust/aws-models/kinesis.json")
+  let svc = find_service(m, "aws.protocols#awsJson1_1", "Kinesis_20131202")
+  let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson11)
+  should.be_true(string.contains(
+    r.source,
+    "pub fn subscribe_to_shard_event_stream(",
+  ))
+  should.be_false(string.contains(
+    r.source,
+    "pub fn subscribe_to_shard_streaming(",
+  ))
+}
+
+/// Generated services that have a Smithy endpoint rule set on their
+/// service shape MUST embed the JSON as a const + attach the parsed
+/// rule set to the client config. Lock the shape so a future emitter
+/// refactor can't accidentally drop the endpoint resolution path.
+pub fn emitted_modules_embed_endpoint_rule_set_test() {
+  let m = load(json10_path)
+  let svc = find_service(m, "aws.protocols#awsJson1_0", "JsonRpc10")
+  let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson10)
+  // The protocol-test service doesn't carry a rule set, so the
+  // `const endpoint_rule_set_json` line should be absent — guards
+  // against the emitter spuriously emitting an empty rule set.
+  should.be_false(string.contains(
+    r.source,
+    "const endpoint_rule_set_json: String =",
+  ))
+  // But the runtime-side ClientConfig setter doesn't get called.
+  should.be_false(string.contains(r.source, "runtime.with_endpoint_rule_set"))
 }
 
 /// Module header is the only place we encode the source service shape

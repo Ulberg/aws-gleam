@@ -25,8 +25,15 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(
     operation_with_required_members_with_defaults_dispatcher(),
   )
+  |> dispatch.register(put_with_content_encoding_dispatcher())
   |> dispatch.register(query_incompatible_operation_dispatcher())
   |> dispatch.register(simple_scalar_properties_dispatcher())
+  |> dispatch.register(query_compatible_operation_dispatcher())
+  |> dispatch.register(complex_error_dispatcher())
+  |> dispatch.register(foo_error_dispatcher())
+  |> dispatch.register(invalid_greeting_dispatcher())
+  |> dispatch.register(custom_code_error_dispatcher())
+  |> dispatch.register(no_custom_code_error_dispatcher())
 }
 
 fn content_type_parameters_dispatcher() -> Dispatcher {
@@ -314,6 +321,29 @@ fn operation_with_required_members_with_defaults_dispatcher() -> Dispatcher {
   )
 }
 
+fn put_with_content_encoding_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#PutWithContentEncoding",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_put_with_content_encoding_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_put_with_content_encoding_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_put_with_content_encoding_response,
+    ),
+  )
+}
+
 fn query_incompatible_operation_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.json10#QueryIncompatibleOperation",
@@ -355,6 +385,79 @@ fn simple_scalar_properties_dispatcher() -> Dispatcher {
       }
     },
     parse_response: response_parser(svc.parse_simple_scalar_properties_response),
+  )
+}
+
+fn query_compatible_operation_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#QueryCompatibleOperation",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_query_compatible_operation_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_query_compatible_operation_request(input)
+          Ok(BuiltRequest(method:, uri:, headers:, body:))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_query_compatible_operation_response,
+    ),
+  )
+}
+
+fn complex_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#ComplexError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_complex_error_response),
+  )
+}
+
+fn foo_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#FooError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_foo_error_response),
+  )
+}
+
+fn invalid_greeting_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#InvalidGreeting",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_invalid_greeting_response),
+  )
+}
+
+fn custom_code_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#CustomCodeError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_custom_code_error_response),
+  )
+}
+
+fn no_custom_code_error_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.json10#NoCustomCodeError",
+    build_request: fn(_params) {
+      Error("error-shape dispatcher has no request side")
+    },
+    parse_response: response_parser(svc.parse_no_custom_code_error_response),
   )
 }
 

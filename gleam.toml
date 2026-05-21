@@ -2,9 +2,34 @@ name = "aws"
 version = "0.1.0"
 target = "erlang"
 
-# Pre-v0.1; no published releases yet.
+# Development meta-package for the aws-gleam workspace. Not
+# published to hex. It pulls in `aws_runtime` and (after regen)
+# every per-service `aws_<svc>` package via path deps so the
+# existing test suite under test/ — which exercises both runtime
+# helpers and codegen-emitted service code — can keep running as
+# a single `gleam test` invocation.
+#
+# Published packages live under runtime/ and services/<svc>/;
+# `gleam publish` is run from those directories, not this one.
 
 [dependencies]
+aws_gleam_runtime = { path = "./runtime" }
+
+# Per-service path deps. Add a new entry here whenever a test file
+# imports `aws/services/<svc>` — the corresponding service package
+# under services/<svc>/ has to be regenerated first via
+# `./scripts/regen.sh <svc>` (the regen creates services/<svc>/
+# automatically). Consumers using the published hex packages list
+# only the services they actually import; this list is the union
+# every test happens to reach.
+aws_gleam_api_gateway = { path = "./services/api_gateway" }
+aws_gleam_cloudwatch_logs = { path = "./services/cloudwatch_logs" }
+aws_gleam_dynamodb = { path = "./services/dynamodb" }
+aws_gleam_eks = { path = "./services/eks" }
+aws_gleam_s3 = { path = "./services/s3" }
+aws_gleam_sqs = { path = "./services/sqs" }
+aws_gleam_transcribe_streaming = { path = "./services/transcribe_streaming" }
+
 gleam_stdlib = ">= 0.40.0 and < 2.0.0"
 gleam_otp = ">= 1.0.0 and < 2.0.0"
 gleam_erlang = ">= 1.0.0 and < 2.0.0"

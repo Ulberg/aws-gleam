@@ -50,9 +50,29 @@ pub type Code {
   /// A `let name = expr` statement. Used inside `Body`.
   Let(name: String, value: Code)
 
+  /// A `let assert <pattern> = expr` statement. `pattern` is a Gleam
+  /// pattern as a string (e.g. `"Ok(rule_set)"`); the renderer emits
+  /// it verbatim, just as `Use` emits its `name` verbatim. Reserved
+  /// for invariants that hold by construction — the caller has
+  /// already proved the match is total, and a runtime failure would
+  /// be a generator bug rather than an end-user condition.
+  LetAssert(pattern: String, value: Code)
+
+  /// A module-level `const NAME: Type = value` declaration. Rendered
+  /// as a top-level item; not allowed inside a function body.
+  Const(name: String, type_: String, value: Code)
+
   /// A `use name <- callee` continuation. Lifts the rest of the body
   /// into a closure passed to `callee`.
   Use(name: String, callee: Code)
+
+  /// A `fn(p1, p2, ...) { body }` anonymous-function expression.
+  /// Parameters are bare identifier names — anonymous functions in
+  /// Gleam don't carry type annotations on params. Used by the codegen
+  /// for body closures fed to `list.map` / `list.fold` / similar; lets
+  /// emitters compose the closure body out of typed AST instead of
+  /// templating a `code.Raw` fragment.
+  Lambda(params: List(String), body: Code)
 
   /// A `case scrutinee { ... }` expression. Each branch is
   /// `pattern -> body`.
@@ -86,6 +106,14 @@ pub type Code {
 
   /// An integer literal.
   IntLit(value: Int)
+
+  /// `Ctor(..record, field1: v1, field2: v2)` — Gleam record update
+  /// expression. `record` is the base value, `type_` is the
+  /// constructor name (Gleam requires it explicitly), and `fields`
+  /// are `Labelled(field, value)` overrides. Used by the codegen for
+  /// in-place updates that would otherwise need a manual rebuild —
+  /// e.g. threading a pagination cursor into a typed input.
+  RecordUpdate(record: Code, type_: String, fields: List(Code))
 
   /// Raw passthrough — emitter hands a pre-formatted Gleam fragment.
   /// Escape hatch for legacy code; should eventually be empty.
@@ -219,6 +247,26 @@ fn do_render(c: Code, indent: Int) -> String {
     Let(name: n, value: v) ->
       string.concat([pad(indent), "let ", n, " = ", do_render_expr(v, indent)])
 
+    LetAssert(pattern: p, value: v) ->
+      string.concat([
+        pad(indent),
+        "let assert ",
+        p,
+        " = ",
+        do_render_expr(v, indent),
+      ])
+
+    Const(name: n, type_: t, value: v) ->
+      string.concat([
+        pad(indent),
+        "const ",
+        n,
+        ": ",
+        t,
+        " = ",
+        do_render_expr(v, indent),
+      ])
+
     Use(name: n, callee: c2) ->
       case n {
         "" ->
@@ -232,6 +280,16 @@ fn do_render(c: Code, indent: Int) -> String {
             do_render_expr(c2, indent),
           ])
       }
+
+    Lambda(params: ps, body: b) ->
+      string.concat([
+        pad(indent),
+        "fn(",
+        string.join(ps, ", "),
+        ") { ",
+        do_render_expr(b, indent),
+        " }",
+      ])
 
     Case(scrutinee: s, branches: bs) -> {
       let header =
@@ -271,6 +329,9 @@ fn do_render(c: Code, indent: Int) -> String {
 
     IntLit(value: n) -> string.concat([pad(indent), int_to_string(n)])
 
+    RecordUpdate(record: r, type_: t, fields: fs) ->
+      string.concat([pad(indent), render_record_update(r, t, fs, indent)])
+
     Raw(fragment: f) -> indent_raw(f, indent)
 
     DocComment(lines: ls) ->
@@ -302,6 +363,8 @@ fn do_render_expr(c: Code, indent: Int) -> String {
     StrLit(value: v) -> escape_string_literal(v)
     IntLit(value: n) -> int_to_string(n)
     Raw(fragment: f) -> f
+    RecordUpdate(record: r, type_: t, fields: fs) ->
+      render_record_update(r, t, fs, indent)
     Call(head: h, args: as_) -> render_call(h, as_, indent)
     Concat(parts: ps) -> render_concat(ps, indent)
     Tuple(items: xs) -> render_tuple(xs, indent)
@@ -311,12 +374,44 @@ fn do_render_expr(c: Code, indent: Int) -> String {
     // in. Skipping the wrap matches the hand-written style and
     // avoids artificial indentation on `let x = case ... { ... }`.
     Case(..) -> string.trim_start(do_render(c, indent))
+    // Anonymous functions render inline too: `fn(p) { body }`. The
+    // body uses `do_render_expr` so we don't add line breaks for
+    // simple bodies, matching how callers template them today.
+    Lambda(params: ps, body: b) ->
+      string.concat([
+        "fn(",
+        string.join(ps, ", "),
+        ") { ",
+        do_render_expr(b, indent),
+        " }",
+      ])
     _ ->
       // Larger constructs in expression position fall back to the
       // statement renderer — Gleam allows blocks as expressions when
       // delimited.
       string.concat(["{\n", do_render(c, indent + 1), "\n", pad(indent), "}"])
   }
+}
+
+fn render_record_update(
+  record: Code,
+  type_: String,
+  fields: List(Code),
+  indent: Int,
+) -> String {
+  // Gleam syntax: `Ctor(..base, field1: v1, field2: v2)`.
+  let record_str = do_render_expr(record, indent)
+  let field_str =
+    fields
+    |> list.map(fn(f) {
+      case f {
+        Labelled(label: l, value: v) ->
+          string.concat([l, ": ", do_render_expr(v, indent)])
+        _ -> do_render_expr(f, indent)
+      }
+    })
+    |> string.join(", ")
+  string.concat([type_, "(..", record_str, ", ", field_str, ")"])
 }
 
 fn render_call(head: Code, args: List(Code), indent: Int) -> String {
@@ -435,6 +530,98 @@ fn trim_trailing(s: String) -> String {
   case string.ends_with(s, "\n") {
     True -> trim_trailing(string.drop_end(s, 1))
     False -> s
+  }
+}
+
+/// Does the rendered body actually reference a module via its qualifier
+/// `prefix` (e.g. `"decode."`)?  Used by file-header emitters to import
+/// only modules a generated body uses. Naive substring matching trips on
+/// suffixes — `"decode."` inside `"xml_decode."` would falsely "use" the
+/// `decode` module. This walks the body and accepts a match only when the
+/// character immediately before the prefix is *not* an identifier
+/// character (i.e. it sits on a real word boundary).
+pub fn references_module(body: String, prefix: String) -> Bool {
+  any_word_boundary(strip_comments(body), prefix)
+}
+
+/// Drop everything from `//` to end-of-line on every line. Catches
+/// `//` regular, `///` doc, and `////` module-doc comments — all are
+/// `//`-prefixed in Gleam. Caller uses this to scan code text
+/// without false-positives from doc text (e.g. a `// the full
+/// list. Required for ...` triggering a `list.` import check).
+fn strip_comments(body: String) -> String {
+  string.split(body, on: "\n")
+  |> list.map(fn(line) {
+    case string.split_once(line, on: "//") {
+      Ok(#(before, _)) -> before
+      Error(_) -> line
+    }
+  })
+  |> string.join("\n")
+}
+
+/// True iff `body` contains `name` as a standalone identifier — i.e.
+/// `name` appears with non-identifier characters on BOTH sides (or
+/// at start/end of string). Stricter than `references_module/2`,
+/// which only checks the left boundary. Use this when you need to
+/// know "did body actually use the identifier `name`", not just
+/// "did body contain anything starting with `name`".
+///
+/// Picks up `input.x`, `input)`, `input,`, `input ` — anything where
+/// the next char isn't part of an identifier. Skips `input_type`,
+/// `inputs`, etc.
+pub fn references_identifier(body: String, name: String) -> Bool {
+  any_identifier_match(body, name)
+}
+
+fn any_identifier_match(body: String, name: String) -> Bool {
+  case string.split_once(body, on: name) {
+    Error(_) -> False
+    Ok(#(before, after)) ->
+      case ends_with_ident_char(before) || starts_with_ident_char(after) {
+        True -> any_identifier_match(after, name)
+        False -> True
+      }
+  }
+}
+
+fn starts_with_ident_char(s: String) -> Bool {
+  case string.length(s) {
+    0 -> False
+    _ -> is_ident_char(string.slice(s, at_index: 0, length: 1))
+  }
+}
+
+fn any_word_boundary(body: String, prefix: String) -> Bool {
+  case string.split_once(body, on: prefix) {
+    Error(_) -> False
+    Ok(#(before, after)) ->
+      case ends_with_ident_char(before) {
+        // identifier ran straight into prefix — keep scanning after it.
+        True -> any_word_boundary(after, prefix)
+        False -> True
+      }
+  }
+}
+
+fn ends_with_ident_char(s: String) -> Bool {
+  case string.length(s) {
+    0 -> False
+    n -> is_ident_char(string.slice(s, at_index: n - 1, length: 1))
+  }
+}
+
+fn is_ident_char(c: String) -> Bool {
+  case c {
+    "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" -> True
+    "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" -> True
+    "u" | "v" | "w" | "x" | "y" | "z" -> True
+    "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" -> True
+    "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" -> True
+    "U" | "V" | "W" | "X" | "Y" | "Z" -> True
+    "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" -> True
+    "_" -> True
+    _ -> False
   }
 }
 

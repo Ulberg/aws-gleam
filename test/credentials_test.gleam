@@ -6,8 +6,12 @@ import aws/credentials.{
   type Credentials, type Provider, type ProviderError, ChainExhausted,
   Credentials, FetchFailed, NotConfigured, Provider,
 }
+import aws/internal/http_send
 import gleam/dict
+import gleam/http/request.{type Request}
+import gleam/http/response
 import gleam/option.{None, Some}
+import gleam/string
 import gleeunit/should
 
 /// Build a lookup function backed by a dict — lets us drive `from_environment`
@@ -388,3 +392,200 @@ pub fn profile_provider_partial_merge_test() {
     )),
   )
 }
+
+// ---------- profile_assume_role provider ----------
+
+fn assume_role_canned_xml() -> BitArray {
+  // Mirrors what the real STS returns for AssumeRole; the inner
+  // `<Credentials>` block is the only structure the SDK decodes.
+  <<
+    "<AssumeRoleResponse><AssumeRoleResult><Credentials><AccessKeyId>ASIAEXAMPLEROLE</AccessKeyId><SecretAccessKey>ROLE_SECRET</SecretAccessKey><SessionToken>ROLE_SESSION_TOKEN</SessionToken><Expiration>2024-01-17T01:00:00Z</Expiration></Credentials></AssumeRoleResult></AssumeRoleResponse>":utf8,
+  >>
+}
+
+fn canned_send(body: BitArray) -> http_send.Send {
+  fn(_req: Request(BitArray)) {
+    Ok(response.Response(status: 200, headers: [], body: body))
+  }
+}
+
+fn fixed_timestamp() -> String {
+  "20240117T000000Z"
+}
+
+pub fn profile_assume_role_falls_through_to_static_keys_test() {
+  // No role_arn → behaves identically to `from_profile`. Confirms the
+  // chained constructor is a strict superset of the simple one.
+  let creds =
+    ok_reader(
+      "[default]
+aws_access_key_id = DK
+aws_secret_access_key = DS
+",
+    )
+  credentials.from_profile_assume_role_with(
+    name: "default",
+    send: canned_send(<<>>),
+    region: "us-east-1",
+    endpoint: "https://sts.amazonaws.com/",
+    credentials_reader: creds,
+    config_reader: no_file(),
+    timestamp: fixed_timestamp,
+  )
+  |> credentials.fetch
+  |> should.equal(
+    Ok(Credentials(
+      access_key_id: "DK",
+      secret_access_key: "DS",
+      session_token: None,
+      expires_at: None,
+      source: "Profile(default)",
+    )),
+  )
+}
+
+pub fn profile_assume_role_chains_via_sts_when_role_arn_present_test() {
+  // Static keys live under [source]; the role-bearing profile points
+  // at it via `source_profile`. The STS Send returns canned AssumeRole
+  // XML; we assert the unpacked role credentials flow through.
+  let config =
+    ok_reader(
+      "[profile dev]
+role_arn = arn:aws:iam::123456789012:role/Demo
+source_profile = source
+role_session_name = my-session
+
+[profile source]
+aws_access_key_id = SRC_KEY
+aws_secret_access_key = SRC_SECRET
+",
+    )
+  let assert Ok(out) =
+    credentials.from_profile_assume_role_with(
+      name: "dev",
+      send: canned_send(assume_role_canned_xml()),
+      region: "us-east-1",
+      endpoint: "https://sts.amazonaws.com/",
+      credentials_reader: no_file(),
+      config_reader: config,
+      timestamp: fixed_timestamp,
+    )
+    |> credentials.fetch
+  out.access_key_id |> should.equal("ASIAEXAMPLEROLE")
+  out.secret_access_key |> should.equal("ROLE_SECRET")
+  out.session_token |> should.equal(Some("ROLE_SESSION_TOKEN"))
+  out.expires_at |> should.equal(Some(1_705_453_200))
+  // The provider label carries the role ARN so the chain log says
+  // which hop fetched the credentials.
+  out.source
+  |> string.contains("AssumeRole(arn:aws:iam::123456789012:role/Demo)")
+  |> should.be_true
+}
+
+pub fn profile_assume_role_missing_source_profile_is_not_configured_test() {
+  // `role_arn` without `source_profile` is a malformed chain — the
+  // SDK can't know which profile holds the bootstrap credentials.
+  let config =
+    ok_reader(
+      "[profile dev]
+role_arn = arn:aws:iam::123456789012:role/Demo
+",
+    )
+  let assert Error(err) =
+    credentials.from_profile_assume_role_with(
+      name: "dev",
+      send: canned_send(<<>>),
+      region: "us-east-1",
+      endpoint: "https://sts.amazonaws.com/",
+      credentials_reader: no_file(),
+      config_reader: config,
+      timestamp: fixed_timestamp,
+    )
+    |> credentials.fetch
+  case err {
+    NotConfigured(reason: r) ->
+      r |> string.contains("source_profile") |> should.be_true
+    _ -> panic as "expected NotConfigured for missing source_profile"
+  }
+}
+
+pub fn profile_assume_role_signs_with_source_profile_credentials_test() {
+  // The outbound request to STS must be SigV4-signed with the source
+  // profile's keys (that's how STS authenticates the caller). We
+  // capture the request, then verify the Authorization header
+  // includes the source profile's access key id in the credential
+  // scope.
+  let config =
+    ok_reader(
+      "[profile dev]
+role_arn = arn:aws:iam::123456789012:role/Demo
+source_profile = source
+
+[profile source]
+aws_access_key_id = SRC_KEY_FOR_SIGNING
+aws_secret_access_key = SRC_SECRET
+",
+    )
+  let captured = make_request_capture()
+  let send = capture_then_canned(captured, assume_role_canned_xml())
+  let _ =
+    credentials.from_profile_assume_role_with(
+      name: "dev",
+      send: send,
+      region: "us-east-1",
+      endpoint: "https://sts.amazonaws.com/",
+      credentials_reader: no_file(),
+      config_reader: config,
+      timestamp: fixed_timestamp,
+    )
+    |> credentials.fetch
+  let req = read_captured_request(captured)
+  let auth = read_header(req, "authorization")
+  auth |> string.contains("SRC_KEY_FOR_SIGNING") |> should.be_true
+}
+
+// --- request-capture helpers ---
+// `process.new_subject` would be cleaner but introduces an inter-test
+// ordering hazard (gleeunit interleaves tests). Use a per-call ETS-
+// backed ref via `aws_test_support_ffi:make_ref/0` instead.
+
+type RequestCapture {
+  RequestCapture(get: fn() -> Request(BitArray))
+}
+
+fn make_request_capture() -> RequestCapture {
+  let ref = capture_new()
+  RequestCapture(get: fn() { capture_get(ref) })
+}
+
+fn capture_then_canned(
+  capture: RequestCapture,
+  body: BitArray,
+) -> http_send.Send {
+  fn(req: Request(BitArray)) {
+    let RequestCapture(get: _) = capture
+    capture_put(req)
+    Ok(response.Response(status: 200, headers: [], body: body))
+  }
+}
+
+fn read_captured_request(capture: RequestCapture) -> Request(BitArray) {
+  let RequestCapture(get: get) = capture
+  get()
+}
+
+fn read_header(req: Request(BitArray), name: String) -> String {
+  case request.get_header(req, name) {
+    Ok(v) -> v
+    Error(_) -> ""
+  }
+}
+
+@external(erlang, "aws_test_support_ffi", "capture_new")
+fn capture_new() -> Int
+
+@external(erlang, "aws_test_support_ffi", "capture_put")
+fn capture_put(req: Request(BitArray)) -> Nil
+
+@external(erlang, "aws_test_support_ffi", "capture_get")
+fn capture_get(ref: Int) -> Request(BitArray)

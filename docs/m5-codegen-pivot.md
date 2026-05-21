@@ -6,6 +6,13 @@ exactly as merged on `main`. What changes is everything above the runtime:
 protocol codecs, typed clients, and per-service code are now **generated**
 from upstream Smithy models instead of hand-written.
 
+> **Status (v0.1 close):** the plan in this document landed and the
+> v0.1 plan's gate is met. For the current state — parity table,
+> wire-format compliance counts, remaining v0.2 candidates — see
+> [`audits/m6.md`](audits/m6.md) and [`audits/m5.md`](audits/m5.md).
+> The detail below is preserved as the rationale that produced the
+> shipped design.
+
 ## Why pivot
 
 A look at `aws_codegen` (an existing project authored in Gleam by

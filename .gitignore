@@ -15,8 +15,34 @@ codegen/build
 # on hand-written code (~135 kLOC saved between services, endpoint
 # fixtures, and protocol-test ASTs).
 
-# Generated service clients (real + protocol-test surrogate).
+# Generated protocol-test surrogate clients (still under the root
+# meta-package because the protocol-test runner needs them all in
+# one place).
 /src/aws/services/
+
+# Per-service hex packages live under services/<svc>/. Only the
+# services the root meta-package + the publish list actively
+# reference have their gleam.toml / README / LICENSE tracked
+# (committed by hand on first use, or via the regen
+# ensure_service_package helper). The other ~410 services get
+# their skeletons regenerated on demand and stay out of git.
+/services/*
+!/services/api_gateway/
+!/services/cloudwatch_logs/
+!/services/dynamodb/
+!/services/eks/
+!/services/rds/
+!/services/s3/
+!/services/sesv2/
+!/services/sqs/
+!/services/transcribe_streaming/
+
+# Inside each tracked service: gleam.toml + LICENSE + README are
+# committed, but generated source + build cache + manifest are
+# regenerated and stay out of git.
+/services/*/src/aws/services/
+/services/*/build/
+/services/*/manifest.toml
 
 # Endpoint rule-set + tests, extracted per-service from the
 # `smithy.rules#endpointRuleSet` / `endpointTests` traits inside

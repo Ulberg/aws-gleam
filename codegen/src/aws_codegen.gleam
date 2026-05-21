@@ -17,7 +17,9 @@
 import argv
 import codegen/awsjson
 import codegen/awsquery
+import codegen/cbor_rpc
 import codegen/dispatcher
+import codegen/member_order
 import codegen/restjson
 import codegen/restxml
 import gleam/dict
@@ -43,9 +45,17 @@ pub fn main() {
       io.println(
         "usage: gleam run -m aws_codegen -- <protocol> <input.json> <output.gleam> [--dispatcher-out <path>]",
       )
+      halt(2)
     }
   }
 }
+
+/// Exit the BEAM process with the given status code. Gleam `main`
+/// returning `Nil` always exits 0, so we have to call `erlang:halt/1`
+/// ourselves to propagate failure up to `scripts/regen.sh` (whose
+/// `if ! $CODEGEN ...` check only sees the exit code, not stdout).
+@external(erlang, "erlang", "halt")
+fn halt(code: Int) -> a
 
 type ParsedArgs {
   ParsedArgs(
@@ -99,6 +109,7 @@ fn run(
       json.parse(text, model.decoder())
       |> result.replace_error("cannot parse Smithy AST"),
     )
+    let m = model.with_member_orders(m, member_order.extract(text))
     use svc_id <- result.try(find_service(m, proto_name))
     use emitted <- result.try(emit(m, svc_id, proto_name))
     use _ <- result.try(
@@ -125,7 +136,17 @@ fn run(
         <> ")",
       )
     }
-    Error(reason) -> io.println("error: " <> reason)
+    Error(reason) -> {
+      io.println("error: " <> reason)
+      // Propagate failure to the shell so `scripts/regen.sh` (and any
+      // CI step that swallows our stdout via `>/dev/null 2>&1`) can
+      // see something went wrong. Before this, every failed codegen
+      // returned exit 0 and the script silently produced an empty
+      // services directory — CI then errored at `gleam test` time
+      // with "Unknown module aws/services/<X>" which was hard to
+      // attribute back to the codegen step.
+      halt(1)
+    }
   }
 }
 
@@ -165,6 +186,10 @@ fn emit(
     }
     "ec2Query" -> {
       use r <- result.try(awsquery.emit_service(m, svc_id, awsquery.Ec2Query))
+      Ok(Emitted(r.source, r.operations_emitted, r.dispatcher_specs))
+    }
+    "rpcv2Cbor" -> {
+      use r <- result.try(cbor_rpc.emit_services(m))
       Ok(Emitted(r.source, r.operations_emitted, r.dispatcher_specs))
     }
     other -> Error("unsupported protocol: " <> other)
@@ -226,6 +251,7 @@ fn find_service(m: model.Model, proto_name: String) -> Result(String, String) {
     "restXml" -> ShapeId("aws.protocols#restXml")
     "awsQuery" -> ShapeId("aws.protocols#awsQuery")
     "ec2Query" -> ShapeId("aws.protocols#ec2Query")
+    "rpcv2Cbor" -> ShapeId("smithy.protocols#rpcv2Cbor")
     _ -> ShapeId("")
   }
   let candidates =

@@ -518,3 +518,105 @@ pub fn exponential_backoff_zero_when_rng_is_zero_test() {
   retry.exponential_backoff(strategy, 1) |> should.equal(0)
   retry.exponential_backoff(strategy, 5) |> should.equal(0)
 }
+
+// ---------- bucket lifecycle ----------
+
+pub fn bucket_shutdown_sync_stops_the_actor_test() {
+  // The bucket spawns an OTP process; long-running apps that build
+  // many adaptive strategies (or rebuild on config change) need to
+  // release the actor or the BEAM accumulates one process per
+  // strategy. `shutdown_sync` is the deterministic monitor-based
+  // teardown — mirrors `credentials_cache.shutdown_sync`.
+  let assert Ok(bucket) = rate_limiter.start_default()
+  rate_limiter.shutdown_sync(bucket, 200) |> should.equal(Ok(Nil))
+}
+
+pub fn bucket_shutdown_sync_is_idempotent_test() {
+  // Second call sees the subject's owner gone and short-circuits to
+  // `Ok(Nil)` rather than hanging on a monitor signal that will
+  // never arrive.
+  let assert Ok(bucket) = rate_limiter.start_default()
+  rate_limiter.shutdown_sync(bucket, 200) |> should.equal(Ok(Nil))
+  rate_limiter.shutdown_sync(bucket, 200) |> should.equal(Ok(Nil))
+}
+
+pub fn bucket_shutdown_fire_and_forget_is_observable_via_sync_test() {
+  // Plain `shutdown` returns immediately; the actor exits on its
+  // next dispatch. A follow-up `shutdown_sync` observes the exit.
+  let assert Ok(bucket) = rate_limiter.start_default()
+  rate_limiter.shutdown(bucket)
+  rate_limiter.shutdown_sync(bucket, 200) |> should.equal(Ok(Nil))
+}
+
+// ---------- with_max_attempts / with_base_delay_ms / with_max_delay_ms ----------
+//
+// These setters tweak a single Strategy field without forcing the
+// caller to re-supply the other knobs. Tests pin the behavioural
+// override (attempts taking effect) and the field-preservation
+// invariant (other knobs survive).
+
+pub fn with_max_attempts_overrides_attempt_budget_test() {
+  // standard_with(3 attempts) capped down to 1 — a single 503 must
+  // surface immediately as the result. No retries.
+  let strategy =
+    retry.standard_with(
+      max_attempts: 3,
+      base_delay_ms: 0,
+      max_delay_ms: 0,
+      sleep: no_sleep,
+      rng: fixed_rng,
+    )
+    |> retry.with_max_attempts(1)
+  let script = start_script([RespOk(status: 503, headers: [])])
+  let send = retry.with_retry(send: stub_send(script), strategy:)
+  let assert Ok(resp) = send(empty_req())
+  resp.status |> should.equal(503)
+  attempt_count(script) |> should.equal(1)
+}
+
+pub fn with_max_attempts_preserves_other_knobs_test() {
+  // Bumping max_attempts on a no-sleep strategy keeps the
+  // sleep / rng / delay knobs intact — exhaustion at 4 means
+  // 4 attempts and zero wall-clock wait.
+  let strategy =
+    retry.standard_with(
+      max_attempts: 2,
+      base_delay_ms: 0,
+      max_delay_ms: 0,
+      sleep: no_sleep,
+      rng: fixed_rng,
+    )
+    |> retry.with_max_attempts(4)
+  let script =
+    start_script([
+      RespOk(status: 503, headers: []),
+      RespOk(status: 503, headers: []),
+      RespOk(status: 503, headers: []),
+      RespOk(status: 503, headers: []),
+    ])
+  let send = retry.with_retry(send: stub_send(script), strategy:)
+  let assert Ok(_) = send(empty_req())
+  attempt_count(script) |> should.equal(4)
+}
+
+pub fn with_base_delay_and_max_delay_ms_compose_with_max_attempts_test() {
+  // Chaining the three setters off `retry.standard()` must produce a
+  // working strategy that retries once on 503, then succeeds on 200.
+  // standard() uses process.sleep which would block 1+ second per
+  // retry; the zero-delay overrides + max_attempts=2 cap make the
+  // test instant.
+  let strategy =
+    retry.standard()
+    |> retry.with_max_attempts(2)
+    |> retry.with_base_delay_ms(0)
+    |> retry.with_max_delay_ms(0)
+  let script =
+    start_script([
+      RespOk(status: 503, headers: []),
+      RespOk(status: 200, headers: []),
+    ])
+  let send = retry.with_retry(send: stub_send(script), strategy:)
+  let assert Ok(resp) = send(empty_req())
+  resp.status |> should.equal(200)
+  attempt_count(script) |> should.equal(2)
+}

@@ -16,6 +16,8 @@ import protocol_tests/dispatch
 import protocol_tests/ec2query_dispatchers
 import protocol_tests/restjson1_dispatchers
 import protocol_tests/restxml_dispatchers
+import protocol_tests/restxml_with_namespace_dispatchers
+import protocol_tests/rpcv2cbor_dispatchers
 import protocol_tests/runner
 
 /// Test cases the runner explicitly skips, keyed by case ID with a
@@ -25,9 +27,21 @@ import protocol_tests/runner
 /// disagreement.
 fn skip_allow_list() -> Dict(String, String) {
   dict.new()
+  // S3 path-style addressing (`vendorParams.scopedConfig.client.s3.
+  // addressing_style: 'path'`). The SDK now supports path-style at
+  // runtime via the codegen-emitted endpoint params dict (the
+  // `@contextParam` Bucket binding flows into `endpoints.resolve`)
+  // combined with `client.with_endpoint_param(client, "ForcePathStyle",
+  // endpoints.BoolVal(True))`. What's missing is the protocol-test
+  // runner side: dispatchers only call `build_*_request` (URI
+  // template substitution), they don't invoke the endpoint resolver,
+  // so the expected `/mybucket` path the rule set would prepend
+  // never lands in `BuiltRequest.uri`. Closing this case is a runner
+  // change (run the resolver, join with the URI template) — out of
+  // scope for the HACK.md sweep.
   |> dict.insert(
-    "XmlUnionsWithUnionMember",
-    "self-referential union — decoder needs `decode.recursive` plumbing",
+    "S3PathAddressing",
+    "SDK supports path-style via endpoint params; runner needs to invoke the endpoint resolver to assemble the full URL before assertion",
   )
 }
 
@@ -64,9 +78,10 @@ pub fn restxml_protocol_test() {
 }
 
 pub fn restxml_with_namespace_protocol_test() {
-  run(
+  run_with(
     "restXmlWithNamespace",
     "test/fixtures/protocol-tests/restXmlWithNamespace.json",
+    restxml_with_namespace_dispatchers.register_all(dispatch.new()),
   )
 }
 
@@ -87,11 +102,11 @@ pub fn ec2query_protocol_test() {
 }
 
 pub fn rpcv2cbor_protocol_test() {
-  run("rpcv2Cbor", "test/fixtures/protocol-tests/rpcv2Cbor.json")
-}
-
-fn run(name: String, path: String) {
-  run_with(name, path, dispatch.new())
+  run_with(
+    "rpcv2Cbor",
+    "test/fixtures/protocol-tests/rpcv2Cbor.json",
+    rpcv2cbor_dispatchers.register_all(dispatch.new()),
+  )
 }
 
 fn run_with(name: String, path: String, registry: dispatch.Registry) {

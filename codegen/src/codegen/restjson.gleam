@@ -15,14 +15,19 @@
 import codegen/client
 import codegen/code
 import codegen/dispatcher
+import codegen/error_dispatch
 import codegen/named_shapes
+import codegen/paginator
 import codegen/rest_request
+import codegen/service_customizations
 import codegen/struct_codec
 import codegen/trait_helpers
 import codegen/types.{
-  type HttpTrait, type MemberDef, type Resolved, Body, HttpTrait, Payload,
-  RDocument, REnum, RIntEnum, RList, RMap, RPrim, RStruct, RUnion,
+  type HttpTrait, type MemberDef, type Resolved, Header, HttpTrait, PBool, PInt,
+  PString, Payload, RDocument, REnum, RIntEnum, RList, RMap, RPrim,
+  RStreamingBlob, RStruct, RTimestamp, RUnion, ResponseCode,
 }
+import codegen/waiter
 import gleam/dict
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -56,8 +61,27 @@ pub fn emit_service(
     Ok(shape.Service(operations: refs, traits: svc_traits, ..)) -> {
       let service_local = strip_namespace(service_id)
       let metadata = trait_helpers.service_metadata(svc_traits, service_local)
+      // Protocol-test corpora declare multiple service shapes per
+      // file (RestJsonValidation, BackplaneControlService, Glacier
+      // alongside the dominant RestJson). Union their ops in so the
+      // dispatcher table covers every `httpRequestTests` case —
+      // no-op for real-world models (one service per file). Each
+      // pair carries the op's source service ID so per-service
+      // customizations (Glacier's version header + tree-hash +
+      // accountId default, ApiGateway's Accept default) target the
+      // right ops in the merged module.
+      let annotated_refs =
+        list.append(
+          list.map(refs, fn(r) { #(r, service_id) }),
+          trait_helpers.secondary_service_op_refs(
+            model,
+            service_id,
+            "aws.protocols#restJson1",
+          ),
+        )
       let resolved_ops =
-        list.filter_map(refs, fn(ref) {
+        list.filter_map(annotated_refs, fn(pair) {
+          let #(ref, src_service_id) = pair
           let ShapeId(target) = ref.target
           case model.lookup(model, target) {
             Ok(shape.Operation(
@@ -77,13 +101,32 @@ pub fn emit_service(
                       let ShapeId(t) = r.target
                       t
                     })
+                  let requires_md5 = trait_helpers.op_requires_md5(op_traits)
+                  let paginated = trait_helpers.paginated_trait(op_traits)
+                  let waiters = trait_helpers.waitable_traits(op_traits)
+                  let http_checksum =
+                    trait_helpers.http_checksum_trait(op_traits)
+                  let host_prefix_info =
+                    extract_host_prefix_info(model, op_traits, in_id)
                   case
                     members_have_no_http_bindings(in_r),
                     types.is_supported(in_r),
                     types.is_supported(out_r)
                   {
                     True, True, True ->
-                      Ok(#(target, http, in_r, out_r, err_ids))
+                      Ok(#(
+                        target,
+                        http,
+                        in_r,
+                        out_r,
+                        err_ids,
+                        requires_md5,
+                        paginated,
+                        waiters,
+                        http_checksum,
+                        host_prefix_info,
+                        src_service_id,
+                      ))
                     _, _, _ -> Error(Nil)
                   }
                 }
@@ -101,13 +144,31 @@ pub fn emit_service(
       let rename = types.build_rename_map(model)
       let resolved_ops =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, http, in_r, out_r, err_ids) = t
+          let #(
+            op_id,
+            http,
+            in_r,
+            out_r,
+            err_ids,
+            requires_md5,
+            paginated,
+            waiters,
+            http_checksum,
+            host_prefix_info,
+            src_service_id,
+          ) = t
           #(
             op_id,
             http,
             types.apply_rename(in_r, rename),
             types.apply_rename(out_r, rename),
             err_ids,
+            requires_md5,
+            paginated,
+            waiters,
+            http_checksum,
+            host_prefix_info,
+            src_service_id,
           )
         })
       let named_shapes = collect_named_shapes(model, resolved_ops)
@@ -115,9 +176,22 @@ pub fn emit_service(
         list.map(named_shapes, fn(r) { types.apply_rename(r, rename) })
       let preamble = emit_named_shapes(model, named_shapes, rename)
 
+      let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, _, in_r, out_r, err_ids) = t
+          let #(
+            op_id,
+            _,
+            in_r,
+            out_r,
+            err_ids,
+            _,
+            paginated,
+            waiters,
+            _,
+            host_prefix_info,
+            src_service_id,
+          ) = t
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info =
@@ -129,6 +203,12 @@ pub fn emit_service(
               out_r,
               rename,
             )
+          let pagination_info =
+            paginator.info_for(
+              members_in: in_info.members,
+              members_out: out_info.members,
+              trait: paginated,
+            )
           OpSpec(
             op_id: op_id,
             local: local,
@@ -136,19 +216,58 @@ pub fn emit_service(
             in_info: in_info,
             out_info: out_info,
             error_ids: err_ids,
+            error_type: trait_helpers.op_error_type(local, emitted_type_names),
+            pagination_info: pagination_info,
+            waiters: waiters,
+            host_prefix_info: host_prefix_info,
+            source_service_id: src_service_id,
           )
         })
 
       let op_blocks =
         list.map(resolved_ops, fn(t) {
-          let #(op_id, http, in_r, out_r, _) = t
-          emit_operation(model, op_id, http, in_r, out_r, rename)
+          let #(
+            op_id,
+            http,
+            in_r,
+            out_r,
+            _,
+            requires_md5,
+            _,
+            _,
+            http_checksum,
+            _,
+            src_service_id,
+          ) = t
+          emit_operation(
+            model,
+            op_id,
+            http,
+            in_r,
+            out_r,
+            rename,
+            requires_md5,
+            http_checksum,
+            src_service_id,
+          )
         })
       let client_block = emit_client(metadata)
-      let invoke_blocks = list.map(op_specs, emit_invoke)
+      let invoke_blocks =
+        list.map(op_specs, fn(s) { emit_invoke(model, s, emitted_type_names) })
+      let paginate_blocks = list.map(op_specs, emit_paginator)
+      let waiter_blocks = list.map(op_specs, emit_waiter)
       let error_blocks =
         list.map(op_specs, fn(spec) {
           string.concat([emit_error_type(spec), emit_error_translator(spec)])
+        })
+      let unique_err_ids =
+        op_specs
+        |> list.flat_map(fn(s) { s.error_ids })
+        |> error_dispatch.dedupe_strings
+      let error_shape_blocks =
+        list.map(unique_err_ids, fn(id) {
+          let local = strip_namespace(id)
+          error_dispatch.emit_parse_fn(local, local)
         })
       let body_content =
         string.concat([
@@ -156,7 +275,10 @@ pub fn emit_service(
           preamble,
           string.concat(op_blocks),
           string.concat(error_blocks),
+          string.concat(error_shape_blocks),
           string.concat(invoke_blocks),
+          string.concat(paginate_blocks),
+          string.concat(waiter_blocks),
         ])
       let body =
         string.concat([
@@ -164,7 +286,7 @@ pub fn emit_service(
           "\n",
           body_content,
         ])
-      let dispatcher_specs =
+      let op_dispatcher_specs =
         list.map(op_specs, fn(s) {
           dispatcher.DispatcherSpec(
             op_id: s.op_id,
@@ -175,13 +297,18 @@ pub fn emit_service(
             // appears, plumb `is_dispatcher_target` through here
             // the same way the awsjson emitter does.
             has_typed_input: True,
+            is_error_shape: False,
           )
         })
+      let err_dispatcher_specs =
+        error_dispatch.dispatcher_specs(unique_err_ids, strip_namespace)
+      let dispatcher_specs =
+        list.append(op_dispatcher_specs, err_dispatcher_specs)
       Ok(EmitResult(
         module_name: derive_module_name(service_id),
         source: body,
         operations_emitted: list.map(resolved_ops, fn(t) {
-          let #(op_id, _, _, _, _) = t
+          let #(op_id, _, _, _, _, _, _, _, _, _, _) = t
           op_id
         }),
         dispatcher_specs: dispatcher_specs,
@@ -199,27 +326,184 @@ type OpSpec {
     in_info: IOTypeInfo,
     out_info: IOTypeInfo,
     error_ids: List(String),
+    /// Gleam type name for this op's typed error sum. Normally
+    /// `<OpLocal>Error`; suffixed to `<OpLocal>OperationError` when
+    /// a Smithy struct of the same name exists in the service.
+    error_type: String,
+    /// Pagination plumbing extracted from `smithy.api#paginated`.
+    /// `Some(_)` ⇒ emit a `paginate_<op>` wrapper; `None` ⇒ skip.
+    pagination_info: option.Option(paginator.PaginationInfo),
+    /// Waiters extracted from `smithy.waiters#waitable`.
+    waiters: List(trait_helpers.WaiterDef),
+    /// `@smithy.api#endpoint.hostPrefix` template + the input's
+    /// `@hostLabel` members.
+    host_prefix_info: option.Option(client.HostPrefixInfo),
+    /// Full Smithy ID of the service this op declares membership in
+    /// — distinct from the dominant service only inside protocol-test
+    /// corpora that merge multiple services per file. Used by the
+    /// build-request emitter to look up per-service customizations
+    /// (Glacier's tree-hash + version header + accountId default,
+    /// ApiGateway's `Accept: application/json` default).
+    source_service_id: String,
   )
+}
+
+/// Read `@smithy.api#endpoint.hostPrefix` + the input's `@hostLabel`
+/// members. Same shape as the helpers in awsjson + restxml.
+fn extract_host_prefix_info(
+  model: Model,
+  op_traits: shape.Traits,
+  in_id: String,
+) -> option.Option(client.HostPrefixInfo) {
+  case trait_helpers.endpoint_host_prefix(op_traits) {
+    option.None -> option.None
+    option.Some(template) -> {
+      let labels = case model.lookup(model, in_id) {
+        Ok(shape.Structure(members: m, ..)) ->
+          trait_helpers.host_label_member_names(m)
+          |> list.map(fn(name) {
+            client.HostLabelBinding(
+              member_pascal: name,
+              member_snake: stringutils.pascal_to_snake(name),
+            )
+          })
+        _ -> []
+      }
+      option.Some(client.HostPrefixInfo(template: template, labels: labels))
+    }
+  }
 }
 
 // `Metadata`, `service_metadata`, `string_field_under` live in
 // `codegen/trait_helpers.gleam` — see Pass 4 in plan.md.
 
 fn emit_client(metadata: trait_helpers.Metadata) -> String {
-  client.render(metadata.endpoint_prefix, metadata.signing_name)
+  client.render(
+    metadata.endpoint_prefix,
+    metadata.signing_name,
+    metadata.endpoint_rule_set_json,
+    metadata.endpoint_param_setters,
+  )
 }
 
-fn emit_invoke(spec: OpSpec) -> String {
-  code.render(
-    code.Module(items: [
-      client.invoke_fn(
-        spec.snake,
-        spec.local,
-        spec.in_info.type_name,
-        spec.out_info.type_name,
-      ),
+fn emit_paginator(spec: OpSpec) -> String {
+  paginator.emit(
+    snake: spec.snake,
+    input_type: spec.in_info.type_name,
+    error_type: spec.error_type,
+    info: spec.pagination_info,
+  )
+}
+
+fn emit_waiter(spec: OpSpec) -> String {
+  waiter.emit(
+    op_snake: spec.snake,
+    input_type: spec.in_info.type_name,
+    error_type: spec.error_type,
+    waiters: spec.waiters,
+    known_error_locals: list.fold(spec.error_ids, set.new(), fn(acc, id) {
+      set.insert(acc, strip_namespace(id))
+    }),
+  )
+}
+
+fn emit_invoke(
+  model: Model,
+  spec: OpSpec,
+  emitted_type_names: Set(String),
+) -> String {
+  let context_params =
+    trait_helpers.context_params_for_op_by_id(model, spec.op_id)
+  let base =
+    client.invoke_fn(
+      spec.snake,
+      spec.in_info.type_name,
+      spec.out_info.type_name,
+      spec.error_type,
+      spec.host_prefix_info,
+      context_params,
+    )
+  let host_prefix_validator = case spec.host_prefix_info {
+    option.None -> []
+    option.Some(info) -> [
       code.Blank,
-    ]),
+      client.host_prefix_validator_fn(spec.snake, spec.in_info.type_name, info),
+    ]
+  }
+  let endpoint_params_builder = case context_params {
+    [] -> []
+    _ -> [
+      code.Blank,
+      client.endpoint_params_builder_fn(
+        spec.snake,
+        spec.in_info.type_name,
+        context_params,
+      ),
+    ]
+  }
+  // Operations whose output carries a `@streaming` blob member get an
+  // extra `<op>_streaming(client, input)` variant routing through
+  // `runtime.invoke_streaming` — body arrives chunked rather than
+  // buffered. Examples: Bedrock InvokeModelWithResponseStream
+  // returns a streaming-blob `body`, MediaLive log streams, etc.
+  let streaming_blob_items = case
+    list.any(spec.out_info.members, fn(m) { m.target == RStreamingBlob })
+  {
+    True -> [
+      code.Blank,
+      client.invoke_streaming_fn(spec.snake, spec.in_info.type_name),
+    ]
+    False -> []
+  }
+  // Operations whose output carries a `@streaming` union (event
+  // streams — Transcribe StartStreamTranscription, Lex Runtime
+  // V2 StartConversation, etc.) get a `<op>_event_stream` variant
+  // plus a typed `parse_<op>_event(event)` decoder. The framing
+  // wrapper hands callers the raw `event_stream.Response`; the
+  // parser dispatches on `:event-type` into the matching union
+  // variant. Mirrors the Rust SDK's `UnmarshallMessage` impl in
+  // vendor/aws-sdk-rust/sdk/transcribestreaming/src/event_stream_serde.rs
+  let event_stream_items = case
+    types.streaming_union_in_members(model, spec.out_info.members)
+  {
+    option.Some(#(union_local, _union_id, union_members)) -> {
+      let variants =
+        list.map(union_members, fn(m) {
+          let target_local = case m.target {
+            RStruct(local_name: ln, ..) -> ln
+            _ -> ""
+          }
+          client.EventParserVariant(
+            wire_name: m.member_name,
+            variant_ctor: stringutils.union_variant_ctor(
+              union_local,
+              m.member_name,
+              emitted_type_names,
+            ),
+            decoder_fn: "decode_"
+              <> stringutils.pascal_to_snake(target_local)
+              <> "_struct",
+          )
+        })
+      [
+        code.Blank,
+        client.invoke_event_stream_fn(spec.snake, spec.in_info.type_name),
+        code.Blank,
+        client.event_parser_fn(spec.snake, union_local, variants),
+      ]
+    }
+    option.None -> []
+  }
+  code.render(
+    code.Module(
+      items: list.flatten([
+        [base, code.Blank],
+        endpoint_params_builder,
+        host_prefix_validator,
+        streaming_blob_items,
+        event_stream_items,
+      ]),
+    ),
   )
 }
 
@@ -228,7 +512,7 @@ fn emit_invoke(spec: OpSpec) -> String {
 /// awsjson emitter — restJson1 errors are still JSON-shaped on the
 /// wire, so the same decoder path works.
 fn emit_error_type(spec: OpSpec) -> String {
-  let name = name_concat([spec.local, "Error"])
+  let name = spec.error_type
   let typed_variants =
     list.map(spec.error_ids, fn(err_id) {
       let local = strip_namespace(err_id)
@@ -261,7 +545,7 @@ fn emit_error_type(spec: OpSpec) -> String {
 
 /// See `awsjson.emit_error_translator` for the table-style design.
 fn emit_error_translator(spec: OpSpec) -> String {
-  let name = name_concat([spec.local, "Error"])
+  let name = spec.error_type
   let snake = spec.snake
   let decoder_entries =
     list.map(spec.error_ids, fn(err_id) {
@@ -365,7 +649,21 @@ fn members_have_no_http_bindings(_r: Resolved) -> Bool {
 
 fn collect_named_shapes(
   model: Model,
-  ops: List(#(String, HttpTrait, Resolved, Resolved, List(String))),
+  ops: List(
+    #(
+      String,
+      HttpTrait,
+      Resolved,
+      Resolved,
+      List(String),
+      Bool,
+      option.Option(trait_helpers.PaginatedTrait),
+      List(trait_helpers.WaiterDef),
+      option.Option(trait_helpers.HttpChecksumInfo),
+      option.Option(client.HostPrefixInfo),
+      String,
+    ),
+  ),
 ) -> List(Resolved) {
   // Dedup keyed by `full_id` so two shapes with the same local name in
   // different namespaces both make it into the named-shape list. The
@@ -374,7 +672,7 @@ fn collect_named_shapes(
   let init = #(set.new(), [])
   let #(_seen, found) =
     list.fold(ops, init, fn(acc, t) {
-      let #(_, _, in_r, out_r, err_ids) = t
+      let #(_, _, in_r, out_r, err_ids, _, _, _, _, _, _) = t
       let acc = walk(model, acc, in_r)
       let acc = walk(model, acc, out_r)
       list.fold(err_ids, acc, fn(a, err_id) {
@@ -427,6 +725,7 @@ fn emit_named_shapes(
   shapes: List(Resolved),
   rename: dict.Dict(String, String),
 ) -> String {
+  let emitted_type_names = named_shapes.emitted_type_names(shapes)
   shapes
   |> list.flat_map(fn(r) {
     case r {
@@ -439,8 +738,11 @@ fn emit_named_shapes(
         emit_int_enum_codec(n, vs),
       ]
       RStruct(gleam_name: n, full_id: id, local_name: ln, ..) ->
-        case ln == "Unit" {
-          True -> []
+        case id == "smithy.api#Unit" {
+          True -> {
+            let _ = ln
+            []
+          }
           False -> {
             let ms =
               types.resolve_members(model, id)
@@ -452,7 +754,10 @@ fn emit_named_shapes(
         let ms =
           types.resolve_members(model, id)
           |> list.map(fn(m) { types.apply_rename_member(m, rename) })
-        [emit_union_def(n, ms), emit_union_codec(n, ms)]
+        [
+          emit_union_def(n, ms, emitted_type_names),
+          emit_union_codec(n, ms, emitted_type_names),
+        ]
       }
       _ -> []
     }
@@ -469,6 +774,9 @@ fn emit_operation(
   in_r: Resolved,
   out_r: Resolved,
   rename: dict.Dict(String, String),
+  requires_md5: Bool,
+  http_checksum: Option(trait_helpers.HttpChecksumInfo),
+  source_service_id: String,
 ) -> String {
   let local = strip_namespace(op_id)
   let pascal = local
@@ -525,16 +833,19 @@ fn emit_operation(
       out_struct_decoder_name,
     )
   let in_members = in_info.members
-  let body_members =
-    list.filter(in_members, fn(m) {
-      case m.binding {
-        Body -> True
-        _ -> False
-      }
-    })
+  let body_members = types.categorize_bindings(in_members).body
   let body_encoder = emit_body_encoder(snake, in_info.type_name, body_members)
   let build =
-    emit_build(in_info.type_name, in_info.synthesise, snake, http, in_members)
+    emit_build(
+      in_info.type_name,
+      in_info.synthesise,
+      snake,
+      http,
+      in_members,
+      requires_md5,
+      http_checksum,
+      service_customizations.for_service_id(source_service_id),
+    )
   let parse = emit_parse(out_info, snake)
   string.concat([
     "\n",
@@ -681,8 +992,15 @@ fn emit_int_enum_def(
   string.concat([code.render(named_shapes.int_enum_def(name, variants)), "\n"])
 }
 
-fn emit_union_def(name: String, members: List(MemberDef)) -> String {
-  string.concat([code.render(named_shapes.union_def(name, members)), "\n"])
+fn emit_union_def(
+  name: String,
+  members: List(MemberDef),
+  emitted: Set(String),
+) -> String {
+  string.concat([
+    code.render(named_shapes.union_def(name, members, emitted)),
+    "\n",
+  ])
 }
 
 // ---------- codec helpers ----------
@@ -722,7 +1040,41 @@ fn emit_enum_codec(name: String, variants: List(types.EnumVariant)) -> String {
         enum_decode_lambda(variants, first_ctor),
       ]),
     )
-  code.render(code.Module(items: [enc, code.Blank, dec, code.Blank]))
+  // Wire→Gleam helper for @httpHeader-bound enum members. The
+  // response-parse emitter calls `<snake>_from_wire(s)` so unknown
+  // values can land as `None` rather than crashing the response
+  // decode. Mirrors the restxml emitter's helper of the same name.
+  let from_wire =
+    code.Fn(
+      public: True,
+      name: name_concat([snake, "_from_wire"]),
+      params: [code.Param(name: "s", type_: "String")],
+      return: code.CodeSome(name_concat(["Result(", name, ", String)"])),
+      body: code.Case(
+        scrutinee: code.Ident(name: "s"),
+        branches: list.append(
+          list.map(variants, fn(v) {
+            code.Branch(
+              pattern: name_concat(["\"", v.wire_value, "\""]),
+              body: code.Call(head: code.Ident(name: "Ok"), args: [
+                code.Ident(name: v.gleam_ctor),
+              ]),
+            )
+          }),
+          [
+            code.Branch(
+              pattern: "_",
+              body: code.Call(head: code.Ident(name: "Ok"), args: [
+                code.Ident(name: first_ctor),
+              ]),
+            ),
+          ],
+        ),
+      ),
+    )
+  code.render(
+    code.Module(items: [enc, code.Blank, dec, code.Blank, from_wire, code.Blank]),
+  )
 }
 
 /// `fn(s) { case s { ... } }` lambda body for the decoder. Stays
@@ -889,7 +1241,11 @@ fn emit_struct_codec(name: String, members: List(MemberDef)) -> String {
   |> string.concat
 }
 
-fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
+fn emit_union_codec(
+  name: String,
+  members: List(MemberDef),
+  emitted: Set(String),
+) -> String {
   let snake = stringutils.pascal_to_snake(name)
   let enc =
     code.Fn(
@@ -901,7 +1257,7 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
         scrutinee: code.Ident(name: "v"),
         branches: list.map(members, fn(m) {
           let ctor =
-            name_concat([name, stringutils.pascalize_member(m.member_name)])
+            stringutils.union_variant_ctor(name, m.member_name, emitted)
           code.Branch(
             pattern: name_concat([ctor, "(x)"]),
             body: code.Call(head: code.Ident(name: "json.object"), args: [
@@ -928,7 +1284,9 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       name: name_concat(["decode_", snake, "_union"]),
       params: [],
       return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-      body: union_decoder_body(name, members, emit_union_branch),
+      body: union_decoder_body(name, members, fn(union_name, m) {
+        emit_union_branch(union_name, m, emitted)
+      }),
     )
   // Parallel decoder keyed by member names — used by the protocol-test
   // dispatchers. Unions in `params` have variant tags identified by
@@ -940,7 +1298,9 @@ fn emit_union_codec(name: String, members: List(MemberDef)) -> String {
       name: name_concat(["decode_", snake, "_union_params"]),
       params: [],
       return: code.CodeSome(name_concat(["decode.Decoder(", name, ")"])),
-      body: union_decoder_body(name, members, emit_union_branch_params),
+      body: union_decoder_body(name, members, fn(union_name, m) {
+        emit_union_branch_params(union_name, m, emitted)
+      }),
     )
   code.render(
     code.Module(items: [
@@ -984,9 +1344,12 @@ fn union_decoder_body(
   }
 }
 
-fn emit_union_branch(union_name: String, m: MemberDef) -> code.Code {
-  let ctor =
-    name_concat([union_name, stringutils.pascalize_member(m.member_name)])
+fn emit_union_branch(
+  union_name: String,
+  m: MemberDef,
+  emitted: Set(String),
+) -> code.Code {
+  let ctor = stringutils.union_variant_ctor(union_name, m.member_name, emitted)
   code.Call(head: code.Ident(name: "decode.field"), args: [
     code.StrLit(value: m.json_name),
     code.Raw(fragment: types.json_decoder(m.target)),
@@ -994,9 +1357,12 @@ fn emit_union_branch(union_name: String, m: MemberDef) -> code.Code {
   ])
 }
 
-fn emit_union_branch_params(union_name: String, m: MemberDef) -> code.Code {
-  let ctor =
-    name_concat([union_name, stringutils.pascalize_member(m.member_name)])
+fn emit_union_branch_params(
+  union_name: String,
+  m: MemberDef,
+  emitted: Set(String),
+) -> code.Code {
+  let ctor = stringutils.union_variant_ctor(union_name, m.member_name, emitted)
   code.Call(head: code.Ident(name: "decode.field"), args: [
     code.StrLit(value: m.member_name),
     code.Raw(fragment: types.json_decoder_params(m.target)),
@@ -1019,6 +1385,9 @@ fn emit_build(
   snake: String,
   http: HttpTrait,
   members: List(MemberDef),
+  requires_md5: Bool,
+  http_checksum: Option(trait_helpers.HttpChecksumInfo),
+  customization: service_customizations.ServiceCustomization,
 ) -> String {
   rest_request.build_request_module(
     input_type,
@@ -1026,6 +1395,9 @@ fn emit_build(
     snake,
     http,
     members,
+    requires_md5,
+    http_checksum,
+    customization,
     fn(cats: types.BindingCategories) {
       case cats.payload {
         Ok(p) -> emit_payload_body(p)
@@ -1051,14 +1423,11 @@ fn json_body_setup(snake: String, body: List(MemberDef)) -> List(code.Code) {
       ),
       code.Let(
         name: "body",
-        value: code.Call(
-          head: code.Ident(name: "bit_array.from_string"),
-          args: [
-            code.Call(head: code.Ident(name: "json.to_string"), args: [
-              code.Ident(name: "body_json"),
-            ]),
-          ],
-        ),
+        value: code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+          code.Call(head: code.Ident(name: "json.to_string"), args: [
+            code.Ident(name: "body_json"),
+          ]),
+        ]),
       ),
       code.Let(
         name: "content_type",
@@ -1092,6 +1461,15 @@ fn emit_payload_body(m: MemberDef) -> List(code.Code) {
   }
   let #(some_expr, none_expr, content_type) = case m.target {
     types.RBlob -> #(code.Ident(name: "v"), code.Raw(fragment: "<<>>"), blob_ct)
+    types.RStreamingBlob -> #(
+      // Buffered materialisation. Drops when a chunked-send
+      // transport replaces `to_bit_array` with a lazy reader.
+      code.Call(head: code.Ident(name: "streaming.to_bit_array"), args: [
+        code.Ident(name: "v"),
+      ]),
+      code.Raw(fragment: "<<>>"),
+      blob_ct,
+    )
     RPrim(primitive: types.PString) -> #(
       code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
         code.Ident(name: "v"),
@@ -1261,13 +1639,45 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
         ]),
       )
     Ok(p), False -> emit_parse_with_payload(out_info, snake, p)
-    Error(_), False ->
+    Error(_), False -> {
+      let overrides = response_overrides(out_info)
+      let full_override =
+        list.length(overrides) == list.length(out_info.members)
+      let with_overrides = fn(call: code.Code) -> code.Code {
+        case overrides {
+          [] -> call
+          _ ->
+            wrap_decode_with_overrides_at(
+              call,
+              output_type,
+              overrides,
+              full_override: full_override,
+            )
+        }
+      }
+      let empty_decode_call =
+        code.Call(
+          head: code.Ident(name: name_concat(["decode_", snake, "_output"])),
+          args: [
+            code.StrLit(value: "{}"),
+          ],
+        )
+      let text_decode_call =
+        code.Call(
+          head: code.Ident(name: name_concat(["decode_", snake, "_output"])),
+          args: [
+            code.Ident(name: "text"),
+          ],
+        )
       code.render(
         code.Module(items: [
           code.Fn(
             public: True,
             name: name_concat(["parse_", snake, "_response"]),
-            params: parse_response_params("body"),
+            params: response_params(
+              body_param: "body",
+              overrides_used: overrides,
+            ),
             return: code.CodeSome(
               name_concat(["Result(", output_type, ", String)"]),
             ),
@@ -1284,21 +1694,11 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
                     branches: [
                       code.Branch(
                         pattern: "\"\"",
-                        body: code.Call(
-                          head: code.Ident(
-                            name: name_concat(["decode_", snake, "_output"]),
-                          ),
-                          args: [code.StrLit(value: "{}")],
-                        ),
+                        body: with_overrides(empty_decode_call),
                       ),
                       code.Branch(
                         pattern: "_",
-                        body: code.Call(
-                          head: code.Ident(
-                            name: name_concat(["decode_", snake, "_output"]),
-                          ),
-                          args: [code.Ident(name: "text")],
-                        ),
+                        body: with_overrides(text_decode_call),
                       ),
                     ],
                   ),
@@ -1315,7 +1715,145 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
           code.Blank,
         ]),
       )
+    }
   }
+}
+
+/// A single `Output(..decoded, field: header_value)` override produced by
+/// a `@httpHeader` or `@httpResponseCode` member. Mirrors the restxml
+/// version — kept in-protocol because the call-site differs (here the
+/// decoder takes a JSON `String`, in restxml an `xml_decode.Element`).
+type ResponseOverride {
+  ResponseOverride(field: String, value_expr: String)
+}
+
+fn response_overrides(out_info: IOTypeInfo) -> List(ResponseOverride) {
+  list.filter_map(out_info.members, fn(m) {
+    case m.binding {
+      Header(header_name: name) ->
+        case header_extractor(m, name) {
+          Some(expr) ->
+            Ok(ResponseOverride(field: m.snake_name, value_expr: expr))
+          None -> Error(Nil)
+        }
+      ResponseCode ->
+        Ok(ResponseOverride(
+          field: m.snake_name,
+          value_expr: "option.Some(code)",
+        ))
+      _ -> Error(Nil)
+    }
+  })
+}
+
+fn header_extractor(m: MemberDef, header_name: String) -> Option(String) {
+  case m.target {
+    RPrim(primitive: PString) ->
+      Some(call_extractor("string_header", header_name))
+    RPrim(primitive: PInt) -> Some(call_extractor("int_header", header_name))
+    RPrim(primitive: PBool) -> Some(call_extractor("bool_header", header_name))
+    REnum(gleam_name: gn, ..) -> Some(call_enum_extractor(header_name, gn))
+    RTimestamp ->
+      Some(call_timestamp_extractor(
+        header_name,
+        timestamp_header_helper(m.timestamp_format),
+      ))
+    _ -> None
+  }
+}
+
+/// Pick the `rest.<helper>` matching the member's `@timestampFormat`.
+/// Defaults to `http_date_header` per Smithy core's
+/// "headers default to HTTP-date" rule.
+fn timestamp_header_helper(format: Option(String)) -> String {
+  case format {
+    Some("date-time") -> "iso8601_header"
+    Some("epoch-seconds") -> "epoch_seconds_header"
+    _ -> "http_date_header"
+  }
+}
+
+fn call_extractor(fn_name: String, header_name: String) -> String {
+  name_concat(["rest.", fn_name, "(headers, \"", header_name, "\")"])
+}
+
+fn call_enum_extractor(header_name: String, enum_gleam_name: String) -> String {
+  name_concat([
+    "rest.enum_header(headers, \"",
+    header_name,
+    "\", ",
+    stringutils.pascal_to_snake(enum_gleam_name),
+    "_from_wire)",
+  ])
+}
+
+fn call_timestamp_extractor(header_name: String, helper: String) -> String {
+  name_concat(["rest.", helper, "(headers, \"", header_name, "\")"])
+}
+
+fn wrap_decode_with_overrides_at(
+  decoder_call: code.Code,
+  output_type: String,
+  overrides: List(ResponseOverride),
+  full_override full_override: Bool,
+) -> code.Code {
+  let overrides_text =
+    overrides
+    |> list.map(fn(o) { name_concat([o.field, ": ", o.value_expr]) })
+    |> string.join(", ")
+  let prefix = case full_override {
+    True -> ""
+    False -> "..decoded, "
+  }
+  let ok_body =
+    code.Call(head: code.Ident(name: "Ok"), args: [
+      code.Raw(
+        fragment: name_concat([output_type, "(", prefix, overrides_text, ")"]),
+      ),
+    ])
+  let pattern = case full_override {
+    True -> "Ok(_)"
+    False -> "Ok(decoded)"
+  }
+  code.Case(scrutinee: decoder_call, branches: [
+    code.Branch(pattern: pattern, body: ok_body),
+    code.Branch(
+      pattern: "Error(r)",
+      body: code.Call(head: code.Ident(name: "Error"), args: [
+        code.Ident(name: "r"),
+      ]),
+    ),
+  ])
+}
+
+fn response_params(
+  body_param body_param: String,
+  overrides_used overrides: List(ResponseOverride),
+) -> List(code.Param) {
+  // Look for the literal `code` / `headers` *identifiers* the
+  // override expressions use — not just substring matches, which
+  // would false-positive on e.g. an `x-amzn-code-interpreter-…`
+  // header name that contains "code" or a `headers` field accessor.
+  // `code` only appears inside `option.Some(code)` (response-code
+  // override); `headers` only appears as the first argument to a
+  // `rest.<*>_header(headers, ...)` extractor call.
+  let uses_code =
+    list.any(overrides, fn(o) { string.contains(o.value_expr, "Some(code)") })
+  let uses_headers =
+    list.any(overrides, fn(o) { string.contains(o.value_expr, "(headers,") })
+  let code_name = case uses_code {
+    True -> "code"
+    False -> "_code"
+  }
+  let headers_name = case uses_headers {
+    True -> "headers"
+    False -> "_headers"
+  }
+  [
+    code.Param(name: code_name, type_: "Int"),
+    code.Param(name: headers_name, type_: "dict.Dict(String, String)"),
+    code.Param(name: body_param, type_: "BitArray"),
+  ]
 }
 
 fn parse_response_params(body_param: String) -> List(code.Param) {
@@ -1336,11 +1874,20 @@ fn emit_parse_with_payload(
   payload: MemberDef,
 ) -> String {
   let output_type = out_info.type_name
+  // Members bound via `@httpHeader` / `@httpResponseCode` get their
+  // value populated from the response headers / status code; the rest
+  // (other than the payload itself) stay `option.None` — they'd live
+  // in the body, but the payload member owns the body here.
+  let overrides = response_overrides(out_info)
   let ctor_args =
     list.map(out_info.members, fn(m) {
       let value = case m.snake_name == payload.snake_name {
         True -> code.Ident(name: "payload")
-        False -> code.Ident(name: "option.None")
+        False ->
+          case list.find(overrides, fn(o) { o.field == m.snake_name }) {
+            Ok(o) -> code.Raw(fragment: o.value_expr)
+            Error(_) -> code.Ident(name: "option.None")
+          }
       }
       code.Labelled(label: m.snake_name, value: value)
     })
@@ -1352,6 +1899,17 @@ fn emit_parse_with_payload(
           code.Ident(name: "body"),
         ]),
       )
+    types.RStreamingBlob ->
+      // Lazy iterator slot for a future chunked-recv transport;
+      // today the v1 buffered transport hands `body` over whole.
+      code.Let(
+        name: "payload",
+        value: code.Call(head: code.Ident(name: "option.Some"), args: [
+          code.Call(head: code.Ident(name: "streaming.from_bit_array"), args: [
+            code.Ident(name: "body"),
+          ]),
+        ]),
+      )
     RPrim(primitive: types.PString) ->
       code.Use(
         name: "payload",
@@ -1359,7 +1917,7 @@ fn emit_parse_with_payload(
           fragment: "result.try(case bit_array.to_string(body) {\n      Ok(s) -> Ok(option.Some(s))\n      Error(_) -> Error(\"non-utf8 payload\")\n    })",
         ),
       )
-    RStruct(local_name: name, ..) -> {
+    RStruct(gleam_name: name, ..) -> {
       let decoder =
         name_concat(["decode_", stringutils.pascal_to_snake(name), "_struct"])
       code.Raw(
@@ -1374,7 +1932,7 @@ fn emit_parse_with_payload(
       code.Raw(
         fragment: "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case json.parse(text, decode.dynamic) {\n        Ok(d) -> Ok(option.Some(json_document.from_dynamic(d)))\n        Error(_) -> Error(\"decode failed\")\n      }\n    })",
       )
-    REnum(local_name: name, ..) -> {
+    REnum(gleam_name: name, ..) -> {
       let decoder =
         name_concat(["decode_", stringutils.pascal_to_snake(name), "_enum"])
       code.Raw(
@@ -1410,11 +1968,10 @@ fn emit_parse_with_payload(
       code.Fn(
         public: True,
         name: name_concat(["parse_", snake, "_response"]),
-        params: [
-          code.Param(name: "_code", type_: "Int"),
-          code.Param(name: "_headers", type_: "dict.Dict(String, String)"),
-          code.Param(name: body_param, type_: "BitArray"),
-        ],
+        params: response_params(
+          body_param: body_param,
+          overrides_used: overrides,
+        ),
         return: code.CodeSome(
           name_concat(["Result(", output_type, ", String)"]),
         ),
@@ -1430,12 +1987,19 @@ fn emit_parse_with_payload(
 fn file_header(service_id: String, body: String) -> String {
   let candidates = [
     #("aws/credentials", "credentials.", code.CodeNone),
+    #("aws/endpoints", "endpoints.", code.CodeNone),
+    #("aws/internal/credentials_cache", "credentials_cache.", code.CodeNone),
+    #("aws/pagination", "pagination.", code.CodeNone),
+    #("aws/waiter", "waiter.", code.CodeNone),
+    #("aws/region", "region.", code.CodeNone),
     #("aws/internal/client/runtime", "runtime.", code.CodeSome("runtime")),
+    #("aws/internal/codec/event_stream", "event_stream.", code.CodeNone),
     #("aws/internal/codec/json_document", "json_document.", code.CodeNone),
     #("aws/internal/codec/json_float", "json_float.", code.CodeNone),
     #("aws/internal/codec/json_timestamp", "json_timestamp.", code.CodeNone),
     #("aws/internal/codec/rest", "rest.", code.CodeNone),
     #("aws/internal/http_send", "http_send.", code.CodeNone),
+    #("aws/streaming", "streaming.", code.CodeNone),
     #("gleam/bit_array", "bit_array.", code.CodeNone),
     #("gleam/dict", "dict.", code.CodeNone),
     #("gleam/dynamic/decode", "decode.", code.CodeNone),
@@ -1445,10 +2009,11 @@ fn file_header(service_id: String, body: String) -> String {
     #("gleam/option", "option.", code.CodeNone),
     #("gleam/result", "result.", code.CodeNone),
     #("gleam/string", "string.", code.CodeNone),
+    #("aws/internal/codec/compression", "compression.", code.CodeNone),
   ]
   let used =
     candidates
-    |> list.filter(fn(c) { string.contains(body, c.1) })
+    |> list.filter(fn(c) { code.references_module(body, c.1) })
     |> list.map(fn(c) { code.Import(path: c.0, alias: c.2, unqualified: []) })
   let items =
     [
@@ -1462,9 +2027,13 @@ fn file_header(service_id: String, body: String) -> String {
   code.render(code.Module(items: items))
 }
 
-fn op_uses_unsupported_trait(traits: shape.Traits) -> Bool {
-  dict.has_key(traits, ShapeId("smithy.api#httpChecksumRequired"))
-  || dict.has_key(traits, ShapeId("aws.protocols#httpChecksum"))
+fn op_uses_unsupported_trait(_traits: shape.Traits) -> Bool {
+  // Both `smithy.api#httpChecksumRequired` (Content-MD5) and
+  // `aws.protocols#httpChecksum` (multi-algorithm) are now emitted
+  // by `rest_request.build_request_module`. The v1 multi-algorithm
+  // path always picks SHA-256 — the algorithm-member dispatch that
+  // honours the input's `ChecksumAlgorithm` field is a follow-up.
+  False
 }
 
 fn http_trait(traits: shape.Traits) -> Option(HttpTrait) {
