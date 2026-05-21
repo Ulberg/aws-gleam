@@ -65,12 +65,50 @@ set_version() {
   fi
 }
 
+rewrite_aws_path_deps_to_hex() {
+  # Hex publish rejects path deps. For the duration of the publish,
+  # rewrite every `aws_gleam_<x> = { path = "..." }` line to a hex
+  # version constraint pointed at the same $VERSION we're publishing
+  # (lock-step versioning across the workspace). Stash the original
+  # so we can restore it once the publish finishes — local dev
+  # workflows (./scripts/test.sh) depend on the path deps.
+  local toml="$1"
+  cp "$toml" "$toml.unpublished"
+  if [ -n "$VERSION" ]; then
+    awk -v v="$VERSION" '
+      /^aws_gleam_[a-z0-9_]+ *= *\{ *path *=/ {
+        # Pull the package name (everything before the first space or =).
+        match($0, /^aws_gleam_[a-z0-9_]+/)
+        name = substr($0, RSTART, RLENGTH)
+        print name " = \">= " v "\""
+        next
+      }
+      { print }
+    ' "$toml" > "$toml.tmp"
+    mv "$toml.tmp" "$toml"
+  fi
+}
+
+restore_path_deps() {
+  # Undo rewrite_aws_path_deps_to_hex.
+  local toml="$1"
+  if [ -f "$toml.unpublished" ]; then
+    mv "$toml.unpublished" "$toml"
+  fi
+}
+
 publish_one() {
   local pkg_dir="$1"
   echo
   echo "→ $(basename "$pkg_dir") @ ${VERSION:-(current)}"
+  # `trap` inside a subshell wires the restore for any exit path
+  # (success, fail, ^C) so a failed publish doesn't leave the
+  # gleam.toml on hex-style deps. Path-dep restore is a no-op for
+  # the runtime package (no aws_gleam_* deps to rewrite).
   ( cd "$pkg_dir" \
     && set_version gleam.toml \
+    && rewrite_aws_path_deps_to_hex gleam.toml \
+    && trap "restore_path_deps '$pkg_dir/gleam.toml'" EXIT \
     && if [ "$DRY_RUN" -eq 1 ]; then
          # `gleam publish` doesn't ship a --dry-run flag yet.
          # Stand in with `gleam build` so we still surface any
