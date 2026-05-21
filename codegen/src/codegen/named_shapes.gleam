@@ -8,7 +8,8 @@
 //// to splice into the emitter's `Module(items)` list.
 
 import codegen/code.{
-  type Code, Param, PositionalVariant, TypeDef, UnitVariant, Variant,
+  type Code, CodeSome, Fn, Param, PositionalVariant, TypeDef, UnitVariant,
+  Variant,
 }
 import codegen/types.{
   type EnumVariant, type IntEnumVariant, type MemberDef, type Resolved, REnum,
@@ -136,4 +137,44 @@ pub fn union_def(
         }),
       )
   }
+}
+
+/// `pub fn <snake>_default() -> Name { Name(field_a: None, field_b: None, ...) }`.
+/// Companion to `record_def` — emit alongside every Request /
+/// Result struct so callers can write
+///
+///     SomeRequest(..s3.some_request_default(), bucket: Some("b"))
+///
+/// instead of spelling out `None` for every other field. Gleam
+/// records require all fields at construction; the record-update
+/// `..default()` syntax is the idiomatic workaround.
+///
+/// `snake` is the Gleam-snake of the type name; `record_name` is
+/// the PascalCase constructor.
+pub fn record_default_fn(
+  snake: String,
+  record_name: String,
+  members: List(MemberDef),
+) -> Code {
+  // Bodyless empty record gets a one-liner.
+  let body = case members {
+    [] -> code.Raw(fragment: name_concat(["  ", record_name, "\n"]))
+    _ -> code.Raw(fragment: render_default_body(record_name, members))
+  }
+  Fn(
+    public: True,
+    name: name_concat([snake, "_default"]),
+    params: [],
+    return: CodeSome(record_name),
+    body: body,
+  )
+}
+
+fn render_default_body(record_name: String, members: List(MemberDef)) -> String {
+  let lines =
+    list.map(members, fn(m) {
+      name_concat(["    ", m.snake_name, ": option.None,\n"])
+    })
+    |> string.concat
+  string.concat(["  ", record_name, "(\n", lines, "  )\n"])
 }

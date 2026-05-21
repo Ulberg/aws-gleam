@@ -1080,7 +1080,14 @@ fn resolve_io_type(
 // ---------- type definitions ----------
 
 fn emit_record_def(name: String, members: List(MemberDef)) -> String {
-  string.concat([code.render(named_shapes.record_def(name, members)), "\n"])
+  // Append `<snake>_default()` factory — see awsjson.emit_record_def.
+  let snake = stringutils.pascal_to_snake(name)
+  string.concat([
+    code.render(named_shapes.record_def(name, members)),
+    "\n",
+    code.render(named_shapes.record_default_fn(snake, name, members)),
+    "\n",
+  ])
 }
 
 fn emit_enum_def(name: String, variants: List(types.EnumVariant)) -> String {
