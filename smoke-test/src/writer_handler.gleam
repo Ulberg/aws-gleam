@@ -168,7 +168,7 @@ fn try_step(
   }
 }
 
-@external(erlang, "os", "getenv")
+@external(erlang, "smoke_ffi", "get_env")
 fn os_getenv(name: String) -> Result(String, Nil)
 
 @external(erlang, "erlang", "unique_integer")

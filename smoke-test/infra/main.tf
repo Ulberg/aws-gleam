@@ -185,7 +185,8 @@ resource "aws_ecs_cluster" "smoke" {
 
 resource "aws_security_group" "tasks" {
   name        = "${var.service_name}-tasks"
-  description = "Egress-only — Fargate tasks call out to S3 / SQS / ECR"
+  # ASCII-only: EC2 rejects non-ASCII in SG descriptions.
+  description = "Egress-only - Fargate tasks call out to S3 / SQS / ECR"
   vpc_id      = data.aws_vpc.default.id
 
   egress {
