@@ -49,18 +49,25 @@ jobs:
         # services/<svc>/src/aws/services/<svc>.gleam is .gitignored;
         # focused regen (re-)creates it for each service we plan to
         # publish. Keep this list in sync with PUBLISHED_SERVICES in
-        # the publish step below.
+        # the publish step below + the verify loop right after.
         run: ./scripts/regen.sh s3 sqs dynamodb rds sesv2
 
       - name: Verify aws_runtime compiles
         working-directory: runtime
         run: gleam build --target erlang
 
-      - name: Verify each service package compiles
+      - name: Verify each published service package compiles
+        # Only walks the curated PUBLISHED_SERVICES list — the other
+        # services/<svc>/ directories on disk (committed gleam.toml
+        # + README + LICENSE from earlier sweeps) have gitignored
+        # src/ trees that the focused regen above doesn't touch, so
+        # `gleam build` errors trying to canonicalise the missing
+        # src/. They're left in the repo for local-dev test coverage
+        # but are not part of the publish gate.
         run: |
-          for svc_dir in services/*/; do
-            echo "→ ${svc_dir}"
-            ( cd "$svc_dir" && gleam build --target erlang )
+          for svc in s3 sqs dynamodb rds sesv2; do
+            echo "→ services/$svc"
+            ( cd "services/$svc" && gleam build --target erlang )
           done
 
   publish:
