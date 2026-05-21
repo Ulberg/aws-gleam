@@ -58,7 +58,52 @@ fi
 
 cd "$REPO/codegen"
 
-mkdir -p ../src/aws/services/protocoltests ../test/protocol_tests
+mkdir -p ../src/aws/services/protocoltests ../test/protocol_tests ../services
+
+# Create a per-service hex package skeleton at services/<svc>/ on
+# first regen. Idempotent: re-running doesn't clobber the gleam.toml
+# (so manually edited metadata like extra deps survives).
+#
+# Used by the per-service codegen loop below so each emitted
+# .gleam file lands inside a buildable, publish-ready package
+# alongside its sibling services.
+ensure_service_package() {
+  svc="$1"
+  pkg_dir="../services/$svc"
+  toml="$pkg_dir/gleam.toml"
+  # Always (re)create the src tree — the codegen write below will
+  # fail with ENOENT if `src/aws/services/` is missing, which it is
+  # for a service whose `gleam.toml` was committed by hand but
+  # whose generated file is gitignored.
+  mkdir -p "$pkg_dir/src/aws/services"
+  if [ ! -f "$toml" ]; then
+    cat > "$toml" <<EOF
+name = "aws_$svc"
+version = "0.1.0"
+target = "erlang"
+
+description = "Typed Gleam client for AWS ${svc//_/ } service. Auto-generated from the upstream Smithy model. Depends on aws_runtime for SigV4 signing, the credentials chain, endpoint resolution, retry, and the protocol codecs."
+
+licences = ["Apache-2.0"]
+repository = { type = "github", user = "Ulberg", repo = "aws-gleam" }
+links = [
+  { title = "Source", href = "https://github.com/Ulberg/aws-gleam/tree/main/services/$svc" },
+]
+
+[dependencies]
+aws_runtime = { path = "../../runtime" }
+gleam_stdlib = ">= 0.40.0 and < 2.0.0"
+gleam_otp = ">= 1.0.0 and < 2.0.0"
+gleam_erlang = ">= 1.0.0 and < 2.0.0"
+gleam_http = ">= 4.0.0 and < 5.0.0"
+gleam_httpc = ">= 5.0.0 and < 6.0.0"
+gleam_json = ">= 2.0.0 and < 4.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
+EOF
+  fi
+}
 
 # Force a fresh codegen build before the per-service loop runs
 # 409 sequential `gleam run -m aws_codegen` calls. CI restores a
@@ -149,7 +194,13 @@ ITER=0
 # command can't reach the loop driver's input.
 while read -r -u 3 name proto; do
   ITER=$((ITER + 1))
-  out="../src/aws/services/${name//-/_}.gleam"
+  # Per-service hex package directory: services/<svc>/src/aws/services/<svc>.gleam.
+  # Service name on disk uses underscores; the hex package name follows the
+  # same convention ("aws_<svc>"). Auto-create the package skeleton on first
+  # regen via ensure_service_package; the .gleam file lands inside.
+  svc="${name//-/_}"
+  ensure_service_package "$svc"
+  out="../services/${svc}/src/aws/services/${svc}.gleam"
   PER_SERVICE_LOG=$(mktemp)
   $CODEGEN "$proto" "../vendor/aws-sdk-rust/aws-models/${name}.json" "$out" \
     </dev/null >"$PER_SERVICE_LOG" 2>&1
@@ -199,7 +250,7 @@ fi
 # run is the first one ever on a clean repo, the directory is
 # nearly empty and the guard would spuriously fire.
 if [ ${#FOCUS[@]} -eq 0 ]; then
-  WRITTEN=$(find ../src/aws/services -maxdepth 1 -name '*.gleam' | wc -l | tr -d ' ')
+  WRITTEN=$(find ../services -maxdepth 4 -path '*/src/aws/services/*.gleam' | wc -l | tr -d ' ')
   if [ "$WRITTEN" -lt "$TOTAL" ]; then
     echo
     echo "  service-count check: expected $TOTAL .gleam files, found $WRITTEN."
@@ -235,7 +286,8 @@ cd "$REPO"
 echo "→ formatting generated modules"
 if [ ${#FOCUS[@]} -eq 0 ]; then
   gleam format \
-    src/aws/services \
+    services \
+    src/aws/services/protocoltests \
     test/protocol_tests >/dev/null
 else
   # `${TOUCHED[@]}` paths are codegen-relative (../src/...); strip

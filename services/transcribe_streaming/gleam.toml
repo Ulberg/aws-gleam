@@ -1,0 +1,23 @@
+name = "aws_transcribe_streaming"
+version = "0.1.0"
+target = "erlang"
+
+description = "Typed Gleam client for AWS transcribe streaming service. Auto-generated from the upstream Smithy model. Depends on aws_runtime for SigV4 signing, the credentials chain, endpoint resolution, retry, and the protocol codecs."
+
+licences = ["Apache-2.0"]
+repository = { type = "github", user = "Ulberg", repo = "aws-gleam" }
+links = [
+  { title = "Source", href = "https://github.com/Ulberg/aws-gleam/tree/main/services/transcribe_streaming" },
+]
+
+[dependencies]
+aws_runtime = { path = "../../runtime" }
+gleam_stdlib = ">= 0.40.0 and < 2.0.0"
+gleam_otp = ">= 1.0.0 and < 2.0.0"
+gleam_erlang = ">= 1.0.0 and < 2.0.0"
+gleam_http = ">= 4.0.0 and < 5.0.0"
+gleam_httpc = ">= 5.0.0 and < 6.0.0"
+gleam_json = ">= 2.0.0 and < 4.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"

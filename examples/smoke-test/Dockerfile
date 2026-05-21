@@ -8,12 +8,13 @@
 
 FROM ghcr.io/gleam-lang/gleam:v1.16.0-erlang-alpine
 
-# Docker context = repo root (set by smoke-test/build.sh). Bring
-# the entire SDK tree in so the smoke-test's `aws = { path = "../" }`
-# dep resolves and `scripts/regen.sh` can read the Smithy models.
+# Docker context = repo root (set by examples/smoke-test/build.sh).
+# Bring the entire SDK tree in so the example's
+# `aws = { path = "../../" }` dep resolves and `scripts/regen.sh`
+# can read the Smithy models under vendor/aws-sdk-rust/aws-models/.
 COPY . /build/aws-gleam/
 
-WORKDIR /build/aws-gleam/smoke-test
+WORKDIR /build/aws-gleam/examples/smoke-test
 
 # regen.sh is a bash pipeline; alpine ships ash as /bin/sh.
 RUN apk add --no-cache bash coreutils findutils grep sed
@@ -26,7 +27,7 @@ RUN apk add --no-cache bash coreutils findutils grep sed
 ENV ERL_AFLAGS="-noinput"
 
 RUN gleam deps download \
-    && bash -c '(cd .. && ./scripts/regen.sh s3 sqs)' \
+    && bash -c '(cd ../.. && ./scripts/regen.sh s3 sqs)' \
     && gleam export erlang-shipment \
     && mv build/erlang-shipment /app \
     && rm -rf /build
