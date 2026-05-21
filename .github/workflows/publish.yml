@@ -27,8 +27,14 @@ on:
         type: string
 
 jobs:
-  test:
-    # Don't publish broken bits.
+  verify:
+    # Publish gate: verify each publishable package builds cleanly
+    # in isolation. Cheaper than the full SDK test suite (~30 s
+    # vs ~10 min) and pinned to exactly what `gleam publish` will
+    # touch. Comprehensive testing is ci.yml's job — the
+    # comprehensive run on every PR is what catches breakage; the
+    # publish workflow only needs to confirm a green tag is
+    # publishable.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,16 +44,28 @@ jobs:
         with:
           otp-version: "27"
           gleam-version: "1.16.0"
-      - name: Regenerate per-service packages
-        # Without this, services/<svc>/src/aws/services/<svc>.gleam
-        # is missing on a fresh clone (.gitignored). The root test
-        # suite needs every service test/ imports.
+
+      - name: Regenerate the per-service packages we publish
+        # services/<svc>/src/aws/services/<svc>.gleam is .gitignored;
+        # the focused regen call (re-)creates it for each service we
+        # plan to publish. Focused mode skips the protocol-test
+        # surrogates step (which needs the Smithy CLI under .tools/),
+        # so this works without installing it.
         run: ./scripts/regen.sh s3 sqs dynamodb cloudwatch-logs api-gateway transcribe-streaming eks
-      - name: Test
-        run: ./scripts/test.sh
+
+      - name: Verify aws_runtime compiles
+        working-directory: runtime
+        run: gleam build --target erlang
+
+      - name: Verify each service package compiles
+        run: |
+          for svc_dir in services/*/; do
+            echo "→ ${svc_dir}"
+            ( cd "$svc_dir" && gleam build --target erlang )
+          done
 
   publish:
-    needs: test
+    needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: read
