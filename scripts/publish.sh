@@ -146,10 +146,18 @@ if [ "$WHAT" = "runtime" ] || [ "$WHAT" = "both" ]; then
 fi
 
 if [ "$WHAT" = "services" ] || [ "$WHAT" = "both" ]; then
-  # Sort so the publish order is deterministic; service packages
-  # don't depend on each other so any order works.
-  for svc_dir in $(ls -d "$ROOT"/services/*/ | sort); do
-    publish_one "$svc_dir"
+  # Curated set of services we publish to hex. The services/
+  # directory contains more (regenerated for local test coverage)
+  # but those aren't user-facing on hex. Add a name here when a
+  # service has been validated as wanting a release.
+  PUBLISHED_SERVICES="${PUBLISHED_SERVICES:-s3 sqs dynamodb rds sesv2}"
+  for svc in $PUBLISHED_SERVICES; do
+    pkg_dir="$ROOT/services/$svc"
+    if [ ! -d "$pkg_dir" ]; then
+      echo "warning: $pkg_dir missing; run ./scripts/regen.sh $svc first" >&2
+      continue
+    fi
+    publish_one "$pkg_dir"
   done
 fi
 

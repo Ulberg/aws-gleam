@@ -190,7 +190,7 @@ for f in "$REPO"/vendor/aws-sdk-rust/aws-models/*.json; do
   # `|| true` because grep exits 1 when there's no match — that's
   # expected for awsQuery / ec2Query / rpcv2Cbor models we're
   # skipping. Without it, `set -e` would terminate the script.
-  proto=$({ grep -m1 -oE '"aws.protocols#(awsJson1_0|awsJson1_1|restJson1|restXml)"' "$f" || true; } | sed -E 's/^"aws.protocols#//;s/".*$//')
+  proto=$({ grep -m1 -oE '"aws.protocols#(awsJson1_0|awsJson1_1|restJson1|restXml|awsQuery)"' "$f" || true; } | sed -E 's/^"aws.protocols#//;s/".*$//')
   if [ -n "$proto" ]; then
     echo "$name $proto" >> "$SERVICES_LIST"
   fi
