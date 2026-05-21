@@ -71,11 +71,52 @@ ensure_service_package() {
   svc="$1"
   pkg_dir="../services/$svc"
   toml="$pkg_dir/gleam.toml"
+  readme="$pkg_dir/README.md"
+  licence="$pkg_dir/LICENSE"
   # Always (re)create the src tree — the codegen write below will
   # fail with ENOENT if `src/aws/services/` is missing, which it is
   # for a service whose `gleam.toml` was committed by hand but
   # whose generated file is gitignored.
   mkdir -p "$pkg_dir/src/aws/services"
+  # README required by hex publish (`gleam publish` errors with
+  # "Cannot publish with no README" otherwise). Auto-generate on
+  # first run; idempotent so hand-edits survive subsequent regens.
+  if [ ! -f "$readme" ]; then
+    cat > "$readme" <<EOF
+# aws_$svc
+
+Typed Gleam client for AWS ${svc//_/ }. Auto-generated from the
+upstream Smithy model in [aws-gleam](https://github.com/Ulberg/aws-gleam).
+
+\`\`\`gleam
+import aws/services/$svc
+
+pub fn main() {
+  let assert Ok(client) = $svc.new_with_auto_region()
+  // ... typed ops, e.g. $svc.<op>(client, input)
+}
+\`\`\`
+
+Depends on [\`aws_runtime\`](https://hex.pm/packages/aws_runtime)
+for SigV4 signing, credentials, endpoint resolution, retry, and
+the protocol codecs. Each AWS service ships as a separate hex
+package so consumers only compile the services they import; the
+SDK's full set of ~409 generated services lives at
+<https://github.com/Ulberg/aws-gleam/tree/main/services>.
+
+## Documentation
+
+Full docs at <https://hexdocs.pm/aws_$svc>.
+
+## License
+
+Apache 2.0. See LICENSE.
+EOF
+  fi
+  # Share the top-level LICENSE across every published package.
+  if [ ! -f "$licence" ] && [ -f "../LICENSE" ]; then
+    cp ../LICENSE "$licence"
+  fi
   if [ ! -f "$toml" ]; then
     cat > "$toml" <<EOF
 name = "aws_$svc"

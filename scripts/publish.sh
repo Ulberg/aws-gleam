@@ -79,10 +79,14 @@ publish_one() {
          gleam build 2>&1 | tail -5
          echo "(dry-run: skipped gleam publish)"
        else
-         # CI is non-interactive; `yes y` answers gleam's
-         # confirmation prompts ("Continue?", "Publish?") until a
-         # --no-confirm / --yes flag lands upstream.
-         yes y | gleam publish --replace
+         # Drive the interactive prompts non-interactively. The
+         # first one (pre-1.0 versions only) requires the literal
+         # string 'I am not using semantic versioning'; subsequent
+         # confirmations take 'y'. `printf` feeds both before yes
+         # takes over for any further prompts gleam adds in the
+         # future.
+         (printf 'I am not using semantic versioning\n'; yes y) \
+           | gleam publish --replace
        fi
   )
 }
