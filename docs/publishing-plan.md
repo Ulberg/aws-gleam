@@ -62,9 +62,10 @@ aws-gleam/
 * **Drop** the top-level `gleam.toml`, `src/aws/`, `test/` once
   the runtime package is moved. Replace with a README pointing
   callers at hex.
-* **`examples/smoke-test/`** stays in-tree until the package
-  split is verified, then migrates to a separate
-  `aws-gleam-examples` repo (see Phase 3 below).
+* **`examples/`** has moved to the separate
+  [`aws-gleam-examples`](https://github.com/Ulberg/aws-gleam-examples)
+  repo as of the package split landing (Phase 3 below). This repo
+  no longer contains any example/consumer code.
 
 ## Phase 1 — Package split (this repo)
 

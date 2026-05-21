@@ -1,4 +1,4 @@
-name = "aws_runtime"
+name = "gleam_aws_runtime"
 version = "0.1.0"
 target = "erlang"
 

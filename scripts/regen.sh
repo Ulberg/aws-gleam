@@ -83,7 +83,7 @@ ensure_service_package() {
   # first run; idempotent so hand-edits survive subsequent regens.
   if [ ! -f "$readme" ]; then
     cat > "$readme" <<EOF
-# aws_$svc
+# gleam_aws_$svc
 
 Typed Gleam client for AWS ${svc//_/ }. Auto-generated from the
 upstream Smithy model in [aws-gleam](https://github.com/Ulberg/aws-gleam).
@@ -97,7 +97,8 @@ pub fn main() {
 }
 \`\`\`
 
-Depends on [\`aws_runtime\`](https://hex.pm/packages/aws_runtime)
+Depends on
+[\`gleam_aws_runtime\`](https://hex.pm/packages/gleam_aws_runtime)
 for SigV4 signing, credentials, endpoint resolution, retry, and
 the protocol codecs. Each AWS service ships as a separate hex
 package so consumers only compile the services they import; the
@@ -106,7 +107,7 @@ SDK's full set of ~409 generated services lives at
 
 ## Documentation
 
-Full docs at <https://hexdocs.pm/aws_$svc>.
+Full docs at <https://hexdocs.pm/gleam_aws_$svc>.
 
 ## License
 
@@ -119,11 +120,11 @@ EOF
   fi
   if [ ! -f "$toml" ]; then
     cat > "$toml" <<EOF
-name = "aws_$svc"
+name = "gleam_aws_$svc"
 version = "0.1.0"
 target = "erlang"
 
-description = "Typed Gleam client for AWS ${svc//_/ } service. Auto-generated from the upstream Smithy model. Depends on aws_runtime for SigV4 signing, the credentials chain, endpoint resolution, retry, and the protocol codecs."
+description = "Typed Gleam client for AWS ${svc//_/ } service. Auto-generated from the upstream Smithy model. Depends on gleam_aws_runtime for SigV4 signing, the credentials chain, endpoint resolution, retry, and the protocol codecs."
 
 licences = ["Apache-2.0"]
 repository = { type = "github", user = "Ulberg", repo = "aws-gleam" }
@@ -132,7 +133,7 @@ links = [
 ]
 
 [dependencies]
-aws_runtime = { path = "../../runtime" }
+gleam_aws_runtime = { path = "../../runtime" }
 gleam_stdlib = ">= 0.40.0 and < 2.0.0"
 gleam_otp = ">= 1.0.0 and < 2.0.0"
 gleam_erlang = ">= 1.0.0 and < 2.0.0"

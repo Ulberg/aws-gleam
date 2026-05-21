@@ -2,7 +2,7 @@
 
 Reference for callers who want to run Gleam code on AWS Lambda
 specifically (as opposed to Fargate, which is what
-[`smoke-test/`](../smoke-test/) uses for the SDK's end-to-end test —
+[`fargate-smoke-test/`](https://github.com/Ulberg/aws-gleam-examples/tree/main/fargate-smoke-test) uses for the SDK's end-to-end test —
 see the [Why not Lambda for this SDK](#why-not-lambda-for-this-sdk)
 note below).
 
@@ -107,10 +107,9 @@ fn loop(endpoint, handle) {
 fn os_getenv(name: String) -> Result(String, Nil)
 ```
 
-(Full implementation: see this repo's
-[`smoke-test/src/runtime_api.gleam`](../smoke-test/src/runtime_api.gleam)
-on the `feat/smoke-test` branch — it's the working version from
-when we still targeted Lambda.)
+(Full implementation: see the `feat/smoke-test` branch on the SDK
+repo or the `git log` of `aws-gleam-examples` — both contain the
+working version from when we still targeted Lambda.)
 
 Terraform deploy shape:
 
@@ -187,7 +186,7 @@ Lambda still makes sense for **very short-lived, very high-RPS,
 event-driven** workloads — and for those, Approach 1 (JS target +
 glambda) is the right call because JS startup is ~10× faster than
 BEAM. For BEAM-target Gleam in particular, Fargate is the more
-natural fit: see [`smoke-test/`](../smoke-test/) for the working
+natural fit: see [`fargate-smoke-test/`](https://github.com/Ulberg/aws-gleam-examples/tree/main/fargate-smoke-test) for the working
 reference.
 
 [glambda]: https://github.com/ryanmiville/glambda

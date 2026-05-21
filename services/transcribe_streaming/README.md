@@ -1,4 +1,4 @@
-# aws_transcribe_streaming
+# gleam_aws_transcribe_streaming
 
 Typed Gleam client for AWS transcribe streaming. Auto-generated from the
 upstream Smithy model in [aws-gleam](https://github.com/Ulberg/aws-gleam).
@@ -12,7 +12,7 @@ pub fn main() {
 }
 ```
 
-Depends on [`aws_runtime`](https://hex.pm/packages/aws_runtime)
+Depends on [`gleam_aws_runtime`](https://hex.pm/packages/gleam_aws_runtime)
 for SigV4 signing, credentials, endpoint resolution, retry, and
 the protocol codecs. Each AWS service ships as a separate hex
 package so consumers only compile the services they import; the
@@ -21,7 +21,7 @@ SDK's full set of ~409 generated services lives at
 
 ## Documentation
 
-Full docs at <https://hexdocs.pm/aws_transcribe_streaming>.
+Full docs at <https://hexdocs.pm/gleam_aws_transcribe_streaming>.
 
 ## License
 
