@@ -13,7 +13,7 @@ target = "erlang"
 # `gleam publish` is run from those directories, not this one.
 
 [dependencies]
-gleam_aws_runtime = { path = "./runtime" }
+aws_gleam_runtime = { path = "./runtime" }
 
 # Per-service path deps. Add a new entry here whenever a test file
 # imports `aws/services/<svc>` — the corresponding service package
@@ -22,13 +22,13 @@ gleam_aws_runtime = { path = "./runtime" }
 # automatically). Consumers using the published hex packages list
 # only the services they actually import; this list is the union
 # every test happens to reach.
-gleam_aws_api_gateway = { path = "./services/api_gateway" }
-gleam_aws_cloudwatch_logs = { path = "./services/cloudwatch_logs" }
-gleam_aws_dynamodb = { path = "./services/dynamodb" }
-gleam_aws_eks = { path = "./services/eks" }
-gleam_aws_s3 = { path = "./services/s3" }
-gleam_aws_sqs = { path = "./services/sqs" }
-gleam_aws_transcribe_streaming = { path = "./services/transcribe_streaming" }
+aws_gleam_api_gateway = { path = "./services/api_gateway" }
+aws_gleam_cloudwatch_logs = { path = "./services/cloudwatch_logs" }
+aws_gleam_dynamodb = { path = "./services/dynamodb" }
+aws_gleam_eks = { path = "./services/eks" }
+aws_gleam_s3 = { path = "./services/s3" }
+aws_gleam_sqs = { path = "./services/sqs" }
+aws_gleam_transcribe_streaming = { path = "./services/transcribe_streaming" }
 
 gleam_stdlib = ">= 0.40.0 and < 2.0.0"
 gleam_otp = ">= 1.0.0 and < 2.0.0"

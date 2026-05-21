@@ -1,4 +1,4 @@
-name = "gleam_aws_s3"
+name = "aws_gleam_s3"
 version = "0.1.0"
 target = "erlang"
 
@@ -11,7 +11,7 @@ links = [
 ]
 
 [dependencies]
-gleam_aws_runtime = { path = "../../runtime" }
+aws_gleam_runtime = { path = "../../runtime" }
 gleam_stdlib = ">= 0.40.0 and < 2.0.0"
 gleam_otp = ">= 1.0.0 and < 2.0.0"
 gleam_erlang = ">= 1.0.0 and < 2.0.0"

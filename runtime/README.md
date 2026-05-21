@@ -1,4 +1,4 @@
-# gleam_aws_runtime
+# aws_gleam_runtime
 
 Runtime core for the [aws-gleam](https://github.com/Ulberg/aws-gleam)
 SDK. Provides everything that's shared across every AWS service
@@ -57,7 +57,7 @@ to this package's types.
 
 ## Documentation
 
-Full docs at <https://hexdocs.pm/gleam_aws_runtime>.
+Full docs at <https://hexdocs.pm/aws_gleam_runtime>.
 
 ## License
 
