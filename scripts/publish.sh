@@ -109,6 +109,13 @@ publish_one() {
     && set_version gleam.toml \
     && rewrite_aws_path_deps_to_hex gleam.toml \
     && trap "restore_path_deps '$pkg_dir/gleam.toml'" EXIT \
+    && \
+    # Force a fresh dep resolution. The previous local build left
+    # build/packages/aws_gleam_runtime symlinked at the path dep;
+    # after we rewrite the toml to a hex version, gleam needs to
+    # fetch the package from hex but won't until manifest.toml + the
+    # cached build/packages/ are gone.
+    rm -rf build manifest.toml \
     && if [ "$DRY_RUN" -eq 1 ]; then
          # `gleam publish` doesn't ship a --dry-run flag yet.
          # Stand in with `gleam build` so we still surface any
