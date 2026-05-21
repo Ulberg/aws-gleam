@@ -27,10 +27,6 @@ jobs:
     # are no-ops — so the macOS runtime overhead per build is the
     # tax we pay only on the first run after a codegen-touching
     # commit.
-    #
-    # See docs/audits/ci-linux-segfault.md for the full triage
-    # history and the architectural-split fix that would let us
-    # route back to Linux.
     runs-on: macos-latest
 
     strategy:

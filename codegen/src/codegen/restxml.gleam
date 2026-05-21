@@ -479,9 +479,8 @@ fn emit_error_type(spec: OpSpec) -> String {
 /// See `awsjson.emit_error_translator` for the table-style design.
 /// restXml's decoder table is intentionally empty today: the runtime
 /// can't yet pull an `error_type` out of an XML `<Code>` element, so
-/// every service error lands in the `*Unknown` variant. Pass 6 of
-/// plan.md teaches the runtime to read XML error bodies; the table
-/// will populate once that lands.
+/// every service error lands in the `*Unknown` variant. The table
+/// will populate once the runtime learns to read XML error bodies.
 fn emit_error_translator(spec: OpSpec) -> String {
   let name = spec.error_type
   let snake = spec.snake
@@ -3374,5 +3373,4 @@ fn derive_module_name(service_id: String) -> String {
   stringutils.pascal_to_snake(local)
 }
 // `pascalize_member`, `int_to_string` live in
-// `codegen/src/internal/stringutils.gleam` — see Pass 4 in
-// plan.md for the de-duplication.
+// `codegen/src/internal/stringutils.gleam`.

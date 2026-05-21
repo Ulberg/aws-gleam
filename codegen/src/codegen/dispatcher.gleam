@@ -12,7 +12,7 @@
 //// `Case` / `Call` nodes); everything around it — module doc,
 //// imports, `register_all` chain, per-op `Dispatcher(...)`
 //// construction with labelled args, `response_parser` helper —
-//// flows through the AST. Pattern follows plan.md Pass 7.
+//// flows through the AST.
 
 import codegen/code.{
   type Code, Blank, Call, CodeNone, CodeSome, Fn, Ident, Labelled, Module,

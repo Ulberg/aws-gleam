@@ -671,7 +671,7 @@ pub fn error_type_matches(error_type: String, local: String) -> Bool {
 /// one-liner that supplies its operation's decoder table plus
 /// constructors for the always-present `*Transport` and `*Unknown`
 /// variants. Saves ~15–25 LOC/op vs the previous open-coded nested
-/// match — see Pass 3c in plan.md.
+/// match.
 ///
 /// `decoders` is a list of `(wire_error_type_local_name, decoder)`
 /// pairs. The first pair whose error_type matches gets to attempt the

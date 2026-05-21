@@ -37,8 +37,7 @@ fn skip_allow_list() -> Dict(String, String) {
   // template substitution), they don't invoke the endpoint resolver,
   // so the expected `/mybucket` path the rule set would prepend
   // never lands in `BuiltRequest.uri`. Closing this case is a runner
-  // change (run the resolver, join with the URI template) — out of
-  // scope for the HACK.md sweep.
+  // change (run the resolver, join with the URI template).
   |> dict.insert(
     "S3PathAddressing",
     "SDK supports path-style via endpoint params; runner needs to invoke the endpoint resolver to assemble the full URL before assertion",

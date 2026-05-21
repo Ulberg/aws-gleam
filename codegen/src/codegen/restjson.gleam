@@ -375,7 +375,7 @@ fn extract_host_prefix_info(
 }
 
 // `Metadata`, `service_metadata`, `string_field_under` live in
-// `codegen/trait_helpers.gleam` — see Pass 4 in plan.md.
+// `codegen/trait_helpers.gleam`.
 
 fn emit_client(metadata: trait_helpers.Metadata) -> String {
   client.render(
@@ -2078,5 +2078,4 @@ fn derive_module_name(service_id: String) -> String {
   stringutils.pascal_to_snake(local)
 }
 // `pascalize_member`, `int_to_string` live in
-// `codegen/src/internal/stringutils.gleam` — see Pass 4 in
-// plan.md for the de-duplication.
+// `codegen/src/internal/stringutils.gleam`.

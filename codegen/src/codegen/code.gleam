@@ -132,7 +132,7 @@ pub type Code {
   /// `Call.args`; the renderer prepends `<label>: ` before the
   /// value expression. Used for labelled record construction
   /// (`Dispatcher(operation_id: "...", build_request: fn(...) ...)`)
-  /// and any labelled function call. Pass 7 of plan.md.
+  /// and any labelled function call.
   Labelled(label: String, value: Code)
 
   /// A literal blank line. Used between functions / types to keep
