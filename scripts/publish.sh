@@ -125,12 +125,17 @@ publish_one() {
          echo "(dry-run: skipped gleam publish)"
        else
          # Drive the interactive prompts non-interactively. The
-         # first one (pre-1.0 versions only) requires the literal
-         # string 'I am not using semantic versioning'; subsequent
-         # confirmations take 'y'. `printf` feeds both before yes
-         # takes over for any further prompts gleam adds in the
-         # future.
-         (printf 'I am not using semantic versioning\n'; yes y) \
+         # first prompt (pre-1.0 versions only) wants the literal
+         # 'I am not using semantic versioning'; the rest are y/n
+         # confirmations. Feed a fixed-length sequence rather than
+         # `yes y` — `yes` gets SIGPIPE'd when gleam closes stdin,
+         # which `pipefail` propagates as a non-zero pipeline exit,
+         # which `set -e` interprets as a loop-killing failure even
+         # when the publish itself succeeded.
+         #
+         # 6 extra `y` lines is more than gleam currently asks for
+         # — excess input is harmlessly discarded.
+         printf 'I am not using semantic versioning\ny\ny\ny\ny\ny\ny\n' \
            | gleam publish --replace
        fi
   )
