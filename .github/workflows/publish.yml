@@ -6,9 +6,11 @@ name: Publish hex packages
 # matching `aws_runtime` + `aws_<svc>` lines.
 #
 # Required GH secrets:
-#   HEXPM_API_KEY — get one via `mix hex.user key generate` or
-#                   `gleam hex authenticate` + read its config.
-#                   Scope it to package-write only on hex.pm.
+#   HEX_KEY — write-scoped hex.pm API key. Get one via
+#             `gleam hex authenticate` and read it out of
+#             `~/.config/gleam/auth.toml`. Passed into the
+#             publish steps below as the `HEXPM_API_KEY` env
+#             var that `gleam publish` reads.
 #
 # Manual dry-run before the first real publish:
 #   ./scripts/publish.sh --dry-run
@@ -76,12 +78,12 @@ jobs:
 
       - name: Publish aws_runtime first
         env:
-          HEXPM_API_KEY: ${{ secrets.HEXPM_API_KEY }}
+          HEXPM_API_KEY: ${{ secrets.HEX_KEY }}
         run: |
           ./scripts/publish.sh "${{ steps.version.outputs.version }}" runtime
 
       - name: Publish per-service packages
         env:
-          HEXPM_API_KEY: ${{ secrets.HEXPM_API_KEY }}
+          HEXPM_API_KEY: ${{ secrets.HEX_KEY }}
         run: |
           ./scripts/publish.sh "${{ steps.version.outputs.version }}" services
