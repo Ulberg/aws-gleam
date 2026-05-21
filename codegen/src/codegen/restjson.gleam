@@ -978,7 +978,15 @@ fn resolve_io_type(
 // ---------- type definitions ----------
 
 fn emit_record_def(name: String, members: List(MemberDef)) -> String {
-  string.concat([code.render(named_shapes.record_def(name, members)), "\n"])
+  // See awsjson.emit_record_def — append a `<snake>_default()`
+  // factory so callers don't have to spell out 20+ `None`s.
+  let snake = stringutils.pascal_to_snake(name)
+  string.concat([
+    code.render(named_shapes.record_def(name, members)),
+    "\n",
+    code.render(named_shapes.record_default_fn(snake, name, members)),
+    "\n",
+  ])
 }
 
 fn emit_enum_def(name: String, variants: List(types.EnumVariant)) -> String {

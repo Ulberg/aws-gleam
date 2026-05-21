@@ -381,6 +381,12 @@ fn emit_scalar_typed_operation(
       code.Blank,
       named_shapes.record_def(input_type, members),
       code.Blank,
+      named_shapes.record_default_fn(
+        stringutils.pascal_to_snake(input_type),
+        input_type,
+        members,
+      ),
+      code.Blank,
       code.TypeDef(public: True, is_opaque: False, name: output_type, variants: [
         code.UnitVariant(name: output_type),
       ]),
@@ -641,10 +647,14 @@ fn emit_nested_struct_block(
           True,
           True,
         )
+      let default_fn =
+        named_shapes.record_default_fn(snake, gn, members)
       string.concat([
         "\n",
         code.render(type_def),
         "\n\n",
+        code.render(default_fn),
+        "\n",
         encoder,
         "\n",
         code.render(decoder),

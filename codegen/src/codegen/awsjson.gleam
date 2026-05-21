@@ -1125,7 +1125,19 @@ fn resolve_io_type(
 // ---------- type definitions ----------
 
 fn emit_record_def(name: String, members: List(MemberDef)) -> String {
-  string.concat([code.render(named_shapes.record_def(name, members)), "\n"])
+  // Append a `<snake>_default()` factory alongside every record so
+  // callers can spread it via `..` to set just the fields they need:
+  //
+  //   SomeRequest(..some_request_default(), bucket: Some("b"))
+  //
+  // Avoids the 20+ `None` lines a full record literal would force.
+  let snake = stringutils.pascal_to_snake(name)
+  string.concat([
+    code.render(named_shapes.record_def(name, members)),
+    "\n",
+    code.render(named_shapes.record_default_fn(snake, name, members)),
+    "\n",
+  ])
 }
 
 fn emit_enum_def(name: String, variants: List(types.EnumVariant)) -> String {
