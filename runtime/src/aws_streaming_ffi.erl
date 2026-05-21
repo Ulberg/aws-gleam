@@ -74,8 +74,6 @@ prepare_headers_loop([{Name, Value} | Rest], Acc, UaSet) ->
     Pair = {unicode:characters_to_list(Name), unicode:characters_to_list(Value)},
     prepare_headers_loop(Rest, [Pair | Acc], UaSet1).
 
-build_http_options(Timeout, VerifyTls) ->
-    build_http_options(Timeout, VerifyTls, false).
 
 %% 3-arg form keyed on (timeout, verify_tls, http2). HTTP/2 = true
 %% adds `{http_version, "HTTP/2"}` to the option list — httpc

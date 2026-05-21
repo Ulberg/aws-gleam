@@ -314,7 +314,12 @@ float_is_nan(_) -> false.
 float_is_infinite(F) when is_float(F) ->
     %% Comparison against the (degraded) sentinels. Reliably false on
     %% Erlang.
-    F =:= float_infinity() andalso F =/= 0.0;
+    %% `+0.0` (rather than the literal `0.0`) silences an OTP 27 warning:
+    %% as of 27, `0.0` only matches +0.0, not -0.0. We're testing
+    %% `=/= 0.0` (positive OR negative), so explicitly say +0.0 to
+    %% acknowledge the asymmetry — the comparison is still correct
+    %% because IEEE 754 says +0.0 =:= -0.0 evaluates equal anyway.
+    F =:= float_infinity() andalso F =/= +0.0;
 float_is_infinite(_) -> false.
 
 %% Parse a JSON string and re-encode it canonically — object keys sorted,

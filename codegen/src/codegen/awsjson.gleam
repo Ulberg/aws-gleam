@@ -1596,23 +1596,31 @@ fn emit_build(
       code.Ident(name: "headers"),
       code.Ident(name: "body"),
     ])
+  let body_items =
+    list.flatten([
+      [body_str_let, body_let, headers_let],
+      md5_step,
+      compression_step,
+      [return_tuple],
+    ])
+  // Same _input rename as rest_request: empty-input ops never
+  // reference the param (the body literal is "{}" hardcoded), so
+  // tag the param `_input` to suppress the unused-arg warning.
+  let body_str = code.render(code.Block(items: body_items))
+  let param_name = case code.references_identifier(body_str, "input") {
+    True -> "input"
+    False -> "_input"
+  }
   code.render(
     code.Module(items: [
       code.Fn(
         public: True,
         name: name_concat(["build_", snake, "_request"]),
-        params: [code.Param(name: "input", type_: input_type)],
+        params: [code.Param(name: param_name, type_: input_type)],
         return: code.CodeSome(
           "#(String, String, dict.Dict(String, String), BitArray)",
         ),
-        body: code.Block(
-          items: list.flatten([
-            [body_str_let, body_let, headers_let],
-            md5_step,
-            compression_step,
-            [return_tuple],
-          ]),
-        ),
+        body: code.Block(items: body_items),
       ),
       code.Blank,
     ]),

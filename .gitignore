@@ -20,10 +20,26 @@ codegen/build
 # one place).
 /src/aws/services/
 
-# Per-service hex packages live under services/<svc>/. The
-# gleam.toml is committed (so the package skeleton survives in
-# git); the generated .gleam content is regenerated on every
-# `./scripts/regen.sh` and stays out of git.
+# Per-service hex packages live under services/<svc>/. Only the
+# services the root meta-package + the publish list actively
+# reference have their gleam.toml / README / LICENSE tracked
+# (committed by hand on first use, or via the regen
+# ensure_service_package helper). The other ~410 services get
+# their skeletons regenerated on demand and stay out of git.
+/services/*
+!/services/api_gateway/
+!/services/cloudwatch_logs/
+!/services/dynamodb/
+!/services/eks/
+!/services/rds/
+!/services/s3/
+!/services/sesv2/
+!/services/sqs/
+!/services/transcribe_streaming/
+
+# Inside each tracked service: gleam.toml + LICENSE + README are
+# committed, but generated source + build cache + manifest are
+# regenerated and stay out of git.
 /services/*/src/aws/services/
 /services/*/build/
 /services/*/manifest.toml

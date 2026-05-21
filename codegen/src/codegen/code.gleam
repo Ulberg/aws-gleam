@@ -541,7 +541,55 @@ fn trim_trailing(s: String) -> String {
 /// character immediately before the prefix is *not* an identifier
 /// character (i.e. it sits on a real word boundary).
 pub fn references_module(body: String, prefix: String) -> Bool {
-  any_word_boundary(body, prefix)
+  any_word_boundary(strip_comments(body), prefix)
+}
+
+/// Drop everything from `//` to end-of-line on every line. Catches
+/// `//` regular, `///` doc, and `////` module-doc comments — all are
+/// `//`-prefixed in Gleam. Caller uses this to scan code text
+/// without false-positives from doc text (e.g. a `// the full
+/// list. Required for ...` triggering a `list.` import check).
+fn strip_comments(body: String) -> String {
+  string.split(body, on: "\n")
+  |> list.map(fn(line) {
+    case string.split_once(line, on: "//") {
+      Ok(#(before, _)) -> before
+      Error(_) -> line
+    }
+  })
+  |> string.join("\n")
+}
+
+/// True iff `body` contains `name` as a standalone identifier — i.e.
+/// `name` appears with non-identifier characters on BOTH sides (or
+/// at start/end of string). Stricter than `references_module/2`,
+/// which only checks the left boundary. Use this when you need to
+/// know "did body actually use the identifier `name`", not just
+/// "did body contain anything starting with `name`".
+///
+/// Picks up `input.x`, `input)`, `input,`, `input ` — anything where
+/// the next char isn't part of an identifier. Skips `input_type`,
+/// `inputs`, etc.
+pub fn references_identifier(body: String, name: String) -> Bool {
+  any_identifier_match(body, name)
+}
+
+fn any_identifier_match(body: String, name: String) -> Bool {
+  case string.split_once(body, on: name) {
+    Error(_) -> False
+    Ok(#(before, after)) ->
+      case ends_with_ident_char(before) || starts_with_ident_char(after) {
+        True -> any_identifier_match(after, name)
+        False -> True
+      }
+  }
+}
+
+fn starts_with_ident_char(s: String) -> Bool {
+  case string.length(s) {
+    0 -> False
+    _ -> is_ident_char(string.slice(s, at_index: 0, length: 1))
+  }
 }
 
 fn any_word_boundary(body: String, prefix: String) -> Bool {

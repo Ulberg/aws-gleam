@@ -665,10 +665,18 @@ pub fn host_prefix_validator_fn(
   info: HostPrefixInfo,
 ) -> Code {
   let body = code.Raw(fragment: render_host_prefix_validator_body(info))
+  // When the template carries no `@hostLabel` substitutions
+  // (e.g. `foo.`) the body never touches `input`. Rename the
+  // param to `_input` for these to silence the unused-arg
+  // warning on the generated module.
+  let param_name = case info.labels {
+    [] -> "_input"
+    _ -> "input"
+  }
   Fn(
     public: False,
     name: string.concat(["build_", snake, "_host_prefix"]),
-    params: [Param(name: "input", type_: in_type)],
+    params: [Param(name: param_name, type_: in_type)],
     return: CodeSome("Result(String, String)"),
     body: body,
   )

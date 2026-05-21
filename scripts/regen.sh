@@ -292,7 +292,7 @@ fi
 # run is the first one ever on a clean repo, the directory is
 # nearly empty and the guard would spuriously fire.
 if [ ${#FOCUS[@]} -eq 0 ]; then
-  WRITTEN=$(find ../services -maxdepth 4 -path '*/src/aws/services/*.gleam' | wc -l | tr -d ' ')
+  WRITTEN=$(find ../services -maxdepth 5 -path '*/src/aws/services/*.gleam' | wc -l | tr -d ' ')
   if [ "$WRITTEN" -lt "$TOTAL" ]; then
     echo
     echo "  service-count check: expected $TOTAL .gleam files, found $WRITTEN."

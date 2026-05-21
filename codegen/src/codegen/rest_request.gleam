@@ -168,12 +168,25 @@ pub fn build_request_module(
       customization_tree_hash_step,
       [path_assign, result_tuple],
     ])
+  // Re-check whether `input` survives label/binding filtering. The
+  // `touches_input` heuristic above is too eager — it returns True
+  // whenever ANY binding exists on the input shape, but
+  // `omit_uri_labels` can strip every label that remains (S3's
+  // `Bucket`-only ops like GetBucketLocation, GetBucketAcl, etc.).
+  // Render the body, scan it for an `input.` reference; rename
+  // the parameter to `_input` if none survives. Eliminates the
+  // "Unused function argument" warning for these ops.
+  let body_str = code.render(code.Block(items: body_items))
+  let final_param_name = case code.references_identifier(body_str, "input") {
+    True -> header_or_input
+    False -> "_input"
+  }
   code.render(
     code.Module(items: [
       code.Fn(
         public: True,
         name: name_concat(["build_", snake, "_request"]),
-        params: [code.Param(name: header_or_input, type_: input_type)],
+        params: [code.Param(name: final_param_name, type_: input_type)],
         return: code.CodeSome(
           "#(String, String, dict.Dict(String, String), BitArray)",
         ),
