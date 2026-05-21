@@ -1,21 +1,20 @@
 # aws
 
-Native Gleam AWS SDK targeting Erlang. v0.2 in review on
-`feat/all-services` (PR #8); not yet published.
-
-The current milestone plan is in [docs/m5-codegen-pivot.md](docs/m5-codegen-pivot.md);
-the original v0.1 runtime plan is in [docs/v0.1-plan.md](docs/v0.1-plan.md)
-(M1–M4 sections still accurate, M5+ superseded). The next steps and
-v0.2 candidates are tracked in [next_steps.md](next_steps.md).
+Native Gleam AWS SDK targeting Erlang. Published on hex as
+[`aws_gleam_runtime`](https://hex.pm/packages/aws_gleam_runtime) plus
+per-service packages ([`aws_gleam_s3`](https://hex.pm/packages/aws_gleam_s3),
+[`aws_gleam_dynamodb`](https://hex.pm/packages/aws_gleam_dynamodb),
+[`aws_gleam_sqs`](https://hex.pm/packages/aws_gleam_sqs),
+[`aws_gleam_rds`](https://hex.pm/packages/aws_gleam_rds),
+[`aws_gleam_sesv2`](https://hex.pm/packages/aws_gleam_sesv2)).
 
 ## Status
 
-The v0.1 plan's gate — *"a Gleam binary that, in Lambda / ECS Fargate /
+The v0.1 gate — *"a Gleam binary that, in Lambda / ECS Fargate /
 EC2 / EKS, resolves credentials + region + endpoint with zero
 configuration and calls DynamoDB `GetItem` and S3 `GetObject`
 end-to-end with typed inputs, outputs, and per-operation error sums"* —
-shipped earlier on PR #7 and merged. v0.2 work continues on
-`feat/all-services` (PR #8). Highlights now include:
+shipped. Current capabilities:
 
 - SigV4 signing — 38 official AWS test vectors green at every stage.
 - **SigV4a** (asymmetric ECDSA P-256 for S3 MRAP / multi-region
@@ -29,8 +28,7 @@ shipped earlier on PR #7 and merged. v0.2 work continues on
   driven corpus loop pins canonical request + string-to-sign byte-
   for-byte across the aws-c-auth `aws-signing-test-suite/v4a/*` set.
   RFC 6979 deterministic nonces (which would unblock signature-byte
-  pinning too) are the remaining piece — see `next_steps.md` "SigV4a
-  sub-status."
+  pinning too) are the remaining piece.
 - Eight-stage credential chain: env → IRSA → SSO (modern + legacy
   profile shapes) → shared credentials → `credential_process` →
   `aws configure export-credentials` → ECS metadata → EC2 IMDSv2.
@@ -80,10 +78,6 @@ shipped earlier on PR #7 and merged. v0.2 work continues on
   precise-Timestamp (`json_timestamp.Timestamp` with seconds +
   nanoseconds, emitted by the codegen for awsJson / restJson /
   restXml types).
-
-See [docs/audits/m6.md](docs/audits/m6.md) for the 1:1 parity table
-vs `aws-sdk-rust` and [next_steps.md](next_steps.md) for the running
-DONE / PARTIAL / pending state per v0.2 item.
 
 ## Using the SDK
 

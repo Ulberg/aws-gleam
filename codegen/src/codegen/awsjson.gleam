@@ -156,7 +156,7 @@ pub fn emit_service(
       let encoder_reachable = case is_dispatcher {
         // Dispatcher targets emit every encoder (they get
         // round-tripped). Production services emit encoders only
-        // for input-reachable shapes — see Pass 3a in plan.md.
+        // for input-reachable shapes.
         True -> set.new()
         False -> input_reachable_structs(model, resolved_ops)
       }
@@ -356,7 +356,7 @@ fn extract_host_prefix_info(
 }
 
 // `Metadata`, `service_metadata`, `string_field_under` live in
-// `codegen/trait_helpers.gleam` — see Pass 4 in plan.md.
+// `codegen/trait_helpers.gleam`.
 
 fn emit_client(metadata: trait_helpers.Metadata) -> String {
   client.render(
@@ -1788,5 +1788,4 @@ fn derive_module_name(service_id: String) -> String {
   stringutils.pascal_to_snake(local)
 }
 // `stringutils.pascalize_member`, `stringutils.int_to_string` live in
-// `codegen/src/internal/stringutils.gleam` — see Pass 4 in
-// plan.md for the de-duplication.
+// `codegen/src/internal/stringutils.gleam`.

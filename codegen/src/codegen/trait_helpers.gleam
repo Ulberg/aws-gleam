@@ -3,7 +3,7 @@
 //// emitter previously carried its own copy of `string_field` /
 //// `int_field` / `service_metadata` / `request_compression_
 //// encodings` / `string_field_under`; the contents were byte-
-//// identical across all three. Pass 4 of plan.md.
+//// identical across all three.
 
 import gleam/dict.{type Dict}
 import gleam/list

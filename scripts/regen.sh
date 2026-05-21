@@ -11,7 +11,7 @@
 # Auto-discovers every awsJson1_0 / awsJson1_1 / restJson1 / restXml
 # service shape in vendor/aws-sdk-rust/aws-models and runs the codegen
 # against each. awsQuery / ec2Query / rpcv2Cbor are skipped here:
-# their bodies aren't fully supported yet (see docs/audits/m5.md).
+# their bodies aren't fully supported yet.
 #
 # All outputs regenerate deterministically from sources that ARE in
 # git (`vendor/aws-sdk-rust/aws-models/*.json` and
@@ -78,11 +78,15 @@ ensure_service_package() {
   # for a service whose `gleam.toml` was committed by hand but
   # whose generated file is gitignored.
   mkdir -p "$pkg_dir/src/aws/services"
-  # README required by hex publish (`gleam publish` errors with
-  # "Cannot publish with no README" otherwise). Auto-generate on
-  # first run; idempotent so hand-edits survive subsequent regens.
-  if [ ! -f "$readme" ]; then
-    cat > "$readme" <<EOF
+  # README is only required by `gleam publish` ("Cannot publish with
+  # no README"). Only emit it for services we actually publish — see
+  # the same list in scripts/publish.sh. Override via env var when
+  # adding a new service to the publish set.
+  PUBLISHED_SERVICES="${PUBLISHED_SERVICES:-s3 sqs dynamodb rds sesv2}"
+  case " $PUBLISHED_SERVICES " in
+    *" $svc "*)
+      if [ ! -f "$readme" ]; then
+        cat > "$readme" <<EOF
 # aws_gleam_$svc
 
 Typed Gleam client for AWS ${svc//_/ }. Auto-generated from the
@@ -113,7 +117,9 @@ Full docs at <https://hexdocs.pm/aws_gleam_$svc>.
 
 Apache 2.0. See LICENSE.
 EOF
-  fi
+      fi
+      ;;
+  esac
   # Share the top-level LICENSE across every published package.
   if [ ! -f "$licence" ] && [ -f "../LICENSE" ]; then
     cp ../LICENSE "$licence"
