@@ -1,0 +1,87 @@
+name: Publish hex packages
+
+# Publishes aws_runtime + the per-service packages on tag push.
+# Tag shape: `v0.1.0`, `v0.2.0-rc.1`, etc. — applies the same
+# version to every published package so consumers can pick
+# matching `aws_runtime` + `aws_<svc>` lines.
+#
+# Required GH secrets:
+#   HEXPM_API_KEY — get one via `mix hex.user key generate` or
+#                   `gleam hex authenticate` + read its config.
+#                   Scope it to package-write only on hex.pm.
+#
+# Manual dry-run before the first real publish:
+#   ./scripts/publish.sh --dry-run
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version_override:
+        description: "Override version string (default: tag without leading v)"
+        required: false
+        type: string
+
+jobs:
+  test:
+    # Don't publish broken bits.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          gleam-version: "1.16.0"
+      - name: Regenerate per-service packages
+        # Without this, services/<svc>/src/aws/services/<svc>.gleam
+        # is missing on a fresh clone (.gitignored). The root test
+        # suite needs every service test/ imports.
+        run: ./scripts/regen.sh s3 sqs dynamodb cloudwatch-logs api-gateway transcribe-streaming eks
+      - name: Test
+        run: ./scripts/test.sh
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          gleam-version: "1.16.0"
+
+      - name: Compute version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version_override }}" ]; then
+            echo "version=${{ github.event.inputs.version_override }}" >> "$GITHUB_OUTPUT"
+          else
+            # Strip leading `v` from the tag ref. v0.2.0-rc.1 → 0.2.0-rc.1
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Regenerate every published service
+        # Same focused list as the test job — every service we
+        # actively support and publish to hex. Add new services
+        # here when ready to ship them.
+        run: ./scripts/regen.sh s3 sqs dynamodb cloudwatch-logs api-gateway transcribe-streaming eks
+
+      - name: Publish aws_runtime first
+        env:
+          HEXPM_API_KEY: ${{ secrets.HEXPM_API_KEY }}
+        run: |
+          ./scripts/publish.sh "${{ steps.version.outputs.version }}" runtime
+
+      - name: Publish per-service packages
+        env:
+          HEXPM_API_KEY: ${{ secrets.HEXPM_API_KEY }}
+        run: |
+          ./scripts/publish.sh "${{ steps.version.outputs.version }}" services
