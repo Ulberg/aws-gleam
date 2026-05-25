@@ -42,6 +42,23 @@
 //// exception) does not take the process down: the runtime traps it, reports
 //// it to `/error` as an `"Unhandled"` failure, and serves the next event.
 ////
+//// ## Deploying
+////
+//// Lambda ships no managed BEAM runtime, so deploy as an OS-only custom
+//// runtime (`provided.al2023`). The package needs an executable `bootstrap`
+//// at its root that boots the VM and runs your `main`; for an Erlang release
+//// built against Amazon Linux 2023 that is roughly:
+////
+//// ```sh
+//// #!/bin/sh
+//// set -eu
+//// exec "${LAMBDA_TASK_ROOT}/bin/my_app" foreground
+//// ```
+////
+//// In that process Lambda sets `AWS_LAMBDA_RUNTIME_API` (the endpoint this
+//// module talks to), plus `_HANDLER` and `LAMBDA_TASK_ROOT`. The handler is
+//// whatever your `main` passes to `start`, so `_HANDLER` is unused.
+////
 //// [api]: https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html
 
 import aws/internal/http_send.{type HttpError, type Send}
@@ -190,7 +207,8 @@ pub fn json_handler(
   fn(payload: BitArray, context: Context) {
     use event <- result.try(decode_payload(payload, decoder))
     case handler(event, context) {
-      Ok(response) -> Ok(bit_array.from_string(json.to_string(encode(response))))
+      Ok(response) ->
+        Ok(bit_array.from_string(json.to_string(encode(response))))
       Error(message) -> Error(invocation_error("Handler.Error", message))
     }
   }
@@ -287,13 +305,9 @@ fn crash_to_error(crash: HandlerCrash) -> InvocationError {
 /// Poll `GET /runtime/invocation/next` for the next event. Blocks until
 /// Lambda has an invocation to deliver.
 pub fn next(api: Api) -> Result(Invocation, RuntimeError) {
-  use request <- result.try(build_request(
-    http.Get,
-    api,
-    "/runtime/invocation/next",
-    <<>>,
-    [],
-  ))
+  use request <- result.try(
+    build_request(http.Get, api, "/runtime/invocation/next", <<>>, []),
+  )
   use response <- result.try(send(api, request))
   case response.status {
     200 -> parse_invocation(response)
@@ -307,13 +321,15 @@ pub fn send_response(
   request_id: String,
   body: BitArray,
 ) -> Result(Nil, RuntimeError) {
-  use request <- result.try(build_request(
-    http.Post,
-    api,
-    "/runtime/invocation/" <> request_id <> "/response",
-    body,
-    [],
-  ))
+  use request <- result.try(
+    build_request(
+      http.Post,
+      api,
+      "/runtime/invocation/" <> request_id <> "/response",
+      body,
+      [],
+    ),
+  )
   expect_accepted(api, "response", request)
 }
 
@@ -352,7 +368,9 @@ pub fn send_init_error(
 
 // --- Wire helpers ---------------------------------------------------------
 
-fn parse_invocation(response: Response(BitArray)) -> Result(Invocation, RuntimeError) {
+fn parse_invocation(
+  response: Response(BitArray),
+) -> Result(Invocation, RuntimeError) {
   case response.get_header(response, "lambda-runtime-aws-request-id") {
     Error(_) -> Error(MissingRequestId)
     Ok(request_id) -> {
@@ -379,7 +397,10 @@ fn parse_invocation(response: Response(BitArray)) -> Result(Invocation, RuntimeE
   }
 }
 
-fn optional_header(response: Response(BitArray), name: String) -> Option(String) {
+fn optional_header(
+  response: Response(BitArray),
+  name: String,
+) -> Option(String) {
   option.from_result(response.get_header(response, name))
 }
 
@@ -428,7 +449,10 @@ fn decode_payload(
   ))
 }
 
-fn send(api: Api, request: Request(BitArray)) -> Result(Response(BitArray), RuntimeError) {
+fn send(
+  api: Api,
+  request: Request(BitArray),
+) -> Result(Response(BitArray), RuntimeError) {
   api.send(request) |> result.map_error(Transport)
 }
 
@@ -440,7 +464,8 @@ fn expect_accepted(
   use response <- result.try(send(api, request))
   case response.status >= 200 && response.status < 300 {
     True -> Ok(Nil)
-    False -> Error(UnexpectedStatus(endpoint: endpoint, status: response.status))
+    False ->
+      Error(UnexpectedStatus(endpoint: endpoint, status: response.status))
   }
 }
 

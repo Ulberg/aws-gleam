@@ -66,7 +66,7 @@ pub fn sqs_decoder() -> Decoder(SqsEvent) {
   use records <- decode.optional_field(
     "Records",
     [],
-    nullable_list(sqs_message_decoder()),
+    decode.list(sqs_message_decoder()),
   )
   decode.success(SqsEvent(records: records))
 }
@@ -78,12 +78,12 @@ fn sqs_message_decoder() -> Decoder(SqsMessage) {
   use attributes <- decode.optional_field(
     "attributes",
     dict.new(),
-    nullable_string_dict(),
+    string_dict(),
   )
   use message_attributes <- decode.optional_field(
     "messageAttributes",
     dict.new(),
-    nullable_dict(sqs_message_attribute_decoder()),
+    optional_dict(sqs_message_attribute_decoder()),
   )
   use md5_of_body <- decode.optional_field("md5OfBody", "", decode.string)
   use event_source <- decode.optional_field("eventSource", "", decode.string)
@@ -143,25 +143,21 @@ pub fn api_gateway_decoder() -> Decoder(ApiGatewayProxyRequest) {
   use resource <- decode.optional_field("resource", "", decode.string)
   use path <- decode.optional_field("path", "", decode.string)
   use http_method <- decode.optional_field("httpMethod", "", decode.string)
-  use headers <- decode.optional_field(
-    "headers",
-    dict.new(),
-    nullable_string_dict(),
-  )
+  use headers <- decode.optional_field("headers", dict.new(), string_dict())
   use query_string_parameters <- decode.optional_field(
     "queryStringParameters",
     dict.new(),
-    nullable_string_dict(),
+    string_dict(),
   )
   use path_parameters <- decode.optional_field(
     "pathParameters",
     dict.new(),
-    nullable_string_dict(),
+    string_dict(),
   )
   use stage_variables <- decode.optional_field(
     "stageVariables",
     dict.new(),
-    nullable_string_dict(),
+    string_dict(),
   )
   use body <- decode.optional_field(
     "body",
@@ -171,7 +167,7 @@ pub fn api_gateway_decoder() -> Decoder(ApiGatewayProxyRequest) {
   use is_base64_encoded <- decode.optional_field(
     "isBase64Encoded",
     False,
-    nullable_bool(),
+    optional_bool(),
   )
   decode.success(ApiGatewayProxyRequest(
     resource: resource,
@@ -223,27 +219,23 @@ pub fn api_gateway_v2_decoder() -> Decoder(ApiGatewayV2Request) {
   use cookies <- decode.optional_field(
     "cookies",
     [],
-    nullable_list(decode.string),
+    decode.list(decode.string),
   )
-  use headers <- decode.optional_field(
-    "headers",
-    dict.new(),
-    nullable_string_dict(),
-  )
+  use headers <- decode.optional_field("headers", dict.new(), string_dict())
   use query_string_parameters <- decode.optional_field(
     "queryStringParameters",
     dict.new(),
-    nullable_string_dict(),
+    string_dict(),
   )
   use path_parameters <- decode.optional_field(
     "pathParameters",
     dict.new(),
-    nullable_string_dict(),
+    string_dict(),
   )
   use stage_variables <- decode.optional_field(
     "stageVariables",
     dict.new(),
-    nullable_string_dict(),
+    string_dict(),
   )
   use method <- decode.then(decode.optionally_at(
     ["requestContext", "http", "method"],
@@ -268,7 +260,7 @@ pub fn api_gateway_v2_decoder() -> Decoder(ApiGatewayV2Request) {
   use is_base64_encoded <- decode.optional_field(
     "isBase64Encoded",
     False,
-    nullable_bool(),
+    optional_bool(),
   )
   decode.success(ApiGatewayV2Request(
     version: version,
@@ -322,7 +314,7 @@ pub fn eventbridge_decoder(
   use resources <- decode.optional_field(
     "resources",
     [],
-    nullable_list(decode.string),
+    decode.list(decode.string),
   )
   use detail <- decode.field("detail", detail_decoder)
   decode.success(EventBridgeEvent(
@@ -368,7 +360,7 @@ pub fn s3_decoder() -> Decoder(S3Event) {
   use records <- decode.optional_field(
     "Records",
     [],
-    nullable_list(s3_record_decoder()),
+    decode.list(s3_record_decoder()),
   )
   decode.success(S3Event(records: records))
 }
@@ -456,7 +448,7 @@ pub fn sns_decoder() -> Decoder(SnsEvent) {
   use records <- decode.optional_field(
     "Records",
     [],
-    nullable_list(sns_record_decoder()),
+    decode.list(sns_record_decoder()),
   )
   decode.success(SnsEvent(records: records))
 }
@@ -498,24 +490,27 @@ fn sns_message_decoder() -> Decoder(SnsMessage) {
 }
 
 // --- Shared null-tolerant combinators -------------------------------------
+//
+// These tolerate a JSON `null` (API Gateway sends `null`, not `{}`, for an
+// empty `queryStringParameters` / `pathParameters` / `stageVariables`) by
+// mapping it to the empty value. They must NOT swallow a genuine decode
+// error in a present value — that would silently drop malformed data — so
+// they key off `decode.optional`, which only short-circuits on `null`, and
+// let any other failure propagate. An absent key is handled separately by
+// the `optional_field` default at the call site.
 
-/// A `Dict(String, String)` that AWS sends as `null` (not `{}`) when empty.
-/// Treats a JSON `null` as an empty dict; an absent key is handled by the
-/// `optional_field` default at the call site.
-fn nullable_string_dict() -> Decoder(Dict(String, String)) {
-  nullable_dict(decode.string)
+fn string_dict() -> Decoder(Dict(String, String)) {
+  optional_dict(decode.string)
 }
 
-fn nullable_dict(value: Decoder(value)) -> Decoder(Dict(String, value)) {
-  decode.one_of(decode.dict(decode.string, value), or: [
-    decode.success(dict.new()),
-  ])
+fn optional_dict(value: Decoder(value)) -> Decoder(Dict(String, value)) {
+  decode.dict(decode.string, value)
+  |> decode.optional
+  |> decode.map(fn(maybe) { option.unwrap(maybe, dict.new()) })
 }
 
-fn nullable_list(inner: Decoder(a)) -> Decoder(List(a)) {
-  decode.one_of(decode.list(inner), or: [decode.success([])])
-}
-
-fn nullable_bool() -> Decoder(Bool) {
-  decode.one_of(decode.bool, or: [decode.success(False)])
+fn optional_bool() -> Decoder(Bool) {
+  decode.bool
+  |> decode.optional
+  |> decode.map(fn(maybe) { option.unwrap(maybe, False) })
 }
