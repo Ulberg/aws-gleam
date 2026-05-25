@@ -199,11 +199,12 @@ jobs:
       # wrongly treated as up-to-date and never recompiled — the stale
       # .beam then drops any newly-added exports and callers fail at
       # runtime with `undef`. Touch native sources after the cache
-      # restore so incremental compilation rebuilds them. Cheap: only a
-      # handful of .erl files; .gleam modules are untouched, so the
-      # service build cache is preserved.
+      # restore so incremental compilation rebuilds them. Scoped to the
+      # source dirs (no `-not`/`-path`, which the macOS/BSD `find`
+      # handles inconsistently). Cheap: only a few .erl files; .gleam
+      # modules are untouched, so the service build cache is preserved.
       - name: Refresh native FFI sources (defeat stale build-cache mtimes)
-        run: find . -type f -name '*.erl' -not -path './build/*' -exec touch {} +
+        run: find runtime services test -type f -name '*.erl' -exec touch {} +
 
       - name: Run tests
         run: ./scripts/test.sh
