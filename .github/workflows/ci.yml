@@ -193,18 +193,22 @@ jobs:
       - name: Check formatting
         run: gleam format --check src test
 
-      # gleam content-hashes .gleam modules but mtime-checks native
-      # (.erl) files. A restored build/ cache has artifact mtimes newer
-      # than the freshly-checked-out sources, so a changed FFI .erl is
-      # wrongly treated as up-to-date and never recompiled — the stale
-      # .beam then drops any newly-added exports and callers fail at
-      # runtime with `undef`. Touch native sources after the cache
-      # restore so incremental compilation rebuilds them. Scoped to the
-      # source dirs (no `-not`/`-path`, which the macOS/BSD `find`
-      # handles inconsistently). Cheap: only a few .erl files; .gleam
-      # modules are untouched, so the service build cache is preserved.
-      - name: Refresh native FFI sources (defeat stale build-cache mtimes)
-        run: find runtime services test -type f -name '*.erl' -exec touch {} +
+      # gleam content-hashes .gleam modules but tracks native (.erl) files
+      # by mtime. A build/ restored from cache has artifacts newer than the
+      # freshly-checked-out sources, so a changed FFI .erl is treated as
+      # up-to-date and never recompiled — the stale .beam then drops any
+      # newly-added exports and callers fail at runtime with `undef`.
+      # Force incremental compilation to rebuild the native modules two
+      # independent ways (whichever the runner honours): delete the
+      # compiled FFI artifacts, and bump the source mtimes. Both are
+      # surgical — only native modules; every .gleam (incl. the ~409
+      # services) stays cached. Verified locally that a stale aws_ffi.beam
+      # otherwise fails the rescue_call tests with `undef`.
+      - name: Rebuild native FFI modules (defeat stale build cache)
+        run: |
+          rm -f build/dev/erlang/*/ebin/*_ffi.beam \
+                build/dev/erlang/*/_gleam_artefacts/*_ffi.erl
+          find runtime services test -type f -name '*.erl' -exec touch {} +
 
       - name: Run tests
         run: ./scripts/test.sh
