@@ -181,13 +181,27 @@ jobs:
         with:
           path: |
             src/aws/services
+            services/api_gateway/src
+            services/cloudwatch_logs/src
+            services/dynamodb/src
+            services/eks/src
+            services/s3/src
+            services/sqs/src
+            services/transcribe_streaming/src
             test/fixtures/protocol-tests
             test/fixtures/endpoints
             test/protocol_tests
-          key: codegen-${{ runner.os }}-${{ steps.cache-keys.outputs.subs }}-${{ steps.cache-keys.outputs.codegen }}
+          key: codegen-svcsrc-${{ runner.os }}-${{ steps.cache-keys.outputs.subs }}-${{ steps.cache-keys.outputs.codegen }}
 
       - name: Regenerate codegen artefacts
-        if: steps.cache-codegen.outputs.cache-hit != 'true'
+        # Also regen when a path-dependency service's generated `src` is
+        # absent. The codegen cache historically omitted `services/*/src`,
+        # so a cache hit could restore `src/aws/services` yet leave the
+        # per-package sources missing — which breaks path-dependency
+        # resolution in `gleam test` on any PR that busts the build cache
+        # (`main` survives only on an exact build-cache hit). The
+        # hashFiles guard self-heals a cache that predates the path above.
+        if: steps.cache-codegen.outputs.cache-hit != 'true' || hashFiles('services/api_gateway/src/**') == ''
         run: ./scripts/regen.sh
 
       - name: Check formatting
