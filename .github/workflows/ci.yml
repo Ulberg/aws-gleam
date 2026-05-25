@@ -68,7 +68,7 @@ jobs:
                               test/protocol_tests/loader.gleam test/protocol_tests/cases.gleam)
           build=$(tree_hash codegen/src codegen/gleam.toml codegen/manifest.toml \
                             scripts/regen.sh scripts/build-protocol-test-asts.sh scripts/extract-endpoints.sh \
-                            src test \
+                            runtime services src test \
                             manifest.toml gleam.toml)
           deps=$(tree_hash manifest.toml gleam.toml)
 
@@ -192,6 +192,18 @@ jobs:
 
       - name: Check formatting
         run: gleam format --check src test
+
+      # gleam content-hashes .gleam modules but mtime-checks native
+      # (.erl) files. A restored build/ cache has artifact mtimes newer
+      # than the freshly-checked-out sources, so a changed FFI .erl is
+      # wrongly treated as up-to-date and never recompiled — the stale
+      # .beam then drops any newly-added exports and callers fail at
+      # runtime with `undef`. Touch native sources after the cache
+      # restore so incremental compilation rebuilds them. Cheap: only a
+      # handful of .erl files; .gleam modules are untouched, so the
+      # service build cache is preserved.
+      - name: Refresh native FFI sources (defeat stale build-cache mtimes)
+        run: find . -type f -name '*.erl' -not -path './build/*' -exec touch {} +
 
       - name: Run tests
         run: ./scripts/test.sh
