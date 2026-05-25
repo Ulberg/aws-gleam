@@ -8,7 +8,7 @@
          float_neg_infinity/0, float_is_nan/1, float_is_infinite/1,
          json_canonicalize/1, xml_parse/1, float_short/1,
          format_iso8601/1, parse_http_date/1, format_http_date/1,
-         idempotency_token/0]).
+         idempotency_token/0, set_env/2, rescue_call/1]).
 
 %% Shortest round-tripping float string, e.g. `1.1` not `1.10000000…e+00`.
 %% Used by query / header / URI-label / XML formatters; matches AWS's
@@ -179,6 +179,46 @@ get_env(Name) ->
         false -> {error, nil};
         Value -> {ok, list_to_binary(Value)}
     end.
+
+%% Set an OS environment variable. The Lambda runtime uses this to copy
+%% the per-invocation X-Ray trace id from the `Lambda-Runtime-Trace-Id`
+%% response header into `_X_AMZ_TRACE_ID`, the variable the AWS SDKs read
+%% to attach downstream calls to the active trace. Returns nil.
+set_env(Name, Value) when is_binary(Name), is_binary(Value) ->
+    os:putenv(binary_to_list(Name), binary_to_list(Value)),
+    nil.
+
+%% Run a 0-arity fun inside try/catch and reflect the outcome as a Gleam
+%% Result. Success becomes {ok, Value}; any raise/throw/exit becomes
+%% {error, {handler_crash, Class, Message, StackLines}} — i.e. the Gleam
+%% value Error(HandlerCrash(class, message, stack_trace)). The Lambda
+%% runtime wraps each user handler call in this so an exception is
+%% reported to the Runtime API /error endpoint (and the loop survives to
+%% serve the next invocation) instead of taking the whole process down.
+rescue_call(Fun) when is_function(Fun, 0) ->
+    try {ok, Fun()}
+    catch
+        Class:Reason:Stack ->
+            {error, {handler_crash,
+                     atom_to_binary(Class, utf8),
+                     reason_to_binary(Reason),
+                     stack_to_lines(Stack)}}
+    end.
+
+%% Gleam `panic`, `todo`, and failed `let assert` raise a map carrying a
+%% `message` binary; surface that verbatim. Everything else gets a
+%% depth-bounded ~p rendering so a deeply nested term can't produce an
+%% unbounded error body.
+reason_to_binary(Reason) when is_map(Reason) ->
+    case Reason of
+        #{message := M} when is_binary(M) -> M;
+        _ -> iolist_to_binary(io_lib:format("~tP", [Reason, 12]))
+    end;
+reason_to_binary(Reason) ->
+    iolist_to_binary(io_lib:format("~tP", [Reason, 12])).
+
+stack_to_lines(Stack) ->
+    [iolist_to_binary(io_lib:format("~tP", [Frame, 8])) || Frame <- Stack].
 
 %% Read a file as text. Path is a binary; return {ok, Binary} | {error, nil}.
 %% Used by the default profile-provider reader so the runtime doesn't take
