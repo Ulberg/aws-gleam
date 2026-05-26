@@ -10,6 +10,7 @@
 //// `AWS_REGION` explicitly, and the few that rely on IMDS region
 //// auto-detection can call `from_imds` themselves and feed the result in.
 
+import aws/env.{get_env}
 import aws/internal/ini
 import gleam/bit_array
 import gleam/option.{type Option, None, Some}
@@ -98,10 +99,7 @@ fn option_try(
   }
 }
 
-// --- FFI wrappers, scoped to this module to avoid coupling with credentials ---
-
-@external(erlang, "aws_ffi", "get_env")
-fn get_env(name: String) -> Result(String, Nil)
+// --- FFI wrapper, scoped to this module ---
 
 @external(erlang, "aws_ffi", "read_file")
 fn read_file_bits(path: String) -> Result(BitArray, Nil)
