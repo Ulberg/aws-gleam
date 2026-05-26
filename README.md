@@ -21,10 +21,9 @@ shipped. Current capabilities:
   endpoints) — algorithm, IAM key derivation
   (`derive_signing_key(akid, secret)`), one-call
   `sign_with_iam_credentials`, session-token + `omit_session_token`,
-  `normalize_path`, plus per-Client opt-in via
-  `<service>.with_sigv4a_region_set(client, region_set)` — every
-  generated service has the setter, and `runtime.prepare_signed_request`
-  routes through `sigv4a.sign_with_credentials` when present. Fixture-
+  `normalize_path`, plus opt-in via the `sigv4a_region_set` field on
+  `config.Settings` — and `runtime.prepare_signed_request` routes
+  through `sigv4a.sign_with_credentials` when present. Fixture-
   driven corpus loop pins canonical request + string-to-sign byte-
   for-byte across the aws-c-auth `aws-signing-test-suite/v4a/*` set.
   RFC 6979 deterministic nonces (which would unblock signature-byte
@@ -35,14 +34,14 @@ shipped. Current capabilities:
   Per-`Client` cache actor (`credentials_cache`) coalesces concurrent
   fetches; both it and the retry `rate_limiter` expose
   `shutdown` / `shutdown_sync` lifecycle helpers.
-- Auto-region: `<service>.new_with_auto_region()` walks
+- Auto-region: the full-auto `<service>.new()` walks
   `AWS_REGION` / `AWS_DEFAULT_REGION` / `~/.aws/config`.
 - Smithy endpoint rule sets bundled at codegen time and evaluated per
   request. `runtime.invoke_with_endpoint_params` threads
   operation-specific params (S3 `Bucket` / `Key`).
 - Retry: `retry.standard` (default) + `retry.adaptive(bucket)` —
-  wired into `runtime.invoke`.
-  Per-Client tuning via `<service>.with_max_attempts(client, n)`.
+  wired into `runtime.invoke`. Tune via the `max_attempts` /
+  `retry_strategy` fields on `config.Settings`.
 - restXml decoder: `@xmlFlattened` lists + struct-member `@xmlName` +
   `@httpHeader` / `@httpResponseCode` output bindings + `<Error><Code>`
   error-type extraction.
@@ -54,8 +53,8 @@ shipped. Current capabilities:
   dispatcher (M18: SHA256 / SHA1 / CRC32 / CRC32C).
 - **Streaming HTTP transport** (chunked) via `aws_streaming_ffi:streaming_send`
   in OTP's `httpc` async-self mode. The SDK runtime's
-  `streaming_http_send` defaults to this; opt into HTTP/2 via
-  `<service>.with_http2(client)`. Codegen-emitted
+  `streaming_http_send` defaults to this; opt into HTTP/2 via the
+  `use_http2` field on `config.Settings`. Codegen-emitted
   `<op>_streaming(client, input) -> Result(streaming.Response,
   runtime.ClientError)` for every `@streaming`-blob output op
   (S3.GetObject, Polly.SynthesizeSpeech, Bedrock, etc.) and
@@ -81,15 +80,34 @@ shipped. Current capabilities:
 
 ## Using the SDK
 
+There are two construction entry points — and that's the whole story:
+
+- **Full auto** — `<service>.new()`. Region resolves from `AWS_REGION` /
+  `AWS_DEFAULT_REGION` / `~/.aws/config` and credentials from the default
+  chain. Zero config; the path you want in Lambda / ECS / EC2.
+- **Customised** — `<service>.new_with(config.Settings(..config.default_settings(), …))`.
+  Start from `default_settings()` and override only the fields you care
+  about. Every knob (region, credentials, endpoint URL, retry, transports,
+  SigV4a, endpoint params) lives on the one `config.Settings` record —
+  there are no post-construction `with_*` setters.
+
 ```gleam
+import aws/config.{Settings, default_settings}
 import aws/services/dynamodb
 import gleam/option.{None, Some}
 
 pub fn main() {
-  // Build a client. Credentials resolve through the default chain;
-  // region resolves from AWS_REGION / config when `new_with_auto_region`
-  // is used.
-  let assert Ok(client) = dynamodb.new_with_auto_region()
+  // Tier 1 — full auto: region + credentials resolve themselves.
+  let assert Ok(client) = dynamodb.new()
+
+  // Tier 2/3 — spread the defaults, override what you need:
+  //
+  //   let assert Ok(client) =
+  //     dynamodb.new_with(Settings(
+  //       ..default_settings(),
+  //       region: Some("eu-west-1"),
+  //       max_attempts: Some(5),
+  //     ))
 
   let input =
     dynamodb.GetItemInput(
@@ -110,7 +128,7 @@ pub fn main() {
 }
 ```
 
-`s3.new(region:)` / `s3.list_buckets`, etc. follow the same shape — see
+`s3.new()` / `s3.list_buckets`, etc. follow the same shape — see
 the generated module under `src/aws/services/s3.gleam` after running
 `./scripts/regen.sh`. End-to-end examples ship in `src/aws/examples/`:
 

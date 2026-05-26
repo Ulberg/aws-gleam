@@ -15,6 +15,7 @@
 //// protocol. Deep behavioural coverage lives in the protocol-test
 //// corpus (`protocol_tests_test.gleam`, ~800 cases).
 
+import aws/config
 import aws/credentials
 import aws/internal/http_send as aws_http
 import aws/services/cloudwatch_logs
@@ -24,7 +25,7 @@ import gleam/erlang/process
 import gleam/http/request.{type Request}
 import gleam/http/response
 import gleam/list
-import gleam/option.{None}
+import gleam/option.{None, Some}
 import gleeunit/should
 
 fn static_credentials() -> credentials.Provider {
@@ -54,10 +55,15 @@ fn host_capturing_send(
 /// awsJson1_0 smoke: SQS.ListQueues lands on `sqs.us-east-1.amazonaws.com`.
 pub fn sqs_list_queues_resolves_to_regional_host_test() {
   let captured = process.new_subject()
-  let client =
-    sqs.new(region: "us-east-1")
-    |> sqs.with_credentials_provider(static_credentials())
-    |> sqs.with_http_send(host_capturing_send(captured))
+  let assert Ok(client) =
+    sqs.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(host_capturing_send(captured)),
+      ),
+    )
 
   let _ =
     sqs.list_queues(
@@ -77,10 +83,15 @@ pub fn sqs_list_queues_resolves_to_regional_host_test() {
 /// `logs.us-east-1.amazonaws.com`.
 pub fn cloudwatch_logs_describe_log_groups_resolves_to_regional_host_test() {
   let captured = process.new_subject()
-  let client =
-    cloudwatch_logs.new(region: "us-east-1")
-    |> cloudwatch_logs.with_credentials_provider(static_credentials())
-    |> cloudwatch_logs.with_http_send(host_capturing_send(captured))
+  let assert Ok(client) =
+    cloudwatch_logs.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(host_capturing_send(captured)),
+      ),
+    )
 
   let _ =
     cloudwatch_logs.describe_log_groups(
@@ -106,10 +117,15 @@ pub fn cloudwatch_logs_describe_log_groups_resolves_to_regional_host_test() {
 /// build path (URI template + headers + body) end-to-end.
 pub fn eks_list_clusters_resolves_to_regional_host_test() {
   let captured = process.new_subject()
-  let client =
-    eks.new(region: "us-east-1")
-    |> eks.with_credentials_provider(static_credentials())
-    |> eks.with_http_send(host_capturing_send(captured))
+  let assert Ok(client) =
+    eks.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(host_capturing_send(captured)),
+      ),
+    )
 
   let _ =
     eks.list_clusters(

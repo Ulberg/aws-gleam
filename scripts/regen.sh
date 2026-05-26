@@ -96,7 +96,7 @@ upstream Smithy model in [aws-gleam](https://github.com/Ulberg/aws-gleam).
 import aws/services/$svc
 
 pub fn main() {
-  let assert Ok(client) = $svc.new_with_auto_region()
+  let assert Ok(client) = $svc.new()
   // ... typed ops, e.g. $svc.<op>(client, input)
 }
 \`\`\`

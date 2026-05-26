@@ -1,7 +1,12 @@
 //// Shared emitter for the per-service `Client` section. Every
-//// generated service module ends up with the same shape — an
-//// opaque `Client` type, a `new(region: ...)` constructor that uses
-//// the default credentials chain, plus `with_*` knobs to override.
+//// generated service module ends up with the same shape — an opaque
+//// `Client` type and two constructors: `new()` (full auto — region +
+//// credentials resolve themselves) and `new_with(config.Settings)`
+//// (the same, from an explicit settings record built off
+//// `config.default_settings()`). All tuning lives on `config.Settings`,
+//// so there are no post-construction `with_*` setters; the shared
+//// `aws/config` module owns the knob set and the settings→config
+//// resolution.
 ////
 //// Lives in its own module so awsjson / restjson / restxml don't
 //// each carry their own copy. The output is identical regardless of
@@ -12,13 +17,10 @@ import codegen/code.{
   type Code, Blank, Call, CodeSome, Const, DocComment, Fn, Ident, LabelledParam,
   Let, LetAssert, Module, Param, StrLit, TypeDef, Use, Variant,
 }
-import codegen/trait_helpers.{
-  type ContextParamBinding, type EndpointParam, BoolParam, StringParam,
-}
+import codegen/trait_helpers.{type ContextParamBinding}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
-import internal/stringutils
 
 /// Build the AST nodes for the per-service Client section. Pairs with
 /// `code.render(code.Module(items))` at the emit site.
@@ -33,94 +35,7 @@ pub fn items(
   endpoint_prefix: String,
   signing_name: String,
   endpoint_rule_set_json: Option(String),
-  endpoint_param_setters: List(EndpointParam),
 ) -> List(Code) {
-  // Common preamble for every Client constructor: build the default
-  // config and start a per-Client credentials cache so the seven-stage
-  // chain runs once at construction rather than per signed request.
-  // The cache actor's `start` call cannot realistically fail (it is
-  // just spawning an OTP actor) so `let assert` matches the
-  // "generator-time invariant" pattern used elsewhere. The cache
-  // subject is stashed on the `Client` value so `shutdown` can
-  // release the actor cleanly.
-  let cache_setup = [
-    Let(
-      name: "config",
-      value: Call(Ident("runtime.default_config"), [
-        Ident("region"),
-        StrLit(endpoint_prefix),
-        StrLit(signing_name),
-      ]),
-    ),
-    LetAssert(
-      pattern: "Ok(cache)",
-      value: Call(Ident("credentials_cache.start_default"), [
-        Ident("config.provider"),
-      ]),
-    ),
-    Let(
-      name: "config",
-      value: Call(Ident("runtime.with_credentials_provider"), [
-        Ident("config"),
-        Call(Ident("credentials_cache.as_provider"), [Ident("cache")]),
-      ]),
-    ),
-  ]
-  // All `Client` constructions thread the same two labelled fields:
-  // `config` and `cache`. Local helpers keep the call shape in one
-  // place so adding a third field later is a single-spot edit.
-  let client_with = fn(config_expr: Code, cache_expr: Code) -> Code {
-    Call(Ident("Client"), [
-      code.Labelled(label: "config", value: config_expr),
-      code.Labelled(label: "cache", value: cache_expr),
-    ])
-  }
-  let client_call = client_with(Ident("config"), Ident("cache"))
-  let new_body = case endpoint_rule_set_json {
-    None -> code.Block(items: list.flatten([cache_setup, [client_call]]))
-    Some(_) ->
-      // Parse the embedded rule set, then chain it onto the default
-      // config. The `let assert` is justified because the JSON is a
-      // codegen-time constant — if it ever fails to parse, that is a
-      // generator bug rather than a runtime concern.
-      code.Block(
-        items: list.flatten([
-          cache_setup,
-          [
-            LetAssert(
-              pattern: "Ok(rule_set)",
-              value: Call(Ident("endpoints.parse_rule_set"), [
-                Ident("endpoint_rule_set_json"),
-              ]),
-            ),
-            Let(
-              name: "config",
-              value: Call(Ident("runtime.with_endpoint_rule_set"), [
-                Ident("config"),
-                Ident("rule_set"),
-              ]),
-            ),
-            client_call,
-          ],
-        ]),
-      )
-  }
-  let rule_set_constant = case endpoint_rule_set_json {
-    None -> []
-    Some(json) -> [
-      DocComment([
-        "Smithy endpoint rule set for this service, lifted verbatim",
-        "from the source model. Parsed once in `new` and attached to",
-        "every Client via `runtime.with_endpoint_rule_set`.",
-      ]),
-      Const(
-        name: "endpoint_rule_set_json",
-        type_: "String",
-        value: StrLit(json),
-      ),
-      Blank,
-    ]
-  }
   let header = [
     TypeDef(public: True, is_opaque: True, name: "Client", variants: [
       Variant(name: "Client", fields: [
@@ -130,253 +45,144 @@ pub fn items(
     ]),
     Blank,
   ]
-  let new_section = [
+  let rule_set_constant = case endpoint_rule_set_json {
+    None -> []
+    Some(json) -> [
+      DocComment([
+        "Smithy endpoint rule set for this service, lifted verbatim from",
+        "the source model. Parsed once in `new_with` and attached to every",
+        "Client via `runtime.with_endpoint_rule_set`.",
+      ]),
+      Const(
+        name: "endpoint_rule_set_json",
+        type_: "String",
+        value: StrLit(json),
+      ),
+      Blank,
+    ]
+  }
+  list.flatten([
+    header,
+    rule_set_constant,
+    new_section(endpoint_prefix, signing_name, endpoint_rule_set_json),
+    lifecycle_section(),
+  ])
+}
+
+/// The two construction entry points every service exposes:
+///   * `new()` — full auto, region + credentials resolve themselves.
+///   * `new_with(settings)` — same, but from an explicit `config.Settings`
+///     (built off `config.default_settings()`). All tuning lives on that
+///     record, so there are no post-construction `with_*` setters.
+fn new_section(
+  endpoint_prefix: String,
+  signing_name: String,
+  endpoint_rule_set_json: Option(String),
+) -> List(Code) {
+  [
     DocComment([
-      "Build a Client for an AWS region. Credentials resolve through",
-      "the default chain (env → web-identity → SSO → profile → process",
-      "→ ECS → IMDS); use `with_credentials_provider` to override.",
+      "Build a Client with everything resolved automatically: the region",
+      "from the standard AWS sources (`AWS_REGION`, `AWS_DEFAULT_REGION`,",
+      "`~/.aws/config`) and credentials from the default chain. Zero",
+      "config — the path you want in Lambda / ECS / EC2, where the",
+      "environment always supplies a region. `Error(_)` only when no",
+      "source provides one; pass an explicit region via `new_with` then.",
     ]),
     Fn(
       public: True,
       name: "new",
-      params: [LabelledParam(label: "region", name: "region", type_: "String")],
-      return: CodeSome("Client"),
-      body: new_body,
-    ),
-    Blank,
-    DocComment([
-      "Build a Client by resolving the region from the standard AWS",
-      "sources (`AWS_REGION`, `AWS_DEFAULT_REGION`, `~/.aws/config`).",
-      "Returns `Error(_)` when no source supplies a region — typical in",
-      "Lambda/ECS/EC2 where exactly one of these is always set.",
-    ]),
-    Fn(
-      public: True,
-      name: "new_with_auto_region",
       params: [],
       return: CodeSome("Result(Client, region.ResolveError)"),
-      body: code.Block(items: [
-        Use(
-          name: "resolved",
-          callee: Call(Ident("result.try"), [
-            Call(Ident("region.resolve"), [
-              code.Labelled(label: "profile", value: StrLit("default")),
-            ]),
-          ]),
-        ),
-        Call(Ident("Ok"), [
-          Call(Ident("new"), [
-            code.Labelled(label: "region", value: Ident("resolved")),
-          ]),
-        ]),
-      ]),
+      body: Call(Ident("new_with"), [Call(Ident("config.default_settings"), [])]),
+    ),
+    Blank,
+    DocComment([
+      "Build a Client from explicit `config.Settings`. Start from",
+      "`config.default_settings()` and override only the fields you need",
+      "(`region`, `credentials`, `endpoint_url`, `max_attempts`, …) with a",
+      "record-update spread. Region auto-resolves when `settings.region`",
+      "is `None` — the only failure path; credentials resolve lazily on",
+      "the first request.",
+    ]),
+    Fn(
+      public: True,
+      name: "new_with",
+      params: [Param(name: "settings", type_: "config.Settings")],
+      return: CodeSome("Result(Client, region.ResolveError)"),
+      body: new_with_body(endpoint_prefix, signing_name, endpoint_rule_set_json),
     ),
     Blank,
   ]
-  let withers = [
-    DocComment([
-      "Override the credentials provider — use for non-default",
-      "profiles, in-process static credentials, or a custom chain.",
-      "The supplied provider is wrapped in a fresh per-Client",
-      "credentials cache so callers don't lose refresh/coalesce",
-      "behaviour by overriding the default chain. The previously",
-      "running cache actor is stopped — call this on a Client value",
-      "you intend to keep, not on one that's about to be discarded.",
-    ]),
-    Fn(
-      public: True,
-      name: "with_credentials_provider",
-      params: [
-        Param(name: "client", type_: "Client"),
-        Param(name: "provider", type_: "credentials.Provider"),
-      ],
-      return: CodeSome("Client"),
-      body: code.Block(items: [
-        Let(
-          name: "_",
-          value: Call(Ident("credentials_cache.shutdown"), [
-            Ident("client.cache"),
-          ]),
-        ),
-        LetAssert(
-          pattern: "Ok(cache)",
-          value: Call(Ident("credentials_cache.start_default"), [
-            Ident("provider"),
-          ]),
-        ),
-        client_with(
-          Call(Ident("runtime.with_credentials_provider"), [
-            Ident("client.config"),
-            Call(Ident("credentials_cache.as_provider"), [Ident("cache")]),
-          ]),
-          Ident("cache"),
-        ),
+}
+
+/// `new_with`'s body: resolve the settings into a `runtime.ClientConfig`,
+/// attach the embedded rule set (when present), then start exactly one
+/// per-Client credentials cache around the resolved provider. The
+/// `let assert`s are generator-time invariants — the rule-set JSON is a
+/// codegen constant and the cache `start` only spawns an actor, so a
+/// failure there is an SDK bug, not a runtime condition.
+fn new_with_body(
+  endpoint_prefix: String,
+  signing_name: String,
+  endpoint_rule_set_json: Option(String),
+) -> Code {
+  let resolve_step =
+    Use(
+      name: "cfg",
+      callee: Call(Ident("result.map"), [
+        Call(Ident("config.resolve"), [
+          Ident("settings"),
+          code.Labelled(
+            label: "endpoint_prefix",
+            value: StrLit(endpoint_prefix),
+          ),
+          code.Labelled(label: "signing_name", value: StrLit(signing_name)),
+        ]),
+      ]),
+    )
+  let rule_set_steps = case endpoint_rule_set_json {
+    None -> []
+    Some(_) -> [
+      LetAssert(
+        pattern: "Ok(rule_set)",
+        value: Call(Ident("endpoints.parse_rule_set"), [
+          Ident("endpoint_rule_set_json"),
+        ]),
+      ),
+      Let(
+        name: "cfg",
+        value: Call(Ident("runtime.with_endpoint_rule_set"), [
+          Ident("cfg"),
+          Ident("rule_set"),
+        ]),
+      ),
+    ]
+  }
+  let cache_steps = [
+    LetAssert(
+      pattern: "Ok(cache)",
+      value: Call(Ident("credentials_cache.start_default"), [
+        Ident("cfg.provider"),
       ]),
     ),
-    Blank,
-    DocComment([
-      "Override the endpoint URL (LocalStack, FIPS endpoints, custom DNS).",
-    ]),
-    Fn(
-      public: True,
-      name: "with_endpoint_url",
-      params: [
-        Param(name: "client", type_: "Client"),
-        Param(name: "url", type_: "String"),
-      ],
-      return: CodeSome("Client"),
-      body: client_with(
-        Call(Ident("runtime.with_endpoint_url"), [
-          Ident("client.config"),
-          Ident("url"),
-        ]),
-        Ident("client.cache"),
-      ),
+    Let(
+      name: "cfg",
+      value: Call(Ident("runtime.with_credentials_provider"), [
+        Ident("cfg"),
+        Call(Ident("credentials_cache.as_provider"), [Ident("cache")]),
+      ]),
     ),
-    Blank,
-    DocComment([
-      "Swap the HTTP transport — useful for canned-response test doubles.",
+    Call(Ident("Client"), [
+      code.Labelled(label: "config", value: Ident("cfg")),
+      code.Labelled(label: "cache", value: Ident("cache")),
     ]),
-    Fn(
-      public: True,
-      name: "with_http_send",
-      params: [
-        Param(name: "client", type_: "Client"),
-        Param(name: "send", type_: "http_send.Send"),
-      ],
-      return: CodeSome("Client"),
-      body: client_with(
-        Call(Ident("runtime.with_http_send"), [
-          Ident("client.config"),
-          Ident("send"),
-        ]),
-        Ident("client.cache"),
-      ),
-    ),
-    Blank,
-    DocComment([
-      "Swap the streaming HTTP transport. Same role as `with_http_send`",
-      "but targets the `@streaming` output path (`runtime.invoke_streaming`).",
-      "Use for canned-response test doubles on streaming ops, or to plug",
-      "in a custom chunked transport (proxy, gRPC tunnel, instrumented",
-      "sender) without disturbing the buffered path.",
-    ]),
-    Fn(
-      public: True,
-      name: "with_streaming_http_send",
-      params: [
-        Param(name: "client", type_: "Client"),
-        Param(name: "send", type_: "http_send.StreamingSend"),
-      ],
-      return: CodeSome("Client"),
-      body: client_with(
-        Call(Ident("runtime.with_streaming_http_send"), [
-          Ident("client.config"),
-          Ident("send"),
-        ]),
-        Ident("client.cache"),
-      ),
-    ),
-    Blank,
-    DocComment([
-      "Switch the streaming sender to the HTTP/2 variant. httpc adds",
-      "`{http_version, \"HTTP/2\"}` to its option list; servers that",
-      "don't speak HTTP/2 negotiate down to HTTP/1.1 via ALPN, so",
-      "calls keep working even when the peer doesn't support it.",
-      "Buffered requests (`with_http_send`) are unaffected — HTTP/2",
-      "is for high-throughput streaming endpoints (S3 multipart,",
-      "Bedrock streaming, Transcribe).",
-    ]),
-    Fn(
-      public: True,
-      name: "with_http2",
-      params: [Param(name: "client", type_: "Client")],
-      return: CodeSome("Client"),
-      body: client_with(
-        Call(Ident("runtime.with_http2"), [Ident("client.config")]),
-        Ident("client.cache"),
-      ),
-    ),
-    Blank,
-    DocComment([
-      "Opt the Client into SigV4a (asymmetric ECDSA P-256) signing",
-      "for every request. `region_set` becomes the `X-Amz-Region-Set`",
-      "header — single-region callers pass `[\"us-east-1\"]`,",
-      "multi-region callers pass the full list. Required for S3",
-      "Multi-Region Access Points and any other endpoint that demands",
-      "AWS4-ECDSA-P256-SHA256 signatures.",
-    ]),
-    Fn(
-      public: True,
-      name: "with_sigv4a_region_set",
-      params: [
-        Param(name: "client", type_: "Client"),
-        Param(name: "region_set", type_: "List(String)"),
-      ],
-      return: CodeSome("Client"),
-      body: client_with(
-        Call(Ident("runtime.with_sigv4a_region_set"), [
-          Ident("client.config"),
-          Ident("region_set"),
-        ]),
-        Ident("client.cache"),
-      ),
-    ),
-    Blank,
-    DocComment([
-      "Override SigV4a's `normalize_path` (RFC 3986 dot-segment removal).",
-      "No-op when `with_sigv4a_region_set` has not been called yet — the",
-      "knob lives on the per-Client SigV4a state, not on the underlying",
-      "transport. S3 callers need `False` so object keys with `.` / `..`",
-      "survive the canonical-request step.",
-    ]),
-    Fn(
-      public: True,
-      name: "with_sigv4a_path_normalization",
-      params: [
-        Param(name: "client", type_: "Client"),
-        Param(name: "normalize", type_: "Bool"),
-      ],
-      return: CodeSome("Client"),
-      body: client_with(
-        Call(Ident("runtime.with_sigv4a_path_normalization"), [
-          Ident("client.config"),
-          Ident("normalize"),
-        ]),
-        Ident("client.cache"),
-      ),
-    ),
-    Blank,
-    DocComment([
-      "Override the retry attempt budget on the underlying ClientConfig.",
-      "The common case for retry tuning — pass `1` to disable retries",
-      "entirely (single attempt per request), `5` for long-running batch",
-      "workloads. Preserves the other retry knobs (delays, sleep, rng,",
-      "rate-limiter); use `runtime.with_retry_strategy` for full control.",
-    ]),
-    Fn(
-      public: True,
-      name: "with_max_attempts",
-      params: [
-        Param(name: "client", type_: "Client"),
-        Param(name: "n", type_: "Int"),
-      ],
-      return: CodeSome("Client"),
-      body: client_with(
-        Call(Ident("runtime.with_max_attempts"), [
-          Ident("client.config"),
-          Ident("n"),
-        ]),
-        Ident("client.cache"),
-      ),
-    ),
-    Blank,
   ]
-  let endpoint_setters =
-    list.flat_map(endpoint_param_setters, fn(p) {
-      emit_endpoint_param_setter(p, client_with)
-    })
-  let tail = [
+  code.Block(items: list.flatten([[resolve_step], rule_set_steps, cache_steps]))
+}
+
+/// Accessor + cache lifecycle — independent of how the Client was built.
+fn lifecycle_section() -> List(Code) {
+  [
     DocComment([
       "Read the underlying `runtime.ClientConfig` out of an existing",
       "`Client`. Use this when you want to dispatch a request through",
@@ -388,7 +194,7 @@ pub fn items(
     ]),
     Fn(
       public: True,
-      name: "config",
+      name: "client_config",
       params: [Param(name: "client", type_: "Client")],
       return: CodeSome("runtime.ClientConfig"),
       body: Ident("client.config"),
@@ -398,7 +204,7 @@ pub fn items(
       "Release the per-Client credentials cache actor. Call this when a",
       "Client value is no longer needed — long-running processes that",
       "build many Clients (tests, scripts, multi-tenant servers) will",
-      "otherwise accumulate one BEAM process per `new` call. Fire-and-",
+      "otherwise accumulate one BEAM process per construction. Fire-and-",
       "forget; safe to call multiple times. For tests or graceful",
       "shutdown that must observe the actor's exit, use `shutdown_sync`.",
     ]),
@@ -431,63 +237,6 @@ pub fn items(
     ),
     Blank,
   ]
-  list.flatten([
-    header,
-    rule_set_constant,
-    new_section,
-    withers,
-    endpoint_setters,
-    tail,
-  ])
-}
-
-/// Emit the doc comment + setter `Fn` for a single endpoint-rule-set
-/// param. Booleans and strings each follow the same pattern: pass
-/// the supplied value through `runtime.with_endpoint_param` using the
-/// `endpoints.BoolVal` / `endpoints.StringVal` constructor for the
-/// `Value` wrapper, keep the credentials cache intact.
-fn emit_endpoint_param_setter(
-  param: EndpointParam,
-  client_with: fn(Code, Code) -> Code,
-) -> List(Code) {
-  let snake = stringutils.pascal_to_snake(param.name)
-  let #(type_, ctor) = case param.kind {
-    BoolParam -> #("Bool", "endpoints.BoolVal")
-    StringParam -> #("String", "endpoints.StringVal")
-  }
-  // Doc-comment: lift the trait's `documentation` field verbatim when
-  // present; fall back to a generic one-liner. Either way pin the
-  // wire-form name so callers can correlate with the Smithy rule
-  // set if needed.
-  let header_doc = case param.documentation {
-    "" -> "Set the `" <> param.name <> "` endpoint-rule-set parameter."
-    other -> other
-  }
-  let trailer_doc =
-    "Wire form: `runtime.with_endpoint_param(config, \""
-    <> param.name
-    <> "\", ...)`."
-  [
-    DocComment([header_doc, trailer_doc]),
-    Fn(
-      public: True,
-      name: "with_" <> snake,
-      params: [
-        Param(name: "client", type_: "Client"),
-        Param(name: "value", type_: type_),
-      ],
-      return: CodeSome("Client"),
-      body: client_with(
-        Call(Ident("runtime.with_endpoint_param"), [
-          Ident("client.config"),
-          StrLit(param.name),
-          Call(Ident(ctor), [Ident("value")]),
-        ]),
-        Ident("client.cache"),
-      ),
-    ),
-    Blank,
-  ]
 }
 
 /// Convenience: build + render in one call.
@@ -495,16 +244,10 @@ pub fn render(
   endpoint_prefix: String,
   signing_name: String,
   endpoint_rule_set_json: Option(String),
-  endpoint_param_setters: List(EndpointParam),
 ) -> String {
   string.concat([
     code.render(
-      Module(items(
-        endpoint_prefix,
-        signing_name,
-        endpoint_rule_set_json,
-        endpoint_param_setters,
-      )),
+      Module(items(endpoint_prefix, signing_name, endpoint_rule_set_json)),
     ),
     "\n",
   ])

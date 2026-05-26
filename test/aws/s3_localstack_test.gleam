@@ -10,6 +10,7 @@
 ////
 //// The test is gated on `INCLUDE_LOCALSTACK=1` in the environment.
 
+import aws/config
 import aws/services/s3
 import gleam/list
 import gleam/option.{None, Some}
@@ -21,12 +22,19 @@ const region: String = "us-east-1"
 const bucket_name: String = "aws-sdk-gleam-e2e"
 
 fn build_client(endpoint: String) -> s3.Client {
-  // `with_endpoint_url` overrides the rule-set-derived URL — needed
-  // for LocalStack since the embedded S3 rule set knows nothing about
-  // a `localhost:4566` host.
-  s3.new(region: region)
-  |> s3.with_credentials_provider(localstack.fake_credentials())
-  |> s3.with_endpoint_url(endpoint)
+  // `endpoint_url` overrides the rule-set-derived URL — needed for
+  // LocalStack since the embedded S3 rule set knows nothing about a
+  // `localhost:4566` host.
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some(region),
+        credentials: Some(localstack.fake_credentials()),
+        endpoint_url: Some(endpoint),
+      ),
+    )
+  client
 }
 
 fn create_bucket_input() -> s3.CreateBucketRequest {

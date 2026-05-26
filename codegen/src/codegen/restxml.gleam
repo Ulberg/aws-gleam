@@ -341,7 +341,6 @@ fn emit_client(metadata: trait_helpers.Metadata) -> String {
     metadata.endpoint_prefix,
     metadata.signing_name,
     metadata.endpoint_rule_set_json,
-    metadata.endpoint_param_setters,
   )
 }
 
@@ -3277,6 +3276,7 @@ fn emit_parse_with_payload(
 /// subset of candidate imports actually referenced.
 fn file_header(service_id: String, body: String) -> String {
   let candidates = [
+    #("aws/config", "config.", code.CodeNone),
     #("aws/credentials", "credentials.", code.CodeNone),
     #("aws/endpoints", "endpoints.", code.CodeNone),
     #("aws/internal/credentials_cache", "credentials_cache.", code.CodeNone),

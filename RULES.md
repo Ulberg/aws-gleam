@@ -16,7 +16,7 @@ Non-negotiable patterns. The reasoning is in [PHILOSOPHY.md](PHILOSOPHY.md).
 - Comments only when the *why* isn't visible. Never narrate *what* the code does.
 
 ## API
-- The default path is the most ergonomic one (auto region + credential chain). Fine-grained control is opt-in via `with_*`, never required.
+- The default path is the most ergonomic one: `new()` auto-resolves region + the credential chain. Fine-grained control is opt-in via `new_with(config.Settings(..config.default_settings(), …))` — one settings record, no builder chains — never required.
 - Absorb maintainer pain rather than push it to the consumer — unless the trade-off is genuinely unreasonable.
 
 ## Gleam idioms

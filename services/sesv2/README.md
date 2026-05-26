@@ -7,7 +7,7 @@ upstream Smithy model in [aws-gleam](https://github.com/Ulberg/aws-gleam).
 import aws/services/sesv2
 
 pub fn main() {
-  let assert Ok(client) = sesv2.new_with_auto_region()
+  let assert Ok(client) = sesv2.new()
   // ... typed ops, e.g. sesv2.<op>(client, input)
 }
 ```

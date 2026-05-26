@@ -21,6 +21,7 @@
 //// assertion can pin the round-trip without invoking the per-
 //// event-union decoder (which is the next codegen pass).
 
+import aws/config
 import aws/credentials
 import aws/internal/client/runtime
 import aws/internal/codec/event_stream.{Event, Header, StringValue}
@@ -30,7 +31,7 @@ import aws/streaming
 import gleam/http/request.{type Request}
 import gleam/http/response
 import gleam/list
-import gleam/option.{None}
+import gleam/option.{None, Some}
 import gleeunit/should
 
 fn static_credentials() -> credentials.Provider {
@@ -117,10 +118,15 @@ pub fn start_stream_transcription_event_stream_round_trips_frames_test() {
         body: framed_body,
       )),
     )
-  let client =
-    transcribe_streaming.new(region: "us-east-1")
-    |> transcribe_streaming.with_credentials_provider(static_credentials())
-    |> transcribe_streaming.with_streaming_http_send(streaming_send)
+  let assert Ok(client) =
+    transcribe_streaming.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        streaming_http_send: Some(streaming_send),
+      ),
+    )
 
   let assert Ok(resp) =
     transcribe_streaming.start_stream_transcription_event_stream(
@@ -146,10 +152,15 @@ pub fn start_stream_transcription_event_stream_surfaces_transport_error_test() {
   // must propagate it as `runtime.TransportError`, identical to the
   // streaming-blob `_streaming` path.
   let streaming_send = fixed_streaming_send(Error(aws_http.Timeout))
-  let client =
-    transcribe_streaming.new(region: "us-east-1")
-    |> transcribe_streaming.with_credentials_provider(static_credentials())
-    |> transcribe_streaming.with_streaming_http_send(streaming_send)
+  let assert Ok(client) =
+    transcribe_streaming.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        streaming_http_send: Some(streaming_send),
+      ),
+    )
 
   case
     transcribe_streaming.start_stream_transcription_event_stream(

@@ -10,6 +10,7 @@
 //// the codegen-emitted closure (wrong field name, wrong cursor
 //// projection, missing fold call) surfaces here.
 
+import aws/config
 import aws/credentials
 import aws/internal/http_send as aws_http
 import aws/services/dynamodb
@@ -18,7 +19,7 @@ import gleam/erlang/process
 import gleam/http/request.{type Request}
 import gleam/http/response
 import gleam/list
-import gleam/option.{None}
+import gleam/option.{None, Some}
 import gleam/string
 import gleeunit/should
 
@@ -59,10 +60,15 @@ pub fn paginate_list_tables_folds_two_pages_test() {
     }
     Ok(response.Response(status: 200, headers: [], body: json_bytes(body)))
   }
-  let client =
-    dynamodb.new(region: "us-east-1")
-    |> dynamodb.with_credentials_provider(static_credentials())
-    |> dynamodb.with_http_send(send)
+  let assert Ok(client) =
+    dynamodb.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(send),
+      ),
+    )
 
   let result =
     dynamodb.paginate_list_tables(
@@ -97,10 +103,15 @@ pub fn paginate_list_tables_threads_cursor_between_pages_test() {
     }
     Ok(response.Response(status: 200, headers: [], body: json_bytes(body)))
   }
-  let client =
-    dynamodb.new(region: "us-east-1")
-    |> dynamodb.with_credentials_provider(static_credentials())
-    |> dynamodb.with_http_send(send)
+  let assert Ok(client) =
+    dynamodb.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(send),
+      ),
+    )
 
   let _ =
     dynamodb.paginate_list_tables(

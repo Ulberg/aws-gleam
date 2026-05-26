@@ -1,14 +1,15 @@
 //// Tests for `aws/s3/streaming.get_object_streaming`. The wrapper
-//// routes through the runtime via `s3.config(client)` +
-//// `runtime.invoke_streaming`; these tests swap the streaming
-//// sender on a real `s3.Client` via `s3.with_streaming_http_send`,
-//// so the assertion is on the wrapper's externally observable
-//// behaviour rather than the runtime layer underneath.
+//// routes through the runtime via `s3.get_object_streaming` +
+//// `runtime.invoke_streaming`; these tests swap the streaming sender
+//// on a real `s3.Client` via the `streaming_http_send` setting, so the
+//// assertion is on the wrapper's externally observable behaviour
+//// rather than the runtime layer underneath.
 ////
 //// LocalStack-backed end-to-end coverage belongs in a future
 //// `test/aws/s3_streaming_localstack_test.gleam` once the
 //// streaming endpoint actually serves chunked bodies.
 
+import aws/config
 import aws/credentials
 import aws/internal/client/runtime
 import aws/internal/http_send as aws_http
@@ -52,10 +53,15 @@ pub fn get_object_streaming_returns_streaming_body_test() {
         body: streaming.from_bit_array(body_bytes),
       )),
     )
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_streaming_http_send(streaming_send)
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        streaming_http_send: Some(streaming_send),
+      ),
+    )
 
   let input = build_get_object_input("bucket", "key")
   case s3.get_object_streaming(client, input) {
@@ -80,10 +86,15 @@ pub fn download_to_bit_array_max_under_cap_returns_bytes_test() {
         body: streaming.from_bit_array(body_bytes),
       )),
     )
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_streaming_http_send(streaming_send)
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        streaming_http_send: Some(streaming_send),
+      ),
+    )
 
   let input = build_get_object_input("bucket", "key")
   s3_streaming.download_to_bit_array_max(client, input, 1024)
@@ -104,10 +115,15 @@ pub fn download_to_bit_array_max_over_cap_returns_body_too_large_test() {
         body: streaming.from_bit_array(body_bytes),
       )),
     )
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_streaming_http_send(streaming_send)
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        streaming_http_send: Some(streaming_send),
+      ),
+    )
 
   case
     s3_streaming.download_to_bit_array_max(
@@ -134,10 +150,15 @@ pub fn download_to_bit_array_max_surfaces_transport_failure_test() {
         body: streaming.from_bit_array(<<"":utf8>>),
       )),
     )
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_streaming_http_send(streaming_send)
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        streaming_http_send: Some(streaming_send),
+      ),
+    )
 
   case
     s3_streaming.download_to_bit_array_max(
@@ -178,10 +199,15 @@ pub fn get_object_streaming_surfaces_typed_error_on_404_test() {
         body: streaming.from_bit_array(<<>>),
       )),
     )
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_streaming_http_send(streaming_send)
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        streaming_http_send: Some(streaming_send),
+      ),
+    )
 
   let input = build_get_object_input("bucket", "missing-key")
   case s3.get_object_streaming(client, input) {

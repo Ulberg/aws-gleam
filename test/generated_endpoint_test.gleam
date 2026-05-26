@@ -8,6 +8,7 @@
 //// `gleam test` through every existing protocol test, so a regression
 //// would surface there too.
 
+import aws/config
 import aws/credentials
 import aws/internal/http_send as aws_http
 import aws/region
@@ -16,7 +17,7 @@ import gleam/erlang/process
 import gleam/http/request.{type Request}
 import gleam/http/response
 import gleam/list
-import gleam/option.{None}
+import gleam/option.{None, Some}
 import gleam/result
 import gleeunit/should
 
@@ -48,10 +49,15 @@ fn host_capturing_send(
 
 pub fn dynamodb_client_resolves_through_embedded_rule_set_test() {
   let captured = process.new_subject()
-  let client =
-    dynamodb.new(region: "us-east-1")
-    |> dynamodb.with_credentials_provider(static_credentials())
-    |> dynamodb.with_http_send(host_capturing_send(captured))
+  let assert Ok(client) =
+    dynamodb.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(host_capturing_send(captured)),
+      ),
+    )
 
   let _ =
     dynamodb.get_item(
@@ -73,12 +79,12 @@ pub fn dynamodb_client_resolves_through_embedded_rule_set_test() {
   |> should.equal(Ok("dynamodb.us-east-1.amazonaws.com"))
 }
 
-pub fn new_with_auto_region_compiles_and_returns_a_result_test() {
-  // Generated `new_with_auto_region` returns a Result. We don't drive
-  // the resolver here — `region_test.gleam` covers all eight resolution
-  // branches — but we do assert that the generator emitted the
-  // expected return type and that the function is callable.
-  let r = dynamodb.new_with_auto_region()
+pub fn new_compiles_and_returns_a_result_test() {
+  // Full-auto `new()` returns a Result. We don't drive the resolver
+  // here — `region_test.gleam` covers all eight resolution branches —
+  // but we do assert that the generator emitted the expected return
+  // type and that the function is callable.
+  let r = dynamodb.new()
   // It's either Ok or Error; both shapes are valid for this test.
   case r {
     Ok(_) -> Nil
@@ -108,10 +114,15 @@ pub fn generated_client_caches_credentials_across_invocations_test() {
       ))
     })
   let host_subj = process.new_subject()
-  let client =
-    dynamodb.new(region: "us-east-1")
-    |> dynamodb.with_credentials_provider(counting_provider)
-    |> dynamodb.with_http_send(host_capturing_send(host_subj))
+  let assert Ok(client) =
+    dynamodb.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(counting_provider),
+        http_send: Some(host_capturing_send(host_subj)),
+      ),
+    )
 
   let input =
     dynamodb.GetItemInput(
@@ -152,7 +163,10 @@ pub fn dynamodb_shutdown_sync_releases_the_cache_actor_test() {
   // has exited (or Error on timeout). Asserting Ok here proves the
   // typed-API surface wires through to the synchronous lifecycle
   // primitive, not just the fire-and-forget one.
-  let client = dynamodb.new(region: "us-east-1")
+  let assert Ok(client) =
+    dynamodb.new_with(
+      config.Settings(..config.default_settings(), region: Some("us-east-1")),
+    )
   dynamodb.shutdown_sync(client, timeout_ms: 200)
   |> should.equal(Ok(Nil))
 }
@@ -161,17 +175,20 @@ pub fn dynamodb_shutdown_is_callable_test() {
   // Fire-and-forget shutdown returns Nil. The lifecycle assertion
   // sits in `credentials_cache_test.shutdown_sync_stops_the_actor_test`;
   // this test only proves the typed-API wires through.
-  let client = dynamodb.new(region: "us-east-1")
+  let assert Ok(client) =
+    dynamodb.new_with(
+      config.Settings(..config.default_settings(), region: Some("us-east-1")),
+    )
   dynamodb.shutdown(client)
 }
 
-pub fn new_with_auto_region_uses_region_resolve_test() {
+pub fn new_resolves_region_via_region_resolve_test() {
   // Reach into `region.resolve_with` with a stub env supplying
-  // `AWS_REGION=eu-central-1`. This is the same path
-  // `dynamodb.new_with_auto_region` ultimately calls — verifying it
-  // here under controlled inputs gives the auto-region wiring an
-  // observable contract test rather than relying on whatever the
-  // host machine's environment happens to be.
+  // `AWS_REGION=eu-central-1`. This is the same path `dynamodb.new`
+  // ultimately calls (through `config.resolve`) — verifying it here
+  // under controlled inputs gives the auto-region wiring an observable
+  // contract test rather than relying on whatever the host machine's
+  // environment happens to be.
   let env_with_region = fn(name) {
     case name {
       "AWS_REGION" -> Ok("eu-central-1")

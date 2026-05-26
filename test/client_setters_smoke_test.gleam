@@ -1,18 +1,19 @@
-//// Functional pins for the codegen-emitted Client setters. The
+//// Functional pins for the `config.Settings` knobs that change runtime
+//// behavior on a real generated Client (built via `new_with`). The
 //// emitter test in `codegen/test/emitter_test.gleam` asserts the
-//// signatures are present; these tests assert the setters actually
-//// change runtime behavior on a real generated Client.
+//// constructors are present; these tests assert the knobs actually take
+//// effect.
 ////
 //// Covered:
-////   - `with_max_attempts(client, n)` — invoke loop respects the
-////     cap, not the standard 3-attempt budget.
-////   - `with_http2(client)` — installs `http_streaming.default_send_http2`
+////   - `max_attempts: Some(1)` — invoke loop respects the cap, not the
+////     standard 3-attempt budget.
+////   - `use_http2: True` — installs `http_streaming.default_send_http2`
 ////     on the underlying ClientConfig's streaming sender field.
 ////
-//// `with_http_send` and `with_streaming_http_send` are exercised
-//// indirectly by every other test that stubs the transport; they
-//// don't get a dedicated smoke test here.
+//// `http_send` / `streaming_http_send` are exercised indirectly by
+//// every other test that stubs the transport; no dedicated smoke here.
 
+import aws/config
 import aws/credentials
 import aws/internal/http_send as aws_http
 import aws/internal/http_streaming
@@ -20,7 +21,7 @@ import aws/services/s3
 import gleam/erlang/process.{type Subject}
 import gleam/http/request.{type Request}
 import gleam/http/response
-import gleam/option.{None}
+import gleam/option.{None, Some}
 import gleeunit/should
 
 fn static_credentials() -> credentials.Provider {
@@ -52,11 +53,16 @@ fn count_messages(subject: Subject(Int), acc: Int) -> Int {
 
 pub fn with_max_attempts_one_disables_retry_test() {
   let counter = process.new_subject()
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_http_send(always_503_recording_send(counter))
-    |> s3.with_max_attempts(1)
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(always_503_recording_send(counter)),
+        max_attempts: Some(1),
+      ),
+    )
 
   let input =
     s3.ListBucketsRequest(
@@ -74,23 +80,28 @@ pub fn with_max_attempts_one_disables_retry_test() {
 }
 
 pub fn with_http2_installs_default_http2_streaming_sender_test() {
-  // The codegen-emitted `s3.with_http2(client)` must delegate to
-  // `runtime.with_http2`, which swaps `streaming_http_send` to
-  // `http_streaming.default_send_http2`. Module-function reference
-  // equality on the BEAM lets us check this exactly: two refs to
-  // the same MFA compare `=:=`. A regression in the codegen
-  // wrapper (wrong runtime call, missing config swap) flips this.
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_http2
+  // `use_http2: True` routes through `runtime.with_http2`, which swaps
+  // `streaming_http_send` to `http_streaming.default_send_http2`.
+  // Module-function reference equality on the BEAM lets us check this
+  // exactly: two refs to the same MFA compare `=:=`. A regression in
+  // the config wiring (wrong runtime call, missing swap) flips this.
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        use_http2: True,
+      ),
+    )
 
   case
-    s3.config(client).streaming_http_send == http_streaming.default_send_http2
+    s3.client_config(client).streaming_http_send
+    == http_streaming.default_send_http2
   {
     True -> Nil
     False ->
-      panic as "s3.with_http2 did not install http_streaming.default_send_http2"
+      panic as "use_http2: True did not install http_streaming.default_send_http2"
   }
   s3.shutdown(client)
 }
@@ -99,12 +110,18 @@ pub fn default_client_does_not_use_http2_streaming_sender_test() {
   // Anchor: a fresh Client (without `with_http2`) defaults to the
   // HTTP/1.1 streaming sender. Pins the with_http2 test as
   // meaningfully different from a no-op.
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+      ),
+    )
 
   case
-    s3.config(client).streaming_http_send == http_streaming.default_send_http2
+    s3.client_config(client).streaming_http_send
+    == http_streaming.default_send_http2
   {
     True -> panic as "default Client should not use the HTTP/2 streaming sender"
     False -> Nil
