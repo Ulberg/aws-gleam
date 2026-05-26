@@ -37,6 +37,7 @@ Non-negotiable patterns. The reasoning is in [PHILOSOPHY.md](PHILOSOPHY.md).
 ## Codegen
 - Services are generated from `vendor/aws-sdk-rust/aws-models/*.json` via `scripts/regen.sh`; generated `src` is not committed.
 - Don't hand-edit generated output — change the codegen and regenerate.
+- The request-builder layer and the typed SDK layer stay separate — the SDK depends on the builder, not the reverse.
 
 ## Logging
 Mechanism: a leveled logger (OTP `logger`); `debug` is gated by the configured level.
