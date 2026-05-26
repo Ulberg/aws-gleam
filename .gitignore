@@ -27,7 +27,6 @@ codegen/build
 # ensure_service_package helper). The other ~410 services get
 # their skeletons regenerated on demand and stay out of git.
 /services/*
-!/services/CLAUDE.md
 !/services/api_gateway/
 !/services/cloudwatch_logs/
 !/services/dynamodb/
