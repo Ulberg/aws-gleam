@@ -8,7 +8,7 @@
          float_neg_infinity/0, float_is_nan/1, float_is_infinite/1,
          json_canonicalize/1, xml_parse/1, float_short/1,
          format_iso8601/1, parse_http_date/1, format_http_date/1,
-         idempotency_token/0, set_env/2, rescue_call/1]).
+         idempotency_token/0, set_env/2, rescue_call/1, plain_args/0]).
 
 %% Shortest round-tripping float string, e.g. `1.1` not `1.10000000…e+00`.
 %% Used by query / header / URI-label / XML formatters; matches AWS's
@@ -187,6 +187,12 @@ get_env(Name) ->
 set_env(Name, Value) when is_binary(Name), is_binary(Value) ->
     os:putenv(binary_to_list(Name), binary_to_list(Value)),
     nil.
+
+%% Plain command-line arguments — everything after `--` in
+%% `gleam run -- ...` — as binaries. The Lambda local-run path reads
+%% `--event <json>` from these; empty list under a release/Lambda boot.
+plain_args() ->
+    [list_to_binary(A) || A <- init:get_plain_arguments()].
 
 %% Run a 0-arity fun inside try/catch and reflect the outcome as a Gleam
 %% Result. Success becomes {ok, Value}; any raise/throw/exit becomes

@@ -69,6 +69,7 @@ import gleam/http
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/int
+import gleam/io
 import gleam/json.{type Json}
 import gleam/option.{type Option, None, Some}
 import gleam/result
@@ -167,6 +168,82 @@ pub fn start(handler: Handler) -> RuntimeError {
   case api_from_env() {
     Ok(api) -> serve(api, set_xray_trace_id, handler)
     Error(error) -> error
+  }
+}
+
+/// Run the handler from the same `main`, locally or in the cloud. Under
+/// Lambda (`AWS_LAMBDA_RUNTIME_API` set) this is [`start`](#start) — the
+/// poll-forever loop. Run any other way (e.g. `gleam run`) it invokes the
+/// handler exactly once, prints the response to stdout, and exits the VM —
+/// so you can smoke-test before deploying. The local event is read from
+/// `--event <json>` (or `-e`), then `$LAMBDA_EVENT`, then `{}`.
+///
+/// Because it can exit the VM, `run` is meant to be your `main`; for the
+/// cloud-only loop with no local/exit behaviour, call [`start`](#start).
+pub fn run(handler: Handler) -> RuntimeError {
+  case api_from_env() {
+    Ok(api) -> serve(api, set_xray_trace_id, handler)
+    Error(_) ->
+      case invoke_once(handler, bit_array.from_string(local_event())) {
+        Ok(body) -> {
+          io.println(result.unwrap(bit_array.to_string(body), ""))
+          halt(0)
+        }
+        Error(failure) -> {
+          io.println_error(
+            failure.error_type <> ": " <> failure.error_message,
+          )
+          halt(1)
+        }
+      }
+  }
+}
+
+/// Invoke the handler once against a raw payload, trapping a panic exactly as
+/// the cloud loop does. The testable core of local execution — no I/O and no
+/// process exit. Uses [`context_default`](#context_default) for the context.
+pub fn invoke_once(
+  handler: Handler,
+  payload: BitArray,
+) -> Result(BitArray, InvocationError) {
+  run_handler(handler, payload, context_default())
+}
+
+/// A `Context` with local-friendly placeholder values, for `run`'s local
+/// path and for tests.
+pub fn context_default() -> Context {
+  Context(
+    request_id: "local",
+    deadline_ms: 0,
+    invoked_function_arn: "arn:aws:lambda:local:000000000000:function:local",
+    trace_id: None,
+    client_context: None,
+    cognito_identity: None,
+  )
+}
+
+/// Resolve the local event payload: an `--event`/`-e` argument, else
+/// `$LAMBDA_EVENT`, else `{}`. Inputs are injected so it stays testable;
+/// `run` calls it with the real argv and environment.
+pub fn local_event_from(
+  args: List(String),
+  read_env: fn(String) -> Result(String, Nil),
+) -> String {
+  case event_arg(args) {
+    Ok(json) -> json
+    Error(_) -> result.unwrap(read_env("LAMBDA_EVENT"), "{}")
+  }
+}
+
+fn local_event() -> String {
+  local_event_from(plain_args(), env.get_env)
+}
+
+fn event_arg(args: List(String)) -> Result(String, Nil) {
+  case args {
+    ["--event", value, ..] | ["-e", value, ..] -> Ok(value)
+    [_, ..rest] -> event_arg(rest)
+    [] -> Error(Nil)
   }
 }
 
@@ -517,3 +594,9 @@ fn set_env(name: String, value: String) -> Nil
 
 @external(erlang, "aws_ffi", "rescue_call")
 fn rescue_call(run: fn() -> a) -> Result(a, HandlerCrash)
+
+@external(erlang, "aws_ffi", "plain_args")
+fn plain_args() -> List(String)
+
+@external(erlang, "erlang", "halt")
+fn halt(code: Int) -> a
