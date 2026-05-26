@@ -61,6 +61,7 @@
 ////
 //// [api]: https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html
 
+import aws/env
 import aws/internal/http_send.{type HttpError, type Send}
 import gleam/bit_array
 import gleam/dynamic/decode.{type Decoder}
@@ -230,7 +231,7 @@ pub fn invocation_error(
 /// for the long-poll on `/next`: Lambda may freeze the process between
 /// events and hold the connection open up to the 15-minute function ceiling.
 pub fn api_from_env() -> Result(Api, RuntimeError) {
-  case get_env("AWS_LAMBDA_RUNTIME_API") {
+  case env.get_env("AWS_LAMBDA_RUNTIME_API") {
     Ok(endpoint) ->
       Ok(Api(send: http_send.with_timeout(seconds: 900), endpoint: endpoint))
     Error(_) -> Error(NotRunningInLambda)
@@ -502,13 +503,12 @@ fn set_xray_trace_id(trace_id: String) -> Nil {
   set_env("_X_AMZ_TRACE_ID", trace_id)
 }
 
-/// Read an OS environment variable, returning `Error(Nil)` if it is unset.
-/// Handy inside a handler for the function's configured environment — bucket
-/// names, table names, feature flags — without hand-rolling an FFI shim.
-/// (`os:getenv/1` works in charlists; this bridges to/from Gleam `String`
-/// and maps the unset miss to `Error(Nil)`.)
-@external(erlang, "aws_ffi", "get_env")
-pub fn get_env(name: String) -> Result(String, Nil)
+/// Deprecated alias for [`aws/env.get_env`](../env.html#get_env). Env access
+/// is not Lambda-specific, so it now lives in `aws/env`.
+@deprecated("Use aws/env.get_env instead")
+pub fn get_env(name: String) -> Result(String, Nil) {
+  env.get_env(name)
+}
 
 // --- FFI ------------------------------------------------------------------
 
