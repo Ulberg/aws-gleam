@@ -502,10 +502,15 @@ fn set_xray_trace_id(trace_id: String) -> Nil {
   set_env("_X_AMZ_TRACE_ID", trace_id)
 }
 
-// --- FFI ------------------------------------------------------------------
-
+/// Read an OS environment variable, returning `Error(Nil)` if it is unset.
+/// Handy inside a handler for the function's configured environment — bucket
+/// names, table names, feature flags — without hand-rolling an FFI shim.
+/// (`os:getenv/1` works in charlists; this bridges to/from Gleam `String`
+/// and maps the unset miss to `Error(Nil)`.)
 @external(erlang, "aws_ffi", "get_env")
-fn get_env(name: String) -> Result(String, Nil)
+pub fn get_env(name: String) -> Result(String, Nil)
+
+// --- FFI ------------------------------------------------------------------
 
 @external(erlang, "aws_ffi", "set_env")
 fn set_env(name: String, value: String) -> Nil
