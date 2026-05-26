@@ -14,6 +14,7 @@
 
 import aws/credentials.{type Credentials, type Provider, type ProviderError}
 import aws/internal/actor_lifecycle
+import aws/internal/log
 import gleam/erlang/process.{type Subject}
 import gleam/option.{type Option, None, Some}
 import gleam/otp/actor
@@ -135,12 +136,21 @@ fn handle_message(
       case fresh_enough(state) {
         True -> {
           let assert Some(creds) = state.cached
+          log.debug(fn() {
+            "aws credentials cache: hit (source " <> creds.source <> ")"
+          })
           process.send(reply, Ok(creds))
           actor.continue(state)
         }
-        False ->
+        False -> {
+          log.debug(fn() { "aws credentials cache: miss — refreshing" })
           case state.provider.fetch() {
             Ok(creds) -> {
+              log.debug(fn() {
+                "aws credentials cache: refreshed (source "
+                <> creds.source
+                <> ")"
+              })
               process.send(reply, Ok(creds))
               actor.continue(State(..state, cached: Some(creds)))
             }
@@ -150,11 +160,15 @@ fn handle_message(
               // call we'd rather keep serving them than blank the cache on
               // a transient IMDS hiccup — but right now we refresh as soon
               // as we re-enter the buffer window, so the next `get` will
-              // retry. Future improvement: serve-stale-on-error.
+              // retry. Future improvement: serve-stale-on-error. The
+              // underlying provider error is already logged by the chain;
+              // here we only note the cache outcome at debug.
+              log.debug(fn() { "aws credentials cache: refresh failed" })
               process.send(reply, Error(error))
               actor.continue(state)
             }
           }
+        }
       }
   }
 }

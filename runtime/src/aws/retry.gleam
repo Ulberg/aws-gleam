@@ -30,6 +30,7 @@
 ////     installs the token bucket only; CUBIC is a follow-up milestone.
 
 import aws/internal/http_send.{type HttpError, type Send}
+import aws/internal/log
 import aws/internal/retry/rate_limiter.{
   type Bucket, type Permit, Acquired, Empty,
 }
@@ -192,31 +193,63 @@ fn do_attempt(
       result
     }
     GiveUp -> {
-      // Non-retryable or out of attempts. Release the held permit so the
-      // bucket has budget for subsequent operations. (Matches Rust's
-      // `release_retry_permit` on terminal non-retryable.)
+      // Out of attempts on a retryable failure: unrecoverable, so an
+      // always-on `error` line (per RULES.md "retries exhausted"). Release
+      // the held permit so the bucket has budget for subsequent operations.
+      // (Matches Rust's `release_retry_permit` on terminal non-retryable.)
+      log.error(
+        "aws: giving up on retryable failure after "
+        <> int.to_string(attempt)
+        <> " attempt(s)",
+      )
       release_if_held(strategy, held_permit)
       result
     }
     RetryAfter(delay_ms: delay, cost: cost) ->
       case gate(strategy, cost) {
         NoBucket -> {
+          log_retry(attempt, delay)
           strategy.sleep(delay)
           do_attempt(send, strategy, req, attempt + 1, None)
         }
         GotPermit(new_permit) -> {
           release_if_held(strategy, held_permit)
+          log_retry(attempt, delay)
           strategy.sleep(delay)
           do_attempt(send, strategy, req, attempt + 1, Some(new_permit))
         }
         BucketEmpty -> {
           // Bucket refused. Surface what we have AND release any prior
           // permit so other operations get the budget back.
+          log.warning(
+            "aws retry: rate limiter exhausted after attempt "
+            <> int.to_string(attempt)
+            <> ", not retrying",
+          )
           release_if_held(strategy, held_permit)
           result
         }
       }
   }
+}
+
+/// A retry firing is notable-but-recovered (`warning`, default-on); the
+/// backoff arithmetic is firehose detail (`debug`).
+fn log_retry(attempt: Int, delay: Int) -> Nil {
+  log.warning(
+    "aws retry: attempt "
+    <> int.to_string(attempt)
+    <> " failed, retrying in "
+    <> int.to_string(delay)
+    <> "ms",
+  )
+  log.debug(fn() {
+    "aws retry: scheduling attempt "
+    <> int.to_string(attempt + 1)
+    <> " after "
+    <> int.to_string(delay)
+    <> "ms backoff"
+  })
 }
 
 /// Three-way result of consulting the rate limiter for a retry attempt.
