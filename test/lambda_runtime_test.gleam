@@ -12,6 +12,7 @@
 import aws/internal/http_send
 import aws/lambda
 import gleam/bit_array
+import gleam/dict
 import gleam/erlang/process
 import gleam/http
 import gleam/http/request.{type Request}
@@ -320,4 +321,61 @@ pub fn serve_loops_then_stops_on_runtime_error_test() {
 pub fn api_from_env_without_runtime_api_var_test() {
   // AWS_LAMBDA_RUNTIME_API is unset outside a Lambda execution environment.
   lambda.api_from_env() |> should.equal(Error(lambda.NotRunningInLambda))
+}
+
+// --- local run (invoke_once / event resolution) ---------------------------
+
+pub fn invoke_once_returns_handler_ok_test() {
+  let handler = fn(payload, _ctx) { Ok(payload) }
+  lambda.invoke_once(handler, bit_array.from_string("hi"))
+  |> should.equal(Ok(bit_array.from_string("hi")))
+}
+
+pub fn invoke_once_returns_handler_error_test() {
+  let handler = fn(_p, _c) { Error(lambda.invocation_error("Bad", "nope")) }
+  lambda.invoke_once(handler, <<>>)
+  |> should.equal(Error(lambda.invocation_error("Bad", "nope")))
+}
+
+pub fn invoke_once_traps_panic_as_unhandled_test() {
+  let handler = fn(_p, _c) { panic as "boom" }
+  let assert Error(failure) = lambda.invoke_once(handler, <<>>)
+  failure.error_type |> should.equal("Unhandled")
+  string.contains(failure.error_message, "boom") |> should.be_true
+}
+
+pub fn context_default_is_local_test() {
+  lambda.context_default().request_id |> should.equal("local")
+}
+
+fn env_of(pairs: List(#(String, String))) -> fn(String) -> Result(String, Nil) {
+  let table = dict.from_list(pairs)
+  fn(name) { dict.get(table, name) }
+}
+
+pub fn local_event_prefers_event_arg_test() {
+  lambda.local_event_from(["--event", "{\"a\":1}"], env_of([]))
+  |> should.equal("{\"a\":1}")
+}
+
+pub fn local_event_accepts_short_flag_test() {
+  lambda.local_event_from(["-e", "X", "ignored"], env_of([]))
+  |> should.equal("X")
+}
+
+pub fn local_event_arg_beats_env_test() {
+  lambda.local_event_from(
+    ["--event", "FROM_ARG"],
+    env_of([#("LAMBDA_EVENT", "FROM_ENV")]),
+  )
+  |> should.equal("FROM_ARG")
+}
+
+pub fn local_event_falls_back_to_env_test() {
+  lambda.local_event_from(["prog"], env_of([#("LAMBDA_EVENT", "FROM_ENV")]))
+  |> should.equal("FROM_ENV")
+}
+
+pub fn local_event_defaults_to_empty_object_test() {
+  lambda.local_event_from([], env_of([])) |> should.equal("{}")
 }
