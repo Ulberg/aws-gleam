@@ -10,6 +10,7 @@
 //// The same `Credentials` value flows into SigV4 signing; the signer ignores
 //// the expiry/source metadata that's relevant only to the chain.
 
+import aws/env.{get_env as os_get_env}
 import aws/internal/http_send.{type Send as HttpSend, imds_send}
 import aws/internal/ini
 import aws/internal/os_process
@@ -103,9 +104,6 @@ pub fn static_provider(credentials: Credentials) -> Provider {
   let labelled = Credentials(..credentials, source: "Static")
   Provider(name: "Static", fetch: fn() { Ok(labelled) })
 }
-
-@external(erlang, "aws_ffi", "get_env")
-fn os_get_env(name: String) -> Result(String, Nil)
 
 /// Environment-variable provider. Reads `AWS_ACCESS_KEY_ID`,
 /// `AWS_SECRET_ACCESS_KEY`, and (optionally) `AWS_SESSION_TOKEN`.

@@ -321,12 +321,3 @@ pub fn api_from_env_without_runtime_api_var_test() {
   // AWS_LAMBDA_RUNTIME_API is unset outside a Lambda execution environment.
   lambda.api_from_env() |> should.equal(Error(lambda.NotRunningInLambda))
 }
-
-// --- get_env --------------------------------------------------------------
-
-pub fn get_env_reads_present_and_missing_vars_test() {
-  // PATH is present in any spawned process; a random name is not.
-  lambda.get_env("PATH") |> should.be_ok
-  lambda.get_env("AWS_GLEAM_NO_SUCH_VAR_42")
-  |> should.equal(Error(Nil))
-}
