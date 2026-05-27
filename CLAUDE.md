@@ -1,6 +1,6 @@
 # Working notes — AWS SDK for Gleam
 
-Conventions are in **[RULES.md](RULES.md)**; the reasoning is in **[PHILOSOPHY.md](PHILOSOPHY.md)**. Read both first — they are the source of truth. This file holds only the repo-specific operational detail and AI-assistant tooling that doesn't belong in either.
+Conventions are in @RULES.md; the reasoning is in @PHILOSOPHY.md. Read both first — they are the source of truth. This file holds only the repo-specific operational detail and AI-assistant tooling that doesn't belong in either.
 
 ## Reference material — mirror the implementation, don't invent
 PHILOSOPHY's "mirror the reference" rule, operationally: for any non-trivial design question, consult a real implementation rather than guessing from training data. Where these graph MCP servers are wired, query them; otherwise read the source directly.
