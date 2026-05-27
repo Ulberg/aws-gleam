@@ -69,6 +69,7 @@ pub fn default_client_uses_sigv4_authorization_test() {
         http_send: Some(capture_send(inbox)),
         max_attempts: Some(1),
       ),
+      s3.default_endpoint_params(),
     )
   let input =
     s3.ListBucketsRequest(
@@ -96,6 +97,7 @@ pub fn with_sigv4a_region_set_flips_authorization_algorithm_test() {
         max_attempts: Some(1),
         sigv4a_region_set: Some(["us-east-1", "us-west-2"]),
       ),
+      s3.default_endpoint_params(),
     )
   let input =
     s3.ListBucketsRequest(
@@ -131,6 +133,7 @@ pub fn with_sigv4a_path_normalization_false_preserves_dot_segments_test() {
         sigv4a_region_set: Some(["us-east-1"]),
         sigv4a_normalize_path: False,
       ),
+      s3.default_endpoint_params(),
     )
   let input =
     s3.ListBucketsRequest(
@@ -163,6 +166,7 @@ pub fn with_sigv4a_path_normalization_without_signer_is_noop_test() {
         max_attempts: Some(1),
         sigv4a_normalize_path: False,
       ),
+      s3.default_endpoint_params(),
     )
   let input =
     s3.ListBucketsRequest(
@@ -190,6 +194,7 @@ pub fn with_sigv4a_region_set_emits_region_set_header_test() {
         max_attempts: Some(1),
         sigv4a_region_set: Some(["us-east-1", "us-west-2"]),
       ),
+      s3.default_endpoint_params(),
     )
   let input =
     s3.ListBucketsRequest(

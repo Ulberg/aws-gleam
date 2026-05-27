@@ -6,7 +6,6 @@
 
 import aws/config
 import aws/credentials
-import aws/endpoints
 import aws/internal/client/runtime
 import gleam/dict
 import gleam/option.{None, Some}
@@ -69,21 +68,6 @@ pub fn endpoint_url_override_is_applied_test() {
   cfg.endpoint_url |> should.equal("http://localhost:4566")
 }
 
-pub fn use_fips_and_dual_stack_land_in_endpoint_params_test() {
-  let cfg =
-    resolve(
-      config.Settings(
-        ..with_region(),
-        use_fips: Some(True),
-        use_dual_stack: Some(False),
-      ),
-    )
-  dict.get(cfg.endpoint_params, "UseFIPS")
-  |> should.equal(Ok(endpoints.BoolVal(True)))
-  dict.get(cfg.endpoint_params, "UseDualStack")
-  |> should.equal(Ok(endpoints.BoolVal(False)))
-}
-
 pub fn sigv4a_region_set_attaches_the_signer_test() {
   let cfg =
     resolve(
@@ -107,11 +91,4 @@ pub fn sigv4a_normalize_path_is_noop_without_region_set_test() {
   let cfg =
     resolve(config.Settings(..with_region(), sigv4a_normalize_path: False))
   cfg.sigv4a_signer |> should.equal(None)
-}
-
-pub fn bool_param_and_string_param_build_tagged_entries_test() {
-  config.bool_param("ForcePathStyle", True)
-  |> should.equal(#("ForcePathStyle", endpoints.BoolVal(True)))
-  config.string_param("Mode", "fast")
-  |> should.equal(#("Mode", endpoints.StringVal("fast")))
 }

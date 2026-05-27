@@ -141,6 +141,7 @@ fn fresh_client(send: aws_http.Send) -> s3.Client {
         credentials: Some(static_credentials()),
         http_send: Some(send),
       ),
+      s3.default_endpoint_params(),
     )
   client
 }

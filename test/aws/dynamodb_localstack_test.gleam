@@ -34,6 +34,7 @@ fn build_client(endpoint: String) -> dynamodb.Client {
         credentials: Some(localstack.fake_credentials()),
         endpoint_url: Some(endpoint),
       ),
+      dynamodb.default_endpoint_params(),
     )
   client
 }

@@ -47,6 +47,7 @@ pub fn wait_until_bucket_exists_settles_on_first_success_test() {
         credentials: Some(static_credentials()),
         http_send: Some(always_ok_send()),
       ),
+      s3.default_endpoint_params(),
     )
 
   let result =

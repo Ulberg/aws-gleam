@@ -63,6 +63,7 @@ pub fn sqs_list_queues_resolves_to_regional_host_test() {
         credentials: Some(static_credentials()),
         http_send: Some(host_capturing_send(captured)),
       ),
+      sqs.default_endpoint_params(),
     )
 
   let _ =
@@ -91,6 +92,7 @@ pub fn cloudwatch_logs_describe_log_groups_resolves_to_regional_host_test() {
         credentials: Some(static_credentials()),
         http_send: Some(host_capturing_send(captured)),
       ),
+      cloudwatch_logs.default_endpoint_params(),
     )
 
   let _ =
@@ -125,6 +127,7 @@ pub fn eks_list_clusters_resolves_to_regional_host_test() {
         credentials: Some(static_credentials()),
         http_send: Some(host_capturing_send(captured)),
       ),
+      eks.default_endpoint_params(),
     )
 
   let _ =

@@ -42,6 +42,11 @@ pub type Metadata {
     signing_name: String,
     endpoint_rule_set_json: Option(String),
     xml_namespace: Option(#(String, String)),
+    /// SDK-config-level endpoint-rule-set parameters extracted from the
+    /// `smithy.rules#endpointRuleSet` trait. Each becomes a typed field on
+    /// the generated service's `EndpointParams` record — see
+    /// `endpoint_params` for the filter rules.
+    endpoint_params: List(EndpointParam),
   )
 }
 
@@ -65,7 +70,91 @@ pub fn service_metadata(
     signing_name: signing_name,
     endpoint_rule_set_json: endpoint_rule_set_json(traits),
     xml_namespace: xml_namespace_trait(traits),
+    endpoint_params: endpoint_params(traits),
   )
+}
+
+/// One SDK-config-level endpoint-rule-set parameter — the kind users
+/// supply once at `Client` construction (FIPS mode, dual-stack
+/// addressing, S3 force-path-style, …) and that participates in every
+/// endpoint-resolution call. Op-scoped params (S3's `Bucket` / `Key`)
+/// flow through `invoke_with_endpoint_params` instead and aren't surfaced
+/// on `EndpointParams`.
+pub type EndpointParam {
+  EndpointParam(
+    /// Wire-form parameter name as it appears in the rule set
+    /// (`UseFIPS`, `ForcePathStyle`, …). Used verbatim as the
+    /// `runtime.with_endpoint_param` key; its snake_case form is the
+    /// `EndpointParams` field name.
+    name: String,
+    /// `BoolParam` or `StringParam` — driven off the trait body's
+    /// `"type"` field. Other kinds (`stringArray`) are dropped — no
+    /// builtIn-flagged param uses them today.
+    kind: EndpointParamKind,
+    /// Human-readable doc lifted from the trait's `"documentation"`
+    /// field. Empty string when absent; surfaced as the field's `///`
+    /// doc comment so callers don't have to consult the Smithy source.
+    documentation: String,
+  )
+}
+
+pub type EndpointParamKind {
+  BoolParam
+  StringParam
+}
+
+/// Extract the SDK-config-level endpoint params from a service's
+/// `smithy.rules#endpointRuleSet` trait. Includes parameters with
+/// `builtIn` set (`AWS::UseFIPS`, `AWS::S3::ForcePathStyle`, …). Excludes:
+///
+///   * `AWS::Region` — already plumbed through every Client via region
+///     resolution.
+///   * `SDK::Endpoint` — already exposed as `Settings.endpoint_url`.
+///   * Op-scoped params (no `builtIn`) — threaded per-op via
+///     `invoke_with_endpoint_params`, not surfaced on `EndpointParams`.
+///
+/// The output preserves the trait's declared order so the generated
+/// `EndpointParams` record has a stable, model-driven field layout.
+pub fn endpoint_params(traits: shape.Traits) -> List(EndpointParam) {
+  case dict.get(traits, ShapeId("smithy.rules#endpointRuleSet")) {
+    Ok(Some(trait.Dict(rule_set))) ->
+      case dict.get(rule_set, ShapeId("parameters")) {
+        Ok(trait.Dict(params)) ->
+          dict.to_list(params)
+          |> list.filter_map(fn(pair) {
+            let #(ShapeId(name), body) = pair
+            extract_endpoint_param(name, body)
+          })
+        _ -> []
+      }
+    _ -> []
+  }
+}
+
+fn extract_endpoint_param(
+  name: String,
+  body: Trait,
+) -> Result(EndpointParam, Nil) {
+  case body {
+    trait.Dict(fields) -> {
+      let built_in = string_field(fields, "builtIn")
+      let type_ = string_field(fields, "type")
+      let doc = string_field(fields, "documentation") |> option.unwrap("")
+      // Filter to the SDK-config-level candidate set: must have a
+      // `builtIn` (otherwise it's op-scoped); skip Region + Endpoint
+      // since they have first-class plumbing already.
+      case built_in, type_ {
+        Some("AWS::Region"), _ -> Error(Nil)
+        Some("SDK::Endpoint"), _ -> Error(Nil)
+        Some(_), Some("boolean") ->
+          Ok(EndpointParam(name: name, kind: BoolParam, documentation: doc))
+        Some(_), Some("string") ->
+          Ok(EndpointParam(name: name, kind: StringParam, documentation: doc))
+        _, _ -> Error(Nil)
+      }
+    }
+    _ -> Error(Nil)
+  }
 }
 
 /// Read `smithy.api#xmlNamespace` from a trait dict. The trait body

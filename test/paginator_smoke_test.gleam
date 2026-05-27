@@ -68,6 +68,7 @@ pub fn paginate_list_tables_folds_two_pages_test() {
         credentials: Some(static_credentials()),
         http_send: Some(send),
       ),
+      dynamodb.default_endpoint_params(),
     )
 
   let result =
@@ -111,6 +112,7 @@ pub fn paginate_list_tables_threads_cursor_between_pages_test() {
         credentials: Some(static_credentials()),
         http_send: Some(send),
       ),
+      dynamodb.default_endpoint_params(),
     )
 
   let _ =

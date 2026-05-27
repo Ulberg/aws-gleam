@@ -57,6 +57,7 @@ pub fn dynamodb_client_resolves_through_embedded_rule_set_test() {
         credentials: Some(static_credentials()),
         http_send: Some(host_capturing_send(captured)),
       ),
+      dynamodb.default_endpoint_params(),
     )
 
   let _ =
@@ -122,6 +123,7 @@ pub fn generated_client_caches_credentials_across_invocations_test() {
         credentials: Some(counting_provider),
         http_send: Some(host_capturing_send(host_subj)),
       ),
+      dynamodb.default_endpoint_params(),
     )
 
   let input =
@@ -166,6 +168,7 @@ pub fn dynamodb_shutdown_sync_releases_the_cache_actor_test() {
   let assert Ok(client) =
     dynamodb.new_with(
       config.Settings(..config.default_settings(), region: Some("us-east-1")),
+      dynamodb.default_endpoint_params(),
     )
   dynamodb.shutdown_sync(client, timeout_ms: 200)
   |> should.equal(Ok(Nil))
@@ -178,6 +181,7 @@ pub fn dynamodb_shutdown_is_callable_test() {
   let assert Ok(client) =
     dynamodb.new_with(
       config.Settings(..config.default_settings(), region: Some("us-east-1")),
+      dynamodb.default_endpoint_params(),
     )
   dynamodb.shutdown(client)
 }

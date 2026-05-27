@@ -126,6 +126,7 @@ pub fn start_stream_transcription_event_stream_round_trips_frames_test() {
         credentials: Some(static_credentials()),
         streaming_http_send: Some(streaming_send),
       ),
+      transcribe_streaming.default_endpoint_params(),
     )
 
   let assert Ok(resp) =
@@ -160,6 +161,7 @@ pub fn start_stream_transcription_event_stream_surfaces_transport_error_test() {
         credentials: Some(static_credentials()),
         streaming_http_send: Some(streaming_send),
       ),
+      transcribe_streaming.default_endpoint_params(),
     )
 
   case

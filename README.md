@@ -85,11 +85,13 @@ There are two construction entry points — and that's the whole story:
 - **Full auto** — `<service>.new()`. Region resolves from `AWS_REGION` /
   `AWS_DEFAULT_REGION` / `~/.aws/config` and credentials from the default
   chain. Zero config; the path you want in Lambda / ECS / EC2.
-- **Customised** — `<service>.new_with(config.Settings(..config.default_settings(), …))`.
-  Start from `default_settings()` and override only the fields you care
-  about. Every knob (region, credentials, endpoint URL, retry, transports,
-  SigV4a, endpoint params) lives on the one `config.Settings` record —
-  there are no post-construction `with_*` setters.
+- **Customised** — `<service>.new_with(settings, endpoint_params)`. Customer
+  config (region, credentials, endpoint URL, retry, transports, SigV4a)
+  lives on the shared `config.Settings`; AWS endpoint-rule-set params
+  (`UseFIPS`, `UseDualStack`, S3 `ForcePathStyle`, …) live on the service's
+  own typed `<service>.EndpointParams`, so the two never mix and a param is
+  only settable where the rule set declares it. Spread each off its defaults
+  and override what you need. No post-construction `with_*` setters.
 
 ```gleam
 import aws/config.{Settings, default_settings}
@@ -100,14 +102,17 @@ pub fn main() {
   // Tier 1 — full auto: region + credentials resolve themselves.
   let assert Ok(client) = dynamodb.new()
 
-  // Tier 2/3 — spread the defaults, override what you need:
+  // Tier 2 — spread the defaults, override what you need. Customer
+  // config and AWS endpoint params are separate, typed objects:
   //
   //   let assert Ok(client) =
-  //     dynamodb.new_with(Settings(
-  //       ..default_settings(),
-  //       region: Some("eu-west-1"),
-  //       max_attempts: Some(5),
-  //     ))
+  //     dynamodb.new_with(
+  //       Settings(..default_settings(), region: Some("eu-west-1")),
+  //       dynamodb.EndpointParams(
+  //         ..dynamodb.default_endpoint_params(),
+  //         use_fips: Some(True),
+  //       ),
+  //     )
 
   let input =
     dynamodb.GetItemInput(

@@ -33,6 +33,7 @@ fn build_client(endpoint: String) -> s3.Client {
         credentials: Some(localstack.fake_credentials()),
         endpoint_url: Some(endpoint),
       ),
+      s3.default_endpoint_params(),
     )
   client
 }

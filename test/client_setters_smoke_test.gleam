@@ -62,6 +62,7 @@ pub fn with_max_attempts_one_disables_retry_test() {
         http_send: Some(always_503_recording_send(counter)),
         max_attempts: Some(1),
       ),
+      s3.default_endpoint_params(),
     )
 
   let input =
@@ -93,6 +94,7 @@ pub fn with_http2_installs_default_http2_streaming_sender_test() {
         credentials: Some(static_credentials()),
         use_http2: True,
       ),
+      s3.default_endpoint_params(),
     )
 
   case
@@ -117,6 +119,7 @@ pub fn default_client_does_not_use_http2_streaming_sender_test() {
         region: Some("us-east-1"),
         credentials: Some(static_credentials()),
       ),
+      s3.default_endpoint_params(),
     )
 
   case

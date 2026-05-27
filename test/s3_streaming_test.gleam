@@ -61,6 +61,7 @@ pub fn get_object_streaming_returns_streaming_body_test() {
         credentials: Some(static_credentials()),
         streaming_http_send: Some(streaming_send),
       ),
+      s3.default_endpoint_params(),
     )
 
   let input = build_get_object_input("bucket", "key")
@@ -94,6 +95,7 @@ pub fn download_to_bit_array_max_under_cap_returns_bytes_test() {
         credentials: Some(static_credentials()),
         streaming_http_send: Some(streaming_send),
       ),
+      s3.default_endpoint_params(),
     )
 
   let input = build_get_object_input("bucket", "key")
@@ -123,6 +125,7 @@ pub fn download_to_bit_array_max_over_cap_returns_body_too_large_test() {
         credentials: Some(static_credentials()),
         streaming_http_send: Some(streaming_send),
       ),
+      s3.default_endpoint_params(),
     )
 
   case
@@ -158,6 +161,7 @@ pub fn download_to_bit_array_max_surfaces_transport_failure_test() {
         credentials: Some(static_credentials()),
         streaming_http_send: Some(streaming_send),
       ),
+      s3.default_endpoint_params(),
     )
 
   case
@@ -207,6 +211,7 @@ pub fn get_object_streaming_surfaces_typed_error_on_404_test() {
         credentials: Some(static_credentials()),
         streaming_http_send: Some(streaming_send),
       ),
+      s3.default_endpoint_params(),
     )
 
   let input = build_get_object_input("bucket", "missing-key")

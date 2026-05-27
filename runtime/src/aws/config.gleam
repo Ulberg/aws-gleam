@@ -1,41 +1,37 @@
-//// Client construction settings — the one shared, declarative knob-set
-//// every service `Client` is built from.
+//// Customer-facing construction settings — the service-agnostic knobs
+//// every `Client` is built from. AWS endpoint-rule-set parameters
+//// (`UseFIPS`, `UseDualStack`, S3 `ForcePathStyle`, …) are NOT here:
+//// they vary per service and live on each service's own typed
+//// `EndpointParams` record, kept separate so customer config and AWS
+//// rule-set attributes never mix.
 ////
-//// Three tiers, one type:
-////   1. Full auto: `<service>.new()` — region resolves from the standard
+//// Two construction entry points per service:
+////   1. `<service>.new()` — full auto: region resolves from the standard
 ////      AWS sources, credentials from the default chain. Zero config.
-////   2/3. Customised: `<service>.new_with(...)` — start from
-////      `default_settings()` and override only the fields you care about:
+////   2. `<service>.new_with(settings, endpoint_params)` — start each
+////      record from its defaults and override only the fields you need:
 ////
 ////        import aws/config.{Settings, default_settings}
-////        import aws/services/dynamodb
+////        import aws/services/s3
 ////
-////        let assert Ok(db) =
-////          dynamodb.new_with(Settings(
-////            ..default_settings(),
-////            region: Some("eu-west-1"),
-////            max_attempts: Some(5),
-////          ))
-////
-//// `Settings` is service-agnostic: every generated service consumes the
-//// same record. Service-specific endpoint-rule-set parameters (S3's
-//// `ForcePathStyle`, `Accelerate`, …) flow through `endpoint_params` via
-//// `bool_param` / `string_param`; the universal `UseFIPS` / `UseDualStack`
-//// built-ins get their own typed fields.
+////        let assert Ok(client) =
+////          s3.new_with(
+////            Settings(..default_settings(), region: Some("eu-west-1")),
+////            s3.EndpointParams(..s3.default_endpoint_params(), use_fips: Some(True)),
+////          )
 
 import aws/credentials.{type Provider}
-import aws/endpoints.{type Value, BoolVal, StringVal}
 import aws/internal/client/runtime.{type ClientConfig}
 import aws/internal/http_send.{type Send, type StreamingSend}
 import aws/region
 import aws/retry.{type Strategy}
-import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 
-/// Declarative settings for building a service `Client`. Start from
-/// `default_settings()` and override the fields you care about with a
-/// record-update spread — see the module docs.
+/// Declarative, service-agnostic settings for building a `Client`. Start
+/// from `default_settings()` and override the fields you care about with a
+/// record-update spread — see the module docs. AWS endpoint-rule-set
+/// parameters are not here; they live on each service's `EndpointParams`.
 pub type Settings {
   Settings(
     /// AWS region. `None` (the default) resolves it at build time from
@@ -76,15 +72,6 @@ pub type Settings {
     /// the canonical-request step. No effect unless `sigv4a_region_set`
     /// is `Some`.
     sigv4a_normalize_path: Bool,
-    /// `UseFIPS` endpoint built-in. `Some(True)` selects FIPS endpoints;
-    /// `None` keeps the rule set's default.
-    use_fips: Option(Bool),
-    /// `UseDualStack` endpoint built-in. `None` keeps the rule-set default.
-    use_dual_stack: Option(Bool),
-    /// Service-specific endpoint-rule-set parameters, keyed by wire name
-    /// (e.g. `[bool_param("ForcePathStyle", True)]`). Most callers leave
-    /// this empty — the typed fields above cover the common knobs.
-    endpoint_params: List(#(String, Value)),
   )
 }
 
@@ -104,22 +91,7 @@ pub fn default_settings() -> Settings {
     use_http2: False,
     sigv4a_region_set: None,
     sigv4a_normalize_path: True,
-    use_fips: None,
-    use_dual_stack: None,
-    endpoint_params: [],
   )
-}
-
-/// Build an `endpoint_params` entry for a boolean endpoint-rule-set
-/// parameter (e.g. `bool_param("ForcePathStyle", True)`).
-pub fn bool_param(name: String, value: Bool) -> #(String, Value) {
-  #(name, BoolVal(value))
-}
-
-/// Build an `endpoint_params` entry for a string endpoint-rule-set
-/// parameter.
-pub fn string_param(name: String, value: String) -> #(String, Value) {
-  #(name, StringVal(value))
 }
 
 /// Resolve `Settings` into a runtime `ClientConfig` for a service,
@@ -129,8 +101,9 @@ pub fn string_param(name: String, value: String) -> #(String, Value) {
 /// on the first request), so a missing chain surfaces at call time, not
 /// here.
 ///
-/// Generated `new` / `new_with` call this, then start the credentials
-/// cache and attach the service's endpoint rule set.
+/// Generated `new` / `new_with` call this, then apply the service's typed
+/// `EndpointParams`, attach its endpoint rule set, and start the
+/// credentials cache.
 pub fn resolve(
   settings: Settings,
   endpoint_prefix endpoint_prefix: String,
@@ -151,7 +124,6 @@ pub fn resolve(
   |> apply_retry(settings)
   |> apply_transports(settings)
   |> apply_sigv4a(settings)
-  |> apply_endpoint_params(settings)
 }
 
 fn resolve_region(settings: Settings) -> Result(String, region.ResolveError) {
@@ -203,29 +175,5 @@ fn apply_sigv4a(config: ClientConfig, settings: Settings) -> ClientConfig {
     Some(region_set) ->
       runtime.with_sigv4a_region_set(config, region_set)
       |> runtime.with_sigv4a_path_normalization(settings.sigv4a_normalize_path)
-  }
-}
-
-fn apply_endpoint_params(
-  config: ClientConfig,
-  settings: Settings,
-) -> ClientConfig {
-  let config =
-    config
-    |> apply_bool_param("UseFIPS", settings.use_fips)
-    |> apply_bool_param("UseDualStack", settings.use_dual_stack)
-  list.fold(settings.endpoint_params, config, fn(cfg, pair) {
-    runtime.with_endpoint_param(cfg, pair.0, pair.1)
-  })
-}
-
-fn apply_bool_param(
-  config: ClientConfig,
-  name: String,
-  value: Option(Bool),
-) -> ClientConfig {
-  case value {
-    Some(b) -> runtime.with_endpoint_param(config, name, BoolVal(b))
-    None -> config
   }
 }

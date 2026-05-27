@@ -152,11 +152,11 @@ pub fn emitted_modules_expose_config_accessor_test() {
 }
 
 /// The two construction entry points are full-auto `new()` and
-/// settings-driven `new_with(config.Settings)`, both returning a
-/// `Result` (region resolution is the one fallible step). Every tuning
-/// knob now lives on `config.Settings`, so there are no post-construction
-/// `with_*` setters. Pin the signatures + the `config` wiring on the
-/// reference fixture so a regression in the Client emitter surfaces here.
+/// `new_with(config.Settings, EndpointParams)`, both returning a `Result`
+/// (region resolution is the one fallible step). Customer config lives on
+/// `config.Settings`; AWS rule-set params on the per-service
+/// `EndpointParams`. No post-construction `with_*` setters. Pin the shape
+/// on the reference fixture so a Client-emitter regression surfaces here.
 pub fn emitted_modules_expose_constructors_test() {
   let m = load(json10_path)
   let svc = find_service(m, "aws.protocols#awsJson1_0", "JsonRpc10")
@@ -167,12 +167,15 @@ pub fn emitted_modules_expose_constructors_test() {
   ))
   should.be_true(string.contains(
     r.source,
-    "pub fn new_with(settings: config.Settings)",
+    "pub fn new_with(settings: config.Settings,",
   ))
-  // Full-auto delegates to new_with(default_settings()).
+  // The per-service AWS endpoint-params record + its all-default builder.
+  should.be_true(string.contains(r.source, "pub type EndpointParams"))
+  should.be_true(string.contains(r.source, "pub fn default_endpoint_params()"))
+  // Full-auto delegates to new_with with both defaults.
   should.be_true(string.contains(
     r.source,
-    "new_with(config.default_settings())",
+    "new_with(config.default_settings(), default_endpoint_params())",
   ))
   // new_with resolves Settings into the runtime ClientConfig.
   should.be_true(string.contains(r.source, "config.resolve("))

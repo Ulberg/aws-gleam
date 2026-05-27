@@ -1,26 +1,28 @@
-//// Shared emitter for the per-service `Client` section. Every
-//// generated service module ends up with the same shape — an opaque
-//// `Client` type and two constructors: `new()` (full auto — region +
-//// credentials resolve themselves) and `new_with(config.Settings)`
-//// (the same, from an explicit settings record built off
-//// `config.default_settings()`). All tuning lives on `config.Settings`,
-//// so there are no post-construction `with_*` setters; the shared
-//// `aws/config` module owns the knob set and the settings→config
-//// resolution.
+//// Shared emitter for the per-service `Client` section. Every generated
+//// service module ends up with the same shape — an opaque `Client`, a
+//// typed `EndpointParams` record (the AWS endpoint-rule-set knobs this
+//// service declares), and two constructors: `new()` (full auto — region +
+//// credentials resolve themselves) and `new_with(config.Settings,
+//// EndpointParams)`. Customer config lives on the shared `config.Settings`;
+//// AWS rule-set params live on the per-service `EndpointParams`, so the two
+//// never mix. There are no post-construction `with_*` setters.
 ////
-//// Lives in its own module so awsjson / restjson / restxml don't
-//// each carry their own copy. The output is identical regardless of
-//// protocol — only the endpoint prefix + signing name vary, so we
-//// take those as parameters.
+//// Lives in its own module so awsjson / restjson / restxml don't each
+//// carry their own copy. The output is identical regardless of protocol —
+//// only the endpoint prefix, signing name, and declared endpoint params
+//// vary, so we take those as parameters.
 
 import codegen/code.{
   type Code, Blank, Call, CodeSome, Const, DocComment, Fn, Ident, LabelledParam,
   Let, LetAssert, Module, Param, StrLit, TypeDef, Use, Variant,
 }
-import codegen/trait_helpers.{type ContextParamBinding}
+import codegen/trait_helpers.{
+  type ContextParamBinding, type EndpointParam, BoolParam, StringParam,
+}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
+import internal/stringutils
 
 /// Build the AST nodes for the per-service Client section. Pairs with
 /// `code.render(code.Module(items))` at the emit site.
@@ -35,6 +37,7 @@ pub fn items(
   endpoint_prefix: String,
   signing_name: String,
   endpoint_rule_set_json: Option(String),
+  endpoint_params: List(EndpointParam),
 ) -> List(Code) {
   let header = [
     TypeDef(public: True, is_opaque: True, name: "Client", variants: [
@@ -64,21 +67,98 @@ pub fn items(
   list.flatten([
     header,
     rule_set_constant,
-    new_section(endpoint_prefix, signing_name, endpoint_rule_set_json),
+    endpoint_params_section(endpoint_params),
+    new_section(
+      endpoint_prefix,
+      signing_name,
+      endpoint_rule_set_json,
+      endpoint_params,
+    ),
     lifecycle_section(),
   ])
 }
 
+/// Emit the per-service `EndpointParams` record + `default_endpoint_params`.
+/// One typed `Option` field per SDK-config-level rule-set param the service
+/// declares (`use_fips`, `use_dual_stack`, S3 `force_path_style`, …), so a
+/// param is settable only where the rule set actually supports it. Services
+/// that declare none get an empty record — `new_with` still takes it, so the
+/// constructor shape stays uniform across every service.
+fn endpoint_params_section(endpoint_params: List(EndpointParam)) -> List(Code) {
+  let fields =
+    list.map(endpoint_params, fn(p) {
+      Param(name: stringutils.pascal_to_snake(p.name), type_: param_type(p))
+    })
+  let default_value = case endpoint_params {
+    [] -> Ident("EndpointParams")
+    _ ->
+      Call(
+        Ident("EndpointParams"),
+        list.map(endpoint_params, fn(p) {
+          code.Labelled(
+            label: stringutils.pascal_to_snake(p.name),
+            value: Ident("option.None"),
+          )
+        }),
+      )
+  }
+  [
+    DocComment([
+      "AWS endpoint-rule-set parameters for this service. Each `Some` value",
+      "feeds endpoint resolution; `None` keeps the rule set's own default.",
+      "Start from `default_endpoint_params()` and override what you need.",
+    ]),
+    TypeDef(public: True, is_opaque: False, name: "EndpointParams", variants: [
+      Variant(name: "EndpointParams", fields: fields),
+    ]),
+    Blank,
+    DocComment([
+      "The all-default `EndpointParams`: every parameter left to the rule",
+      "set's default. Spread it and override only the params you need.",
+    ]),
+    Fn(
+      public: True,
+      name: "default_endpoint_params",
+      params: [],
+      return: CodeSome("EndpointParams"),
+      body: default_value,
+    ),
+    Blank,
+  ]
+}
+
+fn param_type(p: EndpointParam) -> String {
+  case p.kind {
+    BoolParam -> "option.Option(Bool)"
+    StringParam -> "option.Option(String)"
+  }
+}
+
+fn param_value_ctor(p: EndpointParam) -> String {
+  case p.kind {
+    BoolParam -> "endpoints.BoolVal"
+    StringParam -> "endpoints.StringVal"
+  }
+}
+
 /// The two construction entry points every service exposes:
 ///   * `new()` — full auto, region + credentials resolve themselves.
-///   * `new_with(settings)` — same, but from an explicit `config.Settings`
-///     (built off `config.default_settings()`). All tuning lives on that
-///     record, so there are no post-construction `with_*` setters.
+///   * `new_with(settings, endpoint_params)` — customer `config.Settings`
+///     plus this service's AWS `EndpointParams`, each spread off its
+///     defaults. No post-construction `with_*` setters.
 fn new_section(
   endpoint_prefix: String,
   signing_name: String,
   endpoint_rule_set_json: Option(String),
+  endpoint_params: List(EndpointParam),
 ) -> List(Code) {
+  // An unused `endpoint_params` arg (services that declare none) would
+  // warn; rename it to `_endpoint_params` in that case while keeping the
+  // uniform two-arg `new_with` shape.
+  let params_param_name = case endpoint_params {
+    [] -> "_endpoint_params"
+    _ -> "endpoint_params"
+  }
   [
     DocComment([
       "Build a Client with everything resolved automatically: the region",
@@ -86,30 +166,41 @@ fn new_section(
       "`~/.aws/config`) and credentials from the default chain. Zero",
       "config — the path you want in Lambda / ECS / EC2, where the",
       "environment always supplies a region. `Error(_)` only when no",
-      "source provides one; pass an explicit region via `new_with` then.",
+      "source provides one; pass explicit settings via `new_with` then.",
     ]),
     Fn(
       public: True,
       name: "new",
       params: [],
       return: CodeSome("Result(Client, region.ResolveError)"),
-      body: Call(Ident("new_with"), [Call(Ident("config.default_settings"), [])]),
+      body: Call(Ident("new_with"), [
+        Call(Ident("config.default_settings"), []),
+        Call(Ident("default_endpoint_params"), []),
+      ]),
     ),
     Blank,
     DocComment([
-      "Build a Client from explicit `config.Settings`. Start from",
-      "`config.default_settings()` and override only the fields you need",
-      "(`region`, `credentials`, `endpoint_url`, `max_attempts`, …) with a",
-      "record-update spread. Region auto-resolves when `settings.region`",
-      "is `None` — the only failure path; credentials resolve lazily on",
-      "the first request.",
+      "Build a Client from explicit customer `config.Settings` and this",
+      "service's AWS `EndpointParams`. Start each from its defaults",
+      "(`config.default_settings()` / `default_endpoint_params()`) and",
+      "override only the fields you need. Region auto-resolves when",
+      "`settings.region` is `None` — the only failure path; credentials",
+      "resolve lazily on the first request.",
     ]),
     Fn(
       public: True,
       name: "new_with",
-      params: [Param(name: "settings", type_: "config.Settings")],
+      params: [
+        Param(name: "settings", type_: "config.Settings"),
+        Param(name: params_param_name, type_: "EndpointParams"),
+      ],
       return: CodeSome("Result(Client, region.ResolveError)"),
-      body: new_with_body(endpoint_prefix, signing_name, endpoint_rule_set_json),
+      body: new_with_body(
+        endpoint_prefix,
+        signing_name,
+        endpoint_rule_set_json,
+        endpoint_params,
+      ),
     ),
     Blank,
   ]
@@ -125,6 +216,7 @@ fn new_with_body(
   endpoint_prefix: String,
   signing_name: String,
   endpoint_rule_set_json: Option(String),
+  endpoint_params: List(EndpointParam),
 ) -> Code {
   let resolve_step =
     Use(
@@ -158,6 +250,31 @@ fn new_with_body(
       ),
     ]
   }
+  // One `let cfg = case endpoint_params.<field> { Some(v) -> ... }` per
+  // declared param: a `Some` threads the value into the rule-set param
+  // dict; `None` leaves the rule set's default in place.
+  let endpoint_param_steps =
+    list.map(endpoint_params, fn(p) {
+      Let(
+        name: "cfg",
+        value: code.Case(
+          scrutinee: Ident(
+            "endpoint_params." <> stringutils.pascal_to_snake(p.name),
+          ),
+          branches: [
+            code.Branch(
+              pattern: "option.Some(value)",
+              body: Call(Ident("runtime.with_endpoint_param"), [
+                Ident("cfg"),
+                StrLit(p.name),
+                Call(Ident(param_value_ctor(p)), [Ident("value")]),
+              ]),
+            ),
+            code.Branch(pattern: "option.None", body: Ident("cfg")),
+          ],
+        ),
+      )
+    })
   let cache_steps = [
     LetAssert(
       pattern: "Ok(cache)",
@@ -177,7 +294,14 @@ fn new_with_body(
       code.Labelled(label: "cache", value: Ident("cache")),
     ]),
   ]
-  code.Block(items: list.flatten([[resolve_step], rule_set_steps, cache_steps]))
+  code.Block(
+    items: list.flatten([
+      [resolve_step],
+      rule_set_steps,
+      endpoint_param_steps,
+      cache_steps,
+    ]),
+  )
 }
 
 /// Accessor + cache lifecycle — independent of how the Client was built.
@@ -244,10 +368,16 @@ pub fn render(
   endpoint_prefix: String,
   signing_name: String,
   endpoint_rule_set_json: Option(String),
+  endpoint_params: List(EndpointParam),
 ) -> String {
   string.concat([
     code.render(
-      Module(items(endpoint_prefix, signing_name, endpoint_rule_set_json)),
+      Module(items(
+        endpoint_prefix,
+        signing_name,
+        endpoint_rule_set_json,
+        endpoint_params,
+      )),
     ),
     "\n",
   ])
