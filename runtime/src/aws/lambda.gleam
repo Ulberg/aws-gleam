@@ -63,6 +63,7 @@
 
 import aws/env
 import aws/internal/http_send.{type HttpError, type Send}
+import aws/internal/log
 import gleam/bit_array
 import gleam/dynamic/decode.{type Decoder}
 import gleam/http
@@ -190,9 +191,7 @@ pub fn run(handler: Handler) -> RuntimeError {
           halt(0)
         }
         Error(failure) -> {
-          io.println_error(
-            failure.error_type <> ": " <> failure.error_message,
-          )
+          io.println_error(failure.error_type <> ": " <> failure.error_message)
           halt(1)
         }
       }
@@ -331,7 +330,12 @@ pub fn serve(
 ) -> RuntimeError {
   case process_invocation(api, set_trace_id, handler) {
     Ok(Nil) -> serve(api, set_trace_id, handler)
-    Error(error) -> error
+    Error(error) -> {
+      // The loop stops only on an unrecoverable Runtime API failure —
+      // always-on `error` (per RULES.md "Runtime API fatal").
+      log.error("aws lambda runtime: fatal — " <> describe_runtime_error(error))
+      error
+    }
   }
 }
 
@@ -347,13 +351,30 @@ pub fn process_invocation(
 ) -> Result(Nil, RuntimeError) {
   use invocation <- result.try(next(api))
   let context = invocation.context
+  log.debug(fn() {
+    "aws lambda: invocation "
+    <> context.request_id
+    <> " ("
+    <> int.to_string(bit_array.byte_size(invocation.payload))
+    <> " bytes)"
+  })
   case context.trace_id {
     Some(trace_id) -> set_trace_id(trace_id)
     None -> Nil
   }
   case run_handler(handler, invocation.payload, context) {
     Ok(body) -> send_response(api, context.request_id, body)
-    Error(error) -> send_error(api, context.request_id, error)
+    Error(error) -> {
+      log.debug(fn() {
+        "aws lambda: invocation "
+        <> context.request_id
+        <> " handler error "
+        <> error.error_type
+        <> ": "
+        <> error.error_message
+      })
+      send_error(api, context.request_id, error)
+    }
   }
 }
 
@@ -376,6 +397,18 @@ fn crash_to_error(crash: HandlerCrash) -> InvocationError {
     error_message: crash.class <> ": " <> crash.message,
     stack_trace: crash.stack_trace,
   )
+}
+
+fn describe_runtime_error(error: RuntimeError) -> String {
+  case error {
+    NotRunningInLambda -> "not running under a Lambda runtime"
+    InvalidEndpoint(endpoint: endpoint) ->
+      "invalid runtime endpoint: " <> endpoint
+    Transport(_) -> "transport failure talking to the Runtime API"
+    MissingRequestId -> "next-invocation response missing request id"
+    UnexpectedStatus(endpoint: endpoint, status: status) ->
+      "unexpected status " <> int.to_string(status) <> " from " <> endpoint
+  }
 }
 
 // --- Runtime API calls ----------------------------------------------------

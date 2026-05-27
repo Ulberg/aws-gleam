@@ -15,6 +15,7 @@ import aws/endpoints.{type Params, type RuleSet}
 import aws/internal/http_request as our_http
 import aws/internal/http_send.{type HttpError, type Send, type StreamingSend}
 import aws/internal/http_streaming
+import aws/internal/log
 import aws/internal/sigv4.{SigningOptions}
 import aws/internal/sigv4a
 import aws/internal/text_scan
@@ -310,27 +311,53 @@ pub fn invoke_with_endpoint_params_and_host_prefix(
   built: #(String, String, Dict(String, String), BitArray),
   parse: fn(Int, Dict(String, String), BitArray) -> Result(output, String),
 ) -> Result(output, ClientError) {
-  use http_req <- result.try(prepare_signed_request(
-    config,
-    op_params,
-    host_prefix,
-    built,
-  ))
+  use http_req <- result.try(
+    prepare_signed_request(config, op_params, host_prefix, built)
+    |> tap_client_error(config),
+  )
+  log.debug(fn() { "aws → " <> request_summary(config, built, http_req) })
 
   let send =
     retry.with_retry(send: config.http_send, strategy: config.retry_strategy)
   use resp <- result.try(
     send(http_req)
-    |> result.map_error(TransportError),
+    |> result.map_error(fn(err) {
+      log.debug(fn() {
+        "aws ✗ "
+        <> config.signing_name
+        <> " transport: "
+        <> describe_http_error(err)
+      })
+      TransportError(err)
+    }),
   )
 
   let resp_headers = headers_to_dict(resp.headers)
   case resp.status >= 200 && resp.status < 300 {
-    True ->
+    True -> {
+      log.debug(fn() {
+        "aws ← " <> int_to_decimal(resp.status) <> " " <> config.signing_name
+      })
       parse(resp.status, resp_headers, resp.body)
-      |> result.map_error(fn(reason) { DecodeError(reason: reason) })
+      |> result.map_error(fn(reason) {
+        log.debug(fn() {
+          "aws ✗ " <> config.signing_name <> " decode: " <> reason
+        })
+        DecodeError(reason: reason)
+      })
+    }
     False -> {
       let error_type = extract_error_type(resp_headers, resp.body)
+      log.debug(fn() {
+        "aws ✗ "
+        <> config.signing_name
+        <> " "
+        <> int_to_decimal(resp.status)
+        <> " "
+        <> error_type
+        <> ": "
+        <> body_preview(resp.body)
+      })
       Error(ServiceError(
         status: resp.status,
         error_type: error_type,
@@ -379,26 +406,49 @@ pub fn invoke_streaming_with_endpoint_params(
   op_params: Params,
   built: #(String, String, Dict(String, String), BitArray),
 ) -> Result(streaming.Response, ClientError) {
-  use http_req <- result.try(prepare_signed_request(
-    config,
-    op_params,
-    None,
-    built,
-  ))
+  use http_req <- result.try(
+    prepare_signed_request(config, op_params, None, built)
+    |> tap_client_error(config),
+  )
+  log.debug(fn() {
+    "aws → " <> request_summary(config, built, http_req) <> " (streaming)"
+  })
 
   use resp <- result.try(
     config.streaming_http_send(http_req)
-    |> result.map_error(TransportError),
+    |> result.map_error(fn(err) {
+      log.debug(fn() {
+        "aws ✗ "
+        <> config.signing_name
+        <> " transport: "
+        <> describe_http_error(err)
+      })
+      TransportError(err)
+    }),
   )
 
   case resp.status >= 200 && resp.status < 300 {
-    True ->
+    True -> {
+      log.debug(fn() {
+        "aws ← "
+        <> int_to_decimal(resp.status)
+        <> " "
+        <> config.signing_name
+        <> " (streaming)"
+      })
       Ok(streaming.Response(
         status: resp.status,
         headers: resp.headers,
         body: resp.body,
       ))
-    False -> Error(streaming_error(resp))
+    }
+    False -> {
+      let err = streaming_error(resp)
+      log.debug(fn() {
+        "aws ✗ " <> config.signing_name <> " " <> describe_client_error(err)
+      })
+      Error(err)
+    }
   }
 }
 
@@ -806,3 +856,100 @@ fn extract_xml_error_code(body: String) -> Result(String, Nil) {
 
 @external(erlang, "aws_ffi", "aws_timestamp")
 fn aws_timestamp() -> String
+
+// ----- logging helpers -----
+//
+// Logging is centralised here because every generated service routes its
+// operations through `invoke*` — one wired pipeline covers all of them. The
+// happy path is silent unless `LOGLEVEL=debug`; failures that the runtime
+// itself can't recover from (credential chain exhausted, retries exhausted)
+// surface as always-on `error` lines from the credentials / retry layers.
+
+/// Run a side-effecting debug log on the `Error` branch, passing the error
+/// through unchanged. Used to narrate request-preparation failures
+/// (credential resolution, endpoint rule-set resolution) at `debug`.
+fn tap_client_error(
+  result: Result(a, ClientError),
+  config: ClientConfig,
+) -> Result(a, ClientError) {
+  result
+  |> result.map_error(fn(err) {
+    log.debug(fn() {
+      "aws ✗ " <> config.signing_name <> " " <> describe_client_error(err)
+    })
+    err
+  })
+}
+
+/// One-line request summary for the `debug` request log: service, method,
+/// resolved host + URI, and — for the JSON-RPC protocols — the `X-Amz-Target`
+/// operation. Built lazily (only when debug is on).
+fn request_summary(
+  config: ClientConfig,
+  built: #(String, String, Dict(String, String), BitArray),
+  req: Request(BitArray),
+) -> String {
+  let #(method, uri, headers, _body) = built
+  let operation = case header_ci(headers, "x-amz-target") {
+    Ok(target) -> " " <> target
+    Error(_) -> ""
+  }
+  config.signing_name <> " " <> method <> " " <> req.host <> uri <> operation
+}
+
+/// Case-insensitive header lookup over the built request headers (whose key
+/// casing is decided by the per-protocol codegen). Only reached on the
+/// debug path, so the fold cost is paid only when debug is on.
+fn header_ci(
+  headers: Dict(String, String),
+  lower_name: String,
+) -> Result(String, Nil) {
+  dict.fold(headers, Error(Nil), fn(acc, key, value) {
+    case acc {
+      Ok(_) -> acc
+      Error(_) ->
+        case string.lowercase(key) == lower_name {
+          True -> Ok(value)
+          False -> Error(Nil)
+        }
+    }
+  })
+}
+
+fn describe_client_error(err: ClientError) -> String {
+  case err {
+    CredentialsError(_) -> "credentials error"
+    TransportError(e) -> "transport: " <> describe_http_error(e)
+    DecodeError(reason: r) -> "decode: " <> r
+    ServiceError(status: s, error_type: t, ..) ->
+      "service " <> int_to_decimal(s) <> " " <> t
+  }
+}
+
+fn describe_http_error(err: HttpError) -> String {
+  case err {
+    http_send.ConnectFailed(reason: r) -> "connect failed: " <> r
+    http_send.Timeout -> "timeout"
+    http_send.InvalidBody(reason: r) -> "invalid body: " <> r
+    http_send.Other(reason: r) -> r
+  }
+}
+
+// Cap the error-body excerpt logged on the failure path. Real AWS error
+// bodies are a few KB; this keeps a single debug line bounded.
+const error_body_preview_bytes: Int = 512
+
+fn body_preview(body: BitArray) -> String {
+  let excerpt = case bit_array.byte_size(body) > error_body_preview_bytes {
+    True -> bit_array.slice(body, 0, error_body_preview_bytes)
+    False -> Ok(body)
+  }
+  case excerpt {
+    Ok(bytes) ->
+      case bit_array.to_string(bytes) {
+        Ok(text) -> text
+        Error(_) -> "<non-utf8 body>"
+      }
+    Error(_) -> "<body>"
+  }
+}

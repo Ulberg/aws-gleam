@@ -13,6 +13,7 @@
 import aws/env.{get_env as os_get_env}
 import aws/internal/http_send.{type Send as HttpSend, imds_send}
 import aws/internal/ini
+import aws/internal/log
 import aws/internal/os_process
 import aws/internal/providers/ecs
 import aws/internal/providers/imds
@@ -88,13 +89,49 @@ fn try_each(
   attempts: List(#(String, ProviderError)),
 ) -> Result(Credentials, ProviderError) {
   case providers {
-    [] -> Error(ChainExhausted(attempts: list.reverse(attempts)))
+    [] -> {
+      // Whole chain failed: unrecoverable, always-on `error` (per RULES.md
+      // "credential chain exhausted"), listing what was tried.
+      log.error(
+        "aws credentials: chain exhausted — no provider supplied credentials (tried: "
+        <> attempted_names(attempts)
+        <> ")",
+      )
+      Error(ChainExhausted(attempts: list.reverse(attempts)))
+    }
     [p, ..rest] ->
       case p.fetch() {
-        Ok(credentials) -> Ok(credentials)
-        Error(reason) -> try_each(rest, [#(p.name, reason), ..attempts])
+        Ok(credentials) -> {
+          log.debug(fn() { "aws credentials: resolved via " <> p.name })
+          Ok(credentials)
+        }
+        Error(reason) -> {
+          log_provider_miss(p.name, reason)
+          try_each(rest, [#(p.name, reason), ..attempts])
+        }
       }
   }
+}
+
+/// A provider declining mid-chain: a not-configured provider is an expected,
+/// quiet skip (`debug`); a configured-but-failing provider is notable enough
+/// to warn about even on the recovered path (`warning`, default-on).
+fn log_provider_miss(name: String, reason: ProviderError) -> Nil {
+  case reason {
+    NotConfigured(reason: r) ->
+      log.debug(fn() { "aws credentials: skipped " <> name <> " — " <> r })
+    FetchFailed(reason: r) ->
+      log.warning("aws credentials: " <> name <> " failed — " <> r)
+    ChainExhausted(..) ->
+      log.debug(fn() { "aws credentials: " <> name <> " sub-chain exhausted" })
+  }
+}
+
+fn attempted_names(attempts: List(#(String, ProviderError))) -> String {
+  attempts
+  |> list.reverse
+  |> list.map(fn(attempt) { attempt.0 })
+  |> string.join(", ")
 }
 
 /// A provider that always returns the same hardcoded credentials. The primary
