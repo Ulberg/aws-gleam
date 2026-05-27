@@ -113,23 +113,17 @@ pub fn emitted_modules_expose_canonical_function_names_test() {
   should.be_true(string.contains(r.source, "_response("))
 }
 
-/// Cache lifecycle is wired through three call sites in every
-/// generated service: `new` starts the cache, `with_credentials_provider`
-/// shuts the old one before swapping, and `shutdown` /
-/// `shutdown_sync` release the actor at teardown. Locking the
-/// emitted calls keeps the contract observable from the codegen
+/// Cache lifecycle is wired through every generated service: `new` /
+/// `new_with` start exactly one cache around the resolved provider, and
+/// `shutdown` / `shutdown_sync` release the actor at teardown. Locking
+/// the emitted calls keeps the contract observable from the codegen
 /// tests rather than the consumer-side integration suite alone.
 pub fn emitted_modules_wire_credentials_cache_lifecycle_test() {
   let m = load(json10_path)
   let svc = find_service(m, "aws.protocols#awsJson1_0", "JsonRpc10")
   let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson10)
-  // Construction: cache started on `new`.
+  // Construction: cache started on `new` / `new_with`.
   should.be_true(string.contains(r.source, "credentials_cache.start_default"))
-  // Swap: old cache stopped before the new one starts.
-  should.be_true(string.contains(
-    r.source,
-    "let _ = credentials_cache.shutdown(client.cache)",
-  ))
   // Teardown: both modes exposed on the typed API.
   should.be_true(string.contains(r.source, "pub fn shutdown(client: Client)"))
   should.be_true(string.contains(
@@ -139,7 +133,7 @@ pub fn emitted_modules_wire_credentials_cache_lifecycle_test() {
   should.be_true(string.contains(r.source, "credentials_cache.shutdown_sync"))
 }
 
-/// Every generated service exposes a `pub fn config(client) ->
+/// Every generated service exposes a `pub fn client_config(client) ->
 /// runtime.ClientConfig` accessor so callers can build streaming
 /// wrappers (or any other custom dispatch flow) on top of the same
 /// configured Client. Lock its presence on a representative emitted
@@ -152,35 +146,42 @@ pub fn emitted_modules_expose_config_accessor_test() {
   // Signature line + body — both must be present and read straight.
   should.be_true(string.contains(
     r.source,
-    "pub fn config(client: Client) -> runtime.ClientConfig",
+    "pub fn client_config(client: Client) -> runtime.ClientConfig",
   ))
   should.be_true(string.contains(r.source, "  client.config\n"))
 }
 
-/// Streaming-side setters mirror the buffered ones: emit
-/// `with_streaming_http_send`, `with_http2`, and `with_max_attempts`
-/// so callers can swap the chunked transport / opt into HTTP/2 /
-/// tune retry without dropping down to the runtime's ClientConfig.
-/// Pin all three signatures on the same reference fixture.
-pub fn emitted_modules_expose_streaming_and_retry_setters_test() {
+/// The two construction entry points are full-auto `new()` and
+/// `new_with(config.Settings, EndpointParams)`, both returning a `Result`
+/// (region resolution is the one fallible step). Customer config lives on
+/// `config.Settings`; AWS rule-set params on the per-service
+/// `EndpointParams`. No post-construction `with_*` setters. Pin the shape
+/// on the reference fixture so a Client-emitter regression surfaces here.
+pub fn emitted_modules_expose_constructors_test() {
   let m = load(json10_path)
   let svc = find_service(m, "aws.protocols#awsJson1_0", "JsonRpc10")
   let assert Ok(r) = awsjson.emit_service(m, svc, awsjson.AwsJson10)
-  should.be_true(string.contains(r.source, "pub fn with_streaming_http_send("))
-  should.be_true(string.contains(r.source, "send: http_send.StreamingSend"))
-  should.be_true(string.contains(r.source, "pub fn with_http2(client: Client)"))
   should.be_true(string.contains(
     r.source,
-    "pub fn with_max_attempts(client: Client, n: Int)",
+    "pub fn new() -> Result(Client, region.ResolveError)",
   ))
   should.be_true(string.contains(
     r.source,
-    "pub fn with_sigv4a_region_set(client: Client, region_set: List(String))",
+    "pub fn new_with(settings: config.Settings,",
   ))
+  // The per-service AWS endpoint-params record + its all-default builder.
+  should.be_true(string.contains(r.source, "pub type EndpointParams"))
+  should.be_true(string.contains(r.source, "pub fn default_endpoint_params()"))
+  // Full-auto delegates to new_with with both defaults.
   should.be_true(string.contains(
     r.source,
-    "pub fn with_sigv4a_path_normalization(client: Client, normalize: Bool)",
+    "new_with(config.default_settings(), default_endpoint_params())",
   ))
+  // new_with resolves Settings into the runtime ClientConfig.
+  should.be_true(string.contains(r.source, "config.resolve("))
+  // The old builder-chain setters are gone.
+  should.be_false(string.contains(r.source, "pub fn with_credentials_provider("))
+  should.be_false(string.contains(r.source, "pub fn with_max_attempts("))
 }
 
 /// restXml services whose output struct carries a `@streaming` blob

@@ -363,7 +363,7 @@ fn emit_client(metadata: trait_helpers.Metadata) -> String {
     metadata.endpoint_prefix,
     metadata.signing_name,
     metadata.endpoint_rule_set_json,
-    metadata.endpoint_param_setters,
+    metadata.endpoint_params,
   )
 }
 
@@ -1724,6 +1724,7 @@ fn file_header(service_id: String, protocol: Protocol, body: String) -> String {
     AwsJson11 -> "awsJson1_1"
   }
   let candidates = [
+    #("aws/config", "config.", code.CodeNone),
     #("aws/credentials", "credentials.", code.CodeNone),
     #("aws/endpoints", "endpoints.", code.CodeNone),
     #("aws/internal/credentials_cache", "credentials_cache.", code.CodeNone),

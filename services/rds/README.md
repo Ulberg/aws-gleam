@@ -7,7 +7,7 @@ upstream Smithy model in [aws-gleam](https://github.com/Ulberg/aws-gleam).
 import aws/services/rds
 
 pub fn main() {
-  let assert Ok(client) = rds.new_with_auto_region()
+  let assert Ok(client) = rds.new()
   // ... typed ops, e.g. rds.<op>(client, input)
 }
 ```

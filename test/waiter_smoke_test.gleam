@@ -9,13 +9,14 @@
 //// dispatch, missing `waiter.Settled` reference) surfaces as a
 //// failed compile or a non-OK result.
 
+import aws/config
 import aws/credentials
 import aws/internal/http_send as aws_http
 import aws/services/s3
 import aws/waiter as waiter_runtime
 import gleam/http/request.{type Request}
 import gleam/http/response
-import gleam/option.{None}
+import gleam/option.{None, Some}
 import gleeunit/should
 
 fn static_credentials() -> credentials.Provider {
@@ -38,10 +39,16 @@ fn always_ok_send() -> fn(Request(BitArray)) ->
 }
 
 pub fn wait_until_bucket_exists_settles_on_first_success_test() {
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_http_send(always_ok_send())
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(always_ok_send()),
+      ),
+      s3.default_endpoint_params(),
+    )
 
   let result =
     s3.wait_until_bucket_exists(

@@ -10,6 +10,7 @@
 //// algorithm string flipped from `AWS4-HMAC-SHA256` to
 //// `AWS4-ECDSA-P256-SHA256` once `with_sigv4a_region_set` is set.
 
+import aws/config
 import aws/credentials
 import aws/internal/http_send as aws_http
 import aws/services/s3
@@ -17,7 +18,7 @@ import gleam/erlang/process.{type Subject}
 import gleam/http/request.{type Request}
 import gleam/http/response
 import gleam/list
-import gleam/option.{None}
+import gleam/option.{None, Some}
 import gleam/string
 import gleeunit/should
 
@@ -59,11 +60,17 @@ fn first_authorization_header(inbox: Subject(Request(BitArray))) -> String {
 
 pub fn default_client_uses_sigv4_authorization_test() {
   let inbox = process.new_subject()
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_http_send(capture_send(inbox))
-    |> s3.with_max_attempts(1)
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(capture_send(inbox)),
+        max_attempts: Some(1),
+      ),
+      s3.default_endpoint_params(),
+    )
   let input =
     s3.ListBucketsRequest(
       bucket_region: None,
@@ -80,12 +87,18 @@ pub fn default_client_uses_sigv4_authorization_test() {
 
 pub fn with_sigv4a_region_set_flips_authorization_algorithm_test() {
   let inbox = process.new_subject()
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_http_send(capture_send(inbox))
-    |> s3.with_max_attempts(1)
-    |> s3.with_sigv4a_region_set(["us-east-1", "us-west-2"])
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(capture_send(inbox)),
+        max_attempts: Some(1),
+        sigv4a_region_set: Some(["us-east-1", "us-west-2"]),
+      ),
+      s3.default_endpoint_params(),
+    )
   let input =
     s3.ListBucketsRequest(
       bucket_region: None,
@@ -109,13 +122,19 @@ pub fn with_sigv4a_path_normalization_false_preserves_dot_segments_test() {
   // accepted by the round-trip verifier — which would fail if the
   // signer used the normalised path while we hashed the literal.
   let inbox = process.new_subject()
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_http_send(capture_send(inbox))
-    |> s3.with_max_attempts(1)
-    |> s3.with_sigv4a_region_set(["us-east-1"])
-    |> s3.with_sigv4a_path_normalization(False)
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(capture_send(inbox)),
+        max_attempts: Some(1),
+        sigv4a_region_set: Some(["us-east-1"]),
+        sigv4a_normalize_path: False,
+      ),
+      s3.default_endpoint_params(),
+    )
   let input =
     s3.ListBucketsRequest(
       bucket_region: None,
@@ -137,12 +156,18 @@ pub fn with_sigv4a_path_normalization_without_signer_is_noop_test() {
   // override. The dispatch still uses the default `sign_sigv4`
   // path.
   let inbox = process.new_subject()
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_http_send(capture_send(inbox))
-    |> s3.with_max_attempts(1)
-    |> s3.with_sigv4a_path_normalization(False)
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(capture_send(inbox)),
+        max_attempts: Some(1),
+        sigv4a_normalize_path: False,
+      ),
+      s3.default_endpoint_params(),
+    )
   let input =
     s3.ListBucketsRequest(
       bucket_region: None,
@@ -159,12 +184,18 @@ pub fn with_sigv4a_path_normalization_without_signer_is_noop_test() {
 
 pub fn with_sigv4a_region_set_emits_region_set_header_test() {
   let inbox = process.new_subject()
-  let client =
-    s3.new(region: "us-east-1")
-    |> s3.with_credentials_provider(static_credentials())
-    |> s3.with_http_send(capture_send(inbox))
-    |> s3.with_max_attempts(1)
-    |> s3.with_sigv4a_region_set(["us-east-1", "us-west-2"])
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some("us-east-1"),
+        credentials: Some(static_credentials()),
+        http_send: Some(capture_send(inbox)),
+        max_attempts: Some(1),
+        sigv4a_region_set: Some(["us-east-1", "us-west-2"]),
+      ),
+      s3.default_endpoint_params(),
+    )
   let input =
     s3.ListBucketsRequest(
       bucket_region: None,

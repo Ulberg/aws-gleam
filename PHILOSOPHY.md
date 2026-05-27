@@ -13,8 +13,8 @@ The code is written in Gleam and exists to let Gleam run in AWS environments. Re
 
 ## Least-intrusive for the consumer
 We absorb maintainer pain so users don't feel it. The default is the most ergonomic path; finer control is always available but never required.
-- Default: `new_with_auto_region` — region and the credential chain resolve themselves, zero config.
-- Opt-in: `new(region:)`, `with_credentials_provider`, custom transports.
+- Default: `<service>.new()` — region and the credential chain resolve themselves, zero config.
+- Opt-in: `<service>.new_with(settings, endpoint_params)` — customer config (region, credentials, endpoint, retry, transports, SigV4a) on the shared `config.Settings`, AWS endpoint-rule-set params on the per-service typed `EndpointParams`, each spread off its defaults. Never a builder chain.
 
 The only thing that outranks "make it easy for the consumer" is a trade-off that would be genuinely unreasonable to put on maintainers.
 

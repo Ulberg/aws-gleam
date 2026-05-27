@@ -7,7 +7,7 @@ upstream Smithy model in [aws-gleam](https://github.com/Ulberg/aws-gleam).
 import aws/services/dynamodb
 
 pub fn main() {
-  let assert Ok(client) = dynamodb.new_with_auto_region()
+  let assert Ok(client) = dynamodb.new()
   // ... typed ops, e.g. dynamodb.<op>(client, input)
 }
 ```

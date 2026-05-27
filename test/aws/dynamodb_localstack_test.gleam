@@ -12,6 +12,7 @@
 //// `aws_test_support_ffi`; see `test/support/{localstack,docker-compose.yml}`
 //// for the container shape.
 
+import aws/config
 import aws/services/dynamodb
 import gleam/dict
 import gleam/option.{None, Some}
@@ -25,9 +26,17 @@ const table_name: String = "aws-sdk-gleam-e2e"
 const partition_key: String = "id"
 
 fn build_client(endpoint: String) -> dynamodb.Client {
-  dynamodb.new(region: region)
-  |> dynamodb.with_credentials_provider(localstack.fake_credentials())
-  |> dynamodb.with_endpoint_url(endpoint)
+  let assert Ok(client) =
+    dynamodb.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some(region),
+        credentials: Some(localstack.fake_credentials()),
+        endpoint_url: Some(endpoint),
+      ),
+      dynamodb.default_endpoint_params(),
+    )
+  client
 }
 
 fn create_table_input() -> dynamodb.CreateTableInput {

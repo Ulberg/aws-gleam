@@ -7,7 +7,7 @@ upstream Smithy model in [aws-gleam](https://github.com/Ulberg/aws-gleam).
 import aws/services/s3
 
 pub fn main() {
-  let assert Ok(client) = s3.new_with_auto_region()
+  let assert Ok(client) = s3.new()
   // ... typed ops, e.g. s3.<op>(client, input)
 }
 ```

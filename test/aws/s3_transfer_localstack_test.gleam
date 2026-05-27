@@ -16,6 +16,7 @@
 //// Both tests are gated on `INCLUDE_LOCALSTACK=1` so a plain
 //// `gleam test` skips them silently.
 
+import aws/config
 import aws/s3/transfer
 import aws/services/s3
 import aws/streaming
@@ -30,9 +31,17 @@ const bucket_name: String = "aws-sdk-gleam-transfer-e2e"
 const object_key: String = "multipart-roundtrip.bin"
 
 fn build_client(endpoint: String) -> s3.Client {
-  s3.new(region:)
-  |> s3.with_credentials_provider(localstack.fake_credentials())
-  |> s3.with_endpoint_url(endpoint)
+  let assert Ok(client) =
+    s3.new_with(
+      config.Settings(
+        ..config.default_settings(),
+        region: Some(region),
+        credentials: Some(localstack.fake_credentials()),
+        endpoint_url: Some(endpoint),
+      ),
+      s3.default_endpoint_params(),
+    )
+  client
 }
 
 fn create_bucket_input() -> s3.CreateBucketRequest {
