@@ -123,6 +123,50 @@ the generated module under `src/aws/services/s3.gleam` after running
   `s3.get_object_streaming` + `streaming.collect_to_bit_array_max`
   for a size-bounded streaming download.
 
+## Logging
+
+The SDK logs through Erlang/OTP
+[`logger`](https://www.erlang.org/doc/apps/kernel/logger_chapter.html) and stays
+quiet on the happy path. Three levels are used:
+
+- `error` — unrecoverable, operator-must-see: credential chain exhausted,
+  retries exhausted, the Lambda Runtime API gone fatal.
+- `warning` — notable but recovered: a retry fired, a credential provider was
+  configured but failed.
+- `debug` — the firehose: every request, resolved endpoint and response status,
+  each retry and backoff, each credential provider tried, cache hit/miss, and
+  full per-attempt error detail.
+
+Verbosity and destination are yours to set the standard BEAM way — the SDK
+installs no handler and mutates no global `logger` config, the same stance the
+AWS SDK for Rust takes with `tracing`. At OTP's default level (`notice`) you see
+`error` + `warning`; `debug` is hidden until you ask for it:
+
+```sh
+# dev (gleam run / gleam test)
+ERL_FLAGS="-kernel logger_level debug" gleam run
+```
+
+```erlang
+%% release — sys.config
+[{kernel, [{logger_level, debug}]}].
+%% or scope it to the SDK only: logger:set_module_level(aws_log_ffi, debug).
+```
+
+Logs go to OTP's default handler — **stdout**, for every level. To route them
+elsewhere, configure the handler at boot; e.g. send everything to stderr:
+
+```erlang
+%% sys.config
+[{kernel, [{logger, [{handler, default, logger_std_h,
+   #{config => #{type => standard_error}}}]}]}].
+```
+
+Splitting by level (say `warning`+ to stderr, the rest to stdout) is a second
+handler plus a level filter — see the
+[handler docs](https://www.erlang.org/doc/apps/kernel/logger_chapter.html#handlers).
+The SDK leaves that to your deployment rather than baking in a stream policy.
+
 ## Building
 
 Requires Gleam and Erlang/OTP.
