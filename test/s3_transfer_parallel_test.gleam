@@ -114,12 +114,13 @@ fn fresh_client(send: aws_http.Send) -> s3.Client {
 }
 
 pub fn parallel_upload_all_parts_succeed_test() {
-  // 13 parts × 1 KiB each, max_concurrency=4. Every UploadPart
+  // 13 parts × 5 MiB each, max_concurrency=4. Every UploadPart
   // succeeds; the coordinator must dispatch all 13 (regardless of
   // batching) and produce a UploadResult with parts_uploaded=13.
   let inbox = process.new_subject()
   let client = fresh_client(capture_send(inbox, happy))
-  let body = make_body(13 * 1024)
+  let part_size = transfer.default_part_size_bytes
+  let body = make_body(13 * part_size)
   let opts = transfer.with_max_concurrency(transfer.default_options(), 4)
 
   let result =
@@ -128,7 +129,7 @@ pub fn parallel_upload_all_parts_succeed_test() {
       bucket: "my-bucket",
       key: "my-key",
       body: body,
-      part_size_bytes: 1024,
+      part_size_bytes: part_size,
       options: opts,
     )
 
@@ -152,7 +153,8 @@ pub fn parallel_upload_concurrency_one_equals_sequential_test() {
   // handles the degenerate case without deadlocking.
   let inbox = process.new_subject()
   let client = fresh_client(capture_send(inbox, happy))
-  let body = make_body(3 * 1024)
+  let part_size = transfer.default_part_size_bytes
+  let body = make_body(3 * part_size)
   let opts = transfer.with_max_concurrency(transfer.default_options(), 1)
 
   let result =
@@ -161,7 +163,7 @@ pub fn parallel_upload_concurrency_one_equals_sequential_test() {
       bucket: "my-bucket",
       key: "my-key",
       body: body,
-      part_size_bytes: 1024,
+      part_size_bytes: part_size,
       options: opts,
     )
 
@@ -188,18 +190,8 @@ pub fn with_max_concurrency_negative_coerces_to_sequential_test() {
 // ---------- helpers ----------
 
 fn make_body(total_bytes: Int) -> BitArray {
-  case total_bytes {
-    0 -> <<>>
-    _ -> {
-      let one = <<"a":utf8>>
-      grow(one, total_bytes - 1)
-    }
-  }
+  binary_copy(<<"a":utf8>>, total_bytes)
 }
 
-fn grow(b: BitArray, remaining: Int) -> BitArray {
-  case remaining {
-    0 -> b
-    _ -> grow(<<b:bits, "a":utf8>>, remaining - 1)
-  }
-}
+@external(erlang, "binary", "copy")
+fn binary_copy(bytes: BitArray, times: Int) -> BitArray

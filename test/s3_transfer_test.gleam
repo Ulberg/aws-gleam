@@ -23,6 +23,7 @@ import gleam/erlang/process
 import gleam/http
 import gleam/http/request.{type Request}
 import gleam/http/response
+import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
@@ -169,6 +170,44 @@ pub fn upload_empty_body_returns_empty_body_error_test() {
   drain(captured, []) |> list.length |> should.equal(0)
 }
 
+pub fn upload_invalid_small_part_size_returns_invalid_part_size_test() {
+  let captured = process.new_subject()
+  let send = scripted_send(captured, happy_responder)
+  let client = fresh_client(send)
+
+  transfer.upload(
+    client: client,
+    bucket: "my-bucket",
+    key: "my-key",
+    body: <<"small payload":utf8>>,
+    part_size_bytes: transfer.default_part_size_bytes - 1,
+  )
+  |> should.equal(Error(transfer.InvalidPartSize(
+    part_size_bytes: transfer.default_part_size_bytes - 1,
+  )))
+
+  drain(captured, []) |> list.length |> should.equal(0)
+}
+
+pub fn upload_invalid_large_part_size_returns_invalid_part_size_test() {
+  let captured = process.new_subject()
+  let send = scripted_send(captured, happy_responder)
+  let client = fresh_client(send)
+
+  transfer.upload(
+    client: client,
+    bucket: "my-bucket",
+    key: "my-key",
+    body: <<"small payload":utf8>>,
+    part_size_bytes: transfer.max_part_size_bytes + 1,
+  )
+  |> should.equal(Error(transfer.InvalidPartSize(
+    part_size_bytes: transfer.max_part_size_bytes + 1,
+  )))
+
+  drain(captured, []) |> list.length |> should.equal(0)
+}
+
 pub fn upload_succeeds_single_part_test() {
   // Body fits in one part. Sequence: create → upload_part(1) → complete.
   let captured = process.new_subject()
@@ -206,19 +245,20 @@ pub fn upload_succeeds_single_part_test() {
 }
 
 pub fn upload_succeeds_multi_part_test() {
-  // 12 bytes / 5-byte parts = 3 parts (5 + 5 + 2). Sequence:
+  // Two full 5 MiB parts plus a 2-byte tail = 3 parts. Sequence:
   // create → upload_part(1) → upload_part(2) → upload_part(3) → complete.
   let captured = process.new_subject()
   let send = scripted_send(captured, happy_responder)
   let client = fresh_client(send)
+  let part_size = transfer.default_part_size_bytes
 
   let result =
     transfer.upload(
       client: client,
       bucket: "my-bucket",
       key: "my-key",
-      body: <<"hello world!":utf8>>,
-      part_size_bytes: 5,
+      body: repeated_bytes(part_size * 2 + 2),
+      part_size_bytes: part_size,
     )
 
   case result {
@@ -266,8 +306,8 @@ pub fn upload_aborts_on_part_failure_test() {
       client: client,
       bucket: "my-bucket",
       key: "my-key",
-      body: <<"hello world!":utf8>>,
-      part_size_bytes: 5,
+      body: repeated_bytes(transfer.default_part_size_bytes * 2 + 2),
+      part_size_bytes: transfer.default_part_size_bytes,
     )
 
   case result {
@@ -533,22 +573,38 @@ pub fn upload_from_stream_empty_body_returns_empty_body_error_test() {
   drain(captured, []) |> list.length |> should.equal(0)
 }
 
-pub fn upload_from_stream_rechunks_to_part_size_test() {
-  // Body arrives as tiny chunks but the wire-side parts must
-  // follow part_size_bytes. 6 chunks of 2 bytes + part_size 5 →
-  // parts of 5, 5, 2 (= 3 parts).
+pub fn upload_from_stream_invalid_part_size_returns_invalid_part_size_test() {
   let captured = process.new_subject()
   let send = scripted_send(captured, happy_responder)
   let client = fresh_client(send)
 
+  transfer.upload_from_stream(
+    client: client,
+    bucket: "my-bucket",
+    key: "my-key",
+    body: streaming.from_bit_array(<<"small payload":utf8>>),
+    part_size_bytes: 0,
+  )
+  |> should.equal(Error(transfer.InvalidPartSize(part_size_bytes: 0)))
+
+  drain(captured, []) |> list.length |> should.equal(0)
+}
+
+pub fn upload_from_stream_rechunks_to_part_size_test() {
+  // Body arrives in chunks that do not align to the S3 part size,
+  // but the wire-side parts must follow part_size_bytes. Chunks of
+  // part_size-1, 2, and part_size+1 bytes become parts of
+  // part_size, part_size, and 2 bytes (= 3 parts).
+  let captured = process.new_subject()
+  let send = scripted_send(captured, happy_responder)
+  let client = fresh_client(send)
+  let part_size = transfer.default_part_size_bytes
+
   let body =
     streaming.from_chunks([
-      <<"he":utf8>>,
-      <<"ll":utf8>>,
-      <<"o ":utf8>>,
-      <<"wo":utf8>>,
-      <<"rl":utf8>>,
-      <<"d!":utf8>>,
+      repeated_bytes(part_size - 1),
+      repeated_bytes(2),
+      repeated_bytes(part_size + 1),
     ])
 
   let result =
@@ -557,7 +613,7 @@ pub fn upload_from_stream_rechunks_to_part_size_test() {
       bucket: "my-bucket",
       key: "my-key",
       body: body,
-      part_size_bytes: 5,
+      part_size_bytes: part_size,
     )
 
   case result {
@@ -620,12 +676,18 @@ fn describe_error(e: transfer.Error) -> String {
   case e {
     transfer.CreateFailed(_) -> "CreateFailed(_)"
     transfer.UploadPartFailed(part_number: n, ..) ->
-      "UploadPartFailed(" <> int_to_string(n) <> ", _)"
+      "UploadPartFailed(" <> int.to_string(n) <> ", _)"
     transfer.CompleteFailed(_) -> "CompleteFailed(_)"
     transfer.MissingUploadId -> "MissingUploadId"
     transfer.EmptyBody -> "EmptyBody"
+    transfer.InvalidPartSize(part_size_bytes: n) ->
+      "InvalidPartSize(" <> int.to_string(n) <> ")"
   }
 }
 
-@external(erlang, "erlang", "integer_to_binary")
-fn int_to_string(n: Int) -> String
+@external(erlang, "binary", "copy")
+fn binary_copy(bytes: BitArray, times: Int) -> BitArray
+
+fn repeated_bytes(size: Int) -> BitArray {
+  binary_copy(<<"x":utf8>>, size)
+}

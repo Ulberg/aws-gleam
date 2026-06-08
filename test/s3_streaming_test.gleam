@@ -5,9 +5,8 @@
 //// assertion is on the wrapper's externally observable behaviour
 //// rather than the runtime layer underneath.
 ////
-//// LocalStack-backed end-to-end coverage belongs in a future
-//// `test/aws/s3_streaming_localstack_test.gleam` once the
-//// streaming endpoint actually serves chunked bodies.
+//// End-to-end streaming coverage should use a real AWS/live-gated
+//// fixture once the streaming endpoint serves chunked bodies.
 
 import aws/config
 import aws/credentials

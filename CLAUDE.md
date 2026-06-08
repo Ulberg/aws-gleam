@@ -16,7 +16,7 @@ Source fallbacks, always reachable: `github.com/awslabs/aws-sdk-rust`, `github.c
 - `gleam test` is the test command — run it via `scripts/test.sh`, which bumps the BEAM atom table (generating ~409 services creates millions of atoms; the default 1M ceiling crashes the compile).
 - Generated service code is NOT committed. Regenerate from `vendor/aws-sdk-rust/aws-models/*.json` with `scripts/regen.sh [service…]` (no args = full run).
 - Fixtures live on disk — don't invent them: SigV4 vectors under `test/fixtures/aws-c-auth/tests/aws-sig-v4-test-suite/`, Smithy protocol tests under `test/fixtures/protocol-tests/`.
-- LocalStack-backed e2e (DynamoDB `GetItem`, S3 `GetObject`) and the live smoke suite (`--include live`, needs `AWS_PROFILE`) are gated — not run on every commit.
+- Live smoke tests (`--include live`, needs `AWS_PROFILE`) are gated — not run on every commit.
 
 ## Tooling
 - Use the Gleam LSP (wired via the `gleam@claude-code-lsps` plugin) for navigation, references, and types in this codebase — don't grep when the LSP can answer.

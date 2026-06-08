@@ -38,13 +38,16 @@ import gleam/result
 /// `MissingUploadId` fires if S3's `CreateMultipartUpload` response
 /// arrives without an `upload_id` (should never happen in
 /// production, but the wire-type is `Option(String)` so we surface
-/// it explicitly rather than `assert`ing).
+/// it explicitly rather than `assert`ing). `InvalidPartSize` rejects
+/// caller-supplied part sizes outside S3's documented bounds before
+/// any multipart-upload request reaches the bucket.
 pub type Error {
   CreateFailed(cause: s3.CreateMultipartUploadError)
   UploadPartFailed(part_number: Int, cause: s3.UploadPartError)
   CompleteFailed(cause: s3.CompleteMultipartUploadError)
   MissingUploadId
   EmptyBody
+  InvalidPartSize(part_size_bytes: Int)
 }
 
 /// Result of a successful multipart upload. `upload_id` is exposed
@@ -140,6 +143,12 @@ pub fn with_max_concurrency(opts: UploadOptions, n: Int) -> UploadOptions {
 /// per-part round trips but raise outstanding-request memory.
 pub const default_part_size_bytes: Int = 5_242_880
 
+/// S3's maximum size for any individual multipart-upload part
+/// (5 GiB). `upload` / `upload_from_stream` reject larger
+/// `part_size_bytes` values up front so callers get a typed SDK
+/// error instead of a later S3 service error.
+pub const max_part_size_bytes: Int = 5_368_709_120
+
 /// S3's hard cap on parts per multipart upload. Past 10,000 the
 /// `Complete` call returns `InvalidArgument` regardless of total
 /// size, so `part_size_for` scales `part_size_bytes` up for large
@@ -184,6 +193,10 @@ pub fn part_size_for(total_bytes: Int) -> Int {
 /// silenced — the caller already has the more interesting error
 /// from the step that failed.
 ///
+/// `part_size_bytes` must be between
+/// `default_part_size_bytes` (5 MiB) and `max_part_size_bytes`
+/// (5 GiB), inclusive. Invalid values return
+/// `Error(InvalidPartSize(part_size_bytes))` before any HTTP work.
 /// An empty body returns `Error(EmptyBody)`; S3 rejects empty
 /// multipart uploads with `EntityTooSmall`, so we short-circuit
 /// before the create round trip.
@@ -217,6 +230,7 @@ pub fn upload_with_options(
   part_size_bytes part_size_bytes: Int,
   options options: UploadOptions,
 ) -> Result(UploadResult, Error) {
+  use _ <- result.try(validate_part_size(part_size_bytes))
   case bit_array.byte_size(body) {
     0 -> Error(EmptyBody)
     _ ->
@@ -240,10 +254,15 @@ pub fn upload_with_options(
 ///
 /// Today both `StreamingBody` representations (Buffered / Chunked)
 /// hold their full bytes in memory, so this variant doesn't yet
-/// reduce peak memory vs `upload(buffer_to_bit_array(body), ...)`.
+/// reduce peak memory vs `upload(streaming.to_bit_array(body), ...)`.
 /// Once `StreamingBody` grows a lazy `Source(...)` variant (file
 /// handles, generators), this path picks up true bounded-memory
 /// streaming for free.
+///
+/// `part_size_bytes` has the same validation as `upload`: it must
+/// be between 5 MiB and 5 GiB, inclusive, or the function returns
+/// `Error(InvalidPartSize(part_size_bytes))` before reading chunks
+/// or creating the multipart upload.
 pub fn upload_from_stream(
   client client: s3.Client,
   bucket bucket: String,
@@ -271,10 +290,18 @@ pub fn upload_from_stream_with_options(
   part_size_bytes part_size_bytes: Int,
   options options: UploadOptions,
 ) -> Result(UploadResult, Error) {
+  use _ <- result.try(validate_part_size(part_size_bytes))
   let parts = rechunk_to_parts(body, part_size_bytes)
   case list.is_empty(parts) {
     True -> Error(EmptyBody)
     False -> coordinate(client, bucket, key, parts, options)
+  }
+}
+
+fn validate_part_size(part_size: Int) -> Result(Nil, Error) {
+  case part_size >= default_part_size_bytes && part_size <= max_part_size_bytes {
+    True -> Ok(Nil)
+    False -> Error(InvalidPartSize(part_size_bytes: part_size))
   }
 }
 

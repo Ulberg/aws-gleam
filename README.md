@@ -67,7 +67,9 @@ shipped. Current capabilities:
   `upload_from_stream`, `upload_with_options` (content-type, ACL,
   storage class, SSE, etc.), plus `part_size_for(total_bytes)` that
   scales the part size to stay inside S3's 10,000-parts cap.
-  Best-effort abort on any mid-flight failure.
+  `part_size_bytes` is validated against S3's 5 MiB minimum / 5 GiB
+  maximum and returns `InvalidPartSize` before any HTTP request when
+  it is out of range. Best-effort abort on any mid-flight failure.
 - **Event-stream framing codec** (`aws/internal/codec/event_stream`)
   — `application/vnd.amazon.eventstream` encode + decode, all ten
   header wire-codes, prelude + message CRC validation, plus
@@ -141,7 +143,9 @@ the generated module under `src/aws/services/s3.gleam` after running
 - `s3_get.gleam` — buffered restXml call (ListBuckets).
 - `s3_multipart_upload.gleam` — `aws/s3/transfer.upload_with_options`
   driving CreateMultipartUpload → UploadPart × N →
-  CompleteMultipartUpload with content-type set.
+  CompleteMultipartUpload with content-type set; use
+  `upload_from_stream` for a `StreamingBody` source and pass
+  `transfer.part_size_for(total_bytes)` when the total size is known.
 - `s3_streaming_get.gleam` — codegen-emitted
   `s3.get_object_streaming` + `streaming.collect_to_bit_array_max`
   for a size-bounded streaming download.
