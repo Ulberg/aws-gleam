@@ -2,7 +2,7 @@ name = "aws_gleam_eks"
 version = "0.1.0"
 target = "erlang"
 
-description = "Typed Gleam client for AWS eks service. Auto-generated from the upstream Smithy model. Depends on aws_gleam_runtime for SigV4 signing, the credentials chain, endpoint resolution, retry, and the protocol codecs."
+description = "Typed Gleam client for Amazon EKS. Auto-generated from the upstream Smithy model. Depends on aws_gleam_runtime."
 
 licences = ["Apache-2.0"]
 repository = { type = "github", user = "Ulberg", repo = "aws-gleam" }
