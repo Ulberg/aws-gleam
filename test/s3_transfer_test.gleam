@@ -182,9 +182,11 @@ pub fn upload_invalid_small_part_size_returns_invalid_part_size_test() {
     body: <<"small payload":utf8>>,
     part_size_bytes: transfer.default_part_size_bytes - 1,
   )
-  |> should.equal(Error(transfer.InvalidPartSize(
-    part_size_bytes: transfer.default_part_size_bytes - 1,
-  )))
+  |> should.equal(
+    Error(transfer.InvalidPartSize(
+      part_size_bytes: transfer.default_part_size_bytes - 1,
+    )),
+  )
 
   drain(captured, []) |> list.length |> should.equal(0)
 }
@@ -201,9 +203,11 @@ pub fn upload_invalid_large_part_size_returns_invalid_part_size_test() {
     body: <<"small payload":utf8>>,
     part_size_bytes: transfer.max_part_size_bytes + 1,
   )
-  |> should.equal(Error(transfer.InvalidPartSize(
-    part_size_bytes: transfer.max_part_size_bytes + 1,
-  )))
+  |> should.equal(
+    Error(transfer.InvalidPartSize(
+      part_size_bytes: transfer.max_part_size_bytes + 1,
+    )),
+  )
 
   drain(captured, []) |> list.length |> should.equal(0)
 }
