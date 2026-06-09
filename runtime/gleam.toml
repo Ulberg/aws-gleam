@@ -2,7 +2,7 @@ name = "aws_gleam_runtime"
 version = "0.1.0"
 target = "erlang"
 
-description = "Runtime core for the aws-gleam SDK: credentials chain, SigV4 + SigV4a signing, endpoint resolver, retry strategies, HTTP transport (buffered + streaming), waiters, paginators, and the Smithy protocol codecs. Per-service typed clients ship as separate hex packages (aws_s3, aws_sqs, aws_dynamodb, ...) and depend on this one."
+description = "Runtime core for the aws-gleam SDK: credentials, SigV4 + SigV4a signing, endpoint resolution, retry, HTTP transport, waiters, paginators, and Smithy protocol codecs."
 
 licences = ["Apache-2.0"]
 repository = { type = "github", user = "Ulberg", repo = "aws-gleam" }

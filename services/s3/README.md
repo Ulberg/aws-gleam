@@ -1,27 +1,35 @@
 # aws_gleam_s3
 
-Typed Gleam client for AWS s3. Auto-generated from the
-upstream Smithy model in [aws-gleam](https://github.com/Ulberg/aws-gleam).
+Typed Gleam client for Amazon S3. The generated client comes from the upstream
+Smithy model in [aws-gleam](https://github.com/Ulberg/aws-gleam); this package
+also includes S3-specific helpers under `aws/s3/` for streaming and multipart
+upload.
 
 ```gleam
 import aws/services/s3
 
 pub fn main() {
   let assert Ok(client) = s3.new()
-  // ... typed ops, e.g. s3.<op>(client, input)
+  // Call generated operations with typed input records.
+  s3.shutdown(client)
 }
 ```
 
-Depends on [`aws_gleam_runtime`](https://hex.pm/packages/aws_gleam_runtime)
-for SigV4 signing, credentials, endpoint resolution, retry, and
-the protocol codecs. Each AWS service ships as a separate hex
-package so consumers only compile the services they import; the
-SDK's full set of ~409 generated services lives at
-<https://github.com/Ulberg/aws-gleam/tree/main/services>.
+Use `s3.new_with(settings, endpoint_params)` for explicit `aws/config.Settings`
+and S3 endpoint-rule-set parameters such as `UseFIPS`, `UseDualStack`, and
+`ForcePathStyle`.
+
+Depends on [`aws_gleam_runtime`](https://hex.pm/packages/aws_gleam_runtime) for
+signing, credentials, endpoint resolution, retry, transport, streaming, and
+protocol codecs.
 
 ## Documentation
 
 Full docs at <https://hexdocs.pm/aws_gleam_s3>.
+
+## Source
+
+<https://github.com/Ulberg/aws-gleam/tree/main/services/s3>
 
 ## License
 

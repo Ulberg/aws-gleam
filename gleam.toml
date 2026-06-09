@@ -3,7 +3,7 @@ version = "0.1.0"
 target = "erlang"
 
 # Development meta-package for the aws-gleam workspace. Not
-# published to hex. It pulls in `aws_runtime` and (after regen)
+# published to hex. It pulls in `aws_gleam_runtime` and (after regen)
 # every per-service `aws_<svc>` package via path deps so the
 # existing test suite under test/ — which exercises both runtime
 # helpers and codegen-emitted service code — can keep running as

@@ -1,9 +1,9 @@
 //// Tests for `aws_streaming_ffi:collect_stream/2`. Drives the
 //// message-collection loop by sending synthetic stream messages to
 //// the test process and asserting the loop assembles them in the
-//// expected order. The real `request_streaming/4` is exercised via
-//// integration tests against LocalStack / live AWS — those need an
-//// actual HTTP server and live in a separate suite.
+//// expected order. The real `request_streaming/4` is exercised by
+//// `http_streaming_integration_test`, which uses a tiny local TCP
+//// server instead of a Docker-backed service.
 
 import gleam/bit_array
 import gleam/erlang/atom.{type Atom}
