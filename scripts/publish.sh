@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish aws_runtime + every services/<svc>/ to hex.pm.
+# Publish aws_gleam_runtime + every services/<svc>/ to hex.pm.
 #
 # Usage:
 #   ./scripts/publish.sh <version> [runtime|services|both]

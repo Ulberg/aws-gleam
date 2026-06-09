@@ -1,59 +1,54 @@
 # aws_gleam_runtime
 
-Runtime core for the [aws-gleam](https://github.com/Ulberg/aws-gleam)
-SDK. Provides everything that's shared across every AWS service
-typed client:
+Shared runtime package for the [aws-gleam](https://github.com/Ulberg/aws-gleam)
+SDK. Service clients depend on this package for the behavior that is common
+across AWS services.
 
-- **Credentials chain** — env vars → IRSA → SSO (modern + legacy) →
-  shared credentials file → `credential_process` →
-  `aws configure export-credentials` → ECS metadata → EC2 IMDSv2.
-  Per-client cache actor that coalesces concurrent fetches.
-- **Region resolution** — env vars + shared config.
-- **SigV4 + SigV4a signing** — including IAM-credentials-derived
-  signing keys, session-token handling, path normalization.
-- **Endpoint resolver** — Smithy `endpointRuleSet` evaluator; each
-  service package embeds its rule set and threads it through here.
-- **Retry strategies** — standard + adaptive (per-token-bucket rate
-  limiter); pluggable via `runtime.with_retry_strategy`.
-- **Protocol codecs** — restXml, restJson1, awsJson1.0/1.1, awsQuery,
-  ec2Query, rpcv2Cbor (framing), plus the Smithy
-  `application/vnd.amazon.eventstream` framing codec.
-- **Streaming HTTP transport** — `aws_streaming_ffi:streaming_send`
-  in OTP `httpc` async-self mode (HTTP/1.1 + HTTP/2 variants).
-- **Waiters + paginators** — generic helpers each service's
-  generated client wires into per-op `wait_until_*` /
-  `paginate_*` wrappers.
+It provides:
 
-Not directly consumed: import a typed service client instead
-(`aws_s3`, `aws_sqs`, `aws_dynamodb`, ...) — each one declares this
-package as a dependency.
+- Credential providers and the default chain: environment, IRSA, SSO, shared
+  credentials, process providers, `aws configure export-credentials`, ECS
+  metadata, and EC2 IMDSv2.
+- Region resolution from `AWS_REGION`, `AWS_DEFAULT_REGION`, and
+  `~/.aws/config`.
+- SigV4 and SigV4a signing.
+- Smithy endpoint rule-set evaluation.
+- Standard and adaptive retry strategies.
+- Buffered and streaming HTTP transport hooks.
+- Protocol codecs for restXml, restJson, awsJson, awsQuery, ec2Query,
+  rpcv2Cbor, and Smithy event-stream framing.
+- Generic waiter, paginator, and streaming-body helpers.
 
-## Example
+Most applications should import a typed service client such as
+`aws_gleam_s3`, `aws_gleam_sqs`, or `aws_gleam_dynamodb` rather than using this
+package directly. The service packages expose two construction paths:
+
+- `<service>.new()` for automatic region and credential resolution.
+- `<service>.new_with(settings, endpoint_params)` for explicit customer
+  settings plus the service's typed endpoint-rule-set parameters.
+
+## Configuration
+
+Shared customer settings live in `aws/config.Settings`. Start from
+`default_settings()` and override only the fields you need:
 
 ```gleam
-import aws/credentials
-import aws/region
+import aws/config.{Settings, default_settings}
+import aws/retry
+import gleam/option.{Some}
 
-pub fn debug_chain() {
-  let resolved_region =
-    region.resolve(profile: "default") |> result.unwrap("us-east-1")
-
-  case credentials.default_chain() |> credentials.fetch() {
-    Ok(creds) ->
-      io.println("got creds in region " <> resolved_region <> " from "
-        <> creds.source_name)
-    Error(reason) ->
-      io.println_error("no creds: " <> string.inspect(reason))
-  }
-}
+let settings =
+  Settings(
+    ..default_settings(),
+    region: Some("eu-west-1"),
+    max_attempts: Some(5),
+    retry_strategy: Some(retry.standard()),
+  )
 ```
 
-In practice you don't reach for these directly — service clients
-take care of the SigV4 + credentials wiring in their generated
-`new()` constructor. The exception is config tweaks; every service
-client exposes `<service>.with_retry_strategy`, `.with_http_send`,
-`.with_endpoint_param`, etc., which thread their argument through
-to this package's types.
+Service-specific endpoint parameters do not live in `Settings`. They are
+generated per service as `<service>.EndpointParams`, so a parameter is only
+settable where that service's Smithy rule set declares it.
 
 ## Documentation
 

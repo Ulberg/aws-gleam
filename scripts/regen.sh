@@ -89,7 +89,7 @@ ensure_service_package() {
         cat > "$readme" <<EOF
 # aws_gleam_$svc
 
-Typed Gleam client for AWS ${svc//_/ }. Auto-generated from the
+Typed Gleam client for the AWS ${svc//_/ } service, generated from the
 upstream Smithy model in [aws-gleam](https://github.com/Ulberg/aws-gleam).
 
 \`\`\`gleam
@@ -97,21 +97,26 @@ import aws/services/$svc
 
 pub fn main() {
   let assert Ok(client) = $svc.new()
-  // ... typed ops, e.g. $svc.<op>(client, input)
+  // Call generated operations with typed input records.
+  $svc.shutdown(client)
 }
 \`\`\`
 
-Depends on
-[\`aws_gleam_runtime\`](https://hex.pm/packages/aws_gleam_runtime)
-for SigV4 signing, credentials, endpoint resolution, retry, and
-the protocol codecs. Each AWS service ships as a separate hex
-package so consumers only compile the services they import; the
-SDK's full set of ~409 generated services lives at
-<https://github.com/Ulberg/aws-gleam/tree/main/services>.
+Use \`$svc.new_with(settings, endpoint_params)\` for explicit
+\`aws/config.Settings\` and this service's endpoint-rule-set parameters.
+
+Depends on [\`aws_gleam_runtime\`](https://hex.pm/packages/aws_gleam_runtime)
+for signing, credentials, endpoint resolution, retry, transport, and protocol
+codecs. Each AWS service ships as a separate package so consumers only compile
+the services they import.
 
 ## Documentation
 
 Full docs at <https://hexdocs.pm/aws_gleam_$svc>.
+
+## Source
+
+<https://github.com/Ulberg/aws-gleam/tree/main/services/$svc>
 
 ## License
 
