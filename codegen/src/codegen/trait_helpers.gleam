@@ -206,12 +206,13 @@ pub fn endpoint_host_prefix(traits: shape.Traits) -> Option(String) {
 /// placeholders in the hostPrefix template.
 pub fn host_label_member_names(
   members: dict.Dict(String, shape.Member),
-) -> List(String) {
+) -> List(#(String, Bool)) {
   dict.to_list(members)
   |> list.filter_map(fn(pair) {
     let #(name, mem) = pair
     case dict.has_key(mem.traits, ShapeId("smithy.api#hostLabel")) {
-      True -> Ok(name)
+      True ->
+        Ok(#(name, dict.has_key(mem.traits, ShapeId("smithy.api#required"))))
       False -> Error(Nil)
     }
   })
@@ -225,7 +226,7 @@ pub fn host_label_member_names(
 /// Without this binding the rule set runs with only `Region` set and
 /// can't place the bucket anywhere in the resolved URL.
 pub type ContextParamBinding {
-  ContextParamBinding(member_snake: String, param_name: String)
+  ContextParamBinding(member_snake: String, param_name: String, required: Bool)
 }
 
 /// Convenience: resolve an operation's input struct and pull its
@@ -276,6 +277,7 @@ pub fn context_param_bindings(
             Ok(ContextParamBinding(
               member_snake: stringutils.pascal_to_snake(name),
               param_name: param_name,
+              required: dict.has_key(mem.traits, ShapeId("smithy.api#required")),
             ))
           None -> Error(Nil)
         }

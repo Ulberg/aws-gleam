@@ -174,7 +174,9 @@ pub fn emit_service(
       let named_shapes = collect_named_shapes(model, resolved_ops)
       let named_shapes =
         list.map(named_shapes, fn(r) { types.apply_rename(r, rename) })
-      let preamble = emit_named_shapes(model, named_shapes, rename)
+      let required_reachable = input_reachable_structs(model, resolved_ops)
+      let preamble =
+        emit_named_shapes(model, named_shapes, rename, required_reachable)
 
       let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
@@ -195,13 +197,20 @@ pub fn emit_service(
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info =
-            resolve_io_type(model, name_concat([local, "Input"]), in_r, rename)
+            resolve_io_type(
+              model,
+              name_concat([local, "Input"]),
+              in_r,
+              rename,
+              True,
+            )
           let out_info =
             resolve_io_type(
               model,
               name_concat([local, "Output"]),
               out_r,
               rename,
+              False,
             )
           let pagination_info =
             paginator.info_for(
@@ -361,10 +370,12 @@ fn extract_host_prefix_info(
       let labels = case model.lookup(model, in_id) {
         Ok(shape.Structure(members: m, ..)) ->
           trait_helpers.host_label_member_names(m)
-          |> list.map(fn(name) {
+          |> list.map(fn(label) {
+            let #(name, required) = label
             client.HostLabelBinding(
               member_pascal: name,
               member_snake: stringutils.pascal_to_snake(name),
+              required: required,
             )
           })
         _ -> []
@@ -720,10 +731,69 @@ fn remember(
   }
 }
 
+fn input_reachable_structs(
+  model: Model,
+  resolved_ops: List(
+    #(
+      String,
+      HttpTrait,
+      Resolved,
+      Resolved,
+      List(String),
+      Bool,
+      option.Option(trait_helpers.PaginatedTrait),
+      List(trait_helpers.WaiterDef),
+      option.Option(trait_helpers.HttpChecksumInfo),
+      option.Option(client.HostPrefixInfo),
+      String,
+    ),
+  ),
+) -> Set(String) {
+  list.fold(resolved_ops, set.new(), fn(acc, t) {
+    let #(_, _, in_r, _, _, _, _, _, _, _, _) = t
+    walk_for_struct_ids(model, acc, in_r)
+  })
+}
+
+fn walk_for_struct_ids(
+  model: Model,
+  acc: Set(String),
+  r: Resolved,
+) -> Set(String) {
+  case r {
+    RStruct(full_id: id, ..) ->
+      case set.contains(acc, id) {
+        True -> acc
+        False -> {
+          let acc = set.insert(acc, id)
+          let members = types.resolve_members(model, id)
+          list.fold(members, acc, fn(a, m) {
+            walk_for_struct_ids(model, a, m.target)
+          })
+        }
+      }
+    RUnion(full_id: id, ..) ->
+      case set.contains(acc, id) {
+        True -> acc
+        False -> {
+          let acc = set.insert(acc, id)
+          let members = types.resolve_members(model, id)
+          list.fold(members, acc, fn(a, m) {
+            walk_for_struct_ids(model, a, m.target)
+          })
+        }
+      }
+    RList(element: e, ..) -> walk_for_struct_ids(model, acc, e)
+    RMap(value: v, ..) -> walk_for_struct_ids(model, acc, v)
+    _ -> acc
+  }
+}
+
 fn emit_named_shapes(
   model: Model,
   shapes: List(Resolved),
   rename: dict.Dict(String, String),
+  required_reachable: Set(String),
 ) -> String {
   let emitted_type_names = named_shapes.emitted_type_names(shapes)
   shapes
@@ -747,6 +817,12 @@ fn emit_named_shapes(
             let ms =
               types.resolve_members(model, id)
               |> list.map(fn(m) { types.apply_rename_member(m, rename) })
+              |> fn(members) {
+                case set.contains(required_reachable, id) {
+                  True -> members
+                  False -> types.optional_members(members)
+                }
+              }
             [emit_record_def(n, ms), emit_struct_codec(n, ms)]
           }
         }
@@ -782,9 +858,15 @@ fn emit_operation(
   let pascal = local
   let snake = stringutils.pascal_to_snake(local)
   let in_info =
-    resolve_io_type(model, name_concat([pascal, "Input"]), in_r, rename)
+    resolve_io_type(model, name_concat([pascal, "Input"]), in_r, rename, True)
   let out_info =
-    resolve_io_type(model, name_concat([pascal, "Output"]), out_r, rename)
+    resolve_io_type(
+      model,
+      name_concat([pascal, "Output"]),
+      out_r,
+      rename,
+      False,
+    )
 
   let synth_in = synth_io_def(snake, in_info, "input")
   let synth_out = synth_io_def(snake, out_info, "output")
@@ -958,6 +1040,7 @@ fn resolve_io_type(
   synth_name: String,
   r: Resolved,
   rename: dict.Dict(String, String),
+  required_surface: Bool,
 ) -> IOTypeInfo {
   case r {
     RStruct(local_name: ln, gleam_name: gn, full_id: id, ..) ->
@@ -968,6 +1051,12 @@ fn resolve_io_type(
           let ms =
             types.resolve_members(model, id)
             |> list.map(fn(m) { types.apply_rename_member(m, rename) })
+            |> fn(members) {
+              case required_surface {
+                True -> members
+                False -> types.optional_members(members)
+              }
+            }
           IOTypeInfo(type_name: gn, members: ms, synthesise: False)
         }
       }
@@ -1510,16 +1599,24 @@ fn emit_payload_body(m: MemberDef) -> List(code.Code) {
     )
   }
   let body_stmt =
-    code.Let(
-      name: "body",
-      value: code.Case(
-        scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-        branches: [
-          code.Branch(pattern: "option.Some(v)", body: some_expr),
-          code.Branch(pattern: "option.None", body: none_expr),
-        ],
-      ),
-    )
+    code.Let(name: "body", value: case m.required {
+      True ->
+        code.Block(items: [
+          code.Let(
+            name: "v",
+            value: code.Ident(name: name_concat(["input.", m.snake_name])),
+          ),
+          some_expr,
+        ])
+      False ->
+        code.Case(
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
+          branches: [
+            code.Branch(pattern: "option.Some(v)", body: some_expr),
+            code.Branch(pattern: "option.None", body: none_expr),
+          ],
+        )
+    })
   let ct_stmt =
     code.Let(name: "content_type", value: code.StrLit(value: content_type))
   [body_stmt, ct_stmt]
@@ -1559,36 +1656,46 @@ fn emit_body_encoder(
         )
       let updates =
         list.map(body_members, fn(m) {
-          code.Let(
-            name: "pairs",
-            value: code.Case(
-              scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-              branches: [
-                code.Branch(
-                  pattern: "option.Some(v)",
-                  body: code.ListLit(
-                    items: [
-                      code.Tuple(items: [
-                        code.StrLit(value: m.json_name),
-                        code.Call(
-                          head: code.Ident(name: types.json_encoder_member(
-                            m.target,
-                            m.timestamp_format,
-                          )),
-                          args: [code.Ident(name: "v")],
-                        ),
-                      ]),
-                    ],
-                    tail: code.CodeSome(code.Ident(name: "pairs")),
+          let encoded_pair =
+            code.ListLit(
+              items: [
+                code.Tuple(items: [
+                  code.StrLit(value: m.json_name),
+                  code.Call(
+                    head: code.Ident(name: types.json_encoder_member(
+                      m.target,
+                      m.timestamp_format,
+                    )),
+                    args: [code.Ident(name: "v")],
                   ),
-                ),
-                code.Branch(
-                  pattern: "option.None",
-                  body: code.Ident(name: "pairs"),
-                ),
+                ]),
               ],
-            ),
-          )
+              tail: code.CodeSome(code.Ident(name: "pairs")),
+            )
+          let value = case m.required {
+            True ->
+              code.Block(items: [
+                code.Let(
+                  name: "v",
+                  value: code.Ident(name: name_concat(["input.", m.snake_name])),
+                ),
+                encoded_pair,
+              ])
+            False ->
+              code.Case(
+                scrutinee: code.Ident(
+                  name: name_concat(["input.", m.snake_name]),
+                ),
+                branches: [
+                  code.Branch(pattern: "option.Some(v)", body: encoded_pair),
+                  code.Branch(
+                    pattern: "option.None",
+                    body: code.Ident(name: "pairs"),
+                  ),
+                ],
+              )
+          }
+          code.Let(name: "pairs", value: value)
         })
       let tail =
         code.Call(head: code.Ident(name: "json.object"), args: [

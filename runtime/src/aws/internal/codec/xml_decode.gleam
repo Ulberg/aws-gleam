@@ -250,6 +250,19 @@ pub fn optional_child(
   }
 }
 
+/// Decode a required child element, returning an error when the
+/// element is absent.
+pub fn required_child(
+  parent: Element,
+  name: String,
+  decode: fn(Element) -> Result(a, String),
+) -> Result(a, String) {
+  case find_child(parent, name) {
+    None -> Error("xml: missing required child: " <> name)
+    Some(e) -> decode(e)
+  }
+}
+
 /// Decode a wrapped list: `<Wrapper><member>v</member>...</Wrapper>`.
 /// `wrapper` is the parent name, `member_name` is the per-entry tag.
 pub fn optional_list(
@@ -267,6 +280,22 @@ pub fn optional_list(
   }
 }
 
+/// Decode a required wrapped list.
+pub fn required_list(
+  parent: Element,
+  wrapper: String,
+  member_name: String,
+  decode: fn(Element) -> Result(a, String),
+) -> Result(List(a), String) {
+  case find_child(parent, wrapper) {
+    None -> Error("xml: missing required list: " <> wrapper)
+    Some(w) -> {
+      let entries = find_children(w, member_name)
+      list.try_map(entries, decode)
+    }
+  }
+}
+
 /// Decode a flattened list: each entry is a direct child of the
 /// parent (no wrapping element). Returns None when there are zero
 /// entries, matching the Option(List(a)) shape of normal lists.
@@ -278,6 +307,18 @@ pub fn optional_flat_list(
   case find_children(parent, name) {
     [] -> Ok(None)
     entries -> list.try_map(entries, decode) |> result.map(Some)
+  }
+}
+
+/// Decode a required flattened list.
+pub fn required_flat_list(
+  parent: Element,
+  name: String,
+  decode: fn(Element) -> Result(a, String),
+) -> Result(List(a), String) {
+  case find_children(parent, name) {
+    [] -> Error("xml: missing required list: " <> name)
+    entries -> list.try_map(entries, decode)
   }
 }
 

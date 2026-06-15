@@ -71,12 +71,13 @@ fn encoder_body(
         False -> m.json_name
       }
       let wire = StrLit(wire_key)
+      let encoded_value = Call(Ident(member_encoder_expr(m)), [Ident("v")])
       let some_branch =
         ListLit(
           items: [
             Tuple(items: [
               wire,
-              Call(Ident(member_encoder_expr(m)), [Ident("v")]),
+              encoded_value,
             ]),
           ],
           tail: CodeSome(Ident("pairs")),
@@ -91,16 +92,25 @@ fn encoder_body(
           )
         _, _ -> Ident("pairs")
       }
-      Let(
-        name: "pairs",
-        value: Case(
-          scrutinee: Ident(name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(pattern: "option.Some(v)", body: some_branch),
-            code.Branch(pattern: "option.None", body: none_branch),
-          ],
-        ),
-      )
+      let value = case m.required {
+        True ->
+          Block(items: [
+            Let(name: "v", value: Ident(name_concat(["input.", m.snake_name]))),
+            ListLit(
+              items: [Tuple(items: [wire, encoded_value])],
+              tail: CodeSome(Ident("pairs")),
+            ),
+          ])
+        False ->
+          Case(
+            scrutinee: Ident(name_concat(["input.", m.snake_name])),
+            branches: [
+              code.Branch(pattern: "option.Some(v)", body: some_branch),
+              code.Branch(pattern: "option.None", body: none_branch),
+            ],
+          )
+      }
+      Let(name: "pairs", value: value)
     })
   let tail = Call(Ident("json.object"), [Ident("pairs")])
   list.append([init, ..folds], [tail])
@@ -168,14 +178,25 @@ fn decoder_body(
         True -> member_decoder_params_expr(m)
         False -> member_decoder_expr(m)
       }
-      Use(
-        name: m.snake_name,
-        callee: Call(Ident("decode.optional_field"), [
-          StrLit(key),
-          Ident("option.None"),
-          Call(Ident("decode.optional"), [code.Raw(fragment: inner)]),
-        ]),
-      )
+      case m.required {
+        True ->
+          Use(
+            name: m.snake_name,
+            callee: Call(Ident("decode.field"), [
+              StrLit(key),
+              code.Raw(fragment: inner),
+            ]),
+          )
+        False ->
+          Use(
+            name: m.snake_name,
+            callee: Call(Ident("decode.optional_field"), [
+              StrLit(key),
+              Ident("option.None"),
+              Call(Ident("decode.optional"), [code.Raw(fragment: inner)]),
+            ]),
+          )
+      }
     })
   let constructor =
     Call(

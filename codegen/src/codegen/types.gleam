@@ -1128,6 +1128,23 @@ pub fn gleam_type(r: Resolved) -> String {
   }
 }
 
+/// Public record-field type for a Smithy structure member. Required
+/// members surface as plain `T`; optional members surface as
+/// `option.Option(T)`.
+pub fn member_field_type(m: MemberDef) -> String {
+  case m.required {
+    True -> gleam_type(m.target)
+    False -> name_concat(["option.Option(", gleam_type(m.target), ")"])
+  }
+}
+
+/// Return members with requiredness erased. Used for output/error
+/// surfaces while the required-field ergonomics are scoped to
+/// operation inputs and their transitive body shapes.
+pub fn optional_members(members: List(MemberDef)) -> List(MemberDef) {
+  list.map(members, fn(m) { MemberDef(..m, required: False) })
+}
+
 /// Per-member JSON encoder/decoder. Wraps `json_encoder` /
 /// `json_decoder` with `@timestampFormat` handling — timestamps are
 /// the one Smithy type whose wire form depends on the **member**, not

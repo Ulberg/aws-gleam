@@ -160,8 +160,15 @@ pub fn emit_service(
         True -> set.new()
         False -> input_reachable_structs(model, resolved_ops)
       }
+      let required_reachable = input_reachable_structs(model, resolved_ops)
       let preamble =
-        emit_named_shapes(model, named_shapes, is_dispatcher, encoder_reachable)
+        emit_named_shapes(
+          model,
+          named_shapes,
+          is_dispatcher,
+          encoder_reachable,
+          required_reachable,
+        )
 
       let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
@@ -181,9 +188,9 @@ pub fn emit_service(
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info =
-            resolve_io_type(model, name_concat([local, "Input"]), in_r)
+            resolve_io_type(model, name_concat([local, "Input"]), in_r, True)
           let out_info =
-            resolve_io_type(model, name_concat([local, "Output"]), out_r)
+            resolve_io_type(model, name_concat([local, "Output"]), out_r, False)
           let pagination_info =
             paginator.info_for(
               members_in: in_info.members,
@@ -342,10 +349,12 @@ fn extract_host_prefix_info(
       let labels = case model.lookup(model, in_id) {
         Ok(shape.Structure(members: m, ..)) ->
           trait_helpers.host_label_member_names(m)
-          |> list.map(fn(name) {
+          |> list.map(fn(label) {
+            let #(name, required) = label
             client.HostLabelBinding(
               member_pascal: name,
               member_snake: stringutils.pascal_to_snake(name),
+              required: required,
             )
           })
         _ -> []
@@ -685,6 +694,7 @@ fn emit_named_shapes(
   shapes: List(Resolved),
   is_dispatcher: Bool,
   encoder_reachable: Set(String),
+  required_reachable: Set(String),
 ) -> String {
   let emitted_type_names = named_shapes.emitted_type_names(shapes)
   shapes
@@ -712,7 +722,14 @@ fn emit_named_shapes(
             []
           }
           False -> {
-            let ms = types.resolve_members(model, id)
+            let ms =
+              types.resolve_members(model, id)
+              |> fn(members) {
+                case set.contains(required_reachable, ln) {
+                  True -> members
+                  False -> types.optional_members(members)
+                }
+              }
             // Always emit the encoder when the struct appears as a
             // top-level named shape. Output-only structs that don't
             // appear in any union variant still get one — the cost is
@@ -1107,6 +1124,7 @@ fn resolve_io_type(
   model: Model,
   synth_name: String,
   r: Resolved,
+  required_surface: Bool,
 ) -> IOTypeInfo {
   case r {
     RStruct(local_name: ln, gleam_name: gn, full_id: id, ..) ->
@@ -1114,7 +1132,14 @@ fn resolve_io_type(
         "Unit" ->
           IOTypeInfo(type_name: synth_name, members: [], synthesise: True)
         _ -> {
-          let ms = types.resolve_members(model, id)
+          let ms =
+            types.resolve_members(model, id)
+            |> fn(members) {
+              case required_surface {
+                True -> members
+                False -> types.optional_members(members)
+              }
+            }
           IOTypeInfo(type_name: gn, members: ms, synthesise: False)
         }
       }
@@ -1126,9 +1151,9 @@ fn resolve_io_type(
 
 fn emit_record_def(name: String, members: List(MemberDef)) -> String {
   // Append a `<snake>_default()` factory alongside every record so
-  // callers can spread it via `..` to set just the fields they need:
+  // callers can spread it via `..` to set just the optional fields they need:
   //
-  //   SomeRequest(..some_request_default(), bucket: Some("b"))
+  //   SomeRequest(..some_request_default(bucket: "b"), prefix: Some("p"))
   //
   // Avoids the 20+ `None` lines a full record literal would force.
   let snake = stringutils.pascal_to_snake(name)

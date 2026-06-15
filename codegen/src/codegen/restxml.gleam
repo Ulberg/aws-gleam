@@ -20,8 +20,8 @@
 ////     out correctly. `@xmlName` on struct members and `@xmlFlattened`
 ////     are not yet honoured.
 ////   * Output members bound to `@httpHeader` / `@httpResponseCode`
-////     are currently decoded as `option.None` — the response parser
-////     does not yet read response headers into the typed output.
+////     are populated by the per-operation response parser rather than
+////     the generic XML struct decoder.
 ////   * Unions and maps in XML bodies are not yet implemented.
 
 import codegen/client
@@ -149,8 +149,15 @@ pub fn emit_service(
       let named_shapes = collect_named_shapes(model, resolved_ops)
       let is_dispatcher = is_dispatcher_target(service_id)
       let union_reachable = compute_union_reachable_structs(model, named_shapes)
+      let required_reachable = input_reachable_structs(model, resolved_ops)
       let preamble =
-        emit_named_shapes(model, named_shapes, is_dispatcher, union_reachable)
+        emit_named_shapes(
+          model,
+          named_shapes,
+          is_dispatcher,
+          union_reachable,
+          required_reachable,
+        )
 
       let emitted_type_names = named_shapes.emitted_type_names(named_shapes)
       let op_specs =
@@ -171,9 +178,9 @@ pub fn emit_service(
           let local = strip_namespace(op_id)
           let snake = stringutils.pascal_to_snake(local)
           let in_info =
-            resolve_io_type(model, name_concat([local, "Input"]), in_r)
+            resolve_io_type(model, name_concat([local, "Input"]), in_r, True)
           let out_info =
-            resolve_io_type(model, name_concat([local, "Output"]), out_r)
+            resolve_io_type(model, name_concat([local, "Output"]), out_r, False)
           let pagination_info =
             paginator.info_for(
               members_in: in_info.members,
@@ -323,10 +330,12 @@ fn extract_host_prefix_info(
       let labels = case model.lookup(model, in_id) {
         Ok(shape.Structure(members: m, ..)) ->
           trait_helpers.host_label_member_names(m)
-          |> list.map(fn(name) {
+          |> list.map(fn(label) {
+            let #(name, required) = label
             client.HostLabelBinding(
               member_pascal: name,
               member_snake: stringutils.pascal_to_snake(name),
+              required: required,
             )
           })
         _ -> []
@@ -627,11 +636,73 @@ fn remember(
   }
 }
 
+fn input_reachable_structs(
+  model: Model,
+  resolved_ops: List(
+    #(
+      String,
+      HttpTrait,
+      Resolved,
+      Resolved,
+      List(String),
+      Bool,
+      option.Option(trait_helpers.PaginatedTrait),
+      List(trait_helpers.WaiterDef),
+      option.Option(trait_helpers.HttpChecksumInfo),
+      option.Option(client.HostPrefixInfo),
+      String,
+    ),
+  ),
+) -> Set(String) {
+  list.fold(resolved_ops, set.new(), fn(acc, t) {
+    let #(_, _, in_r, _, _, _, _, _, _, _, _) = t
+    walk_for_struct_ids(model, acc, in_r)
+  })
+}
+
+fn walk_for_struct_ids(
+  model: Model,
+  acc: Set(String),
+  r: Resolved,
+) -> Set(String) {
+  case r {
+    RStruct(full_id: id, ..) ->
+      case set.contains(acc, id) {
+        True -> acc
+        False -> {
+          let acc = set.insert(acc, id)
+          let members = types.resolve_members(model, id)
+          list.fold(members, acc, fn(a, m) {
+            walk_for_struct_ids(model, a, m.target)
+          })
+        }
+      }
+    RUnion(full_id: id, ..) ->
+      case set.contains(acc, id) {
+        True -> acc
+        False -> {
+          let acc = set.insert(acc, id)
+          let members = types.resolve_members(model, id)
+          list.fold(members, acc, fn(a, m) {
+            walk_for_struct_ids(model, a, m.target)
+          })
+        }
+      }
+    RList(element: e, ..) -> walk_for_struct_ids(model, acc, e)
+    RMap(key: k, value: v, ..) -> {
+      let acc = walk_for_struct_ids(model, acc, k)
+      walk_for_struct_ids(model, acc, v)
+    }
+    _ -> acc
+  }
+}
+
 fn emit_named_shapes(
   model: Model,
   shapes: List(Resolved),
   is_dispatcher: Bool,
   union_reachable: Set(String),
+  required_reachable: Set(String),
 ) -> String {
   let emitted_type_names = named_shapes.emitted_type_names(shapes)
   shapes
@@ -658,7 +729,14 @@ fn emit_named_shapes(
             []
           }
           False -> {
-            let ms = types.resolve_members(model, id)
+            let ms =
+              types.resolve_members(model, id)
+              |> fn(members) {
+                case set.contains(required_reachable, id) {
+                  True -> members
+                  False -> types.optional_members(members)
+                }
+              }
             let emit_json_encoder = set.contains(union_reachable, ln)
             [
               emit_record_def(n, ms),
@@ -762,8 +840,10 @@ fn emit_operation(
   let local = strip_namespace(op_id)
   let pascal = local
   let snake = stringutils.pascal_to_snake(local)
-  let in_info = resolve_io_type(model, name_concat([pascal, "Input"]), in_r)
-  let out_info = resolve_io_type(model, name_concat([pascal, "Output"]), out_r)
+  let in_info =
+    resolve_io_type(model, name_concat([pascal, "Input"]), in_r, True)
+  let out_info =
+    resolve_io_type(model, name_concat([pascal, "Output"]), out_r, False)
   // Smithy: service-level @xmlNamespace falls in on the body root
   // when the input/output struct doesn't carry its own. Nested
   // members of the struct don't inherit, so this override only
@@ -1036,6 +1116,7 @@ fn resolve_io_type(
   model: Model,
   synth_name: String,
   r: Resolved,
+  required_surface: Bool,
 ) -> IOTypeInfo {
   case r {
     RStruct(
@@ -1055,7 +1136,14 @@ fn resolve_io_type(
             xml_namespace: option.None,
           )
         _ -> {
-          let ms = types.resolve_members(model, id)
+          let ms =
+            types.resolve_members(model, id)
+            |> fn(members) {
+              case required_surface {
+                True -> members
+                False -> types.optional_members(members)
+              }
+            }
           IOTypeInfo(
             type_name: gn,
             members: ms,
@@ -1486,14 +1574,28 @@ fn emit_struct_xml_decoder(
               code.Use(
                 name: m.snake_name,
                 callee: code.Call(head: code.Ident(name: "result.try"), args: [
-                  xml_value_decoder_expr_for_member(m),
+                  xml_member_decoder_expr_for_member(m),
                 ]),
               )
             _ ->
-              code.Let(
-                name: m.snake_name,
-                value: code.Ident(name: "option.None"),
-              )
+              case m.required {
+                True ->
+                  code.Use(
+                    name: m.snake_name,
+                    callee: code.Raw(
+                      fragment: name_concat([
+                        "result.try(Error(\"xml: required non-body member ",
+                        m.snake_name,
+                        " unavailable\"))",
+                      ]),
+                    ),
+                  )
+                False ->
+                  code.Let(
+                    name: m.snake_name,
+                    value: code.Ident(name: "option.None"),
+                  )
+              }
           }
         })
       let ctor_args =
@@ -1524,9 +1626,16 @@ fn emit_struct_xml_decoder(
   )
 }
 
-/// Build the `Result(Option(a), String)` decoder expression that reads
-/// a single member from the parent XML element. Mirrors
-/// `xml_value_expr` on the encoder side: primitives use `int_text` /
+/// Build the decoder expression for a single member from the parent XML
+/// element. Required members return `Result(a, String)`; optional
+/// members return `Result(Option(a), String)`.
+fn xml_member_decoder_expr_for_member(m: MemberDef) -> code.Code {
+  case m.required {
+    True -> required_xml_value_decoder_expr_for_member(m)
+    False -> xml_value_decoder_expr_for_member(m)
+  }
+}
+
 /// Member-aware wrapper around `xml_value_decoder_expr`. Honours
 /// `@xmlFlattened` on list members — flattened lists land as a list
 /// of `<member_name>` siblings rather than a wrapped `<member><entry>`
@@ -1542,6 +1651,20 @@ fn xml_value_decoder_expr_for_member(m: MemberDef) -> code.Code {
       ])
     }
     _, _ -> xml_value_decoder_expr(m.target, m.json_name)
+  }
+}
+
+fn required_xml_value_decoder_expr_for_member(m: MemberDef) -> code.Code {
+  case m.target, m.xml_flattened {
+    RList(element: e, ..), True -> {
+      let inner_decoder = list_element_decoder(e)
+      code.Call(head: code.Ident(name: "xml_decode.required_flat_list"), args: [
+        code.Ident(name: "elem"),
+        code.StrLit(value: m.json_name),
+        code.Raw(fragment: inner_decoder),
+      ])
+    }
+    _, _ -> required_xml_value_decoder_expr(m.target, m.json_name)
   }
 }
 
@@ -1625,6 +1748,69 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
   }
 }
 
+fn required_xml_value_decoder_expr(
+  target: Resolved,
+  member_name: String,
+) -> code.Code {
+  let required_child_via = fn(decoder_ident: String) {
+    code.Call(head: code.Ident(name: "xml_decode.required_child"), args: [
+      code.Ident(name: "elem"),
+      code.StrLit(value: member_name),
+      code.Ident(name: decoder_ident),
+    ])
+  }
+  case target {
+    RPrim(primitive: types.PString) ->
+      required_child_via("xml_decode.string_text")
+    RPrim(primitive: types.PInt) -> required_child_via("xml_decode.int_text")
+    RPrim(primitive: types.PBool) -> required_child_via("xml_decode.bool_text")
+    RPrim(primitive: types.PFloat) ->
+      required_child_via("xml_decode.smithy_float_text")
+    RBlob ->
+      code.Call(head: code.Ident(name: "xml_decode.required_child"), args: [
+        code.Ident(name: "elem"),
+        code.StrLit(value: member_name),
+        code.Raw(
+          fragment: "fn(e) { case xml_decode.string_text(e) { Ok(s) -> case bit_array.base64_decode(s) { Ok(b) -> Ok(b) Error(_) -> Error(\"xml: bad base64\") } Error(r) -> Error(r) } }",
+        ),
+      ])
+    RStreamingBlob ->
+      code.Call(head: code.Ident(name: "xml_decode.required_child"), args: [
+        code.Ident(name: "elem"),
+        code.StrLit(value: member_name),
+        code.Raw(
+          fragment: "fn(e) { case xml_decode.string_text(e) { Ok(s) -> case bit_array.base64_decode(s) { Ok(b) -> Ok(streaming.from_bit_array(b)) Error(_) -> Error(\"xml: bad base64\") } Error(r) -> Error(r) } }",
+        ),
+      ])
+    RTimestamp -> required_child_via("xml_decode.timestamp_text_precise")
+    RStruct(gleam_name: name, ..) ->
+      required_child_via(
+        name_concat(["decode_", stringutils.pascal_to_snake(name), "_xml"]),
+      )
+    RUnion(gleam_name: gn, ..) ->
+      required_child_via(
+        name_concat([
+          "decode_",
+          stringutils.pascal_to_snake(gn),
+          "_union_xml",
+        ]),
+      )
+    RList(element: e, xml_entry_name: entry, ..) -> {
+      let inner_decoder = list_element_decoder(e)
+      code.Call(head: code.Ident(name: "xml_decode.required_list"), args: [
+        code.Ident(name: "elem"),
+        code.StrLit(value: member_name),
+        code.StrLit(value: entry),
+        code.Raw(fragment: inner_decoder),
+      ])
+    }
+    REnum(gleam_name: gn, ..) | RIntEnum(gleam_name: gn, ..) ->
+      emit_required_unsupported_decoder(gn, member_name)
+    RMap(..) | RDocument | RUnit | Unsupported(..) ->
+      emit_required_unsupported_decoder(types.gleam_type(target), member_name)
+  }
+}
+
 /// Decoder expression for one *list element* — i.e. the per-entry
 /// callback passed to `optional_list` / `optional_flat_list`.
 /// Mirrors `xml_inner_expr_for_list_element` on the encoder side.
@@ -1675,6 +1861,21 @@ fn emit_unsupported_decoder(gleam_type: String) -> code.Code {
       "{ let r: Result(option.Option(",
       gleam_type,
       "), String) = Ok(option.None)\n    r }",
+    ]),
+  )
+}
+
+fn emit_required_unsupported_decoder(
+  gleam_type: String,
+  member_name: String,
+) -> code.Code {
+  code.Raw(
+    fragment: name_concat([
+      "{ let r: Result(",
+      gleam_type,
+      ", String) = Error(\"xml: unsupported required member: ",
+      member_name,
+      "\")\n    r }",
     ]),
   )
 }
@@ -1920,27 +2121,38 @@ fn emit_struct_xml_attrs(
     code.Let(name: "attrs", value: code.ListLit(items: [], tail: code.CodeNone))
   let updates =
     list.map(attr_members, fn(m) {
-      code.Let(
-        name: "attrs",
-        value: code.Case(
-          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(
-              pattern: "option.Some(v)",
-              body: code.ListLit(
-                items: [
-                  code.Tuple(items: [
-                    code.StrLit(value: m.json_name),
-                    code.Raw(fragment: attr_value_expr(m.target)),
-                  ]),
-                ],
-                tail: code.CodeSome(code.Ident(name: "attrs")),
-              ),
-            ),
-            code.Branch(pattern: "option.None", body: code.Ident(name: "attrs")),
+      let attr_pair =
+        code.ListLit(
+          items: [
+            code.Tuple(items: [
+              code.StrLit(value: m.json_name),
+              code.Raw(fragment: attr_value_expr(m.target)),
+            ]),
           ],
-        ),
-      )
+          tail: code.CodeSome(code.Ident(name: "attrs")),
+        )
+      let value = case m.required {
+        True ->
+          code.Block(items: [
+            code.Let(
+              name: "v",
+              value: code.Ident(name: name_concat(["input.", m.snake_name])),
+            ),
+            attr_pair,
+          ])
+        False ->
+          code.Case(
+            scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
+            branches: [
+              code.Branch(pattern: "option.Some(v)", body: attr_pair),
+              code.Branch(
+                pattern: "option.None",
+                body: code.Ident(name: "attrs"),
+              ),
+            ],
+          )
+      }
+      code.Let(name: "attrs", value: value)
     })
   let tail = code.Ident(name: "attrs")
   let body_items = list.append([initial, ..updates], [tail])
@@ -2012,25 +2224,35 @@ fn emit_struct_xml_inner_encoder(
       let initial = code.Let(name: "inner", value: code.StrLit(value: ""))
       let updates =
         list.map(body_members, fn(m) {
-          code.Let(
-            name: "inner",
-            value: code.Case(
-              scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-              branches: [
-                code.Branch(
-                  pattern: "option.Some(v)",
-                  body: code.Concat(parts: [
-                    code.Ident(name: "inner"),
-                    xml_value_expr(m),
-                  ]),
+          let append_xml =
+            code.Concat(parts: [
+              code.Ident(name: "inner"),
+              xml_value_expr(m),
+            ])
+          let value = case m.required {
+            True ->
+              code.Block(items: [
+                code.Let(
+                  name: "v",
+                  value: code.Ident(name: name_concat(["input.", m.snake_name])),
                 ),
-                code.Branch(
-                  pattern: "option.None",
-                  body: code.Ident(name: "inner"),
+                append_xml,
+              ])
+            False ->
+              code.Case(
+                scrutinee: code.Ident(
+                  name: name_concat(["input.", m.snake_name]),
                 ),
-              ],
-            ),
-          )
+                branches: [
+                  code.Branch(pattern: "option.Some(v)", body: append_xml),
+                  code.Branch(
+                    pattern: "option.None",
+                    body: code.Ident(name: "inner"),
+                  ),
+                ],
+              )
+          }
+          code.Let(name: "inner", value: value)
         })
       let tail = code.Ident(name: "inner")
       #("input", list.append([initial, ..updates], [tail]))
@@ -2860,16 +3082,27 @@ fn emit_payload_body(m: MemberDef) -> List(code.Code) {
     )
   }
   let body_stmt =
-    code.Let(
-      name: "body",
-      value: code.Case(
-        scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-        branches: [
-          code.Branch(pattern: "option.Some(v)", body: some_expr),
-          code.Branch(pattern: "option.None", body: code.Raw(fragment: "<<>>")),
-        ],
-      ),
-    )
+    code.Let(name: "body", value: case m.required {
+      True ->
+        code.Block(items: [
+          code.Let(
+            name: "v",
+            value: code.Ident(name: name_concat(["input.", m.snake_name])),
+          ),
+          some_expr,
+        ])
+      False ->
+        code.Case(
+          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
+          branches: [
+            code.Branch(pattern: "option.Some(v)", body: some_expr),
+            code.Branch(
+              pattern: "option.None",
+              body: code.Raw(fragment: "<<>>"),
+            ),
+          ],
+        )
+    })
   let ct_stmt =
     code.Let(name: "content_type", value: code.StrLit(value: content_type))
   [body_stmt, ct_stmt]

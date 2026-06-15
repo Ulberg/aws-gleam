@@ -126,7 +126,8 @@ pub fn build_request_module(
     Error(_) -> False
   }
   let customization_tree_hash_step = case
-    customization.glacier_treehash, has_blob_payload
+    customization.glacier_treehash,
+    has_blob_payload
   {
     True, True -> [
       code.Let(
@@ -271,26 +272,31 @@ fn build_dispatched_checksum_step(member: MemberDef) -> code.Code {
         code.Ident(name: "body"),
       ],
     )
-  code.Let(
-    name: "headers",
-    value: code.Case(
-      scrutinee: code.Ident(name: name_concat(["input.", snake])),
-      branches: [
-        code.Branch(pattern: "option.Some(v)", body: some_branch),
-        code.Branch(
-          pattern: "option.None",
-          body: code.Call(
-            head: code.Ident(name: "rest.with_checksum_header"),
-            args: [
-              code.Ident(name: "headers"),
-              code.Ident(name: "rest.ChecksumSha256"),
-              code.Ident(name: "body"),
-            ],
-          ),
+  let default_branch =
+    code.Call(head: code.Ident(name: "rest.with_checksum_header"), args: [
+      code.Ident(name: "headers"),
+      code.Ident(name: "rest.ChecksumSha256"),
+      code.Ident(name: "body"),
+    ])
+  let value = case member.required {
+    True ->
+      code.Block(items: [
+        code.Let(
+          name: "v",
+          value: code.Ident(name: name_concat(["input.", snake])),
         ),
-      ],
-    ),
-  )
+        some_branch,
+      ])
+    False ->
+      code.Case(
+        scrutinee: code.Ident(name: name_concat(["input.", snake])),
+        branches: [
+          code.Branch(pattern: "option.Some(v)", body: some_branch),
+          code.Branch(pattern: "option.None", body: default_branch),
+        ],
+      )
+  }
+  code.Let(name: "headers", value: value)
 }
 
 fn find_algorithm_member(
@@ -394,32 +400,58 @@ fn emit_path_setup_with_defaults(
               code.StrLit(value: default_value),
               greedy_ident,
             ])
-          code.Let(
-            name: "path",
-            value: code.Case(
-              scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-              branches: [
-                code.Branch(pattern: "option.Some(\"\")", body: default_call),
-                code.Branch(pattern: "option.Some(v)", body: some_branch),
-                code.Branch(pattern: "option.None", body: default_call),
-              ],
-            ),
-          )
-        }
-        Error(_) ->
-          code.Let(
-            name: "path",
-            value: code.Case(
-              scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-              branches: [
-                code.Branch(pattern: "option.Some(v)", body: some_branch),
-                code.Branch(
-                  pattern: "option.None",
-                  body: code.Ident(name: "path"),
+          let value = case m.required {
+            True ->
+              code.Block(items: [
+                code.Let(
+                  name: "v",
+                  value: code.Ident(name: name_concat(["input.", m.snake_name])),
                 ),
-              ],
-            ),
-          )
+                code.Case(scrutinee: code.Ident(name: "v"), branches: [
+                  code.Branch(pattern: "\"\"", body: default_call),
+                  code.Branch(pattern: "_", body: some_branch),
+                ]),
+              ])
+            False ->
+              code.Case(
+                scrutinee: code.Ident(
+                  name: name_concat(["input.", m.snake_name]),
+                ),
+                branches: [
+                  code.Branch(pattern: "option.Some(\"\")", body: default_call),
+                  code.Branch(pattern: "option.Some(v)", body: some_branch),
+                  code.Branch(pattern: "option.None", body: default_call),
+                ],
+              )
+          }
+          code.Let(name: "path", value: value)
+        }
+        Error(_) -> {
+          let value = case m.required {
+            True ->
+              code.Block(items: [
+                code.Let(
+                  name: "v",
+                  value: code.Ident(name: name_concat(["input.", m.snake_name])),
+                ),
+                some_branch,
+              ])
+            False ->
+              code.Case(
+                scrutinee: code.Ident(
+                  name: name_concat(["input.", m.snake_name]),
+                ),
+                branches: [
+                  code.Branch(pattern: "option.Some(v)", body: some_branch),
+                  code.Branch(
+                    pattern: "option.None",
+                    body: code.Ident(name: "path"),
+                  ),
+                ],
+              )
+          }
+          code.Let(name: "path", value: value)
+        }
       }
     })
   [initial, ..updates]
@@ -440,30 +472,38 @@ pub fn emit_path_setup(
         True -> code.Ident(name: "True")
         False -> code.Ident(name: "False")
       }
-      code.Let(
-        name: "path",
-        value: code.Case(
-          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(
-              pattern: "option.Some(v)",
-              body: code.Call(
-                head: code.Ident(name: "rest.substitute_label"),
-                args: [
-                  code.Ident(name: "path"),
-                  code.StrLit(value: m.json_name),
-                  code.Raw(fragment: value_to_string_with_format(
-                    m.target,
-                    m.timestamp_format,
-                  )),
-                  greedy_ident,
-                ],
-              ),
+      let substitute =
+        code.Call(head: code.Ident(name: "rest.substitute_label"), args: [
+          code.Ident(name: "path"),
+          code.StrLit(value: m.json_name),
+          code.Raw(fragment: value_to_string_with_format(
+            m.target,
+            m.timestamp_format,
+          )),
+          greedy_ident,
+        ])
+      let value = case m.required {
+        True ->
+          code.Block(items: [
+            code.Let(
+              name: "v",
+              value: code.Ident(name: name_concat(["input.", m.snake_name])),
             ),
-            code.Branch(pattern: "option.None", body: code.Ident(name: "path")),
-          ],
-        ),
-      )
+            substitute,
+          ])
+        False ->
+          code.Case(
+            scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
+            branches: [
+              code.Branch(pattern: "option.Some(v)", body: substitute),
+              code.Branch(
+                pattern: "option.None",
+                body: code.Ident(name: "path"),
+              ),
+            ],
+          )
+      }
+      code.Let(name: "path", value: value)
     })
   [initial, ..updates]
 }
@@ -541,13 +581,21 @@ fn query_member_let(m: MemberDef) -> code.Code {
     False -> code.Ident(name: "query")
   }
 
-  code.Let(
-    name: "query",
-    value: code.Case(scrutinee: scrutinee, branches: [
-      code.Branch(pattern: some_pattern, body: some_body),
-      code.Branch(pattern: "option.None", body: none_body),
-    ]),
-  )
+  let value = case m.required {
+    True -> {
+      let binding = case some_pattern {
+        "option.Some(xs)" -> code.Let(name: "xs", value: scrutinee)
+        _ -> code.Let(name: "v", value: scrutinee)
+      }
+      code.Block(items: [binding, some_body])
+    }
+    False ->
+      code.Case(scrutinee: scrutinee, branches: [
+        code.Branch(pattern: some_pattern, body: some_body),
+        code.Branch(pattern: "option.None", body: none_body),
+      ])
+  }
+  code.Let(name: "query", value: value)
 }
 
 fn query_map_member_let(m: MemberDef) -> Result(code.Code, Nil) {
@@ -559,23 +607,27 @@ fn query_map_member_let(m: MemberDef) -> Result(code.Code, Nil) {
     _ -> Error(Nil)
   }
   case helper {
-    Ok(fn_name) ->
-      Ok(code.Let(
-        name: "query",
-        value: code.Case(
-          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-          branches: [
+    Ok(fn_name) -> {
+      let call = fn(value: code.Code) {
+        code.Call(head: code.Ident(name: fn_name), args: [
+          code.Ident(name: "query"),
+          value,
+        ])
+      }
+      let scrutinee = code.Ident(name: name_concat(["input.", m.snake_name]))
+      let value = case m.required {
+        True -> call(scrutinee)
+        False ->
+          code.Case(scrutinee: scrutinee, branches: [
             code.Branch(
               pattern: "option.Some(m)",
-              body: code.Call(head: code.Ident(name: fn_name), args: [
-                code.Ident(name: "query"),
-                code.Ident(name: "m"),
-              ]),
+              body: call(code.Ident(name: "m")),
             ),
             code.Branch(pattern: "option.None", body: code.Ident(name: "query")),
-          ],
-        ),
-      ))
+          ])
+      }
+      Ok(code.Let(name: "query", value: value))
+    }
     Error(_) -> Error(Nil)
   }
 }
@@ -603,26 +655,26 @@ fn prefix_header_let(m: MemberDef) -> code.Code {
     PrefixHeaders(prefix: p) -> p
     _ -> ""
   }
-  code.Let(
-    name: "headers",
-    value: code.Case(
-      scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-      branches: [
+  let call = fn(value: code.Code) {
+    code.Call(head: code.Ident(name: "rest.add_prefix_headers"), args: [
+      code.Ident(name: "headers"),
+      code.StrLit(value: prefix),
+      value,
+    ])
+  }
+  let scrutinee = code.Ident(name: name_concat(["input.", m.snake_name]))
+  let value = case m.required {
+    True -> call(scrutinee)
+    False ->
+      code.Case(scrutinee: scrutinee, branches: [
         code.Branch(
           pattern: "option.Some(m)",
-          body: code.Call(
-            head: code.Ident(name: "rest.add_prefix_headers"),
-            args: [
-              code.Ident(name: "headers"),
-              code.StrLit(value: prefix),
-              code.Ident(name: "m"),
-            ],
-          ),
+          body: call(code.Ident(name: "m")),
         ),
         code.Branch(pattern: "option.None", body: code.Ident(name: "headers")),
-      ],
-    ),
-  )
+      ])
+  }
+  code.Let(name: "headers", value: value)
 }
 
 fn header_member_let(m: MemberDef) -> code.Code {
@@ -639,43 +691,40 @@ fn header_member_let(m: MemberDef) -> code.Code {
         RPrim(primitive: types.PString) -> "rest.quote_list_string_entry(v)"
         _ -> value_to_string_for_header(e, m.timestamp_format)
       }
-      code.Let(
-        name: "headers",
-        value: code.Case(
-          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(
-              pattern: "option.Some(xs)",
-              body: code.Call(
-                head: code.Ident(name: "rest.maybe_set_list_header"),
-                args: [
-                  code.Ident(name: "headers"),
-                  code.StrLit(value: header_name),
-                  // `list.map(xs, fn(item) { let v = item; <render> })` —
-                  // `<render>` is an expression keyed on `v`. The
-                  // `let v = item` binding hosts the rename so the
-                  // helper-emitted rendering doesn't have to thread
-                  // through a parameter name.
-                  code.Call(head: code.Ident(name: "list.map"), args: [
-                    code.Ident(name: "xs"),
-                    code.Lambda(
-                      params: ["item"],
-                      body: code.Block(items: [
-                        code.Let(name: "v", value: code.Ident(name: "item")),
-                        code.Raw(fragment: render),
-                      ]),
-                    ),
-                  ]),
-                ],
-              ),
+      let call =
+        code.Call(head: code.Ident(name: "rest.maybe_set_list_header"), args: [
+          code.Ident(name: "headers"),
+          code.StrLit(value: header_name),
+          // `list.map(xs, fn(item) { let v = item; <render> })` —
+          // `<render>` is an expression keyed on `v`. The
+          // `let v = item` binding hosts the rename so the
+          // helper-emitted rendering doesn't have to thread
+          // through a parameter name.
+          code.Call(head: code.Ident(name: "list.map"), args: [
+            code.Ident(name: "xs"),
+            code.Lambda(
+              params: ["item"],
+              body: code.Block(items: [
+                code.Let(name: "v", value: code.Ident(name: "item")),
+                code.Raw(fragment: render),
+              ]),
             ),
+          ]),
+        ])
+      let scrutinee = code.Ident(name: name_concat(["input.", m.snake_name]))
+      let value = case m.required {
+        True ->
+          code.Block(items: [code.Let(name: "xs", value: scrutinee), call])
+        False ->
+          code.Case(scrutinee: scrutinee, branches: [
+            code.Branch(pattern: "option.Some(xs)", body: call),
             code.Branch(
               pattern: "option.None",
               body: code.Ident(name: "headers"),
             ),
-          ],
-        ),
-      )
+          ])
+      }
+      code.Let(name: "headers", value: value)
     }
     _ -> {
       // `@mediaType` on a `@httpHeader` string member means the value
@@ -686,29 +735,25 @@ fn header_member_let(m: MemberDef) -> code.Code {
           "bit_array.base64_encode(bit_array.from_string(v), True)"
         _, _ -> value_to_string_for_header(m.target, m.timestamp_format)
       }
-      code.Let(
-        name: "headers",
-        value: code.Case(
-          scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(
-              pattern: "option.Some(v)",
-              body: code.Call(
-                head: code.Ident(name: "rest.maybe_set_header"),
-                args: [
-                  code.Ident(name: "headers"),
-                  code.StrLit(value: header_name),
-                  code.Raw(fragment: render),
-                ],
-              ),
-            ),
+      let call =
+        code.Call(head: code.Ident(name: "rest.maybe_set_header"), args: [
+          code.Ident(name: "headers"),
+          code.StrLit(value: header_name),
+          code.Raw(fragment: render),
+        ])
+      let scrutinee = code.Ident(name: name_concat(["input.", m.snake_name]))
+      let value = case m.required {
+        True -> code.Block(items: [code.Let(name: "v", value: scrutinee), call])
+        False ->
+          code.Case(scrutinee: scrutinee, branches: [
+            code.Branch(pattern: "option.Some(v)", body: call),
             code.Branch(
               pattern: "option.None",
               body: code.Ident(name: "headers"),
             ),
-          ],
-        ),
-      )
+          ])
+      }
+      code.Let(name: "headers", value: value)
     }
   }
 }

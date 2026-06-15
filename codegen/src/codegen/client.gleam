@@ -394,7 +394,7 @@ pub type HostPrefixInfo {
 }
 
 pub type HostLabelBinding {
-  HostLabelBinding(member_pascal: String, member_snake: String)
+  HostLabelBinding(member_pascal: String, member_snake: String, required: Bool)
 }
 
 /// Build the AST node for the per-op `pub fn <snake>(client, input)
@@ -558,23 +558,42 @@ pub fn host_prefix_validator_fn(
 fn render_host_prefix_validator_body(info: HostPrefixInfo) -> String {
   let validate_steps =
     list.map(info.labels, fn(lb) {
-      string.concat([
-        "  use ",
-        lb.member_snake,
-        " <- result.try(case input.",
-        lb.member_snake,
-        " {\n",
-        "    option.Some(v) -> case v {\n",
-        "      \"\" -> Error(\"",
-        lb.member_snake,
-        " was unset or empty but must be set as part of the endpoint prefix\")\n",
-        "      _ -> Ok(v)\n",
-        "    }\n",
-        "    option.None -> Error(\"",
-        lb.member_snake,
-        " was unset or empty but must be set as part of the endpoint prefix\")\n",
-        "  })\n",
-      ])
+      let message =
+        lb.member_snake
+        <> " was unset or empty but must be set as part of the endpoint prefix"
+      case lb.required {
+        True ->
+          string.concat([
+            "  use ",
+            lb.member_snake,
+            " <- result.try(case input.",
+            lb.member_snake,
+            " {\n",
+            "    \"\" -> Error(\"",
+            message,
+            "\")\n",
+            "    v -> Ok(v)\n",
+            "  })\n",
+          ])
+        False ->
+          string.concat([
+            "  use ",
+            lb.member_snake,
+            " <- result.try(case input.",
+            lb.member_snake,
+            " {\n",
+            "    option.Some(v) -> case v {\n",
+            "      \"\" -> Error(\"",
+            message,
+            "\")\n",
+            "      _ -> Ok(v)\n",
+            "    }\n",
+            "    option.None -> Error(\"",
+            message,
+            "\")\n",
+            "  })\n",
+          ])
+      }
     })
     |> string.concat
   let substitutions =
@@ -625,16 +644,27 @@ fn render_endpoint_params_builder_body(
   // via `endpoints.params_from`).
   let inserts =
     list.map(bindings, fn(b) {
-      string.concat([
-        "  let params = case input.",
-        b.member_snake,
-        " {\n",
-        "    option.Some(v) -> dict.insert(params, \"",
-        b.param_name,
-        "\", endpoints.StringVal(v))\n",
-        "    option.None -> params\n",
-        "  }\n",
-      ])
+      case b.required {
+        True ->
+          string.concat([
+            "  let params = dict.insert(params, \"",
+            b.param_name,
+            "\", endpoints.StringVal(input.",
+            b.member_snake,
+            "))\n",
+          ])
+        False ->
+          string.concat([
+            "  let params = case input.",
+            b.member_snake,
+            " {\n",
+            "    option.Some(v) -> dict.insert(params, \"",
+            b.param_name,
+            "\", endpoints.StringVal(v))\n",
+            "    option.None -> params\n",
+            "  }\n",
+          ])
+      }
     })
     |> string.concat
   string.concat(["  let params = dict.new()\n", inserts, "  params\n"])

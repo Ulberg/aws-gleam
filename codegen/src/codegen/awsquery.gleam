@@ -345,10 +345,11 @@ fn emit_empty_operation(op_id: String, version: String) -> EmittedOp {
   )
 }
 
-/// Emit a typed-scalar-input operation: Input record with Option(T)
-/// fields, `decode_<snake>_input` for the test-fixture JSON, and
-/// `build_<snake>_request` that form-urlencodes Some-valued fields
-/// onto the standard `Action=Op&Version=v` body prefix.
+/// Emit a typed-scalar-input operation: Input record with required
+/// members as plain fields and optional members as Option(T),
+/// `decode_<snake>_input` for the test-fixture JSON, and
+/// `build_<snake>_request` that form-urlencodes present fields onto
+/// the standard `Action=Op&Version=v` body prefix.
 fn emit_scalar_typed_operation(
   model: Model,
   op_id: String,
@@ -614,13 +615,25 @@ fn emit_nested_struct_block(
               variant,
               m.timestamp_format,
             )
-          name_concat([
-            "  let acc = case s.",
-            m.snake_name,
-            " { option.None -> acc option.Some(v) -> acc <> ",
-            inner,
-            " }\n",
-          ])
+          case m.required {
+            True ->
+              name_concat([
+                "  let v = s.",
+                m.snake_name,
+                "\n",
+                "  let acc = acc <> ",
+                inner,
+                "\n",
+              ])
+            False ->
+              name_concat([
+                "  let acc = case s.",
+                m.snake_name,
+                " { option.None -> acc option.Some(v) -> acc <> ",
+                inner,
+                " }\n",
+              ])
+          }
         })
         |> string.concat
       let encoder =
@@ -647,8 +660,7 @@ fn emit_nested_struct_block(
           True,
           True,
         )
-      let default_fn =
-        named_shapes.record_default_fn(snake, gn, members)
+      let default_fn = named_shapes.record_default_fn(snake, gn, members)
       string.concat([
         "\n",
         code.render(type_def),
@@ -1005,15 +1017,26 @@ fn scalar_field_append(
       ])
     False -> "body"
   }
-  name_concat([
-    "case input.",
-    m.snake_name,
-    " { option.None -> ",
-    none_branch,
-    " option.Some(v) -> body <> ",
-    body_extension,
-    " }",
-  ])
+  case m.required {
+    True ->
+      name_concat([
+        "{\n  let v = input.",
+        m.snake_name,
+        "\n  body <> ",
+        body_extension,
+        "\n}",
+      ])
+    False ->
+      name_concat([
+        "case input.",
+        m.snake_name,
+        " { option.None -> ",
+        none_branch,
+        " option.Some(v) -> body <> ",
+        body_extension,
+        " }",
+      ])
+  }
 }
 
 /// Emit a Gleam expression that produces the wire-body fragment
