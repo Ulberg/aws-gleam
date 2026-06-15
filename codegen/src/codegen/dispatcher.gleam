@@ -5,18 +5,14 @@
 //// changed the dispatcher shape) and required a separate Python
 //// step in `scripts/regen.sh`.
 ////
-//// Output is built end-to-end as `code.Code` AST nodes. The
-//// per-op `build_request` callback body is still a `Raw` fragment
-//// (it embeds operation-specific snake-cased function names and
-//// looks closer to hand-written Gleam than to a tree of `Let` /
-//// `Case` / `Call` nodes); everything around it — module doc,
+//// Output is built end-to-end as `code.Code` AST nodes: module doc,
 //// imports, `register_all` chain, per-op `Dispatcher(...)`
-//// construction with labelled args, `response_parser` helper —
-//// flows through the AST.
+//// construction with labelled args, request callbacks, and the
+//// `response_parser` helper all flow through the AST.
 
 import codegen/code.{
   type Code, Blank, Call, CodeNone, CodeSome, Fn, Ident, Labelled, Module,
-  ModuleDocComment, Param, Raw, StrLit,
+  ModuleDocComment, Param, StrLit,
 }
 import gleam/list
 import gleam/string
@@ -95,43 +91,27 @@ pub fn render(
 }
 
 fn register_all_fn(specs: List(DispatcherSpec)) -> Code {
-  // The `registry |> dispatch.register(...) |> ...` chain is the
-  // one piece of dispatcher output that `gleam format` always
-  // wraps idiomatically — emitting it through the AST would
-  // duplicate the formatter's logic. Stays as `Raw` inside an
-  // otherwise AST-built `Fn`.
-  let pipe_body =
-    string.concat([
-      "registry",
-      list.fold(specs, "", fn(acc, s) {
-        name_concat([
-          acc,
-          "\n  |> dispatch.register(",
-          s.snake,
-          "_dispatcher())",
-        ])
-      }),
-    ])
+  let register_steps =
+    list.map(specs, fn(s) {
+      Call(Ident("dispatch.register"), [
+        Call(Ident(name_concat([s.snake, "_dispatcher"])), []),
+      ])
+    })
   Fn(
     public: True,
     name: "register_all",
     params: [Param(name: "registry", type_: "Registry")],
     return: CodeSome("Registry"),
-    body: Raw(fragment: pipe_body),
+    body: code.Pipe(initial: Ident("registry"), steps: register_steps),
   )
 }
 
 fn dispatcher_fn(s: DispatcherSpec) -> Code {
-  let build_request_body = case s.is_error_shape, s.has_typed_input {
+  let build_request = case s.is_error_shape, s.has_typed_input {
     True, _ -> error_shape_build_request()
     False, True -> typed_build_request(s.snake)
     False, False -> singleton_build_request(s.snake, s.input_type)
   }
-  // `Dispatcher` is constructed with labelled args. Each label is
-  // a `Labelled` node so the AST captures both the keyword and the
-  // value; the value side is still `Raw` for the callback bodies
-  // (which embed operation-specific symbol names) and an `Ident`
-  // for the `parse_response` callsite.
   Fn(
     public: False,
     name: name_concat([s.snake, "_dispatcher"]),
@@ -139,61 +119,83 @@ fn dispatcher_fn(s: DispatcherSpec) -> Code {
     return: CodeSome("Dispatcher"),
     body: Call(Ident("Dispatcher"), [
       Labelled(label: "operation_id", value: StrLit(s.op_id)),
-      Labelled(label: "build_request", value: Raw(fragment: build_request_body)),
+      Labelled(label: "build_request", value: build_request),
       Labelled(
         label: "parse_response",
-        value: Raw(
-          fragment: name_concat([
-            "response_parser(svc.parse_",
-            s.snake,
-            "_response)",
-          ]),
-        ),
+        value: Call(Ident("response_parser"), [
+          Ident(name_concat(["svc.parse_", s.snake, "_response"])),
+        ]),
       ),
     ]),
   )
 }
 
-fn typed_build_request(snake: String) -> String {
-  name_concat([
-    "fn(params) {
-      let raw = case params {
-        \"\" -> \"{}\"
-        other -> other
-      }
-      case svc.decode_",
-    snake,
-    "_input(raw) {
-        Ok(input) -> {
-          let #(method, uri, headers, body) =
-            svc.build_",
-    snake,
-    "_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
-        }
-        Error(reason) -> Error(reason)
-      }
-    }",
-  ])
+fn typed_build_request(snake: String) -> Code {
+  code.Lambda(
+    params: ["params"],
+    body: code.Block(items: [
+      code.Let(
+        name: "raw",
+        value: code.Case(scrutinee: Ident("params"), branches: [
+          code.Branch(pattern: "\"\"", body: StrLit("{}")),
+          code.Branch(pattern: "other", body: Ident("other")),
+        ]),
+      ),
+      code.Case(
+        scrutinee: Call(Ident(name_concat(["svc.decode_", snake, "_input"])), [
+          Ident("raw"),
+        ]),
+        branches: [
+          code.Branch(
+            pattern: "Ok(input)",
+            body: built_request_ok(
+              Call(Ident(name_concat(["svc.build_", snake, "_request"])), [
+                Ident("input"),
+              ]),
+            ),
+          ),
+          code.Branch(
+            pattern: "Error(reason)",
+            body: Call(Ident("Error"), [Ident("reason")]),
+          ),
+        ],
+      ),
+    ]),
+  )
 }
 
-fn singleton_build_request(snake: String, input_type: String) -> String {
-  name_concat([
-    "fn(params) {
-      let _ = params
-      let #(method, uri, headers, body) =
-        svc.build_",
-    snake,
-    "_request(svc.",
-    input_type,
-    ")
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
-    }",
-  ])
+fn singleton_build_request(snake: String, input_type: String) -> Code {
+  code.Lambda(
+    params: ["_params"],
+    body: built_request_ok(
+      Call(Ident(name_concat(["svc.build_", snake, "_request"])), [
+        Ident(name_concat(["svc.", input_type])),
+      ]),
+    ),
+  )
 }
 
-fn error_shape_build_request() -> String {
-  "fn(_params) { Error(\"error-shape dispatcher has no request side\") }"
+fn error_shape_build_request() -> Code {
+  code.Lambda(
+    params: ["_params"],
+    body: Call(Ident("Error"), [
+      StrLit("error-shape dispatcher has no request side"),
+    ]),
+  )
+}
+
+fn built_request_ok(build_call: Code) -> Code {
+  code.Block(items: [
+    code.Let(name: "#(method, uri, headers, body)", value: build_call),
+    Call(Ident("Ok"), [
+      Call(Ident("BuiltRequest"), [
+        Labelled(label: "method", value: Ident("method")),
+        Labelled(label: "uri", value: Ident("uri")),
+        Labelled(label: "headers", value: Ident("headers")),
+        Labelled(label: "body", value: Ident("body")),
+      ]),
+    ]),
+  ])
 }
 
 fn response_parser_fn() -> Code {
@@ -206,13 +208,29 @@ fn response_parser_fn() -> Code {
     return: CodeSome(
       "fn(ParsedResponseInput) -> Result(dispatch.ParsedResponse, String)",
     ),
-    body: Raw(
-      fragment: "fn(input: ParsedResponseInput) {
-    case parser(input.code, input.headers, input.body) {
-      Ok(_) -> Ok(ParsedOutput(json: \"{}\"))
-      Error(e) -> Error(e)
-    }
-  }",
+    body: code.TypedLambda(
+      params: [Param(name: "input", type_: "ParsedResponseInput")],
+      body: code.Case(
+        scrutinee: Call(Ident("parser"), [
+          Ident("input.code"),
+          Ident("input.headers"),
+          Ident("input.body"),
+        ]),
+        branches: [
+          code.Branch(
+            pattern: "Ok(_)",
+            body: Call(Ident("Ok"), [
+              Call(Ident("ParsedOutput"), [
+                Labelled(label: "json", value: StrLit("{}")),
+              ]),
+            ]),
+          ),
+          code.Branch(
+            pattern: "Error(e)",
+            body: Call(Ident("Error"), [Ident("e")]),
+          ),
+        ],
+      ),
     ),
   )
 }

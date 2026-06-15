@@ -8,10 +8,12 @@ import aws/services/sqs
 
 pub fn main() {
   let assert Ok(client) = sqs.new()
-  // Call generated operations with typed input records.
   sqs.shutdown(client)
 }
 ```
+
+Operations take generated request/input records. Start from the generated
+`*_default(...)` helper and override optional fields with Gleam record update.
 
 Use `sqs.new_with(settings, endpoint_params)` for explicit
 `aws/config.Settings` and SQS endpoint-rule-set parameters.

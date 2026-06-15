@@ -71,12 +71,13 @@ fn encoder_body(
         False -> m.json_name
       }
       let wire = StrLit(wire_key)
+      let encoded_value = Call(member_encoder_expr(m), [Ident("v")])
       let some_branch =
         ListLit(
           items: [
             Tuple(items: [
               wire,
-              Call(Ident(member_encoder_expr(m)), [Ident("v")]),
+              encoded_value,
             ]),
           ],
           tail: CodeSome(Ident("pairs")),
@@ -85,22 +86,31 @@ fn encoder_body(
         False, option.Some(default_expr) ->
           ListLit(
             items: [
-              Tuple(items: [wire, code.Raw(fragment: default_expr)]),
+              Tuple(items: [wire, default_expr]),
             ],
             tail: CodeSome(Ident("pairs")),
           )
         _, _ -> Ident("pairs")
       }
-      Let(
-        name: "pairs",
-        value: Case(
-          scrutinee: Ident(name_concat(["input.", m.snake_name])),
-          branches: [
-            code.Branch(pattern: "option.Some(v)", body: some_branch),
-            code.Branch(pattern: "option.None", body: none_branch),
-          ],
-        ),
-      )
+      let value = case m.required {
+        True ->
+          Block(items: [
+            Let(name: "v", value: Ident(name_concat(["input.", m.snake_name]))),
+            ListLit(
+              items: [Tuple(items: [wire, encoded_value])],
+              tail: CodeSome(Ident("pairs")),
+            ),
+          ])
+        False ->
+          Case(
+            scrutinee: Ident(name_concat(["input.", m.snake_name])),
+            branches: [
+              code.Branch(pattern: "option.Some(v)", body: some_branch),
+              code.Branch(pattern: "option.None", body: none_branch),
+            ],
+          )
+      }
+      Let(name: "pairs", value: value)
     })
   let tail = Call(Ident("json.object"), [Ident("pairs")])
   list.append([init, ..folds], [tail])
@@ -168,14 +178,25 @@ fn decoder_body(
         True -> member_decoder_params_expr(m)
         False -> member_decoder_expr(m)
       }
-      Use(
-        name: m.snake_name,
-        callee: Call(Ident("decode.optional_field"), [
-          StrLit(key),
-          Ident("option.None"),
-          Call(Ident("decode.optional"), [code.Raw(fragment: inner)]),
-        ]),
-      )
+      case m.required {
+        True ->
+          Use(
+            name: m.snake_name,
+            callee: Call(Ident("decode.field"), [
+              StrLit(key),
+              inner,
+            ]),
+          )
+        False ->
+          Use(
+            name: m.snake_name,
+            callee: Call(Ident("decode.optional_field"), [
+              StrLit(key),
+              Ident("option.None"),
+              Call(Ident("decode.optional"), [inner]),
+            ]),
+          )
+      }
     })
   let constructor =
     Call(
@@ -188,14 +209,14 @@ fn decoder_body(
   list.append([recursive_guard, ..field_lets], [tail])
 }
 
-fn member_encoder_expr(m: MemberDef) -> String {
-  types.json_encoder_member(m.target, m.timestamp_format)
+fn member_encoder_expr(m: MemberDef) -> Code {
+  types.json_encoder_member_code(m.target, m.timestamp_format)
 }
 
-fn member_decoder_expr(m: MemberDef) -> String {
-  types.json_decoder_member(m.target, m.timestamp_format)
+fn member_decoder_expr(m: MemberDef) -> Code {
+  types.json_decoder_member_code(m.target, m.timestamp_format)
 }
 
-fn member_decoder_params_expr(m: MemberDef) -> String {
-  types.json_decoder_member_params(m.target, m.timestamp_format)
+fn member_decoder_params_expr(m: MemberDef) -> Code {
+  types.json_decoder_member_params_code(m.target, m.timestamp_format)
 }

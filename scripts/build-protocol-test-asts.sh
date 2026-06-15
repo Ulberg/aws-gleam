@@ -9,15 +9,14 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Pick the platform-specific Smithy CLI build. Falls through any
-# location ending in `bin/smithy` under `.tools/` so a single download
-# step in CI can drop the linux build alongside the macOS one without
-# the script needing per-runner branching.
+SMITHY_VERSION="1.70.0"
+
+# Pick the platform-specific Smithy CLI build.
 case "$(uname -s)-$(uname -m)" in
-  Darwin-arm64)  SMITHY_BIN="$ROOT/.tools/smithy-cli-darwin-aarch64/bin/smithy" ;;
-  Darwin-x86_64) SMITHY_BIN="$ROOT/.tools/smithy-cli-darwin-x86_64/bin/smithy" ;;
-  Linux-x86_64)  SMITHY_BIN="$ROOT/.tools/smithy-cli-linux-x86_64/bin/smithy" ;;
-  Linux-aarch64) SMITHY_BIN="$ROOT/.tools/smithy-cli-linux-aarch64/bin/smithy" ;;
+  Darwin-arm64)  SMITHY_DIST="smithy-cli-darwin-aarch64" ;;
+  Darwin-x86_64) SMITHY_DIST="smithy-cli-darwin-x86_64" ;;
+  Linux-x86_64)  SMITHY_DIST="smithy-cli-linux-x86_64" ;;
+  Linux-aarch64) SMITHY_DIST="smithy-cli-linux-aarch64" ;;
   *)
     echo "error: unsupported platform $(uname -s)-$(uname -m)" >&2
     echo "       extend the case in $0 with the matching Smithy CLI build." >&2
@@ -25,14 +24,20 @@ case "$(uname -s)-$(uname -m)" in
     ;;
 esac
 
+SMITHY_BIN="$ROOT/.tools/$SMITHY_DIST/bin/smithy"
 SMITHY_BUILD="$ROOT/.tools/smithy-build.json"
 MODEL_ROOT="$ROOT/vendor/smithy/smithy-aws-protocol-tests/model"
 OUT_DIR="$ROOT/test/fixtures/protocol-tests"
 
 if [ ! -x "$SMITHY_BIN" ]; then
-  echo "error: smithy CLI not found at $SMITHY_BIN" >&2
-  echo "       download from https://github.com/smithy-lang/smithy/releases" >&2
-  exit 1
+  echo "→ downloading Smithy CLI $SMITHY_VERSION ($SMITHY_DIST)"
+  mkdir -p "$ROOT/.tools"
+  zip="$ROOT/.tools/$SMITHY_DIST.zip"
+  curl -sSL -o "$zip" \
+    "https://github.com/smithy-lang/smithy/releases/download/$SMITHY_VERSION/$SMITHY_DIST.zip"
+  unzip -q "$zip" -d "$ROOT/.tools/"
+  rm "$zip"
+  test -x "$SMITHY_BIN"
 fi
 
 mkdir -p "$OUT_DIR"

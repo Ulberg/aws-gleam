@@ -175,9 +175,9 @@ sha1_hex(Bin) ->
 %% os:getenv/1 returns the string value or the atom false; we coerce to the
 %% Gleam Result(String, Nil) shape that the credentials module expects.
 get_env(Name) ->
-    case os:getenv(binary_to_list(Name)) of
+    case os:getenv(unicode:characters_to_list(Name)) of
         false -> {error, nil};
-        Value -> {ok, list_to_binary(Value)}
+        Value -> {ok, unicode:characters_to_binary(Value)}
     end.
 
 %% Set an OS environment variable. The Lambda runtime uses this to copy
@@ -185,14 +185,14 @@ get_env(Name) ->
 %% response header into `_X_AMZ_TRACE_ID`, the variable the AWS SDKs read
 %% to attach downstream calls to the active trace. Returns nil.
 set_env(Name, Value) when is_binary(Name), is_binary(Value) ->
-    os:putenv(binary_to_list(Name), binary_to_list(Value)),
+    os:putenv(unicode:characters_to_list(Name), unicode:characters_to_list(Value)),
     nil.
 
 %% Plain command-line arguments — everything after `--` in
 %% `gleam run -- ...` — as binaries. The Lambda local-run path reads
 %% `--event <json>` from these; empty list under a release/Lambda boot.
 plain_args() ->
-    [list_to_binary(A) || A <- init:get_plain_arguments()].
+    [unicode:characters_to_binary(A) || A <- init:get_plain_arguments()].
 
 %% Run a 0-arity fun inside try/catch and reflect the outcome as a Gleam
 %% Result. Success becomes {ok, Value}; any raise/throw/exit becomes

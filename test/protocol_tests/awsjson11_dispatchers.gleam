@@ -53,7 +53,12 @@ fn content_type_parameters_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_content_type_parameters_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -74,7 +79,12 @@ fn datetime_offsets_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_datetime_offsets_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -95,7 +105,12 @@ fn empty_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_empty_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -116,7 +131,12 @@ fn endpoint_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_endpoint_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -137,7 +157,12 @@ fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_endpoint_with_host_label_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -160,7 +185,12 @@ fn fractional_seconds_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_fractional_seconds_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -181,7 +211,12 @@ fn greeting_with_errors_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_greeting_with_errors_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -202,7 +237,12 @@ fn host_with_path_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_host_with_path_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -223,7 +263,12 @@ fn json_enums_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_json_enums_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -244,7 +289,12 @@ fn json_int_enums_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_json_int_enums_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -265,7 +315,12 @@ fn json_unions_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_json_unions_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -286,7 +341,12 @@ fn kitchen_sink_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_kitchen_sink_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -307,7 +367,12 @@ fn null_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_null_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -328,7 +393,12 @@ fn operation_with_optional_input_output_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_operation_with_optional_input_output_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -351,7 +421,12 @@ fn put_and_get_inline_documents_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_put_and_get_inline_documents_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -374,7 +449,12 @@ fn put_with_content_encoding_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_put_with_content_encoding_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -397,7 +477,12 @@ fn simple_scalar_properties_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_simple_scalar_properties_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -418,7 +503,12 @@ fn sparse_nulls_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_sparse_nulls_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -438,7 +528,12 @@ fn predict_dispatcher() -> Dispatcher {
       case svc.decode_predict_input(raw) {
         Ok(input) -> {
           let #(method, uri, headers, body) = svc.build_predict_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }

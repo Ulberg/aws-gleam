@@ -51,11 +51,10 @@ pub fn register_all(registry: Registry) -> Registry {
 fn datetime_offsets_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#DatetimeOffsets",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_datetime_offsets_request(svc.DatetimeOffsetsInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_datetime_offsets_response),
   )
@@ -64,13 +63,12 @@ fn datetime_offsets_dispatcher() -> Dispatcher {
 fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#EmptyInputAndEmptyOutput",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_empty_input_and_empty_output_request(
           svc.EmptyInputAndEmptyOutputInput,
         )
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(
       svc.parse_empty_input_and_empty_output_response,
@@ -81,11 +79,10 @@ fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
 fn endpoint_operation_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#EndpointOperation",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_endpoint_operation_request(svc.EndpointOperationInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_endpoint_operation_response),
   )
@@ -103,7 +100,12 @@ fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_endpoint_with_host_label_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -117,11 +119,10 @@ fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
 fn flattened_xml_map_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#FlattenedXmlMap",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_flattened_xml_map_request(svc.FlattenedXmlMapInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_flattened_xml_map_response),
   )
@@ -130,13 +131,12 @@ fn flattened_xml_map_dispatcher() -> Dispatcher {
 fn flattened_xml_map_with_xml_name_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#FlattenedXmlMapWithXmlName",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_flattened_xml_map_with_xml_name_request(
           svc.FlattenedXmlMapWithXmlNameInput,
         )
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(
       svc.parse_flattened_xml_map_with_xml_name_response,
@@ -147,13 +147,12 @@ fn flattened_xml_map_with_xml_name_dispatcher() -> Dispatcher {
 fn flattened_xml_map_with_xml_namespace_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#FlattenedXmlMapWithXmlNamespace",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_flattened_xml_map_with_xml_namespace_request(
           svc.FlattenedXmlMapWithXmlNamespaceInput,
         )
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(
       svc.parse_flattened_xml_map_with_xml_namespace_response,
@@ -164,11 +163,10 @@ fn flattened_xml_map_with_xml_namespace_dispatcher() -> Dispatcher {
 fn fractional_seconds_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#FractionalSeconds",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_fractional_seconds_request(svc.FractionalSecondsInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_fractional_seconds_response),
   )
@@ -177,11 +175,10 @@ fn fractional_seconds_dispatcher() -> Dispatcher {
 fn greeting_with_errors_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#GreetingWithErrors",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_greeting_with_errors_request(svc.GreetingWithErrorsInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_greeting_with_errors_response),
   )
@@ -190,13 +187,12 @@ fn greeting_with_errors_dispatcher() -> Dispatcher {
 fn host_with_path_operation_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#HostWithPathOperation",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_host_with_path_operation_request(
           svc.HostWithPathOperationInput,
         )
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_host_with_path_operation_response),
   )
@@ -205,13 +201,12 @@ fn host_with_path_operation_dispatcher() -> Dispatcher {
 fn ignores_wrapping_xml_name_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#IgnoresWrappingXmlName",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_ignores_wrapping_xml_name_request(
           svc.IgnoresWrappingXmlNameInput,
         )
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(
       svc.parse_ignores_wrapping_xml_name_response,
@@ -231,7 +226,12 @@ fn nested_structures_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_nested_structures_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -243,11 +243,10 @@ fn nested_structures_dispatcher() -> Dispatcher {
 fn no_input_and_no_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#NoInputAndNoOutput",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_no_input_and_no_output_request(svc.NoInputAndNoOutputInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_no_input_and_no_output_response),
   )
@@ -256,11 +255,10 @@ fn no_input_and_no_output_dispatcher() -> Dispatcher {
 fn no_input_and_output_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#NoInputAndOutput",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_no_input_and_output_request(svc.NoInputAndOutputInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_no_input_and_output_response),
   )
@@ -278,7 +276,12 @@ fn put_with_content_encoding_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_put_with_content_encoding_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -301,7 +304,12 @@ fn query_idempotency_token_auto_fill_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_query_idempotency_token_auto_fill_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -324,7 +332,12 @@ fn query_lists_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_query_lists_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -345,7 +358,12 @@ fn query_maps_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_query_maps_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -366,7 +384,12 @@ fn query_timestamps_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_query_timestamps_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -378,11 +401,10 @@ fn query_timestamps_dispatcher() -> Dispatcher {
 fn recursive_xml_shapes_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#RecursiveXmlShapes",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_recursive_xml_shapes_request(svc.RecursiveXmlShapesInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_recursive_xml_shapes_response),
   )
@@ -400,7 +422,12 @@ fn simple_input_params_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_simple_input_params_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -412,13 +439,12 @@ fn simple_input_params_dispatcher() -> Dispatcher {
 fn simple_scalar_xml_properties_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#SimpleScalarXmlProperties",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_simple_scalar_xml_properties_request(
           svc.SimpleScalarXmlPropertiesInput,
         )
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(
       svc.parse_simple_scalar_xml_properties_response,
@@ -429,11 +455,10 @@ fn simple_scalar_xml_properties_dispatcher() -> Dispatcher {
 fn xml_blobs_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#XmlBlobs",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_xml_blobs_request(svc.XmlBlobsInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_xml_blobs_response),
   )
@@ -442,11 +467,10 @@ fn xml_blobs_dispatcher() -> Dispatcher {
 fn xml_empty_blobs_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#XmlEmptyBlobs",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_xml_empty_blobs_request(svc.XmlEmptyBlobsInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_xml_empty_blobs_response),
   )
@@ -455,11 +479,10 @@ fn xml_empty_blobs_dispatcher() -> Dispatcher {
 fn xml_empty_lists_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#XmlEmptyLists",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_xml_empty_lists_request(svc.XmlEmptyListsInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_xml_empty_lists_response),
   )
@@ -468,11 +491,10 @@ fn xml_empty_lists_dispatcher() -> Dispatcher {
 fn xml_empty_maps_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#XmlEmptyMaps",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_xml_empty_maps_request(svc.XmlEmptyMapsInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_xml_empty_maps_response),
   )
@@ -481,11 +503,10 @@ fn xml_empty_maps_dispatcher() -> Dispatcher {
 fn xml_enums_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#XmlEnums",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_xml_enums_request(svc.XmlEnumsInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_xml_enums_response),
   )
@@ -494,11 +515,10 @@ fn xml_enums_dispatcher() -> Dispatcher {
 fn xml_int_enums_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#XmlIntEnums",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_xml_int_enums_request(svc.XmlIntEnumsInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_xml_int_enums_response),
   )
@@ -507,11 +527,10 @@ fn xml_int_enums_dispatcher() -> Dispatcher {
 fn xml_lists_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#XmlLists",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_xml_lists_request(svc.XmlListsInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_xml_lists_response),
   )
@@ -520,11 +539,10 @@ fn xml_lists_dispatcher() -> Dispatcher {
 fn xml_maps_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#XmlMaps",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_xml_maps_request(svc.XmlMapsInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_xml_maps_response),
   )
@@ -533,11 +551,10 @@ fn xml_maps_dispatcher() -> Dispatcher {
 fn xml_maps_xml_name_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#XmlMapsXmlName",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_xml_maps_xml_name_request(svc.XmlMapsXmlNameInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_xml_maps_xml_name_response),
   )
@@ -546,11 +563,10 @@ fn xml_maps_xml_name_dispatcher() -> Dispatcher {
 fn xml_namespaces_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#XmlNamespaces",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_xml_namespaces_request(svc.XmlNamespacesInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_xml_namespaces_response),
   )
@@ -559,11 +575,10 @@ fn xml_namespaces_dispatcher() -> Dispatcher {
 fn xml_timestamps_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.query#XmlTimestamps",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_xml_timestamps_request(svc.XmlTimestampsInput)
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(svc.parse_xml_timestamps_response),
   )

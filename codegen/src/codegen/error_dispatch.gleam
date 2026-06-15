@@ -11,10 +11,15 @@
 //// `no-dispatcher` even though the runtime can route the response
 //// correctly.
 
+import codegen/code
 import codegen/dispatcher
 import gleam/list
 import gleam/string
 import internal/stringutils
+
+fn name_concat(parts: List(String)) -> String {
+  string.concat(parts)
+}
 
 /// Dedupe a list of strings, preserving first-occurrence order. The
 /// concrete fold pattern shows up in every protocol emitter's error
@@ -46,19 +51,29 @@ pub fn dedupe_strings(xs: List(String)) -> List(String) {
 /// (e.g. `Customized`) routes correctly.
 pub fn emit_parse_fn(local: String, wire_code: String) -> String {
   let snake = stringutils.pascal_to_snake(local)
-  string.concat([
-    "\npub fn parse_",
-    snake,
-    "_response(\n",
-    "  _code: Int,\n",
-    "  headers: dict.Dict(String, String),\n",
-    "  body: BitArray,\n",
-    ") -> Result(Nil, String) {\n",
-    "  runtime.check_error_type_matches(headers, body, \"",
-    wire_code,
-    "\")\n",
-    "}\n",
-  ])
+  code.render(
+    code.Module(items: [
+      code.Blank,
+      code.Fn(
+        public: True,
+        name: name_concat(["parse_", snake, "_response"]),
+        params: [
+          code.Param(name: "_code", type_: "Int"),
+          code.Param(name: "headers", type_: "dict.Dict(String, String)"),
+          code.Param(name: "body", type_: "BitArray"),
+        ],
+        return: code.CodeSome("Result(Nil, String)"),
+        body: code.Call(
+          head: code.Ident(name: "runtime.check_error_type_matches"),
+          args: [
+            code.Ident(name: "headers"),
+            code.Ident(name: "body"),
+            code.StrLit(value: wire_code),
+          ],
+        ),
+      ),
+    ]),
+  )
 }
 
 /// Build a `DispatcherSpec` for each unique error shape ID. `op_id`

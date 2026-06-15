@@ -299,7 +299,9 @@ pub fn upload_from_stream_with_options(
 }
 
 fn validate_part_size(part_size: Int) -> Result(Nil, Error) {
-  case part_size >= default_part_size_bytes && part_size <= max_part_size_bytes {
+  case
+    part_size >= default_part_size_bytes && part_size <= max_part_size_bytes
+  {
     True -> Ok(Nil)
     False -> Error(InvalidPartSize(part_size_bytes: part_size))
   }
@@ -629,7 +631,7 @@ fn create_request(
 ) -> s3.CreateMultipartUploadRequest {
   s3.CreateMultipartUploadRequest(
     acl: options.acl,
-    bucket: Some(bucket),
+    bucket: bucket,
     bucket_key_enabled: None,
     cache_control: options.cache_control,
     checksum_algorithm: None,
@@ -644,7 +646,7 @@ fn create_request(
     grant_read: None,
     grant_read_acp: None,
     grant_write_acp: None,
-    key: Some(key),
+    key: key,
     metadata: options.metadata,
     object_lock_legal_hold_status: None,
     object_lock_mode: None,
@@ -671,7 +673,7 @@ fn empty_upload_part_request(
 ) -> s3.UploadPartRequest {
   s3.UploadPartRequest(
     body: Some(streaming.from_bit_array(body)),
-    bucket: Some(bucket),
+    bucket: bucket,
     checksum_algorithm: None,
     checksum_crc32: None,
     checksum_crc32_c: None,
@@ -686,13 +688,13 @@ fn empty_upload_part_request(
     content_length: Some(bit_array.byte_size(body)),
     content_md5: None,
     expected_bucket_owner: None,
-    key: Some(key),
-    part_number: Some(part_number),
+    key: key,
+    part_number: part_number,
     request_payer: None,
     sse_customer_algorithm: None,
     sse_customer_key: None,
     sse_customer_key_md5: None,
-    upload_id: Some(upload_id),
+    upload_id: upload_id,
   )
 }
 
@@ -723,7 +725,7 @@ fn empty_complete_request(
   parts: List(s3.CompletedPart),
 ) -> s3.CompleteMultipartUploadRequest {
   s3.CompleteMultipartUploadRequest(
-    bucket: Some(bucket),
+    bucket: bucket,
     checksum_crc32: None,
     checksum_crc32_c: None,
     checksum_crc64_nvme: None,
@@ -738,14 +740,14 @@ fn empty_complete_request(
     expected_bucket_owner: None,
     if_match: None,
     if_none_match: None,
-    key: Some(key),
+    key: key,
     mpu_object_size: None,
     multipart_upload: Some(s3.CompletedMultipartUpload(parts: Some(parts))),
     request_payer: None,
     sse_customer_algorithm: None,
     sse_customer_key: None,
     sse_customer_key_md5: None,
-    upload_id: Some(upload_id),
+    upload_id: upload_id,
   )
 }
 
@@ -755,11 +757,11 @@ fn empty_abort_request(
   upload_id: String,
 ) -> s3.AbortMultipartUploadRequest {
   s3.AbortMultipartUploadRequest(
-    bucket: Some(bucket),
+    bucket: bucket,
     expected_bucket_owner: None,
     if_match_initiated_time: None,
-    key: Some(key),
+    key: key,
     request_payer: None,
-    upload_id: Some(upload_id),
+    upload_id: upload_id,
   )
 }

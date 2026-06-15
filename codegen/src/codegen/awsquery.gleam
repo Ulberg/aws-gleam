@@ -345,10 +345,11 @@ fn emit_empty_operation(op_id: String, version: String) -> EmittedOp {
   )
 }
 
-/// Emit a typed-scalar-input operation: Input record with Option(T)
-/// fields, `decode_<snake>_input` for the test-fixture JSON, and
-/// `build_<snake>_request` that form-urlencodes Some-valued fields
-/// onto the standard `Action=Op&Version=v` body prefix.
+/// Emit a typed-scalar-input operation: Input record with required
+/// members as plain fields and optional members as Option(T),
+/// `decode_<snake>_input` for the test-fixture JSON, and
+/// `build_<snake>_request` that form-urlencodes present fields onto
+/// the standard `Action=Op&Version=v` body prefix.
 fn emit_scalar_typed_operation(
   model: Model,
   op_id: String,
@@ -404,13 +405,7 @@ fn emit_scalar_typed_operation(
         name: name_concat(["decode_", snake, "_input"]),
         params: [code.Param(name: "json_string", type_: "String")],
         return: CodeSome(name_concat(["Result(", input_type, ", String)"])),
-        body: code.Raw(
-          fragment: name_concat([
-            "json.parse(json_string, decode_",
-            snake,
-            "_input_struct())\n  |> result.map_error(fn(_) { \"input JSON decode failed\" })",
-          ]),
-        ),
+        body: decode_input_body(snake),
       ),
       code.Blank,
       build_scalar_request_fn(
@@ -602,39 +597,8 @@ fn emit_nested_struct_block(
       // helper appends `&prefix.<field>=<value>` in this sequence.
       let members = types.resolve_members_in_order(model, sid)
       let type_def = named_shapes.record_def(gn, members)
-      let field_clauses =
-        list.map(members, fn(m) {
-          let wire = wire_name_for(model, sid, m, variant)
-          let inner =
-            encode_value_expr(
-              m.target,
-              "v",
-              name_concat(["prefix <> \".", wire, "\""]),
-              member_traits(model, sid, m.member_name),
-              variant,
-              m.timestamp_format,
-            )
-          name_concat([
-            "  let acc = case s.",
-            m.snake_name,
-            " { option.None -> acc option.Some(v) -> acc <> ",
-            inner,
-            " }\n",
-          ])
-        })
-        |> string.concat
       let encoder =
-        name_concat([
-          "pub fn encode_",
-          snake,
-          "_at(prefix: String, s: ",
-          gn,
-          ") -> String {\n",
-          "  let acc = \"\"\n",
-          field_clauses,
-          "  acc\n",
-          "}\n",
-        ])
+        nested_struct_encoder_fn(model, sid, snake, gn, members, variant)
       // Decoder for the protocol-test JSON fixture (params side).
       // Member-keyed, params_nested so nested struct refs call
       // sibling `decode_<S>_struct_params()` rather than wire-form
@@ -647,21 +611,87 @@ fn emit_nested_struct_block(
           True,
           True,
         )
-      let default_fn =
-        named_shapes.record_default_fn(snake, gn, members)
+      let default_fn = named_shapes.record_default_fn(snake, gn, members)
       string.concat([
         "\n",
         code.render(type_def),
         "\n\n",
         code.render(default_fn),
         "\n",
-        encoder,
+        code.render(encoder),
         "\n",
         code.render(decoder),
         "\n",
       ])
     }
     _ -> ""
+  }
+}
+
+fn nested_struct_encoder_fn(
+  model: Model,
+  struct_id: String,
+  snake: String,
+  type_name: String,
+  members: List(MemberDef),
+  variant: Variant,
+) -> Code {
+  let field_steps =
+    list.map(members, fn(m) {
+      let wire = wire_name_for(model, struct_id, m, variant)
+      let inner =
+        encode_value_expr(
+          m.target,
+          code.Ident(name: "v"),
+          code.Concat(parts: [
+            code.Ident(name: "prefix"),
+            code.StrLit(value: "." <> wire),
+          ]),
+          member_traits(model, struct_id, m.member_name),
+          variant,
+          m.timestamp_format,
+        )
+      nested_struct_field_step(m, inner)
+    })
+  let body_items =
+    list.append(
+      [
+        code.Let(name: "acc", value: code.StrLit(value: "")),
+        ..list.flatten(field_steps)
+      ],
+      [code.Ident(name: "acc")],
+    )
+  code.Fn(
+    public: True,
+    name: "encode_" <> snake <> "_at",
+    params: [
+      code.Param(name: "prefix", type_: "String"),
+      code.Param(name: "s", type_: type_name),
+    ],
+    return: CodeSome("String"),
+    body: code.Block(items: body_items),
+  )
+}
+
+fn nested_struct_field_step(m: MemberDef, inner: Code) -> List(Code) {
+  let append = code.Concat(parts: [code.Ident(name: "acc"), inner])
+  case m.required {
+    True -> [
+      code.Let(name: "v", value: code.Ident(name: "s." <> m.snake_name)),
+      code.Let(name: "acc", value: append),
+    ]
+    False -> [
+      code.Let(
+        name: "acc",
+        value: code.Case(
+          scrutinee: code.Ident(name: "s." <> m.snake_name),
+          branches: [
+            code.Branch(pattern: "option.None", body: code.Ident(name: "acc")),
+            code.Branch(pattern: "option.Some(v)", body: append),
+          ],
+        ),
+      ),
+    ]
   }
 }
 
@@ -745,7 +775,7 @@ fn emit_enum_block(r: types.Resolved) -> String {
             branches: list.map(vs, fn(v) {
               code.Branch(
                 pattern: v.gleam_ctor,
-                body: code.Raw(fragment: int_to_str(v.wire_value)),
+                body: code.IntLit(value: v.wire_value),
               )
             }),
           ),
@@ -781,28 +811,30 @@ fn enum_decode_lambda(
   variants: List(types.EnumVariant),
   first_ctor: String,
 ) -> code.Code {
-  let arms =
-    list.map(variants, fn(v) {
-      string.concat([
-        "      \"",
-        v.wire_value,
-        "\" -> decode.success(",
-        v.gleam_ctor,
-        ")\n",
-      ])
-    })
-  let fallback =
-    string.concat([
-      "      _ -> decode.failure(",
-      first_ctor,
-      ", \"unknown enum value\")\n    }\n  }",
-    ])
-  code.Raw(
-    fragment: string.concat([
-      "fn(s) {\n    case s {\n",
-      string.concat(arms),
-      fallback,
-    ]),
+  code.Lambda(
+    params: ["s"],
+    body: code.Case(
+      scrutinee: code.Ident(name: "s"),
+      branches: list.append(
+        list.map(variants, fn(v) {
+          code.Branch(
+            pattern: quote_string(v.wire_value),
+            body: code.Call(head: code.Ident(name: "decode.success"), args: [
+              code.Ident(name: v.gleam_ctor),
+            ]),
+          )
+        }),
+        [
+          code.Branch(
+            pattern: "_",
+            body: code.Call(head: code.Ident(name: "decode.failure"), args: [
+              code.Ident(name: first_ctor),
+              code.StrLit(value: "unknown enum value"),
+            ]),
+          ),
+        ],
+      ),
+    ),
   )
 }
 
@@ -810,33 +842,87 @@ fn int_enum_decode_lambda(
   variants: List(types.IntEnumVariant),
   first_ctor: String,
 ) -> code.Code {
-  let arms =
-    list.map(variants, fn(v) {
-      string.concat([
-        "      ",
-        int_to_str(v.wire_value),
-        " -> decode.success(",
-        v.gleam_ctor,
-        ")\n",
-      ])
-    })
-  let fallback =
-    string.concat([
-      "      _ -> decode.failure(",
-      first_ctor,
-      ", \"unknown int enum value\")\n    }\n  }",
-    ])
-  code.Raw(
-    fragment: string.concat([
-      "fn(n) {\n    case n {\n",
-      string.concat(arms),
-      fallback,
-    ]),
+  code.Lambda(
+    params: ["n"],
+    body: code.Case(
+      scrutinee: code.Ident(name: "n"),
+      branches: list.append(
+        list.map(variants, fn(v) {
+          code.Branch(
+            pattern: int_to_str(v.wire_value),
+            body: code.Call(head: code.Ident(name: "decode.success"), args: [
+              code.Ident(name: v.gleam_ctor),
+            ]),
+          )
+        }),
+        [
+          code.Branch(
+            pattern: "_",
+            body: code.Call(head: code.Ident(name: "decode.failure"), args: [
+              code.Ident(name: first_ctor),
+              code.StrLit(value: "unknown int enum value"),
+            ]),
+          ),
+        ],
+      ),
+    ),
   )
 }
 
 @external(erlang, "erlang", "integer_to_binary")
 fn int_to_str(n: Int) -> String
+
+fn decode_input_body(snake: String) -> Code {
+  code.Call(head: code.Ident(name: "result.map_error"), args: [
+    code.Call(head: code.Ident(name: "json.parse"), args: [
+      code.Ident(name: "json_string"),
+      code.Call(
+        head: code.Ident(name: "decode_" <> snake <> "_input_struct"),
+        args: [],
+      ),
+    ]),
+    code.Lambda(
+      params: ["_"],
+      body: code.StrLit(value: "input JSON decode failed"),
+    ),
+  ])
+}
+
+fn form_urlencoded_headers() -> Code {
+  code.Call(head: code.Ident(name: "dict.from_list"), args: [
+    code.ListLit(
+      items: [
+        code.Tuple(items: [
+          code.StrLit(value: "Content-Type"),
+          code.StrLit(value: "application/x-www-form-urlencoded"),
+        ]),
+      ],
+      tail: code.CodeNone,
+    ),
+  ])
+}
+
+fn form_urlencoded_headers_with_length() -> Code {
+  code.Call(head: code.Ident(name: "dict.from_list"), args: [
+    code.ListLit(
+      items: [
+        code.Tuple(items: [
+          code.StrLit(value: "Content-Type"),
+          code.StrLit(value: "application/x-www-form-urlencoded"),
+        ]),
+        code.Tuple(items: [
+          code.StrLit(value: "Content-Length"),
+          code.Call(head: code.Ident(name: "int.to_string"), args: [
+            code.Call(head: code.Ident(name: "bit_array.byte_size"), args: [
+              code.Ident(name: "body_bytes"),
+            ]),
+          ]),
+        ]),
+      ],
+      tail: code.CodeNone,
+    ),
+  ])
+}
 
 /// `pub fn build_<snake>_request(_input: <input_type>) -> #(...) { ... }`
 /// — the empty-input form.
@@ -846,18 +932,15 @@ fn build_empty_request_fn(
   body_literal: String,
 ) -> Code {
   let headers_assign =
-    code.Let(
-      name: "headers",
-      value: code.Raw(
-        fragment: "dict.from_list([#(\"Content-Type\", \"application/x-www-form-urlencoded\")])",
-      ),
-    )
+    code.Let(name: "headers", value: form_urlencoded_headers())
   let tuple_expr =
     code.Tuple(items: [
       code.StrLit(value: "POST"),
       code.StrLit(value: "/"),
       code.Ident(name: "headers"),
-      code.Raw(fragment: name_concat(["<<\"", body_literal, "\">>"])),
+      code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+        code.StrLit(value: body_literal),
+      ]),
     ])
   code.Fn(
     public: True,
@@ -895,27 +978,18 @@ fn build_scalar_request_fn(
       let #(m, wire) = pair
       code.Let(
         name: "body",
-        value: code.Raw(fragment: scalar_field_append(
-          model,
-          struct_id,
-          m,
-          wire,
-          variant,
-        )),
+        value: scalar_field_append_expr(model, struct_id, m, wire, variant),
       )
     })
   let body_bytes =
     code.Let(
       name: "body_bytes",
-      value: code.Raw(fragment: "bit_array.from_string(body)"),
+      value: code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+        code.Ident(name: "body"),
+      ]),
     )
   let headers_assign =
-    code.Let(
-      name: "headers",
-      value: code.Raw(
-        fragment: "dict.from_list([#(\"Content-Type\", \"application/x-www-form-urlencoded\"), #(\"Content-Length\", int.to_string(bit_array.byte_size(body_bytes)))])",
-      ),
-    )
+    code.Let(name: "headers", value: form_urlencoded_headers_with_length())
   // `@smithy.api#requestCompression` — actually gzip the body via
   // `compression.maybe_compress` and append `Content-Encoding: gzip`
   // when the wrap was applied. Mirrors the Rust SDK's
@@ -931,23 +1005,36 @@ fn build_scalar_request_fn(
       [
         code.Let(
           name: "#(body_bytes, applied)",
-          value: code.Raw(
-            fragment: name_concat([
-              "compression.maybe_compress(body_bytes, \"",
-              enc,
-              "\", compression.default_min_compression_size_bytes)",
-            ]),
+          value: code.Call(
+            head: code.Ident(name: "compression.maybe_compress"),
+            args: [
+              code.Ident(name: "body_bytes"),
+              code.StrLit(value: enc),
+              code.Ident(name: "compression.default_min_compression_size_bytes"),
+            ],
           ),
         ),
         code.Let(
           name: "headers",
-          value: code.Raw(
-            fragment: name_concat([
-              "case applied { True -> dict.insert(rest.append_content_encoding(headers, \"",
-              enc,
-              "\"), \"Content-Length\", int.to_string(bit_array.byte_size(body_bytes))) False -> headers }",
-            ]),
-          ),
+          value: code.Case(scrutinee: code.Ident(name: "applied"), branches: [
+            code.Branch(
+              pattern: "True",
+              body: code.Call(head: code.Ident(name: "dict.insert"), args: [
+                code.Call(
+                  head: code.Ident(name: "rest.append_content_encoding"),
+                  args: [code.Ident(name: "headers"), code.StrLit(value: enc)],
+                ),
+                code.StrLit(value: "Content-Length"),
+                code.Call(head: code.Ident(name: "int.to_string"), args: [
+                  code.Call(
+                    head: code.Ident(name: "bit_array.byte_size"),
+                    args: [code.Ident(name: "body_bytes")],
+                  ),
+                ]),
+              ]),
+            ),
+            code.Branch(pattern: "False", body: code.Ident(name: "headers")),
+          ]),
         ),
       ]
     })
@@ -975,45 +1062,60 @@ fn build_scalar_request_fn(
   )
 }
 
-fn scalar_field_append(
+fn scalar_field_append_expr(
   model: Model,
   struct_id: String,
   m: MemberDef,
   wire_name: String,
   variant: Variant,
-) -> String {
+) -> Code {
   let body_extension =
     encode_value_expr(
       m.target,
-      "v",
-      quote_string(wire_name),
+      code.Ident(name: "v"),
+      code.StrLit(value: wire_name),
       member_traits(model, struct_id, m.member_name),
       variant,
       m.timestamp_format,
     )
-  // `@idempotencyToken`: when `None`, substitute the SDK-generated
-  // UUID and append the field. Otherwise omit the field entirely.
-  // The substitution is the same `rest.idempotency_token/0` FFI
-  // the rest-protocol emitters use — tests pin it to all-zeros
-  // via `application:set_env`.
-  let none_branch = case m.idempotency_token {
-    True ->
-      name_concat([
-        "body <> \"&",
-        wire_name,
-        "=\" <> uri.encode_component(rest.idempotency_token())",
+  let append_value =
+    code.Concat(parts: [code.Ident(name: "body"), body_extension])
+  case m.required {
+    True -> {
+      code.Block(items: [
+        code.Let(name: "v", value: code.Ident(name: "input." <> m.snake_name)),
+        append_value,
       ])
-    False -> "body"
+    }
+    False -> {
+      // `@idempotencyToken`: when `None`, substitute the SDK-generated
+      // UUID and append the field. Otherwise omit the field entirely.
+      // The substitution is the same `rest.idempotency_token/0` FFI
+      // the rest-protocol emitters use — tests pin it to all-zeros
+      // via `application:set_env`.
+      let none_branch = case m.idempotency_token {
+        True ->
+          code.Concat(parts: [
+            code.Ident(name: "body"),
+            code.StrLit(value: "&" <> wire_name <> "="),
+            code.Call(head: code.Ident(name: "uri.encode_component"), args: [
+              code.Call(
+                head: code.Ident(name: "rest.idempotency_token"),
+                args: [],
+              ),
+            ]),
+          ])
+        False -> code.Ident(name: "body")
+      }
+      code.Case(
+        scrutinee: code.Ident(name: "input." <> m.snake_name),
+        branches: [
+          code.Branch(pattern: "option.None", body: none_branch),
+          code.Branch(pattern: "option.Some(v)", body: append_value),
+        ],
+      )
+    }
   }
-  name_concat([
-    "case input.",
-    m.snake_name,
-    " { option.None -> ",
-    none_branch,
-    " option.Some(v) -> body <> ",
-    body_extension,
-    " }",
-  ])
 }
 
 /// Emit a Gleam expression that produces the wire-body fragment
@@ -1029,12 +1131,12 @@ fn scalar_field_append(
 /// recursion into nested struct shape lookup happens there.
 fn encode_value_expr(
   target: types.Resolved,
-  value_expr: String,
-  prefix_expr: String,
+  value_expr: Code,
+  prefix_expr: Code,
   m_traits: shape.Traits,
   variant: Variant,
   timestamp_format: option.Option(String),
-) -> String {
+) -> Code {
   case target {
     types.RPrim(_) | types.RBlob | types.REnum(..) | types.RIntEnum(..) ->
       scalar_kv(target, value_expr, prefix_expr)
@@ -1052,15 +1154,12 @@ fn encode_value_expr(
         "http-date" -> "json_timestamp.format_http_date_precise"
         _ -> "json_timestamp.format_iso8601_precise"
       }
-      name_concat([
-        "\"&\" <> ",
+      query_pair(
         prefix_expr,
-        " <> \"=\" <> uri.encode_component(",
-        formatter,
-        "(",
-        value_expr,
-        "))",
-      ])
+        code.Call(head: code.Ident(name: "uri.encode_component"), args: [
+          code.Call(head: code.Ident(name: formatter), args: [value_expr]),
+        ]),
+      )
     }
     types.RList(element: et, xml_entry_name: xen, ..) -> {
       // ec2Query flattens every list per the protocol's "all lists are
@@ -1075,14 +1174,23 @@ fn encode_value_expr(
           }
       }
       let entry_prefix = case flat, xen {
-        True, _ -> prefix_expr <> " <> \".\" <> int.to_string(idx + 1)"
+        True, _ ->
+          code.Concat(parts: [
+            prefix_expr,
+            code.StrLit(value: "."),
+            one_based_idx_string(),
+          ])
         False, name ->
-          prefix_expr <> " <> \"." <> name <> ".\" <> int.to_string(idx + 1)"
+          code.Concat(parts: [
+            prefix_expr,
+            code.StrLit(value: "." <> name <> "."),
+            one_based_idx_string(),
+          ])
       }
       let elem_encode =
         encode_value_expr(
           et,
-          "item",
+          code.Ident(name: "item"),
           entry_prefix,
           dict.new(),
           variant,
@@ -1093,20 +1201,23 @@ fn encode_value_expr(
       //     (matches QueryListWriter.finish() in aws_smithy_query).
       //   ec2Query → do NOT serialize at all (Ec2EmptyQueryLists
       //     fixture: "Does not serialize empty query lists.").
-      let empty_branch = case variant {
-        AwsQuery -> name_concat(["[] -> \"&\" <> ", prefix_expr, " <> \"=\""])
-        Ec2Query -> "[] -> \"\""
+      let empty_body = case variant {
+        AwsQuery -> query_pair(prefix_expr, code.StrLit(value: ""))
+        Ec2Query -> code.StrLit(value: "")
       }
-      name_concat([
-        "case ",
-        value_expr,
-        " { ",
-        empty_branch,
-        " _ -> list.index_fold(",
-        value_expr,
-        ", \"\", fn(acc, item, idx) { acc <> ",
-        elem_encode,
-        " }) }",
+      code.Case(scrutinee: value_expr, branches: [
+        code.Branch(pattern: "[]", body: empty_body),
+        code.Branch(
+          pattern: "_",
+          body: code.Call(head: code.Ident(name: "list.index_fold"), args: [
+            value_expr,
+            code.StrLit(value: ""),
+            code.Lambda(
+              params: ["acc", "item", "idx"],
+              body: code.Concat(parts: [code.Ident(name: "acc"), elem_encode]),
+            ),
+          ]),
+        ),
       ])
     }
     types.RMap(key: kt, value: vt, xml_key_name: kn, xml_value_name: vn, ..) -> {
@@ -1126,16 +1237,34 @@ fn encode_value_expr(
       // plain `String` Gleam expression at runtime.
       let entry_var = "entry_prefix"
       let entry_init = case flat {
-        True -> prefix_expr <> " <> \".\" <> int.to_string(idx + 1)"
-        False -> prefix_expr <> " <> \".entry.\" <> int.to_string(idx + 1)"
+        True ->
+          code.Concat(parts: [
+            prefix_expr,
+            code.StrLit(value: "."),
+            one_based_idx_string(),
+          ])
+        False ->
+          code.Concat(parts: [
+            prefix_expr,
+            code.StrLit(value: ".entry."),
+            one_based_idx_string(),
+          ])
       }
-      let key_prefix = entry_var <> " <> \"." <> kn <> "\""
-      let value_prefix = entry_var <> " <> \"." <> vn <> "\""
-      let key_enc = scalar_kv(kt, "k", key_prefix)
+      let key_prefix =
+        code.Concat(parts: [
+          code.Ident(name: entry_var),
+          code.StrLit(value: "." <> kn),
+        ])
+      let value_prefix =
+        code.Concat(parts: [
+          code.Ident(name: entry_var),
+          code.StrLit(value: "." <> vn),
+        ])
+      let key_enc = scalar_kv(kt, code.Ident(name: "k"), key_prefix)
       let value_enc =
         encode_value_expr(
           vt,
-          "v",
+          code.Ident(name: "v"),
           value_prefix,
           dict.new(),
           variant,
@@ -1145,88 +1274,154 @@ fn encode_value_expr(
       // Ec2EmptyQueryMaps in the corpus). Keys sorted ascending so
       // wire byte-match against fixture is deterministic (matches
       // the Rust SDK convention — its callers explicitly sort).
-      name_concat([
-        "case dict.size(",
-        value_expr,
-        ") { 0 -> \"\" _ -> { let entries = dict.to_list(",
-        value_expr,
-        ") |> list.sort(fn(a, b) { string.compare(a.0, b.0) }) list.index_fold(entries, \"\", fn(acc, pair, idx) { let #(k, v) = pair let ",
-        entry_var,
-        " = ",
-        entry_init,
-        " acc <> ",
-        key_enc,
-        " <> ",
-        value_enc,
-        " }) } }",
-      ])
+      code.Case(
+        scrutinee: code.Call(head: code.Ident(name: "dict.size"), args: [
+          value_expr,
+        ]),
+        branches: [
+          code.Branch(pattern: "0", body: code.StrLit(value: "")),
+          code.Branch(
+            pattern: "_",
+            body: code.Block(items: [
+              code.Let(
+                name: "entries",
+                value: code.Pipe(
+                  initial: code.Call(
+                    head: code.Ident(name: "dict.to_list"),
+                    args: [
+                      value_expr,
+                    ],
+                  ),
+                  steps: [
+                    code.Call(head: code.Ident(name: "list.sort"), args: [
+                      code.Lambda(
+                        params: ["a", "b"],
+                        body: code.Call(
+                          head: code.Ident(name: "string.compare"),
+                          args: [
+                            code.Ident(name: "a.0"),
+                            code.Ident(name: "b.0"),
+                          ],
+                        ),
+                      ),
+                    ]),
+                  ],
+                ),
+              ),
+              code.Call(head: code.Ident(name: "list.index_fold"), args: [
+                code.Ident(name: "entries"),
+                code.StrLit(value: ""),
+                code.Lambda(
+                  params: ["acc", "pair", "idx"],
+                  body: code.Block(items: [
+                    code.Let(name: "#(k, v)", value: code.Ident(name: "pair")),
+                    code.Let(name: entry_var, value: entry_init),
+                    code.Concat(parts: [
+                      code.Ident(name: "acc"),
+                      key_enc,
+                      value_enc,
+                    ]),
+                  ]),
+                ),
+              ]),
+            ]),
+          ),
+        ],
+      )
     }
     types.RStruct(gleam_name: gn, ..) ->
-      name_concat([
-        "encode_",
-        stringutils.pascal_to_snake(gn),
-        "_at(",
-        prefix_expr,
-        ", ",
-        value_expr,
-        ")",
-      ])
+      code.Call(
+        head: code.Ident(
+          name: name_concat([
+            "encode_",
+            stringutils.pascal_to_snake(gn),
+            "_at",
+          ]),
+        ),
+        args: [prefix_expr, value_expr],
+      )
     _ ->
       // Unsupported (union/timestamp/document) — emit a literal
       // empty string so the build still compiles if the classifier
       // missed a case. The classifier should prevent this in
       // practice.
-      "\"\""
+      code.StrLit(value: "")
   }
 }
 
 fn scalar_kv(
   target: types.Resolved,
-  value_expr: String,
-  prefix_expr: String,
-) -> String {
+  value_expr: Code,
+  prefix_expr: Code,
+) -> Code {
   let encoded = case target {
     types.RPrim(types.PString) ->
-      name_concat(["uri.encode_component(", value_expr, ")"])
-    types.RPrim(types.PInt) -> name_concat(["int.to_string(", value_expr, ")"])
-    types.RPrim(types.PFloat) ->
-      name_concat(["format_smithy_float(", value_expr, ")"])
-    types.RPrim(types.PBool) ->
-      name_concat([
-        "case ",
+      code.Call(head: code.Ident(name: "uri.encode_component"), args: [
         value_expr,
-        " { True -> \"true\" False -> \"false\" }",
+      ])
+    types.RPrim(types.PInt) ->
+      code.Call(head: code.Ident(name: "int.to_string"), args: [value_expr])
+    types.RPrim(types.PFloat) ->
+      code.Call(head: code.Ident(name: "format_smithy_float"), args: [
+        value_expr,
+      ])
+    types.RPrim(types.PBool) ->
+      code.Case(scrutinee: value_expr, branches: [
+        code.Branch(pattern: "True", body: code.StrLit(value: "true")),
+        code.Branch(pattern: "False", body: code.StrLit(value: "false")),
       ])
     types.RBlob ->
-      name_concat([
-        "uri.encode_component(bit_array.base64_encode(",
-        value_expr,
-        ", True))",
+      code.Call(head: code.Ident(name: "uri.encode_component"), args: [
+        code.Call(head: code.Ident(name: "bit_array.base64_encode"), args: [
+          value_expr,
+          code.Ident(name: "True"),
+        ]),
       ])
     types.REnum(gleam_name: en, ..) ->
-      name_concat([
-        "uri.encode_component(",
-        stringutils.pascal_to_snake(en),
-        "_to_wire(",
-        value_expr,
-        "))",
+      code.Call(head: code.Ident(name: "uri.encode_component"), args: [
+        code.Call(
+          head: code.Ident(
+            name: name_concat([stringutils.pascal_to_snake(en), "_to_wire"]),
+          ),
+          args: [value_expr],
+        ),
       ])
     types.RIntEnum(gleam_name: en, ..) ->
-      name_concat([
-        "int.to_string(",
-        stringutils.pascal_to_snake(en),
-        "_to_int(",
-        value_expr,
-        "))",
+      code.Call(head: code.Ident(name: "int.to_string"), args: [
+        code.Call(
+          head: code.Ident(
+            name: name_concat([stringutils.pascal_to_snake(en), "_to_int"]),
+          ),
+          args: [value_expr],
+        ),
       ])
     _ ->
-      name_concat([
-        "uri.encode_component(string.inspect(",
-        value_expr,
-        "))",
+      code.Call(head: code.Ident(name: "uri.encode_component"), args: [
+        code.Call(head: code.Ident(name: "string.inspect"), args: [
+          value_expr,
+        ]),
       ])
   }
-  name_concat(["\"&\" <> ", prefix_expr, " <> \"=\" <> ", encoded])
+  query_pair(prefix_expr, encoded)
+}
+
+fn query_pair(prefix_expr: Code, encoded: Code) -> Code {
+  code.Concat(parts: [
+    code.StrLit(value: "&"),
+    prefix_expr,
+    code.StrLit(value: "="),
+    encoded,
+  ])
+}
+
+fn one_based_idx_string() -> Code {
+  code.Call(head: code.Ident(name: "int.to_string"), args: [
+    code.Infix(
+      left: code.Ident(name: "idx"),
+      op: "+",
+      right: code.IntLit(value: 1),
+    ),
+  ])
 }
 
 fn quote_string(s: String) -> String {
@@ -1295,24 +1490,60 @@ fn file_header(service_id: String, variant: Variant, body: String) -> String {
   let preamble = code.render(module)
   let helper = case string.contains(body, "format_smithy_float(") {
     False -> ""
-    True ->
-      "\n// AWS form-urlencoded float formatting:\n"
-      <> "//   NaN -> \"NaN\", +Infinity -> \"Infinity\", -Infinity -> \"-Infinity\",\n"
-      <> "//   finite -> short-form decimal via aws_ffi:float_short/1.\n"
-      <> "// SmithyFloat already discriminates the three IEEE-754 specials,\n"
-      <> "// so the helper just dispatches on the sum.\n"
-      <> "fn format_smithy_float(v: json_float.SmithyFloat) -> String {\n"
-      <> "  case v {\n"
-      <> "    json_float.FloatValue(f) -> float_short(f)\n"
-      <> "    json_float.NaN -> \"NaN\"\n"
-      <> "    json_float.PosInfinity -> \"Infinity\"\n"
-      <> "    json_float.NegInfinity -> \"-Infinity\"\n"
-      <> "  }\n"
-      <> "}\n\n"
-      <> "@external(erlang, \"aws_ffi\", \"float_short\")\n"
-      <> "fn float_short(v: Float) -> String\n"
+    True -> smithy_float_helper()
   }
-  string.concat([preamble, "\n", helper])
+  string.concat([preamble, helper])
+}
+
+fn smithy_float_helper() -> String {
+  code.render(
+    code.Module(items: [
+      code.Blank,
+      code.LineComment(lines: [
+        "AWS form-urlencoded float formatting:",
+        "  NaN -> \"NaN\", +Infinity -> \"Infinity\", -Infinity -> \"-Infinity\",",
+        "  finite -> short-form decimal via aws_ffi:float_short/1.",
+        "SmithyFloat already discriminates the three IEEE-754 specials,",
+        "so the helper just dispatches on the sum.",
+      ]),
+      code.Fn(
+        public: False,
+        name: "format_smithy_float",
+        params: [code.Param(name: "v", type_: "json_float.SmithyFloat")],
+        return: CodeSome("String"),
+        body: code.Case(scrutinee: code.Ident(name: "v"), branches: [
+          code.Branch(
+            pattern: "json_float.FloatValue(f)",
+            body: code.Call(head: code.Ident(name: "float_short"), args: [
+              code.Ident(name: "f"),
+            ]),
+          ),
+          code.Branch(
+            pattern: "json_float.NaN",
+            body: code.StrLit(value: "NaN"),
+          ),
+          code.Branch(
+            pattern: "json_float.PosInfinity",
+            body: code.StrLit(value: "Infinity"),
+          ),
+          code.Branch(
+            pattern: "json_float.NegInfinity",
+            body: code.StrLit(value: "-Infinity"),
+          ),
+        ]),
+      ),
+      code.Blank,
+      code.ExternalFn(
+        target: "erlang",
+        module_name: "aws_ffi",
+        external_name: "float_short",
+        public: False,
+        name: "float_short",
+        params: [code.Param(name: "v", type_: "Float")],
+        return: "String",
+      ),
+    ]),
+  )
 }
 
 fn strip_namespace(id: String) -> String {

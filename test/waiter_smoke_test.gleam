@@ -53,10 +53,7 @@ pub fn wait_until_bucket_exists_settles_on_first_success_test() {
   let result =
     s3.wait_until_bucket_exists(
       client,
-      s3.HeadBucketRequest(
-        bucket: option.Some("my-bucket"),
-        expected_bucket_owner: None,
-      ),
+      s3.head_bucket_request_default(bucket: "my-bucket"),
       // The waiter codegen wires `min_delay_ms` / `max_delay_ms`
       // verbatim from the trait (5000 / 120000 for S3). The test
       // never sleeps because the first attempt settles.
