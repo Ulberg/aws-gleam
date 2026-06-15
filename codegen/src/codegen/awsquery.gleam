@@ -597,51 +597,8 @@ fn emit_nested_struct_block(
       // helper appends `&prefix.<field>=<value>` in this sequence.
       let members = types.resolve_members_in_order(model, sid)
       let type_def = named_shapes.record_def(gn, members)
-      let field_clauses =
-        list.map(members, fn(m) {
-          let wire = wire_name_for(model, sid, m, variant)
-          let inner =
-            encode_value_expr(
-              m.target,
-              "v",
-              name_concat(["prefix <> \".", wire, "\""]),
-              member_traits(model, sid, m.member_name),
-              variant,
-              m.timestamp_format,
-            )
-          case m.required {
-            True ->
-              name_concat([
-                "  let v = s.",
-                m.snake_name,
-                "\n",
-                "  let acc = acc <> ",
-                inner,
-                "\n",
-              ])
-            False ->
-              name_concat([
-                "  let acc = case s.",
-                m.snake_name,
-                " { option.None -> acc option.Some(v) -> acc <> ",
-                inner,
-                " }\n",
-              ])
-          }
-        })
-        |> string.concat
       let encoder =
-        name_concat([
-          "pub fn encode_",
-          snake,
-          "_at(prefix: String, s: ",
-          gn,
-          ") -> String {\n",
-          "  let acc = \"\"\n",
-          field_clauses,
-          "  acc\n",
-          "}\n",
-        ])
+        nested_struct_encoder_fn(model, sid, snake, gn, members, variant)
       // Decoder for the protocol-test JSON fixture (params side).
       // Member-keyed, params_nested so nested struct refs call
       // sibling `decode_<S>_struct_params()` rather than wire-form
@@ -661,13 +618,78 @@ fn emit_nested_struct_block(
         "\n\n",
         code.render(default_fn),
         "\n",
-        encoder,
+        code.render(encoder),
         "\n",
         code.render(decoder),
         "\n",
       ])
     }
     _ -> ""
+  }
+}
+
+fn nested_struct_encoder_fn(
+  model: Model,
+  struct_id: String,
+  snake: String,
+  type_name: String,
+  members: List(MemberDef),
+  variant: Variant,
+) -> Code {
+  let field_steps =
+    list.map(members, fn(m) {
+      let wire = wire_name_for(model, struct_id, m, variant)
+      let inner =
+        encode_value_expr(
+          m.target,
+          "v",
+          "prefix <> \"." <> wire <> "\"",
+          member_traits(model, struct_id, m.member_name),
+          variant,
+          m.timestamp_format,
+        )
+      nested_struct_field_step(m, inner)
+    })
+  let body_items =
+    list.append(
+      [
+        code.Let(name: "acc", value: code.StrLit(value: "")),
+        ..list.flatten(field_steps)
+      ],
+      [code.Ident(name: "acc")],
+    )
+  code.Fn(
+    public: True,
+    name: "encode_" <> snake <> "_at",
+    params: [
+      code.Param(name: "prefix", type_: "String"),
+      code.Param(name: "s", type_: type_name),
+    ],
+    return: CodeSome("String"),
+    body: code.Block(items: body_items),
+  )
+}
+
+fn nested_struct_field_step(m: MemberDef, inner: String) -> List(Code) {
+  let append =
+    code.Concat(parts: [code.Ident(name: "acc"), code.Raw(fragment: inner)])
+  case m.required {
+    True -> [
+      code.Let(name: "v", value: code.Ident(name: "s." <> m.snake_name)),
+      code.Let(name: "acc", value: append),
+    ]
+    False -> [
+      code.Let(
+        name: "acc",
+        value: code.Case(
+          scrutinee: code.Ident(name: "s." <> m.snake_name),
+          branches: [
+            code.Branch(pattern: "option.None", body: code.Ident(name: "acc")),
+            code.Branch(pattern: "option.Some(v)", body: append),
+          ],
+        ),
+      ),
+    ]
   }
 }
 
@@ -751,7 +773,7 @@ fn emit_enum_block(r: types.Resolved) -> String {
             branches: list.map(vs, fn(v) {
               code.Branch(
                 pattern: v.gleam_ctor,
-                body: code.Raw(fragment: int_to_str(v.wire_value)),
+                body: code.IntLit(value: v.wire_value),
               )
             }),
           ),
@@ -787,28 +809,30 @@ fn enum_decode_lambda(
   variants: List(types.EnumVariant),
   first_ctor: String,
 ) -> code.Code {
-  let arms =
-    list.map(variants, fn(v) {
-      string.concat([
-        "      \"",
-        v.wire_value,
-        "\" -> decode.success(",
-        v.gleam_ctor,
-        ")\n",
-      ])
-    })
-  let fallback =
-    string.concat([
-      "      _ -> decode.failure(",
-      first_ctor,
-      ", \"unknown enum value\")\n    }\n  }",
-    ])
-  code.Raw(
-    fragment: string.concat([
-      "fn(s) {\n    case s {\n",
-      string.concat(arms),
-      fallback,
-    ]),
+  code.Lambda(
+    params: ["s"],
+    body: code.Case(
+      scrutinee: code.Ident(name: "s"),
+      branches: list.append(
+        list.map(variants, fn(v) {
+          code.Branch(
+            pattern: quote_string(v.wire_value),
+            body: code.Call(head: code.Ident(name: "decode.success"), args: [
+              code.Ident(name: v.gleam_ctor),
+            ]),
+          )
+        }),
+        [
+          code.Branch(
+            pattern: "_",
+            body: code.Call(head: code.Ident(name: "decode.failure"), args: [
+              code.Ident(name: first_ctor),
+              code.StrLit(value: "unknown enum value"),
+            ]),
+          ),
+        ],
+      ),
+    ),
   )
 }
 
@@ -816,28 +840,30 @@ fn int_enum_decode_lambda(
   variants: List(types.IntEnumVariant),
   first_ctor: String,
 ) -> code.Code {
-  let arms =
-    list.map(variants, fn(v) {
-      string.concat([
-        "      ",
-        int_to_str(v.wire_value),
-        " -> decode.success(",
-        v.gleam_ctor,
-        ")\n",
-      ])
-    })
-  let fallback =
-    string.concat([
-      "      _ -> decode.failure(",
-      first_ctor,
-      ", \"unknown int enum value\")\n    }\n  }",
-    ])
-  code.Raw(
-    fragment: string.concat([
-      "fn(n) {\n    case n {\n",
-      string.concat(arms),
-      fallback,
-    ]),
+  code.Lambda(
+    params: ["n"],
+    body: code.Case(
+      scrutinee: code.Ident(name: "n"),
+      branches: list.append(
+        list.map(variants, fn(v) {
+          code.Branch(
+            pattern: int_to_str(v.wire_value),
+            body: code.Call(head: code.Ident(name: "decode.success"), args: [
+              code.Ident(name: v.gleam_ctor),
+            ]),
+          )
+        }),
+        [
+          code.Branch(
+            pattern: "_",
+            body: code.Call(head: code.Ident(name: "decode.failure"), args: [
+              code.Ident(name: first_ctor),
+              code.StrLit(value: "unknown int enum value"),
+            ]),
+          ),
+        ],
+      ),
+    ),
   )
 }
 
@@ -950,13 +976,7 @@ fn build_scalar_request_fn(
       let #(m, wire) = pair
       code.Let(
         name: "body",
-        value: code.Raw(fragment: scalar_field_append(
-          model,
-          struct_id,
-          m,
-          wire,
-          variant,
-        )),
+        value: scalar_field_append_expr(model, struct_id, m, wire, variant),
       )
     })
   let body_bytes =
@@ -983,23 +1003,36 @@ fn build_scalar_request_fn(
       [
         code.Let(
           name: "#(body_bytes, applied)",
-          value: code.Raw(
-            fragment: name_concat([
-              "compression.maybe_compress(body_bytes, \"",
-              enc,
-              "\", compression.default_min_compression_size_bytes)",
-            ]),
+          value: code.Call(
+            head: code.Ident(name: "compression.maybe_compress"),
+            args: [
+              code.Ident(name: "body_bytes"),
+              code.StrLit(value: enc),
+              code.Ident(name: "compression.default_min_compression_size_bytes"),
+            ],
           ),
         ),
         code.Let(
           name: "headers",
-          value: code.Raw(
-            fragment: name_concat([
-              "case applied { True -> dict.insert(rest.append_content_encoding(headers, \"",
-              enc,
-              "\"), \"Content-Length\", int.to_string(bit_array.byte_size(body_bytes))) False -> headers }",
-            ]),
-          ),
+          value: code.Case(scrutinee: code.Ident(name: "applied"), branches: [
+            code.Branch(
+              pattern: "True",
+              body: code.Call(head: code.Ident(name: "dict.insert"), args: [
+                code.Call(
+                  head: code.Ident(name: "rest.append_content_encoding"),
+                  args: [code.Ident(name: "headers"), code.StrLit(value: enc)],
+                ),
+                code.StrLit(value: "Content-Length"),
+                code.Call(head: code.Ident(name: "int.to_string"), args: [
+                  code.Call(
+                    head: code.Ident(name: "bit_array.byte_size"),
+                    args: [code.Ident(name: "body_bytes")],
+                  ),
+                ]),
+              ]),
+            ),
+            code.Branch(pattern: "False", body: code.Ident(name: "headers")),
+          ]),
         ),
       ]
     })
@@ -1027,13 +1060,13 @@ fn build_scalar_request_fn(
   )
 }
 
-fn scalar_field_append(
+fn scalar_field_append_expr(
   model: Model,
   struct_id: String,
   m: MemberDef,
   wire_name: String,
   variant: Variant,
-) -> String {
+) -> Code {
   let body_extension =
     encode_value_expr(
       m.target,
@@ -1043,39 +1076,46 @@ fn scalar_field_append(
       variant,
       m.timestamp_format,
     )
-  // `@idempotencyToken`: when `None`, substitute the SDK-generated
-  // UUID and append the field. Otherwise omit the field entirely.
-  // The substitution is the same `rest.idempotency_token/0` FFI
-  // the rest-protocol emitters use — tests pin it to all-zeros
-  // via `application:set_env`.
-  let none_branch = case m.idempotency_token {
-    True ->
-      name_concat([
-        "body <> \"&",
-        wire_name,
-        "=\" <> uri.encode_component(rest.idempotency_token())",
-      ])
-    False -> "body"
-  }
+  let append_value =
+    code.Concat(parts: [
+      code.Ident(name: "body"),
+      code.Raw(fragment: body_extension),
+    ])
   case m.required {
-    True ->
-      name_concat([
-        "{\n  let v = input.",
-        m.snake_name,
-        "\n  body <> ",
-        body_extension,
-        "\n}",
+    True -> {
+      code.Block(items: [
+        code.Let(name: "v", value: code.Ident(name: "input." <> m.snake_name)),
+        append_value,
       ])
-    False ->
-      name_concat([
-        "case input.",
-        m.snake_name,
-        " { option.None -> ",
-        none_branch,
-        " option.Some(v) -> body <> ",
-        body_extension,
-        " }",
-      ])
+    }
+    False -> {
+      // `@idempotencyToken`: when `None`, substitute the SDK-generated
+      // UUID and append the field. Otherwise omit the field entirely.
+      // The substitution is the same `rest.idempotency_token/0` FFI
+      // the rest-protocol emitters use — tests pin it to all-zeros
+      // via `application:set_env`.
+      let none_branch = case m.idempotency_token {
+        True ->
+          code.Concat(parts: [
+            code.Ident(name: "body"),
+            code.StrLit(value: "&" <> wire_name <> "="),
+            code.Call(head: code.Ident(name: "uri.encode_component"), args: [
+              code.Call(
+                head: code.Ident(name: "rest.idempotency_token"),
+                args: [],
+              ),
+            ]),
+          ])
+        False -> code.Ident(name: "body")
+      }
+      code.Case(
+        scrutinee: code.Ident(name: "input." <> m.snake_name),
+        branches: [
+          code.Branch(pattern: "option.None", body: none_branch),
+          code.Branch(pattern: "option.Some(v)", body: append_value),
+        ],
+      )
+    }
   }
 }
 
