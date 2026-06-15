@@ -8,8 +8,8 @@
 //// to splice into the emitter's `Module(items)` list.
 
 import codegen/code.{
-  type Code, type Param, CodeSome, Fn, LabelledParam, Param, PositionalVariant,
-  TypeDef, UnitVariant, Variant,
+  type Code, type Param, CodeSome, Fn, Ident, Labelled, LabelledParam, Param,
+  PositionalVariant, RecordConstruct, TypeDef, UnitVariant, Variant,
 }
 import codegen/types.{
   type EnumVariant, type IntEnumVariant, type MemberDef, type Resolved, REnum,
@@ -17,12 +17,7 @@ import codegen/types.{
 }
 import gleam/list
 import gleam/set.{type Set}
-import gleam/string
 import internal/stringutils
-
-fn name_concat(parts: List(String)) -> String {
-  string.concat(parts)
-}
 
 /// Set of `gleam_name`s for every top-level shape that an emitter
 /// will materialise as a `pub type` in the generated module —
@@ -73,7 +68,7 @@ pub fn enum_def(name: String, variants: List(EnumVariant)) -> Code {
   case variants {
     [] ->
       TypeDef(public: True, is_opaque: False, name: name, variants: [
-        UnitVariant(name: name_concat([name, "Unknown"])),
+        UnitVariant(name: name <> "Unknown"),
       ])
     _ ->
       TypeDef(
@@ -91,7 +86,7 @@ pub fn int_enum_def(name: String, variants: List(IntEnumVariant)) -> Code {
   case variants {
     [] ->
       TypeDef(public: True, is_opaque: False, name: name, variants: [
-        UnitVariant(name: name_concat([name, "Unknown"])),
+        UnitVariant(name: name <> "Unknown"),
       ])
     _ ->
       TypeDef(
@@ -116,7 +111,7 @@ pub fn union_def(
   case members {
     [] ->
       TypeDef(public: True, is_opaque: False, name: name, variants: [
-        UnitVariant(name: name_concat([name, "Empty"])),
+        UnitVariant(name: name <> "Empty"),
       ])
     _ ->
       TypeDef(
@@ -150,17 +145,12 @@ pub fn record_default_fn(
   record_name: String,
   members: List(MemberDef),
 ) -> Code {
-  // Bodyless empty record gets a one-liner.
-  let body = case members {
-    [] -> code.Raw(fragment: record_name)
-    _ -> code.Raw(fragment: render_default_body(record_name, members))
-  }
   Fn(
     public: True,
-    name: name_concat([snake, "_default"]),
+    name: snake <> "_default",
     params: required_params(members),
     return: CodeSome(record_name),
-    body: body,
+    body: default_body(record_name, members),
   )
 }
 
@@ -176,18 +166,19 @@ fn required_params(members: List(MemberDef)) -> List(Param) {
   })
 }
 
-fn render_default_body(
-  record_name: String,
-  members: List(MemberDef),
-) -> String {
-  let lines =
-    list.map(members, fn(m) {
-      let value = case m.required {
-        True -> m.snake_name
-        False -> "option.None"
-      }
-      name_concat(["  ", m.snake_name, ": ", value, ",\n"])
-    })
-    |> string.concat
-  string.concat([record_name, "(\n", lines, ")"])
+fn default_body(record_name: String, members: List(MemberDef)) -> Code {
+  case members {
+    [] -> Ident(name: record_name)
+    _ ->
+      RecordConstruct(
+        type_: record_name,
+        fields: list.map(members, fn(m) {
+          let value = case m.required {
+            True -> Ident(name: m.snake_name)
+            False -> Ident(name: "option.None")
+          }
+          Labelled(label: m.snake_name, value: value)
+        }),
+      )
+  }
 }

@@ -115,6 +115,12 @@ pub type Code {
   /// e.g. threading a pagination cursor into a typed input.
   RecordUpdate(record: Code, type_: String, fields: List(Code))
 
+  /// `Ctor(field1: v1, field2: v2)` — labelled record construction.
+  /// Unlike generic `Call`, this renders one field per line with a
+  /// trailing comma so generated record helpers stay readable and
+  /// stable as fields are added.
+  RecordConstruct(type_: String, fields: List(Code))
+
   /// Raw passthrough — emitter hands a pre-formatted Gleam fragment.
   /// Escape hatch for legacy code; should eventually be empty.
   Raw(fragment: String)
@@ -332,6 +338,9 @@ fn do_render(c: Code, indent: Int) -> String {
     RecordUpdate(record: r, type_: t, fields: fs) ->
       string.concat([pad(indent), render_record_update(r, t, fs, indent)])
 
+    RecordConstruct(type_: t, fields: fs) ->
+      string.concat([pad(indent), render_record_construct(t, fs, indent)])
+
     Raw(fragment: f) -> indent_raw(f, indent)
 
     DocComment(lines: ls) ->
@@ -365,6 +374,8 @@ fn do_render_expr(c: Code, indent: Int) -> String {
     Raw(fragment: f) -> f
     RecordUpdate(record: r, type_: t, fields: fs) ->
       render_record_update(r, t, fs, indent)
+    RecordConstruct(type_: t, fields: fs) ->
+      render_record_construct(t, fs, indent)
     Call(head: h, args: as_) -> render_call(h, as_, indent)
     Concat(parts: ps) -> render_concat(ps, indent)
     Tuple(items: xs) -> render_tuple(xs, indent)
@@ -390,6 +401,40 @@ fn do_render_expr(c: Code, indent: Int) -> String {
       // statement renderer — Gleam allows blocks as expressions when
       // delimited.
       string.concat(["{\n", do_render(c, indent + 1), "\n", pad(indent), "}"])
+  }
+}
+
+fn render_record_construct(
+  type_: String,
+  fields: List(Code),
+  indent: Int,
+) -> String {
+  case fields {
+    [] -> type_
+    _ -> {
+      let field_str =
+        fields
+        |> list.map(fn(f) {
+          case f {
+            Labelled(label: l, value: v) ->
+              string.concat([
+                pad(indent + 1),
+                l,
+                ": ",
+                do_render_expr(v, indent + 1),
+                ",",
+              ])
+            _ ->
+              string.concat([
+                pad(indent + 1),
+                do_render_expr(f, indent + 1),
+                ",",
+              ])
+          }
+        })
+        |> string.join("\n")
+      string.concat([type_, "(\n", field_str, "\n", pad(indent), ")"])
+    }
   }
 }
 

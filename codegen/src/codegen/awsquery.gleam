@@ -405,13 +405,7 @@ fn emit_scalar_typed_operation(
         name: name_concat(["decode_", snake, "_input"]),
         params: [code.Param(name: "json_string", type_: "String")],
         return: CodeSome(name_concat(["Result(", input_type, ", String)"])),
-        body: code.Raw(
-          fragment: name_concat([
-            "json.parse(json_string, decode_",
-            snake,
-            "_input_struct())\n  |> result.map_error(fn(_) { \"input JSON decode failed\" })",
-          ]),
-        ),
+        body: decode_input_body(snake),
       ),
       code.Blank,
       build_scalar_request_fn(
@@ -850,6 +844,58 @@ fn int_enum_decode_lambda(
 @external(erlang, "erlang", "integer_to_binary")
 fn int_to_str(n: Int) -> String
 
+fn decode_input_body(snake: String) -> Code {
+  code.Call(head: code.Ident(name: "result.map_error"), args: [
+    code.Call(head: code.Ident(name: "json.parse"), args: [
+      code.Ident(name: "json_string"),
+      code.Call(
+        head: code.Ident(name: "decode_" <> snake <> "_input_struct"),
+        args: [],
+      ),
+    ]),
+    code.Lambda(
+      params: ["_"],
+      body: code.StrLit(value: "input JSON decode failed"),
+    ),
+  ])
+}
+
+fn form_urlencoded_headers() -> Code {
+  code.Call(head: code.Ident(name: "dict.from_list"), args: [
+    code.ListLit(
+      items: [
+        code.Tuple(items: [
+          code.StrLit(value: "Content-Type"),
+          code.StrLit(value: "application/x-www-form-urlencoded"),
+        ]),
+      ],
+      tail: code.CodeNone,
+    ),
+  ])
+}
+
+fn form_urlencoded_headers_with_length() -> Code {
+  code.Call(head: code.Ident(name: "dict.from_list"), args: [
+    code.ListLit(
+      items: [
+        code.Tuple(items: [
+          code.StrLit(value: "Content-Type"),
+          code.StrLit(value: "application/x-www-form-urlencoded"),
+        ]),
+        code.Tuple(items: [
+          code.StrLit(value: "Content-Length"),
+          code.Call(head: code.Ident(name: "int.to_string"), args: [
+            code.Call(head: code.Ident(name: "bit_array.byte_size"), args: [
+              code.Ident(name: "body_bytes"),
+            ]),
+          ]),
+        ]),
+      ],
+      tail: code.CodeNone,
+    ),
+  ])
+}
+
 /// `pub fn build_<snake>_request(_input: <input_type>) -> #(...) { ... }`
 /// — the empty-input form.
 fn build_empty_request_fn(
@@ -858,18 +904,15 @@ fn build_empty_request_fn(
   body_literal: String,
 ) -> Code {
   let headers_assign =
-    code.Let(
-      name: "headers",
-      value: code.Raw(
-        fragment: "dict.from_list([#(\"Content-Type\", \"application/x-www-form-urlencoded\")])",
-      ),
-    )
+    code.Let(name: "headers", value: form_urlencoded_headers())
   let tuple_expr =
     code.Tuple(items: [
       code.StrLit(value: "POST"),
       code.StrLit(value: "/"),
       code.Ident(name: "headers"),
-      code.Raw(fragment: name_concat(["<<\"", body_literal, "\">>"])),
+      code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+        code.StrLit(value: body_literal),
+      ]),
     ])
   code.Fn(
     public: True,
@@ -919,15 +962,12 @@ fn build_scalar_request_fn(
   let body_bytes =
     code.Let(
       name: "body_bytes",
-      value: code.Raw(fragment: "bit_array.from_string(body)"),
+      value: code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+        code.Ident(name: "body"),
+      ]),
     )
   let headers_assign =
-    code.Let(
-      name: "headers",
-      value: code.Raw(
-        fragment: "dict.from_list([#(\"Content-Type\", \"application/x-www-form-urlencoded\"), #(\"Content-Length\", int.to_string(bit_array.byte_size(body_bytes)))])",
-      ),
-    )
+    code.Let(name: "headers", value: form_urlencoded_headers_with_length())
   // `@smithy.api#requestCompression` — actually gzip the body via
   // `compression.maybe_compress` and append `Content-Encoding: gzip`
   // when the wrap was applied. Mirrors the Rust SDK's
