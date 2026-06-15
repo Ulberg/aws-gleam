@@ -642,8 +642,11 @@ fn nested_struct_encoder_fn(
       let inner =
         encode_value_expr(
           m.target,
-          "v",
-          "prefix <> \"." <> wire <> "\"",
+          code.Ident(name: "v"),
+          code.Concat(parts: [
+            code.Ident(name: "prefix"),
+            code.StrLit(value: "." <> wire),
+          ]),
           member_traits(model, struct_id, m.member_name),
           variant,
           m.timestamp_format,
@@ -670,9 +673,8 @@ fn nested_struct_encoder_fn(
   )
 }
 
-fn nested_struct_field_step(m: MemberDef, inner: String) -> List(Code) {
-  let append =
-    code.Concat(parts: [code.Ident(name: "acc"), code.Raw(fragment: inner)])
+fn nested_struct_field_step(m: MemberDef, inner: Code) -> List(Code) {
+  let append = code.Concat(parts: [code.Ident(name: "acc"), inner])
   case m.required {
     True -> [
       code.Let(name: "v", value: code.Ident(name: "s." <> m.snake_name)),
@@ -1070,17 +1072,14 @@ fn scalar_field_append_expr(
   let body_extension =
     encode_value_expr(
       m.target,
-      "v",
-      quote_string(wire_name),
+      code.Ident(name: "v"),
+      code.StrLit(value: wire_name),
       member_traits(model, struct_id, m.member_name),
       variant,
       m.timestamp_format,
     )
   let append_value =
-    code.Concat(parts: [
-      code.Ident(name: "body"),
-      code.Raw(fragment: body_extension),
-    ])
+    code.Concat(parts: [code.Ident(name: "body"), body_extension])
   case m.required {
     True -> {
       code.Block(items: [
@@ -1132,12 +1131,12 @@ fn scalar_field_append_expr(
 /// recursion into nested struct shape lookup happens there.
 fn encode_value_expr(
   target: types.Resolved,
-  value_expr: String,
-  prefix_expr: String,
+  value_expr: Code,
+  prefix_expr: Code,
   m_traits: shape.Traits,
   variant: Variant,
   timestamp_format: option.Option(String),
-) -> String {
+) -> Code {
   case target {
     types.RPrim(_) | types.RBlob | types.REnum(..) | types.RIntEnum(..) ->
       scalar_kv(target, value_expr, prefix_expr)
@@ -1155,15 +1154,12 @@ fn encode_value_expr(
         "http-date" -> "json_timestamp.format_http_date_precise"
         _ -> "json_timestamp.format_iso8601_precise"
       }
-      name_concat([
-        "\"&\" <> ",
+      query_pair(
         prefix_expr,
-        " <> \"=\" <> uri.encode_component(",
-        formatter,
-        "(",
-        value_expr,
-        "))",
-      ])
+        code.Call(head: code.Ident(name: "uri.encode_component"), args: [
+          code.Call(head: code.Ident(name: formatter), args: [value_expr]),
+        ]),
+      )
     }
     types.RList(element: et, xml_entry_name: xen, ..) -> {
       // ec2Query flattens every list per the protocol's "all lists are
@@ -1178,14 +1174,23 @@ fn encode_value_expr(
           }
       }
       let entry_prefix = case flat, xen {
-        True, _ -> prefix_expr <> " <> \".\" <> int.to_string(idx + 1)"
+        True, _ ->
+          code.Concat(parts: [
+            prefix_expr,
+            code.StrLit(value: "."),
+            one_based_idx_string(),
+          ])
         False, name ->
-          prefix_expr <> " <> \"." <> name <> ".\" <> int.to_string(idx + 1)"
+          code.Concat(parts: [
+            prefix_expr,
+            code.StrLit(value: "." <> name <> "."),
+            one_based_idx_string(),
+          ])
       }
       let elem_encode =
         encode_value_expr(
           et,
-          "item",
+          code.Ident(name: "item"),
           entry_prefix,
           dict.new(),
           variant,
@@ -1196,20 +1201,23 @@ fn encode_value_expr(
       //     (matches QueryListWriter.finish() in aws_smithy_query).
       //   ec2Query → do NOT serialize at all (Ec2EmptyQueryLists
       //     fixture: "Does not serialize empty query lists.").
-      let empty_branch = case variant {
-        AwsQuery -> name_concat(["[] -> \"&\" <> ", prefix_expr, " <> \"=\""])
-        Ec2Query -> "[] -> \"\""
+      let empty_body = case variant {
+        AwsQuery -> query_pair(prefix_expr, code.StrLit(value: ""))
+        Ec2Query -> code.StrLit(value: "")
       }
-      name_concat([
-        "case ",
-        value_expr,
-        " { ",
-        empty_branch,
-        " _ -> list.index_fold(",
-        value_expr,
-        ", \"\", fn(acc, item, idx) { acc <> ",
-        elem_encode,
-        " }) }",
+      code.Case(scrutinee: value_expr, branches: [
+        code.Branch(pattern: "[]", body: empty_body),
+        code.Branch(
+          pattern: "_",
+          body: code.Call(head: code.Ident(name: "list.index_fold"), args: [
+            value_expr,
+            code.StrLit(value: ""),
+            code.Lambda(
+              params: ["acc", "item", "idx"],
+              body: code.Concat(parts: [code.Ident(name: "acc"), elem_encode]),
+            ),
+          ]),
+        ),
       ])
     }
     types.RMap(key: kt, value: vt, xml_key_name: kn, xml_value_name: vn, ..) -> {
@@ -1229,16 +1237,34 @@ fn encode_value_expr(
       // plain `String` Gleam expression at runtime.
       let entry_var = "entry_prefix"
       let entry_init = case flat {
-        True -> prefix_expr <> " <> \".\" <> int.to_string(idx + 1)"
-        False -> prefix_expr <> " <> \".entry.\" <> int.to_string(idx + 1)"
+        True ->
+          code.Concat(parts: [
+            prefix_expr,
+            code.StrLit(value: "."),
+            one_based_idx_string(),
+          ])
+        False ->
+          code.Concat(parts: [
+            prefix_expr,
+            code.StrLit(value: ".entry."),
+            one_based_idx_string(),
+          ])
       }
-      let key_prefix = entry_var <> " <> \"." <> kn <> "\""
-      let value_prefix = entry_var <> " <> \"." <> vn <> "\""
-      let key_enc = scalar_kv(kt, "k", key_prefix)
+      let key_prefix =
+        code.Concat(parts: [
+          code.Ident(name: entry_var),
+          code.StrLit(value: "." <> kn),
+        ])
+      let value_prefix =
+        code.Concat(parts: [
+          code.Ident(name: entry_var),
+          code.StrLit(value: "." <> vn),
+        ])
+      let key_enc = scalar_kv(kt, code.Ident(name: "k"), key_prefix)
       let value_enc =
         encode_value_expr(
           vt,
-          "v",
+          code.Ident(name: "v"),
           value_prefix,
           dict.new(),
           variant,
@@ -1248,88 +1274,154 @@ fn encode_value_expr(
       // Ec2EmptyQueryMaps in the corpus). Keys sorted ascending so
       // wire byte-match against fixture is deterministic (matches
       // the Rust SDK convention — its callers explicitly sort).
-      name_concat([
-        "case dict.size(",
-        value_expr,
-        ") { 0 -> \"\" _ -> { let entries = dict.to_list(",
-        value_expr,
-        ") |> list.sort(fn(a, b) { string.compare(a.0, b.0) }) list.index_fold(entries, \"\", fn(acc, pair, idx) { let #(k, v) = pair let ",
-        entry_var,
-        " = ",
-        entry_init,
-        " acc <> ",
-        key_enc,
-        " <> ",
-        value_enc,
-        " }) } }",
-      ])
+      code.Case(
+        scrutinee: code.Call(head: code.Ident(name: "dict.size"), args: [
+          value_expr,
+        ]),
+        branches: [
+          code.Branch(pattern: "0", body: code.StrLit(value: "")),
+          code.Branch(
+            pattern: "_",
+            body: code.Block(items: [
+              code.Let(
+                name: "entries",
+                value: code.Pipe(
+                  initial: code.Call(
+                    head: code.Ident(name: "dict.to_list"),
+                    args: [
+                      value_expr,
+                    ],
+                  ),
+                  steps: [
+                    code.Call(head: code.Ident(name: "list.sort"), args: [
+                      code.Lambda(
+                        params: ["a", "b"],
+                        body: code.Call(
+                          head: code.Ident(name: "string.compare"),
+                          args: [
+                            code.Ident(name: "a.0"),
+                            code.Ident(name: "b.0"),
+                          ],
+                        ),
+                      ),
+                    ]),
+                  ],
+                ),
+              ),
+              code.Call(head: code.Ident(name: "list.index_fold"), args: [
+                code.Ident(name: "entries"),
+                code.StrLit(value: ""),
+                code.Lambda(
+                  params: ["acc", "pair", "idx"],
+                  body: code.Block(items: [
+                    code.Let(name: "#(k, v)", value: code.Ident(name: "pair")),
+                    code.Let(name: entry_var, value: entry_init),
+                    code.Concat(parts: [
+                      code.Ident(name: "acc"),
+                      key_enc,
+                      value_enc,
+                    ]),
+                  ]),
+                ),
+              ]),
+            ]),
+          ),
+        ],
+      )
     }
     types.RStruct(gleam_name: gn, ..) ->
-      name_concat([
-        "encode_",
-        stringutils.pascal_to_snake(gn),
-        "_at(",
-        prefix_expr,
-        ", ",
-        value_expr,
-        ")",
-      ])
+      code.Call(
+        head: code.Ident(
+          name: name_concat([
+            "encode_",
+            stringutils.pascal_to_snake(gn),
+            "_at",
+          ]),
+        ),
+        args: [prefix_expr, value_expr],
+      )
     _ ->
       // Unsupported (union/timestamp/document) — emit a literal
       // empty string so the build still compiles if the classifier
       // missed a case. The classifier should prevent this in
       // practice.
-      "\"\""
+      code.StrLit(value: "")
   }
 }
 
 fn scalar_kv(
   target: types.Resolved,
-  value_expr: String,
-  prefix_expr: String,
-) -> String {
+  value_expr: Code,
+  prefix_expr: Code,
+) -> Code {
   let encoded = case target {
     types.RPrim(types.PString) ->
-      name_concat(["uri.encode_component(", value_expr, ")"])
-    types.RPrim(types.PInt) -> name_concat(["int.to_string(", value_expr, ")"])
-    types.RPrim(types.PFloat) ->
-      name_concat(["format_smithy_float(", value_expr, ")"])
-    types.RPrim(types.PBool) ->
-      name_concat([
-        "case ",
+      code.Call(head: code.Ident(name: "uri.encode_component"), args: [
         value_expr,
-        " { True -> \"true\" False -> \"false\" }",
+      ])
+    types.RPrim(types.PInt) ->
+      code.Call(head: code.Ident(name: "int.to_string"), args: [value_expr])
+    types.RPrim(types.PFloat) ->
+      code.Call(head: code.Ident(name: "format_smithy_float"), args: [
+        value_expr,
+      ])
+    types.RPrim(types.PBool) ->
+      code.Case(scrutinee: value_expr, branches: [
+        code.Branch(pattern: "True", body: code.StrLit(value: "true")),
+        code.Branch(pattern: "False", body: code.StrLit(value: "false")),
       ])
     types.RBlob ->
-      name_concat([
-        "uri.encode_component(bit_array.base64_encode(",
-        value_expr,
-        ", True))",
+      code.Call(head: code.Ident(name: "uri.encode_component"), args: [
+        code.Call(head: code.Ident(name: "bit_array.base64_encode"), args: [
+          value_expr,
+          code.Ident(name: "True"),
+        ]),
       ])
     types.REnum(gleam_name: en, ..) ->
-      name_concat([
-        "uri.encode_component(",
-        stringutils.pascal_to_snake(en),
-        "_to_wire(",
-        value_expr,
-        "))",
+      code.Call(head: code.Ident(name: "uri.encode_component"), args: [
+        code.Call(
+          head: code.Ident(
+            name: name_concat([stringutils.pascal_to_snake(en), "_to_wire"]),
+          ),
+          args: [value_expr],
+        ),
       ])
     types.RIntEnum(gleam_name: en, ..) ->
-      name_concat([
-        "int.to_string(",
-        stringutils.pascal_to_snake(en),
-        "_to_int(",
-        value_expr,
-        "))",
+      code.Call(head: code.Ident(name: "int.to_string"), args: [
+        code.Call(
+          head: code.Ident(
+            name: name_concat([stringutils.pascal_to_snake(en), "_to_int"]),
+          ),
+          args: [value_expr],
+        ),
       ])
     _ ->
-      name_concat([
-        "uri.encode_component(string.inspect(",
-        value_expr,
-        "))",
+      code.Call(head: code.Ident(name: "uri.encode_component"), args: [
+        code.Call(head: code.Ident(name: "string.inspect"), args: [
+          value_expr,
+        ]),
       ])
   }
-  name_concat(["\"&\" <> ", prefix_expr, " <> \"=\" <> ", encoded])
+  query_pair(prefix_expr, encoded)
+}
+
+fn query_pair(prefix_expr: Code, encoded: Code) -> Code {
+  code.Concat(parts: [
+    code.StrLit(value: "&"),
+    prefix_expr,
+    code.StrLit(value: "="),
+    encoded,
+  ])
+}
+
+fn one_based_idx_string() -> Code {
+  code.Call(head: code.Ident(name: "int.to_string"), args: [
+    code.Infix(
+      left: code.Ident(name: "idx"),
+      op: "+",
+      right: code.IntLit(value: 1),
+    ),
+  ])
 }
 
 fn quote_string(s: String) -> String {
@@ -1398,24 +1490,60 @@ fn file_header(service_id: String, variant: Variant, body: String) -> String {
   let preamble = code.render(module)
   let helper = case string.contains(body, "format_smithy_float(") {
     False -> ""
-    True ->
-      "\n// AWS form-urlencoded float formatting:\n"
-      <> "//   NaN -> \"NaN\", +Infinity -> \"Infinity\", -Infinity -> \"-Infinity\",\n"
-      <> "//   finite -> short-form decimal via aws_ffi:float_short/1.\n"
-      <> "// SmithyFloat already discriminates the three IEEE-754 specials,\n"
-      <> "// so the helper just dispatches on the sum.\n"
-      <> "fn format_smithy_float(v: json_float.SmithyFloat) -> String {\n"
-      <> "  case v {\n"
-      <> "    json_float.FloatValue(f) -> float_short(f)\n"
-      <> "    json_float.NaN -> \"NaN\"\n"
-      <> "    json_float.PosInfinity -> \"Infinity\"\n"
-      <> "    json_float.NegInfinity -> \"-Infinity\"\n"
-      <> "  }\n"
-      <> "}\n\n"
-      <> "@external(erlang, \"aws_ffi\", \"float_short\")\n"
-      <> "fn float_short(v: Float) -> String\n"
+    True -> smithy_float_helper()
   }
-  string.concat([preamble, "\n", helper])
+  string.concat([preamble, helper])
+}
+
+fn smithy_float_helper() -> String {
+  code.render(
+    code.Module(items: [
+      code.Blank,
+      code.LineComment(lines: [
+        "AWS form-urlencoded float formatting:",
+        "  NaN -> \"NaN\", +Infinity -> \"Infinity\", -Infinity -> \"-Infinity\",",
+        "  finite -> short-form decimal via aws_ffi:float_short/1.",
+        "SmithyFloat already discriminates the three IEEE-754 specials,",
+        "so the helper just dispatches on the sum.",
+      ]),
+      code.Fn(
+        public: False,
+        name: "format_smithy_float",
+        params: [code.Param(name: "v", type_: "json_float.SmithyFloat")],
+        return: CodeSome("String"),
+        body: code.Case(scrutinee: code.Ident(name: "v"), branches: [
+          code.Branch(
+            pattern: "json_float.FloatValue(f)",
+            body: code.Call(head: code.Ident(name: "float_short"), args: [
+              code.Ident(name: "f"),
+            ]),
+          ),
+          code.Branch(
+            pattern: "json_float.NaN",
+            body: code.StrLit(value: "NaN"),
+          ),
+          code.Branch(
+            pattern: "json_float.PosInfinity",
+            body: code.StrLit(value: "Infinity"),
+          ),
+          code.Branch(
+            pattern: "json_float.NegInfinity",
+            body: code.StrLit(value: "-Infinity"),
+          ),
+        ]),
+      ),
+      code.Blank,
+      code.ExternalFn(
+        target: "erlang",
+        module_name: "aws_ffi",
+        external_name: "float_short",
+        public: False,
+        name: "float_short",
+        params: [code.Param(name: "v", type_: "Float")],
+        return: "String",
+      ),
+    ]),
+  )
 }
 
 fn strip_namespace(id: String) -> String {

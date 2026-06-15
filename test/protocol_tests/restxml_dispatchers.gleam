@@ -98,7 +98,12 @@ fn all_query_string_types_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_all_query_string_types_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -119,7 +124,12 @@ fn body_with_xml_name_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_body_with_xml_name_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -140,7 +150,12 @@ fn constant_and_variable_query_string_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_constant_and_variable_query_string_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -163,7 +178,12 @@ fn constant_query_string_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_constant_query_string_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -184,7 +204,12 @@ fn content_type_parameters_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_content_type_parameters_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -205,7 +230,12 @@ fn datetime_offsets_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_datetime_offsets_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -226,7 +256,12 @@ fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_empty_input_and_empty_output_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -249,7 +284,12 @@ fn endpoint_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_endpoint_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -270,7 +310,12 @@ fn endpoint_with_host_label_header_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_endpoint_with_host_label_header_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -293,7 +338,12 @@ fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_endpoint_with_host_label_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -316,7 +366,12 @@ fn flattened_xml_map_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_flattened_xml_map_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -337,7 +392,12 @@ fn flattened_xml_map_with_xml_name_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_flattened_xml_map_with_xml_name_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -360,7 +420,12 @@ fn flattened_xml_map_with_xml_namespace_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_flattened_xml_map_with_xml_namespace_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -383,7 +448,12 @@ fn fractional_seconds_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_fractional_seconds_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -404,7 +474,12 @@ fn greeting_with_errors_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_greeting_with_errors_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -425,7 +500,12 @@ fn http_empty_prefix_headers_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_empty_prefix_headers_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -448,7 +528,12 @@ fn http_enum_payload_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_enum_payload_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -469,7 +554,12 @@ fn http_payload_traits_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_payload_traits_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -490,7 +580,12 @@ fn http_payload_traits_with_media_type_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_payload_traits_with_media_type_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -513,7 +608,12 @@ fn http_payload_with_member_xml_name_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_payload_with_member_xml_name_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -536,7 +636,12 @@ fn http_payload_with_structure_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_payload_with_structure_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -559,7 +664,12 @@ fn http_payload_with_union_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_payload_with_union_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -580,7 +690,12 @@ fn http_payload_with_xml_name_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_payload_with_xml_name_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -603,7 +718,12 @@ fn http_payload_with_xml_namespace_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_payload_with_xml_namespace_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -626,7 +746,12 @@ fn http_payload_with_xml_namespace_and_prefix_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_payload_with_xml_namespace_and_prefix_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -649,7 +774,12 @@ fn http_prefix_headers_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_prefix_headers_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -670,7 +800,12 @@ fn http_request_with_float_labels_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_request_with_float_labels_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -693,7 +828,12 @@ fn http_request_with_greedy_label_in_path_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_request_with_greedy_label_in_path_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -716,7 +856,12 @@ fn http_request_with_labels_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_request_with_labels_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -739,7 +884,12 @@ fn http_request_with_labels_and_timestamp_format_dispatcher() -> Dispatcher {
             svc.build_http_request_with_labels_and_timestamp_format_request(
               input,
             )
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -762,7 +912,12 @@ fn http_response_code_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_response_code_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -783,7 +938,12 @@ fn http_string_payload_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_string_payload_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -804,7 +964,12 @@ fn ignore_query_params_in_response_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_ignore_query_params_in_response_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -827,7 +992,12 @@ fn input_and_output_with_headers_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_input_and_output_with_headers_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -850,7 +1020,12 @@ fn nested_xml_maps_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_nested_xml_maps_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -871,7 +1046,12 @@ fn nested_xml_map_with_xml_name_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_nested_xml_map_with_xml_name_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -894,7 +1074,12 @@ fn no_input_and_no_output_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_no_input_and_no_output_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -915,7 +1100,12 @@ fn no_input_and_output_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_no_input_and_output_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -936,7 +1126,12 @@ fn null_and_empty_headers_client_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_null_and_empty_headers_client_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -959,7 +1154,12 @@ fn null_and_empty_headers_server_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_null_and_empty_headers_server_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -982,7 +1182,12 @@ fn omits_null_serializes_empty_string_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_omits_null_serializes_empty_string_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1005,7 +1210,12 @@ fn put_with_content_encoding_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_put_with_content_encoding_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1028,7 +1238,12 @@ fn query_idempotency_token_auto_fill_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_query_idempotency_token_auto_fill_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1051,7 +1266,12 @@ fn query_params_as_string_list_map_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_query_params_as_string_list_map_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1074,7 +1294,12 @@ fn query_precedence_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_query_precedence_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1095,7 +1320,12 @@ fn recursive_shapes_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_recursive_shapes_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1116,7 +1346,12 @@ fn simple_scalar_properties_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_simple_scalar_properties_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1137,7 +1372,12 @@ fn timestamp_format_headers_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_timestamp_format_headers_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1158,7 +1398,12 @@ fn xml_attributes_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_attributes_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1179,7 +1424,12 @@ fn xml_attributes_in_middle_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_attributes_in_middle_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1200,7 +1450,12 @@ fn xml_attributes_on_payload_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_attributes_on_payload_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1222,7 +1477,12 @@ fn xml_blobs_dispatcher() -> Dispatcher {
       case svc.decode_xml_blobs_input(raw) {
         Ok(input) -> {
           let #(method, uri, headers, body) = svc.build_xml_blobs_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1243,7 +1503,12 @@ fn xml_empty_blobs_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_empty_blobs_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1264,7 +1529,12 @@ fn xml_empty_lists_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_empty_lists_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1285,7 +1555,12 @@ fn xml_empty_maps_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_empty_maps_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1306,7 +1581,12 @@ fn xml_empty_strings_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_empty_strings_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1326,7 +1606,12 @@ fn xml_enums_dispatcher() -> Dispatcher {
       case svc.decode_xml_enums_input(raw) {
         Ok(input) -> {
           let #(method, uri, headers, body) = svc.build_xml_enums_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1347,7 +1632,12 @@ fn xml_int_enums_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_int_enums_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1367,7 +1657,12 @@ fn xml_lists_dispatcher() -> Dispatcher {
       case svc.decode_xml_lists_input(raw) {
         Ok(input) -> {
           let #(method, uri, headers, body) = svc.build_xml_lists_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1387,7 +1682,12 @@ fn xml_maps_dispatcher() -> Dispatcher {
       case svc.decode_xml_maps_input(raw) {
         Ok(input) -> {
           let #(method, uri, headers, body) = svc.build_xml_maps_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1408,7 +1708,12 @@ fn xml_maps_xml_name_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_maps_xml_name_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1429,7 +1734,12 @@ fn xml_map_with_xml_namespace_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_map_with_xml_namespace_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1452,7 +1762,12 @@ fn xml_namespaces_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_namespaces_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1473,7 +1788,12 @@ fn xml_timestamps_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_timestamps_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1494,7 +1814,12 @@ fn xml_unions_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_xml_unions_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1515,7 +1840,12 @@ fn delete_object_tagging_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_delete_object_tagging_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1536,7 +1866,12 @@ fn get_bucket_location_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_get_bucket_location_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1557,7 +1892,12 @@ fn get_object_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_get_object_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1578,7 +1918,12 @@ fn list_objects_v2_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_list_objects_v2_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }

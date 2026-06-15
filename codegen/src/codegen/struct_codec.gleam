@@ -71,7 +71,7 @@ fn encoder_body(
         False -> m.json_name
       }
       let wire = StrLit(wire_key)
-      let encoded_value = Call(Ident(member_encoder_expr(m)), [Ident("v")])
+      let encoded_value = Call(member_encoder_expr(m), [Ident("v")])
       let some_branch =
         ListLit(
           items: [
@@ -86,7 +86,7 @@ fn encoder_body(
         False, option.Some(default_expr) ->
           ListLit(
             items: [
-              Tuple(items: [wire, code.Raw(fragment: default_expr)]),
+              Tuple(items: [wire, default_expr]),
             ],
             tail: CodeSome(Ident("pairs")),
           )
@@ -184,7 +184,7 @@ fn decoder_body(
             name: m.snake_name,
             callee: Call(Ident("decode.field"), [
               StrLit(key),
-              code.Raw(fragment: inner),
+              inner,
             ]),
           )
         False ->
@@ -193,7 +193,7 @@ fn decoder_body(
             callee: Call(Ident("decode.optional_field"), [
               StrLit(key),
               Ident("option.None"),
-              Call(Ident("decode.optional"), [code.Raw(fragment: inner)]),
+              Call(Ident("decode.optional"), [inner]),
             ]),
           )
       }
@@ -209,14 +209,14 @@ fn decoder_body(
   list.append([recursive_guard, ..field_lets], [tail])
 }
 
-fn member_encoder_expr(m: MemberDef) -> String {
-  types.json_encoder_member(m.target, m.timestamp_format)
+fn member_encoder_expr(m: MemberDef) -> Code {
+  types.json_encoder_member_code(m.target, m.timestamp_format)
 }
 
-fn member_decoder_expr(m: MemberDef) -> String {
-  types.json_decoder_member(m.target, m.timestamp_format)
+fn member_decoder_expr(m: MemberDef) -> Code {
+  types.json_decoder_member_code(m.target, m.timestamp_format)
 }
 
-fn member_decoder_params_expr(m: MemberDef) -> String {
-  types.json_decoder_member_params(m.target, m.timestamp_format)
+fn member_decoder_params_expr(m: MemberDef) -> Code {
+  types.json_decoder_member_params_code(m.target, m.timestamp_format)
 }

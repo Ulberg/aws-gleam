@@ -169,7 +169,12 @@ fn all_query_string_types_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_all_query_string_types_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -190,7 +195,12 @@ fn constant_and_variable_query_string_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_constant_and_variable_query_string_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -213,7 +223,12 @@ fn constant_query_string_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_constant_query_string_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -234,7 +249,12 @@ fn content_type_parameters_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_content_type_parameters_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -255,7 +275,12 @@ fn datetime_offsets_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_datetime_offsets_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -276,7 +301,12 @@ fn document_type_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_document_type_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -297,7 +327,12 @@ fn document_type_as_map_value_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_document_type_as_map_value_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -320,7 +355,12 @@ fn document_type_as_payload_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_document_type_as_payload_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -341,7 +381,12 @@ fn duplex_stream_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_duplex_stream_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -362,7 +407,12 @@ fn duplex_stream_with_distinct_streams_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_duplex_stream_with_distinct_streams_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -385,7 +435,12 @@ fn duplex_stream_with_initial_messages_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_duplex_stream_with_initial_messages_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -408,7 +463,12 @@ fn empty_input_and_empty_output_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_empty_input_and_empty_output_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -431,7 +491,12 @@ fn endpoint_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_endpoint_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -452,7 +517,12 @@ fn endpoint_with_host_label_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_endpoint_with_host_label_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -475,7 +545,12 @@ fn fractional_seconds_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_fractional_seconds_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -496,7 +571,12 @@ fn greeting_with_errors_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_greeting_with_errors_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -517,7 +597,12 @@ fn host_with_path_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_host_with_path_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -538,7 +623,12 @@ fn http_checksum_required_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_checksum_required_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -559,7 +649,12 @@ fn http_empty_prefix_headers_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_empty_prefix_headers_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -582,7 +677,12 @@ fn http_enum_payload_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_enum_payload_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -603,7 +703,12 @@ fn http_payload_traits_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_payload_traits_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -624,7 +729,12 @@ fn http_payload_traits_with_media_type_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_payload_traits_with_media_type_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -647,7 +757,12 @@ fn http_payload_with_structure_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_payload_with_structure_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -670,7 +785,12 @@ fn http_payload_with_union_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_payload_with_union_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -691,7 +811,12 @@ fn http_prefix_headers_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_prefix_headers_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -712,7 +837,12 @@ fn http_prefix_headers_in_response_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_prefix_headers_in_response_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -735,7 +865,12 @@ fn http_query_params_only_operation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_query_params_only_operation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -758,7 +893,12 @@ fn http_request_with_float_labels_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_request_with_float_labels_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -781,7 +921,12 @@ fn http_request_with_greedy_label_in_path_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_request_with_greedy_label_in_path_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -804,7 +949,12 @@ fn http_request_with_labels_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_request_with_labels_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -827,7 +977,12 @@ fn http_request_with_labels_and_timestamp_format_dispatcher() -> Dispatcher {
             svc.build_http_request_with_labels_and_timestamp_format_request(
               input,
             )
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -850,7 +1005,12 @@ fn http_request_with_regex_literal_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_request_with_regex_literal_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -873,7 +1033,12 @@ fn http_response_code_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_response_code_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -894,7 +1059,12 @@ fn http_string_payload_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_http_string_payload_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -915,7 +1085,12 @@ fn ignore_query_params_in_response_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_ignore_query_params_in_response_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -938,7 +1113,12 @@ fn input_and_output_with_headers_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_input_and_output_with_headers_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -961,7 +1141,12 @@ fn input_stream_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_input_stream_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -982,7 +1167,12 @@ fn input_stream_with_initial_request_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_input_stream_with_initial_request_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1005,7 +1195,12 @@ fn json_blobs_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_json_blobs_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1026,7 +1221,12 @@ fn json_enums_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_json_enums_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1047,7 +1247,12 @@ fn json_int_enums_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_json_int_enums_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1068,7 +1273,12 @@ fn json_lists_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_json_lists_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1088,7 +1298,12 @@ fn json_maps_dispatcher() -> Dispatcher {
       case svc.decode_json_maps_input(raw) {
         Ok(input) -> {
           let #(method, uri, headers, body) = svc.build_json_maps_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1109,7 +1324,12 @@ fn json_timestamps_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_json_timestamps_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1130,7 +1350,12 @@ fn json_unions_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_json_unions_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1151,7 +1376,12 @@ fn malformed_accept_with_body_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_accept_with_body_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1174,7 +1404,12 @@ fn malformed_accept_with_generic_string_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_accept_with_generic_string_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1197,7 +1432,12 @@ fn malformed_accept_with_payload_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_accept_with_payload_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1220,7 +1460,12 @@ fn malformed_blob_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_blob_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1241,7 +1486,12 @@ fn malformed_boolean_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_boolean_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1262,7 +1512,12 @@ fn malformed_byte_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_byte_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1283,7 +1538,12 @@ fn malformed_content_type_with_body_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_content_type_with_body_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1306,7 +1566,12 @@ fn malformed_content_type_with_generic_string_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_content_type_with_generic_string_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1329,7 +1594,12 @@ fn malformed_content_type_without_body_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_content_type_without_body_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1356,7 +1626,12 @@ fn malformed_content_type_without_body_empty_input_dispatcher() -> Dispatcher {
             svc.build_malformed_content_type_without_body_empty_input_request(
               input,
             )
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1379,7 +1654,12 @@ fn malformed_content_type_with_payload_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_content_type_with_payload_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1402,7 +1682,12 @@ fn malformed_double_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_double_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1423,7 +1708,12 @@ fn malformed_float_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_float_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1444,7 +1734,12 @@ fn malformed_integer_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_integer_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1465,7 +1760,12 @@ fn malformed_list_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_list_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1486,7 +1786,12 @@ fn malformed_long_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_long_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1507,7 +1812,12 @@ fn malformed_map_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_map_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1528,7 +1838,12 @@ fn malformed_request_body_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_request_body_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1549,7 +1864,12 @@ fn malformed_short_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_short_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1570,7 +1890,12 @@ fn malformed_string_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_string_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1591,7 +1916,12 @@ fn malformed_timestamp_body_date_time_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_timestamp_body_date_time_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1614,7 +1944,12 @@ fn malformed_timestamp_body_default_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_timestamp_body_default_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1637,7 +1972,12 @@ fn malformed_timestamp_body_http_date_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_timestamp_body_http_date_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1660,7 +2000,12 @@ fn malformed_timestamp_header_date_time_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_timestamp_header_date_time_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1683,7 +2028,12 @@ fn malformed_timestamp_header_default_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_timestamp_header_default_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1706,7 +2056,12 @@ fn malformed_timestamp_header_epoch_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_timestamp_header_epoch_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1729,7 +2084,12 @@ fn malformed_timestamp_path_default_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_timestamp_path_default_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1752,7 +2112,12 @@ fn malformed_timestamp_path_epoch_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_timestamp_path_epoch_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1775,7 +2140,12 @@ fn malformed_timestamp_path_http_date_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_timestamp_path_http_date_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1798,7 +2168,12 @@ fn malformed_timestamp_query_default_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_timestamp_query_default_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1821,7 +2196,12 @@ fn malformed_timestamp_query_epoch_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_timestamp_query_epoch_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1844,7 +2224,12 @@ fn malformed_timestamp_query_http_date_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_timestamp_query_http_date_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1867,7 +2252,12 @@ fn malformed_union_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_union_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1888,7 +2278,12 @@ fn media_type_header_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_media_type_header_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1909,7 +2304,12 @@ fn no_input_and_no_output_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_no_input_and_no_output_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1930,7 +2330,12 @@ fn no_input_and_output_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_no_input_and_output_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1951,7 +2356,12 @@ fn null_and_empty_headers_client_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_null_and_empty_headers_client_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1974,7 +2384,12 @@ fn null_and_empty_headers_server_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_null_and_empty_headers_server_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -1997,7 +2412,12 @@ fn omits_null_serializes_empty_string_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_omits_null_serializes_empty_string_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2020,7 +2440,12 @@ fn omits_serializing_empty_lists_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_omits_serializing_empty_lists_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2043,7 +2468,12 @@ fn operation_with_defaults_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_operation_with_defaults_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2064,7 +2494,12 @@ fn operation_with_nested_structure_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_operation_with_nested_structure_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2087,7 +2522,12 @@ fn output_stream_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_output_stream_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2108,7 +2548,12 @@ fn output_stream_with_initial_response_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_output_stream_with_initial_response_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2131,7 +2576,12 @@ fn post_player_action_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_post_player_action_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2152,7 +2602,12 @@ fn post_union_with_json_name_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_post_union_with_json_name_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2175,7 +2630,12 @@ fn put_with_content_encoding_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_put_with_content_encoding_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2198,7 +2658,12 @@ fn query_idempotency_token_auto_fill_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_query_idempotency_token_auto_fill_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2221,7 +2686,12 @@ fn query_params_as_string_list_map_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_query_params_as_string_list_map_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2244,7 +2714,12 @@ fn query_precedence_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_query_precedence_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2265,7 +2740,12 @@ fn recursive_shapes_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_recursive_shapes_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2286,7 +2766,12 @@ fn response_code_http_fallback_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_response_code_http_fallback_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2309,7 +2794,12 @@ fn response_code_required_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_response_code_required_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2330,7 +2820,12 @@ fn simple_scalar_properties_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_simple_scalar_properties_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2351,7 +2846,12 @@ fn sparse_json_lists_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_sparse_json_lists_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2372,7 +2872,12 @@ fn sparse_json_maps_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_sparse_json_maps_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2393,7 +2898,12 @@ fn streaming_traits_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_streaming_traits_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2414,7 +2924,12 @@ fn streaming_traits_require_length_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_streaming_traits_require_length_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2437,7 +2952,12 @@ fn streaming_traits_with_media_type_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_streaming_traits_with_media_type_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2460,7 +2980,12 @@ fn test_body_structure_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_test_body_structure_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2481,7 +3006,12 @@ fn test_get_no_input_no_payload_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_test_get_no_input_no_payload_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2504,7 +3034,12 @@ fn test_get_no_payload_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_test_get_no_payload_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2525,7 +3060,12 @@ fn test_payload_blob_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_test_payload_blob_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2546,7 +3086,12 @@ fn test_payload_structure_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_test_payload_structure_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2567,7 +3112,12 @@ fn test_post_no_input_no_payload_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_test_post_no_input_no_payload_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2590,7 +3140,12 @@ fn test_post_no_payload_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_test_post_no_payload_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2611,7 +3166,12 @@ fn timestamp_format_headers_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_timestamp_format_headers_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2632,7 +3192,12 @@ fn unit_input_and_output_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_unit_input_and_output_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2653,7 +3218,12 @@ fn malformed_enum_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_enum_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2674,7 +3244,12 @@ fn malformed_length_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_length_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2695,7 +3270,12 @@ fn malformed_length_override_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_length_override_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2718,7 +3298,12 @@ fn malformed_length_query_string_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_length_query_string_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2741,7 +3326,12 @@ fn malformed_pattern_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_pattern_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2762,7 +3352,12 @@ fn malformed_pattern_override_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_pattern_override_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2785,7 +3380,12 @@ fn malformed_range_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_range_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2806,7 +3406,12 @@ fn malformed_range_override_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_range_override_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2827,7 +3432,12 @@ fn malformed_required_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_required_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2848,7 +3458,12 @@ fn malformed_unique_items_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_malformed_unique_items_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2869,7 +3484,12 @@ fn recursive_structures_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_recursive_structures_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2890,7 +3510,12 @@ fn sensitive_validation_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_sensitive_validation_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2911,7 +3536,12 @@ fn upload_archive_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_upload_archive_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2932,7 +3562,12 @@ fn upload_multipart_part_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_upload_multipart_part_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }
@@ -2953,7 +3588,12 @@ fn get_rest_apis_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_get_rest_apis_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }

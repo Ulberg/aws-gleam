@@ -258,14 +258,14 @@ fn build_dispatched_checksum_step(member: MemberDef) -> code.Code {
   // pass that to the wire-form helper. SHA-256 fallback when
   // the field is None.
   let snake = member.snake_name
-  let encoder = types.json_encoder(member.target)
+  let encoder = types.json_encoder_code(member.target)
   let some_branch =
     code.Call(
       head: code.Ident(name: "rest.with_checksum_header_for_wire"),
       args: [
         code.Ident(name: "headers"),
         code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
-          code.Call(head: code.Ident(name: encoder), args: [
+          code.Call(head: encoder, args: [
             code.Ident(name: "v"),
           ]),
         ]),
@@ -380,10 +380,11 @@ fn emit_path_setup_with_defaults(
         False -> code.Ident(name: "False")
       }
       let value_expr =
-        code.Raw(fragment: value_to_string_with_format(
+        value_to_string_with_format_code(
           m.target,
           m.timestamp_format,
-        ))
+          code.Ident(name: "v"),
+        )
       let some_branch =
         code.Call(head: code.Ident(name: "rest.substitute_label"), args: [
           code.Ident(name: "path"),
@@ -476,10 +477,11 @@ pub fn emit_path_setup(
         code.Call(head: code.Ident(name: "rest.substitute_label"), args: [
           code.Ident(name: "path"),
           code.StrLit(value: m.json_name),
-          code.Raw(fragment: value_to_string_with_format(
+          value_to_string_with_format_code(
             m.target,
             m.timestamp_format,
-          )),
+            code.Ident(name: "v"),
+          ),
           greedy_ident,
         ])
       let value = case m.required {
@@ -537,39 +539,30 @@ fn query_member_let(m: MemberDef) -> code.Code {
     _, True -> #("option.Some(v)", add_query_call(code.Ident(name: "v")))
     RList(element: e, ..), _ -> #(
       "option.Some(xs)",
-      // `list.fold(xs, query, fn(q, item) { let v = item; rest.add_query(...) })`.
-      // The inner `let v = item` lets `value_to_string_with_format`
-      // emit its rendering keyed on `v` — that helper assumes a
-      // `v`-named binding by convention. Renaming the helper to
-      // accept the binding name would invert the dependency; the
-      // current shape keeps the rendering atom-sized.
       code.Call(head: code.Ident(name: "list.fold"), args: [
         code.Ident(name: "xs"),
         code.Ident(name: "query"),
         code.Lambda(
           params: ["q", "item"],
-          body: code.Block(items: [
-            code.Let(name: "v", value: code.Ident(name: "item")),
-            code.Call(head: code.Ident(name: "rest.add_query"), args: [
-              code.Ident(name: "q"),
-              code.StrLit(value: query_name),
-              code.Raw(fragment: value_to_string_with_format(
-                e,
-                m.timestamp_format,
-              )),
-            ]),
+          body: code.Call(head: code.Ident(name: "rest.add_query"), args: [
+            code.Ident(name: "q"),
+            code.StrLit(value: query_name),
+            value_to_string_with_format_code(
+              e,
+              m.timestamp_format,
+              code.Ident(name: "item"),
+            ),
           ]),
         ),
       ]),
     )
     _, _ -> #(
       "option.Some(v)",
-      add_query_call(
-        code.Raw(fragment: value_to_string_with_format(
-          m.target,
-          m.timestamp_format,
-        )),
-      ),
+      add_query_call(value_to_string_with_format_code(
+        m.target,
+        m.timestamp_format,
+        code.Ident(name: "v"),
+      )),
     )
   }
 
@@ -688,27 +681,27 @@ fn header_member_let(m: MemberDef) -> code.Code {
       // types (numbers, http-date timestamps, enums) use the raw wire
       // form. Smithy's @httpHeader spec only quotes strings.
       let render = case e {
-        RPrim(primitive: types.PString) -> "rest.quote_list_string_entry(v)"
-        _ -> value_to_string_for_header(e, m.timestamp_format)
+        RPrim(primitive: types.PString) ->
+          code.Call(
+            head: code.Ident(name: "rest.quote_list_string_entry"),
+            args: [
+              code.Ident(name: "item"),
+            ],
+          )
+        _ ->
+          value_to_string_for_header_code(
+            e,
+            m.timestamp_format,
+            code.Ident(name: "item"),
+          )
       }
       let call =
         code.Call(head: code.Ident(name: "rest.maybe_set_list_header"), args: [
           code.Ident(name: "headers"),
           code.StrLit(value: header_name),
-          // `list.map(xs, fn(item) { let v = item; <render> })` —
-          // `<render>` is an expression keyed on `v`. The
-          // `let v = item` binding hosts the rename so the
-          // helper-emitted rendering doesn't have to thread
-          // through a parameter name.
           code.Call(head: code.Ident(name: "list.map"), args: [
             code.Ident(name: "xs"),
-            code.Lambda(
-              params: ["item"],
-              body: code.Block(items: [
-                code.Let(name: "v", value: code.Ident(name: "item")),
-                code.Raw(fragment: render),
-              ]),
-            ),
+            code.Lambda(params: ["item"], body: render),
           ]),
         ])
       let scrutinee = code.Ident(name: name_concat(["input.", m.snake_name]))
@@ -732,14 +725,24 @@ fn header_member_let(m: MemberDef) -> code.Code {
       // linefeeds in the payload don't break header parsing.
       let render = case m.target, m.media_type {
         RPrim(primitive: types.PString), Some(_) ->
-          "bit_array.base64_encode(bit_array.from_string(v), True)"
-        _, _ -> value_to_string_for_header(m.target, m.timestamp_format)
+          code.Call(head: code.Ident(name: "bit_array.base64_encode"), args: [
+            code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+              code.Ident(name: "v"),
+            ]),
+            code.Ident(name: "True"),
+          ])
+        _, _ ->
+          value_to_string_for_header_code(
+            m.target,
+            m.timestamp_format,
+            code.Ident(name: "v"),
+          )
       }
       let call =
         code.Call(head: code.Ident(name: "rest.maybe_set_header"), args: [
           code.Ident(name: "headers"),
           code.StrLit(value: header_name),
-          code.Raw(fragment: render),
+          render,
         ])
       let scrutinee = code.Ident(name: name_concat(["input.", m.snake_name]))
       let value = case m.required {
@@ -765,10 +768,14 @@ fn header_member_let(m: MemberDef) -> code.Code {
 pub fn content_type_let_block() -> code.Code {
   code.Let(
     name: "headers",
-    value: code.Case(
-      scrutinee: code.Raw(
-        fragment: "content_type, dict.has_key(headers, \"Content-Type\")",
-      ),
+    value: code.CaseSubjects(
+      scrutinees: [
+        code.Ident(name: "content_type"),
+        code.Call(head: code.Ident(name: "dict.has_key"), args: [
+          code.Ident(name: "headers"),
+          code.StrLit(value: "Content-Type"),
+        ]),
+      ],
       branches: [
         code.Branch(pattern: "\"\", _", body: code.Ident(name: "headers")),
         code.Branch(pattern: "_, True", body: code.Ident(name: "headers")),
@@ -797,7 +804,7 @@ pub fn content_length_let_block() -> code.Code {
         body: code.Call(head: code.Ident(name: "dict.insert"), args: [
           code.Ident(name: "headers"),
           code.StrLit(value: "Content-Length"),
-          code.Raw(fragment: "int.to_string(bit_array.byte_size(body))"),
+          content_length_expr(),
         ]),
       ),
     ]),
@@ -818,22 +825,42 @@ pub fn emit_content_encoding(encodings: List(String)) -> List(code.Code) {
     [
       code.Let(
         name: "#(body, applied)",
-        value: code.Raw(
-          fragment: "compression.maybe_compress(body, \""
-          <> enc
-          <> "\", compression.default_min_compression_size_bytes)",
+        value: code.Call(
+          head: code.Ident(name: "compression.maybe_compress"),
+          args: [
+            code.Ident(name: "body"),
+            code.StrLit(value: enc),
+            code.Ident(name: "compression.default_min_compression_size_bytes"),
+          ],
         ),
       ),
       code.Let(
         name: "headers",
-        value: code.Raw(
-          fragment: "case applied { True -> dict.insert(rest.append_content_encoding(headers, \""
-          <> enc
-          <> "\"), \"Content-Length\", int.to_string(bit_array.byte_size(body))) False -> headers }",
-        ),
+        value: code.Case(scrutinee: code.Ident(name: "applied"), branches: [
+          code.Branch(
+            pattern: "True",
+            body: code.Call(head: code.Ident(name: "dict.insert"), args: [
+              code.Call(
+                head: code.Ident(name: "rest.append_content_encoding"),
+                args: [code.Ident(name: "headers"), code.StrLit(value: enc)],
+              ),
+              code.StrLit(value: "Content-Length"),
+              content_length_expr(),
+            ]),
+          ),
+          code.Branch(pattern: "False", body: code.Ident(name: "headers")),
+        ]),
       ),
     ]
   })
+}
+
+fn content_length_expr() -> code.Code {
+  code.Call(head: code.Ident(name: "int.to_string"), args: [
+    code.Call(head: code.Ident(name: "bit_array.byte_size"), args: [
+      code.Ident(name: "body"),
+    ]),
+  ])
 }
 
 // ---------- value formatters ----------
@@ -845,7 +872,19 @@ pub fn value_to_string_with_format(
   target: Resolved,
   timestamp_format: Option(String),
 ) -> String {
-  value_to_string(target, timestamp_format, "date-time")
+  code.render_expr(value_to_string_with_format_code(
+    target,
+    timestamp_format,
+    code.Ident(name: "v"),
+  ))
+}
+
+pub fn value_to_string_with_format_code(
+  target: Resolved,
+  timestamp_format: Option(String),
+  value: code.Code,
+) -> code.Code {
+  value_to_string(target, timestamp_format, "date-time", value)
 }
 
 /// Same as `value_to_string_with_format`, but the protocol default
@@ -854,27 +893,46 @@ pub fn value_to_string_for_header(
   target: Resolved,
   timestamp_format: Option(String),
 ) -> String {
-  value_to_string(target, timestamp_format, "http-date")
+  code.render_expr(value_to_string_for_header_code(
+    target,
+    timestamp_format,
+    code.Ident(name: "v"),
+  ))
+}
+
+pub fn value_to_string_for_header_code(
+  target: Resolved,
+  timestamp_format: Option(String),
+  value: code.Code,
+) -> code.Code {
+  value_to_string(target, timestamp_format, "http-date", value)
 }
 
 fn value_to_string(
   target: Resolved,
   timestamp_format: Option(String),
   default_ts_format: String,
-) -> String {
+  value: code.Code,
+) -> code.Code {
   case target {
-    RPrim(primitive: types.PString) -> "v"
-    RPrim(primitive: types.PInt) -> "rest.int_to_query(v)"
-    RPrim(primitive: types.PFloat) ->
-      "case v { json_float.FloatValue(f) -> rest.float_to_query(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
-    RPrim(primitive: types.PBool) -> "rest.bool_to_query(v)"
+    RPrim(primitive: types.PString) -> value
+    RPrim(primitive: types.PInt) ->
+      code.Call(head: code.Ident(name: "rest.int_to_query"), args: [value])
+    RPrim(primitive: types.PFloat) -> smithy_float_to_string(value)
+    RPrim(primitive: types.PBool) ->
+      code.Call(head: code.Ident(name: "rest.bool_to_query"), args: [value])
     REnum(local_name: _, ..) ->
-      name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
+      code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
+        code.Call(head: types.json_encoder_code(target), args: [value]),
+      ])
     RIntEnum(gleam_name: n, ..) ->
-      name_concat([
-        "rest.int_to_query(",
-        stringutils.pascal_to_snake(n),
-        "_int_value(v))",
+      code.Call(head: code.Ident(name: "rest.int_to_query"), args: [
+        code.Call(
+          head: code.Ident(
+            name: name_concat([stringutils.pascal_to_snake(n), "_int_value"]),
+          ),
+          args: [value],
+        ),
       ])
     RTimestamp -> {
       let chosen = case timestamp_format {
@@ -882,11 +940,43 @@ fn value_to_string(
         None -> default_ts_format
       }
       case chosen {
-        "epoch-seconds" -> "json_timestamp.epoch_seconds_text(v)"
-        "http-date" -> "json_timestamp.format_http_date_precise(v)"
-        _ -> "json_timestamp.format_iso8601_precise(v)"
+        "epoch-seconds" ->
+          code.Call(
+            head: code.Ident(name: "json_timestamp.epoch_seconds_text"),
+            args: [value],
+          )
+        "http-date" ->
+          code.Call(
+            head: code.Ident(name: "json_timestamp.format_http_date_precise"),
+            args: [value],
+          )
+        _ ->
+          code.Call(
+            head: code.Ident(name: "json_timestamp.format_iso8601_precise"),
+            args: [value],
+          )
       }
     }
-    _ -> "\"\""
+    _ -> code.StrLit(value: "")
   }
+}
+
+fn smithy_float_to_string(value: code.Code) -> code.Code {
+  code.Case(scrutinee: value, branches: [
+    code.Branch(
+      pattern: "json_float.FloatValue(f)",
+      body: code.Call(head: code.Ident(name: "rest.float_to_query"), args: [
+        code.Ident(name: "f"),
+      ]),
+    ),
+    code.Branch(pattern: "json_float.NaN", body: code.StrLit(value: "NaN")),
+    code.Branch(
+      pattern: "json_float.PosInfinity",
+      body: code.StrLit(value: "Infinity"),
+    ),
+    code.Branch(
+      pattern: "json_float.NegInfinity",
+      body: code.StrLit(value: "-Infinity"),
+    ),
+  ])
 }

@@ -515,25 +515,39 @@ fn emit_error_translator(spec: OpSpec) -> String {
             head: code.Ident(name: name_concat([snake, "_error_decoders"])),
             args: [],
           ),
-          code.Raw(
-            fragment: name_concat([
-              "fn(reason) { ",
-              name,
-              "Transport(reason: reason) }",
-            ]),
-          ),
-          code.Raw(
-            fragment: name_concat([
-              "fn(et, s, body) { ",
-              name,
-              "Unknown(error_type: et, status: s, body: body) }",
-            ]),
-          ),
+          error_transport_lambda(name),
+          error_unknown_lambda(name),
         ],
       ),
     )
   code.render(
     code.Module(items: [decoders_fn, code.Blank, translate_fn, code.Blank]),
+  )
+}
+
+fn error_transport_lambda(error_name: String) -> code.Code {
+  code.Lambda(
+    params: ["reason"],
+    body: code.RecordConstruct(
+      type_: name_concat([error_name, "Transport"]),
+      fields: [
+        code.Labelled(label: "reason", value: code.Ident(name: "reason")),
+      ],
+    ),
+  )
+}
+
+fn error_unknown_lambda(error_name: String) -> code.Code {
+  code.Lambda(
+    params: ["et", "s", "body"],
+    body: code.RecordConstruct(
+      type_: name_concat([error_name, "Unknown"]),
+      fields: [
+        code.Labelled(label: "error_type", value: code.Ident(name: "et")),
+        code.Labelled(label: "status", value: code.Ident(name: "s")),
+        code.Labelled(label: "body", value: code.Ident(name: "body")),
+      ],
+    ),
   )
 }
 
@@ -1028,7 +1042,7 @@ fn service_xmlns_wrapped_body(
       ),
       args: [code.Ident(name: "input")],
     )
-  let xmlns_pair = code.Raw(fragment: xmlns_attr_expr(option.Some(ns)))
+  let xmlns_pair = xmlns_attr_code(option.Some(ns))
   let has_xml_attrs =
     list.any(input_members, fn(m) {
       case m.binding, m.xml_attribute {
@@ -1289,66 +1303,65 @@ fn emit_enum_codec(
   )
 }
 
-/// `fn(s) { case s { ... } }` lambda body for the dispatcher-side
-/// decoder. Stays as `code.Raw` since the AST has no anonymous-
-/// function node.
 fn enum_decode_lambda(
   variants: List(types.EnumVariant),
   first_ctor: String,
 ) -> code.Code {
-  let arms =
-    list.map(variants, fn(v) {
-      string.concat([
-        "      \"",
-        v.wire_value,
-        "\" -> decode.success(",
-        v.gleam_ctor,
-        ")\n",
-      ])
-    })
-  let fallback =
-    string.concat([
-      "      _ -> decode.failure(",
-      first_ctor,
-      ", \"unknown enum value\")\n    }\n  }",
-    ])
-  code.Raw(
-    fragment: string.concat([
-      "fn(s) {\n    case s {\n",
-      string.concat(arms),
-      fallback,
-    ]),
+  code.Lambda(
+    params: ["s"],
+    body: code.Case(
+      scrutinee: code.Ident(name: "s"),
+      branches: list.append(
+        list.map(variants, fn(v) {
+          code.Branch(
+            pattern: name_concat(["\"", v.wire_value, "\""]),
+            body: code.Call(head: code.Ident(name: "decode.success"), args: [
+              code.Ident(name: v.gleam_ctor),
+            ]),
+          )
+        }),
+        [
+          code.Branch(
+            pattern: "_",
+            body: code.Call(head: code.Ident(name: "decode.failure"), args: [
+              code.Ident(name: first_ctor),
+              code.StrLit(value: "unknown enum value"),
+            ]),
+          ),
+        ],
+      ),
+    ),
   )
 }
 
-/// `fn(n) { case n { ... } }` lambda body for the int-enum
-/// dispatcher decoder. Same pattern as `enum_decode_lambda`.
 fn int_enum_decode_lambda(
   variants: List(types.IntEnumVariant),
   first_ctor: String,
 ) -> code.Code {
-  let arms =
-    list.map(variants, fn(v) {
-      string.concat([
-        "      ",
-        stringutils.int_to_string(v.wire_value),
-        " -> decode.success(",
-        v.gleam_ctor,
-        ")\n",
-      ])
-    })
-  let fallback =
-    string.concat([
-      "      _ -> decode.failure(",
-      first_ctor,
-      ", \"unknown int enum value\")\n    }\n  }",
-    ])
-  code.Raw(
-    fragment: string.concat([
-      "fn(n) {\n    case n {\n",
-      string.concat(arms),
-      fallback,
-    ]),
+  code.Lambda(
+    params: ["n"],
+    body: code.Case(
+      scrutinee: code.Ident(name: "n"),
+      branches: list.append(
+        list.map(variants, fn(v) {
+          code.Branch(
+            pattern: stringutils.int_to_string(v.wire_value),
+            body: code.Call(head: code.Ident(name: "decode.success"), args: [
+              code.Ident(name: v.gleam_ctor),
+            ]),
+          )
+        }),
+        [
+          code.Branch(
+            pattern: "_",
+            body: code.Call(head: code.Ident(name: "decode.failure"), args: [
+              code.Ident(name: first_ctor),
+              code.StrLit(value: "unknown int enum value"),
+            ]),
+          ),
+        ],
+      ),
+    ),
   )
 }
 
@@ -1582,12 +1595,14 @@ fn emit_struct_xml_decoder(
                 True ->
                   code.Use(
                     name: m.snake_name,
-                    callee: code.Raw(
-                      fragment: name_concat([
-                        "result.try(Error(\"xml: required non-body member ",
-                        m.snake_name,
-                        " unavailable\"))",
-                      ]),
+                    callee: result_try(
+                      error_message(
+                        name_concat([
+                          "xml: required non-body member ",
+                          m.snake_name,
+                          " unavailable",
+                        ]),
+                      ),
                     ),
                   )
                 False ->
@@ -1647,7 +1662,7 @@ fn xml_value_decoder_expr_for_member(m: MemberDef) -> code.Code {
       code.Call(head: code.Ident(name: "xml_decode.optional_flat_list"), args: [
         code.Ident(name: "elem"),
         code.StrLit(value: m.json_name),
-        code.Raw(fragment: inner_decoder),
+        inner_decoder,
       ])
     }
     _, _ -> xml_value_decoder_expr(m.target, m.json_name)
@@ -1661,7 +1676,7 @@ fn required_xml_value_decoder_expr_for_member(m: MemberDef) -> code.Code {
       code.Call(head: code.Ident(name: "xml_decode.required_flat_list"), args: [
         code.Ident(name: "elem"),
         code.StrLit(value: m.json_name),
-        code.Raw(fragment: inner_decoder),
+        inner_decoder,
       ])
     }
     _, _ -> required_xml_value_decoder_expr(m.target, m.json_name)
@@ -1695,9 +1710,7 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
       code.Call(head: code.Ident(name: "xml_decode.optional_child"), args: [
         code.Ident(name: "elem"),
         code.StrLit(value: member_name),
-        code.Raw(
-          fragment: "fn(e) { case xml_decode.string_text(e) { Ok(s) -> case bit_array.base64_decode(s) { Ok(b) -> Ok(b) Error(_) -> Error(\"xml: bad base64\") } Error(r) -> Error(r) } }",
-        ),
+        xml_blob_text_decoder(streaming: False),
       ])
     RStreamingBlob ->
       // A `@streaming` blob in non-payload position is rare — the
@@ -1706,9 +1719,7 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
       code.Call(head: code.Ident(name: "xml_decode.optional_child"), args: [
         code.Ident(name: "elem"),
         code.StrLit(value: member_name),
-        code.Raw(
-          fragment: "fn(e) { case xml_decode.string_text(e) { Ok(s) -> case bit_array.base64_decode(s) { Ok(b) -> Ok(streaming.from_bit_array(b)) Error(_) -> Error(\"xml: bad base64\") } Error(r) -> Error(r) } }",
-        ),
+        xml_blob_text_decoder(streaming: True),
       ])
     // Wire timestamps in restXml are ISO 8601 (e.g.
     // `2024-01-02T03:04:05.000Z`); the type walker surfaces them
@@ -1737,7 +1748,7 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
         code.Ident(name: "elem"),
         code.StrLit(value: member_name),
         code.StrLit(value: entry),
-        code.Raw(fragment: inner_decoder),
+        inner_decoder,
       ])
     }
     RMap(key: _, value: _, ..) ->
@@ -1746,6 +1757,49 @@ fn xml_value_decoder_expr(target: Resolved, member_name: String) -> code.Code {
     RUnit -> emit_unsupported_decoder(types.gleam_type(target))
     Unsupported(..) -> emit_unsupported_decoder(types.gleam_type(target))
   }
+}
+
+fn xml_blob_text_decoder(streaming streaming: Bool) -> code.Code {
+  let ok_payload = case streaming {
+    False -> code.Ident(name: "b")
+    True ->
+      code.Call(head: code.Ident(name: "streaming.from_bit_array"), args: [
+        code.Ident(name: "b"),
+      ])
+  }
+  code.Lambda(
+    params: ["e"],
+    body: code.Case(
+      scrutinee: code.Call(
+        head: code.Ident(name: "xml_decode.string_text"),
+        args: [
+          code.Ident(name: "e"),
+        ],
+      ),
+      branches: [
+        code.Branch(
+          pattern: "Ok(s)",
+          body: code.Case(
+            scrutinee: code.Call(
+              head: code.Ident(name: "bit_array.base64_decode"),
+              args: [code.Ident(name: "s")],
+            ),
+            branches: [
+              code.Branch(pattern: "Ok(b)", body: ok_expr(ok_payload)),
+              code.Branch(
+                pattern: "Error(_)",
+                body: error_message("xml: bad base64"),
+              ),
+            ],
+          ),
+        ),
+        code.Branch(
+          pattern: "Error(r)",
+          body: error_expr(code.Ident(name: "r")),
+        ),
+      ],
+    ),
+  )
 }
 
 fn required_xml_value_decoder_expr(
@@ -1770,17 +1824,13 @@ fn required_xml_value_decoder_expr(
       code.Call(head: code.Ident(name: "xml_decode.required_child"), args: [
         code.Ident(name: "elem"),
         code.StrLit(value: member_name),
-        code.Raw(
-          fragment: "fn(e) { case xml_decode.string_text(e) { Ok(s) -> case bit_array.base64_decode(s) { Ok(b) -> Ok(b) Error(_) -> Error(\"xml: bad base64\") } Error(r) -> Error(r) } }",
-        ),
+        xml_blob_text_decoder(streaming: False),
       ])
     RStreamingBlob ->
       code.Call(head: code.Ident(name: "xml_decode.required_child"), args: [
         code.Ident(name: "elem"),
         code.StrLit(value: member_name),
-        code.Raw(
-          fragment: "fn(e) { case xml_decode.string_text(e) { Ok(s) -> case bit_array.base64_decode(s) { Ok(b) -> Ok(streaming.from_bit_array(b)) Error(_) -> Error(\"xml: bad base64\") } Error(r) -> Error(r) } }",
-        ),
+        xml_blob_text_decoder(streaming: True),
       ])
     RTimestamp -> required_child_via("xml_decode.timestamp_text_precise")
     RStruct(gleam_name: name, ..) ->
@@ -1801,7 +1851,7 @@ fn required_xml_value_decoder_expr(
         code.Ident(name: "elem"),
         code.StrLit(value: member_name),
         code.StrLit(value: entry),
-        code.Raw(fragment: inner_decoder),
+        inner_decoder,
       ])
     }
     REnum(gleam_name: gn, ..) | RIntEnum(gleam_name: gn, ..) ->
@@ -1814,39 +1864,95 @@ fn required_xml_value_decoder_expr(
 /// Decoder expression for one *list element* — i.e. the per-entry
 /// callback passed to `optional_list` / `optional_flat_list`.
 /// Mirrors `xml_inner_expr_for_list_element` on the encoder side.
-fn list_element_decoder(e: Resolved) -> String {
+fn list_element_decoder(e: Resolved) -> code.Code {
   case e {
-    RPrim(primitive: types.PString) -> "xml_decode.string_text"
-    RPrim(primitive: types.PInt) -> "xml_decode.int_text"
-    RPrim(primitive: types.PBool) -> "xml_decode.bool_text"
-    RPrim(primitive: types.PFloat) -> "xml_decode.float_text"
-    RTimestamp -> "xml_decode.timestamp_text_precise"
+    RPrim(primitive: types.PString) ->
+      code.Ident(name: "xml_decode.string_text")
+    RPrim(primitive: types.PInt) -> code.Ident(name: "xml_decode.int_text")
+    RPrim(primitive: types.PBool) -> code.Ident(name: "xml_decode.bool_text")
+    RPrim(primitive: types.PFloat) -> code.Ident(name: "xml_decode.float_text")
+    RTimestamp -> code.Ident(name: "xml_decode.timestamp_text_precise")
     RStruct(gleam_name: n, ..) ->
-      name_concat(["decode_", stringutils.pascal_to_snake(n), "_xml"])
+      code.Ident(
+        name: name_concat(["decode_", stringutils.pascal_to_snake(n), "_xml"]),
+      )
     REnum(gleam_name: n, ..) ->
-      name_concat([
-        "fn(e) { case xml_decode.string_text(e) { Ok(s) -> ",
-        stringutils.pascal_to_snake(n),
-        "_from_wire(s) Error(r) -> Error(r) } }",
-      ])
+      code.Lambda(
+        params: ["e"],
+        body: code.Case(
+          scrutinee: code.Call(
+            head: code.Ident(name: "xml_decode.string_text"),
+            args: [
+              code.Ident(name: "e"),
+            ],
+          ),
+          branches: [
+            code.Branch(
+              pattern: "Ok(s)",
+              body: code.Call(
+                head: code.Ident(
+                  name: name_concat([
+                    stringutils.pascal_to_snake(n),
+                    "_from_wire",
+                  ]),
+                ),
+                args: [code.Ident(name: "s")],
+              ),
+            ),
+            code.Branch(
+              pattern: "Error(r)",
+              body: error_expr(code.Ident(name: "r")),
+            ),
+          ],
+        ),
+      )
     RIntEnum(gleam_name: n, ..) ->
-      name_concat([
-        "fn(e) { case xml_decode.int_text(e) { Ok(i) -> ",
-        stringutils.pascal_to_snake(n),
-        "_from_int(i) Error(r) -> Error(r) } }",
-      ])
+      code.Lambda(
+        params: ["e"],
+        body: code.Case(
+          scrutinee: code.Call(
+            head: code.Ident(name: "xml_decode.int_text"),
+            args: [
+              code.Ident(name: "e"),
+            ],
+          ),
+          branches: [
+            code.Branch(
+              pattern: "Ok(i)",
+              body: code.Call(
+                head: code.Ident(
+                  name: name_concat([
+                    stringutils.pascal_to_snake(n),
+                    "_from_int",
+                  ]),
+                ),
+                args: [code.Ident(name: "i")],
+              ),
+            ),
+            code.Branch(
+              pattern: "Error(r)",
+              body: error_expr(code.Ident(name: "r")),
+            ),
+          ],
+        ),
+      )
     // Nested list: each outer entry wraps an inner list whose
     // children share the same per-entry name. `inner_list`
     // extracts those children and recursively decodes.
     RList(element: inner_e, xml_entry_name: inner_entry, ..) ->
-      name_concat([
-        "fn(e) { xml_decode.inner_list(e, \"",
-        inner_entry,
-        "\", ",
-        list_element_decoder(inner_e),
-        ") }",
-      ])
-    _ -> "fn(_) { Error(\"xml: unsupported list element\") }"
+      code.Lambda(
+        params: ["e"],
+        body: code.Call(head: code.Ident(name: "xml_decode.inner_list"), args: [
+          code.Ident(name: "e"),
+          code.StrLit(value: inner_entry),
+          list_element_decoder(inner_e),
+        ]),
+      )
+    _ ->
+      code.Lambda(
+        params: ["_"],
+        body: error_message("xml: unsupported list element"),
+      )
   }
 }
 
@@ -1856,28 +1962,33 @@ fn list_element_decoder(e: Resolved) -> String {
 fn emit_unsupported_decoder(gleam_type: String) -> code.Code {
   // Cast the literal `Ok(option.None)` to the right Result type so
   // the use-bound variable infers as `option.Option(<gleam_type>)`.
-  code.Raw(
-    fragment: name_concat([
-      "{ let r: Result(option.Option(",
-      gleam_type,
-      "), String) = Ok(option.None)\n    r }",
-    ]),
-  )
+  code.Block(items: [
+    code.LetTyped(
+      name: "r",
+      type_: name_concat(["Result(option.Option(", gleam_type, "), String)"]),
+      value: ok_expr(code.Ident(name: "option.None")),
+    ),
+    code.Ident(name: "r"),
+  ])
 }
 
 fn emit_required_unsupported_decoder(
   gleam_type: String,
   member_name: String,
 ) -> code.Code {
-  code.Raw(
-    fragment: name_concat([
-      "{ let r: Result(",
-      gleam_type,
-      ", String) = Error(\"xml: unsupported required member: ",
-      member_name,
-      "\")\n    r }",
-    ]),
-  )
+  code.Block(items: [
+    code.LetTyped(
+      name: "r",
+      type_: name_concat(["Result(", gleam_type, ", String)"]),
+      value: error_message(
+        name_concat([
+          "xml: unsupported required member: ",
+          member_name,
+        ]),
+      ),
+    ),
+    code.Ident(name: "r"),
+  ])
 }
 
 /// Emit `decode_<u>_union_xml(elem) -> Result(<U>, String)` for a
@@ -1903,7 +2014,7 @@ fn emit_union_xml_decoder(
       name: name_concat(["decode_", snake, "_union_xml"]),
       params: [code.Param(name: "elem", type_: "xml_decode.Element")],
       return: code.CodeSome(name_concat(["Result(", name, ", String)"])),
-      body: code.Raw(fragment: body),
+      body: body,
     )
   code.render(code.Module(items: [f, code.Blank]))
 }
@@ -1912,35 +2023,38 @@ fn union_xml_decoder_body(
   name: String,
   members: List(MemberDef),
   emitted: Set(String),
-) -> String {
+) -> code.Code {
   // Right-associative nested `case`. Each member tries `find_child`
   // on its wire name; if Some, decode that element and wrap in the
   // variant constructor; if None, fall through to the next member.
   // Final fall-through returns Error.
   case members {
-    [] -> "Error(\"xml: empty union shape\")"
+    [] -> error_message("xml: empty union shape")
     _ -> {
       list.fold_right(
         members,
-        "Error(\"xml: no union variant present\")",
+        error_message("xml: no union variant present"),
         fn(else_branch, m) {
           let ctor =
             stringutils.union_variant_ctor(name, m.member_name, emitted)
           let inner = union_variant_xml_inner_decoder(m.target, name)
-          name_concat([
-            "case xml_decode.find_child(elem, \"",
-            m.json_name,
-            "\") {\n",
-            "    option.Some(c) -> ",
-            inner,
-            " |> result.map(",
-            ctor,
-            ")\n",
-            "    option.None -> ",
-            else_branch,
-            "\n",
-            "  }",
-          ])
+          code.Case(
+            scrutinee: code.Call(
+              head: code.Ident(name: "xml_decode.find_child"),
+              args: [code.Ident(name: "elem"), code.StrLit(value: m.json_name)],
+            ),
+            branches: [
+              code.Branch(
+                pattern: "option.Some(c)",
+                body: code.Pipe(initial: inner, steps: [
+                  code.Call(head: code.Ident(name: "result.map"), args: [
+                    code.Ident(name: ctor),
+                  ]),
+                ]),
+              ),
+              code.Branch(pattern: "option.None", body: else_branch),
+            ],
+          )
         },
       )
     }
@@ -1954,29 +2068,121 @@ fn union_xml_decoder_body(
 fn union_variant_xml_inner_decoder(
   target: Resolved,
   recurse_name: String,
-) -> String {
+) -> code.Code {
   case target {
-    RPrim(primitive: types.PString) -> "xml_decode.string_text(c)"
-    RPrim(primitive: types.PInt) -> "xml_decode.int_text(c)"
-    RPrim(primitive: types.PBool) -> "xml_decode.bool_text(c)"
-    RPrim(primitive: types.PFloat) -> "xml_decode.smithy_float_text(c)"
-    RTimestamp -> "xml_decode.timestamp_text_precise(c)"
+    RPrim(primitive: types.PString) ->
+      code.Call(head: code.Ident(name: "xml_decode.string_text"), args: [
+        code.Ident(name: "c"),
+      ])
+    RPrim(primitive: types.PInt) ->
+      code.Call(head: code.Ident(name: "xml_decode.int_text"), args: [
+        code.Ident(name: "c"),
+      ])
+    RPrim(primitive: types.PBool) ->
+      code.Call(head: code.Ident(name: "xml_decode.bool_text"), args: [
+        code.Ident(name: "c"),
+      ])
+    RPrim(primitive: types.PFloat) ->
+      code.Call(head: code.Ident(name: "xml_decode.smithy_float_text"), args: [
+        code.Ident(name: "c"),
+      ])
+    RTimestamp ->
+      code.Call(
+        head: code.Ident(name: "xml_decode.timestamp_text_precise"),
+        args: [code.Ident(name: "c")],
+      )
     RBlob ->
-      "case xml_decode.string_text(c) { Ok(s) -> case bit_array.base64_decode(s) { Ok(b) -> Ok(b) Error(_) -> Error(\"xml: bad base64\") } Error(r) -> Error(r) }"
+      code.Case(
+        scrutinee: code.Call(
+          head: code.Ident(name: "xml_decode.string_text"),
+          args: [
+            code.Ident(name: "c"),
+          ],
+        ),
+        branches: [
+          code.Branch(
+            pattern: "Ok(s)",
+            body: code.Case(
+              scrutinee: code.Call(
+                head: code.Ident(name: "bit_array.base64_decode"),
+                args: [code.Ident(name: "s")],
+              ),
+              branches: [
+                code.Branch(
+                  pattern: "Ok(b)",
+                  body: ok_expr(code.Ident(name: "b")),
+                ),
+                code.Branch(
+                  pattern: "Error(_)",
+                  body: error_message("xml: bad base64"),
+                ),
+              ],
+            ),
+          ),
+          code.Branch(
+            pattern: "Error(r)",
+            body: error_expr(code.Ident(name: "r")),
+          ),
+        ],
+      )
     REnum(gleam_name: gn, ..) ->
-      name_concat([
-        "case xml_decode.string_text(c) { Ok(s) -> ",
-        stringutils.pascal_to_snake(gn),
-        "_from_wire(s) Error(r) -> Error(r) }",
-      ])
+      code.Case(
+        scrutinee: code.Call(
+          head: code.Ident(name: "xml_decode.string_text"),
+          args: [
+            code.Ident(name: "c"),
+          ],
+        ),
+        branches: [
+          code.Branch(
+            pattern: "Ok(s)",
+            body: code.Call(
+              head: code.Ident(
+                name: name_concat([
+                  stringutils.pascal_to_snake(gn),
+                  "_from_wire",
+                ]),
+              ),
+              args: [code.Ident(name: "s")],
+            ),
+          ),
+          code.Branch(
+            pattern: "Error(r)",
+            body: error_expr(code.Ident(name: "r")),
+          ),
+        ],
+      )
     RIntEnum(gleam_name: gn, ..) ->
-      name_concat([
-        "case xml_decode.int_text(c) { Ok(i) -> ",
-        stringutils.pascal_to_snake(gn),
-        "_from_int(i) Error(r) -> Error(r) }",
-      ])
+      code.Case(
+        scrutinee: code.Call(
+          head: code.Ident(name: "xml_decode.int_text"),
+          args: [
+            code.Ident(name: "c"),
+          ],
+        ),
+        branches: [
+          code.Branch(
+            pattern: "Ok(i)",
+            body: code.Call(
+              head: code.Ident(
+                name: name_concat([stringutils.pascal_to_snake(gn), "_from_int"]),
+              ),
+              args: [code.Ident(name: "i")],
+            ),
+          ),
+          code.Branch(
+            pattern: "Error(r)",
+            body: error_expr(code.Ident(name: "r")),
+          ),
+        ],
+      )
     RStruct(gleam_name: gn, ..) ->
-      name_concat(["decode_", stringutils.pascal_to_snake(gn), "_xml(c)"])
+      code.Call(
+        head: code.Ident(
+          name: name_concat(["decode_", stringutils.pascal_to_snake(gn), "_xml"]),
+        ),
+        args: [code.Ident(name: "c")],
+      )
     RUnion(gleam_name: gn, ..) ->
       // Direct recursion — for self-referential unions (XmlUnionShape's
       // `unionValue` -> XmlUnionShape) this is the same fn name we're
@@ -1984,19 +2190,29 @@ fn union_variant_xml_inner_decoder(
       // (each union has its own decoder fn).
       case gn == recurse_name {
         True ->
-          name_concat([
-            "decode_",
-            stringutils.pascal_to_snake(gn),
-            "_union_xml(c)",
-          ])
+          code.Call(
+            head: code.Ident(
+              name: name_concat([
+                "decode_",
+                stringutils.pascal_to_snake(gn),
+                "_union_xml",
+              ]),
+            ),
+            args: [code.Ident(name: "c")],
+          )
         False ->
-          name_concat([
-            "decode_",
-            stringutils.pascal_to_snake(gn),
-            "_union_xml(c)",
-          ])
+          code.Call(
+            head: code.Ident(
+              name: name_concat([
+                "decode_",
+                stringutils.pascal_to_snake(gn),
+                "_union_xml",
+              ]),
+            ),
+            args: [code.Ident(name: "c")],
+          )
       }
-    _ -> "Error(\"xml: unsupported union variant target\")"
+    _ -> error_message("xml: unsupported union variant target")
   }
 }
 
@@ -2081,7 +2297,6 @@ fn struct_xml_attrs_expr(
   xml_namespace: option.Option(#(String, String)),
   snake: String,
 ) -> code.Code {
-  let xmlns_attr = xmlns_attr_expr(xml_namespace)
   let attrs_call =
     code.Call(
       head: code.Ident(name: name_concat(["encode_", snake, "_xml_attrs"])),
@@ -2089,26 +2304,29 @@ fn struct_xml_attrs_expr(
     )
   case attr_members, xml_namespace {
     [], option.Some(_) ->
-      code.ListLit(items: [code.Raw(fragment: xmlns_attr)], tail: code.CodeNone)
+      code.ListLit(items: [xmlns_attr_code(xml_namespace)], tail: code.CodeNone)
     _, option.None -> attrs_call
     _, option.Some(_) ->
       code.ListLit(
-        items: [code.Raw(fragment: xmlns_attr)],
+        items: [xmlns_attr_code(xml_namespace)],
         tail: code.CodeSome(attrs_call),
       )
   }
 }
 
 /// Render the `xmlns` / `xmlns:prefix` attribute tuple expression
-/// for an `@xmlNamespace` trait. Returns the empty string when
-/// there's no namespace — the caller still emits the list literal,
-/// which collapses to `[]` if no other attrs are present.
-fn xmlns_attr_expr(ns: option.Option(#(String, String))) -> String {
+/// for an `@xmlNamespace` trait.
+fn xmlns_attr_code(ns: option.Option(#(String, String))) -> code.Code {
   case ns {
-    option.None -> ""
-    option.Some(#("", uri)) -> name_concat(["#(\"xmlns\", \"", uri, "\")"])
+    option.None ->
+      code.Tuple(items: [code.StrLit(value: ""), code.StrLit(value: "")])
+    option.Some(#("", uri)) ->
+      code.Tuple(items: [code.StrLit(value: "xmlns"), code.StrLit(value: uri)])
     option.Some(#(prefix, uri)) ->
-      name_concat(["#(\"xmlns:", prefix, "\", \"", uri, "\")"])
+      code.Tuple(items: [
+        code.StrLit(value: "xmlns:" <> prefix),
+        code.StrLit(value: uri),
+      ])
   }
 }
 
@@ -2126,7 +2344,7 @@ fn emit_struct_xml_attrs(
           items: [
             code.Tuple(items: [
               code.StrLit(value: m.json_name),
-              code.Raw(fragment: attr_value_expr(m.target)),
+              attr_value_expr(m.target, code.Ident(name: "v")),
             ]),
           ],
           tail: code.CodeSome(code.Ident(name: "attrs")),
@@ -2182,17 +2400,24 @@ fn emit_struct_xml_attrs(
   )
 }
 
-fn attr_value_expr(target: Resolved) -> String {
+fn attr_value_expr(target: Resolved, value: code.Code) -> code.Code {
   case target {
-    RPrim(primitive: types.PString) -> "v"
-    RPrim(primitive: types.PInt) -> "xml.int_text(v)"
-    RPrim(primitive: types.PBool) -> "xml.bool_text(v)"
-    RPrim(primitive: types.PFloat) ->
-      "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
-    RTimestamp -> "json_timestamp.format_iso8601_precise(v)"
+    RPrim(primitive: types.PString) -> value
+    RPrim(primitive: types.PInt) ->
+      code.Call(head: code.Ident(name: "xml.int_text"), args: [value])
+    RPrim(primitive: types.PBool) ->
+      code.Call(head: code.Ident(name: "xml.bool_text"), args: [value])
+    RPrim(primitive: types.PFloat) -> xml_float_text_expr(value)
+    RTimestamp ->
+      code.Call(
+        head: code.Ident(name: "json_timestamp.format_iso8601_precise"),
+        args: [value],
+      )
     REnum(..) ->
-      name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
-    _ -> "\"\""
+      code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
+        code.Call(head: types.json_encoder_code(target), args: [value]),
+      ])
+    _ -> code.StrLit(value: "")
   }
 }
 
@@ -2286,13 +2511,7 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
     RPrim(primitive: types.PBool) ->
       wrap_text_call(member_name, mem_ns, "xml.bool_text")
     RPrim(primitive: types.PFloat) ->
-      wrap_with_attrs(
-        member_name,
-        mem_ns,
-        code.Raw(
-          fragment: "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }",
-        ),
-      )
+      wrap_with_attrs(member_name, mem_ns, xml_float_text_expr(code.Ident("v")))
     RBlob -> wrap_text_call(member_name, mem_ns, "xml.blob_text")
     RStreamingBlob ->
       // Same wire form as `RBlob`; `v` is a `StreamingBody`
@@ -2300,7 +2519,11 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
       wrap_with_attrs(
         member_name,
         mem_ns,
-        code.Raw(fragment: "xml.blob_text(streaming.to_bit_array(v))"),
+        code.Call(head: code.Ident(name: "xml.blob_text"), args: [
+          code.Call(head: code.Ident(name: "streaming.to_bit_array"), args: [
+            code.Ident(name: "v"),
+          ]),
+        ]),
       )
     RTimestamp ->
       // restXml's protocol default is `date-time` (ISO 8601). The
@@ -2317,7 +2540,7 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
         member_name,
         mem_ns,
         code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
-          code.Call(head: code.Ident(name: types.json_encoder(m.target)), args: [
+          code.Call(head: types.json_encoder_code(m.target), args: [
             code.Ident(name: "v"),
           ]),
         ]),
@@ -2368,15 +2591,13 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
       // the per-entry tag — S3's Buckets list uses `<Bucket>`.
       // `@xmlFlattened` on the member drops the wrapper: entries
       // become repeated `<member_name>value</member_name>` siblings.
-      let inner = xml_inner_expr_for_list_element(m.target)
+      let inner =
+        xml_inner_expr_for_list_element(m.target, code.Ident(name: "item"))
       let mapped_v =
-        code.Raw(
-          fragment: name_concat([
-            "list.map(v, fn(item) { let v = item ",
-            inner,
-            " })",
-          ]),
-        )
+        code.Call(head: code.Ident(name: "list.map"), args: [
+          code.Ident(name: "v"),
+          code.Lambda(params: ["item"], body: inner),
+        ])
       // For flat lists the member-level namespace is the outer
       // (repeated) element's namespace; if the outer member has
       // none, fall back to the list-inner's namespace. For non-
@@ -2428,15 +2649,12 @@ fn xml_value_expr(m: MemberDef) -> code.Code {
       // `<member_name><key>K</key><value>V</value></member_name>`
       // siblings. `@xmlName` on the map's key / value members
       // replaces the default `key` / `value` labels.
-      let val_expr = xml_map_value_expr(v)
+      let val_expr = xml_map_value_expr(v, code.Ident(name: "v"))
       let mapped_v =
-        code.Raw(
-          fragment: name_concat([
-            "dict.map_values(v, fn(_, v) { ",
-            val_expr,
-            " })",
-          ]),
-        )
+        code.Call(head: code.Ident(name: "dict.map_values"), args: [
+          code.Ident(name: "v"),
+          code.Lambda(params: ["_", "v"], body: val_expr),
+        ])
       let any_ns = case mem_ns, knp, vnp {
         option.None, option.None, option.None -> False
         _, _, _ -> True
@@ -2506,6 +2724,26 @@ fn wrap_text_call(
   )
 }
 
+fn xml_float_text_expr(value: code.Code) -> code.Code {
+  code.Case(scrutinee: value, branches: [
+    code.Branch(
+      pattern: "json_float.FloatValue(f)",
+      body: code.Call(head: code.Ident(name: "xml.float_text"), args: [
+        code.Ident(name: "f"),
+      ]),
+    ),
+    code.Branch(pattern: "json_float.NaN", body: code.StrLit(value: "NaN")),
+    code.Branch(
+      pattern: "json_float.PosInfinity",
+      body: code.StrLit(value: "Infinity"),
+    ),
+    code.Branch(
+      pattern: "json_float.NegInfinity",
+      body: code.StrLit(value: "-Infinity"),
+    ),
+  ])
+}
+
 /// Render a struct-typed member as `<member_name [mem_ns] [..struct_attrs]>
 /// encode_<X>_xml_inner(v)</member_name>`. The struct's own
 /// `_xml_attrs(v)` helper rides on the wrapper so any
@@ -2536,7 +2774,7 @@ fn struct_member_wrapped(
     option.None -> attrs_call
     option.Some(_) ->
       code.ListLit(
-        items: [code.Raw(fragment: xmlns_attr_expr(mem_ns))],
+        items: [xmlns_attr_code(mem_ns)],
         tail: code.CodeSome(attrs_call),
       )
   }
@@ -2563,10 +2801,7 @@ fn wrap_with_attrs(
     option.Some(_) ->
       code.Call(head: code.Ident(name: "xml.element_with_attrs"), args: [
         code.StrLit(value: name),
-        code.ListLit(
-          items: [code.Raw(fragment: xmlns_attr_expr(ns))],
-          tail: code.CodeNone,
-        ),
+        code.ListLit(items: [xmlns_attr_code(ns)], tail: code.CodeNone),
         inner,
       ])
   }
@@ -2579,53 +2814,70 @@ fn xmlns_attrs_list_code(ns: option.Option(#(String, String))) -> code.Code {
   case ns {
     option.None -> code.ListLit(items: [], tail: code.CodeNone)
     option.Some(_) ->
-      code.ListLit(
-        items: [code.Raw(fragment: xmlns_attr_expr(ns))],
-        tail: code.CodeNone,
-      )
+      code.ListLit(items: [xmlns_attr_code(ns)], tail: code.CodeNone)
   }
 }
 
 /// Render an XML map's *value* — what goes inside the `<value>...
 /// </value>` wrapper. Structs become inline-no-wrapper XML; the
 /// `<value>` element wraps. Primitives become their text form.
-fn xml_map_value_expr(target: Resolved) -> String {
+fn xml_map_value_expr(target: Resolved, value: code.Code) -> code.Code {
   case target {
-    RPrim(primitive: types.PString) -> "xml.escape_text(v)"
-    RPrim(primitive: types.PInt) -> "xml.int_text(v)"
-    RPrim(primitive: types.PBool) -> "xml.bool_text(v)"
-    RPrim(primitive: types.PFloat) ->
-      "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
-    RBlob -> "xml.blob_text(v)"
-    RTimestamp -> "json_timestamp.format_iso8601_precise(v)"
+    RPrim(primitive: types.PString) ->
+      code.Call(head: code.Ident(name: "xml.escape_text"), args: [value])
+    RPrim(primitive: types.PInt) ->
+      code.Call(head: code.Ident(name: "xml.int_text"), args: [value])
+    RPrim(primitive: types.PBool) ->
+      code.Call(head: code.Ident(name: "xml.bool_text"), args: [value])
+    RPrim(primitive: types.PFloat) -> xml_float_text_expr(value)
+    RBlob -> code.Call(head: code.Ident(name: "xml.blob_text"), args: [value])
+    RTimestamp ->
+      code.Call(
+        head: code.Ident(name: "json_timestamp.format_iso8601_precise"),
+        args: [value],
+      )
     REnum(..) ->
-      name_concat(["rest.enum_wire_value(", types.json_encoder(target), "(v))"])
+      code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
+        code.Call(head: types.json_encoder_code(target), args: [
+          value,
+        ]),
+      ])
     RIntEnum(gleam_name: n, ..) ->
-      name_concat([
-        "xml.int_text(",
-        stringutils.pascal_to_snake(n),
-        "_int_value(v))",
+      code.Call(head: code.Ident(name: "xml.int_text"), args: [
+        code.Call(
+          head: code.Ident(
+            name: name_concat([stringutils.pascal_to_snake(n), "_int_value"]),
+          ),
+          args: [value],
+        ),
       ])
     RStruct(gleam_name: name, ..) ->
-      name_concat([
-        "encode_",
-        stringutils.pascal_to_snake(name),
-        "_xml_inner(v)",
-      ])
+      code.Call(
+        head: code.Ident(
+          name: name_concat([
+            "encode_",
+            stringutils.pascal_to_snake(name),
+            "_xml_inner",
+          ]),
+        ),
+        args: [value],
+      )
     RMap(value: vv, xml_key_name: kn, xml_value_name: vn, ..) ->
       // Nested map value: produce just the inner entries; the
       // surrounding `<value>` wrapper sits on the outer map's
       // entry. Recursive — supports Map<String, Map<String, ...>>.
-      name_concat([
-        "xml.map_entries(\"",
-        kn,
-        "\", \"",
-        vn,
-        "\", dict.map_values(v, fn(_, v) { ",
-        xml_map_value_expr(vv),
-        " }))",
+      code.Call(head: code.Ident(name: "xml.map_entries"), args: [
+        code.StrLit(value: kn),
+        code.StrLit(value: vn),
+        code.Call(head: code.Ident(name: "dict.map_values"), args: [
+          value,
+          code.Lambda(
+            params: ["_", "v"],
+            body: xml_map_value_expr(vv, code.Ident(name: "v")),
+          ),
+        ]),
       ])
-    _ -> "\"\""
+    _ -> code.StrLit(value: "")
   }
 }
 
@@ -2645,64 +2897,97 @@ fn xml_timestamp_format_expr(format: Option(String)) -> String {
 /// For list elements, produce the INNER content (no wrapping element).
 /// Used inside `xml.list_element` to render each item as just its
 /// text-content / inner XML.
-fn xml_inner_expr_for_list_element(target: Resolved) -> String {
+fn xml_inner_expr_for_list_element(
+  target: Resolved,
+  value: code.Code,
+) -> code.Code {
   case target {
     RList(element: e, ..) ->
       case e {
-        RPrim(primitive: types.PString) -> "xml.escape_text(v)"
-        RPrim(primitive: types.PInt) -> "xml.int_text(v)"
-        RPrim(primitive: types.PBool) -> "xml.bool_text(v)"
-        RPrim(primitive: types.PFloat) ->
-          "case v { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }"
-        RBlob -> "xml.blob_text(v)"
+        RPrim(primitive: types.PString) ->
+          code.Call(head: code.Ident(name: "xml.escape_text"), args: [value])
+        RPrim(primitive: types.PInt) ->
+          code.Call(head: code.Ident(name: "xml.int_text"), args: [value])
+        RPrim(primitive: types.PBool) ->
+          code.Call(head: code.Ident(name: "xml.bool_text"), args: [value])
+        RPrim(primitive: types.PFloat) -> xml_float_text_expr(value)
+        RBlob ->
+          code.Call(head: code.Ident(name: "xml.blob_text"), args: [value])
         // restXml's protocol default is `date-time` (ISO 8601). The
         // per-member `@timestampFormat` override doesn't apply at
         // the list-element position (Smithy puts that trait on the
         // *list member*, not its target shape, and we currently
         // don't plumb it through `RList`).
-        RTimestamp -> "json_timestamp.format_iso8601_precise(v)"
+        RTimestamp ->
+          code.Call(
+            head: code.Ident(name: "json_timestamp.format_iso8601_precise"),
+            args: [value],
+          )
         REnum(..) ->
-          name_concat(["rest.enum_wire_value(", types.json_encoder(e), "(v))"])
+          code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
+            code.Call(head: types.json_encoder_code(e), args: [
+              value,
+            ]),
+          ])
         RIntEnum(gleam_name: n, ..) ->
-          name_concat([
-            "xml.int_text(",
-            stringutils.pascal_to_snake(n),
-            "_int_value(v))",
+          code.Call(head: code.Ident(name: "xml.int_text"), args: [
+            code.Call(
+              head: code.Ident(
+                name: name_concat([stringutils.pascal_to_snake(n), "_int_value"]),
+              ),
+              args: [value],
+            ),
           ])
         RStruct(gleam_name: n, ..) ->
           // Lists of structs: each entry is an inline struct without
           // an outer wrapper (caller's `<member>...</member>` wraps).
-          name_concat([
-            "encode_",
-            stringutils.pascal_to_snake(n),
-            "_xml_inner(v)",
-          ])
+          code.Call(
+            head: code.Ident(
+              name: name_concat([
+                "encode_",
+                stringutils.pascal_to_snake(n),
+                "_xml_inner",
+              ]),
+            ),
+            args: [value],
+          )
         RList(element: inner_e, xml_entry_name: inner_entry, ..) ->
           // Nested list — outer entry's `<member>` wraps an inline
           // list. Recurse via a synthetic single-step call to
           // `xml.flat_list` (no outer wrapper; the surrounding
           // `<member>` provides it).
-          name_concat([
-            "xml.flat_list(\"",
-            inner_entry,
-            "\", list.map(v, fn(inner_item) { let v = inner_item ",
-            xml_inner_expr_for_list_element(RList(
-              element: inner_e,
-              xml_entry_name: inner_entry,
-              sparse: False,
-              xml_element_namespace: option.None,
-            )),
-            " }))",
+          code.Call(head: code.Ident(name: "xml.flat_list"), args: [
+            code.StrLit(value: inner_entry),
+            code.Call(head: code.Ident(name: "list.map"), args: [
+              value,
+              code.Lambda(
+                params: ["inner_item"],
+                body: xml_inner_expr_for_list_element(
+                  RList(
+                    element: inner_e,
+                    xml_entry_name: inner_entry,
+                    sparse: False,
+                    xml_element_namespace: option.None,
+                  ),
+                  code.Ident(name: "inner_item"),
+                ),
+              ),
+            ]),
           ])
         RUnion(local_name: n, ..) ->
-          name_concat([
-            "encode_",
-            stringutils.pascal_to_snake(n),
-            "_union_xml_inner(v)",
-          ])
-        _ -> "\"\""
+          code.Call(
+            head: code.Ident(
+              name: name_concat([
+                "encode_",
+                stringutils.pascal_to_snake(n),
+                "_union_xml_inner",
+              ]),
+            ),
+            args: [value],
+          )
+        _ -> code.StrLit(value: "")
       }
-    _ -> "\"\""
+    _ -> code.StrLit(value: "")
   }
 }
 
@@ -2736,10 +3021,9 @@ fn emit_union_codec(
                 items: [
                   code.Tuple(items: [
                     code.StrLit(value: m.json_name),
-                    code.Call(
-                      head: code.Ident(name: types.json_encoder(m.target)),
-                      args: [code.Ident(name: "x")],
-                    ),
+                    code.Call(head: types.json_encoder_code(m.target), args: [
+                      code.Ident(name: "x"),
+                    ]),
                   ]),
                 ],
                 tail: code.CodeNone,
@@ -2813,10 +3097,7 @@ fn union_variant_xml_inner_expr(target: Resolved) -> code.Code {
       code.Call(head: code.Ident(name: "xml.bool_text"), args: [
         code.Ident(name: "x"),
       ])
-    RPrim(primitive: types.PFloat) ->
-      code.Raw(
-        fragment: "case x { json_float.FloatValue(f) -> xml.float_text(f) json_float.NaN -> \"NaN\" json_float.PosInfinity -> \"Infinity\" json_float.NegInfinity -> \"-Infinity\" }",
-      )
+    RPrim(primitive: types.PFloat) -> xml_float_text_expr(code.Ident(name: "x"))
     RBlob ->
       code.Call(head: code.Ident(name: "xml.blob_text"), args: [
         code.Ident(name: "x"),
@@ -2828,7 +3109,7 @@ fn union_variant_xml_inner_expr(target: Resolved) -> code.Code {
       )
     REnum(..) ->
       code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
-        code.Call(head: code.Ident(name: types.json_encoder(target)), args: [
+        code.Call(head: types.json_encoder_code(target), args: [
           code.Ident(name: "x"),
         ]),
       ])
@@ -2909,9 +3190,18 @@ fn emit_union_branch_params(
   let ctor = stringutils.union_variant_ctor(union_name, m.member_name, emitted)
   code.Call(head: code.Ident(name: "decode.field"), args: [
     code.StrLit(value: m.member_name),
-    code.Raw(fragment: types.json_decoder_params(m.target)),
-    code.Raw(fragment: name_concat(["fn(x) { decode.success(", ctor, "(x)) }"])),
+    types.json_decoder_params_code(m.target),
+    decode_success_variant_lambda(ctor),
   ])
+}
+
+fn decode_success_variant_lambda(ctor: String) -> code.Code {
+  code.Lambda(
+    params: ["x"],
+    body: code.Call(head: code.Ident(name: "decode.success"), args: [
+      code.Call(head: code.Ident(name: ctor), args: [code.Ident(name: "x")]),
+    ]),
+  )
 }
 
 /// Emit the per-op `build_<op>_request`. Partitions members by HTTP
@@ -2954,7 +3244,7 @@ fn emit_build(
 fn xml_body_setup(snake: String, body: List(MemberDef)) -> List(code.Code) {
   case body {
     [] -> [
-      code.Let(name: "body", value: code.Raw(fragment: "<<>>")),
+      code.Let(name: "body", value: code.EmptyBitArray),
       code.Let(name: "content_type", value: code.StrLit(value: "")),
     ]
     _ -> [
@@ -3023,7 +3313,7 @@ fn emit_payload_body(m: MemberDef) -> List(code.Code) {
     REnum(local_name: _, ..) -> #(
       code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
         code.Call(head: code.Ident(name: "rest.enum_wire_value"), args: [
-          code.Call(head: code.Ident(name: types.json_encoder(m.target)), args: [
+          code.Call(head: types.json_encoder_code(m.target), args: [
             code.Ident(name: "v"),
           ]),
         ]),
@@ -3073,7 +3363,7 @@ fn emit_payload_body(m: MemberDef) -> List(code.Code) {
     _ -> #(
       code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
         code.Call(head: code.Ident(name: "json.to_string"), args: [
-          code.Call(head: code.Ident(name: types.json_encoder(m.target)), args: [
+          code.Call(head: types.json_encoder_code(m.target), args: [
             code.Ident(name: "v"),
           ]),
         ]),
@@ -3096,10 +3386,7 @@ fn emit_payload_body(m: MemberDef) -> List(code.Code) {
           scrutinee: code.Ident(name: name_concat(["input.", m.snake_name])),
           branches: [
             code.Branch(pattern: "option.Some(v)", body: some_expr),
-            code.Branch(
-              pattern: "option.None",
-              body: code.Raw(fragment: "<<>>"),
-            ),
+            code.Branch(pattern: "option.None", body: code.EmptyBitArray),
           ],
         )
     })
@@ -3159,9 +3446,17 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
         list.length(overrides) == list.length(out_info.members)
       let bare_decode_call =
         code.Call(head: code.Ident(name: decoder), args: [
-          code.Raw(
-            fragment: "xml_decode.Element(name: \"empty\", attrs: [], children: [])",
-          ),
+          code.RecordConstruct(type_: "xml_decode.Element", fields: [
+            code.Labelled(label: "name", value: code.StrLit(value: "empty")),
+            code.Labelled(
+              label: "attrs",
+              value: code.ListLit(items: [], tail: code.CodeNone),
+            ),
+            code.Labelled(
+              label: "children",
+              value: code.ListLit(items: [], tail: code.CodeNone),
+            ),
+          ]),
         ])
       let bare_decode_call_with_root =
         code.Call(head: code.Ident(name: decoder), args: [
@@ -3242,7 +3537,12 @@ fn emit_parse(out_info: IOTypeInfo, snake: String) -> String {
 /// A single `Output(..decoded, field: header_value)` override produced by
 /// a `@httpHeader` or `@httpResponseCode` member.
 type ResponseOverride {
-  ResponseOverride(field: String, value_expr: String)
+  ResponseOverride(
+    field: String,
+    value_expr: code.Code,
+    uses_code: Bool,
+    uses_headers: Bool,
+  )
 }
 
 fn response_overrides(out_info: IOTypeInfo) -> List(ResponseOverride) {
@@ -3251,13 +3551,22 @@ fn response_overrides(out_info: IOTypeInfo) -> List(ResponseOverride) {
       Header(header_name: name) ->
         case header_extractor(m, name) {
           option.Some(expr) ->
-            Ok(ResponseOverride(field: m.snake_name, value_expr: expr))
+            Ok(ResponseOverride(
+              field: m.snake_name,
+              value_expr: expr,
+              uses_code: False,
+              uses_headers: True,
+            ))
           option.None -> Error(Nil)
         }
       ResponseCode ->
         Ok(ResponseOverride(
           field: m.snake_name,
-          value_expr: "option.Some(code)",
+          value_expr: code.Call(head: code.Ident(name: "option.Some"), args: [
+            code.Ident(name: "code"),
+          ]),
+          uses_code: True,
+          uses_headers: False,
         ))
       _ -> Error(Nil)
     }
@@ -3269,7 +3578,7 @@ fn response_overrides(out_info: IOTypeInfo) -> List(ResponseOverride) {
 /// land as `option.None` — same behaviour the codegen had before
 /// this pass; new binding support drops into this match without
 /// touching anything else.
-fn header_extractor(m: MemberDef, header_name: String) -> Option(String) {
+fn header_extractor(m: MemberDef, header_name: String) -> Option(code.Code) {
   case m.target {
     RPrim(primitive: PString) ->
       option.Some(call_extractor("string_header", header_name))
@@ -3303,25 +3612,34 @@ fn timestamp_header_helper(format: Option(String)) -> String {
   }
 }
 
-fn call_extractor(fn_name: String, header_name: String) -> String {
-  name_concat(["rest.", fn_name, "(headers, \"", header_name, "\")"])
+fn call_extractor(fn_name: String, header_name: String) -> code.Code {
+  code.Call(head: code.Ident(name: name_concat(["rest.", fn_name])), args: [
+    code.Ident(name: "headers"),
+    code.StrLit(value: header_name),
+  ])
 }
 
-fn call_timestamp_extractor(header_name: String, helper: String) -> String {
-  name_concat(["rest.", helper, "(headers, \"", header_name, "\")"])
+fn call_timestamp_extractor(header_name: String, helper: String) -> code.Code {
+  call_extractor(helper, header_name)
 }
 
-fn call_enum_extractor(header_name: String, enum_gleam_name: String) -> String {
+fn call_enum_extractor(
+  header_name: String,
+  enum_gleam_name: String,
+) -> code.Code {
   // The codegen emits `<snake>_from_wire(s) -> Result(Enum, String)`
   // for every enum (see `types.gleam`); pass it directly to the
   // forgiving `rest.enum_header` helper so unknown wire values land
   // as `None` rather than crashing the response parse.
-  name_concat([
-    "rest.enum_header(headers, \"",
-    header_name,
-    "\", ",
-    stringutils.pascal_to_snake(enum_gleam_name),
-    "_from_wire)",
+  code.Call(head: code.Ident(name: "rest.enum_header"), args: [
+    code.Ident(name: "headers"),
+    code.StrLit(value: header_name),
+    code.Ident(
+      name: name_concat([
+        stringutils.pascal_to_snake(enum_gleam_name),
+        "_from_wire",
+      ]),
+    ),
   ])
 }
 
@@ -3335,26 +3653,19 @@ fn wrap_decode_with_overrides_at(
   overrides: List(ResponseOverride),
   full_override full_override: Bool,
 ) -> code.Code {
-  let overrides_text =
+  let override_fields =
     overrides
-    |> list.map(fn(o) { name_concat([o.field, ": ", o.value_expr]) })
-    |> string.join(", ")
-  let prefix = case full_override {
-    True -> ""
-    False -> "..decoded, "
+    |> list.map(fn(o) { code.Labelled(label: o.field, value: o.value_expr) })
+  let output = case full_override {
+    True -> code.RecordConstruct(type_: output_type, fields: override_fields)
+    False ->
+      code.RecordUpdate(
+        record: code.Ident(name: "decoded"),
+        type_: output_type,
+        fields: override_fields,
+      )
   }
-  let ok_body =
-    code.Call(head: code.Ident(name: "Ok"), args: [
-      code.Raw(
-        fragment: name_concat([
-          output_type,
-          "(",
-          prefix,
-          overrides_text,
-          ")",
-        ]),
-      ),
-    ])
+  let ok_body = code.Call(head: code.Ident(name: "Ok"), args: [output])
   let pattern = case full_override {
     True -> "Ok(_)"
     False -> "Ok(decoded)"
@@ -3380,16 +3691,9 @@ fn response_params(
   overrides_used overrides: List(ResponseOverride),
 ) -> List(code.Param) {
   // Look for the literal `code` / `headers` *identifiers* the
-  // override expressions use — not just substring matches, which
-  // would false-positive on e.g. an `x-amzn-code-interpreter-…`
-  // header name that contains "code" or a `headers` field accessor.
-  // `code` only appears inside `option.Some(code)` (response-code
-  // override); `headers` only appears as the first argument to a
-  // `rest.<*>_header(headers, ...)` extractor call.
-  let uses_code =
-    list.any(overrides, fn(o) { string.contains(o.value_expr, "Some(code)") })
-  let uses_headers =
-    list.any(overrides, fn(o) { string.contains(o.value_expr, "(headers,") })
+  // override expressions use.
+  let uses_code = list.any(overrides, fn(o) { o.uses_code })
+  let uses_headers = list.any(overrides, fn(o) { o.uses_headers })
   let code_name = case uses_code {
     True -> "code"
     False -> "_code"
@@ -3413,6 +3717,98 @@ fn parse_response_params(body_param: String) -> List(code.Param) {
   ]
 }
 
+fn result_try(expr: code.Code) -> code.Code {
+  code.Call(head: code.Ident(name: "result.try"), args: [expr])
+}
+
+fn ok_expr(value: code.Code) -> code.Code {
+  code.Call(head: code.Ident(name: "Ok"), args: [value])
+}
+
+fn error_expr(value: code.Code) -> code.Code {
+  code.Call(head: code.Ident(name: "Error"), args: [value])
+}
+
+fn error_message(message: String) -> code.Code {
+  error_expr(code.StrLit(value: message))
+}
+
+fn option_some_expr(value: code.Code) -> code.Code {
+  code.Call(head: code.Ident(name: "option.Some"), args: [value])
+}
+
+fn utf8_text_result(ok_value: code.Code) -> code.Code {
+  code.Case(
+    scrutinee: code.Call(head: code.Ident(name: "bit_array.to_string"), args: [
+      code.Ident(name: "body"),
+    ]),
+    branches: [
+      code.Branch(pattern: "Ok(s)", body: ok_expr(ok_value)),
+      code.Branch(pattern: "Error(_)", body: error_message("non-utf8 payload")),
+    ],
+  )
+}
+
+fn bind_text_from_body() -> code.Code {
+  code.Use(name: "text", callee: result_try(utf8_text_result(code.Ident("s"))))
+}
+
+fn bind_string_payload_from_body() -> code.Code {
+  code.Use(
+    name: "payload",
+    callee: result_try(utf8_text_result(option_some_expr(code.Ident("s")))),
+  )
+}
+
+fn bind_xml_payload(decoder: String) -> code.Code {
+  code.Use(
+    name: "payload",
+    callee: result_try(
+      code.Case(scrutinee: code.Ident(name: "text"), branches: [
+        code.Branch(
+          pattern: "\"\"",
+          body: ok_expr(code.Ident(name: "option.None")),
+        ),
+        code.Branch(
+          pattern: "_",
+          body: code.Case(
+            scrutinee: code.Call(
+              head: code.Ident(name: "xml_decode.parse"),
+              args: [
+                code.Ident(name: "text"),
+              ],
+            ),
+            branches: [
+              code.Branch(
+                pattern: "Ok(root)",
+                body: code.Case(
+                  scrutinee: code.Call(head: code.Ident(name: decoder), args: [
+                    code.Ident(name: "root"),
+                  ]),
+                  branches: [
+                    code.Branch(
+                      pattern: "Ok(v)",
+                      body: ok_expr(option_some_expr(code.Ident(name: "v"))),
+                    ),
+                    code.Branch(
+                      pattern: "Error(r)",
+                      body: error_expr(code.Ident(name: "r")),
+                    ),
+                  ],
+                ),
+              ),
+              code.Branch(
+                pattern: "Error(r)",
+                body: error_expr(code.Ident(name: "r")),
+              ),
+            ],
+          ),
+        ),
+      ]),
+    ),
+  )
+}
+
 fn emit_parse_with_payload(
   out_info: IOTypeInfo,
   snake: String,
@@ -3430,7 +3826,7 @@ fn emit_parse_with_payload(
         True -> code.Ident(name: "payload")
         False ->
           case list.find(overrides, fn(o) { o.field == m.snake_name }) {
-            Ok(o) -> code.Raw(fragment: o.value_expr)
+            Ok(o) -> o.value_expr
             Error(_) -> code.Ident(name: "option.None")
           }
       }
@@ -3455,28 +3851,15 @@ fn emit_parse_with_payload(
           ]),
         ]),
       )
-    RPrim(primitive: types.PString) ->
-      code.Raw(
-        fragment: "use payload <- result.try(case bit_array.to_string(body) {\n      Ok(s) -> Ok(option.Some(s))\n      Error(_) -> Error(\"non-utf8 payload\")\n    })",
-      )
+    RPrim(primitive: types.PString) -> bind_string_payload_from_body()
     RStruct(gleam_name: name, ..) -> {
       let decoder =
         name_concat(["decode_", stringutils.pascal_to_snake(name), "_xml"])
-      code.Raw(
-        fragment: name_concat([
-          "use text <- result.try(case bit_array.to_string(body) {\n      Ok(t) -> Ok(t)\n      Error(_) -> Error(\"non-utf8 payload\")\n    })\n    use payload <- result.try(case text {\n      \"\" -> Ok(option.None)\n      _ -> case xml_decode.parse(text) {\n        Ok(root) -> case ",
-          decoder,
-          "(root) {\n          Ok(v) -> Ok(option.Some(v))\n          Error(r) -> Error(r)\n        }\n        Error(r) -> Error(r)\n      }\n    })",
-        ]),
-      )
+      code.Block(items: [bind_text_from_body(), bind_xml_payload(decoder)])
     }
     _ -> code.Let(name: "payload", value: code.Ident(name: "option.None"))
   }
-  let payload_fragment = case payload_decode {
-    code.Raw(fragment: f) -> f
-    other -> code.render(other)
-  }
-  let body_param = case string.contains(payload_fragment, "body") {
+  let body_param = case payload_uses_body(payload.target) {
     True -> "body"
     False -> "_body"
   }
@@ -3504,6 +3887,14 @@ fn emit_parse_with_payload(
       code.Blank,
     ]),
   )
+}
+
+fn payload_uses_body(target: Resolved) -> Bool {
+  case target {
+    RBlob | RStreamingBlob | RPrim(primitive: types.PString) | RStruct(..) ->
+      True
+    _ -> False
+  }
 }
 
 /// See `awsjson.file_header` for the design — body-scan picks the

@@ -25,7 +25,12 @@ fn simple_scalar_properties_dispatcher() -> Dispatcher {
         Ok(input) -> {
           let #(method, uri, headers, body) =
             svc.build_simple_scalar_properties_request(input)
-          Ok(BuiltRequest(method:, uri:, headers:, body:))
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
         }
         Error(reason) -> Error(reason)
       }

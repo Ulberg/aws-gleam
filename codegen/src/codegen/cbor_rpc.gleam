@@ -199,7 +199,7 @@ fn build_request_fn(
       code.StrLit(value: "POST"),
       code.StrLit(value: uri),
       code.Ident(name: "headers"),
-      code.Raw(fragment: "<<>>"),
+      code.EmptyBitArray,
     ])
   code.Fn(
     public: True,
@@ -328,22 +328,6 @@ fn parse_error_response_fn(
   ctor: String,
   with_message: Bool,
 ) -> Code {
-  let body = case with_message {
-    True -> "case cbor.decode_value(body) {
-    Error(reason) -> Error(\"cbor decode failed: \" <> reason)
-    Ok(value) -> {
-      let message = case cbor.get_field(value, \"message\") {
-        option.Some(cbor.CString(s)) -> option.Some(s)
-        _ -> option.None
-      }
-      Ok(" <> ctor <> "(message: message))
-    }
-  }"
-    False -> "case cbor.decode_value(body) {
-    Error(reason) -> Error(\"cbor decode failed: \" <> reason)
-    Ok(_) -> Ok(" <> ctor <> ")
-  }"
-  }
   code.Fn(
     public: True,
     name: string.concat(["parse_", snake, "_response"]),
@@ -353,7 +337,71 @@ fn parse_error_response_fn(
       code.Param(name: "body", type_: "BitArray"),
     ],
     return: CodeSome(string.concat(["Result(", ctor, ", String)"])),
-    body: code.Raw(fragment: body),
+    body: cbor_error_parse_body(ctor, with_message),
+  )
+}
+
+fn cbor_error_parse_body(ctor: String, with_message: Bool) -> Code {
+  let ok_branch = case with_message {
+    True ->
+      code.Branch(
+        pattern: "Ok(value)",
+        body: code.Block(items: [
+          code.Let(
+            name: "message",
+            value: code.Case(
+              scrutinee: code.Call(
+                head: code.Ident(name: "cbor.get_field"),
+                args: [
+                  code.Ident(name: "value"),
+                  code.StrLit(value: "message"),
+                ],
+              ),
+              branches: [
+                code.Branch(
+                  pattern: "option.Some(cbor.CString(s))",
+                  body: code.Call(head: code.Ident(name: "option.Some"), args: [
+                    code.Ident(name: "s"),
+                  ]),
+                ),
+                code.Branch(pattern: "_", body: code.Ident(name: "option.None")),
+              ],
+            ),
+          ),
+          code.Call(head: code.Ident(name: "Ok"), args: [
+            code.RecordConstruct(type_: ctor, fields: [
+              code.Labelled(
+                label: "message",
+                value: code.Ident(name: "message"),
+              ),
+            ]),
+          ]),
+        ]),
+      )
+    False ->
+      code.Branch(
+        pattern: "Ok(_)",
+        body: code.Call(head: code.Ident(name: "Ok"), args: [
+          code.Ident(name: ctor),
+        ]),
+      )
+  }
+  code.Case(
+    scrutinee: code.Call(head: code.Ident(name: "cbor.decode_value"), args: [
+      code.Ident(name: "body"),
+    ]),
+    branches: [
+      code.Branch(
+        pattern: "Error(reason)",
+        body: code.Call(head: code.Ident(name: "Error"), args: [
+          code.Concat(parts: [
+            code.StrLit(value: "cbor decode failed: "),
+            code.Ident(name: "reason"),
+          ]),
+        ]),
+      ),
+      ok_branch,
+    ],
   )
 }
 
@@ -372,6 +420,7 @@ fn file_header() -> String {
       ),
       code.Import(path: "gleam/dict", alias: code.CodeNone, unqualified: []),
       code.Import(path: "gleam/option", alias: code.CodeNone, unqualified: []),
+      code.Import(path: "gleam/string", alias: code.CodeNone, unqualified: []),
     ]),
   )
   |> fn(s) { string.concat([s, "\n"]) }

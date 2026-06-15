@@ -19,13 +19,12 @@ pub fn register_all(registry: Registry) -> Registry {
 fn non_query_compatible_operation_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.rpcv2cbor#NonQueryCompatibleOperation",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_non_query_compatible_operation_request(
           svc.NonQueryCompatibleOperationInput,
         )
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(
       svc.parse_non_query_compatible_operation_response,
@@ -36,13 +35,12 @@ fn non_query_compatible_operation_dispatcher() -> Dispatcher {
 fn query_compatible_operation_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.rpcv2cbor#QueryCompatibleOperation",
-    build_request: fn(params) {
-      let _ = params
+    build_request: fn(_params) {
       let #(method, uri, headers, body) =
         svc.build_query_compatible_operation_request(
           svc.QueryCompatibleOperationInput,
         )
-      Ok(BuiltRequest(method:, uri:, headers:, body:))
+      Ok(BuiltRequest(method: method, uri: uri, headers: headers, body: body))
     },
     parse_response: response_parser(
       svc.parse_query_compatible_operation_response,

@@ -20,6 +20,7 @@
 //// every Gleam record is heap-allocated already), so this only
 //// matters for the walking phase of code generation.
 
+import codegen/code
 import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option
@@ -178,10 +179,10 @@ pub type MemberDef {
     /// awsJson family, `date-time` for restJson1 / restXml).
     timestamp_format: option.Option(String),
     /// `@default(value)` — the SDK serialises this value when the user
-    /// leaves the field unset (`Option.None`). Stored as a Gleam source
+    /// leaves the field unset (`Option.None`). Stored as a structured
     /// expression that produces `gleam/json.Json` so the encoder can
     /// splice it directly into the body.
-    default_json: option.Option(String),
+    default_json: option.Option(code.Code),
     /// `@idempotencyToken` — when the member is `None`, the SDK
     /// auto-generates a UUID v4 and serialises that. Behaves like a
     /// dynamic `@default` whose value is a fresh UUID per request.
@@ -238,56 +239,40 @@ fn timestamp_format_of_target(
   }
 }
 
-/// Render an `@default(VALUE)` trait as a Gleam source expression
-/// producing `gleam/json.Json`. Used by the per-struct encoder to
-/// splice the default in place of an `option.None` field.
-fn default_to_json_expr(t: trait.Trait) -> String {
+/// Render an `@default(VALUE)` trait as a Gleam expression producing
+/// `gleam/json.Json`. Used by the per-struct encoder to splice the
+/// default in place of an `option.None` field.
+fn default_to_json_code(t: trait.Trait) -> code.Code {
   case t {
-    trait.Null -> "json.null()"
+    trait.Null -> code.Call(head: code.Ident(name: "json.null"), args: [])
     trait.String(s) ->
-      name_concat(["json.string(\"", escape_default_string(s), "\")"])
-    trait.Int(n) -> name_concat(["json.int(", int_to_dec(n), ")"])
-    trait.Float(f) -> name_concat(["json.float(", float_to_dec(f), ")"])
-    trait.Bool(True) -> "json.bool(True)"
-    trait.Bool(False) -> "json.bool(False)"
-    trait.List(_) -> "json.preprocessed_array([])"
-    trait.Dict(_) -> "json.object([])"
-  }
-}
-
-fn escape_default_string(s: String) -> String {
-  s
-  |> string.replace("\\", "\\\\")
-  |> string.replace("\"", "\\\"")
-}
-
-fn int_to_dec(n: Int) -> String {
-  case n {
-    0 -> "0"
-    _ -> int_str(n, "")
-  }
-}
-
-fn int_str(n: Int, acc: String) -> String {
-  case n {
-    0 -> acc
-    _ -> {
-      let d = n - { n / 10 } * 10
-      let c = case d {
-        0 -> "0"
-        1 -> "1"
-        2 -> "2"
-        3 -> "3"
-        4 -> "4"
-        5 -> "5"
-        6 -> "6"
-        7 -> "7"
-        8 -> "8"
-        9 -> "9"
-        _ -> "?"
-      }
-      int_str(n / 10, name_concat([c, acc]))
-    }
+      code.Call(head: code.Ident(name: "json.string"), args: [
+        code.StrLit(value: s),
+      ])
+    trait.Int(n) ->
+      code.Call(head: code.Ident(name: "json.int"), args: [
+        code.IntLit(value: n),
+      ])
+    trait.Float(f) ->
+      code.Call(head: code.Ident(name: "json.float"), args: [
+        code.FloatLit(value: float_to_dec(f)),
+      ])
+    trait.Bool(True) ->
+      code.Call(head: code.Ident(name: "json.bool"), args: [
+        code.Ident(name: "True"),
+      ])
+    trait.Bool(False) ->
+      code.Call(head: code.Ident(name: "json.bool"), args: [
+        code.Ident(name: "False"),
+      ])
+    trait.List(_) ->
+      code.Call(head: code.Ident(name: "json.preprocessed_array"), args: [
+        code.ListLit(items: [], tail: code.CodeNone),
+      ])
+    trait.Dict(_) ->
+      code.Call(head: code.Ident(name: "json.object"), args: [
+        code.ListLit(items: [], tail: code.CodeNone),
+      ])
   }
 }
 
@@ -1002,7 +987,7 @@ fn extract_members(
       dict.get(mem.traits, ShapeId("smithy.api#default")),
       client_optional
     {
-      Ok(option.Some(t)), False -> option.Some(default_to_json_expr(t))
+      Ok(option.Some(t)), False -> option.Some(default_to_json_code(t))
       _, _ -> option.None
     }
     let idempotency_token =
@@ -1155,12 +1140,35 @@ pub fn json_encoder_member(
   r: Resolved,
   format: option.Option(String),
 ) -> String {
+  code.render_expr(json_encoder_member_code(r, format))
+}
+
+pub fn json_encoder_member_code(
+  r: Resolved,
+  format: option.Option(String),
+) -> code.Code {
   case r, format {
     RTimestamp, option.Some("date-time") ->
-      "fn(v) { json.string(json_timestamp.format_iso8601_precise(v)) }"
+      code.Lambda(
+        params: ["v"],
+        body: code.Call(head: code.Ident(name: "json.string"), args: [
+          code.Call(
+            head: code.Ident(name: "json_timestamp.format_iso8601_precise"),
+            args: [code.Ident(name: "v")],
+          ),
+        ]),
+      )
     RTimestamp, option.Some("http-date") ->
-      "fn(v) { json.string(json_timestamp.format_http_date_precise(v)) }"
-    _, _ -> json_encoder(r)
+      code.Lambda(
+        params: ["v"],
+        body: code.Call(head: code.Ident(name: "json.string"), args: [
+          code.Call(
+            head: code.Ident(name: "json_timestamp.format_http_date_precise"),
+            args: [code.Ident(name: "v")],
+          ),
+        ]),
+      )
+    _, _ -> json_encoder_code(r)
   }
 }
 
@@ -1168,9 +1176,20 @@ pub fn json_decoder_member(
   r: Resolved,
   format: option.Option(String),
 ) -> String {
+  code.render_expr(json_decoder_member_code(r, format))
+}
+
+pub fn json_decoder_member_code(
+  r: Resolved,
+  format: option.Option(String),
+) -> code.Code {
   case r, format {
-    RTimestamp, _ -> "json_timestamp.decoder_precise()"
-    _, _ -> json_decoder(r)
+    RTimestamp, _ ->
+      code.Call(
+        head: code.Ident(name: "json_timestamp.decoder_precise"),
+        args: [],
+      )
+    _, _ -> json_decoder_code(r)
   }
 }
 
@@ -1178,55 +1197,181 @@ pub fn json_decoder_member_params(
   r: Resolved,
   format: option.Option(String),
 ) -> String {
+  code.render_expr(json_decoder_member_params_code(r, format))
+}
+
+pub fn json_decoder_member_params_code(
+  r: Resolved,
+  format: option.Option(String),
+) -> code.Code {
   case r, format {
-    RTimestamp, _ -> "json_timestamp.decoder_precise()"
-    _, _ -> json_decoder_params(r)
+    RTimestamp, _ ->
+      code.Call(
+        head: code.Ident(name: "json_timestamp.decoder_precise"),
+        args: [],
+      )
+    _, _ -> json_decoder_params_code(r)
   }
 }
 
 /// JSON encoder expression — produces a Gleam expression that takes a
 /// value of `gleam_type(r)` and returns `gleam/json.Json`.
 pub fn json_encoder(r: Resolved) -> String {
+  code.render_expr(json_encoder_code(r))
+}
+
+pub fn json_encoder_code(r: Resolved) -> code.Code {
   case r {
-    RPrim(primitive: PString) -> "json.string"
-    RPrim(primitive: PInt) -> "json.int"
-    RPrim(primitive: PFloat) -> "json_float.encode"
-    RPrim(primitive: PBool) -> "json.bool"
+    RPrim(primitive: PString) -> code.Ident(name: "json.string")
+    RPrim(primitive: PInt) -> code.Ident(name: "json.int")
+    RPrim(primitive: PFloat) -> code.Ident(name: "json_float.encode")
+    RPrim(primitive: PBool) -> code.Ident(name: "json.bool")
     REnum(gleam_name: n, ..) ->
-      name_concat(["encode_", stringutils.pascal_to_snake(n), "_enum"])
+      code.Ident(
+        name: name_concat(["encode_", stringutils.pascal_to_snake(n), "_enum"]),
+      )
     RIntEnum(gleam_name: n, ..) ->
-      name_concat(["encode_", stringutils.pascal_to_snake(n), "_int_enum"])
+      code.Ident(
+        name: name_concat([
+          "encode_",
+          stringutils.pascal_to_snake(n),
+          "_int_enum",
+        ]),
+      )
     RList(element: e, sparse: True, ..) ->
-      name_concat([
-        "fn(xs) { json.array(xs, fn(o) { case o { option.Some(x) -> ",
-        json_encoder(e),
-        "(x) option.None -> json.null() } }) }",
-      ])
+      code.Lambda(
+        params: ["xs"],
+        body: code.Call(head: code.Ident(name: "json.array"), args: [
+          code.Ident(name: "xs"),
+          code.Lambda(
+            params: ["o"],
+            body: code.Case(scrutinee: code.Ident(name: "o"), branches: [
+              code.Branch(
+                pattern: "option.Some(x)",
+                body: code.Call(head: json_encoder_code(e), args: [
+                  code.Ident(name: "x"),
+                ]),
+              ),
+              code.Branch(
+                pattern: "option.None",
+                body: code.Call(head: code.Ident(name: "json.null"), args: []),
+              ),
+            ]),
+          ),
+        ]),
+      )
     RList(element: e, sparse: False, ..) ->
-      name_concat(["fn(xs) { json.array(xs, ", json_encoder(e), ") }"])
+      code.Lambda(
+        params: ["xs"],
+        body: code.Call(head: code.Ident(name: "json.array"), args: [
+          code.Ident(name: "xs"),
+          json_encoder_code(e),
+        ]),
+      )
     RMap(value: v, sparse: True, ..) ->
-      name_concat([
-        "fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, case pair.1 { option.Some(x) -> ",
-        json_encoder(v),
-        "(x) option.None -> json.null() }) })) }",
-      ])
+      code.Lambda(
+        params: ["d"],
+        body: code.Call(head: code.Ident(name: "json.object"), args: [
+          code.Pipe(
+            initial: code.Call(head: code.Ident(name: "dict.to_list"), args: [
+              code.Ident(name: "d"),
+            ]),
+            steps: [
+              code.Call(head: code.Ident(name: "list.map"), args: [
+                code.Lambda(
+                  params: ["pair"],
+                  body: code.Tuple(items: [
+                    code.Ident(name: "pair.0"),
+                    code.Case(scrutinee: code.Ident(name: "pair.1"), branches: [
+                      code.Branch(
+                        pattern: "option.Some(x)",
+                        body: code.Call(head: json_encoder_code(v), args: [
+                          code.Ident(name: "x"),
+                        ]),
+                      ),
+                      code.Branch(
+                        pattern: "option.None",
+                        body: code.Call(
+                          head: code.Ident(name: "json.null"),
+                          args: [],
+                        ),
+                      ),
+                    ]),
+                  ]),
+                ),
+              ]),
+            ],
+          ),
+        ]),
+      )
     RMap(value: v, sparse: False, ..) ->
-      name_concat([
-        "fn(d) { json.object(dict.to_list(d) |> list.map(fn(pair) { #(pair.0, ",
-        json_encoder(v),
-        "(pair.1)) })) }",
-      ])
+      code.Lambda(
+        params: ["d"],
+        body: code.Call(head: code.Ident(name: "json.object"), args: [
+          code.Pipe(
+            initial: code.Call(head: code.Ident(name: "dict.to_list"), args: [
+              code.Ident(name: "d"),
+            ]),
+            steps: [
+              code.Call(head: code.Ident(name: "list.map"), args: [
+                code.Lambda(
+                  params: ["pair"],
+                  body: code.Tuple(items: [
+                    code.Ident(name: "pair.0"),
+                    code.Call(head: json_encoder_code(v), args: [
+                      code.Ident(name: "pair.1"),
+                    ]),
+                  ]),
+                ),
+              ]),
+            ],
+          ),
+        ]),
+      )
     RStruct(gleam_name: n, ..) ->
-      name_concat(["encode_", stringutils.pascal_to_snake(n), "_struct"])
+      code.Ident(
+        name: name_concat(["encode_", stringutils.pascal_to_snake(n), "_struct"]),
+      )
     RUnion(gleam_name: n, ..) ->
-      name_concat(["encode_", stringutils.pascal_to_snake(n), "_union"])
-    RTimestamp -> "json_timestamp.encode_epoch_seconds"
-    RBlob -> "fn(b) { json.string(bit_array.base64_encode(b, True)) }"
+      code.Ident(
+        name: name_concat(["encode_", stringutils.pascal_to_snake(n), "_union"]),
+      )
+    RTimestamp -> code.Ident(name: "json_timestamp.encode_epoch_seconds")
+    RBlob ->
+      code.Lambda(
+        params: ["b"],
+        body: code.Call(head: code.Ident(name: "json.string"), args: [
+          code.Call(head: code.Ident(name: "bit_array.base64_encode"), args: [
+            code.Ident(name: "b"),
+            code.Ident(name: "True"),
+          ]),
+        ]),
+      )
     RStreamingBlob ->
-      "fn(b) { json.string(bit_array.base64_encode(streaming.to_bit_array(b), True)) }"
-    RDocument -> "fn(j) { j }"
-    RUnit -> "fn(_) { json.object([]) }"
-    Unsupported(..) -> "fn(_) { json.null() }"
+      code.Lambda(
+        params: ["b"],
+        body: code.Call(head: code.Ident(name: "json.string"), args: [
+          code.Call(head: code.Ident(name: "bit_array.base64_encode"), args: [
+            code.Call(head: code.Ident(name: "streaming.to_bit_array"), args: [
+              code.Ident(name: "b"),
+            ]),
+            code.Ident(name: "True"),
+          ]),
+        ]),
+      )
+    RDocument -> code.Lambda(params: ["j"], body: code.Ident(name: "j"))
+    RUnit ->
+      code.Lambda(
+        params: ["_"],
+        body: code.Call(head: code.Ident(name: "json.object"), args: [
+          code.ListLit(items: [], tail: code.CodeNone),
+        ]),
+      )
+    Unsupported(..) ->
+      code.Lambda(
+        params: ["_"],
+        body: code.Call(head: code.Ident(name: "json.null"), args: []),
+      )
   }
 }
 
@@ -1244,78 +1389,182 @@ fn name_concat(parts: List(String)) -> String {
 /// overrides. List and map element decoders recurse via this same
 /// function so the member-keyed convention reaches the leaves.
 pub fn json_decoder_params(r: Resolved) -> String {
+  code.render_expr(json_decoder_params_code(r))
+}
+
+pub fn json_decoder_params_code(r: Resolved) -> code.Code {
   case r {
     RStruct(gleam_name: n, ..) ->
-      name_concat([
-        "decode_",
-        stringutils.pascal_to_snake(n),
-        "_struct_params()",
-      ])
+      code.Call(
+        head: code.Ident(
+          name: name_concat([
+            "decode_",
+            stringutils.pascal_to_snake(n),
+            "_struct_params",
+          ]),
+        ),
+        args: [],
+      )
     RUnion(gleam_name: n, ..) ->
-      name_concat([
-        "decode_",
-        stringutils.pascal_to_snake(n),
-        "_union_params()",
-      ])
+      code.Call(
+        head: code.Ident(
+          name: name_concat([
+            "decode_",
+            stringutils.pascal_to_snake(n),
+            "_union_params",
+          ]),
+        ),
+        args: [],
+      )
     RList(element: e, sparse: True, ..) ->
-      name_concat(["decode.list(decode.optional(", json_decoder_params(e), "))"])
+      code.Call(head: code.Ident(name: "decode.list"), args: [
+        code.Call(head: code.Ident(name: "decode.optional"), args: [
+          json_decoder_params_code(e),
+        ]),
+      ])
     RList(element: e, sparse: False, ..) ->
-      name_concat(["decode.list(", json_decoder_params(e), ")"])
+      code.Call(head: code.Ident(name: "decode.list"), args: [
+        json_decoder_params_code(e),
+      ])
     RMap(value: v, sparse: True, ..) ->
-      name_concat([
-        "decode.dict(decode.string, decode.optional(",
-        json_decoder_params(v),
-        "))",
+      code.Call(head: code.Ident(name: "decode.dict"), args: [
+        code.Ident(name: "decode.string"),
+        code.Call(head: code.Ident(name: "decode.optional"), args: [
+          json_decoder_params_code(v),
+        ]),
       ])
     RMap(value: v, sparse: False, ..) ->
-      name_concat(["decode.dict(decode.string, ", json_decoder_params(v), ")"])
-    _ -> json_decoder(r)
+      code.Call(head: code.Ident(name: "decode.dict"), args: [
+        code.Ident(name: "decode.string"),
+        json_decoder_params_code(v),
+      ])
+    _ -> json_decoder_code(r)
   }
 }
 
 /// JSON decoder expression — produces a Gleam `Decoder(t)` value.
 pub fn json_decoder(r: Resolved) -> String {
+  code.render_expr(json_decoder_code(r))
+}
+
+pub fn json_decoder_code(r: Resolved) -> code.Code {
   case r {
-    RPrim(primitive: PString) -> "decode.string"
-    RPrim(primitive: PInt) -> "decode.int"
-    RPrim(primitive: PFloat) -> "json_float.decoder()"
-    RPrim(primitive: PBool) -> "decode.bool"
+    RPrim(primitive: PString) -> code.Ident(name: "decode.string")
+    RPrim(primitive: PInt) -> code.Ident(name: "decode.int")
+    RPrim(primitive: PFloat) ->
+      code.Call(head: code.Ident(name: "json_float.decoder"), args: [])
+    RPrim(primitive: PBool) -> code.Ident(name: "decode.bool")
     REnum(gleam_name: n, ..) ->
-      name_concat(["decode_", stringutils.pascal_to_snake(n), "_enum()"])
+      code.Call(
+        head: code.Ident(
+          name: name_concat(["decode_", stringutils.pascal_to_snake(n), "_enum"]),
+        ),
+        args: [],
+      )
     RIntEnum(gleam_name: n, ..) ->
-      name_concat(["decode_", stringutils.pascal_to_snake(n), "_int_enum()"])
+      code.Call(
+        head: code.Ident(
+          name: name_concat([
+            "decode_",
+            stringutils.pascal_to_snake(n),
+            "_int_enum",
+          ]),
+        ),
+        args: [],
+      )
     RList(element: e, sparse: True, ..) ->
-      name_concat(["decode.list(decode.optional(", json_decoder(e), "))"])
+      code.Call(head: code.Ident(name: "decode.list"), args: [
+        code.Call(head: code.Ident(name: "decode.optional"), args: [
+          json_decoder_code(e),
+        ]),
+      ])
     RList(element: e, sparse: False, ..) ->
-      name_concat(["decode.list(", json_decoder(e), ")"])
+      code.Call(head: code.Ident(name: "decode.list"), args: [
+        json_decoder_code(e),
+      ])
     RMap(value: v, sparse: True, ..) ->
-      name_concat([
-        "decode.dict(decode.string, decode.optional(",
-        json_decoder(v),
-        "))",
+      code.Call(head: code.Ident(name: "decode.dict"), args: [
+        code.Ident(name: "decode.string"),
+        code.Call(head: code.Ident(name: "decode.optional"), args: [
+          json_decoder_code(v),
+        ]),
       ])
     RMap(value: v, sparse: False, ..) ->
-      name_concat(["decode.dict(decode.string, ", json_decoder(v), ")"])
+      code.Call(head: code.Ident(name: "decode.dict"), args: [
+        code.Ident(name: "decode.string"),
+        json_decoder_code(v),
+      ])
     RStruct(gleam_name: n, ..) ->
-      name_concat(["decode_", stringutils.pascal_to_snake(n), "_struct()"])
+      code.Call(
+        head: code.Ident(
+          name: name_concat([
+            "decode_",
+            stringutils.pascal_to_snake(n),
+            "_struct",
+          ]),
+        ),
+        args: [],
+      )
     RUnion(gleam_name: n, ..) ->
-      name_concat(["decode_", stringutils.pascal_to_snake(n), "_union()"])
-    RTimestamp -> "json_timestamp.decoder_precise()"
+      code.Call(
+        head: code.Ident(
+          name: name_concat([
+            "decode_",
+            stringutils.pascal_to_snake(n),
+            "_union",
+          ]),
+        ),
+        args: [],
+      )
+    RTimestamp ->
+      code.Call(
+        head: code.Ident(name: "json_timestamp.decoder_precise"),
+        args: [],
+      )
     RBlob ->
       // Smithy protocol-test params encode blobs as UTF-8 strings, not
       // base64. The on-the-wire response form IS base64 — a wire-side
       // decoder lands when real-response tests do.
-      "decode.then(decode.string, fn(s) { decode.success(bit_array.from_string(s)) })"
+      code.Call(head: code.Ident(name: "decode.then"), args: [
+        code.Ident(name: "decode.string"),
+        code.Lambda(
+          params: ["s"],
+          body: code.Call(head: code.Ident(name: "decode.success"), args: [
+            code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+              code.Ident(name: "s"),
+            ]),
+          ]),
+        ),
+      ])
     RStreamingBlob ->
       // Protocol-test params surface a streaming blob as a UTF-8
       // string too (the corpus doesn't distinguish — `@streaming`
       // is purely a wire / runtime concern). Wrap the raw bytes
       // in `streaming.from_bit_array` so the public field stays
       // typed as `StreamingBody`.
-      "decode.then(decode.string, fn(s) { decode.success(streaming.from_bit_array(bit_array.from_string(s))) })"
-    RDocument -> "json_document.decoder()"
-    RUnit -> "decode.success(Nil)"
-    Unsupported(..) -> "decode.success(Nil)"
+      code.Call(head: code.Ident(name: "decode.then"), args: [
+        code.Ident(name: "decode.string"),
+        code.Lambda(
+          params: ["s"],
+          body: code.Call(head: code.Ident(name: "decode.success"), args: [
+            code.Call(head: code.Ident(name: "streaming.from_bit_array"), args: [
+              code.Call(head: code.Ident(name: "bit_array.from_string"), args: [
+                code.Ident(name: "s"),
+              ]),
+            ]),
+          ]),
+        ),
+      ])
+    RDocument ->
+      code.Call(head: code.Ident(name: "json_document.decoder"), args: [])
+    RUnit ->
+      code.Call(head: code.Ident(name: "decode.success"), args: [
+        code.Ident(name: "Nil"),
+      ])
+    Unsupported(..) ->
+      code.Call(head: code.Ident(name: "decode.success"), args: [
+        code.Ident(name: "Nil"),
+      ])
   }
 }
 

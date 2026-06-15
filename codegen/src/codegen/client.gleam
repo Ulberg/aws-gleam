@@ -464,16 +464,7 @@ pub fn invoke_fn(
       ])
     Some(info) ->
       code.Block(items: [
-        // `case build_<snake>_host_prefix(input) { ... }` —
-        // validation surfaces as `Error(reason)` and gets wrapped
-        // in a `runtime.DecodeError` so the typed-error translator
-        // sees it as a normal client-side failure.
-        code.Raw(fragment: build_host_prefix_case(
-          snake,
-          info,
-          err_type,
-          invoke_call,
-        )),
+        build_host_prefix_case(snake, info, invoke_call),
       ])
   }
   Fn(
@@ -494,36 +485,33 @@ pub fn invoke_fn(
 fn build_host_prefix_case(
   snake: String,
   _info: HostPrefixInfo,
-  err_type: String,
   invoke_call: Code,
-) -> String {
+) -> Code {
   let prefix_fn = string.concat(["build_", snake, "_host_prefix"])
-  let invoke_src = code.render(invoke_call)
   let translator = string.concat(["translate_", snake, "_error"])
-  string.concat([
-    "case ",
-    prefix_fn,
-    "(input) {\n",
-    "    Error(reason) ->\n",
-    "      Error(",
-    translator,
-    "(runtime.DecodeError(reason: reason)))\n",
-    "    Ok(host_prefix) ->\n",
-    "      case ",
-    invoke_src,
-    " {\n",
-    "        Ok(out) -> Ok(out)\n",
-    "        Error(err) -> Error(",
-    translator,
-    "(err))\n",
-    "      }\n",
-    "  }",
-    // Silence the unused-binding warning if `host_prefix` slips
-    // out of scope (it doesn't — invoke_src consumes it — but
-    // explicit binding is clearer).
-    case err_type {
-      _ -> ""
-    },
+  code.Case(scrutinee: Call(Ident(prefix_fn), [Ident("input")]), branches: [
+    code.Branch(
+      pattern: "Error(reason)",
+      body: Call(Ident("Error"), [
+        Call(Ident(translator), [
+          code.RecordConstruct(type_: "runtime.DecodeError", fields: [
+            code.Labelled(label: "reason", value: Ident("reason")),
+          ]),
+        ]),
+      ]),
+    ),
+    code.Branch(
+      pattern: "Ok(host_prefix)",
+      body: code.Case(scrutinee: invoke_call, branches: [
+        code.Branch(pattern: "Ok(out)", body: Call(Ident("Ok"), [Ident("out")])),
+        code.Branch(
+          pattern: "Error(err)",
+          body: Call(Ident("Error"), [
+            Call(Ident(translator), [Ident("err")]),
+          ]),
+        ),
+      ]),
+    ),
   ])
 }
 
@@ -537,7 +525,6 @@ pub fn host_prefix_validator_fn(
   in_type: String,
   info: HostPrefixInfo,
 ) -> Code {
-  let body = code.Raw(fragment: render_host_prefix_validator_body(info))
   // When the template carries no `@hostLabel` substitutions
   // (e.g. `foo.`) the body never touches `input`. Rename the
   // param to `_input` for these to silence the unused-arg
@@ -551,64 +538,63 @@ pub fn host_prefix_validator_fn(
     name: string.concat(["build_", snake, "_host_prefix"]),
     params: [Param(name: param_name, type_: in_type)],
     return: CodeSome("Result(String, String)"),
-    body: body,
+    body: host_prefix_validator_body(info),
   )
 }
 
-fn render_host_prefix_validator_body(info: HostPrefixInfo) -> String {
-  let validate_steps =
-    list.map(info.labels, fn(lb) {
-      let message =
-        lb.member_snake
-        <> " was unset or empty but must be set as part of the endpoint prefix"
-      case lb.required {
-        True ->
-          string.concat([
-            "  use ",
-            lb.member_snake,
-            " <- result.try(case input.",
-            lb.member_snake,
-            " {\n",
-            "    \"\" -> Error(\"",
-            message,
-            "\")\n",
-            "    v -> Ok(v)\n",
-            "  })\n",
-          ])
-        False ->
-          string.concat([
-            "  use ",
-            lb.member_snake,
-            " <- result.try(case input.",
-            lb.member_snake,
-            " {\n",
-            "    option.Some(v) -> case v {\n",
-            "      \"\" -> Error(\"",
-            message,
-            "\")\n",
-            "      _ -> Ok(v)\n",
-            "    }\n",
-            "    option.None -> Error(\"",
-            message,
-            "\")\n",
-            "  })\n",
-          ])
-      }
-    })
-    |> string.concat
+fn host_prefix_validator_body(info: HostPrefixInfo) -> Code {
+  let validate_steps = list.map(info.labels, host_prefix_validate_step)
   let substitutions =
-    list.fold(info.labels, "\"" <> info.template <> "\"", fn(acc, lb) {
-      string.concat([
-        "string.replace(",
+    list.fold(info.labels, StrLit(info.template), fn(acc, lb) {
+      Call(Ident("string.replace"), [
         acc,
-        ", \"{",
-        lb.member_pascal,
-        "}\", ",
-        lb.member_snake,
-        ")",
+        StrLit(string.concat(["{", lb.member_pascal, "}"])),
+        Ident(lb.member_snake),
       ])
     })
-  string.concat([validate_steps, "  Ok(", substitutions, ")\n"])
+  code.Block(
+    items: list.append(validate_steps, [Call(Ident("Ok"), [substitutions])]),
+  )
+}
+
+fn host_prefix_validate_step(lb: HostLabelBinding) -> Code {
+  let message =
+    lb.member_snake
+    <> " was unset or empty but must be set as part of the endpoint prefix"
+  let body = case lb.required {
+    True ->
+      code.Case(
+        scrutinee: Ident(string.concat(["input.", lb.member_snake])),
+        branches: [
+          code.Branch(
+            pattern: "\"\"",
+            body: Call(Ident("Error"), [StrLit(message)]),
+          ),
+          code.Branch(pattern: "v", body: Call(Ident("Ok"), [Ident("v")])),
+        ],
+      )
+    False ->
+      code.Case(
+        scrutinee: Ident(string.concat(["input.", lb.member_snake])),
+        branches: [
+          code.Branch(
+            pattern: "option.Some(v)",
+            body: code.Case(scrutinee: Ident("v"), branches: [
+              code.Branch(
+                pattern: "\"\"",
+                body: Call(Ident("Error"), [StrLit(message)]),
+              ),
+              code.Branch(pattern: "_", body: Call(Ident("Ok"), [Ident("v")])),
+            ]),
+          ),
+          code.Branch(
+            pattern: "option.None",
+            body: Call(Ident("Error"), [StrLit(message)]),
+          ),
+        ],
+      )
+  }
+  Use(name: lb.member_snake, callee: Call(Ident("result.try"), [body]))
 }
 
 /// Build the `fn build_<snake>_endpoint_params(input)` helper. For
@@ -623,51 +609,50 @@ pub fn endpoint_params_builder_fn(
   in_type: String,
   bindings: List(ContextParamBinding),
 ) -> Code {
-  let body = code.Raw(fragment: render_endpoint_params_builder_body(bindings))
   Fn(
     public: False,
     name: string.concat(["build_", snake, "_endpoint_params"]),
     params: [Param(name: "input", type_: in_type)],
     return: CodeSome("dict.Dict(String, endpoints.Value)"),
-    body: body,
+    body: endpoint_params_builder_body(bindings),
   )
 }
 
-fn render_endpoint_params_builder_body(
-  bindings: List(ContextParamBinding),
-) -> String {
+fn endpoint_params_builder_body(bindings: List(ContextParamBinding)) -> Code {
   // Wrap each string value in `endpoints.StringVal(_)` so the
   // resulting dict is compatible with `runtime.invoke_with_endpoint_
   // params`'s `Params = Dict(String, endpoints.Value)` type. Maps to
   // the same shape the rule-set evaluator's other inputs use
   // (Region, UseFips, UseDualStack flow in as `StringVal` / `BoolVal`
   // via `endpoints.params_from`).
-  let inserts =
-    list.map(bindings, fn(b) {
-      case b.required {
-        True ->
-          string.concat([
-            "  let params = dict.insert(params, \"",
-            b.param_name,
-            "\", endpoints.StringVal(input.",
-            b.member_snake,
-            "))\n",
-          ])
-        False ->
-          string.concat([
-            "  let params = case input.",
-            b.member_snake,
-            " {\n",
-            "    option.Some(v) -> dict.insert(params, \"",
-            b.param_name,
-            "\", endpoints.StringVal(v))\n",
-            "    option.None -> params\n",
-            "  }\n",
-          ])
-      }
-    })
-    |> string.concat
-  string.concat(["  let params = dict.new()\n", inserts, "  params\n"])
+  let inserts = list.map(bindings, endpoint_param_insert)
+  code.Block(
+    items: list.append(
+      [Let(name: "params", value: Call(Ident("dict.new"), [])), ..inserts],
+      [Ident("params")],
+    ),
+  )
+}
+
+fn endpoint_param_insert(b: ContextParamBinding) -> Code {
+  let insert_value = fn(value: Code) {
+    Call(Ident("dict.insert"), [
+      Ident("params"),
+      StrLit(b.param_name),
+      Call(Ident("endpoints.StringVal"), [value]),
+    ])
+  }
+  Let(name: "params", value: case b.required {
+    True -> insert_value(Ident(string.concat(["input.", b.member_snake])))
+    False ->
+      code.Case(
+        scrutinee: Ident(string.concat(["input.", b.member_snake])),
+        branches: [
+          code.Branch(pattern: "option.Some(v)", body: insert_value(Ident("v"))),
+          code.Branch(pattern: "option.None", body: Ident("params")),
+        ],
+      )
+  })
 }
 
 /// Streaming-side counterpart: emits `pub fn <snake>_streaming(client,
@@ -737,38 +722,55 @@ pub fn event_parser_fn(
   union_local: String,
   variants: List(EventParserVariant),
 ) -> Code {
-  let arms =
-    list.map(variants, fn(v) {
-      string.concat([
-        "    Ok(\"",
-        v.wire_name,
-        "\") ->\n",
-        "      json.parse_bits(event.payload, ",
-        v.decoder_fn,
-        "())\n",
-        "      |> result.map(",
-        v.variant_ctor,
-        ")\n",
-        "      |> result.map_error(fn(_) { \"decode ",
-        v.wire_name,
-        " payload failed\" })\n",
-      ])
-    })
-    |> string.concat
-  let body =
-    string.concat([
-      "case event_stream.string_header(event, \":event-type\") {\n",
-      arms,
-      "    Ok(other) -> Error(\"unknown :event-type: \" <> other)\n",
-      "    Error(_) -> Error(\"missing :event-type header\")\n",
-      "  }",
-    ])
   Fn(
     public: True,
     name: string.concat(["parse_", snake, "_event"]),
     params: [Param(name: "event", type_: "event_stream.Event")],
     return: CodeSome(string.concat(["Result(", union_local, ", String)"])),
-    body: code.Raw(fragment: body),
+    body: code.Case(
+      scrutinee: Call(Ident("event_stream.string_header"), [
+        Ident("event"),
+        StrLit(":event-type"),
+      ]),
+      branches: list.append(list.map(variants, event_parser_branch), [
+        code.Branch(
+          pattern: "Ok(other)",
+          body: Call(Ident("Error"), [
+            code.Concat(parts: [
+              StrLit("unknown :event-type: "),
+              Ident("other"),
+            ]),
+          ]),
+        ),
+        code.Branch(
+          pattern: "Error(_)",
+          body: Call(Ident("Error"), [StrLit("missing :event-type header")]),
+        ),
+      ]),
+    ),
+  )
+}
+
+fn event_parser_branch(v: EventParserVariant) -> code.Branch {
+  code.Branch(
+    pattern: string.concat(["Ok(\"", v.wire_name, "\")"]),
+    body: code.Pipe(
+      initial: Call(Ident("json.parse_bits"), [
+        Ident("event.payload"),
+        Call(Ident(v.decoder_fn), []),
+      ]),
+      steps: [
+        Call(Ident("result.map"), [Ident(v.variant_ctor)]),
+        Call(Ident("result.map_error"), [
+          code.Lambda(
+            params: ["_"],
+            body: StrLit(
+              string.concat(["decode ", v.wire_name, " payload failed"]),
+            ),
+          ),
+        ]),
+      ],
+    ),
   )
 }
 

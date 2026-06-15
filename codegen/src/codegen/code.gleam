@@ -50,6 +50,11 @@ pub type Code {
   /// A `let name = expr` statement. Used inside `Body`.
   Let(name: String, value: Code)
 
+  /// A `let name: Type = expr` statement. Used when the generated
+  /// source needs to pin inference for a deliberately polymorphic
+  /// fallback expression.
+  LetTyped(name: String, type_: String, value: Code)
+
   /// A `let assert <pattern> = expr` statement. `pattern` is a Gleam
   /// pattern as a string (e.g. `"Ok(rule_set)"`); the renderer emits
   /// it verbatim, just as `Use` emits its `name` verbatim. Reserved
@@ -61,6 +66,18 @@ pub type Code {
   /// A module-level `const NAME: Type = value` declaration. Rendered
   /// as a top-level item; not allowed inside a function body.
   Const(name: String, type_: String, value: Code)
+
+  /// An `@external(target, "module", "function")` declaration for a
+  /// Gleam function whose body lives outside Gleam.
+  ExternalFn(
+    target: String,
+    module_name: String,
+    external_name: String,
+    public: Bool,
+    name: String,
+    params: List(Param),
+    return: String,
+  )
 
   /// A `use name <- callee` continuation. Lifts the rest of the body
   /// into a closure passed to `callee`.
@@ -74,13 +91,31 @@ pub type Code {
   /// templating a `code.Raw` fragment.
   Lambda(params: List(String), body: Code)
 
+  /// A `fn(p1: T1, p2: T2, ...) { body }` anonymous-function
+  /// expression. Use this only where generated record access needs an
+  /// inference anchor; most closures should stay as `Lambda`.
+  TypedLambda(params: List(Param), body: Code)
+
   /// A `case scrutinee { ... }` expression. Each branch is
   /// `pattern -> body`.
   Case(scrutinee: Code, branches: List(Branch))
 
+  /// A multi-subject `case a, b { ... }` expression. Branch patterns
+  /// contain the matching comma-separated pattern text.
+  CaseSubjects(scrutinees: List(Code), branches: List(Branch))
+
   /// A sequence of statements (lets + uses + a tail expression).
   /// Rendered with one statement per line.
   Block(items: List(Code))
+
+  /// `initial |> step(...) |> next(...)` pipeline expression.
+  /// `steps` are rendered as pipeline right-hand sides, so callers
+  /// pass each piped call without the left-hand argument.
+  Pipe(initial: Code, steps: List(Code))
+
+  /// `left <op> right` infix expression, for the small places where
+  /// generated code needs arithmetic or boolean operators.
+  Infix(left: Code, op: String, right: Code)
 
   /// `head(args)` — function/constructor application. `args` render
   /// comma-joined.
@@ -107,6 +142,12 @@ pub type Code {
   /// An integer literal.
   IntLit(value: Int)
 
+  /// A float literal, stored as already-normalized source text.
+  FloatLit(value: String)
+
+  /// Empty bit-array literal: `<<>>`.
+  EmptyBitArray
+
   /// `Ctor(..record, field1: v1, field2: v2)` — Gleam record update
   /// expression. `record` is the base value, `type_` is the
   /// constructor name (Gleam requires it explicitly), and `fields`
@@ -128,6 +169,10 @@ pub type Code {
   /// A doc comment (`/// ...`) attached to the next item. Empty
   /// list of lines = no comment.
   DocComment(lines: List(String))
+
+  /// A plain source comment (`// ...`). Used for generated helper
+  /// notes that should not become public documentation.
+  LineComment(lines: List(String))
 
   /// A module-level doc comment (`//// ...`). Differs from
   /// `DocComment` only in slash count; Gleam's parser uses the
@@ -186,6 +231,10 @@ pub fn render(c: Code) -> String {
   do_render(c, 0)
   |> trim_trailing
   |> fn(s) { string.concat([s, "\n"]) }
+}
+
+pub fn render_expr(c: Code) -> String {
+  do_render_expr(c, 0)
 }
 
 // ---------- internals ----------
@@ -253,6 +302,17 @@ fn do_render(c: Code, indent: Int) -> String {
     Let(name: n, value: v) ->
       string.concat([pad(indent), "let ", n, " = ", do_render_expr(v, indent)])
 
+    LetTyped(name: n, type_: t, value: v) ->
+      string.concat([
+        pad(indent),
+        "let ",
+        n,
+        ": ",
+        t,
+        " = ",
+        do_render_expr(v, indent),
+      ])
+
     LetAssert(pattern: p, value: v) ->
       string.concat([
         pad(indent),
@@ -273,6 +333,38 @@ fn do_render(c: Code, indent: Int) -> String {
         do_render_expr(v, indent),
       ])
 
+    ExternalFn(
+      target: target,
+      module_name: module_name,
+      external_name: external_name,
+      public: pub_,
+      name: n,
+      params: ps,
+      return: ret,
+    ) -> {
+      let keyword = case pub_ {
+        True -> "pub fn "
+        False -> "fn "
+      }
+      string.concat([
+        pad(indent),
+        "@external(",
+        target,
+        ", ",
+        escape_string_literal(module_name),
+        ", ",
+        escape_string_literal(external_name),
+        ")\n",
+        pad(indent),
+        keyword,
+        n,
+        "(",
+        render_params(ps),
+        ") -> ",
+        ret,
+      ])
+    }
+
     Use(name: n, callee: c2) ->
       case n {
         "" ->
@@ -288,18 +380,34 @@ fn do_render(c: Code, indent: Int) -> String {
       }
 
     Lambda(params: ps, body: b) ->
-      string.concat([
-        pad(indent),
-        "fn(",
-        string.join(ps, ", "),
-        ") { ",
-        do_render_expr(b, indent),
-        " }",
-      ])
+      render_lambda(string.join(ps, ", "), b, indent)
+
+    TypedLambda(params: ps, body: b) ->
+      render_lambda(render_params(ps), b, indent)
 
     Case(scrutinee: s, branches: bs) -> {
       let header =
         string.concat([pad(indent), "case ", do_render_expr(s, indent), " {"])
+      let body =
+        bs
+        |> list.map(fn(br) {
+          string.concat([
+            pad(indent + 1),
+            br.pattern,
+            " -> ",
+            do_render_expr(br.body, indent + 1),
+          ])
+        })
+        |> string.join("\n")
+      string.concat([header, "\n", body, "\n", pad(indent), "}"])
+    }
+
+    CaseSubjects(scrutinees: ss, branches: bs) -> {
+      let subjects =
+        ss
+        |> list.map(fn(s) { do_render_expr(s, indent) })
+        |> string.join(", ")
+      let header = string.concat([pad(indent), "case ", subjects, " {"])
       let body =
         bs
         |> list.map(fn(br) {
@@ -319,6 +427,15 @@ fn do_render(c: Code, indent: Int) -> String {
       |> list.map(fn(x) { do_render(x, indent) })
       |> string.join("\n")
 
+    Pipe(initial: initial, steps: steps) ->
+      string.concat([
+        pad(indent),
+        render_pipe(initial, steps, indent),
+      ])
+
+    Infix(left: l, op: op, right: r) ->
+      string.concat([pad(indent), render_infix(l, op, r, indent)])
+
     Call(head: h, args: as_) ->
       string.concat([pad(indent), render_call(h, as_, indent)])
 
@@ -335,6 +452,10 @@ fn do_render(c: Code, indent: Int) -> String {
 
     IntLit(value: n) -> string.concat([pad(indent), int_to_string(n)])
 
+    FloatLit(value: n) -> string.concat([pad(indent), n])
+
+    EmptyBitArray -> string.concat([pad(indent), "<<>>"])
+
     RecordUpdate(record: r, type_: t, fields: fs) ->
       string.concat([pad(indent), render_record_update(r, t, fs, indent)])
 
@@ -346,6 +467,11 @@ fn do_render(c: Code, indent: Int) -> String {
     DocComment(lines: ls) ->
       ls
       |> list.map(fn(l) { string.concat([pad(indent), "/// ", l]) })
+      |> string.join("\n")
+
+    LineComment(lines: ls) ->
+      ls
+      |> list.map(fn(l) { string.concat([pad(indent), "// ", l]) })
       |> string.join("\n")
 
     ModuleDocComment(lines: ls) ->
@@ -371,12 +497,16 @@ fn do_render_expr(c: Code, indent: Int) -> String {
     Ident(name: n) -> n
     StrLit(value: v) -> escape_string_literal(v)
     IntLit(value: n) -> int_to_string(n)
+    FloatLit(value: n) -> n
+    EmptyBitArray -> "<<>>"
     Raw(fragment: f) -> f
     RecordUpdate(record: r, type_: t, fields: fs) ->
       render_record_update(r, t, fs, indent)
     RecordConstruct(type_: t, fields: fs) ->
       render_record_construct(t, fs, indent)
     Call(head: h, args: as_) -> render_call(h, as_, indent)
+    Pipe(initial: initial, steps: steps) -> render_pipe(initial, steps, indent)
+    Infix(left: l, op: op, right: r) -> render_infix(l, op, r, indent)
     Concat(parts: ps) -> render_concat(ps, indent)
     Tuple(items: xs) -> render_tuple(xs, indent)
     ListLit(items: xs, tail: t) -> render_list(xs, t, indent)
@@ -384,18 +514,14 @@ fn do_render_expr(c: Code, indent: Int) -> String {
     // without the explicit-block braces the fallback would wrap it
     // in. Skipping the wrap matches the hand-written style and
     // avoids artificial indentation on `let x = case ... { ... }`.
-    Case(..) -> string.trim_start(do_render(c, indent))
+    Case(..) | CaseSubjects(..) -> string.trim_start(do_render(c, indent))
     // Anonymous functions render inline too: `fn(p) { body }`. The
     // body uses `do_render_expr` so we don't add line breaks for
     // simple bodies, matching how callers template them today.
     Lambda(params: ps, body: b) ->
-      string.concat([
-        "fn(",
-        string.join(ps, ", "),
-        ") { ",
-        do_render_expr(b, indent),
-        " }",
-      ])
+      string.trim_start(render_lambda(string.join(ps, ", "), b, indent))
+    TypedLambda(params: ps, body: b) ->
+      string.trim_start(render_lambda(render_params(ps), b, indent))
     _ ->
       // Larger constructs in expression position fall back to the
       // statement renderer — Gleam allows blocks as expressions when
@@ -472,6 +598,52 @@ fn render_call(head: Code, args: List(Code), indent: Int) -> String {
     })
     |> string.join(", ")
   string.concat([head_str, "(", args_str, ")"])
+}
+
+fn render_pipe(initial: Code, steps: List(Code), indent: Int) -> String {
+  let first = do_render_expr(initial, indent)
+  let rest =
+    steps
+    |> list.map(fn(step) {
+      string.concat([pad(indent + 1), "|> ", do_render_expr(step, indent + 1)])
+    })
+    |> string.join("\n")
+  case rest {
+    "" -> first
+    _ -> string.concat([first, "\n", rest])
+  }
+}
+
+fn render_infix(left: Code, op: String, right: Code, indent: Int) -> String {
+  string.concat([
+    do_render_expr(left, indent),
+    " ",
+    op,
+    " ",
+    do_render_expr(right, indent),
+  ])
+}
+
+fn render_lambda(params: String, body: Code, indent: Int) -> String {
+  let head = string.concat([pad(indent), "fn(", params, ") {"])
+  case body {
+    Block(..) ->
+      string.concat([
+        head,
+        "\n",
+        do_render(body, indent + 1),
+        "\n",
+        pad(indent),
+        "}",
+      ])
+    _ ->
+      string.concat([
+        head,
+        " ",
+        do_render_expr(body, indent),
+        " }",
+      ])
+  }
 }
 
 fn render_concat(parts: List(Code), indent: Int) -> String {
@@ -671,9 +843,13 @@ fn is_ident_char(c: String) -> Bool {
 }
 
 fn int_to_string(n: Int) -> String {
-  case n {
-    0 -> "0"
-    _ -> int_str(n, "")
+  case n < 0 {
+    True -> string.concat(["-", int_str(0 - n, "")])
+    False ->
+      case n {
+        0 -> "0"
+        _ -> int_str(n, "")
+      }
   }
 }
 
