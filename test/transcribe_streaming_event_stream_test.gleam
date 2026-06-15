@@ -52,9 +52,11 @@ fn fixed_streaming_send(
   fn(_req: Request(BitArray)) { resp }
 }
 
-fn empty_request() -> transcribe_streaming.StartStreamTranscriptionRequest {
+fn minimal_request() -> transcribe_streaming.StartStreamTranscriptionRequest {
   transcribe_streaming.StartStreamTranscriptionRequest(
-    audio_stream: None,
+    audio_stream: transcribe_streaming.AudioStreamAudioEvent(
+      transcribe_streaming.audio_event_default(),
+    ),
     content_identification_type: None,
     content_redaction_type: None,
     enable_channel_identification: None,
@@ -64,8 +66,8 @@ fn empty_request() -> transcribe_streaming.StartStreamTranscriptionRequest {
     language_code: None,
     language_model_name: None,
     language_options: None,
-    media_encoding: None,
-    media_sample_rate_hertz: None,
+    media_encoding: transcribe_streaming.MediaEncodingPcm,
+    media_sample_rate_hertz: 16_000,
     number_of_channels: None,
     partial_results_stability: None,
     pii_entity_types: None,
@@ -132,7 +134,7 @@ pub fn start_stream_transcription_event_stream_round_trips_frames_test() {
   let assert Ok(resp) =
     transcribe_streaming.start_stream_transcription_event_stream(
       client,
-      empty_request(),
+      minimal_request(),
     )
   resp.status |> should.equal(200)
 
@@ -167,7 +169,7 @@ pub fn start_stream_transcription_event_stream_surfaces_transport_error_test() {
   case
     transcribe_streaming.start_stream_transcription_event_stream(
       client,
-      empty_request(),
+      minimal_request(),
     )
   {
     Error(runtime.TransportError(_)) -> Nil

@@ -238,14 +238,14 @@ fn int_to_string(n: Int) -> String
 
 fn build_get_object_input(bucket: String, key: String) -> s3.GetObjectRequest {
   s3.GetObjectRequest(
-    bucket: Some(bucket),
+    bucket: bucket,
     checksum_mode: None,
     expected_bucket_owner: None,
     if_match: None,
     if_modified_since: None,
     if_none_match: None,
     if_unmodified_since: None,
-    key: Some(key),
+    key: key,
     part_number: None,
     range: None,
     request_payer: None,

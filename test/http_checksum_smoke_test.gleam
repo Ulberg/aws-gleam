@@ -13,20 +13,19 @@ import gleeunit/should
 
 pub fn default_to_sha256_when_algorithm_unset_test() {
   // No `checksum_algorithm` supplied — M10's fallback fires and
-  // we get a SHA-256 header. The body is empty so the digest is
-  // the well-known sha256("") base64.
+  // we get a SHA-256 header over the required XML payload body.
   let #(_method, _path, headers, _body) =
     s3.build_put_bucket_accelerate_configuration_request(
       s3.PutBucketAccelerateConfigurationRequest(
-        accelerate_configuration: None,
-        bucket: Some("my-bucket"),
+        accelerate_configuration: s3.accelerate_configuration_default(),
+        bucket: "my-bucket",
         checksum_algorithm: None,
         expected_bucket_owner: None,
       ),
     )
   headers
   |> dict.get("x-amz-checksum-sha256")
-  |> should.equal(Ok("47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="))
+  |> should.equal(Ok("dGXD7ZK/Y0/h7o7CY4+cGKg8jJkMYQR5mIISZJbN7/s="))
 }
 
 pub fn dispatch_to_sha1_when_algorithm_set_test() {
@@ -36,15 +35,15 @@ pub fn dispatch_to_sha1_when_algorithm_set_test() {
   let #(_method, _path, headers, _body) =
     s3.build_put_bucket_accelerate_configuration_request(
       s3.PutBucketAccelerateConfigurationRequest(
-        accelerate_configuration: None,
-        bucket: Some("my-bucket"),
+        accelerate_configuration: s3.accelerate_configuration_default(),
+        bucket: "my-bucket",
         checksum_algorithm: Some(s3.ChecksumAlgorithmSha1),
         expected_bucket_owner: None,
       ),
     )
   headers
   |> dict.get("x-amz-checksum-sha1")
-  |> should.equal(Ok("2jmj7l5rSw0yVb/vlWAYkK/YBwk="))
+  |> should.equal(Ok("A5VoLlOjFumW+SgRiXCgbGODhFw="))
   // The SHA-256 header is NOT also set — only the dispatched
   // algorithm fires.
   headers
@@ -56,16 +55,15 @@ pub fn dispatch_to_crc32c_test() {
   let #(_method, _path, headers, _body) =
     s3.build_put_bucket_accelerate_configuration_request(
       s3.PutBucketAccelerateConfigurationRequest(
-        accelerate_configuration: None,
-        bucket: Some("my-bucket"),
+        accelerate_configuration: s3.accelerate_configuration_default(),
+        bucket: "my-bucket",
         checksum_algorithm: Some(s3.ChecksumAlgorithmCrc32c),
         expected_bucket_owner: None,
       ),
     )
-  // CRC-32C("") = 0; base64 of 4 zero bytes = "AAAAAA==".
   headers
   |> dict.get("x-amz-checksum-crc32c")
-  |> should.equal(Ok("AAAAAA=="))
+  |> should.equal(Ok("J2KavQ=="))
 }
 
 pub fn unsupported_algorithm_falls_back_to_sha256_test() {
@@ -75,13 +73,13 @@ pub fn unsupported_algorithm_falls_back_to_sha256_test() {
   let #(_method, _path, headers, _body) =
     s3.build_put_bucket_accelerate_configuration_request(
       s3.PutBucketAccelerateConfigurationRequest(
-        accelerate_configuration: None,
-        bucket: Some("my-bucket"),
+        accelerate_configuration: s3.accelerate_configuration_default(),
+        bucket: "my-bucket",
         checksum_algorithm: Some(s3.ChecksumAlgorithmSha512),
         expected_bucket_owner: None,
       ),
     )
   headers
   |> dict.get("x-amz-checksum-sha256")
-  |> should.equal(Ok("47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="))
+  |> should.equal(Ok("dGXD7ZK/Y0/h7o7CY4+cGKg8jJkMYQR5mIISZJbN7/s="))
 }

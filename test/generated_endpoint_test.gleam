@@ -13,6 +13,7 @@ import aws/credentials
 import aws/internal/http_send as aws_http
 import aws/region
 import aws/services/dynamodb
+import gleam/dict
 import gleam/erlang/process
 import gleam/http/request.{type Request}
 import gleam/http/response
@@ -63,15 +64,7 @@ pub fn dynamodb_client_resolves_through_embedded_rule_set_test() {
   let _ =
     dynamodb.get_item(
       client,
-      dynamodb.GetItemInput(
-        attributes_to_get: None,
-        consistent_read: None,
-        expression_attribute_names: None,
-        key: None,
-        projection_expression: None,
-        return_consumed_capacity: None,
-        table_name: None,
-      ),
+      dynamodb.get_item_input_default(key: dict.new(), table_name: "test-table"),
     )
 
   // The DynamoDB rule set, given just Region=us-east-1, lands on the
@@ -127,15 +120,7 @@ pub fn generated_client_caches_credentials_across_invocations_test() {
     )
 
   let input =
-    dynamodb.GetItemInput(
-      attributes_to_get: None,
-      consistent_read: None,
-      expression_attribute_names: None,
-      key: None,
-      projection_expression: None,
-      return_consumed_capacity: None,
-      table_name: None,
-    )
+    dynamodb.get_item_input_default(key: dict.new(), table_name: "test-table")
   let _ = dynamodb.get_item(client, input)
   let _ = dynamodb.get_item(client, input)
   let _ = dynamodb.get_item(client, input)
