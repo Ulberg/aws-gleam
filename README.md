@@ -30,15 +30,27 @@ Generated service clients expose two constructors:
 
 ```gleam
 import aws/services/s3
+import gleam/option.{Some}
 
 pub fn main() {
   let assert Ok(client) = s3.new()
 
-  // Call generated operations with typed input records.
+  let request =
+    s3.ListObjectsV2Request(
+      ..s3.list_objects_v2_request_default(bucket: "my-bucket"),
+      prefix: Some("photos/"),
+    )
+
+  let _ = s3.list_objects_v2(client, request)
 
   s3.shutdown(client)
 }
 ```
+
+Generated operations take request/input records. Use the generated
+`*_default(...)` helper with the operation's required fields, then override
+optional fields with Gleam record update. Optional fields are `Option(...)`;
+fields required by Smithy are plain values.
 
 Custom configuration stays split between shared SDK settings and
 service-specific endpoint parameters:

@@ -97,10 +97,12 @@ import aws/services/$svc
 
 pub fn main() {
   let assert Ok(client) = $svc.new()
-  // Call generated operations with typed input records.
   $svc.shutdown(client)
 }
 \`\`\`
+
+Operations take generated request/input records. Start from the generated
+\`*_default(...)\` helper and override optional fields with Gleam record update.
 
 Use \`$svc.new_with(settings, endpoint_params)\` for explicit
 \`aws/config.Settings\` and this service's endpoint-rule-set parameters.

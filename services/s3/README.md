@@ -10,10 +10,12 @@ import aws/services/s3
 
 pub fn main() {
   let assert Ok(client) = s3.new()
-  // Call generated operations with typed input records.
   s3.shutdown(client)
 }
 ```
+
+Operations take generated request/input records. Start from the generated
+`*_default(...)` helper and override optional fields with Gleam record update.
 
 Use `s3.new_with(settings, endpoint_params)` for explicit `aws/config.Settings`
 and S3 endpoint-rule-set parameters such as `UseFIPS`, `UseDualStack`, and
