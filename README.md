@@ -111,9 +111,8 @@ Requires Gleam and Erlang/OTP.
 
 ```sh
 gleam deps download
-scripts/init-submodules.sh    # first time only
-./scripts/regen.sh            # generate service clients + protocol dispatchers
-./scripts/test.sh             # gleam test with ERL_FLAGS="+t 4194304"
+./scripts/test.sh             # bootstraps missing generated artifacts, then gleam test
+./scripts/regen.sh            # explicit full regeneration when codegen changes
 ```
 
 Focused regeneration accepts service names:
