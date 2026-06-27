@@ -5,10 +5,12 @@
 //// ECS/EKS task. Response shape is the same as IMDS step 3 (a JSON
 //// document with `AccessKeyId`, `SecretAccessKey`, `Token`, `Expiration`).
 ////
-//// Auth token, when present, goes in the `Authorization` header verbatim.
-//// AWS Fargate gates the metadata endpoint with this token, so an empty
-//// value means "no auth header at all" (None) rather than "send the empty
-//// string".
+//// Auth token, when present, goes in the `Authorization` header — but only
+//// when the destination is trusted (see `ecs_uri_allows_auth`). The token is
+//// a bearer credential; attaching it to an arbitrary host advertised via
+//// `AWS_CONTAINER_CREDENTIALS_FULL_URI` would exfiltrate it (issue #28). An
+//// empty token value means "no auth header at all" (None) rather than "send
+//// the empty string".
 
 import aws/internal/datetime
 import aws/internal/http_send.{type Send}
@@ -20,6 +22,8 @@ import gleam/int
 import gleam/json
 import gleam/option.{type Option, None, Some}
 import gleam/result
+import gleam/string
+import gleam/uri
 
 pub type Options {
   Options(url: String, auth_token: Option(String))
@@ -43,7 +47,11 @@ pub type Error {
 
 pub fn fetch(send: Send, options: Options) -> Result(EcsCredentials, Error) {
   use req <- result.try(
-    build_request(http.Get, options.url, auth_headers(options.auth_token))
+    build_request(
+      http.Get,
+      options.url,
+      auth_headers(options.url, options.auth_token),
+    )
     |> result.map_error(fn(reason) { Failed(reason: reason) }),
   )
   use resp <- result.try(
@@ -61,10 +69,76 @@ pub fn fetch(send: Send, options: Options) -> Result(EcsCredentials, Error) {
   }
 }
 
-fn auth_headers(token: Option(String)) -> List(#(String, String)) {
+/// Build the auth headers for a request to `url`. The token is withheld —
+/// the `Authorization` header is simply omitted — when `url` is not a trusted
+/// destination, so an untrusted `FULL_URI` can never receive the bearer token
+/// (issue #28). The request still goes out unauthenticated; the metadata
+/// endpoint, if it really requires auth, then fails closed.
+fn auth_headers(url: String, token: Option(String)) -> List(#(String, String)) {
   case token {
-    Some(t) -> [#("authorization", t)]
+    Some(t) ->
+      case ecs_uri_allows_auth(url) {
+        True -> [#("authorization", t)]
+        False -> []
+      }
     None -> []
+  }
+}
+
+/// Whether the metadata URL may receive the
+/// `AWS_CONTAINER_AUTHORIZATION_TOKEN`. The token is a bearer credential, so
+/// sending it to an arbitrary host over plain HTTP would leak it (SSRF /
+/// credential exfiltration — issue #28). Mirroring aws-sdk-rust and
+/// aws-sdk-go-v2, it is only attached when the destination is trusted:
+///
+/// - any `https` host (TLS protects the token in transit), or
+/// - a loopback host: `127.0.0.0/8`, IPv6 `::1` / `[::1]`, or `localhost`, or
+/// - the ECS (`169.254.170.2`) / EKS (`169.254.170.23`) link-local endpoints.
+///
+/// Any other host over plain HTTP returns `False` so the caller omits the
+/// header entirely rather than leak the token. A URL that fails to parse is
+/// treated as untrusted.
+pub fn ecs_uri_allows_auth(url: String) -> Bool {
+  case uri.parse(url) {
+    Ok(parsed) ->
+      case option.map(parsed.scheme, string.lowercase) {
+        Some("https") -> True
+        _ ->
+          case parsed.host {
+            Some(host) -> host_is_trusted(string.lowercase(host))
+            None -> False
+          }
+      }
+    Error(_) -> False
+  }
+}
+
+/// Hosts allowed to receive the auth token over plain HTTP.
+fn host_is_trusted(host: String) -> Bool {
+  case host {
+    "localhost" -> True
+    "::1" | "[::1]" -> True
+    // ECS / EKS container-credentials link-local endpoints.
+    "169.254.170.2" -> True
+    "169.254.170.23" -> True
+    _ -> is_loopback_ipv4(host)
+  }
+}
+
+/// True for any address in the `127.0.0.0/8` loopback block.
+fn is_loopback_ipv4(host: String) -> Bool {
+  case string.split(host, on: ".") {
+    [first, b, c, d] ->
+      first == "127" && is_octet(b) && is_octet(c) && is_octet(d)
+    _ -> False
+  }
+}
+
+/// True if `s` is a decimal byte (0–255), i.e. a valid dotted-quad octet.
+fn is_octet(s: String) -> Bool {
+  case int.parse(s) {
+    Ok(n) -> n >= 0 && n <= 255
+    Error(_) -> False
   }
 }
 
