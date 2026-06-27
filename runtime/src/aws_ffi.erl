@@ -20,23 +20,31 @@ float_short(F) when is_float(F) -> float_to_binary(F, [short]).
 %% Used by Smithy `@timestampFormat("http-date")` on response headers
 %% / bodies. Returns epoch seconds or `{error, nil}` on malformed input.
 parse_http_date(Bin) when is_binary(Bin) ->
-    Months = #{<<"Jan">>=>1, <<"Feb">>=>2, <<"Mar">>=>3, <<"Apr">>=>4,
-               <<"May">>=>5, <<"Jun">>=>6, <<"Jul">>=>7, <<"Aug">>=>8,
-               <<"Sep">>=>9, <<"Oct">>=>10, <<"Nov">>=>11, <<"Dec">>=>12},
-    Re = "^[A-Za-z]+, ([0-9]{2}) ([A-Za-z]{3}) ([0-9]{4}) ([0-9]{2}):([0-9]{2}):([0-9]{2}) GMT$",
-    case re:run(Bin, Re, [{capture, all_but_first, binary}]) of
-        {match, [D, MoBin, Y, H, Mi, S]} ->
-            case maps:find(MoBin, Months) of
-                {ok, Mo} ->
-                    DateTime = {
-                        {binary_to_integer(Y), Mo, binary_to_integer(D)},
-                        {binary_to_integer(H), binary_to_integer(Mi), binary_to_integer(S)}
-                    },
-                    Epoch = 62167219200,
-                    {ok, calendar:datetime_to_gregorian_seconds(DateTime) - Epoch};
-                error -> {error, nil}
-            end;
-        _ -> {error, nil}
+    %% `calendar:datetime_to_gregorian_seconds/1` raises `function_clause`
+    %% on out-of-range fields (e.g. day 39, hour 25) that pass the regex
+    %% shape check; this is server-controlled input, so catch and report
+    %% it as `{error, nil}` rather than crash the consumer's process.
+    try
+        Months = #{<<"Jan">>=>1, <<"Feb">>=>2, <<"Mar">>=>3, <<"Apr">>=>4,
+                   <<"May">>=>5, <<"Jun">>=>6, <<"Jul">>=>7, <<"Aug">>=>8,
+                   <<"Sep">>=>9, <<"Oct">>=>10, <<"Nov">>=>11, <<"Dec">>=>12},
+        Re = "^[A-Za-z]+, ([0-9]{2}) ([A-Za-z]{3}) ([0-9]{4}) ([0-9]{2}):([0-9]{2}):([0-9]{2}) GMT$",
+        case re:run(Bin, Re, [{capture, all_but_first, binary}]) of
+            {match, [D, MoBin, Y, H, Mi, S]} ->
+                case maps:find(MoBin, Months) of
+                    {ok, Mo} ->
+                        DateTime = {
+                            {binary_to_integer(Y), Mo, binary_to_integer(D)},
+                            {binary_to_integer(H), binary_to_integer(Mi), binary_to_integer(S)}
+                        },
+                        Epoch = 62167219200,
+                        {ok, calendar:datetime_to_gregorian_seconds(DateTime) - Epoch};
+                    error -> {error, nil}
+                end;
+            _ -> {error, nil}
+        end
+    catch
+        _:_ -> {error, nil}
     end.
 
 %% Inverse of `parse_iso8601`: epoch seconds (Int) → `"YYYY-MM-DDTHH:MM:SSZ"`
@@ -426,25 +434,35 @@ do_encode_canonical(M) when is_map(M) ->
 parse_iso8601(Bin) when is_binary(Bin) ->
     %% Accept either `Z` or `±HH:MM` zone suffix, with optional fractional
     %% seconds. The offset is folded into the returned epoch seconds.
-    Re = "^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\\.[0-9]+)?(Z|([+-])([0-9]{2}):([0-9]{2}))$",
-    case re:run(Bin, Re, [{capture, all_but_first, binary}]) of
-        {match, [Y, Mo, D, H, Mi, S | Zone]} ->
-            DateTime = {
-                {binary_to_integer(Y), binary_to_integer(Mo), binary_to_integer(D)},
-                {binary_to_integer(H), binary_to_integer(Mi), binary_to_integer(S)}
-            },
-            Epoch = 62167219200,
-            Base = calendar:datetime_to_gregorian_seconds(DateTime) - Epoch,
-            OffsetSec = case Zone of
-                [<<"Z">>] -> 0;
-                [<<"Z">>, _, _, _] -> 0;
-                [_, Sign, OffH, OffM] ->
-                    Sec = binary_to_integer(OffH) * 3600 + binary_to_integer(OffM) * 60,
-                    case Sign of <<"-">> -> Sec; <<"+">> -> -Sec end
-            end,
-            {ok, Base + OffsetSec};
-        _ ->
-            {error, nil}
+    %%
+    %% `calendar:datetime_to_gregorian_seconds/1` raises `function_clause`
+    %% on out-of-range fields (e.g. month 13, hour 25) that pass the regex
+    %% shape check; this parses server-controlled credential `Expiration`
+    %% and response timestamps, so catch and report it as `{error, nil}`
+    %% rather than crash the consumer's process.
+    try
+        Re = "^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\\.[0-9]+)?(Z|([+-])([0-9]{2}):([0-9]{2}))$",
+        case re:run(Bin, Re, [{capture, all_but_first, binary}]) of
+            {match, [Y, Mo, D, H, Mi, S | Zone]} ->
+                DateTime = {
+                    {binary_to_integer(Y), binary_to_integer(Mo), binary_to_integer(D)},
+                    {binary_to_integer(H), binary_to_integer(Mi), binary_to_integer(S)}
+                },
+                Epoch = 62167219200,
+                Base = calendar:datetime_to_gregorian_seconds(DateTime) - Epoch,
+                OffsetSec = case Zone of
+                    [<<"Z">>] -> 0;
+                    [<<"Z">>, _, _, _] -> 0;
+                    [_, Sign, OffH, OffM] ->
+                        Sec = binary_to_integer(OffH) * 3600 + binary_to_integer(OffM) * 60,
+                        case Sign of <<"-">> -> Sec; <<"+">> -> -Sec end
+                end,
+                {ok, Base + OffsetSec};
+            _ ->
+                {error, nil}
+        end
+    catch
+        _:_ -> {error, nil}
     end.
 
 %% Run an external command and capture its stdout + exit status.
