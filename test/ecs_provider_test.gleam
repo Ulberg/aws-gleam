@@ -115,9 +115,11 @@ pub fn no_uri_env_var_is_not_configured_test() {
 }
 
 pub fn auth_token_env_sets_authorization_header_test() {
+  // Loopback host: the auth token is only attached to trusted destinations
+  // (issue #28), so the FULL_URI here must be one of them.
   let lookup =
     env_from([
-      #("AWS_CONTAINER_CREDENTIALS_FULL_URI", "http://10.0.0.1/abc"),
+      #("AWS_CONTAINER_CREDENTIALS_FULL_URI", "http://127.0.0.1/abc"),
       #("AWS_CONTAINER_AUTHORIZATION_TOKEN", "Bearer hunter2"),
     ])
   let send = fn(req: Request(BitArray)) {
@@ -137,7 +139,7 @@ pub fn auth_token_env_sets_authorization_header_test() {
 pub fn auth_token_file_is_read_when_inline_token_absent_test() {
   let lookup =
     env_from([
-      #("AWS_CONTAINER_CREDENTIALS_FULL_URI", "http://10.0.0.1/abc"),
+      #("AWS_CONTAINER_CREDENTIALS_FULL_URI", "http://127.0.0.1/abc"),
       #("AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE", "/secrets/auth.token"),
     ])
   let read_file = fn(path: String) {
