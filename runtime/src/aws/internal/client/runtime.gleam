@@ -544,7 +544,16 @@ fn prepare_signed_request(
   }
 
   let full_url = endpoint_url <> uri
-  let assert Ok(base) = request.to(full_url)
+  // Parse the consumer-supplied endpoint here, at the edge: a URL
+  // without a scheme (the classic `endpoint_url: Some("localhost:4566")`
+  // LocalStack mistake) makes `request.to` return `Error`. Surface it as
+  // a typed `ClientError` rather than `let assert`-crashing the caller.
+  use base <- result.try(
+    request.to(full_url)
+    |> result.replace_error(DecodeError(
+      reason: "invalid endpoint url: " <> full_url,
+    )),
+  )
   let http_req =
     base
     |> request.set_method(parse_method(method))
