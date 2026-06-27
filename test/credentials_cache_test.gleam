@@ -263,6 +263,29 @@ pub fn shutdown_sync_is_idempotent_test() {
   credentials_cache.shutdown_sync(cache, 200) |> should.equal(Ok(Nil))
 }
 
+pub fn get_on_dead_cache_actor_returns_error_test() {
+  // Regression for #30: a dead cache actor must surface a typed Error,
+  // not panic the caller. We can't crash the actor without taking down
+  // this linked test process, so we stop it cleanly (a normal exit does
+  // not propagate) and then call `get` — `safe_call` sees the dead
+  // owner and `get` maps it to `FetchFailed`.
+  let inner =
+    credentials.static_provider(Credentials(
+      access_key_id: "AKID",
+      secret_access_key: "SECRET",
+      session_token: None,
+      expires_at: None,
+      source: "ignored",
+    ))
+  let assert Ok(cache) = credentials_cache.start_default(provider: inner)
+  credentials_cache.shutdown_sync(cache, 200) |> should.equal(Ok(Nil))
+  let assert Error(err) = credentials_cache.get(cache)
+  case err {
+    FetchFailed(_) -> Nil
+    _ -> panic as "expected FetchFailed from a dead cache actor"
+  }
+}
+
 pub fn shutdown_fire_and_forget_does_not_block_test() {
   // Plain `shutdown` returns immediately without waiting for the
   // actor; subsequent `shutdown_sync` confirms it eventually exited.

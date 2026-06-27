@@ -11,6 +11,45 @@
 
 import gleam/erlang/process.{type Subject}
 
+/// A non-crashing replacement for `actor.call` / `process.call`.
+///
+/// `actor.call` *panics* the caller when the callee has exited or fails to
+/// reply within the timeout. That is fine for a supervised callee, but the
+/// SDK's long-lived actors (credentials cache, retry rate-limiter) are
+/// unsupervised — a single crashing provider would otherwise take down the
+/// consumer's process on every subsequent call. This variant monitors the
+/// callee and selects over both the reply and the `DOWN` signal, returning
+/// `Error(Nil)` on a dead owner, an immediate `DOWN`, or a timeout, and
+/// `Ok(reply)` on a normal reply. Callers map `Error(Nil)` onto their own
+/// error shape so the consumer sees a recoverable error, never a panic.
+///
+/// Mirrors `gleam_erlang`'s internal `perform_call`, minus the two
+/// `let assert`/`panic` lines that make the stock `call` crash.
+pub fn safe_call(
+  subject subject: Subject(msg),
+  waiting timeout_ms: Int,
+  sending make_request: fn(Subject(reply)) -> msg,
+) -> Result(reply, Nil) {
+  case process.subject_owner(subject) {
+    Error(_) -> Error(Nil)
+    Ok(callee) -> {
+      let reply_subject = process.new_subject()
+      let monitor = process.monitor(callee)
+      process.send(subject, make_request(reply_subject))
+      let outcome =
+        process.new_selector()
+        |> process.select_map(reply_subject, Ok)
+        |> process.select_specific_monitor(monitor, fn(_down) { Error(Nil) })
+        |> process.selector_receive(timeout_ms)
+      process.demonitor_process(monitor)
+      case outcome {
+        Ok(reply_result) -> reply_result
+        Error(Nil) -> Error(Nil)
+      }
+    }
+  }
+}
+
 /// Fire-and-forget teardown: send the supplied `Stop` message and
 /// return immediately. The actor exits on its next dispatch. Safe to
 /// call against a dead actor — Erlang silently drops sends to a
