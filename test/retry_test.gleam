@@ -18,6 +18,10 @@ import gleeunit/should
 
 type ScriptedResponse {
   RespOk(status: Int, headers: List(#(String, String)))
+  /// Like `RespOk` but with a JSON body, so tests can exercise the
+  /// modeled-error-code classifier (e.g. a 400 carrying a DynamoDB
+  /// `__type` throttling code).
+  RespBody(status: Int, headers: List(#(String, String)), body: String)
   RespError(error: HttpError)
 }
 
@@ -73,6 +77,12 @@ fn stub_send(script: Subject(ScriptMessage)) -> Send {
           status: status,
           headers: headers,
           body: bit_array.from_string(""),
+        ))
+      RespBody(status: status, headers: headers, body: body) ->
+        Ok(response.Response(
+          status: status,
+          headers: headers,
+          body: bit_array.from_string(body),
         ))
       RespError(error: e) -> Error(e)
     }
@@ -619,4 +629,110 @@ pub fn with_base_delay_and_max_delay_ms_compose_with_max_attempts_test() {
   let assert Ok(resp) = send(empty_req())
   resp.status |> should.equal(200)
   attempt_count(script) |> should.equal(2)
+}
+
+// ---------- modeled-error-code classification (issue #29) ----------
+//
+// Many AWS throttling / transient errors arrive as HTTP 400 with the
+// retryable signal in the response body's modeled error code
+// (`__type`), not the status line. The classifier must honour the
+// modeled code in addition to the status-based rules.
+
+fn json_type(code: String) -> String {
+  "{\"__type\":\"" <> code <> "\",\"message\":\"throttled\"}"
+}
+
+pub fn provisioned_throughput_exceeded_400_is_retried_test() {
+  let script =
+    start_script([
+      RespBody(
+        status: 400,
+        headers: [],
+        body: json_type("ProvisionedThroughputExceededException"),
+      ),
+      RespOk(status: 200, headers: []),
+    ])
+  let send =
+    retry.with_retry(send: stub_send(script), strategy: test_strategy())
+  let assert Ok(resp) = send(empty_req())
+  resp.status |> should.equal(200)
+  attempt_count(script) |> should.equal(2)
+}
+
+pub fn throttling_exception_400_is_retried_test() {
+  let script =
+    start_script([
+      RespBody(status: 400, headers: [], body: json_type("ThrottlingException")),
+      RespOk(status: 200, headers: []),
+    ])
+  let send =
+    retry.with_retry(send: stub_send(script), strategy: test_strategy())
+  let assert Ok(resp) = send(empty_req())
+  resp.status |> should.equal(200)
+  attempt_count(script) |> should.equal(2)
+}
+
+pub fn namespaced_throttling_exception_400_is_retried_test() {
+  // AWS often namespaces `__type`: `com.amazonaws...#ThrottlingException`.
+  // The classifier matches on the local suffix after `#` (and after the
+  // last `.`).
+  let script =
+    start_script([
+      RespBody(
+        status: 400,
+        headers: [],
+        body: json_type("com.amazonaws.dynamodb.v20120810#ThrottlingException"),
+      ),
+      RespOk(status: 200, headers: []),
+    ])
+  let send =
+    retry.with_retry(send: stub_send(script), strategy: test_strategy())
+  let assert Ok(resp) = send(empty_req())
+  resp.status |> should.equal(200)
+  attempt_count(script) |> should.equal(2)
+}
+
+pub fn validation_exception_400_is_not_retried_test() {
+  // A non-throttling 400 (the caller's bad input) must NOT be retried.
+  let script =
+    start_script([
+      RespBody(status: 400, headers: [], body: json_type("ValidationException")),
+    ])
+  let send =
+    retry.with_retry(send: stub_send(script), strategy: test_strategy())
+  let assert Ok(resp) = send(empty_req())
+  resp.status |> should.equal(400)
+  attempt_count(script) |> should.equal(1)
+}
+
+pub fn throttling_via_error_type_header_is_retried_test() {
+  // awsJson / restJson1 surface the modeled code in the
+  // `x-amzn-errortype` header; the classifier honours it too.
+  let script =
+    start_script([
+      RespOk(status: 400, headers: [
+        #("x-amzn-errortype", "TooManyRequestsException"),
+      ]),
+      RespOk(status: 200, headers: []),
+    ])
+  let send =
+    retry.with_retry(send: stub_send(script), strategy: test_strategy())
+  let assert Ok(resp) = send(empty_req())
+  resp.status |> should.equal(200)
+  attempt_count(script) |> should.equal(2)
+}
+
+pub fn is_retryable_error_code_predicate_test() {
+  retry.is_retryable_error_code("ThrottlingException") |> should.equal(True)
+  retry.is_retryable_error_code("ProvisionedThroughputExceededException")
+  |> should.equal(True)
+  retry.is_retryable_error_code(
+    "com.amazonaws.dynamodb.v20120810#ThrottlingException",
+  )
+  |> should.equal(True)
+  retry.is_retryable_error_code("TransactionInProgressException")
+  |> should.equal(True)
+  retry.is_retryable_error_code("ValidationException") |> should.equal(False)
+  retry.is_retryable_error_code("ResourceNotFoundException")
+  |> should.equal(False)
 }
