@@ -20,6 +20,7 @@
 //// actor semantics.
 
 import aws/internal/actor_lifecycle
+import aws/internal/log
 import gleam/erlang/process.{type Subject}
 import gleam/otp/actor
 
@@ -98,10 +99,31 @@ pub fn start_default() -> Result(Bucket, StartError) {
 
 /// Try to acquire `cost` tokens. Returns `Acquired(permit)` if the bucket
 /// can pay; `Empty` if not (caller must NOT retry).
+///
+/// Degrade-open on a dead/unresponsive bucket: if the actor has crashed or
+/// doesn't reply in time, `safe_call` returns `Error` and we hand back a
+/// zero-cost `Acquired` permit rather than `Empty`. Rationale: the limiter
+/// is a *best-effort* concurrent-retry semaphore, not a correctness gate —
+/// `Empty` means "stop retrying", so returning it on a dead limiter would
+/// silently suppress legitimate retries and degrade availability. Treating
+/// an unavailable limiter as "no throttle" keeps the request path working;
+/// the zero-cost permit makes the later `release`/`reward_success` sends
+/// (which Erlang drops to a dead Pid anyway) harmless no-ops. The original
+/// fix for #30: a panicking limiter must never crash the request path.
 pub fn try_acquire(bucket: Bucket, cost cost: Int) -> AcquireResult {
-  actor.call(bucket.subject, waiting: 1000, sending: fn(reply) {
-    TryAcquire(cost: cost, reply: reply)
-  })
+  case
+    actor_lifecycle.safe_call(bucket.subject, waiting: 1000, sending: fn(reply) {
+      TryAcquire(cost: cost, reply: reply)
+    })
+  {
+    Ok(result) -> result
+    Error(Nil) -> {
+      log.warning(
+        "aws retry rate limiter: actor unavailable — proceeding without throttle",
+      )
+      Acquired(permit: Permit(cost: 0))
+    }
+  }
 }
 
 /// Return the permit's tokens to the bucket. Called on success, on a final

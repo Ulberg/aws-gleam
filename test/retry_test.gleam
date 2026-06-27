@@ -440,6 +440,22 @@ pub fn bucket_try_acquire_returns_empty_when_short_test() {
   rate_limiter.current(bucket).available |> should.equal(0)
 }
 
+pub fn try_acquire_on_dead_bucket_degrades_to_acquired_test() {
+  // Regression for #30: a dead rate-limiter actor must NOT crash the
+  // request path, and must degrade *open* (no throttle) rather than
+  // return Empty — Empty would suppress legitimate retries. We stop the
+  // bucket cleanly (a normal exit doesn't crash this linked test
+  // process) then try_acquire: it returns a zero-cost Acquired permit.
+  let assert Ok(bucket) = rate_limiter.start(capacity: 100, success_reward: 0)
+  rate_limiter.shutdown_sync(bucket, 200) |> should.equal(Ok(Nil))
+  let assert rate_limiter.Acquired(p) =
+    rate_limiter.try_acquire(bucket, cost: 50)
+  rate_limiter.permit_cost(p) |> should.equal(0)
+  // release / reward against the dead bucket are harmless no-ops.
+  rate_limiter.release(bucket, permit: p)
+  rate_limiter.reward_success(bucket)
+}
+
 // ---------- edge cases caught by the M4 audit ----------
 
 pub fn status_408_is_retried_like_429_test() {

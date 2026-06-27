@@ -12,7 +12,9 @@
 //// invocation. No thundering-herd shielding beyond that — adequate for the
 //// rates AWS SDKs see in practice.
 
-import aws/credentials.{type Credentials, type Provider, type ProviderError}
+import aws/credentials.{
+  type Credentials, type Provider, type ProviderError, FetchFailed,
+}
 import aws/internal/actor_lifecycle
 import aws/internal/log
 import gleam/erlang/process.{type Subject}
@@ -99,7 +101,21 @@ pub fn start_default(provider provider: Provider) -> Result(Cache, StartError) {
 /// expiry. Returns whatever the provider produced — the cache itself never
 /// fabricates errors.
 pub fn get(cache: Cache) -> Result(Credentials, ProviderError) {
-  actor.call(cache.subject, waiting: 5000, sending: Get)
+  // `safe_call` returns `Error(Nil)` if the cache actor is dead or doesn't
+  // reply in time — e.g. a wrapped provider panicked instead of returning
+  // `Error`. Map that onto the provider error shape so the consumer gets a
+  // recoverable `Error`, never a crashed process. The success path is
+  // identical to the old `actor.call`: the actor's own `Result` is returned
+  // verbatim.
+  case actor_lifecycle.safe_call(cache.subject, waiting: 5000, sending: Get) {
+    Ok(provider_result) -> provider_result
+    Error(Nil) -> {
+      log.warning(
+        "aws credentials cache: actor unavailable (dead or timed out)",
+      )
+      Error(FetchFailed(reason: "credentials cache actor unavailable"))
+    }
+  }
 }
 
 /// Re-expose the cache as a regular `Provider`. The returned provider's
