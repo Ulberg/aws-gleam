@@ -12,13 +12,13 @@
 
 import aws/credentials.{type Provider}
 import aws/endpoints.{type Params, type RuleSet}
+import aws/internal/error_code
 import aws/internal/http_request as our_http
 import aws/internal/http_send.{type HttpError, type Send, type StreamingSend}
 import aws/internal/http_streaming
 import aws/internal/log
 import aws/internal/sigv4.{SigningOptions}
 import aws/internal/sigv4a
-import aws/internal/text_scan
 import aws/retry.{type Strategy}
 import aws/streaming.{type StreamingBody}
 import gleam/bit_array
@@ -767,14 +767,7 @@ pub fn extract_error_type(
   headers: Dict(String, String),
   body: BitArray,
 ) -> String {
-  case dict.get(headers, "x-amzn-errortype") {
-    Ok(v) -> normalise_error_type(v)
-    Error(_) ->
-      case bit_array.to_string(body) {
-        Error(_) -> "Unknown"
-        Ok(text) -> error_type_from_body(text)
-      }
-  }
+  error_code.from_headers_and_body(headers, body)
 }
 
 /// Discriminator check for protocol-test error-shape dispatchers. Used
@@ -809,48 +802,6 @@ pub fn check_error_type_matches(
         <> ", got "
         <> extracted,
       )
-  }
-}
-
-fn normalise_error_type(raw: String) -> String {
-  let s = case string.split_once(raw, ":") {
-    Ok(#(prefix, _)) -> prefix
-    Error(_) -> raw
-  }
-  let s = case string.split_once(s, ",") {
-    Ok(#(prefix, _)) -> prefix
-    Error(_) -> s
-  }
-  case string.split_once(s, "#") {
-    Ok(#(_, local)) -> local
-    Error(_) -> s
-  }
-}
-
-fn error_type_from_body(body: String) -> String {
-  let found =
-    text_scan.json_string_after_key(body, "__type")
-    |> result.lazy_or(fn() { text_scan.json_string_after_key(body, "code") })
-    |> result.lazy_or(fn() { extract_xml_error_code(body) })
-  case found {
-    Ok(v) -> normalise_error_type(v)
-    Error(_) -> "Unknown"
-  }
-}
-
-/// Pull the error code out of a restXml error body. Two shapes appear
-/// in the wild — S3-style `<Error><Code>NoSuchBucket</Code>...</Error>`
-/// and SQS/SNS-style `<ErrorResponse><Error><Code>X</Code>...</Error>...`.
-/// In both cases the first `<Code>` element holds the error type, so a
-/// single text search keyed on `<Code>` covers both shapes without
-/// dragging in the full XML decoder for an error-only path. The trim
-/// + empty-check rejects `<Code/>` and `<Code>   </Code>` so the
-/// fallback to "Unknown" still fires for malformed bodies.
-fn extract_xml_error_code(body: String) -> Result(String, Nil) {
-  use raw <- result.try(text_scan.xml_tag_text(body, "Code"))
-  case string.trim(raw) {
-    "" -> Error(Nil)
-    non_empty -> Ok(non_empty)
   }
 }
 

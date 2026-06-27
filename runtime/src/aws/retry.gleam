@@ -29,6 +29,7 @@
 ////     component for "true" adaptive mode. Our `adaptive` builder
 ////     installs the token bucket only; CUBIC is a follow-up milestone.
 
+import aws/internal/error_code
 import aws/internal/http_send.{type HttpError, type Send}
 import aws/internal/log
 import aws/internal/retry/rate_limiter.{
@@ -40,6 +41,7 @@ import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/int
 import gleam/option.{type Option, None, Some}
+import gleam/string
 
 /// Default maximum total attempts. Matches AWS SDK "standard" mode.
 pub const default_max_attempts: Int = 3
@@ -277,10 +279,10 @@ fn classify_response(
   attempt: Int,
   strategy: Strategy,
 ) -> Decision {
-  case classify_status(resp.status), attempt < strategy.max_attempts {
-    NotRetryable, _ -> Stop
-    _, False -> GiveUp
-    _, True -> {
+  case is_retryable_response(resp), attempt < strategy.max_attempts {
+    False, _ -> Stop
+    True, False -> GiveUp
+    True, True -> {
       let delay = case retry_after_seconds(resp) {
         Some(secs) -> int.min(secs * 1000, strategy.max_delay_ms)
         None -> exponential_backoff(strategy, attempt)
@@ -313,6 +315,79 @@ fn classify_transport_error(
 type StatusKind {
   NotRetryable
   Retryable
+}
+
+/// Decide whether a completed response should be retried. A response is
+/// retryable when *either* the status code is retryable *or* the body /
+/// header carries a modeled throttling-class error code.
+///
+/// The error-code check is the fix for the common AWS pattern where a
+/// throttling / transient failure arrives as HTTP **400** with the real
+/// signal in the modeled code (DynamoDB
+/// `ProvisionedThroughputExceededException`, `ThrottlingException`,
+/// `TransactionInProgressException`, …) rather than in the status line.
+/// Real AWS SDKs retry on that modeled code, not just the status.
+///
+/// 2xx responses are never retried via the error code — a success body
+/// never names a retryable error — so the modeled-code parse is skipped
+/// for them.
+fn is_retryable_response(resp: Response(BitArray)) -> Bool {
+  case classify_status(resp.status) {
+    Retryable -> True
+    NotRetryable ->
+      resp.status >= 300 && is_retryable_error_code(modeled_error_code(resp))
+  }
+}
+
+/// Extract the modeled error code (local Smithy shape name) from a
+/// response — `x-amzn-errortype` header first, then the body's
+/// `__type` / `code` (JSON) or `<Code>` (restXml). Shared with the
+/// runtime's typed-error path via `aws/internal/error_code`.
+fn modeled_error_code(resp: Response(BitArray)) -> String {
+  error_code.from_header_value_and_body(
+    response.get_header(resp, "x-amzn-errortype"),
+    resp.body,
+  )
+}
+
+/// True when `code` names a throttling / transient error AWS expects
+/// clients to retry. Mirrors the AWS SDK `THROTTLING_ERRORS` set; the
+/// match is case-sensitive on the *local* shape name, so a namespaced
+/// or URI-suffixed wire value (`com.amazonaws…#ThrottlingException`,
+/// `ThrottlingException:http://…`) is reduced to its suffix after the
+/// last `#` and last `.` before comparison.
+pub fn is_retryable_error_code(code: String) -> Bool {
+  let local =
+    code
+    |> suffix_after(on: "#")
+    |> suffix_after(on: ".")
+  case local {
+    "Throttling"
+    | "ThrottlingException"
+    | "ThrottledException"
+    | "RequestThrottled"
+    | "RequestThrottledException"
+    | "ProvisionedThroughputExceededException"
+    | "TransactionInProgressException"
+    | "RequestLimitExceeded"
+    | "BandwidthLimitExceeded"
+    | "LimitExceededException"
+    | "SlowDown"
+    | "EC2ThrottledException"
+    | "TooManyRequestsException"
+    | "PriorRequestNotComplete" -> True
+    _ -> False
+  }
+}
+
+/// Return the substring after the final occurrence of `on`, or the whole
+/// string when `on` is absent. Used to peel a namespace / URI prefix off
+/// a modeled error code down to its local shape name.
+fn suffix_after(in text: String, on sep: String) -> String {
+  case string.split_once(string.reverse(text), string.reverse(sep)) {
+    Ok(#(rev_suffix, _)) -> string.reverse(rev_suffix)
+    Error(_) -> text
+  }
 }
 
 /// 408 and 429 are throttling-adjacent (request timeout / too many
