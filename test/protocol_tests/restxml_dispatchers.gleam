@@ -46,8 +46,8 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(http_string_payload_dispatcher())
   |> dispatch.register(ignore_query_params_in_response_dispatcher())
   |> dispatch.register(input_and_output_with_headers_dispatcher())
-  |> dispatch.register(nested_xml_maps_dispatcher())
   |> dispatch.register(nested_xml_map_with_xml_name_dispatcher())
+  |> dispatch.register(nested_xml_maps_dispatcher())
   |> dispatch.register(no_input_and_no_output_dispatcher())
   |> dispatch.register(no_input_and_output_dispatcher())
   |> dispatch.register(null_and_empty_headers_client_dispatcher())
@@ -71,9 +71,9 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(xml_enums_dispatcher())
   |> dispatch.register(xml_int_enums_dispatcher())
   |> dispatch.register(xml_lists_dispatcher())
+  |> dispatch.register(xml_map_with_xml_namespace_dispatcher())
   |> dispatch.register(xml_maps_dispatcher())
   |> dispatch.register(xml_maps_xml_name_dispatcher())
-  |> dispatch.register(xml_map_with_xml_namespace_dispatcher())
   |> dispatch.register(xml_namespaces_dispatcher())
   |> dispatch.register(xml_timestamps_dispatcher())
   |> dispatch.register(xml_unions_dispatcher())
@@ -1008,32 +1008,6 @@ fn input_and_output_with_headers_dispatcher() -> Dispatcher {
   )
 }
 
-fn nested_xml_maps_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#NestedXmlMaps",
-    build_request: fn(params) {
-      let raw = case params {
-        "" -> "{}"
-        other -> other
-      }
-      case svc.decode_nested_xml_maps_input(raw) {
-        Ok(input) -> {
-          let #(method, uri, headers, body) =
-            svc.build_nested_xml_maps_request(input)
-          Ok(BuiltRequest(
-            method: method,
-            uri: uri,
-            headers: headers,
-            body: body,
-          ))
-        }
-        Error(reason) -> Error(reason)
-      }
-    },
-    parse_response: response_parser(svc.parse_nested_xml_maps_response),
-  )
-}
-
 fn nested_xml_map_with_xml_name_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restxml#NestedXmlMapWithXmlName",
@@ -1059,6 +1033,32 @@ fn nested_xml_map_with_xml_name_dispatcher() -> Dispatcher {
     parse_response: response_parser(
       svc.parse_nested_xml_map_with_xml_name_response,
     ),
+  )
+}
+
+fn nested_xml_maps_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restxml#NestedXmlMaps",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_nested_xml_maps_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_nested_xml_maps_request(input)
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(svc.parse_nested_xml_maps_response),
   )
 }
 
@@ -1671,6 +1671,34 @@ fn xml_lists_dispatcher() -> Dispatcher {
   )
 }
 
+fn xml_map_with_xml_namespace_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restxml#XmlMapWithXmlNamespace",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_xml_map_with_xml_namespace_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_xml_map_with_xml_namespace_request(input)
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_xml_map_with_xml_namespace_response,
+    ),
+  )
+}
+
 fn xml_maps_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restxml#XmlMaps",
@@ -1719,34 +1747,6 @@ fn xml_maps_xml_name_dispatcher() -> Dispatcher {
       }
     },
     parse_response: response_parser(svc.parse_xml_maps_xml_name_response),
-  )
-}
-
-fn xml_map_with_xml_namespace_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restxml#XmlMapWithXmlNamespace",
-    build_request: fn(params) {
-      let raw = case params {
-        "" -> "{}"
-        other -> other
-      }
-      case svc.decode_xml_map_with_xml_namespace_input(raw) {
-        Ok(input) -> {
-          let #(method, uri, headers, body) =
-            svc.build_xml_map_with_xml_namespace_request(input)
-          Ok(BuiltRequest(
-            method: method,
-            uri: uri,
-            headers: headers,
-            body: body,
-          ))
-        }
-        Error(reason) -> Error(reason)
-      }
-    },
-    parse_response: response_parser(
-      svc.parse_xml_map_with_xml_namespace_response,
-    ),
   )
 }
 

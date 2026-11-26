@@ -65,11 +65,11 @@ pub fn register_all(registry: Registry) -> Registry {
   |> dispatch.register(malformed_byte_dispatcher())
   |> dispatch.register(malformed_content_type_with_body_dispatcher())
   |> dispatch.register(malformed_content_type_with_generic_string_dispatcher())
+  |> dispatch.register(malformed_content_type_with_payload_dispatcher())
   |> dispatch.register(malformed_content_type_without_body_dispatcher())
   |> dispatch.register(
     malformed_content_type_without_body_empty_input_dispatcher(),
   )
-  |> dispatch.register(malformed_content_type_with_payload_dispatcher())
   |> dispatch.register(malformed_double_dispatcher())
   |> dispatch.register(malformed_float_dispatcher())
   |> dispatch.register(malformed_integer_dispatcher())
@@ -1582,6 +1582,34 @@ fn malformed_content_type_with_generic_string_dispatcher() -> Dispatcher {
   )
 }
 
+fn malformed_content_type_with_payload_dispatcher() -> Dispatcher {
+  Dispatcher(
+    operation_id: "aws.protocoltests.restjson#MalformedContentTypeWithPayload",
+    build_request: fn(params) {
+      let raw = case params {
+        "" -> "{}"
+        other -> other
+      }
+      case svc.decode_malformed_content_type_with_payload_input(raw) {
+        Ok(input) -> {
+          let #(method, uri, headers, body) =
+            svc.build_malformed_content_type_with_payload_request(input)
+          Ok(BuiltRequest(
+            method: method,
+            uri: uri,
+            headers: headers,
+            body: body,
+          ))
+        }
+        Error(reason) -> Error(reason)
+      }
+    },
+    parse_response: response_parser(
+      svc.parse_malformed_content_type_with_payload_response,
+    ),
+  )
+}
+
 fn malformed_content_type_without_body_dispatcher() -> Dispatcher {
   Dispatcher(
     operation_id: "aws.protocoltests.restjson#MalformedContentTypeWithoutBody",
@@ -1638,34 +1666,6 @@ fn malformed_content_type_without_body_empty_input_dispatcher() -> Dispatcher {
     },
     parse_response: response_parser(
       svc.parse_malformed_content_type_without_body_empty_input_response,
-    ),
-  )
-}
-
-fn malformed_content_type_with_payload_dispatcher() -> Dispatcher {
-  Dispatcher(
-    operation_id: "aws.protocoltests.restjson#MalformedContentTypeWithPayload",
-    build_request: fn(params) {
-      let raw = case params {
-        "" -> "{}"
-        other -> other
-      }
-      case svc.decode_malformed_content_type_with_payload_input(raw) {
-        Ok(input) -> {
-          let #(method, uri, headers, body) =
-            svc.build_malformed_content_type_with_payload_request(input)
-          Ok(BuiltRequest(
-            method: method,
-            uri: uri,
-            headers: headers,
-            body: body,
-          ))
-        }
-        Error(reason) -> Error(reason)
-      }
-    },
-    parse_response: response_parser(
-      svc.parse_malformed_content_type_with_payload_response,
     ),
   )
 }
