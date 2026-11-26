@@ -273,10 +273,7 @@ fn find_service(m: model.Model, proto_name: String) -> Result(String, String) {
   // exactly one service shape per file so it's a no-op there.
   let with_op_counts =
     list.map(candidates, fn(id) {
-      case model.lookup(m, id) {
-        Ok(shape.Service(operations: ops, ..)) -> #(id, list.length(ops))
-        _ -> #(id, 0)
-      }
+      #(id, list.length(model.operation_refs(m, id)))
     })
   case with_op_counts {
     [] -> Error("no service has trait " <> shape_id.to_string(trait_id))

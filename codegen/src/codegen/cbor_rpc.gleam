@@ -108,8 +108,8 @@ fn find_services(m: Model) -> List(ServiceCtx) {
 
 fn emit_service_ops(m: Model, svc: ServiceCtx) -> List(EmittedOp) {
   case model.lookup(m, svc.service_id) {
-    Ok(shape.Service(operations: refs, ..)) ->
-      list.filter_map(refs, fn(ref) {
+    Ok(shape.Service(..)) ->
+      list.filter_map(model.operation_refs(m, svc.service_id), fn(ref) {
         let ShapeId(target) = ref.target
         case model.lookup(m, target) {
           Ok(shape.Operation(input: in_ref, ..)) ->
@@ -272,8 +272,8 @@ fn emit_error_shapes(m: Model, services: List(ServiceCtx)) -> List(EmittedOp) {
 
 fn collect_error_ids(m: Model, service_id: String) -> List(String) {
   case model.lookup(m, service_id) {
-    Ok(shape.Service(operations: refs, ..)) ->
-      list.flat_map(refs, fn(ref) {
+    Ok(shape.Service(..)) ->
+      list.flat_map(model.operation_refs(m, service_id), fn(ref) {
         let ShapeId(target) = ref.target
         case model.lookup(m, target) {
           Ok(shape.Operation(errors: errs, ..)) ->

@@ -70,7 +70,8 @@ pub fn emit_service(
 ) -> Result(EmitResult, String) {
   case model.lookup(model, service_id) {
     Error(_) -> Error(string.concat(["service not found: ", service_id]))
-    Ok(shape.Service(operations: refs, traits: svc_traits, ..)) -> {
+    Ok(shape.Service(traits: svc_traits, ..)) -> {
+      let refs = model.operation_refs(model, service_id)
       let service_target = strip_namespace(service_id)
       let metadata = trait_helpers.service_metadata(svc_traits, service_target)
       // Protocol-test corpora declare multiple service shapes per

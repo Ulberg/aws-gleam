@@ -4,6 +4,10 @@
 
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode.{type Decoder}
+import gleam/list
+import gleam/option
+import gleam/set.{type Set}
+import gleam/string
 import smithy/shape.{type Shape}
 import smithy/shape_id.{type ShapeId}
 
@@ -35,6 +39,82 @@ pub fn decoder() -> Decoder(Model) {
 
 pub fn lookup(model: Model, id: String) -> Result(Shape, Nil) {
   dict.get(model.shapes, shape_id.ShapeId(id))
+}
+
+/// All operations bound to a service or resource, including nested resources
+/// and lifecycle bindings. Like Smithy's TopDownIndex, return unique operations
+/// sorted by shape ID; do not follow input/output or identifier references.
+pub fn operation_refs(
+  model: Model,
+  container_id: String,
+) -> List(shape.Reference) {
+  walk_operations(model, [shape_id.ShapeId(container_id)], set.new(), [])
+  |> list.sort(fn(a, b) {
+    string.compare(shape_id.to_string(a.target), shape_id.to_string(b.target))
+  })
+}
+
+fn walk_operations(
+  model: Model,
+  pending: List(ShapeId),
+  visited: Set(ShapeId),
+  operations: List(shape.Reference),
+) -> List(shape.Reference) {
+  case pending {
+    [] -> operations
+    [id, ..rest] -> {
+      case set.contains(visited, id) {
+        True -> walk_operations(model, rest, visited, operations)
+        False -> {
+          let visited = set.insert(visited, id)
+          case dict.get(model.shapes, id) {
+            Ok(shape.Operation(..)) ->
+              walk_operations(model, rest, visited, [
+                shape.Reference(id),
+                ..operations
+              ])
+            Ok(container) -> {
+              let targets =
+                list.map(container_refs(container), fn(ref) { ref.target })
+              walk_operations(
+                model,
+                list.append(targets, rest),
+                visited,
+                operations,
+              )
+            }
+            Error(_) -> walk_operations(model, rest, visited, operations)
+          }
+        }
+      }
+    }
+  }
+}
+
+fn container_refs(container: Shape) -> List(shape.Reference) {
+  case container {
+    shape.Service(operations: operations, resources: resources, ..) ->
+      list.append(operations, resources)
+    shape.Resource(
+      create: create,
+      put: put,
+      read: read,
+      update: update,
+      delete: delete,
+      list: list_op,
+      operations: operations,
+      collection_operations: collection_operations,
+      resources: resources,
+      ..,
+    ) -> {
+      let lifecycle =
+        list.filter_map([create, put, read, update, delete, list_op], fn(ref) {
+          option.to_result(ref, Nil)
+        })
+      list.flatten([lifecycle, operations, collection_operations, resources])
+    }
+    _ -> []
+  }
 }
 
 /// Replace the model's `member_orders` map. Used by the codegen
