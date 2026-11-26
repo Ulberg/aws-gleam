@@ -207,6 +207,10 @@ jobs:
       - name: Check formatting
         run: gleam format --check src test
 
+      - name: Test code generator
+        working-directory: codegen
+        run: gleam test
+
       # gleam content-hashes .gleam modules but tracks native (.erl) files
       # by mtime. A build/ restored from cache has artifacts newer than the
       # freshly-checked-out sources, so a changed FFI .erl is treated as

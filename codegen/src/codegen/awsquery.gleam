@@ -65,7 +65,8 @@ pub fn emit_service(
 ) -> Result(EmitResult, String) {
   case model.lookup(model, service_id) {
     Error(_) -> Error(string.concat(["service not found: ", service_id]))
-    Ok(shape.Service(operations: refs, version: ver, ..)) -> {
+    Ok(shape.Service(version: ver, ..)) -> {
+      let refs = model.operation_refs(model, service_id)
       let version = case ver {
         Some(v) -> v
         None -> "unknown"

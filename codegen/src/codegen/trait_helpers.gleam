@@ -583,9 +583,12 @@ pub fn secondary_service_op_refs(
     let #(sid, sh) = pair
     let sid_str = shape_id.to_string(sid)
     case sid_str == dominant_service_id, sh {
-      False, shape.Service(operations: ops, traits: t, ..) ->
+      False, shape.Service(traits: t, ..) ->
         case dict.has_key(t, ShapeId(protocol_trait_id)) {
-          True -> list.map(ops, fn(ref) { #(ref, sid_str) })
+          True ->
+            list.map(model.operation_refs(model, sid_str), fn(ref) {
+              #(ref, sid_str)
+            })
           False -> []
         }
       _, _ -> []
